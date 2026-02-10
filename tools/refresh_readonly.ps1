@@ -1,91 +1,84 @@
-# tools/refresh_readonly.ps1
-# Purpose:
-# 1) Run the data pipeline (writes warehouse.duckdb)
-# 2) Apply analytics views (analytics.campaign_daily, etc.)
-# 3) Refresh warehouse_readonly.duckdb for safe DBeaver usage
+param(
+  [int]$LookbackDays = 1,
+  [ValidateSet("test","live")]
+  [string]$RunMode = "test",
+  [string]$ClientConfig = "configs\client_001.yaml"
+)
 
 $ErrorActionPreference = "Stop"
 
-Write-Host ""
-Write-Host "==> Starting refresh_readonly pipeline" -ForegroundColor Cyan
-Write-Host ""
-
-# -------------------------------------------------------------------
-# Resolve repo root
-# -------------------------------------------------------------------
-$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+# Repo root = parent of /tools
+$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..") | Select-Object -ExpandProperty Path
+Write-Host "=> Repo root: $repoRoot"
 Set-Location $repoRoot
-Write-Host "==> Repo root: $repoRoot" -ForegroundColor DarkGray
 
-# -------------------------------------------------------------------
-# Resolve Python executable
-# -------------------------------------------------------------------
-$venvPython = Join-Path $repoRoot ".venv\Scripts\python.exe"
+# Activate venv (required)
+$venvActivate = Join-Path $repoRoot ".venv\Scripts\Activate.ps1"
+if (!(Test-Path $venvActivate)) {
+  throw "Missing venv activation script at: $venvActivate`nCreate the venv first (see CHUNK_1 handoff)."
+}
+. $venvActivate
+Write-Host "=> Activated venv"
 
-if (Test-Path $venvPython) {
-    $pythonExe = $venvPython
-    Write-Host "==> Using venv python: $pythonExe" -ForegroundColor DarkGray
+# Always use venv python explicitly (avoid system Python)
+$pythonExe = Join-Path $repoRoot ".venv\Scripts\python.exe"
+if (!(Test-Path $pythonExe)) {
+  throw "Missing venv python at: $pythonExe"
+}
+Write-Host "=> Using python: $pythonExe"
+
+# Ensure Postgres is running (Docker)
+try {
+  $null = docker version 2>$null
+  Write-Host "=> Ensuring Postgres is running (Docker)"
+  try {
+    docker compose up -d postgres | Out-Null
+  } catch {
+    # fallback if service name differs
+    docker compose up -d | Out-Null
+  }
+  $running = docker ps --format '{{.Names}}' | Select-String -SimpleMatch "gads_postgres"
+  if ($running) {
+    Write-Host "Container gads_postgres Running"
+  } else {
+    Write-Host "NOTE: gads_postgres container not detected (check docker compose output)."
+  }
+} catch {
+  Write-Host "NOTE: Docker not available; skipping Postgres startup."
+}
+
+# Run pipeline -> writes warehouse.duckdb
+$cfgPath = Join-Path $repoRoot $ClientConfig
+if (!(Test-Path $cfgPath)) {
+  throw "Client config not found: $cfgPath"
+}
+
+Write-Host "=> Running pipeline ($RunMode) (writes to warehouse.duckdb)"
+& $pythonExe -m gads_pipeline.cli run-v1 $RunMode $cfgPath --lookback-days $LookbackDays
+
+# Apply analytics layer (creates analytics.campaign_daily etc)
+if (Test-Path (Join-Path $repoRoot "tools\apply_analytics.py")) {
+  Write-Host "=> Applying analytics views"
+  & $pythonExe (Join-Path $repoRoot "tools\apply_analytics.py")
 } else {
-    $pythonExe = "python"
-    Write-Host "==> Using system python" -ForegroundColor DarkGray
+  Write-Host "NOTE: tools\apply_analytics.py not found; skipping analytics apply."
 }
 
-# -------------------------------------------------------------------
-# Ensure Postgres (Docker) is running
-# -------------------------------------------------------------------
-Write-Host ""
-Write-Host "==> Ensuring Postgres is running (Docker)" -ForegroundColor Cyan
+# Copy -> readonly DB
+$src = Join-Path $repoRoot "warehouse.duckdb"
+$dst = Join-Path $repoRoot "warehouse_readonly.duckdb"
 
-$pgContainer = docker ps --filter "name=gads_postgres" --format "{{.Names}}"
-if (-not $pgContainer) {
-    throw "Postgres container 'gads_postgres' is not running"
+if (!(Test-Path $src)) {
+  throw "Source warehouse DB not found: $src"
 }
 
-Write-Host "Container gads_postgres running" -ForegroundColor Green
-
-# -------------------------------------------------------------------
-# Run pipeline (writes warehouse.duckdb)
-# -------------------------------------------------------------------
-Write-Host ""
-Write-Host "==> Running pipeline (writes to warehouse.duckdb)" -ForegroundColor Cyan
-
-& $pythonExe ".\tools\run_pipeline.py"
-if ($LASTEXITCODE -ne 0) {
-    throw "run_pipeline.py failed"
+Write-Host "=> Copying warehouse.duckdb -> warehouse_readonly.duckdb"
+try {
+  Copy-Item -Force $src $dst
+} catch {
+  Write-Host "!! FAILED to overwrite warehouse_readonly.duckdb (likely file is open/locked)."
+  Write-Host "   Fix: Disconnect warehouse_readonly.duckdb in DBeaver and re-run this script."
+  throw
 }
 
-Write-Host "SUCCESS: pipeline complete" -ForegroundColor Green
-
-# -------------------------------------------------------------------
-# Apply analytics views (analytics schema)
-# -------------------------------------------------------------------
-Write-Host ""
-Write-Host "==> Applying analytics views to warehouse.duckdb" -ForegroundColor Cyan
-
-& $pythonExe ".\tools\apply_analytics.py"
-if ($LASTEXITCODE -ne 0) {
-    throw "apply_analytics.py failed"
-}
-
-Write-Host "SUCCESS: analytics views applied" -ForegroundColor Green
-
-# -------------------------------------------------------------------
-# Refresh readonly DuckDB
-# -------------------------------------------------------------------
-Write-Host ""
-Write-Host "==> Refreshing warehouse_readonly.duckdb" -ForegroundColor Cyan
-
-$srcDb  = Join-Path $repoRoot "warehouse.duckdb"
-$destDb = Join-Path $repoRoot "warehouse_readonly.duckdb"
-
-if (-not (Test-Path $srcDb)) {
-    throw "Source DuckDB not found: $srcDb"
-}
-
-Copy-Item -Path $srcDb -Destination $destDb -Force
-
-Write-Host "SUCCESS: refreshed warehouse_readonly.duckdb" -ForegroundColor Green
-
-Write-Host ""
-Write-Host "==> refresh_readonly COMPLETE" -ForegroundColor Green
-Write-Host ""
+Write-Host "DONE: refresh_readonly OK"
