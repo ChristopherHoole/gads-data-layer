@@ -1,0 +1,18 @@
+# Example (SAFE) Google Ads API credentials file.
+# Copy this to: secrets/google-ads.yaml and replace placeholders.
+# IMPORTANT: Never commit secrets/google-ads.yaml
+
+use_proto_plus: true
+
+# From Google Ads MCC -> Admin -> API Center
+developer_token: "PASTE_DEVELOPER_TOKEN_HERE"
+
+# Your MCC ID (numbers only; no dashes)
+login_customer_id: "PASTE_MCC_ID_HERE"
+
+# From Google Cloud -> APIs & Services -> Credentials -> OAuth 2.0 Client IDs
+client_id: "PASTE_OAUTH_CLIENT_ID.apps.googleusercontent.com"
+client_secret: "PASTE_OAUTH_CLIENT_SECRET_HERE"
+
+# From your OAuth flow (scripts/google_ads_oauth.py)
+refresh_token: "PASTE_REFRESH_TOKEN_HERE"
