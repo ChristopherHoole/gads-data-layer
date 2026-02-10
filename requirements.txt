@@ -1,0 +1,12 @@
+﻿typer==0.12.5
+pydantic==2.8.2
+pyyaml==6.0.2
+python-dotenv==1.0.1
+rich==13.9.2
+
+sqlalchemy==2.0.34
+psycopg2-binary==2.9.9
+
+duckdb==1.1.0
+pandas==2.2.2
+pyarrow==17.0.0

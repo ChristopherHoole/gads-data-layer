@@ -1,0 +1,14 @@
+﻿services:
+  postgres:
+    image: postgres:16
+    container_name: gads_postgres
+    environment:
+      POSTGRES_USER: gads
+      POSTGRES_PASSWORD: gads_password
+      POSTGRES_DB: gads_meta
+    ports:
+      - "5432:5432"
+    volumes:
+      - gads_pgdata:/var/lib/postgresql/data
+volumes:
+  gads_pgdata:

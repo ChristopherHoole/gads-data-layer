@@ -1,0 +1,30 @@
+﻿client_name: "Test_Client_001"
+client_type: "ecom"
+primary_kpi: "roas"
+
+google_ads:
+  mcc_id: "2077923976"
+  customer_id: "7372844356"
+
+targets:
+  target_roas: 3.0
+
+conversion_sources:
+  include: ["purchase"]
+  exclude: []
+
+currency: "USD"
+timezone: "UTC"
+automation_mode: "insights"
+risk_tolerance: "conservative"
+
+spend_caps:
+  daily: 50
+  monthly: 1500
+
+protected_entities:
+  brand_is_protected: true
+  entities: []
+
+exclusions:
+  campaign_types_ignore: ["hotel", "app"]

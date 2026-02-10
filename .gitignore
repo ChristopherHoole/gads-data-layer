@@ -1,0 +1,66 @@
+﻿# =========================
+# Python / Virtualenv
+# =========================
+.venv/
+venv/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# =========================
+# IDE / OS
+# =========================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# =========================
+# Environment / Secrets
+# =========================
+.env
+.env.*
+secrets/
+**/secrets/
+*.pem
+*.p12
+*.key
+*_client_secret.json
+client_secret*.json
+
+# =========================
+# Data / Artifacts
+# =========================
+data/
+out/
+outputs/
+*.csv
+*.parquet
+*.jsonl
+*.log
+
+# =========================
+# DuckDB / Local DB
+# =========================
+*.duckdb
+*.db
+*.sqlite
+*.sqlite3
+warehouse.duckdb
+**/warehouse.duckdb
+
+# =========================
+# Build / Distribution
+# =========================
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
