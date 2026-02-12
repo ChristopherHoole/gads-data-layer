@@ -1,0 +1,163 @@
+{
+  "client_id": "Test_Client_001",
+  "customer_id": "7372844356",
+  "snapshot_date": "2026-02-10",
+  "generated_at_utc": "2026-02-11T23:34:00.756098+00:00",
+  "needs_config": false,
+  "config_hash": "81d230ea0c7d",
+  "insights": [
+    {
+      "rank": 1,
+      "entity_type": "CAMPAIGN",
+      "entity_id": "1001",
+      "diagnosis_code": "COST_DROP",
+      "confidence": 0.4,
+      "risk_tier": "med",
+      "labels": [
+        "LOW_DATA",
+        "NEEDS_REVIEW"
+      ],
+      "evidence": {
+        "cost_micros_w1_vs_prev_pct": -1.0,
+        "threshold": -0.5
+      },
+      "recommended_action": "Check budget, eligibility, disapprovals, and demand changes; verify tracking.",
+      "guardrail_rule_ids": [
+        "CONSTITUTION-5-2",
+        "CONSTITUTION-A-4"
+      ]
+    },
+    {
+      "rank": 2,
+      "entity_type": "CAMPAIGN",
+      "entity_id": "1002",
+      "diagnosis_code": "COST_DROP",
+      "confidence": 0.4,
+      "risk_tier": "med",
+      "labels": [
+        "LOW_DATA",
+        "NEEDS_REVIEW"
+      ],
+      "evidence": {
+        "cost_micros_w1_vs_prev_pct": -1.0,
+        "threshold": -0.5
+      },
+      "recommended_action": "Check budget, eligibility, disapprovals, and demand changes; verify tracking.",
+      "guardrail_rule_ids": [
+        "CONSTITUTION-5-2",
+        "CONSTITUTION-A-4"
+      ]
+    },
+    {
+      "rank": 3,
+      "entity_type": "CAMPAIGN",
+      "entity_id": "1003",
+      "diagnosis_code": "COST_DROP",
+      "confidence": 0.4,
+      "risk_tier": "med",
+      "labels": [
+        "LOW_DATA",
+        "NEEDS_REVIEW"
+      ],
+      "evidence": {
+        "cost_micros_w1_vs_prev_pct": -1.0,
+        "threshold": -0.5
+      },
+      "recommended_action": "Check budget, eligibility, disapprovals, and demand changes; verify tracking.",
+      "guardrail_rule_ids": [
+        "CONSTITUTION-5-2",
+        "CONSTITUTION-A-4"
+      ]
+    },
+    {
+      "rank": 4,
+      "entity_type": "CAMPAIGN",
+      "entity_id": "1004",
+      "diagnosis_code": "COST_DROP",
+      "confidence": 0.4,
+      "risk_tier": "med",
+      "labels": [
+        "LOW_DATA",
+        "NEEDS_REVIEW"
+      ],
+      "evidence": {
+        "cost_micros_w1_vs_prev_pct": -1.0,
+        "threshold": -0.5
+      },
+      "recommended_action": "Check budget, eligibility, disapprovals, and demand changes; verify tracking.",
+      "guardrail_rule_ids": [
+        "CONSTITUTION-5-2",
+        "CONSTITUTION-A-4"
+      ]
+    },
+    {
+      "rank": 5,
+      "entity_type": "CAMPAIGN",
+      "entity_id": "1005",
+      "diagnosis_code": "COST_DROP",
+      "confidence": 0.4,
+      "risk_tier": "med",
+      "labels": [
+        "LOW_DATA",
+        "NEEDS_REVIEW"
+      ],
+      "evidence": {
+        "cost_micros_w1_vs_prev_pct": -1.0,
+        "threshold": -0.5
+      },
+      "recommended_action": "Check budget, eligibility, disapprovals, and demand changes; verify tracking.",
+      "guardrail_rule_ids": [
+        "CONSTITUTION-5-2",
+        "CONSTITUTION-A-4"
+      ]
+    },
+    {
+      "rank": 6,
+      "entity_type": "ACCOUNT",
+      "entity_id": null,
+      "diagnosis_code": "NEEDS_REVIEW",
+      "confidence": 0.2,
+      "risk_tier": "low",
+      "labels": [
+        "NEEDS_REVIEW"
+      ],
+      "evidence": {
+        "note": "Filler insight to ensure top-N output."
+      },
+      "recommended_action": "Review config completeness and data availability.",
+      "guardrail_rule_ids": []
+    },
+    {
+      "rank": 7,
+      "entity_type": "ACCOUNT",
+      "entity_id": null,
+      "diagnosis_code": "NEEDS_REVIEW",
+      "confidence": 0.2,
+      "risk_tier": "low",
+      "labels": [
+        "NEEDS_REVIEW"
+      ],
+      "evidence": {
+        "note": "Filler insight to ensure top-N output."
+      },
+      "recommended_action": "Review config completeness and data availability.",
+      "guardrail_rule_ids": []
+    },
+    {
+      "rank": 8,
+      "entity_type": "ACCOUNT",
+      "entity_id": null,
+      "diagnosis_code": "NEEDS_REVIEW",
+      "confidence": 0.2,
+      "risk_tier": "low",
+      "labels": [
+        "NEEDS_REVIEW"
+      ],
+      "evidence": {
+        "note": "Filler insight to ensure top-N output."
+      },
+      "recommended_action": "Review config completeness and data availability.",
+      "guardrail_rule_ids": []
+    }
+  ]
+}

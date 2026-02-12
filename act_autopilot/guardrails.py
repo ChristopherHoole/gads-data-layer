@@ -1,14 +1,16 @@
 """
-Guardrails — Constitution compliance checks applied to every recommendation.
+Guardrails – Constitution compliance checks applied to every recommendation.
 
 Each check returns (passed: bool, reason: str).
 If passed=False, the recommendation is blocked with the reason.
 """
 from __future__ import annotations
 
+from datetime import date
 from typing import Any, Dict, List, Optional, Tuple
 
 from .models import AutopilotConfig, RuleContext, _safe_float
+from .change_log import ChangeLog
 
 
 def check_low_data_block(ctx: RuleContext) -> Tuple[bool, str]:
@@ -85,7 +87,7 @@ def check_monthly_pacing(ctx: RuleContext) -> Tuple[bool, str]:
     """CONSTITUTION-5-5: Block expansions if pacing >105% of monthly cap."""
     pacing_flag = ctx.features.get("pacing_flag_over_105")
     if pacing_flag is True:
-        return False, "Monthly pacing >105% of cap — no expansions allowed (CONSTITUTION-5-5)"
+        return False, "Monthly pacing >105% of cap – no expansions allowed (CONSTITUTION-5-5)"
     return True, ""
 
 
@@ -100,28 +102,17 @@ def check_automation_mode(ctx: RuleContext, risk_tier: str) -> Tuple[bool, str]:
     """CONSTITUTION-6: Check if automation_mode allows this risk tier."""
     mode = ctx.config.automation_mode
     if mode == "insights":
-        return False, f"automation_mode=insights — no execution allowed (CONSTITUTION-6)"
+        return False, f"automation_mode=insights – no execution allowed (CONSTITUTION-6)"
     if mode == "suggest":
         # suggest mode: recommendations are generated but not executed
-        # We don't block — we just mark them as suggestions
+        # We don't block – we just mark them as suggestions
         return True, ""
     if mode == "auto_low_risk":
         if risk_tier != "low":
-            return False, f"automation_mode=auto_low_risk — {risk_tier} risk not auto-executable (CONSTITUTION-6)"
+            return False, f"automation_mode=auto_low_risk – {risk_tier} risk not auto-executable (CONSTITUTION-6)"
     if mode == "auto_expanded":
         if risk_tier == "high":
-            return False, f"automation_mode=auto_expanded — high risk always requires approval (CONSTITUTION-6)"
-    return True, ""
-
-
-def check_one_lever_rule(ctx: RuleContext, campaign_id: Optional[str], lever: str) -> Tuple[bool, str]:
-    """CONSTITUTION-5-4: One lever at a time — no budget+bid on same campaign within 7d."""
-    if campaign_id is None:
-        return True, ""
-    opposite = "bid" if "budget" in lever else "budget"
-    for change in ctx.recent_changes:
-        if str(change.get("entity_id")) == campaign_id and opposite in str(change.get("lever", "")):
-            return False, f"One-lever rule: {opposite} change exists on campaign {campaign_id} within 7d (CONSTITUTION-5-4)"
+            return False, f"automation_mode=auto_expanded – high risk always requires approval (CONSTITUTION-6)"
     return True, ""
 
 
@@ -129,9 +120,52 @@ def check_cooldown(ctx: RuleContext, campaign_id: Optional[str], lever: str) -> 
     """CONSTITUTION-5-3: 7-day cooldown on same entity+lever."""
     if campaign_id is None:
         return True, ""
-    for change in ctx.recent_changes:
-        if str(change.get("entity_id")) == campaign_id and lever in str(change.get("lever", "")):
-            return False, f"Cooldown: {lever} change on campaign {campaign_id} within 7d (CONSTITUTION-5-3)"
+    
+    change_log = ChangeLog(db_path=ctx.db_path)
+    
+    in_cooldown = change_log.check_cooldown(
+        customer_id=ctx.customer_id,
+        campaign_id=campaign_id,
+        lever=lever,
+        cooldown_days=7
+    )
+    
+    if in_cooldown:
+        recent = change_log.get_recent_changes(
+            customer_id=ctx.customer_id,
+            campaign_id=campaign_id,
+            lever=lever,
+            days_back=7
+        )
+        last_change = recent[0] if recent else None
+        last_date = last_change['change_date'] if last_change else 'unknown'
+        
+        return False, f"Cooldown: {lever} change on campaign {campaign_id} on {last_date} (CONSTITUTION-5-3)"
+    
+    return True, ""
+
+
+def check_one_lever_rule(ctx: RuleContext, campaign_id: Optional[str], lever: str) -> Tuple[bool, str]:
+    """CONSTITUTION-5-4: One lever at a time – no budget+bid on same campaign within 7d."""
+    if campaign_id is None:
+        return True, ""
+    
+    if lever not in ['budget', 'bid']:
+        return True, ""
+    
+    change_log = ChangeLog(db_path=ctx.db_path)
+    
+    violation = change_log.check_one_lever(
+        customer_id=ctx.customer_id,
+        campaign_id=campaign_id,
+        proposed_lever=lever,
+        cooldown_days=7
+    )
+    
+    if violation:
+        opposite = 'bid' if lever == 'budget' else 'budget'
+        return False, f"One-lever rule: {opposite} change on campaign {campaign_id} within 7d (CONSTITUTION-5-4)"
+    
     return True, ""
 
 

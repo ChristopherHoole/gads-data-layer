@@ -1,0 +1,553 @@
+{
+  "customer_id": "9999999999",
+  "snapshot_date": "2026-02-11",
+  "generated_at": "2026-02-12T23:51:00.626941",
+  "client_name": "Synthetic_Test_Client",
+  "automation_mode": "insights",
+  "summary": {
+    "total_recommendations": 21,
+    "low_risk": 19,
+    "medium_risk": 1,
+    "high_risk": 1,
+    "blocked": 4,
+    "executable": 17
+  },
+  "recommendations": [
+    {
+      "rule_id": "STATUS-001",
+      "rule_name": "Flag Underperformer for Review",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3008",
+      "campaign_name": "N/A",
+      "action_type": "review",
+      "risk_tier": "high",
+      "confidence": 0.75,
+      "current_value": 1.2040368891745725,
+      "recommended_value": 3.0,
+      "change_pct": null,
+      "rationale": "Campaign 'Decline Fast' ROAS (30d) is 1.20 \u2014 60% below target 3.00. Spent 1443.73 (30d). Consider pausing or restructuring.",
+      "expected_impact": "N/A",
+      "blocked": false,
+      "block_reason": null,
+      "priority": 8,
+      "constitution_refs": [
+        "CONSTITUTION-4",
+        "CONSTITUTION-5-6"
+      ],
+      "guardrails_checked": [
+        "underperformer_review"
+      ]
+    },
+    {
+      "rule_id": "BUDGET-002",
+      "rule_name": "Decrease Budget \u2014 Low ROAS",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3008",
+      "campaign_name": "N/A",
+      "action_type": "budget_decrease",
+      "risk_tier": "low",
+      "confidence": 0.65,
+      "current_value": 48501551.14285714,
+      "recommended_value": 46076473.58571428,
+      "change_pct": -0.05,
+      "rationale": "ROAS 1.21 is 60% below target 3.00. Reducing budget by 5% to limit waste.",
+      "expected_impact": "N/A",
+      "blocked": false,
+      "block_reason": null,
+      "priority": 15,
+      "constitution_refs": [
+        "CONSTITUTION-5-1",
+        "CONSTITUTION-A-4"
+      ],
+      "guardrails_checked": [
+        "low_data_block",
+        "low_conv_bid_block",
+        "protected_entity",
+        "confidence_threshold",
+        "cooldown",
+        "one_lever_rule",
+        "budget_change_cap",
+        "daily_spend_cap"
+      ]
+    },
+    {
+      "rule_id": "BUDGET-002",
+      "rule_name": "Decrease Budget \u2014 Low ROAS",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3009",
+      "campaign_name": "N/A",
+      "action_type": "budget_decrease",
+      "risk_tier": "low",
+      "confidence": 0.65,
+      "current_value": 77765702.42857143,
+      "recommended_value": 73877417.30714285,
+      "change_pct": -0.05,
+      "rationale": "ROAS 1.94 is 35% below target 3.00. Reducing budget by 5% to limit waste.",
+      "expected_impact": "N/A",
+      "blocked": false,
+      "block_reason": null,
+      "priority": 15,
+      "constitution_refs": [
+        "CONSTITUTION-5-1",
+        "CONSTITUTION-A-4"
+      ],
+      "guardrails_checked": [
+        "low_data_block",
+        "low_conv_bid_block",
+        "protected_entity",
+        "confidence_threshold",
+        "cooldown",
+        "one_lever_rule",
+        "budget_change_cap",
+        "daily_spend_cap"
+      ]
+    },
+    {
+      "rule_id": "BUDGET-002",
+      "rule_name": "Decrease Budget \u2014 Low ROAS",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3001",
+      "campaign_name": "N/A",
+      "action_type": "budget_decrease",
+      "risk_tier": "low",
+      "confidence": 0.65,
+      "current_value": 123143733.42857143,
+      "recommended_value": 116986546.75714286,
+      "change_pct": -0.05,
+      "rationale": "ROAS 1.98 is 34% below target 3.00. Reducing budget by 5% to limit waste.",
+      "expected_impact": "N/A",
+      "blocked": false,
+      "block_reason": null,
+      "priority": 15,
+      "constitution_refs": [
+        "CONSTITUTION-5-1",
+        "CONSTITUTION-A-4"
+      ],
+      "guardrails_checked": [
+        "low_data_block",
+        "low_conv_bid_block",
+        "protected_entity",
+        "confidence_threshold",
+        "cooldown",
+        "one_lever_rule",
+        "budget_change_cap",
+        "daily_spend_cap"
+      ]
+    },
+    {
+      "rule_id": "BUDGET-001",
+      "rule_name": "Increase Budget \u2014 High ROAS",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3003",
+      "campaign_name": "N/A",
+      "action_type": "budget_increase",
+      "risk_tier": "low",
+      "confidence": 0.6,
+      "current_value": 117918928.28571428,
+      "recommended_value": 123814874.7,
+      "change_pct": 0.05,
+      "rationale": "ROAS 3.83 exceeds target 3.00 by 28%. Increasing budget by 5% to capture additional conversions.",
+      "expected_impact": "N/A",
+      "blocked": true,
+      "block_reason": "Monthly pacing >105% of cap \u2013 no expansions allowed (CONSTITUTION-5-5)",
+      "priority": 20,
+      "constitution_refs": [
+        "CONSTITUTION-5-1",
+        "CONSTITUTION-5-5",
+        "CONSTITUTION-A-4"
+      ],
+      "guardrails_checked": [
+        "low_data_block",
+        "low_conv_bid_block",
+        "protected_entity",
+        "confidence_threshold",
+        "cooldown",
+        "one_lever_rule",
+        "budget_change_cap",
+        "daily_spend_cap",
+        "monthly_pacing"
+      ]
+    },
+    {
+      "rule_id": "BUDGET-001",
+      "rule_name": "Increase Budget \u2014 High ROAS",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3004",
+      "campaign_name": "N/A",
+      "action_type": "budget_increase",
+      "risk_tier": "low",
+      "confidence": 0.6,
+      "current_value": 119104391.85714285,
+      "recommended_value": 125059611.45,
+      "change_pct": 0.05,
+      "rationale": "ROAS 4.91 exceeds target 3.00 by 64%. Increasing budget by 5% to capture additional conversions.",
+      "expected_impact": "N/A",
+      "blocked": true,
+      "block_reason": "Monthly pacing >105% of cap \u2013 no expansions allowed (CONSTITUTION-5-5)",
+      "priority": 20,
+      "constitution_refs": [
+        "CONSTITUTION-5-1",
+        "CONSTITUTION-5-5",
+        "CONSTITUTION-A-4"
+      ],
+      "guardrails_checked": [
+        "low_data_block",
+        "low_conv_bid_block",
+        "protected_entity",
+        "confidence_threshold",
+        "cooldown",
+        "one_lever_rule",
+        "budget_change_cap",
+        "daily_spend_cap",
+        "monthly_pacing"
+      ]
+    },
+    {
+      "rule_id": "BUDGET-001",
+      "rule_name": "Increase Budget \u2014 High ROAS",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3020",
+      "campaign_name": "N/A",
+      "action_type": "budget_increase",
+      "risk_tier": "low",
+      "confidence": 0.25,
+      "current_value": 143794895.57142857,
+      "recommended_value": 150984640.35,
+      "change_pct": 0.05,
+      "rationale": "ROAS 4.17 exceeds target 3.00 by 39%. Increasing budget by 5% to capture additional conversions.",
+      "expected_impact": "N/A",
+      "blocked": true,
+      "block_reason": "Confidence 0.25 < minimum 0.50",
+      "priority": 20,
+      "constitution_refs": [
+        "CONSTITUTION-5-1",
+        "CONSTITUTION-5-5",
+        "CONSTITUTION-A-4"
+      ],
+      "guardrails_checked": [
+        "low_data_block",
+        "low_conv_bid_block",
+        "protected_entity",
+        "confidence_threshold"
+      ]
+    },
+    {
+      "rule_id": "BUDGET-001",
+      "rule_name": "Increase Budget \u2014 High ROAS",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3005",
+      "campaign_name": "N/A",
+      "action_type": "budget_increase",
+      "risk_tier": "low",
+      "confidence": 0.25,
+      "current_value": 210743745.2857143,
+      "recommended_value": 221280932.55,
+      "change_pct": 0.05,
+      "rationale": "ROAS 3.73 exceeds target 3.00 by 24%. Increasing budget by 5% to capture additional conversions.",
+      "expected_impact": "N/A",
+      "blocked": true,
+      "block_reason": "Confidence 0.25 < minimum 0.50",
+      "priority": 20,
+      "constitution_refs": [
+        "CONSTITUTION-5-1",
+        "CONSTITUTION-5-5",
+        "CONSTITUTION-A-4"
+      ],
+      "guardrails_checked": [
+        "low_data_block",
+        "low_conv_bid_block",
+        "protected_entity",
+        "confidence_threshold"
+      ]
+    },
+    {
+      "rule_id": "ACCT-002",
+      "rule_name": "Portfolio Rebalance \u2014 Shift Budget to Top Performer",
+      "entity_type": "ACCOUNT",
+      "entity_id": null,
+      "campaign_name": "N/A",
+      "action_type": "review",
+      "risk_tier": "med",
+      "confidence": 0.55,
+      "current_value": null,
+      "recommended_value": null,
+      "change_pct": null,
+      "rationale": "ROAS spread: best campaign (3004) at 4.91 vs worst campaign (3008) at 1.21 (ratio 4.0x). Consider shifting budget from worst to best.",
+      "expected_impact": "N/A",
+      "blocked": false,
+      "block_reason": null,
+      "priority": 50,
+      "constitution_refs": [
+        "CONSTITUTION-4",
+        "CONSTITUTION-5-4"
+      ],
+      "guardrails_checked": [
+        "cross_campaign_review"
+      ]
+    },
+    {
+      "rule_id": "STATUS-003",
+      "rule_name": "Healthy Campaign \u2014 No Action Needed",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3015",
+      "campaign_name": "N/A",
+      "action_type": "no_action",
+      "risk_tier": "low",
+      "confidence": 0.8,
+      "current_value": 3.067776035494183,
+      "recommended_value": 3.0,
+      "change_pct": null,
+      "rationale": "Campaign is healthy: ROAS 3.07 within \u00b115% of target 3.00, no diagnosis codes, sufficient data. No intervention needed.",
+      "expected_impact": "N/A",
+      "blocked": false,
+      "block_reason": null,
+      "priority": 90,
+      "constitution_refs": [],
+      "guardrails_checked": [
+        "health_assessment"
+      ]
+    },
+    {
+      "rule_id": "STATUS-003",
+      "rule_name": "Healthy Campaign \u2014 No Action Needed",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3018",
+      "campaign_name": "N/A",
+      "action_type": "no_action",
+      "risk_tier": "low",
+      "confidence": 0.8,
+      "current_value": 2.910971190128944,
+      "recommended_value": 3.0,
+      "change_pct": null,
+      "rationale": "Campaign is healthy: ROAS 2.91 within \u00b115% of target 3.00, no diagnosis codes, sufficient data. No intervention needed.",
+      "expected_impact": "N/A",
+      "blocked": false,
+      "block_reason": null,
+      "priority": 90,
+      "constitution_refs": [],
+      "guardrails_checked": [
+        "health_assessment"
+      ]
+    },
+    {
+      "rule_id": "STATUS-003",
+      "rule_name": "Healthy Campaign \u2014 No Action Needed",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3019",
+      "campaign_name": "N/A",
+      "action_type": "no_action",
+      "risk_tier": "low",
+      "confidence": 0.8,
+      "current_value": 3.0474755722793976,
+      "recommended_value": 3.0,
+      "change_pct": null,
+      "rationale": "Campaign is healthy: ROAS 3.05 within \u00b115% of target 3.00, no diagnosis codes, sufficient data. No intervention needed.",
+      "expected_impact": "N/A",
+      "blocked": false,
+      "block_reason": null,
+      "priority": 90,
+      "constitution_refs": [],
+      "guardrails_checked": [
+        "health_assessment"
+      ]
+    },
+    {
+      "rule_id": "STATUS-003",
+      "rule_name": "Healthy Campaign \u2014 No Action Needed",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3006",
+      "campaign_name": "N/A",
+      "action_type": "no_action",
+      "risk_tier": "low",
+      "confidence": 0.8,
+      "current_value": 3.3631880446123326,
+      "recommended_value": 3.0,
+      "change_pct": null,
+      "rationale": "Campaign is healthy: ROAS 3.36 within \u00b115% of target 3.00, no diagnosis codes, sufficient data. No intervention needed.",
+      "expected_impact": "N/A",
+      "blocked": false,
+      "block_reason": null,
+      "priority": 90,
+      "constitution_refs": [],
+      "guardrails_checked": [
+        "health_assessment"
+      ]
+    },
+    {
+      "rule_id": "STATUS-003",
+      "rule_name": "Healthy Campaign \u2014 No Action Needed",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3014",
+      "campaign_name": "N/A",
+      "action_type": "no_action",
+      "risk_tier": "low",
+      "confidence": 0.8,
+      "current_value": 3.096875108165423,
+      "recommended_value": 3.0,
+      "change_pct": null,
+      "rationale": "Campaign is healthy: ROAS 3.10 within \u00b115% of target 3.00, no diagnosis codes, sufficient data. No intervention needed.",
+      "expected_impact": "N/A",
+      "blocked": false,
+      "block_reason": null,
+      "priority": 90,
+      "constitution_refs": [],
+      "guardrails_checked": [
+        "health_assessment"
+      ]
+    },
+    {
+      "rule_id": "STATUS-003",
+      "rule_name": "Healthy Campaign \u2014 No Action Needed",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3016",
+      "campaign_name": "N/A",
+      "action_type": "no_action",
+      "risk_tier": "low",
+      "confidence": 0.8,
+      "current_value": 3.0418049314806948,
+      "recommended_value": 3.0,
+      "change_pct": null,
+      "rationale": "Campaign is healthy: ROAS 3.04 within \u00b115% of target 3.00, no diagnosis codes, sufficient data. No intervention needed.",
+      "expected_impact": "N/A",
+      "blocked": false,
+      "block_reason": null,
+      "priority": 90,
+      "constitution_refs": [],
+      "guardrails_checked": [
+        "health_assessment"
+      ]
+    },
+    {
+      "rule_id": "STATUS-003",
+      "rule_name": "Healthy Campaign \u2014 No Action Needed",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3011",
+      "campaign_name": "N/A",
+      "action_type": "no_action",
+      "risk_tier": "low",
+      "confidence": 0.8,
+      "current_value": 3.0549990880193367,
+      "recommended_value": 3.0,
+      "change_pct": null,
+      "rationale": "Campaign is healthy: ROAS 3.05 within \u00b115% of target 3.00, no diagnosis codes, sufficient data. No intervention needed.",
+      "expected_impact": "N/A",
+      "blocked": false,
+      "block_reason": null,
+      "priority": 90,
+      "constitution_refs": [],
+      "guardrails_checked": [
+        "health_assessment"
+      ]
+    },
+    {
+      "rule_id": "STATUS-003",
+      "rule_name": "Healthy Campaign \u2014 No Action Needed",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3007",
+      "campaign_name": "N/A",
+      "action_type": "no_action",
+      "risk_tier": "low",
+      "confidence": 0.8,
+      "current_value": 3.176493654624072,
+      "recommended_value": 3.0,
+      "change_pct": null,
+      "rationale": "Campaign is healthy: ROAS 3.18 within \u00b115% of target 3.00, no diagnosis codes, sufficient data. No intervention needed.",
+      "expected_impact": "N/A",
+      "blocked": false,
+      "block_reason": null,
+      "priority": 90,
+      "constitution_refs": [],
+      "guardrails_checked": [
+        "health_assessment"
+      ]
+    },
+    {
+      "rule_id": "STATUS-003",
+      "rule_name": "Healthy Campaign \u2014 No Action Needed",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3017",
+      "campaign_name": "N/A",
+      "action_type": "no_action",
+      "risk_tier": "low",
+      "confidence": 0.8,
+      "current_value": 3.0185865213331207,
+      "recommended_value": 3.0,
+      "change_pct": null,
+      "rationale": "Campaign is healthy: ROAS 3.02 within \u00b115% of target 3.00, no diagnosis codes, sufficient data. No intervention needed.",
+      "expected_impact": "N/A",
+      "blocked": false,
+      "block_reason": null,
+      "priority": 90,
+      "constitution_refs": [],
+      "guardrails_checked": [
+        "health_assessment"
+      ]
+    },
+    {
+      "rule_id": "STATUS-003",
+      "rule_name": "Healthy Campaign \u2014 No Action Needed",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3013",
+      "campaign_name": "N/A",
+      "action_type": "no_action",
+      "risk_tier": "low",
+      "confidence": 0.8,
+      "current_value": 3.00707714057082,
+      "recommended_value": 3.0,
+      "change_pct": null,
+      "rationale": "Campaign is healthy: ROAS 3.01 within \u00b115% of target 3.00, no diagnosis codes, sufficient data. No intervention needed.",
+      "expected_impact": "N/A",
+      "blocked": false,
+      "block_reason": null,
+      "priority": 90,
+      "constitution_refs": [],
+      "guardrails_checked": [
+        "health_assessment"
+      ]
+    },
+    {
+      "rule_id": "STATUS-003",
+      "rule_name": "Healthy Campaign \u2014 No Action Needed",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3012",
+      "campaign_name": "N/A",
+      "action_type": "no_action",
+      "risk_tier": "low",
+      "confidence": 0.8,
+      "current_value": 2.9719416258328915,
+      "recommended_value": 3.0,
+      "change_pct": null,
+      "rationale": "Campaign is healthy: ROAS 2.97 within \u00b115% of target 3.00, no diagnosis codes, sufficient data. No intervention needed.",
+      "expected_impact": "N/A",
+      "blocked": false,
+      "block_reason": null,
+      "priority": 90,
+      "constitution_refs": [],
+      "guardrails_checked": [
+        "health_assessment"
+      ]
+    },
+    {
+      "rule_id": "STATUS-003",
+      "rule_name": "Healthy Campaign \u2014 No Action Needed",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3002",
+      "campaign_name": "N/A",
+      "action_type": "no_action",
+      "risk_tier": "low",
+      "confidence": 0.8,
+      "current_value": 2.8358318844511667,
+      "recommended_value": 3.0,
+      "change_pct": null,
+      "rationale": "Campaign is healthy: ROAS 2.84 within \u00b115% of target 3.00, no diagnosis codes, sufficient data. No intervention needed.",
+      "expected_impact": "N/A",
+      "blocked": false,
+      "block_reason": null,
+      "priority": 90,
+      "constitution_refs": [],
+      "guardrails_checked": [
+        "health_assessment"
+      ]
+    }
+  ]
+}

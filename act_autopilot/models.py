@@ -54,6 +54,8 @@ class Recommendation:
 @dataclass
 class RuleContext:
     """Everything a rule needs to make a decision."""
+    customer_id: str
+    snapshot_date: Any  # date, but avoiding import
     config: AutopilotConfig
     # Lighthouse insights for this campaign (list, may be empty)
     insights: List[Dict[str, Any]]
@@ -65,6 +67,8 @@ class RuleContext:
     all_features: List[Dict[str, Any]]
     # Change log (for cooldown checks) - list of recent changes
     recent_changes: List[Dict[str, Any]] = field(default_factory=list)
+    # Database path for change log queries
+    db_path: str = "warehouse.duckdb"
 
 
 def _safe_float(x: Any, default: float = 0.0) -> float:

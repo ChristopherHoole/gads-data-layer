@@ -1,0 +1,241 @@
+{
+  "snapshot_date": "2026-02-11",
+  "total_checks": 23,
+  "passed": 23,
+  "failed": 0,
+  "pass_rate": 100.0,
+  "details": [
+    {
+      "campaign_id": "2001",
+      "scenario": "STABLE_A",
+      "check": "should_fire",
+      "rule_id": "STATUS-003",
+      "result": "PASS",
+      "fired_rules": [
+        "STATUS-003"
+      ]
+    },
+    {
+      "campaign_id": "2001",
+      "scenario": "STABLE_A",
+      "check": "should_not_fire",
+      "rule_id": "BUDGET-003",
+      "result": "PASS",
+      "fired_rules": [
+        "STATUS-003"
+      ]
+    },
+    {
+      "campaign_id": "2001",
+      "scenario": "STABLE_A",
+      "check": "should_not_fire",
+      "rule_id": "BUDGET-005",
+      "result": "PASS",
+      "fired_rules": [
+        "STATUS-003"
+      ]
+    },
+    {
+      "campaign_id": "2002",
+      "scenario": "STABLE_B",
+      "check": "should_fire",
+      "rule_id": "STATUS-003",
+      "result": "PASS",
+      "fired_rules": [
+        "STATUS-003"
+      ]
+    },
+    {
+      "campaign_id": "2002",
+      "scenario": "STABLE_B",
+      "check": "should_not_fire",
+      "rule_id": "BUDGET-003",
+      "result": "PASS",
+      "fired_rules": [
+        "STATUS-003"
+      ]
+    },
+    {
+      "campaign_id": "2002",
+      "scenario": "STABLE_B",
+      "check": "should_not_fire",
+      "rule_id": "BUDGET-005",
+      "result": "PASS",
+      "fired_rules": [
+        "STATUS-003"
+      ]
+    },
+    {
+      "campaign_id": "2003",
+      "scenario": "COST_SPIKE",
+      "check": "should_fire",
+      "rule_id": "BUDGET-003",
+      "result": "PASS",
+      "fired_rules": [
+        "BUDGET-003"
+      ]
+    },
+    {
+      "campaign_id": "2003",
+      "scenario": "COST_SPIKE",
+      "check": "should_not_fire",
+      "rule_id": "BUDGET-001",
+      "result": "PASS",
+      "fired_rules": [
+        "BUDGET-003"
+      ]
+    },
+    {
+      "campaign_id": "2003",
+      "scenario": "COST_SPIKE",
+      "check": "should_not_fire",
+      "rule_id": "BUDGET-004",
+      "result": "PASS",
+      "fired_rules": [
+        "BUDGET-003"
+      ]
+    },
+    {
+      "campaign_id": "2004",
+      "scenario": "COST_DROP",
+      "check": "should_fire",
+      "rule_id": "BUDGET-004",
+      "result": "PASS",
+      "fired_rules": [
+        "BUDGET-004"
+      ]
+    },
+    {
+      "campaign_id": "2004",
+      "scenario": "COST_DROP",
+      "check": "should_not_fire",
+      "rule_id": "BUDGET-003",
+      "result": "PASS",
+      "fired_rules": [
+        "BUDGET-004"
+      ]
+    },
+    {
+      "campaign_id": "2005",
+      "scenario": "CTR_DROP",
+      "check": "should_fire",
+      "rule_id": "BID-003",
+      "result": "PASS",
+      "fired_rules": [
+        "BID-003"
+      ]
+    },
+    {
+      "campaign_id": "2005",
+      "scenario": "CTR_DROP",
+      "check": "should_not_fire",
+      "rule_id": "BUDGET-001",
+      "result": "PASS",
+      "fired_rules": [
+        "BID-003"
+      ]
+    },
+    {
+      "campaign_id": "2006",
+      "scenario": "CVR_DROP",
+      "check": "should_fire",
+      "rule_id": "BID-003",
+      "result": "PASS",
+      "fired_rules": [
+        "BID-003"
+      ]
+    },
+    {
+      "campaign_id": "2006",
+      "scenario": "CVR_DROP",
+      "check": "should_not_fire",
+      "rule_id": "BID-001",
+      "result": "PASS",
+      "fired_rules": [
+        "BID-003"
+      ]
+    },
+    {
+      "campaign_id": "2006",
+      "scenario": "CVR_DROP",
+      "check": "should_not_fire",
+      "rule_id": "BID-002",
+      "result": "PASS",
+      "fired_rules": [
+        "BID-003"
+      ]
+    },
+    {
+      "campaign_id": "2007",
+      "scenario": "VOLATILE",
+      "check": "should_not_fire",
+      "rule_id": "BUDGET-001",
+      "result": "PASS",
+      "fired_rules": [
+        "BUDGET-005",
+        "STATUS-003"
+      ]
+    },
+    {
+      "campaign_id": "2007",
+      "scenario": "VOLATILE",
+      "check": "should_not_fire",
+      "rule_id": "BUDGET-002",
+      "result": "PASS",
+      "fired_rules": [
+        "BUDGET-005",
+        "STATUS-003"
+      ]
+    },
+    {
+      "campaign_id": "2008",
+      "scenario": "LOW_DATA",
+      "check": "should_fire",
+      "rule_id": "BID-004",
+      "result": "PASS",
+      "fired_rules": [
+        "BID-004"
+      ]
+    },
+    {
+      "campaign_id": "2008",
+      "scenario": "LOW_DATA",
+      "check": "should_not_fire",
+      "rule_id": "BUDGET-001",
+      "result": "PASS",
+      "fired_rules": [
+        "BID-004"
+      ]
+    },
+    {
+      "campaign_id": "2008",
+      "scenario": "LOW_DATA",
+      "check": "should_not_fire",
+      "rule_id": "BUDGET-002",
+      "result": "PASS",
+      "fired_rules": [
+        "BID-004"
+      ]
+    },
+    {
+      "campaign_id": "2008",
+      "scenario": "LOW_DATA",
+      "check": "should_not_fire",
+      "rule_id": "BID-001",
+      "result": "PASS",
+      "fired_rules": [
+        "BID-004"
+      ]
+    },
+    {
+      "campaign_id": "2008",
+      "scenario": "LOW_DATA",
+      "check": "should_not_fire",
+      "rule_id": "BID-002",
+      "result": "PASS",
+      "fired_rules": [
+        "BID-004"
+      ]
+    }
+  ]
+}

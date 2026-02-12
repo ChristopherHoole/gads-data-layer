@@ -1,0 +1,303 @@
+{
+  "client_id": "Synthetic_Test_Client",
+  "customer_id": "9999999999",
+  "snapshot_date": "2026-02-11",
+  "generated_at_utc": "2026-02-12T16:31:03.794177+00:00",
+  "automation_mode": "insights",
+  "risk_tolerance": "conservative",
+  "lighthouse_report": "C:\\Users\\User\\Desktop\\gads-data-layer\\reports\\lighthouse\\Synthetic_Test_Client\\2026-02-11.json",
+  "total_recommendations": 9,
+  "blocked_count": 1,
+  "actionable_count": 2,
+  "recommendations": [
+    {
+      "rule_id": "BUDGET-005",
+      "rule_name": "Pacing Reduction — Monthly Cap at Risk",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "2007",
+      "action_type": "pacing_cut",
+      "risk_tier": "high",
+      "confidence": 0.85,
+      "current_value": 107564423.0,
+      "recommended_value": 96807980.7,
+      "change_pct": -0.1,
+      "rationale": "Account pacing +15.2% over monthly cap. Cutting highest-spend campaign budget by 10%.",
+      "evidence": {
+        "pacing_over_cap_pct": 0.15198107053333332,
+        "projected_monthly_micros": 17279716058,
+        "monthly_cap_micros": 15000000000,
+        "campaign_cost_w7": 752950961.0
+      },
+      "constitution_refs": [
+        "CONSTITUTION-5-5",
+        "CONSTITUTION-5-8"
+      ],
+      "guardrails_checked": [
+        "low_data_block",
+        "low_conv_bid_block",
+        "protected_entity",
+        "confidence_threshold",
+        "cooldown",
+        "one_lever_rule",
+        "budget_change_cap"
+      ],
+      "triggering_diagnosis": "PACE_OVER_CAP",
+      "triggering_confidence": 0.85,
+      "blocked": true,
+      "block_reason": "Budget change -10.0% exceeds conservative cap ±5% (CONSTITUTION-5-1)",
+      "priority": 3
+    },
+    {
+      "rule_id": "BUDGET-003",
+      "rule_name": "Emergency Budget Cut — Cost Spike",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "2003",
+      "action_type": "budget_decrease",
+      "risk_tier": "med",
+      "confidence": 1.0,
+      "current_value": 100731428.57142857,
+      "recommended_value": 95694857.14285713,
+      "change_pct": -0.05,
+      "rationale": "Cost spiked +64% day-over-day. Cutting budget by 5% to contain overspend pending investigation.",
+      "evidence": {
+        "cost_spike_pct": 0.640506329113924,
+        "lighthouse_confidence": 1.0,
+        "cost_w7_micros": 705120000.0
+      },
+      "constitution_refs": [
+        "CONSTITUTION-5-1",
+        "CONSTITUTION-5-8"
+      ],
+      "guardrails_checked": [
+        "low_data_block",
+        "low_conv_bid_block",
+        "protected_entity",
+        "confidence_threshold",
+        "cooldown",
+        "one_lever_rule",
+        "budget_change_cap",
+        "daily_spend_cap"
+      ],
+      "triggering_diagnosis": "COST_SPIKE",
+      "triggering_confidence": 1.0,
+      "blocked": false,
+      "block_reason": null,
+      "priority": 5
+    },
+    {
+      "rule_id": "BID-003",
+      "rule_name": "Hold Bid Target — CTR Drop Investigation",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "2005",
+      "action_type": "bid_hold",
+      "risk_tier": "med",
+      "confidence": 1.0,
+      "current_value": null,
+      "recommended_value": null,
+      "change_pct": 0.0,
+      "rationale": "CTR dropped -31%. Hold bid target until root cause identified (landing page, tracking, demand shift, creative).",
+      "evidence": {
+        "ctr_drop_pct": -0.3058964384005039,
+        "lighthouse_confidence": 1.0,
+        "diagnosis_code": "CTR_DROP"
+      },
+      "constitution_refs": [
+        "CONSTITUTION-5-3",
+        "CONSTITUTION-5-7"
+      ],
+      "guardrails_checked": [
+        "efficiency_investigation_hold"
+      ],
+      "triggering_diagnosis": "CTR_DROP",
+      "triggering_confidence": 1.0,
+      "blocked": false,
+      "block_reason": null,
+      "priority": 10
+    },
+    {
+      "rule_id": "BID-003",
+      "rule_name": "Hold Bid Target — CVR Drop Investigation",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "2006",
+      "action_type": "bid_hold",
+      "risk_tier": "med",
+      "confidence": 0.9982,
+      "current_value": null,
+      "recommended_value": null,
+      "change_pct": 0.0,
+      "rationale": "CVR dropped -30%. Hold bid target until root cause identified (landing page, tracking, demand shift, creative).",
+      "evidence": {
+        "cvr_drop_pct": -0.29847105787254996,
+        "lighthouse_confidence": 0.9982162341846417,
+        "diagnosis_code": "CVR_DROP"
+      },
+      "constitution_refs": [
+        "CONSTITUTION-5-3",
+        "CONSTITUTION-5-7"
+      ],
+      "guardrails_checked": [
+        "efficiency_investigation_hold"
+      ],
+      "triggering_diagnosis": "CVR_DROP",
+      "triggering_confidence": 0.9982,
+      "blocked": false,
+      "block_reason": null,
+      "priority": 10
+    },
+    {
+      "rule_id": "BUDGET-004",
+      "rule_name": "Recovery Budget Increase — Cost Drop",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "2004",
+      "action_type": "budget_increase",
+      "risk_tier": "low",
+      "confidence": 1.0,
+      "current_value": 83828571.42857143,
+      "recommended_value": 88020000.00000001,
+      "change_pct": 0.05,
+      "rationale": "Cost dropped significantly but ROAS 3.58 is still above target 3.00. Increasing budget by 5% to recover lost volume.",
+      "evidence": {
+        "cost_drop_pct": -0.5733333333333334,
+        "roas_w7": 3.57521947483377,
+        "target_roas": 3.0,
+        "clicks_w7": 489.0
+      },
+      "constitution_refs": [
+        "CONSTITUTION-5-1",
+        "CONSTITUTION-5-5"
+      ],
+      "guardrails_checked": [
+        "low_data_block",
+        "low_conv_bid_block",
+        "protected_entity",
+        "confidence_threshold",
+        "cooldown",
+        "one_lever_rule",
+        "budget_change_cap",
+        "daily_spend_cap"
+      ],
+      "triggering_diagnosis": "COST_DROP",
+      "triggering_confidence": 1.0,
+      "blocked": false,
+      "block_reason": null,
+      "priority": 25
+    },
+    {
+      "rule_id": "BID-004",
+      "rule_name": "Hold Bid Target — Low Data",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "2008",
+      "action_type": "bid_hold",
+      "risk_tier": "low",
+      "confidence": 0.35,
+      "current_value": null,
+      "recommended_value": null,
+      "change_pct": 0.0,
+      "rationale": "Low data: 4 conversions (30d), 17 clicks (7d). Need ≥15 conversions (30d) before any bid target changes.",
+      "evidence": {
+        "conversions_w30": 3.62091271683338,
+        "clicks_w7": 17.0,
+        "conv_threshold": 15
+      },
+      "constitution_refs": [
+        "CONSTITUTION-5-2",
+        "CONSTITUTION-A-4"
+      ],
+      "guardrails_checked": [
+        "low_data_block"
+      ],
+      "triggering_diagnosis": "LOW_DATA",
+      "triggering_confidence": 0.35,
+      "blocked": false,
+      "block_reason": null,
+      "priority": 45
+    },
+    {
+      "rule_id": "STATUS-003",
+      "rule_name": "Healthy Campaign — No Action Needed",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "2001",
+      "action_type": "no_action",
+      "risk_tier": "low",
+      "confidence": 0.8,
+      "current_value": 3.333299317690689,
+      "recommended_value": 3.0,
+      "change_pct": null,
+      "rationale": "Campaign is healthy: ROAS 3.33 within ±15% of target 3.00, no diagnosis codes, sufficient data. No intervention needed.",
+      "evidence": {
+        "roas_w7": 3.333299317690689,
+        "target_roas": 3.0,
+        "roas_deviation_pct": 0.11109977256356296,
+        "clicks_w7": 523.0,
+        "conversions_w30": 174.58209978539523
+      },
+      "constitution_refs": [],
+      "guardrails_checked": [
+        "health_assessment"
+      ],
+      "triggering_diagnosis": "HEALTHY",
+      "triggering_confidence": 0.8,
+      "blocked": false,
+      "block_reason": null,
+      "priority": 90
+    },
+    {
+      "rule_id": "STATUS-003",
+      "rule_name": "Healthy Campaign — No Action Needed",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "2007",
+      "action_type": "no_action",
+      "risk_tier": "low",
+      "confidence": 0.8,
+      "current_value": 2.819389765504606,
+      "recommended_value": 3.0,
+      "change_pct": null,
+      "rationale": "Campaign is healthy: ROAS 2.82 within ±15% of target 3.00, no diagnosis codes, sufficient data. No intervention needed.",
+      "evidence": {
+        "roas_w7": 2.819389765504606,
+        "target_roas": 3.0,
+        "roas_deviation_pct": -0.06020341149846464,
+        "clicks_w7": 647.0,
+        "conversions_w30": 182.85091280885692
+      },
+      "constitution_refs": [],
+      "guardrails_checked": [
+        "health_assessment"
+      ],
+      "triggering_diagnosis": "HEALTHY",
+      "triggering_confidence": 0.8,
+      "blocked": false,
+      "block_reason": null,
+      "priority": 90
+    },
+    {
+      "rule_id": "STATUS-003",
+      "rule_name": "Healthy Campaign — No Action Needed",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "2002",
+      "action_type": "no_action",
+      "risk_tier": "low",
+      "confidence": 0.8,
+      "current_value": 3.312650463906673,
+      "recommended_value": 3.0,
+      "change_pct": null,
+      "rationale": "Campaign is healthy: ROAS 3.31 within ±15% of target 3.00, no diagnosis codes, sufficient data. No intervention needed.",
+      "evidence": {
+        "roas_w7": 3.312650463906673,
+        "target_roas": 3.0,
+        "roas_deviation_pct": 0.10421682130222432,
+        "clicks_w7": 525.0,
+        "conversions_w30": 176.98208735788396
+      },
+      "constitution_refs": [],
+      "guardrails_checked": [
+        "health_assessment"
+      ],
+      "triggering_diagnosis": "HEALTHY",
+      "triggering_confidence": 0.8,
+      "blocked": false,
+      "block_reason": null,
+      "priority": 90
+    }
+  ]
+}

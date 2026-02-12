@@ -1,5 +1,5 @@
 """
-Rule Engine — Orchestrates rule evaluation against Lighthouse insights + features.
+Rule Engine – Orchestrates rule evaluation against Lighthouse insights + features.
 
 Flow:
   1. Load Lighthouse JSON report
@@ -131,7 +131,9 @@ def run_rules(
     config: AutopilotConfig,
     lighthouse_report: Dict[str, Any],
     feature_rows: List[Dict[str, Any]],
+    snapshot_date: date,
     recent_changes: Optional[List[Dict[str, Any]]] = None,
+    db_path: str = "warehouse.duckdb",
 ) -> List[Recommendation]:
     """
     Run all rules against all campaigns. Returns list of Recommendations.
@@ -146,12 +148,15 @@ def run_rules(
         campaign_id = str(feat_row.get("campaign_id"))
 
         ctx = RuleContext(
+            customer_id=config.customer_id,
+            snapshot_date=snapshot_date,
             config=config,
             insights=_insights_for_campaign(all_insights, campaign_id),
             features=feat_row,
             all_insights=all_insights,
             all_features=feature_rows,
             recent_changes=recent_changes,
+            db_path=db_path,
         )
 
         for rule_fn in ALL_RULES:
@@ -160,7 +165,7 @@ def run_rules(
                 if rec is not None:
                     all_recs.append(rec)
             except Exception as e:
-                # Log but don't crash — one broken rule shouldn't kill the engine
+                # Log but don't crash – one broken rule shouldn't kill the engine
                 print(f"[Autopilot] WARN: Rule {rule_fn.__name__} failed on campaign {campaign_id}: {e}")
 
     # Resolve conflicts and deduplicate
@@ -186,7 +191,7 @@ def _resolve_conflicts(recs: List[Recommendation]) -> List[Recommendation]:
     for rec in recs:
         lever = _extract_lever(rec.action_type)
         if rec.entity_type == "ACCOUNT" or lever in ("hold", "review", "no_action"):
-            # These don't conflict — always include
+            # These don't conflict – always include
             key = f"_noconflict_{id(rec)}"
         else:
             key = f"{rec.entity_id}_{lever}"

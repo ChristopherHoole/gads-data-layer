@@ -1,0 +1,107 @@
+{
+  "client_id": "Synthetic_Test_Client",
+  "customer_id": "9999999999",
+  "snapshot_date": "2026-02-11",
+  "generated_at_utc": "2026-02-12T23:37:14.194447+00:00",
+  "needs_config": false,
+  "config_hash": "1bdabc13ac5a",
+  "insights": [
+    {
+      "rank": 1,
+      "entity_type": "ACCOUNT",
+      "entity_id": null,
+      "diagnosis_code": "PACE_OVER_CAP",
+      "confidence": 0.85,
+      "risk_tier": "high",
+      "labels": [
+        "NEEDS_REVIEW"
+      ],
+      "evidence": {
+        "acct_projected_month_cost_micros": 60683434878,
+        "acct_monthly_cap_micros": 15000000000,
+        "acct_pacing_vs_cap_pct": 3.0455623251999997,
+        "threshold": 0.05
+      },
+      "recommended_action": "Pacing risk: review spend caps and planned expansions (human decision).",
+      "guardrail_rule_ids": [
+        "CONSTITUTION-5-5"
+      ]
+    },
+    {
+      "rank": 2,
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3005",
+      "diagnosis_code": "NEEDS_REVIEW",
+      "confidence": 0.25,
+      "risk_tier": "low",
+      "labels": [
+        "NEEDS_REVIEW"
+      ],
+      "evidence": {
+        "clicks_w7_sum": 1840.0,
+        "impressions_w7_sum": 61464.0,
+        "cost_micros_w7_sum": 1475206217.0,
+        "note": "Filler insight to ensure top-N output (no suppression)."
+      },
+      "recommended_action": "No strong rule-based triggers fired. Monitor trends and ensure config completeness.",
+      "guardrail_rule_ids": []
+    },
+    {
+      "rank": 3,
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3006",
+      "diagnosis_code": "NEEDS_REVIEW",
+      "confidence": 0.25,
+      "risk_tier": "low",
+      "labels": [
+        "NEEDS_REVIEW"
+      ],
+      "evidence": {
+        "clicks_w7_sum": 1441.0,
+        "impressions_w7_sum": 48097.0,
+        "cost_micros_w7_sum": 1154416568.0,
+        "note": "Filler insight to ensure top-N output (no suppression)."
+      },
+      "recommended_action": "No strong rule-based triggers fired. Monitor trends and ensure config completeness.",
+      "guardrail_rule_ids": []
+    },
+    {
+      "rank": 4,
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3007",
+      "diagnosis_code": "NEEDS_REVIEW",
+      "confidence": 0.25,
+      "risk_tier": "low",
+      "labels": [
+        "NEEDS_REVIEW"
+      ],
+      "evidence": {
+        "clicks_w7_sum": 1240.0,
+        "impressions_w7_sum": 41446.0,
+        "cost_micros_w7_sum": 994760369.0,
+        "note": "Filler insight to ensure top-N output (no suppression)."
+      },
+      "recommended_action": "No strong rule-based triggers fired. Monitor trends and ensure config completeness.",
+      "guardrail_rule_ids": []
+    },
+    {
+      "rank": 5,
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3020",
+      "diagnosis_code": "NEEDS_REVIEW",
+      "confidence": 0.25,
+      "risk_tier": "low",
+      "labels": [
+        "NEEDS_REVIEW"
+      ],
+      "evidence": {
+        "clicks_w7_sum": 1255.0,
+        "impressions_w7_sum": 41936.0,
+        "cost_micros_w7_sum": 1006564269.0,
+        "note": "Filler insight to ensure top-N output (no suppression)."
+      },
+      "recommended_action": "No strong rule-based triggers fired. Monitor trends and ensure config completeness.",
+      "guardrail_rule_ids": []
+    }
+  ]
+}
