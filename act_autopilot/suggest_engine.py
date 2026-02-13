@@ -165,7 +165,10 @@ class SuggestEngine:
                 "block_reason": rec.block_reason,
                 "priority": rec.priority,
                 "constitution_refs": rec.constitution_refs,
-                "guardrails_checked": rec.guardrails_checked
+                "guardrails_checked": rec.guardrails_checked,
+                "evidence": rec.evidence,
+                "triggering_diagnosis": rec.triggering_diagnosis,
+                "triggering_confidence": round(rec.triggering_confidence, 3)
             })
         
         return {

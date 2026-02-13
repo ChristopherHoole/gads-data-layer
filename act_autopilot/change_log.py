@@ -28,7 +28,9 @@ class ChangeLog:
         new_value: float,
         rule_id: str,
         risk_tier: str,
-        approved_by: Optional[str] = None
+        change_pct: Optional[float] = None,
+        approved_by: Optional[str] = None,
+        executed_at: Optional[datetime] = None
     ) -> int:
         """
         Log an executed change
@@ -37,17 +39,23 @@ class ChangeLog:
         """
         conn = self._get_connection()
         
-        change_pct = ((new_value - old_value) / old_value) if old_value != 0 else 0
+        # Calculate change_pct if not provided
+        if change_pct is None:
+            change_pct = ((new_value - old_value) / old_value) if old_value != 0 else 0
+        
+        # Use current timestamp if not provided
+        if executed_at is None:
+            executed_at = datetime.utcnow()
         
         result = conn.execute("""
             INSERT INTO analytics.change_log (
                 customer_id, campaign_id, change_date, lever,
-                old_value, new_value, change_pct, rule_id, risk_tier, approved_by
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                old_value, new_value, change_pct, rule_id, risk_tier, approved_by, executed_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             RETURNING change_id
         """, [
             customer_id, campaign_id, change_date, lever,
-            old_value, new_value, change_pct, rule_id, risk_tier, approved_by
+            old_value, new_value, change_pct, rule_id, risk_tier, approved_by, executed_at
         ]).fetchone()
         
         conn.close()

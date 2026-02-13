@@ -1,5 +1,5 @@
 """
-Autopilot data models — Recommendation, RuleResult, AutopilotConfig.
+Autopilot data models – Recommendation, RuleResult, AutopilotConfig.
 """
 from __future__ import annotations
 
@@ -30,6 +30,7 @@ class AutopilotConfig:
 @dataclass(frozen=True)
 class Recommendation:
     """A single rule-generated recommendation."""
+    # Required fields (no defaults) - MUST come first
     rule_id: str
     rule_name: str
     entity_type: str                    # CAMPAIGN | ACCOUNT
@@ -46,6 +47,10 @@ class Recommendation:
     guardrails_checked: List[str]       # which guardrails were verified
     triggering_diagnosis: str           # Lighthouse diagnosis_code that triggered this
     triggering_confidence: float        # Lighthouse confidence score
+    
+    # Optional fields (with defaults) - MUST come last
+    campaign_name: Optional[str] = None
+    expected_impact: str = ""
     blocked: bool = False               # True if guardrail blocked execution
     block_reason: Optional[str] = None  # why it was blocked
     priority: int = 50                  # lower = higher priority (0-100)
