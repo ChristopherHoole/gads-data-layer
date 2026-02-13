@@ -1,4 +1,5 @@
 client_name: "Synthetic_Test_Client"
+customer_id: "9999999999"
 client_type: "ecom"
 primary_kpi: "roas"
 
