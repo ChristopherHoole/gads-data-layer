@@ -75,6 +75,8 @@ def budget_001_increase_high_roas(ctx: RuleContext) -> Optional[Recommendation]:
         rationale=f"ROAS {roas_w7:.2f} exceeds target {target:.2f} by {((roas_w7/target)-1)*100:.0f}%. "
                   f"Increasing budget by {change_pct:.0%} to capture additional conversions.",
         evidence={
+            "campaign_name": ctx.features.get("campaign_name", "Unknown"),
+            "expected_impact": f"Unlock additional conversions at {roas_w7:.2f} ROAS",
             "roas_w7": roas_w7,
             "target_roas": target,
             "threshold": threshold,
@@ -145,6 +147,8 @@ def budget_002_decrease_low_roas(ctx: RuleContext) -> Optional[Recommendation]:
         rationale=f"ROAS {roas_w7:.2f} is {((1-(roas_w7/target))*100):.0f}% below target {target:.2f}. "
                   f"Reducing budget by {abs(change_pct):.0%} to limit waste.",
         evidence={
+            "campaign_name": ctx.features.get("campaign_name", "Unknown"),
+            "expected_impact": f"Reduce waste on underperforming campaign",
             "roas_w7": roas_w7,
             "target_roas": target,
             "threshold": threshold,
@@ -176,7 +180,7 @@ def budget_003_emergency_cost_spike(ctx: RuleContext) -> Optional[Recommendation
     if insight["confidence"] < 0.6:
         return None
 
-    cost_w1_pct = _safe_float(insight["evidence"].get("cost_micros_w1_vs_prev_pct"))
+    cost_w1_pct = _safe_float(insight.get("evidence", {}).get("cost_micros_w1_vs_prev_pct"))
     campaign_id = str(ctx.features.get("campaign_id"))
     cost_w7 = _safe_float(ctx.features.get("cost_micros_w7_sum"))
 
@@ -203,9 +207,10 @@ def budget_003_emergency_cost_spike(ctx: RuleContext) -> Optional[Recommendation
         rationale=f"Cost spiked {cost_w1_pct:+.0%} day-over-day. "
                   f"Cutting budget by {abs(change_pct):.0%} to contain overspend pending investigation.",
         evidence={
+            "campaign_name": ctx.features.get("campaign_name", "Unknown"),
+            "expected_impact": f"Contain overspend, prevent budget blow-out",
             "cost_spike_pct": cost_w1_pct,
             "lighthouse_confidence": insight["confidence"],
-            "cost_w7_micros": cost_w7,
         },
         constitution_refs=["CONSTITUTION-5-1", "CONSTITUTION-5-8"],
         guardrails_checked=checked,
@@ -213,23 +218,24 @@ def budget_003_emergency_cost_spike(ctx: RuleContext) -> Optional[Recommendation
         triggering_confidence=insight["confidence"],
         blocked=not passed,
         block_reason=block_reason,
-        priority=5,  # high priority
+        priority=5,
     )
 
 
 # ─────────────────────────────────────────────────────────────
-# BUDGET-004: Recovery Budget Increase — Cost Drop + Good Efficiency
+# BUDGET-004: Recovery Budget Increase — Cost Drop
 # ─────────────────────────────────────────────────────────────
 def budget_004_recovery_cost_drop(ctx: RuleContext) -> Optional[Recommendation]:
     """
-    Trigger: Lighthouse COST_DROP + ROAS (7d) >= target_roas
-    Action:  +5% budget to recover lost volume
+    Trigger: Lighthouse COST_DROP diagnosis + ROAS still above target
+    Action:  +5% budget
     Risk:    low
     """
     insight = _find_insight(ctx, "COST_DROP")
     if insight is None:
         return None
-    if ctx.config.target_roas is None:
+
+    if ctx.config.primary_kpi != "roas" or ctx.config.target_roas is None:
         return None
 
     roas_w7 = _safe_float(ctx.features.get("roas_w7_mean"))
@@ -265,7 +271,9 @@ def budget_004_recovery_cost_drop(ctx: RuleContext) -> Optional[Recommendation]:
         rationale=f"Cost dropped significantly but ROAS {roas_w7:.2f} is still above target {ctx.config.target_roas:.2f}. "
                   f"Increasing budget by {change_pct:.0%} to recover lost volume.",
         evidence={
-            "cost_drop_pct": _safe_float(insight["evidence"].get("cost_micros_w1_vs_prev_pct")),
+            "campaign_name": ctx.features.get("campaign_name", "Unknown"),
+            "expected_impact": f"Recover lost volume at good ROAS",
+            "cost_drop_pct": _safe_float(insight.get("evidence", {}).get("cost_micros_w1_vs_prev_pct")),
             "roas_w7": roas_w7,
             "target_roas": ctx.config.target_roas,
             "clicks_w7": clicks_w7,
@@ -306,7 +314,7 @@ def budget_005_pacing_reduction(ctx: RuleContext) -> Optional[Recommendation]:
     if str(highest_cost_campaign.get("campaign_id")) != campaign_id:
         return None
 
-    pacing_pct = _safe_float(insight["evidence"].get("acct_pacing_vs_cap_pct"))
+    pacing_pct = _safe_float(insight.get("evidence", {}).get("acct_pacing_vs_cap_pct"))
     change_pct = -0.10
     current_daily_budget_micros = cost_w7 / 7.0
     new_daily_budget_micros = current_daily_budget_micros * (1 + change_pct)
@@ -330,9 +338,11 @@ def budget_005_pacing_reduction(ctx: RuleContext) -> Optional[Recommendation]:
         rationale=f"Account pacing {pacing_pct:+.1%} over monthly cap. "
                   f"Cutting highest-spend campaign budget by {abs(change_pct):.0%}.",
         evidence={
+            "campaign_name": ctx.features.get("campaign_name", "Unknown"),
+            "expected_impact": f"Prevent monthly cap breach",
             "pacing_over_cap_pct": pacing_pct,
-            "projected_monthly_micros": insight["evidence"].get("acct_projected_month_cost_micros"),
-            "monthly_cap_micros": insight["evidence"].get("acct_monthly_cap_micros"),
+            "projected_monthly_micros": insight.get("evidence", {}).get("acct_projected_month_cost_micros"),
+            "monthly_cap_micros": insight.get("evidence", {}).get("acct_monthly_cap_micros"),
             "campaign_cost_w7": cost_w7,
         },
         constitution_refs=["CONSTITUTION-5-5", "CONSTITUTION-5-8"],
@@ -361,11 +371,11 @@ def budget_006_hold_volatile(ctx: RuleContext) -> Optional[Recommendation]:
     # Try Lighthouse insight first
     if insight is not None and insight["confidence"] >= 0.5:
         confidence = insight["confidence"]
-        source = "lighthouse"
+        triggering_confidence = insight["confidence"]
     elif cost_cv > 0.35:
         # Fallback: check features directly
         confidence = 0.60
-        source = "features"
+        triggering_confidence = 0.60
     else:
         return None
 
@@ -378,21 +388,23 @@ def budget_006_hold_volatile(ctx: RuleContext) -> Optional[Recommendation]:
         entity_id=campaign_id,
         action_type="budget_hold",
         risk_tier="low",
-        confidence=insight["confidence"],
+        confidence=confidence,
         current_value=None,
         recommended_value=None,
         change_pct=0.0,
         rationale=f"Campaign is volatile (cost CV={cost_cv:.2f}). "
                   f"Holding budget steady until variance stabilises below 0.60.",
         evidence={
+            "campaign_name": ctx.features.get("campaign_name", "Unknown"),
+            "expected_impact": "Stabilise performance, avoid amplifying volatility",
             "cost_w14_cv": cost_cv,
             "volatile_threshold": 0.60,
-            "lighthouse_confidence": insight["confidence"],
+            "lighthouse_confidence": confidence,
         },
         constitution_refs=["CONSTITUTION-5-3"],
         guardrails_checked=["volatility_check"],
         triggering_diagnosis="VOLATILE",
-        triggering_confidence=insight["confidence"],
+        triggering_confidence=triggering_confidence,
         blocked=False,
         block_reason=None,
         priority=40,

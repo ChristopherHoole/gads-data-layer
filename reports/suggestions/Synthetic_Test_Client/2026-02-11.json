@@ -1,18 +1,59 @@
 {
   "customer_id": "9999999999",
   "snapshot_date": "2026-02-11",
-  "generated_at": "2026-02-13T10:01:06.753654",
+  "generated_at": "2026-02-13T14:45:02.058162",
   "client_name": "Synthetic_Test_Client",
   "automation_mode": "insights",
   "summary": {
     "total_recommendations": 21,
-    "low_risk": 19,
+    "low_risk": 18,
     "medium_risk": 1,
-    "high_risk": 1,
+    "high_risk": 2,
     "blocked": 4,
     "executable": 17
   },
   "recommendations": [
+    {
+      "rule_id": "BUDGET-005",
+      "rule_name": "Pacing Reduction \u2014 Monthly Cap at Risk",
+      "entity_type": "CAMPAIGN",
+      "entity_id": "3005",
+      "campaign_name": "Growth Strong",
+      "action_type": "pacing_cut",
+      "risk_tier": "high",
+      "confidence": 0.85,
+      "current_value": 210743745.2857143,
+      "recommended_value": 189669370.75714287,
+      "change_pct": -0.1,
+      "rationale": "Account pacing +0.0% over monthly cap. Cutting highest-spend campaign budget by 10%.",
+      "expected_impact": "Prevent monthly cap breach",
+      "blocked": true,
+      "block_reason": "Budget change -10.0% exceeds conservative cap \u00b15% (CONSTITUTION-5-1)",
+      "priority": 3,
+      "constitution_refs": [
+        "CONSTITUTION-5-5",
+        "CONSTITUTION-5-8"
+      ],
+      "guardrails_checked": [
+        "low_data_block",
+        "low_conv_bid_block",
+        "protected_entity",
+        "confidence_threshold",
+        "cooldown",
+        "one_lever_rule",
+        "budget_change_cap"
+      ],
+      "evidence": {
+        "campaign_name": "Growth Strong",
+        "expected_impact": "Prevent monthly cap breach",
+        "pacing_over_cap_pct": 0.0,
+        "projected_monthly_micros": null,
+        "monthly_cap_micros": null,
+        "campaign_cost_w7": 1475206217.0
+      },
+      "triggering_diagnosis": "PACE_OVER_CAP",
+      "triggering_confidence": 0.85
+    },
     {
       "rule_id": "STATUS-001",
       "rule_name": "Flag Underperformer for Review",
@@ -53,7 +94,7 @@
       "rule_name": "Decrease Budget \u2014 Low ROAS",
       "entity_type": "CAMPAIGN",
       "entity_id": "3008",
-      "campaign_name": "N/A",
+      "campaign_name": "Decline Fast",
       "action_type": "budget_decrease",
       "risk_tier": "low",
       "confidence": 0.65,
@@ -61,7 +102,7 @@
       "recommended_value": 46076473.58571428,
       "change_pct": -0.05,
       "rationale": "ROAS 1.21 is 60% below target 3.00. Reducing budget by 5% to limit waste.",
-      "expected_impact": "N/A",
+      "expected_impact": "Reduce waste on underperforming campaign",
       "blocked": false,
       "block_reason": null,
       "priority": 15,
@@ -80,6 +121,8 @@
         "daily_spend_cap"
       ],
       "evidence": {
+        "campaign_name": "Decline Fast",
+        "expected_impact": "Reduce waste on underperforming campaign",
         "roas_w7": 1.2136872512042016,
         "target_roas": 3.0,
         "threshold": 2.25,
@@ -94,7 +137,7 @@
       "rule_name": "Decrease Budget \u2014 Low ROAS",
       "entity_type": "CAMPAIGN",
       "entity_id": "3009",
-      "campaign_name": "N/A",
+      "campaign_name": "Decline Moderate",
       "action_type": "budget_decrease",
       "risk_tier": "low",
       "confidence": 0.65,
@@ -102,7 +145,7 @@
       "recommended_value": 73877417.30714285,
       "change_pct": -0.05,
       "rationale": "ROAS 1.94 is 35% below target 3.00. Reducing budget by 5% to limit waste.",
-      "expected_impact": "N/A",
+      "expected_impact": "Reduce waste on underperforming campaign",
       "blocked": false,
       "block_reason": null,
       "priority": 15,
@@ -121,6 +164,8 @@
         "daily_spend_cap"
       ],
       "evidence": {
+        "campaign_name": "Decline Moderate",
+        "expected_impact": "Reduce waste on underperforming campaign",
         "roas_w7": 1.9448897079613598,
         "target_roas": 3.0,
         "threshold": 2.25,
@@ -135,7 +180,7 @@
       "rule_name": "Decrease Budget \u2014 Low ROAS",
       "entity_type": "CAMPAIGN",
       "entity_id": "3001",
-      "campaign_name": "N/A",
+      "campaign_name": "Stable ROAS 2.0",
       "action_type": "budget_decrease",
       "risk_tier": "low",
       "confidence": 0.65,
@@ -143,7 +188,7 @@
       "recommended_value": 116986546.75714286,
       "change_pct": -0.05,
       "rationale": "ROAS 1.98 is 34% below target 3.00. Reducing budget by 5% to limit waste.",
-      "expected_impact": "N/A",
+      "expected_impact": "Reduce waste on underperforming campaign",
       "blocked": false,
       "block_reason": null,
       "priority": 15,
@@ -162,6 +207,8 @@
         "daily_spend_cap"
       ],
       "evidence": {
+        "campaign_name": "Stable ROAS 2.0",
+        "expected_impact": "Reduce waste on underperforming campaign",
         "roas_w7": 1.9760996271518412,
         "target_roas": 3.0,
         "threshold": 2.25,
@@ -176,7 +223,7 @@
       "rule_name": "Increase Budget \u2014 High ROAS",
       "entity_type": "CAMPAIGN",
       "entity_id": "3003",
-      "campaign_name": "N/A",
+      "campaign_name": "Stable ROAS 4.0",
       "action_type": "budget_increase",
       "risk_tier": "low",
       "confidence": 0.6,
@@ -184,7 +231,7 @@
       "recommended_value": 123814874.7,
       "change_pct": 0.05,
       "rationale": "ROAS 3.83 exceeds target 3.00 by 28%. Increasing budget by 5% to capture additional conversions.",
-      "expected_impact": "N/A",
+      "expected_impact": "Unlock additional conversions at 3.83 ROAS",
       "blocked": true,
       "block_reason": "Monthly pacing >105% of cap \u2013 no expansions allowed (CONSTITUTION-5-5)",
       "priority": 20,
@@ -205,6 +252,8 @@
         "monthly_pacing"
       ],
       "evidence": {
+        "campaign_name": "Stable ROAS 4.0",
+        "expected_impact": "Unlock additional conversions at 3.83 ROAS",
         "roas_w7": 3.83235456280763,
         "target_roas": 3.0,
         "threshold": 3.4499999999999997,
@@ -220,7 +269,7 @@
       "rule_name": "Increase Budget \u2014 High ROAS",
       "entity_type": "CAMPAIGN",
       "entity_id": "3004",
-      "campaign_name": "N/A",
+      "campaign_name": "Stable ROAS 5.0",
       "action_type": "budget_increase",
       "risk_tier": "low",
       "confidence": 0.6,
@@ -228,7 +277,7 @@
       "recommended_value": 125059611.45,
       "change_pct": 0.05,
       "rationale": "ROAS 4.91 exceeds target 3.00 by 64%. Increasing budget by 5% to capture additional conversions.",
-      "expected_impact": "N/A",
+      "expected_impact": "Unlock additional conversions at 4.91 ROAS",
       "blocked": true,
       "block_reason": "Monthly pacing >105% of cap \u2013 no expansions allowed (CONSTITUTION-5-5)",
       "priority": 20,
@@ -249,6 +298,8 @@
         "monthly_pacing"
       ],
       "evidence": {
+        "campaign_name": "Stable ROAS 5.0",
+        "expected_impact": "Unlock additional conversions at 4.91 ROAS",
         "roas_w7": 4.911105934832968,
         "target_roas": 3.0,
         "threshold": 3.4499999999999997,
@@ -264,7 +315,7 @@
       "rule_name": "Increase Budget \u2014 High ROAS",
       "entity_type": "CAMPAIGN",
       "entity_id": "3020",
-      "campaign_name": "N/A",
+      "campaign_name": "Recovery Turnaround",
       "action_type": "budget_increase",
       "risk_tier": "low",
       "confidence": 0.25,
@@ -272,7 +323,7 @@
       "recommended_value": 150984640.35,
       "change_pct": 0.05,
       "rationale": "ROAS 4.17 exceeds target 3.00 by 39%. Increasing budget by 5% to capture additional conversions.",
-      "expected_impact": "N/A",
+      "expected_impact": "Unlock additional conversions at 4.17 ROAS",
       "blocked": true,
       "block_reason": "Confidence 0.25 < minimum 0.50",
       "priority": 20,
@@ -288,51 +339,14 @@
         "confidence_threshold"
       ],
       "evidence": {
+        "campaign_name": "Recovery Turnaround",
+        "expected_impact": "Unlock additional conversions at 4.17 ROAS",
         "roas_w7": 4.169033343662232,
         "target_roas": 3.0,
         "threshold": 3.4499999999999997,
         "clicks_w7": 1255.0,
         "cost_w7_micros": 1006564269.0,
         "conv_value_w7": 4196.4
-      },
-      "triggering_diagnosis": "HIGH_ROAS_OPPORTUNITY",
-      "triggering_confidence": 0.25
-    },
-    {
-      "rule_id": "BUDGET-001",
-      "rule_name": "Increase Budget \u2014 High ROAS",
-      "entity_type": "CAMPAIGN",
-      "entity_id": "3005",
-      "campaign_name": "N/A",
-      "action_type": "budget_increase",
-      "risk_tier": "low",
-      "confidence": 0.25,
-      "current_value": 210743745.2857143,
-      "recommended_value": 221280932.55,
-      "change_pct": 0.05,
-      "rationale": "ROAS 3.73 exceeds target 3.00 by 24%. Increasing budget by 5% to capture additional conversions.",
-      "expected_impact": "N/A",
-      "blocked": true,
-      "block_reason": "Confidence 0.25 < minimum 0.50",
-      "priority": 20,
-      "constitution_refs": [
-        "CONSTITUTION-5-1",
-        "CONSTITUTION-5-5",
-        "CONSTITUTION-A-4"
-      ],
-      "guardrails_checked": [
-        "low_data_block",
-        "low_conv_bid_block",
-        "protected_entity",
-        "confidence_threshold"
-      ],
-      "evidence": {
-        "roas_w7": 3.728590577109804,
-        "target_roas": 3.0,
-        "threshold": 3.4499999999999997,
-        "clicks_w7": 1840.0,
-        "cost_w7_micros": 1475206217.0,
-        "conv_value_w7": 5500.4400000000005
       },
       "triggering_diagnosis": "HIGH_ROAS_OPPORTUNITY",
       "triggering_confidence": 0.25
