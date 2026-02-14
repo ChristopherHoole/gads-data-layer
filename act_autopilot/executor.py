@@ -17,6 +17,11 @@ from typing import List, Dict, Any, Optional
 from act_autopilot.models import Recommendation
 from act_autopilot.change_log import ChangeLog
 from act_autopilot.logging_config import setup_logging
+from act_autopilot.google_ads_api import (
+    update_campaign_budget,
+    update_campaign_bidding_strategy,
+    validate_campaign_exists
+)
 
 logger = setup_logging(__name__)
 
@@ -257,6 +262,120 @@ class BudgetExecutor:
         logger.info(f"DRY-RUN bid change: {rec.rule_id} campaign={rec.entity_id}")
         return ExecutionResult(success=True, message=message)
     
+    def _execute_budget_change_live(self, rec: Recommendation) -> ExecutionResult:
+        """Execute real budget change via Google Ads API."""
+        if not self.client:
+            return ExecutionResult(
+                success=False,
+                message="No Google Ads client configured",
+                error="Cannot execute live without Google Ads API client"
+            )
+        
+        try:
+            # Validate campaign exists
+            if not validate_campaign_exists(self.client, self.customer_id, rec.entity_id):
+                return ExecutionResult(
+                    success=False,
+                    message=f"Campaign {rec.entity_id} not found",
+                    error=f"Campaign {rec.entity_id} does not exist"
+                )
+            
+            # Convert budget to micros
+            new_budget_micros = int((rec.recommended_value or 0) * 1_000_000)
+            
+            # Execute API call
+            response = update_campaign_budget(
+                client=self.client,
+                customer_id=self.customer_id,
+                campaign_id=rec.entity_id,
+                new_budget_micros=new_budget_micros
+            )
+            
+            message = f"""LIVE: Executed {rec.rule_id}
+  Campaign: {rec.campaign_name or 'Unknown'} ({rec.entity_id})
+  Old Budget: £{rec.current_value:.2f}/day
+  New Budget: £{rec.recommended_value:.2f}/day
+  Change: {rec.change_pct:+.1f}%
+  API Response: {response['message']}
+  Status: SUCCESS"""
+            
+            logger.info(f"LIVE budget change successful: {rec.rule_id} campaign={rec.entity_id}")
+            
+            return ExecutionResult(
+                success=True,
+                message=message,
+                executed_at=datetime.now(),
+                api_response=response
+            )
+        
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(f"LIVE budget change failed: {error_msg}")
+            
+            return ExecutionResult(
+                success=False,
+                message=f"API call failed: {error_msg}",
+                error=error_msg
+            )
+    
+    def _execute_bid_change_live(self, rec: Recommendation) -> ExecutionResult:
+        """Execute real bid change via Google Ads API."""
+        if not self.client:
+            return ExecutionResult(
+                success=False,
+                message="No Google Ads client configured",
+                error="Cannot execute live without Google Ads API client"
+            )
+        
+        try:
+            # Validate campaign exists
+            if not validate_campaign_exists(self.client, self.customer_id, rec.entity_id):
+                return ExecutionResult(
+                    success=False,
+                    message=f"Campaign {rec.entity_id} not found",
+                    error=f"Campaign {rec.entity_id} does not exist"
+                )
+            
+            # Determine bid type
+            bid_type = self._get_bid_type_from_recommendation(rec)
+            
+            # Execute API call
+            response = update_campaign_bidding_strategy(
+                client=self.client,
+                customer_id=self.customer_id,
+                campaign_id=rec.entity_id,
+                new_target_value=rec.recommended_value or 0,
+                bid_type=bid_type
+            )
+            
+            message = f"""LIVE: Executed {rec.rule_id}
+  Campaign: {rec.campaign_name or 'Unknown'} ({rec.entity_id})
+  Bid Type: {bid_type}
+  Old Target: {rec.current_value:.2f}
+  New Target: {rec.recommended_value:.2f}
+  Change: {rec.change_pct:+.1f}%
+  API Response: {response['message']}
+  Status: SUCCESS"""
+            
+            logger.info(f"LIVE bid change successful: {rec.rule_id} campaign={rec.entity_id}")
+            
+            return ExecutionResult(
+                success=True,
+                message=message,
+                executed_at=datetime.now(),
+                api_response=response
+            )
+        
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(f"LIVE bid change failed: {error_msg}")
+            
+            return ExecutionResult(
+                success=False,
+                message=f"API call failed: {error_msg}",
+                error=error_msg
+            )
+    
     def _get_bid_type_from_recommendation(self, rec: Recommendation) -> str:
         """Determine bid type from recommendation evidence."""
         evidence = rec.evidence or {}
@@ -276,22 +395,6 @@ class BudgetExecutor:
         
         logger.warning(f"Could not determine bid type for {rec.rule_id}, defaulting to target_roas")
         return 'target_roas'
-    
-    def _execute_budget_change_live(self, rec: Recommendation) -> ExecutionResult:
-        """Execute real budget change via Google Ads API."""
-        return ExecutionResult(
-            success=False,
-            message="Live execution not yet implemented",
-            error="Live mode requires Google Ads API integration"
-        )
-    
-    def _execute_bid_change_live(self, rec: Recommendation) -> ExecutionResult:
-        """Execute real bid change via Google Ads API."""
-        return ExecutionResult(
-            success=False,
-            message="Live execution not yet implemented",
-            error="Live mode requires Google Ads API integration"
-        )
     
     def _log_change(self, rec: Recommendation) -> None:
         """Log executed change to database."""

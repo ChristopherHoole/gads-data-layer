@@ -12,6 +12,7 @@ import yaml
 from .models import AutopilotConfig, Recommendation
 from .executor import BudgetExecutor
 from .logging_config import setup_logging
+from .google_ads_api import load_google_ads_client
 
 # Initialize logger
 logger = setup_logging(__name__)
@@ -56,7 +57,7 @@ def create_autopilot_config(config: dict) -> AutopilotConfig:
 
 
 def cmd_execute(args):
-    """Execute recommendations (budget changes only)."""
+    """Execute recommendations (budget and bid changes)."""
     
     print("=" * 80)
     print(f"EXECUTION ENGINE - {args.config}")
@@ -134,8 +135,21 @@ def cmd_execute(args):
         logger.info(f"Filtered to {len(recommendations)} recommendations matching rule IDs: {rule_ids}")
         print(f"\nFiltered to {len(recommendations)} recommendations matching: {', '.join(rule_ids)}")
     
-    # Confirmation for live mode
+    # Load Google Ads client for live mode
+    google_ads_client = None
     if args.live:
+        print("\n⚠️  LIVE MODE - Loading Google Ads API client...")
+        try:
+            google_ads_client = load_google_ads_client(args.google_ads_config)
+            print("✅ Google Ads API client loaded")
+        except Exception as e:
+            logger.error(f"Failed to load Google Ads client: {e}")
+            print(f"\n❌ ERROR: Failed to load Google Ads API client")
+            print(f"Error: {e}")
+            print(f"\nCheck that {args.google_ads_config} exists and is valid")
+            return 1
+        
+        # Confirmation for live mode
         print("\n⚠️  LIVE MODE - This will make REAL changes to Google Ads!")
         response = input("Type 'yes' to confirm: ")
         if response.lower() != 'yes':
@@ -147,7 +161,7 @@ def cmd_execute(args):
     executor = BudgetExecutor(
         customer_id=config.customer_id,
         db_path=args.db_path,
-        google_ads_client=None  # None = dry-run mode, pass GoogleAdsClient for live
+        google_ads_client=google_ads_client
     )
     
     # Execute
@@ -211,6 +225,7 @@ def main():
     execute_parser.add_argument('--report', help='Path to suggestion report JSON (optional)')
     execute_parser.add_argument('--rule-ids', help='Comma-separated rule IDs to execute (optional)')
     execute_parser.add_argument('--db-path', default='warehouse.duckdb', help='Database path')
+    execute_parser.add_argument('--google-ads-config', default='google-ads.yaml', help='Google Ads API config path')
     execute_parser.set_defaults(func=cmd_execute)
     
     args = parser.parse_args()
