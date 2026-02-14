@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Alert - {{ client_name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            background-color: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #d97706;
+            margin: 0;
+            font-size: 24px;
+        }
+        .header p {
+            color: #92400e;
+            margin: 10px 0 0 0;
+            font-weight: bold;
+        }
+        .alert-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .severity-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+        .severity-high {
+            background-color: #fecaca;
+            color: #991b1b;
+        }
+        .severity-medium {
+            background-color: #fed7aa;
+            color: #9a3412;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f8fafc;
+            border-radius: 6px;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        .metric-box {
+            background-color: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .metric-name {
+            font-size: 14px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .metric-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #dc2626;
+            margin: 10px 0;
+        }
+        .threshold-info {
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
+        .threshold-value {
+            font-weight: bold;
+            color: #1e293b;
+        }
+        .action-box {
+            background-color: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 6px;
+        }
+        .action-box h3 {
+            color: #1e40af;
+            margin-top: 0;
+        }
+        .button {
+            display: inline-block;
+            background-color: #2563eb;
+            color: white !important;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="alert-icon">⚠️</div>
+            <h1>PERFORMANCE ALERT</h1>
+            <p>{{ client_name }}</p>
+            <span class="severity-badge severity-{{ severity|lower }}">{{ severity }} Priority</span>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Threshold Breach Detected</div>
+            
+            <div class="metric-box">
+                <div class="metric-name">{{ metric_name }}</div>
+                <div class="metric-value">{{ "%.2f"|format(current_value) }}</div>
+                <div class="threshold-info">
+                    Threshold: 
+                    <span class="threshold-value">
+                        {{ threshold_type|title }} {{ "%.2f"|format(threshold) }}
+                    </span>
+                </div>
+            </div>
+
+            <p style="text-align: center; color: #666; margin-top: 20px;">
+                Your {{ metric_name }} is currently 
+                {% if threshold_type == 'above' %}
+                    <strong style="color: #dc2626;">{{ "%.1f"|format((current_value - threshold) / threshold * 100) }}% above</strong>
+                {% else %}
+                    <strong style="color: #dc2626;">{{ "%.1f"|format((threshold - current_value) / threshold * 100) }}% below</strong>
+                {% endif %}
+                the threshold.
+            </p>
+        </div>
+
+        <div class="action-box">
+            <h3>📋 Recommended Action</h3>
+            <p>{{ recommended_action }}</p>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="{{ dashboard_url }}" class="button">View Dashboard</a>
+        </div>
+
+        <div class="footer">
+            <p>Ads Control Tower • Performance Monitoring</p>
+            <p>Alert triggered: {{ timestamp }}</p>
+        </div>
+    </div>
+</body>
+</html>

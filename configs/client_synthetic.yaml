@@ -23,3 +23,13 @@ protected_entities:
   entities: []
 exclusions:
   campaign_types_ignore: []
+
+# Email Alerts Configuration
+email_alerts:
+  enabled: true
+  smtp_host: smtp.gmail.com
+  smtp_port: 587
+  smtp_user: chrishoole101@gmail.com
+  smtp_password: ridp widp evgg agjc
+  recipient: chrishoole101@gmail.com
+  daily_summary_time: "08:00"

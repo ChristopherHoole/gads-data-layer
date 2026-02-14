@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Summary - {{ client_name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #2563eb;
+            margin: 0;
+            font-size: 24px;
+        }
+        .header p {
+            color: #666;
+            margin: 5px 0 0 0;
+        }
+        .metrics {
+            display: table;
+            width: 100%;
+            margin: 20px 0;
+        }
+        .metric {
+            display: table-cell;
+            width: 33.33%;
+            text-align: center;
+            padding: 15px;
+            background-color: #f8fafc;
+            border-radius: 6px;
+        }
+        .metric + .metric {
+            border-left: 2px solid #fff;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e293b;
+        }
+        .section {
+            margin: 30px 0;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .pending-badge {
+            background-color: #3b82f6;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .change-item {
+            background-color: #f8fafc;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border-left: 4px solid #3b82f6;
+        }
+        .change-date {
+            font-size: 12px;
+            color: #666;
+        }
+        .change-details {
+            margin-top: 5px;
+            font-size: 14px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #2563eb;
+            color: white !important;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Daily Summary</h1>
+            <p><strong>{{ client_name }}</strong></p>
+            <p>{{ date }}</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Yesterday's Performance</div>
+            <div class="metrics">
+                <div class="metric">
+                    <div class="metric-label">Spend</div>
+                    <div class="metric-value">£{{ "%.2f"|format(spend) }}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Conversions</div>
+                    <div class="metric-value">{{ conversions|int }}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">ROAS</div>
+                    <div class="metric-value">{{ "%.2f"|format(roas) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">
+                Pending Recommendations
+                <span class="pending-badge">{{ pending_count }}</span>
+            </div>
+            {% if pending_count > 0 %}
+            <p>You have <strong>{{ pending_count }}</strong> recommendations waiting for your review.</p>
+            <a href="{{ dashboard_url }}/recommendations" class="button">Review Recommendations</a>
+            {% else %}
+            <p>No pending recommendations at this time.</p>
+            {% endif %}
+        </div>
+
+        {% if recent_changes %}
+        <div class="section">
+            <div class="section-title">Recent Changes (Last 7 Days)</div>
+            {% for change in recent_changes %}
+            <div class="change-item">
+                <div class="change-date">{{ change[0] }} • Campaign {{ change[1] }}</div>
+                <div class="change-details">
+                    <strong>{{ change[2]|upper }}</strong>: 
+                    £{{ "%.2f"|format(change[3]) }} → £{{ "%.2f"|format(change[4]) }} 
+                    ({{ "%+.1f"|format(change[5]) }}%)
+                    <br>
+                    <small>Rule: {{ change[6] }}</small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="footer">
+            <p>Ads Control Tower • Automated Google Ads Optimization</p>
+            <p><a href="{{ dashboard_url }}" style="color: #2563eb;">View Dashboard</a></p>
+        </div>
+    </div>
+</body>
+</html>
