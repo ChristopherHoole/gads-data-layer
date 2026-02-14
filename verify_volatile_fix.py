@@ -7,9 +7,9 @@ import duckdb
 db_path = "warehouse.duckdb"
 con = duckdb.connect(db_path, read_only=True)
 
-print("="*60)
+print("=" * 60)
 print("BUG #4 VERIFICATION - Volatile Campaign Variance")
-print("="*60)
+print("=" * 60)
 
 result = con.execute("""
     SELECT 
@@ -29,22 +29,22 @@ result = con.execute("""
 """).fetchall()
 
 print("\nResults:")
-print("-"*60)
+print("-" * 60)
 for row in result:
     print(f"\nCampaign: {row[1]} ({row[0]})")
     print(f"  Coefficient of Variation: {row[2]:.3f} ({row[2]*100:.1f}%)")
     print(f"  Status: {row[3]}")
 
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 
 # Check if all passed
-all_pass = all('✅' in row[3] for row in result)
+all_pass = all("✅" in row[3] for row in result)
 
 if all_pass:
     print("✅ BUG #4 FIXED - All volatile campaigns have proper variance!")
 else:
     print("❌ Some campaigns still don't have enough variance")
 
-print("="*60)
+print("=" * 60)
 
 con.close()

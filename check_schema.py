@@ -1,6 +1,6 @@
 import duckdb
 
-con = duckdb.connect('warehouse_readonly.duckdb')
+con = duckdb.connect("warehouse_readonly.duckdb")
 result = con.execute("PRAGMA table_info('analytics.campaign_daily');").fetchall()
 
 print("Column name | Type")

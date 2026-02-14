@@ -9,6 +9,7 @@ Rules:
   BUDGET-005: Pacing reduction (monthly cap at risk)
   BUDGET-006: Stabilise budget (volatile campaign — hold steady)
 """
+
 from __future__ import annotations
 
 from typing import List, Optional
@@ -69,7 +70,7 @@ def budget_001_increase_high_roas(ctx: RuleContext) -> Optional[Recommendation]:
         recommended_value=new_daily_budget_micros,
         change_pct=change_pct,
         rationale=f"ROAS {roas_w7:.2f} exceeds target {target:.2f} by {((roas_w7/target)-1)*100:.0f}%. "
-                  f"Increasing budget by {change_pct:.0%} to capture additional conversions.",
+        f"Increasing budget by {change_pct:.0%} to capture additional conversions.",
         evidence={
             "campaign_name": ctx.features.get("campaign_name", "Unknown"),
             "expected_impact": f"Unlock additional conversions at {roas_w7:.2f} ROAS",
@@ -138,7 +139,7 @@ def budget_002_decrease_low_roas(ctx: RuleContext) -> Optional[Recommendation]:
         recommended_value=new_daily_budget_micros,
         change_pct=change_pct,
         rationale=f"ROAS {roas_w7:.2f} is {((1-(roas_w7/target))*100):.0f}% below target {target:.2f}. "
-                  f"Reducing budget by {abs(change_pct):.0%} to limit waste.",
+        f"Reducing budget by {abs(change_pct):.0%} to limit waste.",
         evidence={
             "campaign_name": ctx.features.get("campaign_name", "Unknown"),
             "expected_impact": f"Reduce waste on underperforming campaign",
@@ -173,7 +174,9 @@ def budget_003_emergency_cost_spike(ctx: RuleContext) -> Optional[Recommendation
     if insight["confidence"] < 0.6:
         return None
 
-    cost_w1_pct = _safe_float(insight.get("evidence", {}).get("cost_micros_w1_vs_prev_pct"))
+    cost_w1_pct = _safe_float(
+        insight.get("evidence", {}).get("cost_micros_w1_vs_prev_pct")
+    )
     campaign_id = str(ctx.features.get("campaign_id"))
     cost_w7 = _safe_float(ctx.features.get("cost_micros_w7_sum"))
 
@@ -195,7 +198,7 @@ def budget_003_emergency_cost_spike(ctx: RuleContext) -> Optional[Recommendation
         recommended_value=new_daily_budget_micros,
         change_pct=change_pct,
         rationale=f"Cost spiked {cost_w1_pct:+.0%} day-over-day. "
-                  f"Cutting budget by {abs(change_pct):.0%} to contain overspend pending investigation.",
+        f"Cutting budget by {abs(change_pct):.0%} to contain overspend pending investigation.",
         evidence={
             "campaign_name": ctx.features.get("campaign_name", "Unknown"),
             "expected_impact": f"Contain overspend, prevent budget blow-out",
@@ -256,11 +259,13 @@ def budget_004_recovery_cost_drop(ctx: RuleContext) -> Optional[Recommendation]:
         recommended_value=new_daily_budget_micros,
         change_pct=change_pct,
         rationale=f"Cost dropped significantly but ROAS {roas_w7:.2f} is still above target {ctx.config.target_roas:.2f}. "
-                  f"Increasing budget by {change_pct:.0%} to recover lost volume.",
+        f"Increasing budget by {change_pct:.0%} to recover lost volume.",
         evidence={
             "campaign_name": ctx.features.get("campaign_name", "Unknown"),
             "expected_impact": f"Recover lost volume at good ROAS",
-            "cost_drop_pct": _safe_float(insight.get("evidence", {}).get("cost_micros_w1_vs_prev_pct")),
+            "cost_drop_pct": _safe_float(
+                insight.get("evidence", {}).get("cost_micros_w1_vs_prev_pct")
+            ),
             "roas_w7": roas_w7,
             "target_roas": ctx.config.target_roas,
             "clicks_w7": clicks_w7,
@@ -283,7 +288,7 @@ def budget_005_pacing_reduction(ctx: RuleContext) -> Optional[Recommendation]:
     Trigger: Lighthouse PACE_OVER_CAP at ACCOUNT level
     Action:  -10% budget on highest-cost campaign
     Risk:    high (account-level impact)
-    
+
     NOTE: This rule only fires for the highest-spend campaign per account.
     """
     insight = _find_account_insight(ctx, "PACE_OVER_CAP")
@@ -320,13 +325,17 @@ def budget_005_pacing_reduction(ctx: RuleContext) -> Optional[Recommendation]:
         recommended_value=new_daily_budget_micros,
         change_pct=change_pct,
         rationale=f"Account pacing {pacing_pct:+.1%} over monthly cap. "
-                  f"Cutting highest-spend campaign budget by {abs(change_pct):.0%}.",
+        f"Cutting highest-spend campaign budget by {abs(change_pct):.0%}.",
         evidence={
             "campaign_name": ctx.features.get("campaign_name", "Unknown"),
             "expected_impact": f"Prevent monthly cap breach",
             "pacing_over_cap_pct": pacing_pct,
-            "projected_monthly_micros": insight.get("evidence", {}).get("acct_projected_month_cost_micros"),
-            "monthly_cap_micros": insight.get("evidence", {}).get("acct_monthly_cap_micros"),
+            "projected_monthly_micros": insight.get("evidence", {}).get(
+                "acct_projected_month_cost_micros"
+            ),
+            "monthly_cap_micros": insight.get("evidence", {}).get(
+                "acct_monthly_cap_micros"
+            ),
             "campaign_cost_w7": cost_w7,
         },
         constitution_refs=["CONSTITUTION-5-5", "CONSTITUTION-5-8"],
@@ -377,7 +386,7 @@ def budget_006_hold_volatile(ctx: RuleContext) -> Optional[Recommendation]:
         recommended_value=None,
         change_pct=0.0,
         rationale=f"Campaign is volatile (cost CV={cost_cv:.2f}). "
-                  f"Holding budget steady until variance stabilises below 0.60.",
+        f"Holding budget steady until variance stabilises below 0.60.",
         evidence={
             "campaign_name": ctx.features.get("campaign_name", "Unknown"),
             "expected_impact": "Stabilise performance, avoid amplifying volatility",
@@ -402,7 +411,10 @@ def _find_insight(ctx: RuleContext, diagnosis_code: str) -> Optional[dict]:
     """Find a Lighthouse insight for this campaign by diagnosis code."""
     campaign_id = str(ctx.features.get("campaign_id"))
     for ins in ctx.insights:
-        if ins.get("diagnosis_code") == diagnosis_code and str(ins.get("entity_id")) == campaign_id:
+        if (
+            ins.get("diagnosis_code") == diagnosis_code
+            and str(ins.get("entity_id")) == campaign_id
+        ):
             return ins
     return None
 
@@ -410,7 +422,10 @@ def _find_insight(ctx: RuleContext, diagnosis_code: str) -> Optional[dict]:
 def _find_account_insight(ctx: RuleContext, diagnosis_code: str) -> Optional[dict]:
     """Find an ACCOUNT-level Lighthouse insight."""
     for ins in ctx.all_insights:
-        if ins.get("diagnosis_code") == diagnosis_code and ins.get("entity_type") == "ACCOUNT":
+        if (
+            ins.get("diagnosis_code") == diagnosis_code
+            and ins.get("entity_type") == "ACCOUNT"
+        ):
             return ins
     return None
 
@@ -420,7 +435,10 @@ def _best_insight_confidence(ctx: RuleContext, codes: List[str]) -> Optional[flo
     campaign_id = str(ctx.features.get("campaign_id"))
     best = None
     for ins in ctx.insights:
-        if str(ins.get("entity_id")) == campaign_id and ins.get("diagnosis_code") in codes:
+        if (
+            str(ins.get("entity_id")) == campaign_id
+            and ins.get("diagnosis_code") in codes
+        ):
             c = _safe_float(ins.get("confidence"))
             if best is None or c > best:
                 best = c
@@ -429,7 +447,7 @@ def _best_insight_confidence(ctx: RuleContext, codes: List[str]) -> Optional[flo
 
 # Registry of all budget rules (order = evaluation order)
 BUDGET_RULES = [
-    budget_005_pacing_reduction,    # highest priority
+    budget_005_pacing_reduction,  # highest priority
     budget_003_emergency_cost_spike,
     budget_002_decrease_low_roas,
     budget_001_increase_high_roas,

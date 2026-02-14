@@ -6,6 +6,7 @@ Validates which rules fire for each of the 8 synthetic scenarios.
 Usage:
     python tools/testing/test_autopilot_rules.py
 """
+
 from __future__ import annotations
 
 import json
@@ -29,15 +30,14 @@ from act_autopilot.engine import (
 )
 from act_autopilot.models import Recommendation
 
-
 # ─────────────────────────────────────────────────────────────
 # Expected rule outcomes per scenario
 # ─────────────────────────────────────────────────────────────
 EXPECTED_OUTCOMES = {
     "2001": {
         "name": "STABLE_A",
-        "should_fire": ["STATUS-003"],                  # healthy — no action
-        "should_not_fire": ["BUDGET-003", "BUDGET-005"], # no spikes, no pacing crisis
+        "should_fire": ["STATUS-003"],  # healthy — no action
+        "should_not_fire": ["BUDGET-003", "BUDGET-005"],  # no spikes, no pacing crisis
     },
     "2002": {
         "name": "STABLE_B",
@@ -46,32 +46,35 @@ EXPECTED_OUTCOMES = {
     },
     "2003": {
         "name": "COST_SPIKE",
-        "should_fire": ["BUDGET-003"],                  # emergency budget cut
-        "should_not_fire": ["BUDGET-001", "BUDGET-004"], # not a recovery/increase scenario
+        "should_fire": ["BUDGET-003"],  # emergency budget cut
+        "should_not_fire": [
+            "BUDGET-001",
+            "BUDGET-004",
+        ],  # not a recovery/increase scenario
     },
     "2004": {
         "name": "COST_DROP",
-        "should_fire": ["BUDGET-004"],                  # recovery budget increase
-        "should_not_fire": ["BUDGET-003"],               # not a spike
+        "should_fire": ["BUDGET-004"],  # recovery budget increase
+        "should_not_fire": ["BUDGET-003"],  # not a spike
     },
     "2005": {
         "name": "CTR_DROP",
-        "should_fire": ["BID-003"],                     # hold bids — investigate CTR
-        "should_not_fire": ["BUDGET-001"],               # no budget increase
+        "should_fire": ["BID-003"],  # hold bids — investigate CTR
+        "should_not_fire": ["BUDGET-001"],  # no budget increase
     },
     "2006": {
         "name": "CVR_DROP",
-        "should_fire": ["BID-003"],                     # hold bids — investigate CVR
-        "should_not_fire": ["BID-001", "BID-002"],       # no bid target changes
+        "should_fire": ["BID-003"],  # hold bids — investigate CVR
+        "should_not_fire": ["BID-001", "BID-002"],  # no bid target changes
     },
-"2007": {
+    "2007": {
         "name": "VOLATILE",
-        "should_fire": [],                               # cost_w14_cv is NULL in synthetic data — BUDGET-006 cannot fire
-        "should_not_fire": ["BUDGET-001", "BUDGET-002"], # no budget changes
+        "should_fire": [],  # cost_w14_cv is NULL in synthetic data — BUDGET-006 cannot fire
+        "should_not_fire": ["BUDGET-001", "BUDGET-002"],  # no budget changes
     },
     "2008": {
         "name": "LOW_DATA",
-        "should_fire": ["BID-004"],                     # hold bids — low data
+        "should_fire": ["BID-004"],  # hold bids — low data
         "should_not_fire": ["BUDGET-001", "BUDGET-002", "BID-001", "BID-002"],
     },
 }
@@ -87,14 +90,22 @@ def run_tests() -> Dict[str, Any]:
     print(f"[Test] Config loaded: {config.client_id}")
 
     # Load Lighthouse report
-    report_path = project_root / "reports" / "lighthouse" / config.client_id / f"{snapshot_date.isoformat()}.json"
+    report_path = (
+        project_root
+        / "reports"
+        / "lighthouse"
+        / config.client_id
+        / f"{snapshot_date.isoformat()}.json"
+    )
     if not report_path.exists():
         print(f"[Test] ERROR: Lighthouse report not found: {report_path}")
         print(f"[Test] Run Lighthouse first.")
         return {"passed": 0, "failed": 0, "errors": ["Lighthouse report not found"]}
 
     lighthouse_report = load_lighthouse_report(str(report_path))
-    print(f"[Test] Lighthouse report loaded: {len(lighthouse_report.get('insights', []))} insights")
+    print(
+        f"[Test] Lighthouse report loaded: {len(lighthouse_report.get('insights', []))} insights"
+    )
 
     # Connect to build DB
     build_db = project_root / "warehouse.duckdb"
@@ -103,7 +114,9 @@ def run_tests() -> Dict[str, Any]:
         return {"passed": 0, "failed": 0, "errors": ["warehouse.duckdb not found"]}
 
     con = duckdb.connect(str(build_db))
-    feature_rows = load_feature_rows(con, config.client_id, config.customer_id, snapshot_date)
+    feature_rows = load_feature_rows(
+        con, config.client_id, config.customer_id, snapshot_date
+    )
     print(f"[Test] Feature rows loaded: {len(feature_rows)}")
 
     if len(feature_rows) == 0:
@@ -137,12 +150,16 @@ def run_tests() -> Dict[str, Any]:
         print(f"\n  Campaign {cid} ({name}):")
         for r in recs:
             status = "BLOCKED" if r.blocked else "OK"
-            print(f"    [{r.rule_id}] {r.action_type} | risk={r.risk_tier} | conf={r.confidence:.2f} | {status}")
+            print(
+                f"    [{r.rule_id}] {r.action_type} | risk={r.risk_tier} | conf={r.confidence:.2f} | {status}"
+            )
 
     if account_recs:
         print(f"\n  ACCOUNT-level:")
         for r in account_recs:
-            print(f"    [{r.rule_id}] {r.action_type} | risk={r.risk_tier} | conf={r.confidence:.2f}")
+            print(
+                f"    [{r.rule_id}] {r.action_type} | risk={r.risk_tier} | conf={r.confidence:.2f}"
+            )
 
     # Validate expectations
     print(f"\n{'='*70}")
@@ -176,7 +193,9 @@ def run_tests() -> Dict[str, Any]:
             }
             details.append(detail)
             icon = "✅" if status == "PASS" else "❌"
-            print(f"  {icon} Campaign {campaign_id} ({scenario_name}): {rule_id} should fire → {status}")
+            print(
+                f"  {icon} Campaign {campaign_id} ({scenario_name}): {rule_id} should fire → {status}"
+            )
 
         # Check should_not_fire
         for rule_id in expected["should_not_fire"]:
@@ -196,7 +215,9 @@ def run_tests() -> Dict[str, Any]:
             }
             details.append(detail)
             icon = "✅" if status == "PASS" else "❌"
-            print(f"  {icon} Campaign {campaign_id} ({scenario_name}): {rule_id} should NOT fire → {status}")
+            print(
+                f"  {icon} Campaign {campaign_id} ({scenario_name}): {rule_id} should NOT fire → {status}"
+            )
 
     total = passed + failed
     pct = (passed / total * 100) if total > 0 else 0
@@ -206,11 +227,15 @@ def run_tests() -> Dict[str, Any]:
     print(f"{'='*70}")
 
     # Save report
-    report = generate_autopilot_report(config, all_recs, snapshot_date, str(report_path))
+    report = generate_autopilot_report(
+        config, all_recs, snapshot_date, str(report_path)
+    )
     out_dir = project_root / "reports" / "autopilot" / config.client_id
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{snapshot_date.isoformat()}.json"
-    out_path.write_text(json.dumps(report, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
+    out_path.write_text(
+        json.dumps(report, indent=2, ensure_ascii=False, default=str), encoding="utf-8"
+    )
     print(f"\n[Test] Autopilot report saved: {out_path}")
 
     # Save test results
@@ -223,7 +248,9 @@ def run_tests() -> Dict[str, Any]:
         "details": details,
     }
     test_path = out_dir / f"test_results_{snapshot_date.isoformat()}.json"
-    test_path.write_text(json.dumps(test_report, indent=2, ensure_ascii=False), encoding="utf-8")
+    test_path.write_text(
+        json.dumps(test_report, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     print(f"[Test] Test results saved: {test_path}")
 
     con.close()

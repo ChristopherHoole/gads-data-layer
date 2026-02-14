@@ -129,9 +129,13 @@ def main() -> int:
         yaml_obj["developer_token"] = args.developer_token
     if args.login_customer_id:
         # Google Ads expects no dashes
-        yaml_obj["login_customer_id"] = str(args.login_customer_id).replace("-", "").strip()
+        yaml_obj["login_customer_id"] = (
+            str(args.login_customer_id).replace("-", "").strip()
+        )
 
-    out_yaml_path.write_text(yaml.safe_dump(yaml_obj, sort_keys=False), encoding="utf-8")
+    out_yaml_path.write_text(
+        yaml.safe_dump(yaml_obj, sort_keys=False), encoding="utf-8"
+    )
 
     print("\nOK: OAuth refresh token generated.")
     print(f"OK: Wrote: {out_yaml_path}")

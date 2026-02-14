@@ -201,48 +201,37 @@ def build_campaign_features_daily(
 
             base_out_parts.append(f"{m}_w{w}_sum")
             base_out_parts.append(f"{m}_w{w}_mean")
-            base_out_parts.append(f"({m}_w{w}_sum - {m}_w{w}_sum_prev) AS {m}_w{w}_vs_prev_abs")
             base_out_parts.append(
-                f"""CASE
+                f"({m}_w{w}_sum - {m}_w{w}_sum_prev) AS {m}_w{w}_vs_prev_abs"
+            )
+            base_out_parts.append(f"""CASE
                       WHEN {m}_w{w}_sum_prev IS NULL OR {m}_w{w}_sum_prev = 0 THEN NULL
                       ELSE ({m}_w{w}_sum - {m}_w{w}_sum_prev) / NULLIF({m}_w{w}_sum_prev, 0)
-                    END AS {m}_w{w}_vs_prev_pct"""
-            )
+                    END AS {m}_w{w}_vs_prev_pct""")
     lag_sql = ",\n            ".join(lag_parts)
 
     # Derived metrics (ratio-of-sums) + derived deltas vs prev window
     derived_parts: list[str] = []
     for w in windows:
-        derived_parts.append(
-            f"""CASE WHEN impressions_w{w}_sum = 0 THEN NULL
+        derived_parts.append(f"""CASE WHEN impressions_w{w}_sum = 0 THEN NULL
                     ELSE clicks_w{w}_sum::DOUBLE / NULLIF(impressions_w{w}_sum::DOUBLE, 0)
-                  END AS ctr_w{w}_mean"""
-        )
-        derived_parts.append(
-            f"""CASE WHEN clicks_w{w}_sum = 0 THEN NULL
+                  END AS ctr_w{w}_mean""")
+        derived_parts.append(f"""CASE WHEN clicks_w{w}_sum = 0 THEN NULL
                     ELSE cost_micros_w{w}_sum::DOUBLE / NULLIF(clicks_w{w}_sum::DOUBLE, 0)
-                  END AS cpc_w{w}_mean"""
-        )
-        derived_parts.append(
-            f"""CASE WHEN clicks_w{w}_sum = 0 THEN NULL
+                  END AS cpc_w{w}_mean""")
+        derived_parts.append(f"""CASE WHEN clicks_w{w}_sum = 0 THEN NULL
                     ELSE conversions_w{w}_sum::DOUBLE / NULLIF(clicks_w{w}_sum::DOUBLE, 0)
-                  END AS cvr_w{w}_mean"""
-        )
-        derived_parts.append(
-            f"""CASE WHEN conversions_w{w}_sum = 0 THEN NULL
+                  END AS cvr_w{w}_mean""")
+        derived_parts.append(f"""CASE WHEN conversions_w{w}_sum = 0 THEN NULL
                     ELSE cost_micros_w{w}_sum::DOUBLE / NULLIF(conversions_w{w}_sum::DOUBLE, 0)
-                  END AS cpa_w{w}_mean"""
-        )
-        derived_parts.append(
-            f"""CASE
+                  END AS cpa_w{w}_mean""")
+        derived_parts.append(f"""CASE
                     WHEN conversion_value_w{w}_sum IS NULL THEN NULL
                     WHEN cost_micros_w{w}_sum = 0 THEN NULL
                     ELSE conversion_value_w{w}_sum::DOUBLE / NULLIF((cost_micros_w{w}_sum::DOUBLE / 1000000.0), 0)
-                  END AS roas_w{w}_mean"""
-        )
+                  END AS roas_w{w}_mean""")
 
-        derived_parts.append(
-            f"""CASE
+        derived_parts.append(f"""CASE
                     WHEN impressions_w{w}_sum_prev IS NULL OR impressions_w{w}_sum_prev = 0 THEN NULL
                     WHEN clicks_w{w}_sum_prev IS NULL THEN NULL
                     ELSE
@@ -259,11 +248,9 @@ def build_campaign_features_daily(
                           /
                           NULLIF((clicks_w{w}_sum_prev::DOUBLE / NULLIF(impressions_w{w}_sum_prev::DOUBLE,0)),0)
                       END
-                  END AS ctr_w{w}_vs_prev_pct"""
-        )
+                  END AS ctr_w{w}_vs_prev_pct""")
 
-        derived_parts.append(
-            f"""CASE
+        derived_parts.append(f"""CASE
                     WHEN clicks_w{w}_sum_prev IS NULL OR clicks_w{w}_sum_prev = 0 THEN NULL
                     WHEN conversions_w{w}_sum_prev IS NULL THEN NULL
                     ELSE
@@ -280,11 +267,9 @@ def build_campaign_features_daily(
                           /
                           NULLIF((conversions_w{w}_sum_prev::DOUBLE / NULLIF(clicks_w{w}_sum_prev::DOUBLE,0)),0)
                       END
-                  END AS cvr_w{w}_vs_prev_pct"""
-        )
+                  END AS cvr_w{w}_vs_prev_pct""")
 
-        derived_parts.append(
-            f"""CASE
+        derived_parts.append(f"""CASE
                     WHEN conversions_w{w}_sum_prev IS NULL OR conversions_w{w}_sum_prev = 0 THEN NULL
                     WHEN cost_micros_w{w}_sum_prev IS NULL THEN NULL
                     ELSE
@@ -301,11 +286,9 @@ def build_campaign_features_daily(
                           /
                           NULLIF((cost_micros_w{w}_sum_prev::DOUBLE / NULLIF(conversions_w{w}_sum_prev::DOUBLE,0)),0)
                       END
-                  END AS cpa_w{w}_vs_prev_pct"""
-        )
+                  END AS cpa_w{w}_vs_prev_pct""")
 
-        derived_parts.append(
-            f"""CASE
+        derived_parts.append(f"""CASE
                     WHEN conversion_value_w{w}_sum_prev IS NULL OR cost_micros_w{w}_sum_prev IS NULL THEN NULL
                     WHEN cost_micros_w{w}_sum_prev = 0 THEN NULL
                     ELSE
@@ -324,8 +307,7 @@ def build_campaign_features_daily(
                           /
                           NULLIF((conversion_value_w{w}_sum_prev::DOUBLE / NULLIF((cost_micros_w{w}_sum_prev::DOUBLE / 1000000.0),0)),0)
                       END
-                  END AS roas_w{w}_vs_prev_pct"""
-        )
+                  END AS roas_w{w}_vs_prev_pct""")
 
     derived_sql = ",\n            ".join(derived_parts)
 
@@ -550,7 +532,10 @@ def build_campaign_features_daily(
         snapshot_date,
     ]
 
-    con.execute(f"INSERT INTO analytics.campaign_features_daily ({insert_cols_sql}) " + sql, params)
+    con.execute(
+        f"INSERT INTO analytics.campaign_features_daily ({insert_cols_sql}) " + sql,
+        params,
+    )
 
     rows = con.execute(
         """
@@ -578,8 +563,12 @@ def build_campaign_features_daily(
     if days_elapsed > 0:
         projected = int((mtd_cost / float(days_elapsed)) * float(days_in_month))
 
-    daily_cap_micros = int(cfg.spend_caps.daily * 1_000_000) if cfg.spend_caps.daily else None
-    monthly_cap_micros = int(cfg.spend_caps.monthly * 1_000_000) if cfg.spend_caps.monthly else None
+    daily_cap_micros = (
+        int(cfg.spend_caps.daily * 1_000_000) if cfg.spend_caps.daily else None
+    )
+    monthly_cap_micros = (
+        int(cfg.spend_caps.monthly * 1_000_000) if cfg.spend_caps.monthly else None
+    )
 
     pacing_vs_cap: Optional[float] = None
     pacing_flag: Optional[bool] = None

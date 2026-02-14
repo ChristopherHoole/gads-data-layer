@@ -24,8 +24,7 @@ def _utc_now_iso() -> str:
 
 def ensure_insights_table(con: duckdb.DuckDBPyConnection) -> None:
     con.execute("CREATE SCHEMA IF NOT EXISTS analytics;")
-    con.execute(
-        """
+    con.execute("""
         CREATE TABLE IF NOT EXISTS analytics.lighthouse_insights_daily (
           client_id TEXT NOT NULL,
           customer_id TEXT NOT NULL,
@@ -42,11 +41,12 @@ def ensure_insights_table(con: duckdb.DuckDBPyConnection) -> None:
           guardrail_rule_ids_json TEXT NOT NULL,
           generated_at_utc TIMESTAMP NOT NULL
         );
-        """
-    )
+        """)
 
 
-def _rows_to_dicts(con: duckdb.DuckDBPyConnection, sql: str, params: list[Any]) -> List[Dict[str, Any]]:
+def _rows_to_dicts(
+    con: duckdb.DuckDBPyConnection, sql: str, params: list[Any]
+) -> List[Dict[str, Any]]:
     cur = con.execute(sql, params)
     cols = [c[0] for c in cur.description]
     rows = cur.fetchall()
@@ -125,7 +125,7 @@ def write_lighthouse_insights_and_report(
 ) -> Dict[str, Any]:
     ensure_insights_table(con)
 
-    needs_config = (cfg.client_type is None or str(cfg.client_type).strip() == "")
+    needs_config = cfg.client_type is None or str(cfg.client_type).strip() == ""
 
     feature_rows = _rows_to_dicts(
         con,
@@ -140,7 +140,9 @@ def write_lighthouse_insights_and_report(
     )
 
     if len(feature_rows) == 0:
-        raise RuntimeError("No feature rows found. Build features first for this client/date.")
+        raise RuntimeError(
+            "No feature rows found. Build features first for this client/date."
+        )
 
     # 1) Run real diagnostics
     insights: List[Insight] = []
@@ -194,14 +196,23 @@ def write_lighthouse_insights_and_report(
                 labels=["NEEDS_REVIEW"] + (["NEEDS_CONFIG"] if needs_config else []),
                 evidence={"note": "Filler insight to ensure top-N output."},
                 recommended_action="Review config completeness and data availability.",
-                guardrail_rule_ids=[RULE_CONFIG_GATED, RULE_CLIENT_TYPE_REQUIRED] if needs_config else [],
+                guardrail_rule_ids=(
+                    [RULE_CONFIG_GATED, RULE_CLIENT_TYPE_REQUIRED]
+                    if needs_config
+                    else []
+                ),
             )
         )
 
     # 3) Sort + take top N
     insights_sorted = sorted(
         insights,
-        key=lambda x: (-float(x.confidence), x.diagnosis_code, x.entity_type, x.entity_id or ""),
+        key=lambda x: (
+            -float(x.confidence),
+            x.diagnosis_code,
+            x.entity_type,
+            x.entity_id or "",
+        ),
     )[:max_insights]
 
     ranked: List[Insight] = []
@@ -291,6 +302,8 @@ def write_lighthouse_insights_and_report(
         ],
     }
 
-    out_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    out_path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
 
     return {"insights_written": len(ranked), "report_path": str(out_path)}

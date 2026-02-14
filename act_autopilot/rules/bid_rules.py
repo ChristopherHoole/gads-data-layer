@@ -7,6 +7,7 @@ Rules:
   BID-003: Hold bid target (CVR drop — investigate first)
   BID-004: Hold bid target (low data — collect more)
 """
+
 from __future__ import annotations
 
 from typing import Optional
@@ -22,7 +23,7 @@ def bid_001_tighten_troas(ctx: RuleContext) -> Optional[Recommendation]:
     Trigger: ROAS (30d) > target_roas * 1.25 AND conversions_w30 >= 15 AND stable (CV < 0.60)
     Action:  Increase tROAS target by +5% (conservative) / +10% (balanced)
     Risk:    med (bid target changes are medium risk)
-    
+
     Rationale: Campaign is significantly outperforming target — tighten to improve efficiency
     or allow Google to find cheaper conversions.
     """
@@ -61,7 +62,7 @@ def bid_001_tighten_troas(ctx: RuleContext) -> Optional[Recommendation]:
         recommended_value=new_target_roas,
         change_pct=change_pct,
         rationale=f"ROAS (30d) is {roas_w30:.2f}, exceeding target {target:.2f} by {((roas_w30/target)-1)*100:.0f}%. "
-                  f"Tightening tROAS target to {new_target_roas:.2f} (+{change_pct:.0%}).",
+        f"Tightening tROAS target to {new_target_roas:.2f} (+{change_pct:.0%}).",
         evidence={
             "roas_w30": roas_w30,
             "target_roas": target,
@@ -87,7 +88,7 @@ def bid_002_loosen_troas(ctx: RuleContext) -> Optional[Recommendation]:
     Trigger: ROAS (30d) < target_roas * 0.85 AND conversions_w30 >= 15 AND stable
     Action:  Decrease tROAS target by -5% to give bidder more room
     Risk:    med
-    
+
     Rationale: Campaign is consistently missing target — loosen to avoid limiting volume too much.
     """
     if ctx.config.primary_kpi != "roas" or ctx.config.target_roas is None:
@@ -125,7 +126,7 @@ def bid_002_loosen_troas(ctx: RuleContext) -> Optional[Recommendation]:
         recommended_value=new_target_roas,
         change_pct=change_pct,
         rationale=f"ROAS (30d) is {roas_w30:.2f}, {((1-(roas_w30/target))*100):.0f}% below target {target:.2f}. "
-                  f"Loosening tROAS to {new_target_roas:.2f} ({change_pct:.0%}) to give smart bidding more room.",
+        f"Loosening tROAS to {new_target_roas:.2f} ({change_pct:.0%}) to give smart bidding more room.",
         evidence={
             "roas_w30": roas_w30,
             "target_roas": target,
@@ -160,7 +161,10 @@ def bid_003_hold_cvr_drop(ctx: RuleContext) -> Optional[Recommendation]:
     if insight is None:
         return None
 
-    drop_pct = _safe_float(insight["evidence"].get("cvr_w14_vs_prev_pct") or insight["evidence"].get("ctr_w7_vs_prev_pct"))
+    drop_pct = _safe_float(
+        insight["evidence"].get("cvr_w14_vs_prev_pct")
+        or insight["evidence"].get("ctr_w7_vs_prev_pct")
+    )
     campaign_id = str(ctx.features.get("campaign_id"))
 
     return Recommendation(
@@ -175,7 +179,7 @@ def bid_003_hold_cvr_drop(ctx: RuleContext) -> Optional[Recommendation]:
         recommended_value=None,
         change_pct=0.0,
         rationale=f"{label} dropped {drop_pct:.0%}. "
-                  f"Hold bid target until root cause identified (landing page, tracking, demand shift, creative).",
+        f"Hold bid target until root cause identified (landing page, tracking, demand shift, creative).",
         evidence={
             f"{label.lower()}_drop_pct": drop_pct,
             "lighthouse_confidence": insight["confidence"],
@@ -225,7 +229,7 @@ def bid_004_hold_low_data(ctx: RuleContext) -> Optional[Recommendation]:
         recommended_value=None,
         change_pct=0.0,
         rationale=f"Low data: {conv_w30:.0f} conversions (30d), {clicks_w7:.0f} clicks (7d). "
-                  f"Need ≥15 conversions (30d) before any bid target changes.",
+        f"Need ≥15 conversions (30d) before any bid target changes.",
         evidence={
             "conversions_w30": conv_w30,
             "clicks_w7": clicks_w7,
@@ -247,7 +251,10 @@ def bid_004_hold_low_data(ctx: RuleContext) -> Optional[Recommendation]:
 def _find_insight(ctx: RuleContext, diagnosis_code: str) -> Optional[dict]:
     campaign_id = str(ctx.features.get("campaign_id"))
     for ins in ctx.insights:
-        if ins.get("diagnosis_code") == diagnosis_code and str(ins.get("entity_id")) == campaign_id:
+        if (
+            ins.get("diagnosis_code") == diagnosis_code
+            and str(ins.get("entity_id")) == campaign_id
+        ):
             return ins
     return None
 

@@ -1,7 +1,10 @@
 ﻿import random
 from datetime import date, datetime, timezone
 
-def mock_campaign_daily(run_id: str, customer_id: str, snapshot_date: date, seed: int) -> list[dict]:
+
+def mock_campaign_daily(
+    run_id: str, customer_id: str, snapshot_date: date, seed: int
+) -> list[dict]:
     rnd = random.Random(seed)
     rows = []
     ingested_at = datetime.now(timezone.utc)
@@ -37,6 +40,7 @@ def mock_campaign_daily(run_id: str, customer_id: str, snapshot_date: date, seed
             )
         )
     return rows
+
 
 def mock_campaign_config(run_id: str, customer_id: str, seed: int) -> list[dict]:
     rnd = random.Random(seed + 999)

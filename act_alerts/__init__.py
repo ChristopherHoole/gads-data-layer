@@ -9,11 +9,16 @@ Sends automated email notifications:
 
 __version__ = "1.0.0"
 
-from .email_sender import EmailSender, send_daily_summary, send_rollback_alert, send_performance_alert
+from .email_sender import (
+    EmailSender,
+    send_daily_summary,
+    send_rollback_alert,
+    send_performance_alert,
+)
 
 __all__ = [
-    'EmailSender',
-    'send_daily_summary',
-    'send_rollback_alert',
-    'send_performance_alert',
+    "EmailSender",
+    "send_daily_summary",
+    "send_rollback_alert",
+    "send_performance_alert",
 ]

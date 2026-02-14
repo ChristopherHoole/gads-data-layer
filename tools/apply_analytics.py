@@ -7,6 +7,7 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SQL_PATH = os.path.join(REPO_ROOT, "sql", "analytics_views.sql")
 DB_PATH = os.path.join(REPO_ROOT, "warehouse.duckdb")
 
+
 def main() -> int:
     if not os.path.exists(DB_PATH):
         print(f"ERROR: DuckDB not found: {DB_PATH}")
@@ -29,6 +30,7 @@ def main() -> int:
         return 0
     finally:
         con.close()
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

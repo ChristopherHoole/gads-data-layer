@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 from dotenv import load_dotenv
 
+
 @dataclass(frozen=True)
 class Settings:
     # Mode: mock | test_account | prod
@@ -19,6 +20,7 @@ class Settings:
 
     # Mock
     mock_seed: int
+
 
 def get_settings() -> Settings:
     load_dotenv()  # reads .env if present

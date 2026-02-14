@@ -65,11 +65,18 @@ def load_client_config(path: str | Path) -> ClientConfig:
     if not isinstance(raw, dict):
         raise ValueError("Client config YAML must be a mapping/object at top level.")
 
-    client_id = str(raw.get("client_id") or raw.get("client_name") or raw.get("name") or "UNKNOWN_CLIENT").strip()
+    client_id = str(
+        raw.get("client_id")
+        or raw.get("client_name")
+        or raw.get("name")
+        or "UNKNOWN_CLIENT"
+    ).strip()
 
     customer_id = _dig(raw, ["google_ads", "customer_id"]) or raw.get("customer_id")
     if customer_id is None or str(customer_id).strip() == "":
-        raise ValueError("Client config must include google_ads.customer_id (or legacy top-level customer_id).")
+        raise ValueError(
+            "Client config must include google_ads.customer_id (or legacy top-level customer_id)."
+        )
     customer_id = str(customer_id).strip()
 
     client_type = raw.get("client_type")

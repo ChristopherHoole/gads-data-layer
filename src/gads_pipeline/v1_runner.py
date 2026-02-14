@@ -29,18 +29,30 @@ from .warehouse_duckdb import (
 @dataclass(frozen=True)
 class RunContext:
     warehouse_path: str
-    customer_id: Optional[str]          # In test mode, may be resolved via MCC discovery if omitted
+    customer_id: Optional[
+        str
+    ]  # In test mode, may be resolved via MCC discovery if omitted
     end_date: date
     lookback_days: int
-    mode: str                           # mock | test | prod
+    mode: str  # mock | test | prod
 
     # test/prod only
     google_ads_yaml: Optional[str] = None
-    mcc_id: Optional[str] = None        # login_customer_id (manager account), digits only
+    mcc_id: Optional[str] = None  # login_customer_id (manager account), digits only
 
 
-def run_v1(mode: str, config_path: str, lookback_days: int = 1, target_date_override: str | None = None) -> int:
-    ctx = _build_run_context(mode=mode, config_path=config_path, lookback_days=lookback_days, target_date_override=target_date_override)
+def run_v1(
+    mode: str,
+    config_path: str,
+    lookback_days: int = 1,
+    target_date_override: str | None = None,
+) -> int:
+    ctx = _build_run_context(
+        mode=mode,
+        config_path=config_path,
+        lookback_days=lookback_days,
+        target_date_override=target_date_override,
+    )
 
     conn = connect_warehouse(ctx.warehouse_path)
     init_warehouse(conn)
@@ -51,12 +63,15 @@ def run_v1(mode: str, config_path: str, lookback_days: int = 1, target_date_over
     if ctx.mode == "test":
         return _run_test(conn, ctx)
 
-    raise NotImplementedError("Only mock and test modes are supported right now for v1.")
+    raise NotImplementedError(
+        "Only mock and test modes are supported right now for v1."
+    )
 
 
 # ----------------------------
 # Config helpers
 # ----------------------------
+
 
 def _load_cfg(path: str) -> dict[str, Any]:
     p = Path(path)
@@ -94,7 +109,9 @@ def _digits_only(s: str) -> str:
     return "".join(ch for ch in s if ch.isdigit())
 
 
-def _build_run_context(mode: str, config_path: str, lookback_days: int, target_date_override: str | None) -> RunContext:
+def _build_run_context(
+    mode: str, config_path: str, lookback_days: int, target_date_override: str | None
+) -> RunContext:
     mode = (mode or "").strip().lower()
     if mode not in {"mock", "test", "prod"}:
         raise ValueError("mode must be one of: mock | test | prod")
@@ -202,7 +219,10 @@ def _date_range_inclusive(end_date: date, lookback_days: int) -> list[date]:
 # MOCK mode
 # ----------------------------
 
-def _mock_campaign_daily_rows(run_id: str, ingested_at: str, customer_id: str, snapshot_date: date, seed: int) -> list[dict[str, Any]]:
+
+def _mock_campaign_daily_rows(
+    run_id: str, ingested_at: str, customer_id: str, snapshot_date: date, seed: int
+) -> list[dict[str, Any]]:
     # deterministic "random-ish" but stable
     base = int(_digits_only(customer_id)[-4:] or "1111")
     rows: list[dict[str, Any]] = []
@@ -242,7 +262,11 @@ def _run_mock(conn, ctx: RunContext) -> int:
     dates = _date_range_inclusive(ctx.end_date, ctx.lookback_days)
     all_rows: list[dict[str, Any]] = []
     for d in dates:
-        all_rows.extend(_mock_campaign_daily_rows(run_id, ingested_at, ctx.customer_id or "0", d, seed=42))
+        all_rows.extend(
+            _mock_campaign_daily_rows(
+                run_id, ingested_at, ctx.customer_id or "0", d, seed=42
+            )
+        )
 
     insert_raw_campaign_daily(conn, all_rows)
     insert_snap_campaign_daily(conn, all_rows)
@@ -265,9 +289,11 @@ def _run_mock(conn, ctx: RunContext) -> int:
 # TEST mode (Google Ads API)
 # ----------------------------
 
+
 def _require_google_ads() -> Any:
     try:
         from google.ads.googleads.client import GoogleAdsClient  # type: ignore
+
         return GoogleAdsClient
     except Exception as e:  # pragma: no cover
         raise RuntimeError(
@@ -287,7 +313,11 @@ def _load_google_ads_client_from_yaml(creds_path: str, mcc_id: str | None) -> An
         cfg = yaml.safe_load(f) or {}
 
     # Hard requirements for GoogleAdsClient
-    missing = [k for k in ["developer_token", "client_id", "client_secret", "refresh_token"] if not cfg.get(k)]
+    missing = [
+        k
+        for k in ["developer_token", "client_id", "client_secret", "refresh_token"]
+        if not cfg.get(k)
+    ]
     if missing:
         raise ValueError(
             "Your secrets/google-ads.yaml is missing required fields: "
@@ -317,7 +347,14 @@ def _list_accessible_customers(client: Any) -> list[str]:
     return out
 
 
-def _fetch_campaign_daily_rows(client: Any, customer_id: str, start_date: date, end_date: date, run_id: str, ingested_at: str) -> list[dict[str, Any]]:
+def _fetch_campaign_daily_rows(
+    client: Any,
+    customer_id: str,
+    start_date: date,
+    end_date: date,
+    run_id: str,
+    ingested_at: str,
+) -> list[dict[str, Any]]:
     google_ads_service = client.get_service("GoogleAdsService")
 
     query = f"""
@@ -368,7 +405,9 @@ def _fetch_campaign_daily_rows(client: Any, customer_id: str, start_date: date, 
 
 def _run_test(conn, ctx: RunContext) -> int:
     if not ctx.google_ads_yaml:
-        raise ValueError("test mode requires google_ads_yaml (defaults to ./secrets/google-ads.yaml)")
+        raise ValueError(
+            "test mode requires google_ads_yaml (defaults to ./secrets/google-ads.yaml)"
+        )
 
     # 1) Auth + build client
     client = _load_google_ads_client_from_yaml(ctx.google_ads_yaml, ctx.mcc_id)
@@ -383,7 +422,9 @@ def _run_test(conn, ctx: RunContext) -> int:
     customer_id = ctx.customer_id
     if not customer_id:
         if not accessible:
-            raise RuntimeError("No accessible customers returned. Check your OAuth + developer token + account access.")
+            raise RuntimeError(
+                "No accessible customers returned. Check your OAuth + developer token + account access."
+            )
         customer_id = accessible[0]
         print(f"customer_id not set in config, using first accessible: {customer_id}")
 
@@ -394,7 +435,9 @@ def _run_test(conn, ctx: RunContext) -> int:
     start_date = dates[0]
     end_date = dates[-1]
 
-    rows = _fetch_campaign_daily_rows(client, customer_id, start_date, end_date, run_id, ingested_at)
+    rows = _fetch_campaign_daily_rows(
+        client, customer_id, start_date, end_date, run_id, ingested_at
+    )
 
     # 5) Load into same DuckDB raw/snap tables (idempotency is handled in insert_*)
     insert_raw_campaign_daily(conn, rows)
@@ -418,6 +461,7 @@ def _run_test(conn, ctx: RunContext) -> int:
 # ----------------------------
 # Output
 # ----------------------------
+
 
 def _print_summary(
     target_date: date,

@@ -14,11 +14,11 @@ RULE_SPEND_CAPS_PACING = "CONSTITUTION-5-5"
 @dataclass(frozen=True)
 class Insight:
     insight_rank: int
-    entity_type: str          # ACCOUNT | CAMPAIGN
+    entity_type: str  # ACCOUNT | CAMPAIGN
     entity_id: Optional[str]  # campaign_id for CAMPAIGN
     diagnosis_code: str
     confidence: float
-    risk_tier: str            # low | med | high
+    risk_tier: str  # low | med | high
     labels: List[str]
     evidence: Dict[str, Any]
     recommended_action: str
@@ -33,10 +33,12 @@ def _clamp01(x: float) -> float:
     return x
 
 
-def _score_volume(clicks_w7: float, conversions_w30: float, impressions_w7: float) -> float:
-    clicks_score = _clamp01((clicks_w7 - 10.0) / 90.0)   # 10->0, 100->1
-    conv_score = _clamp01(conversions_w30 / 30.0)        # 30 conv -> 1
-    impr_score = _clamp01(impressions_w7 / 2000.0)       # 2k impr -> 1
+def _score_volume(
+    clicks_w7: float, conversions_w30: float, impressions_w7: float
+) -> float:
+    clicks_score = _clamp01((clicks_w7 - 10.0) / 90.0)  # 10->0, 100->1
+    conv_score = _clamp01(conversions_w30 / 30.0)  # 30 conv -> 1
+    impr_score = _clamp01(impressions_w7 / 2000.0)  # 2k impr -> 1
     return 0.65 * clicks_score + 0.25 * conv_score + 0.10 * impr_score
 
 
@@ -93,7 +95,9 @@ def run_diagnostics_for_features_row(
 
     # VOLATILE
     if cost_cv14 is not None and float(cost_cv14) > 0.60:
-        conf = _cap_low_data(0.30 + 0.30 * volume + 0.40 * (1.0 - stability), low_data_flag)
+        conf = _cap_low_data(
+            0.30 + 0.30 * volume + 0.40 * (1.0 - stability), low_data_flag
+        )
         insights.append(
             Insight(
                 insight_rank=0,
@@ -130,8 +134,13 @@ def run_diagnostics_for_features_row(
                     diagnosis_code="COST_SPIKE",
                     confidence=conf,
                     risk_tier="med",
-                    labels=sorted(set(labels + (["NEEDS_REVIEW"] if conf < 0.45 else []))),
-                    evidence={"cost_micros_w1_vs_prev_pct": cost_w1_pct, "threshold": 0.50},
+                    labels=sorted(
+                        set(labels + (["NEEDS_REVIEW"] if conf < 0.45 else []))
+                    ),
+                    evidence={
+                        "cost_micros_w1_vs_prev_pct": cost_w1_pct,
+                        "threshold": 0.50,
+                    },
                     recommended_action="Confirm the driver: budget cap, bidding changes, demand spike, or tracking anomalies.",
                     guardrail_rule_ids=sorted(set(guardrails)),
                 )
@@ -146,8 +155,13 @@ def run_diagnostics_for_features_row(
                     diagnosis_code="COST_DROP",
                     confidence=conf,
                     risk_tier="med",
-                    labels=sorted(set(labels + (["NEEDS_REVIEW"] if conf < 0.45 else []))),
-                    evidence={"cost_micros_w1_vs_prev_pct": cost_w1_pct, "threshold": -0.50},
+                    labels=sorted(
+                        set(labels + (["NEEDS_REVIEW"] if conf < 0.45 else []))
+                    ),
+                    evidence={
+                        "cost_micros_w1_vs_prev_pct": cost_w1_pct,
+                        "threshold": -0.50,
+                    },
                     recommended_action="Check budget, eligibility, disapprovals, and demand changes; verify tracking.",
                     guardrail_rule_ids=sorted(set(guardrails)),
                 )
@@ -201,7 +215,9 @@ def run_diagnostics_for_features_row(
     return insights
 
 
-def run_account_level_diagnostics(any_row: Dict[str, Any], needs_config: bool) -> List[Insight]:
+def run_account_level_diagnostics(
+    any_row: Dict[str, Any], needs_config: bool
+) -> List[Insight]:
     insights: List[Insight] = []
     labels: List[str] = []
     guardrails: List[str] = []
@@ -222,7 +238,9 @@ def run_account_level_diagnostics(any_row: Dict[str, Any], needs_config: bool) -
                 risk_tier="high",
                 labels=sorted(set(labels + ["NEEDS_REVIEW"])),
                 evidence={
-                    "acct_projected_month_cost_micros": any_row.get("acct_projected_month_cost_micros"),
+                    "acct_projected_month_cost_micros": any_row.get(
+                        "acct_projected_month_cost_micros"
+                    ),
                     "acct_monthly_cap_micros": any_row.get("acct_monthly_cap_micros"),
                     "acct_pacing_vs_cap_pct": any_row.get("acct_pacing_vs_cap_pct"),
                     "threshold": 0.05,

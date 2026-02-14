@@ -6,6 +6,7 @@ Rules:
   ACCT-002: Portfolio rebalance suggestion (shift budget from worst to best)
   ACCT-003: Account-wide low data warning
 """
+
 from __future__ import annotations
 
 from typing import List, Optional
@@ -22,7 +23,7 @@ def acct_001_pacing_alert(ctx: RuleContext) -> Optional[Recommendation]:
              (i.e. approaching cap but not yet breached)
     Action:  Alert — suggest reviewing expansion plans
     Risk:    med
-    
+
     NOTE: If pacing is >105%, BUDGET-005 handles the hard cut. This is the early warning.
     """
     # Check account-level pacing from features
@@ -50,7 +51,7 @@ def acct_001_pacing_alert(ctx: RuleContext) -> Optional[Recommendation]:
         recommended_value=monthly_cap,
         change_pct=pacing_pct,
         rationale=f"Account is pacing {pacing_pct:+.1%} over monthly cap. "
-                  f"Not critical yet, but review planned expansions and pause any non-essential increases.",
+        f"Not critical yet, but review planned expansions and pause any non-essential increases.",
         evidence={
             "acct_pacing_vs_cap_pct": pacing_pct,
             "acct_projected_month_cost_micros": projected,
@@ -75,7 +76,7 @@ def acct_002_portfolio_rebalance(ctx: RuleContext) -> Optional[Recommendation]:
              (best campaign ROAS > 2x worst campaign ROAS)
     Action:  Suggest shifting budget from worst to best
     Risk:    med (cross-campaign, judgment required)
-    
+
     This rule fires ONCE per account (on the worst-performing campaign).
     """
     if ctx.config.primary_kpi != "roas" or ctx.config.target_roas is None:
@@ -126,8 +127,8 @@ def acct_002_portfolio_rebalance(ctx: RuleContext) -> Optional[Recommendation]:
         recommended_value=None,
         change_pct=None,
         rationale=f"ROAS spread: best campaign ({str(best.get('campaign_id'))}) at {best_roas:.2f} vs "
-                  f"worst campaign ({worst_id}) at {worst_roas:.2f} (ratio {best_roas/worst_roas:.1f}x). "
-                  f"Consider shifting budget from worst to best.",
+        f"worst campaign ({worst_id}) at {worst_roas:.2f} (ratio {best_roas/worst_roas:.1f}x). "
+        f"Consider shifting budget from worst to best.",
         evidence={
             "best_campaign_id": str(best.get("campaign_id")),
             "best_roas_w7": best_roas,
@@ -156,7 +157,7 @@ def acct_003_low_data_warning(ctx: RuleContext) -> Optional[Recommendation]:
     Trigger: >50% of campaigns have low_data_flag=True
     Action:  Warning — account needs more data before meaningful optimization
     Risk:    low
-    
+
     Only fires once (on first campaign processed).
     """
     if not ctx.all_features:
@@ -186,7 +187,7 @@ def acct_003_low_data_warning(ctx: RuleContext) -> Optional[Recommendation]:
         recommended_value=None,
         change_pct=None,
         rationale=f"{low_data_count}/{total} campaigns ({low_data_count/total:.0%}) have low data. "
-                  f"Account-wide optimization is limited until more data accumulates.",
+        f"Account-wide optimization is limited until more data accumulates.",
         evidence={
             "total_campaigns": total,
             "low_data_campaigns": low_data_count,

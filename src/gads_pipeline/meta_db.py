@@ -29,10 +29,10 @@ from sqlalchemy.engine import Engine
 
 from .settings import Settings
 
-
 # -----------------------------
 # Engine
 # -----------------------------
+
 
 def meta_engine(settings: Settings) -> Engine:
     """
@@ -48,6 +48,7 @@ def meta_engine(settings: Settings) -> Engine:
 # -----------------------------
 # Helpers
 # -----------------------------
+
 
 def now_utc() -> datetime:
     return datetime.now(timezone.utc)
@@ -69,6 +70,7 @@ def _to_json_str(value: Any) -> Optional[str]:
 # -----------------------------
 # Schema
 # -----------------------------
+
 
 def init_metadata_schema(engine: Engine) -> None:
     """
@@ -129,6 +131,7 @@ def init_metadata_schema(engine: Engine) -> None:
 # Run logging
 # -----------------------------
 
+
 def insert_run_start(
     engine: Engine,
     run_id: str,
@@ -145,8 +148,7 @@ def insert_run_start(
     """
     with engine.begin() as cxn:
         cxn.execute(
-            text(
-                """
+            text("""
                 INSERT INTO pipeline_runs
                     (run_id, created_at, status, mode, client_name, customer_id, target_date, config_hash)
                 VALUES
@@ -158,8 +160,7 @@ def insert_run_start(
                     customer_id = EXCLUDED.customer_id,
                     target_date = EXCLUDED.target_date,
                     config_hash = EXCLUDED.config_hash
-                """
-            ),
+                """),
             {
                 "run_id": run_id,
                 "created_at": now_utc(),
@@ -173,7 +174,9 @@ def insert_run_start(
         )
 
 
-def finish_run(engine: Engine, run_id: str, status: str, summary: Optional[dict]) -> None:
+def finish_run(
+    engine: Engine, run_id: str, status: str, summary: Optional[dict]
+) -> None:
     """
     Mark run as finished + store summary JSONB (safe casting).
     """
@@ -181,8 +184,7 @@ def finish_run(engine: Engine, run_id: str, status: str, summary: Optional[dict]
 
     with engine.begin() as cxn:
         cxn.execute(
-            text(
-                """
+            text("""
                 UPDATE pipeline_runs
                 SET finished_at = :finished_at,
                     status = :status,
@@ -192,8 +194,7 @@ def finish_run(engine: Engine, run_id: str, status: str, summary: Optional[dict]
                             ELSE CAST(:summary_json AS jsonb)
                         END
                 WHERE run_id = :run_id
-                """
-            ),
+                """),
             {
                 "run_id": run_id,
                 "finished_at": now_utc(),
@@ -207,7 +208,14 @@ def finish_run(engine: Engine, run_id: str, status: str, summary: Optional[dict]
 # Errors + validations
 # -----------------------------
 
-def log_error(engine: Engine, run_id: str, severity: str, message: str, details: Optional[dict] = None) -> None:
+
+def log_error(
+    engine: Engine,
+    run_id: str,
+    severity: str,
+    message: str,
+    details: Optional[dict] = None,
+) -> None:
     """
     Log an error row with JSONB details (safe casting).
     """
@@ -215,8 +223,7 @@ def log_error(engine: Engine, run_id: str, severity: str, message: str, details:
 
     with engine.begin() as cxn:
         cxn.execute(
-            text(
-                """
+            text("""
                 INSERT INTO pipeline_errors (run_id, created_at, severity, message, details_json)
                 VALUES (
                     :run_id,
@@ -228,8 +235,7 @@ def log_error(engine: Engine, run_id: str, severity: str, message: str, details:
                         ELSE CAST(:details_json AS jsonb)
                     END
                 )
-                """
-            ),
+                """),
             {
                 "run_id": run_id,
                 "created_at": now_utc(),
@@ -240,7 +246,9 @@ def log_error(engine: Engine, run_id: str, severity: str, message: str, details:
         )
 
 
-def log_validation(engine: Engine, run_id: str, name: str, passed: bool, details: Optional[dict] = None) -> None:
+def log_validation(
+    engine: Engine, run_id: str, name: str, passed: bool, details: Optional[dict] = None
+) -> None:
     """
     Log a validation row with JSONB details (safe casting).
     """
@@ -248,8 +256,7 @@ def log_validation(engine: Engine, run_id: str, name: str, passed: bool, details
 
     with engine.begin() as cxn:
         cxn.execute(
-            text(
-                """
+            text("""
                 INSERT INTO validation_results (run_id, created_at, name, passed, details_json)
                 VALUES (
                     :run_id,
@@ -261,8 +268,7 @@ def log_validation(engine: Engine, run_id: str, name: str, passed: bool, details
                         ELSE CAST(:details_json AS jsonb)
                     END
                 )
-                """
-            ),
+                """),
             {
                 "run_id": run_id,
                 "created_at": now_utc(),

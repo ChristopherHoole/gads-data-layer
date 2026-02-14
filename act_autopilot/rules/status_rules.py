@@ -6,6 +6,7 @@ Rules:
   STATUS-002: CTR crisis — recommend review (significant creative decline)
   STATUS-003: Healthy campaign — no action needed
 """
+
 from __future__ import annotations
 
 from typing import Optional
@@ -21,7 +22,7 @@ def status_001_flag_underperformer(ctx: RuleContext) -> Optional[Recommendation]
     Trigger: ROAS (30d) < target * 0.50 AND conversions_w30 >= 15 AND cost is significant
     Action:  Flag for human review — potential pause candidate
     Risk:    high (pausing campaigns is always high risk)
-    
+
     This does NOT auto-pause. It flags for human review per Constitution.
     """
     if ctx.config.primary_kpi != "roas" or ctx.config.target_roas is None:
@@ -57,8 +58,8 @@ def status_001_flag_underperformer(ctx: RuleContext) -> Optional[Recommendation]
         recommended_value=target,
         change_pct=None,
         rationale=f"Campaign '{campaign_name}' ROAS (30d) is {roas_w30:.2f} — "
-                  f"{((1-(roas_w30/target))*100):.0f}% below target {target:.2f}. "
-                  f"Spent {cost_w30/1e6:.2f} (30d). Consider pausing or restructuring.",
+        f"{((1-(roas_w30/target))*100):.0f}% below target {target:.2f}. "
+        f"Spent {cost_w30/1e6:.2f} (30d). Consider pausing or restructuring.",
         evidence={
             "roas_w30": roas_w30,
             "target_roas": target,
@@ -110,7 +111,7 @@ def status_002_ctr_crisis(ctx: RuleContext) -> Optional[Recommendation]:
         recommended_value=None,
         change_pct=None,
         rationale=f"CTR dropped {ctr_drop_pct:.0%} AND absolute CTR is {ctr_w7:.2%} (<1%). "
-                  f"Review ad copy relevance, keyword-to-ad alignment, and landing page.",
+        f"Review ad copy relevance, keyword-to-ad alignment, and landing page.",
         evidence={
             "ctr_w7": ctr_w7,
             "ctr_drop_pct": ctr_drop_pct,
@@ -142,9 +143,18 @@ def status_003_healthy(ctx: RuleContext) -> Optional[Recommendation]:
     campaign_id = str(ctx.features.get("campaign_id"))
 
     # Check no real diagnosis codes (only NEEDS_REVIEW fillers)
-    real_codes = {"COST_SPIKE", "COST_DROP", "CTR_DROP", "CVR_DROP", "VOLATILE", "LOW_DATA", "PACE_OVER_CAP"}
+    real_codes = {
+        "COST_SPIKE",
+        "COST_DROP",
+        "CTR_DROP",
+        "CVR_DROP",
+        "VOLATILE",
+        "LOW_DATA",
+        "PACE_OVER_CAP",
+    }
     has_real = any(
-        ins.get("diagnosis_code") in real_codes and str(ins.get("entity_id")) == campaign_id
+        ins.get("diagnosis_code") in real_codes
+        and str(ins.get("entity_id")) == campaign_id
         for ins in ctx.insights
     )
     if has_real:
@@ -174,7 +184,7 @@ def status_003_healthy(ctx: RuleContext) -> Optional[Recommendation]:
         recommended_value=target,
         change_pct=None,
         rationale=f"Campaign is healthy: ROAS {roas_w7:.2f} within ±15% of target {target:.2f}, "
-                  f"no diagnosis codes, sufficient data. No intervention needed.",
+        f"no diagnosis codes, sufficient data. No intervention needed.",
         evidence={
             "roas_w7": roas_w7,
             "target_roas": target,
@@ -198,7 +208,10 @@ def status_003_healthy(ctx: RuleContext) -> Optional[Recommendation]:
 def _find_insight(ctx: RuleContext, diagnosis_code: str) -> Optional[dict]:
     campaign_id = str(ctx.features.get("campaign_id"))
     for ins in ctx.insights:
-        if ins.get("diagnosis_code") == diagnosis_code and str(ins.get("entity_id")) == campaign_id:
+        if (
+            ins.get("diagnosis_code") == diagnosis_code
+            and str(ins.get("entity_id")) == campaign_id
+        ):
             return ins
     return None
 

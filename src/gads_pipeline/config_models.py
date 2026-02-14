@@ -1,6 +1,7 @@
 ﻿from pydantic import BaseModel, Field, ValidationError, field_validator
 from typing import List, Optional, Dict, Any
 
+
 class GoogleAdsConfig(BaseModel):
     mcc_id: Optional[str] = None
     customer_id: str
@@ -13,24 +14,30 @@ class GoogleAdsConfig(BaseModel):
             raise ValueError("google_ads.customer_id must contain digits")
         return v2
 
+
 class Targets(BaseModel):
     target_roas: Optional[float] = None
     target_cpa: Optional[float] = None
+
 
 class ConversionSources(BaseModel):
     include: List[str] = Field(default_factory=list)
     exclude: List[str] = Field(default_factory=list)
 
+
 class SpendCaps(BaseModel):
     daily: Optional[float] = None
     monthly: Optional[float] = None
+
 
 class ProtectedEntities(BaseModel):
     brand_is_protected: bool = False
     entities: List[Dict[str, Any]] = Field(default_factory=list)
 
+
 class Exclusions(BaseModel):
     campaign_types_ignore: List[str] = Field(default_factory=list)
+
 
 class ClientConfig(BaseModel):
     client_name: str
@@ -50,6 +57,7 @@ class ClientConfig(BaseModel):
     spend_caps: SpendCaps = SpendCaps()
     protected_entities: ProtectedEntities = ProtectedEntities()
     exclusions: Exclusions = Exclusions()
+
 
 def parse_client_config(data: dict) -> ClientConfig:
     # Raises ValidationError if invalid (used for config-gating)

@@ -7,7 +7,6 @@ from typing import Any, Dict, Iterable, List, Sequence, Tuple, Union, Optional
 
 import duckdb
 
-
 # -----------------------------
 # Column contracts (raw/snap)
 # -----------------------------
@@ -79,14 +78,18 @@ def _normalize_campaign_row(row: Dict[str, Any]) -> Dict[str, Any]:
     return r
 
 
-def _rows_to_tuples(rows: Sequence[Dict[str, Any]], cols: Sequence[str]) -> List[Tuple[Any, ...]]:
+def _rows_to_tuples(
+    rows: Sequence[Dict[str, Any]], cols: Sequence[str]
+) -> List[Tuple[Any, ...]]:
     out: List[Tuple[Any, ...]] = []
     for row in rows:
         out.append(tuple(row.get(c) for c in cols))
     return out
 
 
-def _unique_keys(rows: Sequence[Dict[str, Any]], key_cols: Sequence[str]) -> List[Tuple[Any, ...]]:
+def _unique_keys(
+    rows: Sequence[Dict[str, Any]], key_cols: Sequence[str]
+) -> List[Tuple[Any, ...]]:
     seen = set()
     keys: List[Tuple[Any, ...]] = []
     for r in rows:
@@ -124,8 +127,7 @@ def connect_warehouse(settings_or_path: Any) -> duckdb.DuckDBPyConnection:
 
 def init_warehouse(conn: duckdb.DuckDBPyConnection) -> None:
     # Base tables
-    conn.execute(
-        """
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS raw_campaign_daily (
             run_id VARCHAR,
             ingested_at TIMESTAMP,
@@ -143,11 +145,9 @@ def init_warehouse(conn: duckdb.DuckDBPyConnection) -> None:
             all_conversions DOUBLE,
             all_conversions_value DOUBLE
         );
-        """
-    )
+        """)
 
-    conn.execute(
-        """
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS snap_campaign_daily (
             run_id VARCHAR,
             ingested_at TIMESTAMP,
@@ -165,34 +165,28 @@ def init_warehouse(conn: duckdb.DuckDBPyConnection) -> None:
             all_conversions DOUBLE,
             all_conversions_value DOUBLE
         );
-        """
-    )
+        """)
 
-    conn.execute(
-        """
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS snap_campaign_config (
             ingested_at TIMESTAMP,
             customer_id VARCHAR,
             config_path VARCHAR,
             config_yaml VARCHAR
         );
-        """
-    )
+        """)
 
     # Latest view (overall latest snapshot_date)
-    conn.execute(
-        """
+    conn.execute("""
         CREATE OR REPLACE VIEW vw_campaign_daily_latest AS
         SELECT *
         FROM snap_campaign_daily
         WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM snap_campaign_daily);
-        """
-    )
+        """)
 
     # Analytics layer (safe to create/replace)
     conn.execute("CREATE SCHEMA IF NOT EXISTS analytics;")
-    conn.execute(
-        """
+    conn.execute("""
         CREATE OR REPLACE VIEW analytics.campaign_daily AS
         SELECT
             run_id,
@@ -216,8 +210,7 @@ def init_warehouse(conn: duckdb.DuckDBPyConnection) -> None:
             CASE WHEN impressions > 0 THEN (cost_micros / 1000.0) / impressions ELSE NULL END AS cpm,
             CASE WHEN cost_micros > 0 THEN conversions * 1.0 / (cost_micros / 1000000.0) ELSE NULL END AS roas
         FROM snap_campaign_daily;
-        """
-    )
+        """)
 
 
 # -----------------------------
@@ -257,14 +250,18 @@ def _insert_rows(
     conn.executemany(sql, tuples)
 
 
-def insert_raw_campaign_daily(conn: duckdb.DuckDBPyConnection, rows: Sequence[Dict[str, Any]]) -> None:
+def insert_raw_campaign_daily(
+    conn: duckdb.DuckDBPyConnection, rows: Sequence[Dict[str, Any]]
+) -> None:
     norm = [_normalize_campaign_row(r) for r in rows]
     keys = _unique_keys(norm, CAMPAIGN_DAILY_KEY_COLS)
     _delete_by_keys(conn, "raw_campaign_daily", CAMPAIGN_DAILY_KEY_COLS, keys)
     _insert_rows(conn, "raw_campaign_daily", RAW_CAMPAIGN_DAILY_COLS, norm)
 
 
-def insert_snap_campaign_daily(conn: duckdb.DuckDBPyConnection, rows: Sequence[Dict[str, Any]]) -> None:
+def insert_snap_campaign_daily(
+    conn: duckdb.DuckDBPyConnection, rows: Sequence[Dict[str, Any]]
+) -> None:
     norm = [_normalize_campaign_row(r) for r in rows]
     keys = _unique_keys(norm, CAMPAIGN_DAILY_KEY_COLS)
     _delete_by_keys(conn, "snap_campaign_daily", CAMPAIGN_DAILY_KEY_COLS, keys)

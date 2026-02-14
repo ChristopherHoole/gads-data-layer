@@ -3,6 +3,7 @@ from pathlib import Path
 from pydantic import ValidationError
 from .config_models import ClientConfig, parse_client_config
 
+
 def load_client_config(path: str) -> ClientConfig:
     p = Path(path)
     if not p.exists():
