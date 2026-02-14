@@ -1,14 +1,42 @@
 """
-Dashboard Routes
-All URL endpoints for the web interface.
+Dashboard Routes - Multi-Client Support
+All URL endpoints with dynamic client switching.
 """
 
-from flask import render_template, request, redirect, url_for, session, jsonify, flash
+from flask import render_template, request, redirect, url_for, session, jsonify, flash, current_app
 from act_dashboard.auth import login_required, check_credentials
+from act_dashboard.config import DashboardConfig
 import duckdb
 import json
 from pathlib import Path
 from datetime import datetime, date, timedelta
+
+
+def get_current_config():
+    """
+    Get the current client config based on session.
+    
+    Returns:
+        DashboardConfig instance for current client
+    """
+    # Get config path from session or use default
+    config_path = session.get('current_client_config')
+    
+    if not config_path:
+        # Use default client
+        config_path = current_app.config.get('DEFAULT_CLIENT')
+        if config_path:
+            session['current_client_config'] = config_path
+    
+    if not config_path:
+        raise ValueError("No client configuration available")
+    
+    return DashboardConfig(config_path)
+
+
+def get_available_clients():
+    """Get list of available clients for switcher."""
+    return current_app.config.get('AVAILABLE_CLIENTS', [])
 
 
 def init_routes(app):
@@ -46,11 +74,29 @@ def init_routes(app):
         return redirect(url_for('login'))
     
     
+    @app.route('/switch-client/<int:client_index>')
+    @login_required
+    def switch_client(client_index):
+        """Switch to a different client."""
+        clients = get_available_clients()
+        
+        if 0 <= client_index < len(clients):
+            _, config_path = clients[client_index]
+            session['current_client_config'] = config_path
+            flash(f'Switched to {clients[client_index][0]}', 'success')
+        else:
+            flash('Invalid client selection', 'error')
+        
+        return redirect(url_for('dashboard'))
+    
+    
     @app.route('/')
     @login_required
     def dashboard():
         """Dashboard home page with overview stats."""
-        config = app.config['DASHBOARD_CONFIG']
+        config = get_current_config()
+        clients = get_available_clients()
+        current_client_path = session.get('current_client_config')
         
         # Connect to database
         conn = duckdb.connect(config.db_path, read_only=True)
@@ -116,6 +162,8 @@ def init_routes(app):
         # Prepare data for template
         return render_template('dashboard.html',
             client_name=config.client_name,
+            available_clients=clients,
+            current_client_config=current_client_path,
             campaign_count=summary[0] or 0,
             total_spend=summary[1] or 0,
             total_conversions=summary[2] or 0,
@@ -131,7 +179,9 @@ def init_routes(app):
     @login_required
     def recommendations(date_str=None):
         """Recommendations page for viewing and approving suggestions."""
-        config = app.config['DASHBOARD_CONFIG']
+        config = get_current_config()
+        clients = get_available_clients()
+        current_client_path = session.get('current_client_config')
         
         # Use today's date if not specified
         if date_str is None:
@@ -143,6 +193,8 @@ def init_routes(app):
         if not suggestions_path.exists():
             return render_template('recommendations.html',
                 client_name=config.client_name,
+                available_clients=clients,
+                current_client_config=current_client_path,
                 date=date_str,
                 recommendations=None,
                 error=f"No suggestions found for {date_str}"
@@ -191,6 +243,8 @@ def init_routes(app):
         
         return render_template('recommendations.html',
             client_name=config.client_name,
+            available_clients=clients,
+            current_client_config=current_client_path,
             date=date_str,
             summary=suggestions_data.get('summary', {}),
             low_risk=low_risk,
@@ -203,6 +257,7 @@ def init_routes(app):
     @login_required
     def approve_recommendation():
         """API endpoint to approve a recommendation."""
+        config = get_current_config()
         data = request.json
         date_str = data.get('date')
         rule_id = data.get('rule_id')
@@ -210,7 +265,6 @@ def init_routes(app):
         campaign_name = data.get('campaign_name', 'N/A')
         action_type = data.get('action_type')
         
-        config = app.config['DASHBOARD_CONFIG']
         approvals_path = config.get_approvals_path(date_str)
         
         # Load or create approvals file
@@ -263,6 +317,7 @@ def init_routes(app):
     @login_required
     def reject_recommendation():
         """API endpoint to reject a recommendation."""
+        config = get_current_config()
         data = request.json
         date_str = data.get('date')
         rule_id = data.get('rule_id')
@@ -270,7 +325,6 @@ def init_routes(app):
         campaign_name = data.get('campaign_name', 'N/A')
         action_type = data.get('action_type')
         
-        config = app.config['DASHBOARD_CONFIG']
         approvals_path = config.get_approvals_path(date_str)
         
         # Load or create approvals file
@@ -323,7 +377,9 @@ def init_routes(app):
     @login_required
     def changes():
         """Change history page showing all executed changes."""
-        config = app.config['DASHBOARD_CONFIG']
+        config = get_current_config()
+        clients = get_available_clients()
+        current_client_path = session.get('current_client_config')
         
         # Get filter parameters
         search = request.args.get('search', '')
@@ -374,6 +430,8 @@ def init_routes(app):
         
         return render_template('changes.html',
             client_name=config.client_name,
+            available_clients=clients,
+            current_client_config=current_client_path,
             changes=changes_data,
             search=search,
             status_filter=status_filter,
@@ -385,7 +443,9 @@ def init_routes(app):
     @login_required
     def settings():
         """Settings page for editing client configuration."""
-        config = app.config['DASHBOARD_CONFIG']
+        config = get_current_config()
+        clients = get_available_clients()
+        current_client_path = session.get('current_client_config')
         
         if request.method == 'POST':
             # Update configuration from form
@@ -420,5 +480,7 @@ def init_routes(app):
         
         return render_template('settings.html',
             client_name=config.client_name,
+            available_clients=clients,
+            current_client_config=current_client_path,
             config=config
         )

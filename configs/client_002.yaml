@@ -1,0 +1,21 @@
+client_name: "Client_002_Test"
+client_type: "lead_gen"
+primary_kpi: "cpa"
+
+google_ads:
+  customer_id: "8888888888"
+  login_customer_id: "1111111111"
+
+targets:
+  target_cpa: 25.00
+
+spend_caps:
+  daily: 500.0
+  monthly: 15000.0
+
+automation_mode: "suggest"
+risk_tolerance: "balanced"
+
+protected_entities:
+  brand_is_protected: true
+  entities: []

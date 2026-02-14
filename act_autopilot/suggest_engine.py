@@ -55,25 +55,22 @@ class SuggestEngine:
         config = engine.load_autopilot_config(config_path)
         customer_id = config.customer_id
         
-        print(f"Generating suggestions for {config.client_id} ({customer_id}) on {snapshot_date}")
+        print(f"Generating suggestions for {config.client_name} ({customer_id}) on {snapshot_date}")
         
         # Load Lighthouse insights
         insights = self.load_lighthouse_insights(customer_id, snapshot_date)
         
-        # Build lighthouse report dict (format expected by engine)
-        lighthouse_report = {
-            "insights": insights
-        }
-        
         # Load campaign features
         conn = duckdb.connect(str(self.db_path))
-        features = engine.load_feature_rows(
-            con=conn,
-            client_id=config.client_id,
-            customer_id=customer_id,
-            snapshot_date=snapshot_date
-        )
+        features_df = conn.execute("""
+            SELECT *
+            FROM analytics.campaign_features_daily
+            WHERE customer_id = ?
+              AND snapshot_date = ?
+        """, [customer_id, snapshot_date]).fetchdf()
         conn.close()
+        
+        features = features_df.to_dict('records') if not features_df.empty else []
         
         print(f"  Loaded {len(insights)} insights, {len(features)} campaign features")
         
@@ -84,10 +81,9 @@ class SuggestEngine:
         # Run rules
         recommendations = engine.run_rules(
             config=config,
-            lighthouse_report=lighthouse_report,
-            feature_rows=features,
+            insights=insights,
+            features=features,
             snapshot_date=snapshot_date,
-            recent_changes=[],
             db_path=str(self.db_path)
         )
         
@@ -114,7 +110,7 @@ class SuggestEngine:
             "customer_id": customer_id,
             "snapshot_date": str(snapshot_date),
             "generated_at": datetime.now().isoformat(),
-            "client_name": config.client_id,
+            "client_name": config.client_name,
             "automation_mode": config.automation_mode,
             "summary": {
                 "total_recommendations": 0,
@@ -175,7 +171,7 @@ class SuggestEngine:
             "customer_id": customer_id,
             "snapshot_date": str(snapshot_date),
             "generated_at": datetime.now().isoformat(),
-            "client_name": config.client_id,
+            "client_name": config.client_name,
             "automation_mode": config.automation_mode,
             "summary": {
                 "total_recommendations": total,

@@ -1,44 +1,77 @@
 """
-Ads Control Tower Dashboard - Main Application
-Flask web interface for viewing and approving Google Ads optimization recommendations.
+Ads Control Tower Dashboard - Multi-Client Application
+Flask web interface supporting multiple Google Ads clients.
 """
 
 from flask import Flask, session
 from datetime import timedelta
 import os
 import sys
+from pathlib import Path
+import glob
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from act_dashboard.config import DashboardConfig
 from act_dashboard.routes import init_routes
 from act_dashboard.auth import init_auth
 
 
-def create_app(config_path: str = "configs/client_synthetic.yaml"):
+def discover_clients():
     """
-    Create and configure Flask application.
+    Discover all client config files.
     
-    Args:
-        config_path: Path to client config YAML file
+    Returns:
+        List of (client_name, config_path) tuples
+    """
+    config_files = glob.glob("configs/client_*.yaml")
+    clients = []
+    
+    for config_path in sorted(config_files):
+        # Extract client name from filename
+        # configs/client_synthetic.yaml -> Synthetic_Test_Client
+        filename = Path(config_path).stem  # client_synthetic
+        
+        # Load config to get actual client_name
+        import yaml
+        try:
+            with open(config_path, 'r') as f:
+                config = yaml.safe_load(f)
+                client_name = config.get('client_name', filename)
+                clients.append((client_name, config_path))
+        except Exception as e:
+            print(f"Warning: Could not load {config_path}: {e}")
+    
+    return clients
+
+
+def create_app():
+    """
+    Create and configure Flask application (multi-client).
     
     Returns:
         Flask app instance
     """
     app = Flask(__name__)
     
-    # Load dashboard configuration
-    dashboard_config = DashboardConfig(config_path)
-    app.config.from_object(dashboard_config)
-    
-    # Store config path for routes to access
-    app.config['CONFIG_PATH'] = config_path
-    app.config['DASHBOARD_CONFIG'] = dashboard_config
-    
     # Session configuration
     app.secret_key = os.environ.get('DASHBOARD_SECRET_KEY', 'dev-secret-key-change-in-production')
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
+    
+    # Discover available clients
+    clients = discover_clients()
+    app.config['AVAILABLE_CLIENTS'] = clients
+    
+    # Set default client (first one) if available
+    if clients:
+        app.config['DEFAULT_CLIENT'] = clients[0][1]  # config_path
+    else:
+        print("WARNING: No client configs found in configs/client_*.yaml")
+        app.config['DEFAULT_CLIENT'] = None
+    
+    # Flask settings
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
     
     # Initialize authentication
     init_auth(app)
@@ -51,20 +84,18 @@ def create_app(config_path: str = "configs/client_synthetic.yaml"):
 
 def main():
     """Run the dashboard server."""
-    # Get config path from command line or use default
-    config_path = sys.argv[1] if len(sys.argv) > 1 else "configs/client_synthetic.yaml"
-    
     # Create app
-    app = create_app(config_path)
+    app = create_app()
     
-    # Get client name for display
-    client_name = app.config['DASHBOARD_CONFIG'].client_name
+    # Display startup info
+    clients = app.config['AVAILABLE_CLIENTS']
     
     print("=" * 80)
-    print("ADS CONTROL TOWER - Dashboard Starting")
+    print("ADS CONTROL TOWER - Multi-Client Dashboard Starting")
     print("=" * 80)
-    print(f"Client: {client_name}")
-    print(f"Config: {config_path}")
+    print(f"Available Clients: {len(clients)}")
+    for client_name, config_path in clients:
+        print(f"  • {client_name} ({config_path})")
     print()
     print("Dashboard running at: http://localhost:5000")
     print()

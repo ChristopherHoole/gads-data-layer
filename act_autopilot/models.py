@@ -1,85 +1,114 @@
 """
-Autopilot data models – Recommendation, RuleResult, AutopilotConfig.
+Data models for Autopilot module.
 """
-from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import List, Optional, Dict, Any
+from datetime import date
 
 
-@dataclass(frozen=True)
+def _safe_float(value: Any, default: float = 0.0) -> float:
+    """
+    Safely convert value to float.
+    
+    Args:
+        value: Value to convert (can be None, int, float, str)
+        default: Default value to return if conversion fails (default: 0.0)
+    
+    Returns:
+        Float value or default if conversion fails
+    """
+    if value is None:
+        return default
+    
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return default
+
+
+@dataclass
 class AutopilotConfig:
-    """Extended config for Autopilot (adds fields beyond Lighthouse ClientConfig)."""
-    client_id: str
+    """Configuration for Autopilot execution."""
     customer_id: str
-    client_type: str                    # ecom | lead_gen | mixed
-    primary_kpi: str                    # roas | cpa | qualified_leads
-    automation_mode: str                # insights | suggest | auto_low_risk | auto_expanded
-    risk_tolerance: str                 # conservative | balanced | aggressive
+    automation_mode: str  # 'insights', 'suggest', 'auto_low_risk', 'auto_expanded'
+    risk_tolerance: str  # 'conservative', 'balanced', 'aggressive'
+    daily_spend_cap: float
+    monthly_spend_cap: float
+    brand_is_protected: bool
+    protected_entities: List[str]
+    
+    # Additional fields used by engine and reporting
+    client_name: str = 'UNKNOWN'
+    client_type: str = 'ecom'
+    primary_kpi: str = 'roas'
     target_roas: Optional[float] = None
     target_cpa: Optional[float] = None
-    daily_cap: Optional[float] = None   # in currency units (not micros)
-    monthly_cap: Optional[float] = None # in currency units (not micros)
-    protected_campaign_ids: List[str] = field(default_factory=list)
-    brand_is_protected: bool = True
-    currency: str = "USD"
-    timezone: str = "UTC"
-    raw: Dict[str, Any] = field(default_factory=dict)
+    max_changes_per_day: int = 10
 
 
-@dataclass(frozen=True)
+@dataclass
 class Recommendation:
-    """A single rule-generated recommendation."""
-    # Required fields (no defaults) - MUST come first
+    """
+    A single optimization recommendation.
+    
+    Fields with defaults MUST come after fields without defaults.
+    """
+    # Required fields (no defaults)
     rule_id: str
     rule_name: str
-    entity_type: str                    # CAMPAIGN | ACCOUNT
-    entity_id: Optional[str]            # campaign_id or None for ACCOUNT
-    action_type: str                    # budget_increase | budget_decrease | bid_target_increase | bid_target_decrease | pause | enable | pacing_cut | review
-    risk_tier: str                      # low | med | high
-    confidence: float                   # 0-1 (inherited from triggering insight)
-    current_value: Optional[float]      # current budget/bid/etc (micros or ratio)
-    recommended_value: Optional[float]  # new budget/bid/etc
-    change_pct: Optional[float]         # e.g. 0.10 = +10%
-    rationale: str                      # human-readable explanation
-    evidence: Dict[str, Any]            # supporting data
-    constitution_refs: List[str]        # CONSTITUTION-X-Y rule IDs
-    guardrails_checked: List[str]       # which guardrails were verified
-    triggering_diagnosis: str           # Lighthouse diagnosis_code that triggered this
-    triggering_confidence: float        # Lighthouse confidence score
+    entity_type: str
+    entity_id: str
+    action_type: str
+    risk_tier: str
     
-    # Optional fields (with defaults) - MUST come last
+    # Optional fields (with defaults)
+    confidence: float = 0.0
+    current_value: Optional[float] = None
+    recommended_value: Optional[float] = None
+    change_pct: Optional[float] = None
+    rationale: str = ""
     campaign_name: Optional[str] = None
+    blocked: bool = False
+    block_reason: Optional[str] = None
+    priority: int = 50
+    constitution_refs: List[str] = field(default_factory=list)
+    guardrails_checked: List[str] = field(default_factory=list)
+    evidence: Optional[Dict[str, Any]] = None
+    triggering_diagnosis: Optional[str] = None
+    triggering_confidence: float = 0.0
     expected_impact: str = ""
-    blocked: bool = False               # True if guardrail blocked execution
-    block_reason: Optional[str] = None  # why it was blocked
-    priority: int = 50                  # lower = higher priority (0-100)
+
+
+@dataclass
+class GuardrailCheck:
+    """Result of guardrail validation."""
+    valid: bool
+    blocked_reasons: List[str] = field(default_factory=list)
 
 
 @dataclass
 class RuleContext:
-    """Everything a rule needs to make a decision."""
+    """
+    Context passed to each rule function.
+    
+    Contains all information needed to make a recommendation decision.
+    """
+    # Campaign identification
     customer_id: str
-    snapshot_date: Any  # date, but avoiding import
+    campaign_id: str
+    
+    # Data snapshots
+    snapshot_date: date
+    features: Dict[str, Any]  # Campaign features from Lighthouse
+    insights: List[Dict[str, Any]]  # Lighthouse insights for this campaign
+    
+    # Configuration
     config: AutopilotConfig
-    # Lighthouse insights for this campaign (list, may be empty)
-    insights: List[Dict[str, Any]]
-    # Feature row from campaign_features_daily (full row dict)
-    features: Dict[str, Any]
-    # All insights for the account (for account-level rules)
-    all_insights: List[Dict[str, Any]]
-    # All feature rows for all campaigns (for cross-campaign rules)
-    all_features: List[Dict[str, Any]]
-    # Change log (for cooldown checks) - list of recent changes
-    recent_changes: List[Dict[str, Any]] = field(default_factory=list)
-    # Database path for change log queries
+    
+    # All campaigns data (for account-level rules)
+    all_features: List[Dict[str, Any]] = field(default_factory=list)
+    all_insights: List[Dict[str, Any]] = field(default_factory=list)
+    
+    # Database access
     db_path: str = "warehouse.duckdb"
-
-
-def _safe_float(x: Any, default: float = 0.0) -> float:
-    if x is None:
-        return default
-    try:
-        return float(x)
-    except (TypeError, ValueError):
-        return default

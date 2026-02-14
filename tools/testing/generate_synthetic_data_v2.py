@@ -1,10 +1,13 @@
 """
 Synthetic data generator v2 - 20 campaigns, 365 days
 Generates realistic Google Ads campaign data for testing
+
+FIXED: Bug #4 - Volatile campaigns now generate actual variance
 """
 
 import random
 import math
+import numpy as np  # ADDED FOR VOLATILE VARIANCE
 from datetime import date, timedelta
 from pathlib import Path
 import duckdb
@@ -37,8 +40,8 @@ CAMPAIGNS = [
     {"id": "3011", "name": "Seasonal High Amplitude", "scenario": "seasonal", "amplitude": 0.5},
     {"id": "3012", "name": "Seasonal Low Amplitude", "scenario": "seasonal", "amplitude": 0.25},
     
-    # 3 Volatile (high day-to-day variance)
-    {"id": "3013", "name": "Volatile High", "scenario": "volatile", "volatility": 0.4},
+    # 3 Volatile (high day-to-day variance) - FIXED
+    {"id": "3013", "name": "Volatile High", "scenario": "volatile", "volatility": 0.40},
     {"id": "3014", "name": "Volatile Medium", "scenario": "volatile", "volatility": 0.25},
     {"id": "3015", "name": "Volatile Low", "scenario": "volatile", "volatility": 0.15},
     
@@ -132,16 +135,35 @@ def generate_seasonal(campaign, day_index, base_metrics):
 
 
 def generate_volatile(campaign, day_index, base_metrics):
-    """High day-to-day variance"""
+    """
+    High day-to-day variance using normal distribution.
+    
+    FIXED: Now generates actual variance with coefficient of variation.
+    Uses numpy.random.normal() to create realistic day-to-day fluctuations.
+    
+    volatility parameter = target coefficient of variation (stddev/mean)
+    - 0.40 = 40% CV (high variance)
+    - 0.25 = 25% CV (medium variance)
+    - 0.15 = 15% CV (low variance)
+    """
     volatility = campaign.get("volatility", 0.3)
-    noise = random.uniform(1 - volatility, 1 + volatility)
     
-    impressions = int(base_metrics["impressions"] * noise)
-    clicks = int(base_metrics["clicks"] * noise)
-    cost = base_metrics["cost"] * noise
+    # Generate random multiplier using normal distribution
+    # Mean=1.0, StdDev=volatility
+    # This creates actual coefficient of variation = volatility
+    cost_multiplier = np.random.normal(1.0, volatility)
+    cost_multiplier = max(0.3, cost_multiplier)  # Floor to prevent negative/zero
     
-    conversions = clicks * base_metrics["cvr"] * random.uniform(0.7, 1.3)
-    conv_value = cost * base_metrics["roas"] * random.uniform(0.7, 1.3)
+    impressions = int(base_metrics["impressions"] * cost_multiplier)
+    clicks = int(base_metrics["clicks"] * cost_multiplier)
+    cost = base_metrics["cost"] * cost_multiplier
+    
+    # Conversions and value also vary (less than cost)
+    conv_multiplier = np.random.normal(1.0, volatility * 0.7)
+    conv_multiplier = max(0.5, conv_multiplier)
+    
+    conversions = clicks * base_metrics["cvr"] * conv_multiplier
+    conv_value = cost * base_metrics["roas"] * conv_multiplier
     
     return impressions, clicks, cost, conversions, conv_value
 
@@ -310,8 +332,8 @@ def write_to_duckdb(rows):
         
         for row in batch:
             conn.execute(insert_sql, [
-                'synthetic-v2',  # run_id
-                '2026-02-12 10:00:00',  # ingested_at
+                'synthetic-v2-FIXED',  # run_id (marked as FIXED)
+                '2026-02-14 11:00:00',  # ingested_at
                 row["customer_id"],
                 row["snapshot_date"],
                 row["campaign_id"],
@@ -337,19 +359,25 @@ def write_to_duckdb(rows):
     return row_count
 
 def main():
-    print("Generating synthetic data v2...")
+    print("Generating synthetic data v2 (FIXED - Bug #4)...")
     print(f"  Campaigns: {len(CAMPAIGNS)}")
     print(f"  Date range: {START_DATE} to {END_DATE} ({DAYS} days)")
-    print(f"  Expected rows: {len(CAMPAIGNS) * DAYS}\n")
+    print(f"  Expected rows: {len(CAMPAIGNS) * DAYS}")
+    print(f"  FIX: Volatile campaigns now generate actual variance\n")
     
     rows = generate_all_data()
-    print(f"âœ… Generated {len(rows)} rows\n")
+    print(f"✅ Generated {len(rows)} rows\n")
     
     print("Writing to warehouse.duckdb...")
     row_count = write_to_duckdb(rows)
-    print(f"âœ… Wrote {row_count} rows to analytics.campaign_daily\n")
+    print(f"✅ Wrote {row_count} rows to analytics.campaign_daily\n")
     
     print("DONE. Run refresh_readonly.ps1 to update browsing DB.")
+    print("\nTo verify volatile variance, run:")
+    print("  SELECT campaign_id, STDDEV(cost_micros)/AVG(cost_micros) as cv")
+    print("  FROM snap_campaign_daily")
+    print("  WHERE campaign_id IN ('3013','3014','3015')")
+    print("  GROUP BY campaign_id;")
 
 
 if __name__ == "__main__":

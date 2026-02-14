@@ -1,26 +1,30 @@
-# Simple GitHub Commit Script
-# Commits all changes and pushes to GitHub
+# Interactive GitHub Commit Script
+# Prompts for commit message, then commits and pushes
 
-Write-Host "Committing to GitHub..." -ForegroundColor Cyan
+Write-Host ""
+Write-Host "=== Git Commit & Push ===" -ForegroundColor Cyan
+Write-Host ""
+
+# Prompt for commit message
+$message = Read-Host "Enter commit message"
+
+if ([string]::IsNullOrWhiteSpace($message)) {
+    Write-Host "Error: Commit message cannot be empty" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host ""
+Write-Host "Committing to GitHub..." -ForegroundColor Yellow
 
 # Add all files
 git add .
 
-# Commit with message
-git commit -m "feat: Chat 7 complete - Web dashboard MVP
+# Commit
+git commit -m $message
 
-- Flask web interface for non-technical users
-- Login page (admin/admin123)
-- Dashboard home (stats, charts, recent activity)
-- Recommendations page (approve/reject with color-coded risk)
-- Change History page (filter/search)
-- Settings page (edit client config via form)
-- Responsive design (desktop/tablet/mobile)
-- Real-time data from DuckDB
-- 11 files total (5 Python, 6 HTML templates, 1 launch script)"
-
-# Push to GitHub
+# Push
 git push
 
 Write-Host ""
 Write-Host "Done! Changes pushed to GitHub." -ForegroundColor Green
+Write-Host ""
