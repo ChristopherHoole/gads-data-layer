@@ -1,31 +1,25 @@
-client_name: "Synthetic_Test_Client"
-customer_id: "9999999999"
-client_type: "ecom"
-primary_kpi: "roas"
-
+client_name: Synthetic_Test_Client
+customer_id: '9999999999'
+client_type: ecom
+primary_kpi: roas
 google_ads:
-  mcc_id: "2077923976"
-  customer_id: "9999999999"
-
+  mcc_id: '2077923976'
+  customer_id: '9999999999'
 targets:
-  target_roas: 3.0
-
+  target_roas: 3.5
 conversion_sources:
-  include: ["purchase"]
+  include:
+  - purchase
   exclude: []
-
-currency: "USD"
-timezone: "UTC"
-automation_mode: "insights"
-risk_tolerance: "conservative"
-
+currency: USD
+timezone: UTC
+automation_mode: insights
+risk_tolerance: conservative
 spend_caps:
-  daily: 500
-  monthly: 15000
-
+  daily: 500.0
+  monthly: 15000.0
 protected_entities:
   brand_is_protected: true
   entities: []
-
 exclusions:
   campaign_types_ignore: []

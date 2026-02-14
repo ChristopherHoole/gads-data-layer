@@ -1,0 +1,16 @@
+{
+  "customer_id": "9999999999",
+  "snapshot_date": "2026-02-13",
+  "generated_at": "2026-02-13T23:37:09.441600",
+  "client_name": "Synthetic_Test_Client",
+  "automation_mode": "insights",
+  "summary": {
+    "total_recommendations": 0,
+    "low_risk": 0,
+    "medium_risk": 0,
+    "high_risk": 0,
+    "blocked": 0,
+    "executable": 0
+  },
+  "recommendations": []
+}

@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Change History - Ads Control Tower{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Page header -->
+    <div>
+        <h1 class="text-3xl font-bold text-gray-900">Change History</h1>
+        <p class="mt-1 text-sm text-gray-500">All executed budget and bid changes</p>
+    </div>
+    
+    <!-- Filters -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <form method="GET" action="/changes" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label for="search" class="block text-sm font-medium text-gray-700">Search Campaign ID</label>
+                <input type="text" name="search" id="search" value="{{ search }}"
+                       placeholder="Enter campaign ID"
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+                <select name="status" id="status"
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                    <option value="monitoring" {% if status_filter == 'monitoring' %}selected{% endif %}>Monitoring</option>
+                    <option value="rolled_back" {% if status_filter == 'rolled_back' %}selected{% endif %}>Rolled Back</option>
+                    <option value="confirmed_good" {% if status_filter == 'confirmed_good' %}selected{% endif %}>Confirmed Good</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="lever" class="block text-sm font-medium text-gray-700">Type</label>
+                <select name="lever" id="lever"
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    <option value="all" {% if lever_filter == 'all' %}selected{% endif %}>All</option>
+                    <option value="budget" {% if lever_filter == 'budget' %}selected{% endif %}>Budget</option>
+                    <option value="bid" {% if lever_filter == 'bid' %}selected{% endif %}>Bid</option>
+                </select>
+            </div>
+            
+            <div class="flex items-end">
+                <button type="submit"
+                        class="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Apply Filters
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Changes table -->
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        {% if changes %}
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Campaign</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rule</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for change in changes %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ change[1] }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ change[2] }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if change[3] == 'budget' %}bg-blue-100 text-blue-800{% else %}bg-purple-100 text-purple-800{% endif %}">
+                            {{ change[3]|upper }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div class="flex items-center space-x-2">
+                            <span>${{ "%.2f"|format(change[4]) }}</span>
+                            <span class="text-gray-400">→</span>
+                            <span>${{ "%.2f"|format(change[5]) }}</span>
+                            <span class="font-medium {% if change[6] > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                                {{ "{:+.1f}".format(change[6] * 100) }}%
+                            </span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ change[7] }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if change[9] == 'rolled_back' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                Rolled Back
+                            </span>
+                        {% elif change[9] == 'confirmed_good' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Confirmed Good
+                            </span>
+                        {% elif change[9] == 'monitoring' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                Monitoring
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                Active
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-6 text-center text-gray-500">
+            No changes found matching your filters
+        </div>
+        {% endif %}
+    </div>
+    
+    {% if changes and changes|length == 100 %}
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+        <p class="text-sm text-yellow-700">
+            Showing first 100 results. Use filters to narrow down results.
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Ads Control Tower{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Page header -->
+    <div>
+        <h1 class="text-3xl font-bold text-gray-900">Settings</h1>
+        <p class="mt-1 text-sm text-gray-500">Configure optimization parameters and automation mode</p>
+    </div>
+    
+    <!-- Settings form -->
+    <form method="POST" action="/settings" class="space-y-6">
+        <!-- Basic Information -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div>
+                    <label for="client_name" class="block text-sm font-medium text-gray-700">Client Name</label>
+                    <input type="text" name="client_name" id="client_name" value="{{ config.client_name }}" required
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label for="client_type" class="block text-sm font-medium text-gray-700">Client Type</label>
+                    <select name="client_type" id="client_type" required
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="ecom" {% if config.client_type == 'ecom' %}selected{% endif %}>Ecommerce</option>
+                        <option value="lead_gen" {% if config.client_type == 'lead_gen' %}selected{% endif %}>Lead Generation</option>
+                        <option value="mixed" {% if config.client_type == 'mixed' %}selected{% endif %}>Mixed</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- KPIs & Targets -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">KPIs & Targets</h2>
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div>
+                    <label for="primary_kpi" class="block text-sm font-medium text-gray-700">Primary KPI</label>
+                    <select name="primary_kpi" id="primary_kpi" required
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="roas" {% if config.primary_kpi == 'roas' %}selected{% endif %}>ROAS</option>
+                        <option value="cpa" {% if config.primary_kpi == 'cpa' %}selected{% endif %}>CPA</option>
+                        <option value="conversions" {% if config.primary_kpi == 'conversions' %}selected{% endif %}>Conversions</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="target_roas" class="block text-sm font-medium text-gray-700">Target ROAS</label>
+                    <input type="number" name="target_roas" id="target_roas" value="{{ config.target_roas }}" step="0.1"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="e.g., 3.0">
+                    <p class="mt-1 text-xs text-gray-500">Leave blank if not applicable</p>
+                </div>
+                
+                <div>
+                    <label for="target_cpa" class="block text-sm font-medium text-gray-700">Target CPA ($)</label>
+                    <input type="number" name="target_cpa" id="target_cpa" value="{{ config.target_cpa }}" step="0.01"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="e.g., 25.00">
+                    <p class="mt-1 text-xs text-gray-500">Leave blank if not applicable</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Automation Settings -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Automation Settings</h2>
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div>
+                    <label for="automation_mode" class="block text-sm font-medium text-gray-700">Automation Mode</label>
+                    <select name="automation_mode" id="automation_mode" required
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="insights" {% if config.automation_mode == 'insights' %}selected{% endif %}>Insights Only</option>
+                        <option value="suggest" {% if config.automation_mode == 'suggest' %}selected{% endif %}>Suggest (Manual Approval)</option>
+                        <option value="auto_low_risk" {% if config.automation_mode == 'auto_low_risk' %}selected{% endif %}>Auto Low Risk</option>
+                        <option value="auto_expanded" {% if config.automation_mode == 'auto_expanded' %}selected{% endif %}>Auto Expanded</option>
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500">
+                        Insights = Analysis only | Suggest = Recommend but don't execute | Auto = Execute approved changes
+                    </p>
+                </div>
+                
+                <div>
+                    <label for="risk_tolerance" class="block text-sm font-medium text-gray-700">Risk Tolerance</label>
+                    <select name="risk_tolerance" id="risk_tolerance" required
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="conservative" {% if config.risk_tolerance == 'conservative' %}selected{% endif %}>Conservative (±5%)</option>
+                        <option value="balanced" {% if config.risk_tolerance == 'balanced' %}selected{% endif %}>Balanced (±10%)</option>
+                        <option value="aggressive" {% if config.risk_tolerance == 'aggressive' %}selected{% endif %}>Aggressive (±15%)</option>
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500">Maximum budget/bid change per day</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Spend Caps -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Spend Caps</h2>
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div>
+                    <label for="daily_cap" class="block text-sm font-medium text-gray-700">Daily Spend Cap ($)</label>
+                    <input type="number" name="daily_cap" id="daily_cap" value="{{ config.daily_cap }}" step="0.01" required
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label for="monthly_cap" class="block text-sm font-medium text-gray-700">Monthly Spend Cap ($)</label>
+                    <input type="number" name="monthly_cap" id="monthly_cap" value="{{ config.monthly_cap }}" step="0.01" required
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Protected Entities -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Protected Entities</h2>
+            <div class="space-y-4">
+                <div class="flex items-center">
+                    <input type="checkbox" name="brand_protected" id="brand_protected" 
+                           {% if config.brand_protected %}checked{% endif %}
+                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                    <label for="brand_protected" class="ml-2 block text-sm text-gray-900">
+                        Protect brand campaigns (prevents automatic changes to brand campaigns)
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Save button -->
+        <div class="flex justify-end">
+            <button type="submit"
+                    class="px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Save Settings
+            </button>
+        </div>
+    </form>
+    
+    <!-- Warning -->
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-yellow-700">
+                    Changes to settings will apply to future optimization runs. Restart the dashboard after saving to reload configuration.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

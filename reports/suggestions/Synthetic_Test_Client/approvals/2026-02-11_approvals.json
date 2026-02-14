@@ -1,10 +1,10 @@
 {
   "snapshot_date": "2026-02-11",
   "client_name": "Synthetic_Test_Client",
-  "reviewed_at": "2026-02-12T23:57:23.675518",
+  "reviewed_at": "2026-02-14T04:59:13.664503Z",
   "total_reviewed": 17,
-  "approved": 6,
-  "rejected": 6,
+  "approved": 7,
+  "rejected": 7,
   "skipped": 5,
   "decisions": [
     {
@@ -25,14 +25,6 @@
     },
     {
       "rule_id": "BUDGET-002",
-      "entity_id": "3009",
-      "campaign_name": "N/A",
-      "action_type": "budget_decrease",
-      "decision": "skipped",
-      "reviewed_at": "2026-02-12T23:57:05.876924"
-    },
-    {
-      "rule_id": "BUDGET-002",
       "entity_id": "3001",
       "campaign_name": "N/A",
       "action_type": "budget_decrease",
@@ -46,14 +38,6 @@
       "action_type": "review",
       "decision": "rejected",
       "reviewed_at": "2026-02-12T23:57:10.147188"
-    },
-    {
-      "rule_id": "STATUS-003",
-      "entity_id": "3015",
-      "campaign_name": "N/A",
-      "action_type": "no_action",
-      "decision": "skipped",
-      "reviewed_at": "2026-02-12T23:57:11.669270"
     },
     {
       "rule_id": "STATUS-003",
@@ -142,6 +126,22 @@
       "action_type": "no_action",
       "decision": "rejected",
       "reviewed_at": "2026-02-12T23:57:23.675006"
+    },
+    {
+      "rule_id": "BUDGET-002",
+      "entity_id": "3009",
+      "campaign_name": "Decline Moderate",
+      "action_type": "budget_decrease",
+      "decision": "approved",
+      "reviewed_at": "2026-02-14T04:59:06.441853Z"
+    },
+    {
+      "rule_id": "STATUS-003",
+      "entity_id": "3015",
+      "campaign_name": "N/A",
+      "action_type": "no_action",
+      "decision": "rejected",
+      "reviewed_at": "2026-02-14T04:59:13.664503Z"
     }
   ]
 }

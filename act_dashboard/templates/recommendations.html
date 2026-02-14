@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}Recommendations - Ads Control Tower{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Page header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Recommendations</h1>
+            <p class="mt-1 text-sm text-gray-500">Review and approve optimization suggestions for {{ date }}</p>
+        </div>
+        <div>
+            <input type="date" id="dateSelector" value="{{ date }}" 
+                   class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                   onchange="window.location.href='/recommendations/' + this.value">
+        </div>
+    </div>
+    
+    {% if error %}
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+            <p class="text-sm text-yellow-700">{{ error }}</p>
+            <p class="text-sm text-yellow-700 mt-2">
+                <a href="/recommendations" class="underline">View today's recommendations</a> or select a different date.
+            </p>
+        </div>
+    {% else %}
+        <!-- Summary -->
+        {% if summary %}
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Summary</h2>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div>
+                    <p class="text-sm text-gray-500">Total</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ summary.total_recommendations }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Low Risk</p>
+                    <p class="text-2xl font-bold text-green-600">{{ summary.low_risk }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Medium Risk</p>
+                    <p class="text-2xl font-bold text-yellow-600">{{ summary.medium_risk }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">High Risk</p>
+                    <p class="text-2xl font-bold text-red-600">{{ summary.high_risk }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Executable</p>
+                    <p class="text-2xl font-bold text-blue-600">{{ summary.executable }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Low Risk Recommendations -->
+        {% if low_risk %}
+        <div class="bg-white shadow rounded-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-900">
+                    <span class="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                    Low Risk ({{ low_risk|length }})
+                </h2>
+            </div>
+            <div class="space-y-4">
+                {% for rec in low_risk %}
+                <div class="border border-gray-200 rounded-lg p-4 {% if rec.approved %}bg-green-50 border-green-300{% elif rec.rejected %}bg-red-50 border-red-300{% endif %}" 
+                     id="rec-{{ rec.rule_id }}-{{ rec.entity_id }}">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-900">{{ rec.rule_name }}</h3>
+                            <p class="text-sm text-gray-600 mt-1">Campaign: {{ rec.campaign_name or rec.entity_id }}</p>
+                            {% if rec.current_value is not none and rec.recommended_value is not none %}
+                            <div class="mt-2 flex items-center space-x-4">
+                                <span class="text-sm text-gray-500">
+                                    Current: <strong>${{ "%.2f"|format(rec.current_value / 1000000) }}</strong>
+                                </span>
+                                <span class="text-gray-400">→</span>
+                                <span class="text-sm text-gray-500">
+                                    Proposed: <strong>${{ "%.2f"|format(rec.recommended_value / 1000000) }}</strong>
+                                </span>
+                                {% if rec.change_pct is not none %}
+                                <span class="text-sm font-medium {% if rec.change_pct > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                                    {{ "{:+.1f}".format(rec.change_pct * 100) }}%
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            <p class="text-sm text-gray-600 mt-2">{{ rec.rationale }}</p>
+                            <p class="text-sm text-blue-600 mt-1">Expected: {{ rec.expected_impact }}</p>
+                        </div>
+                        <div class="ml-4 flex-shrink-0">
+                            {% if rec.approved %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                    ✓ Approved
+                                </span>
+                            {% elif rec.rejected %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                    ✗ Rejected
+                                </span>
+                            {% else %}
+                                <div class="flex space-x-2">
+                                    <button onclick="approveRec('{{ date }}', '{{ rec.rule_id }}', '{{ rec.entity_id }}', '{{ rec.campaign_name or "N/A" }}', '{{ rec.action_type }}')"
+                                            class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                                        Approve
+                                    </button>
+                                    <button onclick="rejectRec('{{ date }}', '{{ rec.rule_id }}', '{{ rec.entity_id }}', '{{ rec.campaign_name or "N/A" }}', '{{ rec.action_type }}')"
+                                            class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                                        Reject
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Medium Risk Recommendations -->
+        {% if medium_risk %}
+        <div class="bg-white shadow rounded-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-900">
+                    <span class="inline-block w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
+                    Medium Risk ({{ medium_risk|length }})
+                </h2>
+            </div>
+            <div class="space-y-4">
+                {% for rec in medium_risk %}
+                <div class="border border-gray-200 rounded-lg p-4 {% if rec.approved %}bg-green-50 border-green-300{% elif rec.rejected %}bg-red-50 border-red-300{% endif %}" 
+                     id="rec-{{ rec.rule_id }}-{{ rec.entity_id }}">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-900">{{ rec.rule_name }}</h3>
+                            <p class="text-sm text-gray-600 mt-1">Campaign: {{ rec.campaign_name or rec.entity_id }}</p>
+                            {% if rec.current_value is not none and rec.recommended_value is not none %}
+                            <div class="mt-2 flex items-center space-x-4">
+                                <span class="text-sm text-gray-500">
+                                    Current: <strong>${{ "%.2f"|format(rec.current_value / 1000000) }}</strong>
+                                </span>
+                                <span class="text-gray-400">→</span>
+                                <span class="text-sm text-gray-500">
+                                    Proposed: <strong>${{ "%.2f"|format(rec.recommended_value / 1000000) }}</strong>
+                                </span>
+                                {% if rec.change_pct is not none %}
+                                <span class="text-sm font-medium {% if rec.change_pct > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                                    {{ "{:+.1f}".format(rec.change_pct * 100) }}%
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            <p class="text-sm text-gray-600 mt-2">{{ rec.rationale }}</p>
+                            <p class="text-sm text-blue-600 mt-1">Expected: {{ rec.expected_impact }}</p>
+                        </div>
+                        <div class="ml-4 flex-shrink-0">
+                            {% if rec.approved %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                    ✓ Approved
+                                </span>
+                            {% elif rec.rejected %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                    ✗ Rejected
+                                </span>
+                            {% else %}
+                                <div class="flex space-x-2">
+                                    <button onclick="approveRec('{{ date }}', '{{ rec.rule_id }}', '{{ rec.entity_id }}', '{{ rec.campaign_name or "N/A" }}', '{{ rec.action_type }}')"
+                                            class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                                        Approve
+                                    </button>
+                                    <button onclick="rejectRec('{{ date }}', '{{ rec.rule_id }}', '{{ rec.entity_id }}', '{{ rec.campaign_name or "N/A" }}', '{{ rec.action_type }}')"
+                                            class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                                        Reject
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- High Risk Recommendations -->
+        {% if high_risk %}
+        <div class="bg-white shadow rounded-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-900">
+                    <span class="inline-block w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                    High Risk ({{ high_risk|length }})
+                </h2>
+            </div>
+            <div class="space-y-4">
+                {% for rec in high_risk %}
+                <div class="border border-gray-200 rounded-lg p-4 {% if rec.approved %}bg-green-50 border-green-300{% elif rec.rejected %}bg-red-50 border-red-300{% endif %}" 
+                     id="rec-{{ rec.rule_id }}-{{ rec.entity_id }}">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-900">{{ rec.rule_name }}</h3>
+                            <p class="text-sm text-gray-600 mt-1">Campaign: {{ rec.campaign_name or rec.entity_id }}</p>
+                            {% if rec.current_value is not none and rec.recommended_value is not none %}
+                            <div class="mt-2 flex items-center space-x-4">
+                                <span class="text-sm text-gray-500">
+                                    Current: <strong>${{ "%.2f"|format(rec.current_value / 1000000) }}</strong>
+                                </span>
+                                <span class="text-gray-400">→</span>
+                                <span class="text-sm text-gray-500">
+                                    Proposed: <strong>${{ "%.2f"|format(rec.recommended_value / 1000000) }}</strong>
+                                </span>
+                                {% if rec.change_pct is not none %}
+                                <span class="text-sm font-medium {% if rec.change_pct > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                                    {{ "{:+.1f}".format(rec.change_pct * 100) }}%
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            <p class="text-sm text-gray-600 mt-2">{{ rec.rationale }}</p>
+                            <p class="text-sm text-blue-600 mt-1">Expected: {{ rec.expected_impact }}</p>
+                        </div>
+                        <div class="ml-4 flex-shrink-0">
+                            {% if rec.approved %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                    ✓ Approved
+                                </span>
+                            {% elif rec.rejected %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                    ✗ Rejected
+                                </span>
+                            {% else %}
+                                <div class="flex space-x-2">
+                                    <button onclick="approveRec('{{ date }}', '{{ rec.rule_id }}', '{{ rec.entity_id }}', '{{ rec.campaign_name or "N/A" }}', '{{ rec.action_type }}')"
+                                            class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                                        Approve
+                                    </button>
+                                    <button onclick="rejectRec('{{ date }}', '{{ rec.rule_id }}', '{{ rec.entity_id }}', '{{ rec.campaign_name or "N/A" }}', '{{ rec.action_type }}')"
+                                            class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                                        Reject
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if not low_risk and not medium_risk and not high_risk %}
+        <div class="bg-white shadow rounded-lg p-6">
+            <p class="text-gray-500 text-center">No recommendations available for this date</p>
+        </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+<script>
+function approveRec(date, ruleId, entityId, campaignName, actionType) {
+    fetch('/api/approve', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            date: date,
+            rule_id: ruleId,
+            entity_id: entityId,
+            campaign_name: campaignName,
+            action_type: actionType
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function rejectRec(date, ruleId, entityId, campaignName, actionType) {
+    fetch('/api/reject', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            date: date,
+            rule_id: ruleId,
+            entity_id: entityId,
+            campaign_name: campaignName,
+            action_type: actionType
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+</script>
+{% endblock %}

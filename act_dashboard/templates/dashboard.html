@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Ads Control Tower{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Page header -->
+    <div>
+        <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <p class="mt-1 text-sm text-gray-500">Overview of your Google Ads performance (last 7 days)</p>
+    </div>
+    
+    <!-- Stats cards -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <!-- Campaigns -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Active Campaigns</dt>
+                            <dd class="text-3xl font-semibold text-gray-900">{{ campaign_count }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Spend -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Spend</dt>
+                            <dd class="text-3xl font-semibold text-gray-900">${{ "%.2f"|format(total_spend) }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Conversions -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Conversions</dt>
+                            <dd class="text-3xl font-semibold text-gray-900">{{ "%.0f"|format(total_conversions) }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ROAS -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Avg ROAS</dt>
+                            <dd class="text-3xl font-semibold text-gray-900">{{ "%.2f"|format(avg_roas) }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Performance chart -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Performance Trend (Last 30 Days)</h2>
+        <canvas id="performanceChart" height="100"></canvas>
+    </div>
+    
+    <!-- Quick actions + Recent changes -->
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <!-- Quick actions -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+            <div class="space-y-3">
+                <a href="/recommendations" class="block p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-medium text-gray-900">Review Recommendations</h3>
+                            <p class="text-sm text-gray-500">{{ pending_count }} pending approval</p>
+                        </div>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                            {{ pending_count }}
+                        </span>
+                    </div>
+                </a>
+                
+                <a href="/changes" class="block p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-medium text-gray-900">View Change History</h3>
+                            <p class="text-sm text-gray-500">See all executed changes</p>
+                        </div>
+                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Recent changes -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Recent Changes</h2>
+            {% if recent_changes %}
+                <div class="space-y-3">
+                    {% for change in recent_changes %}
+                        <div class="border-l-4 {% if change[7] == 'rolled_back' %}border-red-400{% elif change[7] == 'confirmed_good' %}border-green-400{% else %}border-blue-400{% endif %} pl-3 py-2">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">
+                                        Campaign {{ change[1] }} - {{ change[2]|upper }}
+                                    </p>
+                                    <p class="text-sm text-gray-500">
+                                        {{ "%.2f"|format(change[3]) }} → {{ "%.2f"|format(change[4]) }} 
+                                        ({{ "{:+.0f}".format(change[5] * 100) }}%)
+                                    </p>
+                                </div>
+                                <span class="text-xs text-gray-500">{{ change[0] }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-sm text-gray-500">No changes in the last 7 days</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Performance chart
+const ctx = document.getElementById('performanceChart').getContext('2d');
+
+const dates = {{ trend_data | map(attribute=0) | map('string') | list | tojson }};
+const spend = {{ trend_data | map(attribute=1) | list | tojson }};
+const conversions = {{ trend_data | map(attribute=2) | list | tojson }};
+const roas = {{ trend_data | map(attribute=3) | list | tojson }};
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: dates,
+        datasets: [
+            {
+                label: 'Spend ($)',
+                data: spend,
+                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                yAxisID: 'y'
+            },
+            {
+                label: 'Conversions',
+                data: conversions,
+                borderColor: 'rgb(16, 185, 129)',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                yAxisID: 'y1'
+            },
+            {
+                label: 'ROAS',
+                data: roas,
+                borderColor: 'rgb(245, 158, 11)',
+                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                yAxisID: 'y2'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        scales: {
+            y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: { display: true, text: 'Spend ($)' }
+            },
+            y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                title: { display: true, text: 'Conversions' },
+                grid: { drawOnChartArea: false }
+            },
+            y2: {
+                type: 'linear',
+                display: false
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
