@@ -464,6 +464,561 @@ def init_routes(app):
             lever_filter=lever_filter,
         )
 
+    @app.route("/keywords")
+    @login_required
+    def keywords():
+        """Keyword performance page with search terms and recommendations."""
+        config = get_current_config()
+        clients = get_available_clients()
+        current_client_path = session.get("current_client_config")
+
+        conn = duckdb.connect(config.db_path)
+        ro_path = config.db_path.replace("warehouse.duckdb", "warehouse_readonly.duckdb")
+        try:
+            conn.execute(f"ATTACH '{ro_path}' AS ro (READ_ONLY);")
+        except Exception:
+            pass  # Already attached or not available
+
+        # Determine snapshot date (latest available)
+        snap_row = conn.execute("""
+            SELECT MAX(snapshot_date) FROM analytics.keyword_features_daily
+            WHERE customer_id = ?
+        """, [config.customer_id]).fetchone()
+        snapshot_date = snap_row[0] if snap_row and snap_row[0] else date.today()
+
+        # Target CPA from config
+        target_cpa = float(config.target_cpa) if config.target_cpa else 25.0
+
+        # ── Load keyword features ──
+        kw_rows = conn.execute("""
+            SELECT
+                keyword_id, keyword_text, match_type, status,
+                campaign_id, campaign_name,
+                quality_score, quality_score_creative,
+                quality_score_landing_page, quality_score_relevance,
+                clicks_w7_sum, impressions_w7_sum,
+                cost_micros_w30_sum, conversions_w30_sum,
+                conversion_value_w30_sum,
+                ctr_w7, cvr_w30, cpa_w30, roas_w30,
+                low_data_flag
+            FROM analytics.keyword_features_daily
+            WHERE customer_id = ?
+              AND snapshot_date = ?
+            ORDER BY cost_micros_w30_sum DESC
+        """, [config.customer_id, snapshot_date]).fetchall()
+
+        kw_cols = [d[0] for d in conn.description]
+        keywords_list = []
+        for row in kw_rows:
+            d = dict(zip(kw_cols, row))
+            d["clicks_w7"] = float(d.get("clicks_w7_sum") or 0)
+            d["cost_w30"] = float(d.get("cost_micros_w30_sum") or 0)
+            d["conv_w30"] = float(d.get("conversions_w30_sum") or 0)
+            d["cpa_dollars"] = (float(d["cpa_w30"]) / 1_000_000) if d.get("cpa_w30") and float(d["cpa_w30"]) > 0 else 0
+            d["cost_w30_dollars"] = d["cost_w30"] / 1_000_000
+            keywords_list.append(d)
+
+        # ── Summary stats ──
+        active_count = len(keywords_list)
+        low_qs_count = sum(1 for k in keywords_list if k.get("quality_score") and int(k["quality_score"]) <= 3)
+        low_data_count = sum(1 for k in keywords_list if k.get("low_data_flag"))
+        wasted_spend = sum(
+            k["cost_w30"] / 1_000_000
+            for k in keywords_list
+            if k["conv_w30"] == 0 and k["cost_w30"] > 50_000_000
+        )
+        cpa_kws = [k for k in keywords_list if k["cpa_dollars"] > 0]
+        avg_cpa_dollars = round(sum(k["cpa_dollars"] for k in cpa_kws) / len(cpa_kws), 2) if cpa_kws else 0
+        qs_kws = [k for k in keywords_list if k.get("quality_score")]
+        avg_qs = round(sum(int(k["quality_score"]) for k in qs_kws) / len(qs_kws), 1) if qs_kws else 0
+
+        # ── Campaign list for filter ──
+        campaigns_dict = {}
+        for k in keywords_list:
+            cid = str(k.get("campaign_id", ""))
+            cname = k.get("campaign_name", cid)
+            if cid not in campaigns_dict:
+                campaigns_dict[cid] = cname
+        campaigns = sorted(campaigns_dict.items(), key=lambda x: x[1])
+
+        # ── Load search term aggregates ──
+        from datetime import timedelta as td
+        st_start = snapshot_date - td(days=29)
+
+        st_rows = conn.execute("""
+            SELECT
+                search_term, search_term_status,
+                campaign_id, campaign_name,
+                ad_group_id, keyword_id, keyword_text,
+                match_type,
+                SUM(COALESCE(impressions, 0)) as impressions,
+                SUM(COALESCE(clicks, 0)) as clicks,
+                SUM(COALESCE(cost_micros, 0)) as cost_micros,
+                SUM(COALESCE(conversions, 0)) as conversions,
+                SUM(COALESCE(conversions_value, 0)) as conversion_value,
+                CASE WHEN SUM(clicks) > 0
+                     THEN SUM(conversions)::DOUBLE / SUM(clicks)
+                     ELSE NULL END AS cvr,
+                CASE WHEN SUM(conversions) > 0
+                     THEN SUM(cost_micros)::DOUBLE / SUM(conversions)
+                     ELSE NULL END AS cpa_micros
+            FROM ro.analytics.search_term_daily
+            WHERE customer_id = ?
+              AND snapshot_date BETWEEN ? AND ?
+            GROUP BY search_term, search_term_status, campaign_id, campaign_name,
+                     ad_group_id, keyword_id, keyword_text, match_type
+            ORDER BY cost_micros DESC
+        """, [config.customer_id, st_start, snapshot_date]).fetchall()
+
+        st_cols = [d[0] for d in conn.description]
+        search_terms = []
+        for row in st_rows:
+            d = dict(zip(st_cols, row))
+            d["cost_dollars"] = float(d.get("cost_micros") or 0) / 1_000_000
+            d["cpa_dollars"] = (float(d["cpa_micros"]) / 1_000_000) if d.get("cpa_micros") and float(d["cpa_micros"]) > 0 else 0
+            search_terms.append(d)
+
+        conn.close()
+
+        # ── Load keyword recommendations (run rules live) ──
+        rec_groups = []
+        rec_count = 0
+        try:
+            from act_lighthouse.config import load_client_config
+            from act_lighthouse.keyword_diagnostics import compute_campaign_averages
+            from act_autopilot.models import AutopilotConfig, RuleContext, _safe_float
+            from act_autopilot.rules.keyword_rules import KEYWORD_RULES, SEARCH_TERM_RULES
+
+            lh_cfg = load_client_config(
+                session.get("current_client_config")
+                or current_app.config.get("DEFAULT_CLIENT")
+            )
+            raw = lh_cfg.raw or {}
+            targets = raw.get("targets", {})
+            ap_config = AutopilotConfig(
+                customer_id=lh_cfg.customer_id,
+                automation_mode=raw.get("automation_mode", "suggest"),
+                risk_tolerance=raw.get("risk_tolerance", "conservative"),
+                daily_spend_cap=lh_cfg.spend_caps.daily or 0,
+                monthly_spend_cap=lh_cfg.spend_caps.monthly or 0,
+                brand_is_protected=False,
+                protected_entities=[],
+                client_name=lh_cfg.client_id,
+                client_type=lh_cfg.client_type or "ecom",
+                primary_kpi=lh_cfg.primary_kpi or "roas",
+                target_roas=targets.get("target_roas"),
+                target_cpa=targets.get("target_cpa", 25),
+            )
+
+            # Compute campaign averages for enrichment
+            ro_path = config.db_path.replace("warehouse.duckdb", "warehouse_readonly.duckdb")
+            conn2 = duckdb.connect(config.db_path)
+            try:
+                conn2.execute(f"ATTACH '{ro_path}' AS ro (READ_ONLY);")
+            except Exception:
+                pass
+            avg_ctrs, avg_cvrs = compute_campaign_averages(
+                conn2, config.customer_id, snapshot_date, 7
+            )
+            conn2.close()
+
+            # Enrich keyword features
+            for k in keywords_list:
+                cid = str(k.get("campaign_id", ""))
+                k["_campaign_avg_ctr"] = avg_ctrs.get(cid, 0)
+                k["_campaign_avg_cvr"] = avg_cvrs.get(cid, 0)
+
+            # Run keyword rules
+            kw_recs = []
+            for feat in keywords_list:
+                ctx = RuleContext(
+                    customer_id=config.customer_id,
+                    campaign_id=str(feat.get("campaign_id", "")),
+                    snapshot_date=snapshot_date,
+                    features=feat,
+                    insights=[],
+                    config=ap_config,
+                    db_path=config.db_path,
+                )
+                for rule_fn in KEYWORD_RULES:
+                    try:
+                        rec = rule_fn(ctx)
+                        if rec is not None:
+                            kw_recs.append(rec)
+                    except Exception:
+                        pass
+
+            # Run search term rules
+            for st in search_terms:
+                cid = str(st.get("campaign_id", ""))
+                st["_campaign_avg_cvr"] = avg_cvrs.get(cid, 0)
+                st["_campaign_avg_cpc"] = 0
+                ctx = RuleContext(
+                    customer_id=config.customer_id,
+                    campaign_id=cid,
+                    snapshot_date=snapshot_date,
+                    features=st,
+                    insights=[],
+                    config=ap_config,
+                    db_path=config.db_path,
+                )
+                for rule_fn in SEARCH_TERM_RULES:
+                    try:
+                        rec = rule_fn(ctx)
+                        if rec is not None:
+                            kw_recs.append(rec)
+                    except Exception:
+                        pass
+
+            rec_count = len(kw_recs)
+
+            # Group recommendations
+            groups = {}
+            for rec in sorted(kw_recs, key=lambda r: r.priority):
+                prefix = rec.rule_id.rsplit("-", 1)[0]
+                group_map = {
+                    "KW-PAUSE": "Keyword Pause",
+                    "KW-BID": "Keyword Bid Adjustments",
+                    "KW-REVIEW": "Keyword Review",
+                    "ST-ADD": "Search Term Adds",
+                    "ST-NEG": "Search Term Negatives",
+                }
+                gname = group_map.get(prefix, prefix)
+                if gname not in groups:
+                    groups[gname] = []
+                groups[gname].append(rec)
+
+            group_order = [
+                "Keyword Pause", "Keyword Bid Adjustments",
+                "Search Term Negatives", "Search Term Adds", "Keyword Review",
+            ]
+            for gn in group_order:
+                if gn in groups:
+                    rec_groups.append((gn, groups[gn]))
+            for gn, recs in groups.items():
+                if gn not in group_order:
+                    rec_groups.append((gn, recs))
+
+        except Exception as e:
+            print(f"[Dashboard] Keyword recommendations error: {e}")
+            import traceback
+            traceback.print_exc()
+
+        return render_template(
+            "keywords.html",
+            client_name=config.client_name,
+            available_clients=clients,
+            current_client_config=current_client_path,
+            snapshot_date=str(snapshot_date),
+            target_cpa=target_cpa,
+            keywords=keywords_list,
+            search_terms=search_terms,
+            campaigns=campaigns,
+            active_count=active_count,
+            low_qs_count=low_qs_count,
+            low_data_count=low_data_count,
+            wasted_spend_dollars=wasted_spend,
+            avg_cpa_dollars=avg_cpa_dollars,
+            avg_qs=avg_qs,
+            rec_groups=rec_groups,
+            rec_count=rec_count,
+        )
+
+    @app.route("/ads")
+    @login_required
+    def ads():
+        """Ads page - show ad performance and recommendations."""
+        config = get_current_config()
+        clients = get_available_clients()
+        current_client_path = session.get("current_client_config")
+
+        try:
+            conn = duckdb.connect(config.db_path)
+            try:
+                ro_path = config.db_path.replace("warehouse.duckdb", "warehouse_readonly.duckdb")
+                conn.execute(f"ATTACH '{ro_path}' AS ro (READ_ONLY);")
+            except Exception:
+                pass
+
+            # Get latest snapshot date from ad features
+            latest_date = conn.execute(
+                "SELECT MAX(snapshot_date) FROM analytics.ad_features_daily"
+            ).fetchone()[0]
+
+            if not latest_date:
+                conn.close()
+                return render_template(
+                    "ads.html",
+                    client_name=config.client_name,
+                    available_clients=clients,
+                    current_client_config=current_client_path,
+                    error="No ad data available. Run ad features generation first.",
+                    ads=[],
+                    ad_groups=[],
+                    recommendations=[],
+                    summary={},
+                )
+
+            # Load ad features
+            ad_features_df = conn.execute(
+                "SELECT * FROM analytics.ad_features_daily WHERE snapshot_date = ?",
+                [latest_date],
+            ).fetchdf()
+
+            # Load ad group performance
+            ad_group_perf_df = conn.execute(
+                "SELECT * FROM ro.analytics.ad_group_daily WHERE snapshot_date = ?",
+                [latest_date],
+            ).fetchdf()
+
+            # Convert to dicts
+            ad_features = ad_features_df.to_dict("records")
+            ad_groups = ad_group_perf_df.to_dict("records")
+
+            # Compute summary stats
+            total_ads = len(ad_features)
+            total_ad_groups = len(ad_groups)
+
+            poor_strength_count = sum(
+                1
+                for f in ad_features
+                if f.get("ad_type") == "RESPONSIVE_SEARCH_AD"
+                and f.get("ad_strength") == "POOR"
+            )
+
+            low_data_count = sum(1 for f in ad_features if f.get("low_data_flag"))
+
+            avg_ctr = ad_features_df["ctr_30d"].mean() if len(ad_features) > 0 else 0
+            avg_cvr = ad_features_df["cvr_30d"].mean() if len(ad_features) > 0 else 0
+
+            summary = {
+                "total_ads": total_ads,
+                "total_ad_groups": total_ad_groups,
+                "poor_strength": poor_strength_count,
+                "low_data": low_data_count,
+                "avg_ctr": avg_ctr,
+                "avg_cvr": avg_cvr,
+                "snapshot_date": str(latest_date),
+            }
+
+            # Get unique campaigns for filter
+            campaigns = sorted(set(f["campaign_name"] for f in ad_features))
+
+            # Generate recommendations using ad rules
+            from act_autopilot.rules.ad_rules import apply_ad_rules
+            from act_lighthouse.config import load_client_config
+
+            lh_cfg = load_client_config(current_client_path)
+            raw = lh_cfg.raw or {}
+            from act_autopilot.models import AutopilotConfig
+
+            targets = raw.get("targets", {})
+            ap_config = AutopilotConfig(
+                customer_id=lh_cfg.customer_id,
+                automation_mode=raw.get("automation_mode", "suggest"),
+                risk_tolerance=raw.get("risk_tolerance", "conservative"),
+                daily_spend_cap=lh_cfg.spend_caps.daily or 0,
+                monthly_spend_cap=lh_cfg.spend_caps.monthly or 0,
+                brand_is_protected=False,
+                protected_entities=[],
+                client_name=lh_cfg.client_id,
+                client_type=lh_cfg.client_type or "ecom",
+                primary_kpi=lh_cfg.primary_kpi or "roas",
+                target_roas=targets.get("target_roas"),
+                target_cpa=targets.get("target_cpa", 25),
+            )
+
+            recommendations_list = apply_ad_rules(ad_features, ap_config)
+
+            # Convert to dicts
+            recommendations = [
+                {
+                    "rule_id": r.rule_id,
+                    "rule_name": r.rule_name,
+                    "entity_type": r.entity_type,
+                    "entity_id": r.entity_id,
+                    "action_type": r.action_type,
+                    "risk_tier": r.risk_tier,
+                    "confidence": r.confidence,
+                    "priority": r.priority,
+                    "rationale": r.rationale,
+                    "campaign_name": r.campaign_name,
+                    "ad_group_name": r.ad_group_name,
+                    "current_value": r.current_value,
+                    "recommended_value": r.recommended_value,
+                }
+                for r in recommendations_list
+            ]
+
+            # Group recommendations by category
+            pause_recs = [r for r in recommendations if r["action_type"] == "pause_ad"]
+            review_recs = [r for r in recommendations if r["action_type"] == "review_ad"]
+            asset_recs = [
+                r for r in recommendations if r["action_type"] == "asset_insight"
+            ]
+            adgroup_recs = [
+                r for r in recommendations if r["action_type"] == "review_ad_group"
+            ]
+
+            conn.close()
+
+            return render_template(
+                "ads.html",
+                client_name=config.client_name,
+                available_clients=clients,
+                current_client_config=current_client_path,
+                ads=ad_features,
+                ad_groups=ad_groups,
+                recommendations=recommendations,
+                pause_recs=pause_recs,
+                review_recs=review_recs,
+                asset_recs=asset_recs,
+                adgroup_recs=adgroup_recs,
+                summary=summary,
+                campaigns=campaigns,
+                error=None,
+            )
+
+        except Exception as e:
+            print(f"[Dashboard] ERROR in /ads route: {e}")
+            import traceback
+
+            traceback.print_exc()
+            return render_template(
+                "ads.html",
+                client_name=config.client_name,
+                available_clients=clients,
+                current_client_config=current_client_path,
+                error=str(e),
+                ads=[],
+                ad_groups=[],
+                recommendations=[],
+                summary={},
+            )
+
+
+
+    @app.route("/shopping")
+    @login_required
+    def shopping():
+        """Shopping products page - insights and recommendations."""
+        try:
+            cfg = get_current_config()
+            conn = duckdb.connect(cfg.db_path, read_only=True)
+            
+            # Get latest snapshot date
+            snapshot_date = conn.execute("""
+                SELECT MAX(snapshot_date) 
+                FROM analytics.product_features_daily
+                WHERE customer_id = ?
+            """, (cfg.customer_id,)).fetchone()[0]
+            
+            if not snapshot_date:
+                return render_template(
+                    "shopping.html",
+                    client_name=cfg.client_name,
+                    available_clients=get_available_clients(),
+                    current_client_config=session.get("current_client_config"),
+                    error="No Shopping data available. Run Shopping Lighthouse first.",
+                )
+            
+            # Get product features
+            products = conn.execute("""
+                SELECT 
+                    product_id,
+                    product_title,
+                    product_brand,
+                    product_category,
+                    availability,
+                    impressions_w30_sum,
+                    clicks_w30_sum,
+                    cost_micros_w30_sum,
+                    conversions_w30_sum,
+                    conversions_value_w30_sum,
+                    ctr_w30,
+                    cvr_w30,
+                    roas_w30,
+                    stock_out_flag,
+                    stock_out_days_w30,
+                    feed_quality_score,
+                    has_price_mismatch,
+                    has_disapproval,
+                    new_product_flag,
+                    days_live,
+                    low_data_flag
+                FROM analytics.product_features_daily
+                WHERE snapshot_date = ?
+                    AND customer_id = ?
+                ORDER BY cost_micros_w30_sum DESC
+                LIMIT 200
+            """, (snapshot_date, cfg.customer_id)).fetchall()
+            
+            # Format products for template
+            products_list = []
+            for p in products:
+                products_list.append({
+                    "product_id": p[0],
+                    "product_title": p[1],
+                    "product_brand": p[2],
+                    "product_category": p[3],
+                    "availability": p[4],
+                    "impressions": int(p[5] or 0),
+                    "clicks": int(p[6] or 0),
+                    "cost": float(p[7] or 0) / 1_000_000,
+                    "conversions": float(p[8] or 0),
+                    "conv_value": float(p[9] or 0) / 1_000_000,
+                    "ctr": float(p[10] or 0) * 100,
+                    "cvr": float(p[11] or 0) * 100,
+                    "roas": float(p[12] or 0),
+                    "stock_out_flag": bool(p[13]),
+                    "stock_out_days": int(p[14] or 0),
+                    "feed_quality": float(p[15] or 0) * 100,
+                    "price_mismatch": bool(p[16]),
+                    "disapproved": bool(p[17]),
+                    "is_new": bool(p[18]),
+                    "days_live": int(p[19] or 0),
+                    "low_data": bool(p[20]),
+                })
+            
+            # Summary stats
+            total_products = len(products_list)
+            total_cost = sum(p["cost"] for p in products_list)
+            total_conversions = sum(p["conversions"] for p in products_list)
+            total_conv_value = sum(p["conv_value"] for p in products_list)
+            avg_roas = total_conv_value / total_cost if total_cost > 0 else 0
+            
+            out_of_stock = sum(1 for p in products_list if p["stock_out_flag"])
+            price_mismatches = sum(1 for p in products_list if p["price_mismatch"])
+            disapproved = sum(1 for p in products_list if p["disapproved"])
+            
+            conn.close()
+            
+            return render_template(
+                "shopping.html",
+                client_name=cfg.client_name,
+                available_clients=get_available_clients(),
+                current_client_config=session.get("current_client_config"),
+                snapshot_date=snapshot_date,
+                products=products_list,
+                total_products=total_products,
+                total_cost=total_cost,
+                total_conversions=total_conversions,
+                total_conv_value=total_conv_value,
+                avg_roas=avg_roas,
+                out_of_stock=out_of_stock,
+                price_mismatches=price_mismatches,
+                disapproved=disapproved,
+            )
+            
+        except Exception as e:
+            return render_template(
+                "shopping.html",
+                client_name="Error",
+                available_clients=get_available_clients(),
+                current_client_config=session.get("current_client_config"),
+                error=str(e),
+            )
+
     @app.route("/settings", methods=["GET", "POST"])
     @login_required
     def settings():
