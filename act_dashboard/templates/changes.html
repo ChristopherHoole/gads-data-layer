@@ -10,9 +10,37 @@
         <p class="mt-1 text-sm text-gray-500">All executed budget and bid changes</p>
     </div>
     
-    <!-- Filters -->
+    <!-- Quick Filter Buttons (Client-side) -->
+    <div class="bg-white shadow rounded-lg p-4">
+        <div class="flex items-center space-x-4">
+            <span class="text-sm font-medium text-gray-700">Quick Filter:</span>
+            <div class="flex space-x-2">
+                <button onclick="filterByStatus('all')" id="filter-all"
+                        class="filter-btn px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white">
+                    All Changes
+                </button>
+                <button onclick="filterByStatus('success')" id="filter-success"
+                        class="filter-btn px-4 py-2 text-sm font-medium rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    Success Only
+                </button>
+                <button onclick="filterByStatus('failed')" id="filter-failed"
+                        class="filter-btn px-4 py-2 text-sm font-medium rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    Failed Only
+                </button>
+            </div>
+            <span class="text-sm text-gray-500" id="visible-count"></span>
+        </div>
+    </div>
+    
+    <!-- Advanced Filters (Server-side) -->
     <div class="bg-white shadow rounded-lg p-6">
-        <form method="GET" action="/changes" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-medium text-gray-700">Advanced Filters</h3>
+            <button onclick="toggleAdvancedFilters()" class="text-sm text-blue-600 hover:text-blue-800">
+                <span id="toggle-text">Show</span>
+            </button>
+        </div>
+        <form method="GET" action="/changes" id="advanced-filters" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label for="search" class="block text-sm font-medium text-gray-700">Search Campaign ID</label>
                 <input type="text" name="search" id="search" value="{{ search }}"
@@ -62,12 +90,14 @@
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rule</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Execution Status</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monitor Status</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 {% for change in changes %}
-                <tr class="hover:bg-gray-50">
+                <tr class="change-row hover:bg-gray-50" 
+                    data-status="{% if change[9] == 'rolled_back' %}failed{% else %}success{% endif %}">
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {{ change[1] }}
                     </td>
@@ -91,6 +121,17 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {{ change[7] }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if change[9] == 'rolled_back' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                ✗ Failed
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                ✓ Success
+                            </span>
+                        {% endif %}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         {% if change[9] == 'rolled_back' %}
@@ -130,4 +171,62 @@
     </div>
     {% endif %}
 </div>
+
+<script>
+// Toggle advanced filters
+function toggleAdvancedFilters() {
+    const filters = document.getElementById('advanced-filters');
+    const toggleText = document.getElementById('toggle-text');
+    
+    if (filters.classList.contains('hidden')) {
+        filters.classList.remove('hidden');
+        toggleText.textContent = 'Hide';
+    } else {
+        filters.classList.add('hidden');
+        toggleText.textContent = 'Show';
+    }
+}
+
+// Filter table by execution status
+function filterByStatus(status) {
+    const rows = document.querySelectorAll('.change-row');
+    const buttons = document.querySelectorAll('.filter-btn');
+    let visibleCount = 0;
+    
+    // Update button styles
+    buttons.forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.add('bg-gray-200', 'text-gray-700');
+    });
+    
+    const activeBtn = document.getElementById(`filter-${status}`);
+    activeBtn.classList.remove('bg-gray-200', 'text-gray-700');
+    activeBtn.classList.add('bg-blue-600', 'text-white');
+    
+    // Filter rows
+    rows.forEach(row => {
+        const rowStatus = row.dataset.status;
+        
+        if (status === 'all') {
+            row.style.display = '';
+            visibleCount++;
+        } else if (status === rowStatus) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Update count
+    const totalCount = rows.length;
+    document.getElementById('visible-count').textContent = 
+        `Showing ${visibleCount} of ${totalCount} changes`;
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    filterByStatus('all');
+});
+</script>
 {% endblock %}

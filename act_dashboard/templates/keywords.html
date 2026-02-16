@@ -3,6 +3,49 @@
 {% block title %}Keywords - Ads Control Tower{% endblock %}
 
 {% block content %}
+<style>
+/* Smooth transitions for all buttons */
+button {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Spinner animation */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+/* Enhanced hover effects */
+button:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+button:not(:disabled):active {
+    transform: translateY(0);
+}
+
+/* Mobile responsive button stacking */
+@media (max-width: 640px) {
+    .flex.space-x-2 {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+}
+</style>
+
 <!-- Page header -->
 <div class="mb-6">
     <h2 class="text-2xl font-bold text-gray-900">Keyword Performance</h2>
@@ -418,9 +461,9 @@ function executeKeywordRecommendation(recId, dryRun) {
     liveBtn.disabled = true;
     
     if (dryRun) {
-        dryBtn.textContent = 'Running...';
+        dryBtn.innerHTML = '<span class="spinner"></span>Running...';
     } else {
-        liveBtn.textContent = 'Executing...';
+        liveBtn.innerHTML = '<span class="spinner"></span>Executing...';
     }
     
     // Clear any previous error
@@ -512,9 +555,9 @@ function executeKeywordBatch(dryRun) {
     liveBtn.disabled = true;
     
     if (dryRun) {
-        dryBtn.textContent = 'Running...';
+        dryBtn.innerHTML = '<span class="spinner"></span>Running...';
     } else {
-        liveBtn.textContent = 'Executing...';
+        liveBtn.innerHTML = '<span class="spinner"></span>Executing...';
     }
     
     // Function to actually execute

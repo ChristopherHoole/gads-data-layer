@@ -3,6 +3,49 @@
 {% block title %}Recommendations - Ads Control Tower{% endblock %}
 
 {% block content %}
+<style>
+/* Smooth transitions for all buttons */
+button {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Spinner animation */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+/* Enhanced hover effects */
+button:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+button:not(:disabled):active {
+    transform: translateY(0);
+}
+
+/* Mobile responsive button stacking */
+@media (max-width: 640px) {
+    .flex.space-x-2 {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+}
+</style>
+
 <div class="space-y-6">
     <!-- Page header -->
     <div class="flex items-center justify-between">
@@ -434,9 +477,9 @@ function executeRecommendation(recId, dryRun) {
     liveBtn.disabled = true;
     
     if (dryRun) {
-        dryBtn.textContent = 'Running...';
+        dryBtn.innerHTML = '<span class="spinner"></span>Running...';
     } else {
-        liveBtn.textContent = 'Executing...';
+        liveBtn.innerHTML = '<span class="spinner"></span>Executing...';
     }
     
     // Clear any previous error
@@ -528,9 +571,9 @@ function executeBatch(riskTier, dryRun) {
     liveBtn.disabled = true;
     
     if (dryRun) {
-        dryBtn.textContent = 'Running...';
+        dryBtn.innerHTML = '<span class="spinner"></span>Running...';
     } else {
-        liveBtn.textContent = 'Executing...';
+        liveBtn.innerHTML = '<span class="spinner"></span>Executing...';
     }
     
     // Function to actually execute
