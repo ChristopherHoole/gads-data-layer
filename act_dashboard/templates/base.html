@@ -62,7 +62,7 @@
                     <div class="relative inline-block text-left">
                         <div>
                             <button type="button" onclick="toggleDropdown()" class="inline-flex justify-center items-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" id="client-menu-button">
-                                <span class="mr-2">🔄</span>
+                                <span class="mr-2">📄</span>
                                 <span>{{ client_name }}</span>
                                 <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -131,6 +131,25 @@
         {% endif %}
     {% endwith %}
     
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+            <h3 class="text-lg font-bold mb-4" id="confirm-modal-title">Confirm Action</h3>
+            <p class="mb-6 text-gray-700" id="confirm-modal-message"></p>
+            <div class="flex gap-2 justify-end">
+                <button id="confirm-modal-cancel" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded font-medium">
+                    Cancel
+                </button>
+                <button id="confirm-modal-confirm" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded font-medium">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Main content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {% block content %}{% endblock %}
@@ -150,6 +169,100 @@
             
             if (button && dropdown && !button.contains(event.target) && !dropdown.contains(event.target)) {
                 dropdown.classList.add('hidden');
+            }
+        });
+        
+        // Toast Notification System
+        function showToast(message, type, duration) {
+            // Default duration: 3s for success, 5s for error
+            if (!duration) {
+                duration = type === 'success' ? 3000 : 5000;
+            }
+            
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `transform transition-all duration-300 ease-in-out ${
+                type === 'success' 
+                    ? 'bg-green-500 text-white' 
+                    : 'bg-red-500 text-white'
+            } px-6 py-3 rounded-lg shadow-lg flex items-center space-x-3 min-w-[300px] max-w-md`;
+            
+            // Icon
+            const icon = type === 'success' 
+                ? '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
+                : '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+            
+            toast.innerHTML = `
+                <div class="flex-shrink-0">${icon}</div>
+                <div class="flex-1">${message}</div>
+            `;
+            
+            // Add to container
+            const container = document.getElementById('toast-container');
+            container.appendChild(toast);
+            
+            // Animate in
+            setTimeout(() => {
+                toast.style.opacity = '1';
+            }, 100);
+            
+            // Auto-dismiss
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(400px)';
+                setTimeout(() => {
+                    container.removeChild(toast);
+                }, 300);
+            }, duration);
+        }
+        
+        // Confirmation Modal System
+        let confirmCallback = null;
+        
+        function showConfirmModal(message, onConfirm, title = 'Confirm Action') {
+            const modal = document.getElementById('confirm-modal');
+            const modalTitle = document.getElementById('confirm-modal-title');
+            const modalMessage = document.getElementById('confirm-modal-message');
+            
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            confirmCallback = onConfirm;
+            
+            modal.classList.remove('hidden');
+        }
+        
+        function hideConfirmModal() {
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.add('hidden');
+            confirmCallback = null;
+        }
+        
+        // Modal event listeners
+        document.getElementById('confirm-modal-cancel').addEventListener('click', function() {
+            hideConfirmModal();
+        });
+        
+        document.getElementById('confirm-modal-confirm').addEventListener('click', function() {
+            if (confirmCallback) {
+                confirmCallback();
+            }
+            hideConfirmModal();
+        });
+        
+        // Close modal on backdrop click
+        document.getElementById('confirm-modal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                hideConfirmModal();
+            }
+        });
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modal = document.getElementById('confirm-modal');
+                if (!modal.classList.contains('hidden')) {
+                    hideConfirmModal();
+                }
             }
         });
     </script>

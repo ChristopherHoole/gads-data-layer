@@ -299,6 +299,27 @@
                     <p class="text-blue-700">No recommendations available. Run Shopping Autopilot rules to generate recommendations.</p>
                 </div>
                 {% else %}
+                
+                <!-- Batch Selection Header -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <span class="text-sm font-medium text-gray-700">Batch Actions:</span>
+                        <span class="text-sm text-gray-500" id="shopping-rec-selected-count">0 selected</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="executeShoppingBatch(true)" 
+                                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                id="shopping-rec-batch-dry-run" disabled>
+                            Dry-Run Selected
+                        </button>
+                        <button onclick="executeShoppingBatch(false)" 
+                                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                id="shopping-rec-batch-live" disabled>
+                            Execute Selected
+                        </button>
+                    </div>
+                </div>
+                
                 <!-- Filters -->
                 <div class="mb-4 flex gap-2">
                     <button onclick="filterRecommendations('all')" class="rec-filter px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white">All Recommendations</button>
@@ -312,17 +333,25 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
+                                <th class="px-3 py-3 text-left">
+                                    <input type="checkbox" id="select-all-shopping" onchange="toggleAllShoppingRecs()" class="w-4 h-4 text-blue-600 rounded">
+                                </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rule ID</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entity</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current → Proposed</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reasoning</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             {% for r in recommendations %}
-                            <tr class="recommendation-row hover:bg-gray-50" data-risk="{{ r.risk_tier }}">
+                            <tr class="recommendation-row hover:bg-gray-50" data-risk="{{ r.risk_tier }}" id="shopping-rec-{{ r.id }}">
+                                <td class="px-3 py-4">
+                                    <input type="checkbox" class="shopping-rec-checkbox w-4 h-4 text-blue-600 rounded" 
+                                           data-rec-id="{{ r.id }}" onchange="updateShoppingBatchButtons()">
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">{{ r.rule_id }}</td>
                                 <td class="px-6 py-4">
                                     <div class="text-sm font-medium text-gray-900">{{ r.entity_name }}</div>
@@ -333,12 +362,26 @@
                                     <span class="text-gray-500">{{ r.current_value }}</span>
                                     <span class="mx-1">→</span>
                                     <span class="font-semibold text-green-600">{{ r.proposed_value }}</span>
+                                    <!-- Error message area -->
+                                    <div id="shopping-rec-error-{{ r.id }}" class="text-red-600 mt-1 hidden text-xs"></div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-500">{{ r.reasoning }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if r.risk_tier == 'LOW' %}bg-green-100 text-green-800{% elif r.risk_tier == 'MEDIUM' %}bg-yellow-100 text-yellow-800{% else %}bg-red-100 text-red-800{% endif %}">
                                         {{ r.risk_tier }}
                                     </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <button onclick="executeShoppingRecommendation({{ r.id }}, true)" 
+                                            id="shopping-btn-dry-{{ r.id }}"
+                                            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs mr-1">
+                                        Dry-Run
+                                    </button>
+                                    <button onclick="executeShoppingRecommendation({{ r.id }}, false)" 
+                                            id="shopping-btn-live-{{ r.id }}"
+                                            class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs">
+                                        Execute
+                                    </button>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -474,6 +517,225 @@ function filterRecommendations(filterType) {
         row.style.display = show ? '' : 'none';
     });
 }
+
+// ==================== SHOPPING RECOMMENDATIONS EXECUTION ====================
+
+// Execute a single shopping recommendation
+function executeShoppingRecommendation(recId, dryRun) {
+    // Get current date from snapshot
+    const dateStr = '{{ snapshot_date }}';
+    
+    // Disable buttons during execution
+    const dryBtn = document.getElementById(`shopping-btn-dry-${recId}`);
+    const liveBtn = document.getElementById(`shopping-btn-live-${recId}`);
+    const originalDryText = dryBtn.textContent;
+    const originalLiveText = liveBtn.textContent;
+    
+    dryBtn.disabled = true;
+    liveBtn.disabled = true;
+    
+    if (dryRun) {
+        dryBtn.textContent = 'Running...';
+    } else {
+        liveBtn.textContent = 'Executing...';
+    }
+    
+    // Clear any previous error
+    const errorDiv = document.getElementById(`shopping-rec-error-${recId}`);
+    errorDiv.classList.add('hidden');
+    errorDiv.textContent = '';
+    
+    // Function to actually execute
+    const executeNow = () => {
+        fetch('/api/execute-recommendation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                recommendation_id: recId,
+                date_str: dateStr,
+                dry_run: dryRun
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Re-enable buttons
+            dryBtn.disabled = false;
+            liveBtn.disabled = false;
+            dryBtn.textContent = originalDryText;
+            liveBtn.textContent = originalLiveText;
+            
+            if (data.success) {
+                // Show success toast
+                const mode = dryRun ? 'Dry-run' : 'Live execution';
+                showToast(`${mode} successful: ${data.message}`, 'success', 3000);
+            } else {
+                // Show error inline
+                errorDiv.textContent = `Error: ${data.error || data.message}`;
+                errorDiv.classList.remove('hidden');
+                
+                // Also show error toast
+                showToast(`Execution failed: ${data.error || data.message}`, 'error', 5000);
+            }
+        })
+        .catch(error => {
+            // Re-enable buttons
+            dryBtn.disabled = false;
+            liveBtn.disabled = false;
+            dryBtn.textContent = originalDryText;
+            liveBtn.textContent = originalLiveText;
+            
+            // Show error
+            const errorMsg = `Execution failed: ${error.message}`;
+            errorDiv.textContent = errorMsg;
+            errorDiv.classList.remove('hidden');
+            showToast(errorMsg, 'error', 5000);
+        });
+    };
+    
+    // Only show modal for live execution
+    if (!dryRun) {
+        showConfirmModal(
+            'Execute this recommendation LIVE? This will modify your Google Ads account.',
+            executeNow,
+            'Confirm Live Execution'
+        );
+    } else {
+        executeNow();
+    }
+}
+
+// Execute batch shopping recommendations
+function executeShoppingBatch(dryRun) {
+    const checkboxes = document.querySelectorAll('.shopping-rec-checkbox:checked');
+    const recIds = Array.from(checkboxes).map(cb => parseInt(cb.dataset.recId));
+    
+    if (recIds.length === 0) {
+        showToast('No recommendations selected', 'error', 3000);
+        return;
+    }
+    
+    // Get current date
+    const dateStr = '{{ snapshot_date }}';
+    
+    // Disable batch buttons
+    const dryBtn = document.getElementById('shopping-rec-batch-dry-run');
+    const liveBtn = document.getElementById('shopping-rec-batch-live');
+    const originalDryText = dryBtn.textContent;
+    const originalLiveText = liveBtn.textContent;
+    
+    dryBtn.disabled = true;
+    liveBtn.disabled = true;
+    
+    if (dryRun) {
+        dryBtn.textContent = 'Running...';
+    } else {
+        liveBtn.textContent = 'Executing...';
+    }
+    
+    // Function to actually execute
+    const executeNow = () => {
+        fetch('/api/execute-batch', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                recommendation_ids: recIds,
+                date_str: dateStr,
+                dry_run: dryRun
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Re-enable buttons
+            dryBtn.disabled = false;
+            liveBtn.disabled = false;
+            dryBtn.textContent = originalDryText;
+            liveBtn.textContent = originalLiveText;
+            
+            if (data.success) {
+                const summary = data.summary;
+                const mode = dryRun ? 'Dry-run' : 'Live execution';
+                showToast(`${mode} complete: ${summary.succeeded} succeeded, ${summary.failed} failed`, 'success', 5000);
+                
+                // Show individual results
+                data.results.forEach(result => {
+                    const errorDiv = document.getElementById(`shopping-rec-error-${result.recommendation_id}`);
+                    if (!result.success) {
+                        // Show error inline
+                        errorDiv.textContent = `Error: ${result.message}`;
+                        errorDiv.classList.remove('hidden');
+                    } else {
+                        // Clear error if shown
+                        errorDiv.classList.add('hidden');
+                    }
+                });
+                
+                // Uncheck all checkboxes
+                checkboxes.forEach(cb => cb.checked = false);
+                document.getElementById('select-all-shopping').checked = false;
+                updateShoppingBatchButtons();
+            } else {
+                showToast(`Batch execution failed: ${data.message}`, 'error', 5000);
+            }
+        })
+        .catch(error => {
+            // Re-enable buttons
+            dryBtn.disabled = false;
+            liveBtn.disabled = false;
+            dryBtn.textContent = originalDryText;
+            liveBtn.textContent = originalLiveText;
+            
+            showToast(`Batch execution failed: ${error.message}`, 'error', 5000);
+        });
+    };
+    
+    // Only show modal for live execution
+    if (!dryRun) {
+        showConfirmModal(
+            `Execute ${recIds.length} recommendations LIVE? This will modify your Google Ads account.`,
+            executeNow,
+            'Confirm Batch Execution'
+        );
+    } else {
+        executeNow();
+    }
+}
+
+// Update batch button states based on checkbox selection
+function updateShoppingBatchButtons() {
+    const checkboxes = document.querySelectorAll('.shopping-rec-checkbox:checked');
+    const count = checkboxes.length;
+    
+    const countSpan = document.getElementById('shopping-rec-selected-count');
+    const dryBtn = document.getElementById('shopping-rec-batch-dry-run');
+    const liveBtn = document.getElementById('shopping-rec-batch-live');
+    
+    countSpan.textContent = `${count} selected`;
+    
+    if (count > 0) {
+        dryBtn.disabled = false;
+        liveBtn.disabled = false;
+    } else {
+        dryBtn.disabled = true;
+        liveBtn.disabled = true;
+    }
+}
+
+// Toggle all shopping checkboxes
+function toggleAllShoppingRecs() {
+    const selectAll = document.getElementById('select-all-shopping');
+    const checkboxes = document.querySelectorAll('.shopping-rec-checkbox');
+    
+    checkboxes.forEach(cb => {
+        cb.checked = selectAll.checked;
+    });
+    
+    updateShoppingBatchButtons();
+}
+
 </script>
 
 {% endblock %}

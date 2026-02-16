@@ -18,6 +18,12 @@ from act_dashboard.config import DashboardConfig
 import duckdb
 import json
 from datetime import datetime, date
+from pathlib import Path
+
+# Import Executor for executing recommendations
+from act_autopilot.executor import Executor
+from google.ads.googleads.client import GoogleAdsClient
+
 
 
 def get_current_config():
@@ -45,6 +51,26 @@ def get_current_config():
 def get_available_clients():
     """Get list of available clients for switcher."""
     return current_app.config.get("AVAILABLE_CLIENTS", [])
+
+
+def get_google_ads_client(config):
+    """
+    Initialize Google Ads API client for the current config.
+    
+    Args:
+        config: DashboardConfig instance
+        
+    Returns:
+        GoogleAdsClient instance
+    """
+    # Path to google-ads.yaml (in secrets folder)
+    google_ads_yaml = Path(__file__).parent.parent / "secrets" / "google-ads.yaml"
+    
+    if not google_ads_yaml.exists():
+        raise FileNotFoundError(f"Google Ads config not found at {google_ads_yaml}")
+    
+    return GoogleAdsClient.load_from_storage(str(google_ads_yaml))
+
 
 
 def init_routes(app):
@@ -94,6 +120,312 @@ def init_routes(app):
             flash("Invalid client selection", "error")
 
         return redirect(url_for("dashboard"))
+
+    # ==================== EXECUTION API ROUTES ====================
+    
+    @app.route("/api/execute-recommendation", methods=["POST"])
+    @login_required
+    def api_execute_recommendation():
+        """
+        Execute a single recommendation.
+        
+        Request JSON:
+            {
+                "recommendation_id": int,  # Index in recommendations list
+                "date_str": str,           # Date of recommendations file
+                "dry_run": bool            # True for dry-run, False for live
+            }
+            
+        Returns JSON:
+            {
+                "success": bool,
+                "message": str,
+                "change_id": int or null,
+                "error": str or null
+            }
+        """
+        try:
+            data = request.get_json()
+            rec_id = data.get("recommendation_id")
+            date_str = data.get("date_str", date.today().isoformat())
+            dry_run = data.get("dry_run", True)
+            
+            if rec_id is None:
+                return jsonify({
+                    "success": False,
+                    "message": "Missing recommendation_id",
+                    "error": "recommendation_id is required"
+                }), 400
+            
+            # Get current config
+            config = get_current_config()
+            
+            # Load recommendations from JSON file
+            suggestions_path = config.get_suggestions_path(date_str)
+            if not suggestions_path.exists():
+                return jsonify({
+                    "success": False,
+                    "message": "Recommendations file not found",
+                    "error": f"No recommendations for {date_str}"
+                }), 404
+            
+            with open(suggestions_path, "r") as f:
+                suggestions = json.load(f)
+            
+            recommendations = suggestions.get("recommendations", [])
+            
+            if rec_id < 0 or rec_id >= len(recommendations):
+                return jsonify({
+                    "success": False,
+                    "message": "Invalid recommendation_id",
+                    "error": f"recommendation_id {rec_id} out of range"
+                }), 400
+            
+            recommendation = recommendations[rec_id]
+            
+            # Check if already blocked
+            if recommendation.get("blocked", False):
+                return jsonify({
+                    "success": False,
+                    "message": "Recommendation is blocked",
+                    "error": "This recommendation was blocked by guardrails"
+                }), 400
+            
+            # Initialize executor
+            google_ads_client = get_google_ads_client(config)
+            executor = Executor(config, config.db_path, google_ads_client)
+            
+            # Execute
+            results = executor.execute([recommendation], dry_run=dry_run)
+            result = results[0]
+            
+            # Return result
+            return jsonify({
+                "success": result.success,
+                "message": result.message,
+                "change_id": result.change_id,
+                "error": None if result.success else result.message
+            })
+            
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "message": f"Execution failed: {str(e)}",
+                "error": str(e)
+            }), 500
+    
+    @app.route("/api/execute-batch", methods=["POST"])
+    @login_required
+    def api_execute_batch():
+        """
+        Execute multiple recommendations in batch.
+        
+        Request JSON:
+            {
+                "recommendation_ids": [int, int, ...],
+                "date_str": str,
+                "dry_run": bool
+            }
+            
+        Returns JSON:
+            {
+                "success": bool,
+                "results": [
+                    {
+                        "recommendation_id": int,
+                        "success": bool,
+                        "message": str,
+                        "change_id": int or null
+                    },
+                    ...
+                ],
+                "summary": {
+                    "total": int,
+                    "succeeded": int,
+                    "failed": int
+                }
+            }
+        """
+        try:
+            data = request.get_json()
+            rec_ids = data.get("recommendation_ids", [])
+            date_str = data.get("date_str", date.today().isoformat())
+            dry_run = data.get("dry_run", True)
+            
+            if not rec_ids or not isinstance(rec_ids, list):
+                return jsonify({
+                    "success": False,
+                    "message": "Invalid recommendation_ids",
+                    "error": "recommendation_ids must be a non-empty list"
+                }), 400
+            
+            # Get current config
+            config = get_current_config()
+            
+            # Load recommendations from JSON file
+            suggestions_path = config.get_suggestions_path(date_str)
+            if not suggestions_path.exists():
+                return jsonify({
+                    "success": False,
+                    "message": "Recommendations file not found",
+                    "error": f"No recommendations for {date_str}"
+                }), 404
+            
+            with open(suggestions_path, "r") as f:
+                suggestions = json.load(f)
+            
+            all_recommendations = suggestions.get("recommendations", [])
+            
+            # Collect recommendations to execute
+            recommendations_to_execute = []
+            invalid_ids = []
+            blocked_ids = []
+            
+            for rec_id in rec_ids:
+                if rec_id < 0 or rec_id >= len(all_recommendations):
+                    invalid_ids.append(rec_id)
+                    continue
+                
+                rec = all_recommendations[rec_id]
+                if rec.get("blocked", False):
+                    blocked_ids.append(rec_id)
+                    continue
+                
+                recommendations_to_execute.append((rec_id, rec))
+            
+            # Initialize executor
+            google_ads_client = get_google_ads_client(config)
+            executor = Executor(config, config.db_path, google_ads_client)
+            
+            # Execute all valid recommendations
+            recs_only = [r[1] for r in recommendations_to_execute]
+            execution_results = executor.execute(recs_only, dry_run=dry_run)
+            
+            # Build response
+            results = []
+            succeeded = 0
+            failed = 0
+            
+            for i, (rec_id, _) in enumerate(recommendations_to_execute):
+                exec_result = execution_results[i]
+                results.append({
+                    "recommendation_id": rec_id,
+                    "success": exec_result.success,
+                    "message": exec_result.message,
+                    "change_id": exec_result.change_id
+                })
+                if exec_result.success:
+                    succeeded += 1
+                else:
+                    failed += 1
+            
+            # Add invalid IDs to results
+            for rec_id in invalid_ids:
+                results.append({
+                    "recommendation_id": rec_id,
+                    "success": False,
+                    "message": f"Invalid recommendation ID: {rec_id}",
+                    "change_id": None
+                })
+                failed += 1
+            
+            # Add blocked IDs to results
+            for rec_id in blocked_ids:
+                results.append({
+                    "recommendation_id": rec_id,
+                    "success": False,
+                    "message": "Recommendation blocked by guardrails",
+                    "change_id": None
+                })
+                failed += 1
+            
+            return jsonify({
+                "success": True,
+                "results": results,
+                "summary": {
+                    "total": len(rec_ids),
+                    "succeeded": succeeded,
+                    "failed": failed
+                }
+            })
+            
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "message": f"Batch execution failed: {str(e)}",
+                "error": str(e)
+            }), 500
+    
+    @app.route("/api/execution-status/<int:change_id>", methods=["GET"])
+    @login_required
+    def api_execution_status(change_id):
+        """
+        Get status of an executed change.
+        
+        Returns JSON:
+            {
+                "success": bool,
+                "change_id": int,
+                "status": str,
+                "details": {...}
+            }
+        """
+        try:
+            config = get_current_config()
+            conn = duckdb.connect(config.db_path, read_only=True)
+            
+            # Query change log
+            query = """
+            SELECT
+                change_id,
+                customer_id,
+                change_date,
+                campaign_id,
+                lever,
+                old_value,
+                new_value,
+                change_pct,
+                rule_id,
+                rollback_status,
+                executed_at
+            FROM analytics.change_log
+            WHERE change_id = ?
+            """
+            
+            result = conn.execute(query, [change_id]).fetchone()
+            conn.close()
+            
+            if not result:
+                return jsonify({
+                    "success": False,
+                    "message": "Change not found",
+                    "error": f"No change found with ID {change_id}"
+                }), 404
+            
+            return jsonify({
+                "success": True,
+                "change_id": result[0],
+                "status": result[9] or "active",  # rollback_status
+                "details": {
+                    "customer_id": result[1],
+                    "change_date": str(result[2]),
+                    "campaign_id": result[3],
+                    "lever": result[4],
+                    "old_value": result[5],
+                    "new_value": result[6],
+                    "change_pct": result[7],
+                    "rule_id": result[8],
+                    "executed_at": str(result[10])
+                }
+            })
+            
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "message": f"Status check failed: {str(e)}",
+                "error": str(e)
+            }), 500
+
 
     @app.route("/")
     @login_required
@@ -234,10 +566,13 @@ def init_routes(app):
         medium_risk = []
         high_risk = []
 
-        for rec in suggestions_data["recommendations"]:
+        for idx, rec in enumerate(suggestions_data["recommendations"]):
             if rec.get("blocked", False):
                 continue  # Skip blocked recommendations
 
+            # Add index for execution API
+            rec["id"] = idx
+            
             # Add approval status
             key = f"{rec['rule_id']}_{rec['entity_id']}"
             rec["approved"] = key in approved_ids
@@ -671,6 +1006,10 @@ def init_routes(app):
                         pass
 
             rec_count = len(kw_recs)
+
+            # Add index as id for each recommendation (for execution API)
+            for idx, rec in enumerate(kw_recs):
+                rec.id = idx
 
             # Group recommendations
             groups = {}
