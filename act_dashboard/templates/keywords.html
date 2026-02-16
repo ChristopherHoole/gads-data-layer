@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block title %}Keywords - Ads Control Tower{% endblock %}
+
+{% block content %}
+<!-- Page header -->
+<div class="mb-6">
+    <h2 class="text-2xl font-bold text-gray-900">Keyword Performance</h2>
+    <p class="mt-1 text-sm text-gray-500">{{ client_name }} &mdash; Data as of {{ snapshot_date }}</p>
+</div>
+
+<!-- Tab navigation -->
+<div class="border-b border-gray-200 mb-6">
+    <nav class="-mb-px flex space-x-8">
+        <button onclick="showTab('keywords')" id="tab-keywords"
+            class="tab-btn border-blue-500 text-blue-600 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">
+            Keywords ({{ keywords|length }})
+        </button>
+        <button onclick="showTab('search-terms')" id="tab-search-terms"
+            class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">
+            Search Terms ({{ search_terms|length }})
+        </button>
+        <button onclick="showTab('recommendations')" id="tab-recommendations"
+            class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">
+            Recommendations ({{ rec_count }})
+        </button>
+    </nav>
+</div>
+
+<!-- ═══ Summary cards ═══ -->
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+        <p class="text-xs text-gray-500 uppercase tracking-wide">Active Keywords</p>
+        <p class="text-2xl font-bold text-gray-900 mt-1">{{ active_count }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+        <p class="text-xs text-gray-500 uppercase tracking-wide">Low QS (≤3)</p>
+        <p class="text-2xl font-bold text-red-600 mt-1">{{ low_qs_count }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+        <p class="text-xs text-gray-500 uppercase tracking-wide">Wasted Spend</p>
+        <p class="text-2xl font-bold text-orange-600 mt-1">${{ wasted_spend_dollars|round(0)|int }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+        <p class="text-xs text-gray-500 uppercase tracking-wide">Avg CPA (30d)</p>
+        <p class="text-2xl font-bold text-gray-900 mt-1">${{ avg_cpa_dollars }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+        <p class="text-xs text-gray-500 uppercase tracking-wide">Avg QS</p>
+        <p class="text-2xl font-bold text-gray-900 mt-1">{{ avg_qs }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+        <p class="text-xs text-gray-500 uppercase tracking-wide">Low Data</p>
+        <p class="text-2xl font-bold text-yellow-600 mt-1">{{ low_data_count }}</p>
+    </div>
+</div>
+
+<!-- ═══ KEYWORDS TAB ═══ -->
+<div id="panel-keywords">
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200 mb-4">
+        <div class="flex flex-wrap gap-4 items-end">
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Campaign</label>
+                <select id="filter-campaign" onchange="filterKeywords()" class="rounded-md border-gray-300 text-sm px-3 py-1.5 border">
+                    <option value="all">All Campaigns</option>
+                    {% for cid, cname in campaigns %}
+                    <option value="{{ cid }}">{{ cname }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Match Type</label>
+                <select id="filter-match" onchange="filterKeywords()" class="rounded-md border-gray-300 text-sm px-3 py-1.5 border">
+                    <option value="all">All</option>
+                    <option value="EXACT">Exact</option>
+                    <option value="PHRASE">Phrase</option>
+                    <option value="BROAD">Broad</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Quality Score</label>
+                <select id="filter-qs" onchange="filterKeywords()" class="rounded-md border-gray-300 text-sm px-3 py-1.5 border">
+                    <option value="all">All</option>
+                    <option value="low">Low (1-3)</option>
+                    <option value="mid">Mid (4-6)</option>
+                    <option value="high">High (7-10)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Search</label>
+                <input type="text" id="filter-search" onkeyup="filterKeywords()" placeholder="Keyword text..." class="rounded-md border-gray-300 text-sm px-3 py-1.5 border w-48">
+            </div>
+            <div class="ml-auto">
+                <span id="kw-count" class="text-sm text-gray-500"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keywords table -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200" id="kw-table">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortTable(0)">Keyword</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortTable(1)">Match</th>
+                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortTable(2)">QS</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortTable(3)">Clicks 7d</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortTable(4)">Cost 30d</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortTable(5)">Conv 30d</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortTable(6)">CPA 30d</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortTable(7)">CTR 7d</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortTable(8)">CVR 30d</th>
+                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Flags</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for kw in keywords %}
+                    <tr class="kw-row hover:bg-gray-50"
+                        data-campaign="{{ kw.campaign_id }}"
+                        data-match="{{ kw.match_type }}"
+                        data-qs="{{ kw.quality_score or 0 }}"
+                        data-text="{{ kw.keyword_text|lower }}">
+                        <td class="px-3 py-2 text-sm text-gray-900 max-w-xs truncate" title="{{ kw.keyword_text }}">
+                            {{ kw.keyword_text }}
+                            <span class="text-xs text-gray-400 block">{{ kw.campaign_name }}</span>
+                        </td>
+                        <td class="px-3 py-2 text-sm">
+                            <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full
+                                {% if kw.match_type == 'EXACT' %}bg-green-100 text-green-800
+                                {% elif kw.match_type == 'PHRASE' %}bg-blue-100 text-blue-800
+                                {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                {{ kw.match_type }}
+                            </span>
+                        </td>
+                        <td class="px-3 py-2 text-sm text-center">
+                            {% if kw.quality_score %}
+                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold
+                                {% if kw.quality_score <= 3 %}bg-red-100 text-red-700
+                                {% elif kw.quality_score <= 6 %}bg-yellow-100 text-yellow-700
+                                {% else %}bg-green-100 text-green-700{% endif %}">
+                                {{ kw.quality_score }}
+                            </span>
+                            {% else %}
+                            <span class="text-gray-400">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-3 py-2 text-sm text-right text-gray-700" data-sort="{{ kw.clicks_w7 }}">{{ kw.clicks_w7|int }}</td>
+                        <td class="px-3 py-2 text-sm text-right text-gray-700" data-sort="{{ kw.cost_w30_dollars }}">${{ kw.cost_w30_dollars|round(0)|int }}</td>
+                        <td class="px-3 py-2 text-sm text-right text-gray-700" data-sort="{{ kw.conv_w30 }}">{{ kw.conv_w30|round(1) }}</td>
+                        <td class="px-3 py-2 text-sm text-right font-medium
+                            {% if kw.cpa_w30 and kw.cpa_w30 > 0 %}
+                                {% if kw.cpa_dollars > target_cpa * 1.5 %}text-red-600
+                                {% elif kw.cpa_dollars > target_cpa %}text-orange-600
+                                {% elif kw.cpa_dollars > 0 %}text-green-600
+                                {% else %}text-gray-400{% endif %}
+                            {% else %}text-gray-400{% endif %}"
+                            data-sort="{{ kw.cpa_w30 or 0 }}">
+                            {% if kw.cpa_dollars and kw.cpa_dollars > 0 %}${{ kw.cpa_dollars|round(2) }}{% else %}—{% endif %}
+                        </td>
+                        <td class="px-3 py-2 text-sm text-right text-gray-700" data-sort="{{ kw.ctr_w7 or 0 }}">
+                            {% if kw.ctr_w7 %}{{ (kw.ctr_w7 * 100)|round(2) }}%{% else %}—{% endif %}
+                        </td>
+                        <td class="px-3 py-2 text-sm text-right text-gray-700" data-sort="{{ kw.cvr_w30 or 0 }}">
+                            {% if kw.cvr_w30 %}{{ (kw.cvr_w30 * 100)|round(2) }}%{% else %}—{% endif %}
+                        </td>
+                        <td class="px-3 py-2 text-center">
+                            {% if kw.low_data_flag %}
+                            <span class="inline-flex px-1.5 py-0.5 text-xs rounded bg-yellow-100 text-yellow-700" title="Low data">LD</span>
+                            {% endif %}
+                            {% if kw.quality_score and kw.quality_score <= 3 %}
+                            <span class="inline-flex px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-700" title="Low QS">QS</span>
+                            {% endif %}
+                            {% if kw.conv_w30 == 0 and kw.cost_w30 > 50000000 %}
+                            <span class="inline-flex px-1.5 py-0.5 text-xs rounded bg-orange-100 text-orange-700" title="Wasted spend">WS</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SEARCH TERMS TAB ═══ -->
+<div id="panel-search-terms" class="hidden">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Search Term</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Triggering Keyword</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Clicks</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Cost</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Conv</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">CVR</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">CPA</th>
+                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Signal</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for st in search_terms %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-3 py-2 text-sm text-gray-900 max-w-xs truncate" title="{{ st.search_term }}">
+                            {{ st.search_term }}
+                            <span class="text-xs text-gray-400 block">{{ st.campaign_name }}</span>
+                        </td>
+                        <td class="px-3 py-2 text-sm text-gray-500">{{ st.keyword_text or '—' }}</td>
+                        <td class="px-3 py-2 text-sm">
+                            <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full
+                                {% if st.search_term_status == 'ADDED' %}bg-green-100 text-green-800
+                                {% elif st.search_term_status == 'EXCLUDED' %}bg-red-100 text-red-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ st.search_term_status or 'NONE' }}
+                            </span>
+                        </td>
+                        <td class="px-3 py-2 text-sm text-right text-gray-700">{{ st.clicks|int }}</td>
+                        <td class="px-3 py-2 text-sm text-right text-gray-700">${{ st.cost_dollars|round(0)|int }}</td>
+                        <td class="px-3 py-2 text-sm text-right text-gray-700">{{ st.conversions|round(1) }}</td>
+                        <td class="px-3 py-2 text-sm text-right text-gray-700">
+                            {% if st.cvr %}{{ (st.cvr * 100)|round(2) }}%{% else %}—{% endif %}
+                        </td>
+                        <td class="px-3 py-2 text-sm text-right text-gray-700">
+                            {% if st.cpa_dollars and st.cpa_dollars > 0 %}${{ st.cpa_dollars|round(2) }}{% else %}—{% endif %}
+                        </td>
+                        <td class="px-3 py-2 text-center">
+                            {% if st.conversions >= 5 and st.cvr and st.cvr > 0.05 %}
+                            <span class="inline-flex px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">Winner</span>
+                            {% elif st.conversions == 0 and st.cost_dollars > 50 %}
+                            <span class="inline-flex px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">Negative</span>
+                            {% elif st.conversions == 0 and st.cost_dollars > 20 %}
+                            <span class="inline-flex px-2 py-0.5 text-xs rounded-full bg-orange-100 text-orange-700">Watch</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ RECOMMENDATIONS TAB ═══ -->
+<div id="panel-recommendations" class="hidden">
+    {% if rec_groups %}
+    {% for group_name, recs in rec_groups %}
+    <div class="mb-6">
+        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">{{ group_name }} ({{ recs|length }})</h3>
+        <div class="space-y-3">
+            {% for rec in recs %}
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:border-blue-300 transition-colors">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="inline-flex px-2 py-0.5 text-xs font-bold rounded
+                                {% if rec.risk_tier == 'low' %}bg-green-100 text-green-800
+                                {% elif rec.risk_tier in ['med', 'medium'] %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ rec.risk_tier|upper }}
+                            </span>
+                            <span class="text-sm font-semibold text-gray-900">{{ rec.rule_id }}</span>
+                            <span class="text-sm text-gray-500">{{ rec.rule_name }}</span>
+                        </div>
+                        <p class="text-sm text-gray-700 mt-1">{{ rec.rationale[:200] }}</p>
+                        <div class="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                            <span>Confidence: {{ (rec.confidence * 100)|round(0)|int }}%</span>
+                            {% if rec.change_pct and rec.change_pct != 0 %}
+                            <span>Change: {{ (rec.change_pct * 100)|round(0)|int }}%</span>
+                            {% endif %}
+                            {% if rec.evidence and rec.evidence.campaign_name %}
+                            <span>Campaign: {{ rec.evidence.campaign_name }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+        <p class="text-gray-500">No keyword recommendations available. Run the keyword rules first.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- JavaScript -->
+<script>
+function showTab(tab) {
+    // Hide all panels
+    document.querySelectorAll('[id^="panel-"]').forEach(p => p.classList.add('hidden'));
+    // Deactivate all tabs
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('border-blue-500', 'text-blue-600');
+        b.classList.add('border-transparent', 'text-gray-500');
+    });
+    // Show selected panel
+    document.getElementById('panel-' + tab).classList.remove('hidden');
+    // Activate selected tab
+    const btn = document.getElementById('tab-' + tab);
+    btn.classList.remove('border-transparent', 'text-gray-500');
+    btn.classList.add('border-blue-500', 'text-blue-600');
+}
+
+function filterKeywords() {
+    const campaign = document.getElementById('filter-campaign').value;
+    const match = document.getElementById('filter-match').value;
+    const qs = document.getElementById('filter-qs').value;
+    const search = document.getElementById('filter-search').value.toLowerCase();
+
+    let visible = 0;
+    document.querySelectorAll('.kw-row').forEach(row => {
+        let show = true;
+        if (campaign !== 'all' && row.dataset.campaign !== campaign) show = false;
+        if (match !== 'all' && row.dataset.match !== match) show = false;
+        if (qs !== 'all') {
+            const qsVal = parseInt(row.dataset.qs) || 0;
+            if (qs === 'low' && qsVal > 3) show = false;
+            if (qs === 'mid' && (qsVal < 4 || qsVal > 6)) show = false;
+            if (qs === 'high' && qsVal < 7) show = false;
+        }
+        if (search && !row.dataset.text.includes(search)) show = false;
+        row.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+    document.getElementById('kw-count').textContent = visible + ' of {{ keywords|length }} keywords';
+}
+
+let sortDir = {};
+function sortTable(colIdx) {
+    const table = document.getElementById('kw-table');
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+
+    sortDir[colIdx] = !sortDir[colIdx]; // toggle
+    const dir = sortDir[colIdx] ? 1 : -1;
+
+    rows.sort((a, b) => {
+        const cellA = a.cells[colIdx];
+        const cellB = b.cells[colIdx];
+        let valA = cellA.dataset.sort !== undefined ? parseFloat(cellA.dataset.sort) || 0 : cellA.textContent.trim().toLowerCase();
+        let valB = cellB.dataset.sort !== undefined ? parseFloat(cellB.dataset.sort) || 0 : cellB.textContent.trim().toLowerCase();
+
+        if (typeof valA === 'number' && typeof valB === 'number') {
+            return (valA - valB) * dir;
+        }
+        return valA < valB ? -dir : valA > valB ? dir : 0;
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+// Initialize count
+filterKeywords();
+</script>
+{% endblock %}

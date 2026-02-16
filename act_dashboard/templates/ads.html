@@ -1,0 +1,431 @@
+{% extends "base.html" %}
+
+{% block title %}Ads - Ads Control Tower{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="px-4 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="sm:flex sm:items-center sm:justify-between mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Ad Performance</h1>
+                <p class="mt-1 text-sm text-gray-500">
+                    {% if summary %}
+                        Snapshot: {{ summary.snapshot_date }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        {% if error %}
+        <div class="rounded-md bg-red-50 p-4 mb-6">
+            <div class="flex">
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">Error</h3>
+                    <div class="mt-2 text-sm text-red-700">
+                        {{ error }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not error and summary %}
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 mb-6">
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Ads</dt>
+                            <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ summary.total_ads }}</dd>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <dt class="text-sm font-medium text-gray-500 truncate">Ad Groups</dt>
+                            <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ summary.total_ad_groups }}</dd>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <dt class="text-sm font-medium text-gray-500 truncate">POOR Strength RSAs</dt>
+                            <dd class="mt-1 text-3xl font-semibold text-red-600">{{ summary.poor_strength }}</dd>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <dt class="text-sm font-medium text-gray-500 truncate">Low Data Ads</dt>
+                            <dd class="mt-1 text-3xl font-semibold text-yellow-600">{{ summary.low_data }}</dd>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <dt class="text-sm font-medium text-gray-500 truncate">Avg CTR (30d)</dt>
+                            <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ "%.2f"|format(summary.avg_ctr * 100) }}%</dd>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <dt class="text-sm font-medium text-gray-500 truncate">Avg CVR (30d)</dt>
+                            <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ "%.2f"|format(summary.avg_cvr * 100) }}%</dd>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="border-b border-gray-200 mb-6">
+            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                <a href="#" onclick="showTab('ad-groups'); return false;" 
+                   id="tab-ad-groups"
+                   class="tab-link border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    Ad Groups
+                </a>
+                <a href="#" onclick="showTab('ads'); return false;" 
+                   id="tab-ads"
+                   class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    Ads
+                </a>
+                <a href="#" onclick="showTab('recommendations'); return false;" 
+                   id="tab-recommendations"
+                   class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    Recommendations
+                    <span class="ml-2 bg-gray-100 text-gray-900 py-0.5 px-2.5 rounded-full text-xs font-medium">
+                        {{ recommendations|length }}
+                    </span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Tab 1: Ad Groups -->
+        <div id="content-ad-groups" class="tab-content">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ad Group</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Campaign</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Impressions</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">CTR</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">CVR</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Conversions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for ag in ad_groups[:50] %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ ag.ad_group_name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ag.campaign_name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{{ "{:,}".format(ag.impressions) }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{{ "%.2f"|format(ag.ctr * 100) }}%</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                                    {% if ag.clicks > 0 %}
+                                        {{ "%.2f"|format((ag.conversions / ag.clicks) * 100) }}%
+                                    {% else %}
+                                        0.00%
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">${{ "%.2f"|format(ag.cost_micros / 1000000) }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{{ "%.1f"|format(ag.conversions) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if ad_groups|length > 50 %}
+                <div class="bg-gray-50 px-4 py-3 text-sm text-gray-500">
+                    Showing first 50 of {{ ad_groups|length }} ad groups
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Tab 2: Ads -->
+        <div id="content-ads" class="tab-content hidden">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ad</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Strength</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Impr</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">CTR</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">CVR</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">vs Group</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for ad in ads[:100] %}
+                            <tr class="hover:bg-gray-50
+                                {% if ad.ctr_vs_ad_group > 1.2 and ad.cvr_vs_ad_group > 1.2 %}
+                                    bg-green-50
+                                {% elif ad.ctr_vs_ad_group < 0.7 or ad.cvr_vs_ad_group < 0.7 %}
+                                    bg-red-50
+                                {% elif ad.ad_strength == 'POOR' %}
+                                    bg-yellow-50
+                                {% endif %}
+                            ">
+                                <td class="px-6 py-4 text-sm">
+                                    <div class="font-medium text-gray-900">Ad {{ ad.ad_id }}</div>
+                                    <div class="text-gray-500 text-xs">{{ ad.ad_group_name[:40] }}...</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {{ ad.ad_type.replace('_', ' ') }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    {% if ad.ad_strength %}
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                            {% if ad.ad_strength == 'EXCELLENT' %}
+                                                bg-green-100 text-green-800
+                                            {% elif ad.ad_strength == 'GOOD' %}
+                                                bg-blue-100 text-blue-800
+                                            {% elif ad.ad_strength == 'AVERAGE' %}
+                                                bg-yellow-100 text-yellow-800
+                                            {% elif ad.ad_strength == 'POOR' %}
+                                                bg-red-100 text-red-800
+                                            {% endif %}
+                                        ">
+                                            {{ ad.ad_strength }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-gray-400">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                                    {{ "{:,}".format(ad.impressions_30d) }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                                    {{ "%.2f"|format(ad.ctr_30d * 100) }}%
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                                    {{ "%.2f"|format(ad.cvr_30d * 100) }}%
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                    <div class="text-gray-900">CTR: {{ "%.0f"|format(ad.ctr_vs_ad_group * 100) }}%</div>
+                                    <div class="text-gray-500 text-xs">CVR: {{ "%.0f"|format(ad.cvr_vs_ad_group * 100) }}%</div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if ads|length > 100 %}
+                <div class="bg-gray-50 px-4 py-3 text-sm text-gray-500">
+                    Showing first 100 of {{ ads|length }} ads
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Tab 3: Recommendations -->
+        <div id="content-recommendations" class="tab-content hidden">
+            <!-- Pause Recommendations -->
+            {% if pause_recs|length > 0 %}
+            <div class="mb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">
+                    Pause Ads
+                    <span class="ml-2 bg-red-100 text-red-800 py-0.5 px-2.5 rounded-full text-sm font-medium">
+                        {{ pause_recs|length }}
+                    </span>
+                </h3>
+                <div class="space-y-3">
+                    {% for rec in pause_recs[:20] %}
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center">
+                                    <span class="text-sm font-medium text-gray-900">{{ rec.rule_id }}</span>
+                                    <span class="ml-2 px-2 py-0.5 text-xs font-medium rounded
+                                        {% if rec.risk_tier == 'low' %}
+                                            bg-green-100 text-green-800
+                                        {% elif rec.risk_tier == 'med' %}
+                                            bg-yellow-100 text-yellow-800
+                                        {% else %}
+                                            bg-red-100 text-red-800
+                                        {% endif %}
+                                    ">
+                                        {{ rec.risk_tier|upper }} RISK
+                                    </span>
+                                    <span class="ml-2 text-xs text-gray-500">
+                                        Confidence: {{ "%.0f"|format(rec.confidence * 100) }}%
+                                    </span>
+                                </div>
+                                <p class="mt-1 text-sm text-gray-600">{{ rec.campaign_name }} / {{ rec.ad_group_name }}</p>
+                                <p class="mt-2 text-sm text-gray-900">{{ rec.rationale }}</p>
+                                <div class="mt-2 flex items-center text-xs text-gray-500">
+                                    <span class="font-medium">Ad ID: {{ rec.entity_id }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if pause_recs|length > 20 %}
+                <div class="mt-3 text-sm text-gray-500">
+                    Showing first 20 of {{ pause_recs|length }} pause recommendations
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Review Recommendations -->
+            {% if review_recs|length > 0 %}
+            <div class="mb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">
+                    Review Ads
+                    <span class="ml-2 bg-blue-100 text-blue-800 py-0.5 px-2.5 rounded-full text-sm font-medium">
+                        {{ review_recs|length }}
+                    </span>
+                </h3>
+                <div class="space-y-3">
+                    {% for rec in review_recs[:20] %}
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center">
+                                    <span class="text-sm font-medium text-gray-900">{{ rec.rule_id }}</span>
+                                    <span class="ml-2 px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800">
+                                        REVIEW
+                                    </span>
+                                </div>
+                                <p class="mt-1 text-sm text-gray-600">{{ rec.campaign_name }} / {{ rec.ad_group_name }}</p>
+                                <p class="mt-2 text-sm text-gray-900">{{ rec.rationale }}</p>
+                                {% if rec.current_value %}
+                                <div class="mt-2 text-xs text-gray-500">
+                                    Current: {{ rec.current_value }} → Suggested: {{ rec.recommended_value }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if review_recs|length > 20 %}
+                <div class="mt-3 text-sm text-gray-500">
+                    Showing first 20 of {{ review_recs|length }} review recommendations
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Asset Insights -->
+            {% if asset_recs|length > 0 %}
+            <div class="mb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">
+                    Asset Insights
+                    <span class="ml-2 bg-purple-100 text-purple-800 py-0.5 px-2.5 rounded-full text-sm font-medium">
+                        {{ asset_recs|length }}
+                    </span>
+                </h3>
+                <div class="space-y-3">
+                    {% for rec in asset_recs[:20] %}
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center">
+                                    <span class="text-sm font-medium text-gray-900">{{ rec.rule_id }}</span>
+                                    <span class="ml-2 px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-800">
+                                        ASSET
+                                    </span>
+                                </div>
+                                <p class="mt-1 text-sm text-gray-600">{{ rec.campaign_name }} / {{ rec.ad_group_name }}</p>
+                                <p class="mt-2 text-sm text-gray-900">{{ rec.rationale }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Ad Group Recommendations -->
+            {% if adgroup_recs|length > 0 %}
+            <div class="mb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">
+                    Ad Group Review
+                    <span class="ml-2 bg-gray-100 text-gray-800 py-0.5 px-2.5 rounded-full text-sm font-medium">
+                        {{ adgroup_recs|length }}
+                    </span>
+                </h3>
+                <div class="space-y-3">
+                    {% for rec in adgroup_recs[:20] %}
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center">
+                                    <span class="text-sm font-medium text-gray-900">{{ rec.rule_id }}</span>
+                                </div>
+                                <p class="mt-1 text-sm text-gray-600">{{ rec.campaign_name }} / {{ rec.ad_group_name }}</p>
+                                <p class="mt-2 text-sm text-gray-900">{{ rec.rationale }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if recommendations|length == 0 %}
+            <div class="text-center py-12">
+                <p class="text-gray-500">No recommendations at this time.</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function showTab(tabName) {
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(el => {
+        el.classList.add('hidden');
+    });
+    
+    // Remove active class from all tabs
+    document.querySelectorAll('.tab-link').forEach(el => {
+        el.classList.remove('border-indigo-500', 'text-indigo-600');
+        el.classList.add('border-transparent', 'text-gray-500');
+    });
+    
+    // Show selected tab content
+    document.getElementById('content-' + tabName).classList.remove('hidden');
+    
+    // Add active class to selected tab
+    document.getElementById('tab-' + tabName).classList.remove('border-transparent', 'text-gray-500');
+    document.getElementById('tab-' + tabName).classList.add('border-indigo-500', 'text-indigo-600');
+}
+</script>
+{% endblock %}

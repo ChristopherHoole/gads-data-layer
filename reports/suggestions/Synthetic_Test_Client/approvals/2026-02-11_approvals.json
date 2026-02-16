@@ -1,10 +1,10 @@
 {
   "snapshot_date": "2026-02-11",
   "client_name": "Synthetic_Test_Client",
-  "reviewed_at": "2026-02-14T04:59:13.664503Z",
-  "total_reviewed": 17,
-  "approved": 7,
-  "rejected": 7,
+  "reviewed_at": "2026-02-16T00:30:59.597034Z",
+  "total_reviewed": 18,
+  "approved": 9,
+  "rejected": 8,
   "skipped": 5,
   "decisions": [
     {
@@ -57,14 +57,6 @@
     },
     {
       "rule_id": "STATUS-003",
-      "entity_id": "3006",
-      "campaign_name": "N/A",
-      "action_type": "no_action",
-      "decision": "skipped",
-      "reviewed_at": "2026-02-12T23:57:15.093193"
-    },
-    {
-      "rule_id": "STATUS-003",
       "entity_id": "3014",
       "campaign_name": "N/A",
       "action_type": "no_action",
@@ -78,14 +70,6 @@
       "action_type": "no_action",
       "decision": "rejected",
       "reviewed_at": "2026-02-12T23:57:17.666428"
-    },
-    {
-      "rule_id": "STATUS-003",
-      "entity_id": "3011",
-      "campaign_name": "N/A",
-      "action_type": "no_action",
-      "decision": "skipped",
-      "reviewed_at": "2026-02-12T23:57:18.525217"
     },
     {
       "rule_id": "STATUS-003",
@@ -142,6 +126,30 @@
       "action_type": "no_action",
       "decision": "rejected",
       "reviewed_at": "2026-02-14T04:59:13.664503Z"
+    },
+    {
+      "rule_id": "STATUS-003",
+      "entity_id": "3003",
+      "campaign_name": "N/A",
+      "action_type": "no_action",
+      "decision": "rejected",
+      "reviewed_at": "2026-02-15T22:55:27.017907Z"
+    },
+    {
+      "rule_id": "STATUS-003",
+      "entity_id": "3006",
+      "campaign_name": "N/A",
+      "action_type": "no_action",
+      "decision": "approved",
+      "reviewed_at": "2026-02-16T00:03:36.236696Z"
+    },
+    {
+      "rule_id": "STATUS-003",
+      "entity_id": "3011",
+      "campaign_name": "N/A",
+      "action_type": "no_action",
+      "decision": "approved",
+      "reviewed_at": "2026-02-16T00:30:59.597034Z"
     }
   ]
 }
