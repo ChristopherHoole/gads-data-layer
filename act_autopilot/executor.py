@@ -600,6 +600,12 @@ class Executor:
         keyword_id = rec.entity_id
         new_bid_micros = int((rec.recommended_value or 0) * 1_000_000)
 
+        # DEBUG LOGGING - Show exact values received
+        logger.info(f"DEBUG KW-BID: ad_group_id={ad_group_id}, keyword_id={keyword_id}, new_bid_micros={new_bid_micros}")
+        logger.info(f"DEBUG KW-BID: rec.recommended_value={rec.recommended_value}")
+        logger.info(f"DEBUG KW-BID: rec.current_value={rec.current_value}")
+        logger.info(f"DEBUG KW-BID: rec.evidence={rec.evidence}")
+
         if not all([ad_group_id, keyword_id, new_bid_micros]):
             return ExecutionResult(
                 success=False,

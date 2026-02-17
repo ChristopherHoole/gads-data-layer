@@ -683,7 +683,7 @@ function executeAdRecommendation(group, recId, dryRun) {
             },
             body: JSON.stringify({
                 recommendation_id: recId,
-                date_str: dateStr,
+                page: 'ads',
                 dry_run: dryRun
             })
         })

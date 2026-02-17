@@ -15,6 +15,7 @@ from flask import (
 )
 from act_dashboard.auth import login_required, check_credentials
 from act_dashboard.config import DashboardConfig
+from act_dashboard.utils import dict_to_recommendation, validate_recommendation_dict
 import duckdb
 import json
 from datetime import datetime, date
@@ -80,6 +81,11 @@ def init_routes(app):
     Args:
         app: Flask application instance
     """
+    
+    # Initialize recommendations cache (stored in server memory, not cookies)
+    # This avoids Flask session size limits (~4KB)
+    if 'RECOMMENDATIONS_CACHE' not in app.config:
+        app.config['RECOMMENDATIONS_CACHE'] = {}
 
     @app.route("/login", methods=["GET", "POST"])
     def login():
@@ -147,7 +153,8 @@ def init_routes(app):
         try:
             data = request.get_json()
             rec_id = data.get("recommendation_id")
-            date_str = data.get("date_str", date.today().isoformat())
+            date_str = data.get("date_str")  # Optional - for file-based recommendations
+            page = data.get("page")  # Optional - 'keywords', 'ads', 'shopping' for session-based
             dry_run = data.get("dry_run", True)
             
             if rec_id is None:
@@ -160,51 +167,136 @@ def init_routes(app):
             # Get current config
             config = get_current_config()
             
-            # Load recommendations from JSON file
-            suggestions_path = config.get_suggestions_path(date_str)
-            if not suggestions_path.exists():
+            # ==================== LOAD RECOMMENDATION ====================
+            # Two sources: FILE (main recommendations page) or SESSION (keywords/ads/shopping)
+            
+            recommendation = None
+            
+            # Option 1: Load from CACHE (live recommendations from keywords/ads/shopping)
+            if page:
+                cache = current_app.config.get('RECOMMENDATIONS_CACHE', {})
+                recommendations = cache.get(page, [])
+                
+                if not recommendations:
+                    return jsonify({
+                        "success": False,
+                        "message": f"No {page} recommendations in cache",
+                        "error": f"Please refresh the {page} page to generate recommendations"
+                    }), 404
+                
+                if rec_id < 0 or rec_id >= len(recommendations):
+                    return jsonify({
+                        "success": False,
+                        "message": "Invalid recommendation_id",
+                        "error": f"recommendation_id {rec_id} out of range (cache has {len(recommendations)} recommendations)"
+                    }), 400
+                
+                recommendation = recommendations[rec_id]
+            
+            # Option 2: Load from FILE (main recommendations page)
+            else:
+                if not date_str:
+                    date_str = date.today().isoformat()
+                
+                suggestions_path = config.get_suggestions_path(date_str)
+                if not suggestions_path.exists():
+                    return jsonify({
+                        "success": False,
+                        "message": "Recommendations file not found",
+                        "error": f"No recommendations file for {date_str}. Try refreshing the Recommendations page."
+                    }), 404
+                
+                with open(suggestions_path, "r") as f:
+                    suggestions = json.load(f)
+                
+                recommendations = suggestions.get("recommendations", [])
+                
+                if rec_id < 0 or rec_id >= len(recommendations):
+                    return jsonify({
+                        "success": False,
+                        "message": "Invalid recommendation_id",
+                        "error": f"recommendation_id {rec_id} out of range (file has {len(recommendations)} recommendations)"
+                    }), 400
+                
+                recommendation = recommendations[rec_id]
+            
+            # ==================== VALIDATE RECOMMENDATION ====================
+            
+            # Validate recommendation dict
+            is_valid, validation_error = validate_recommendation_dict(recommendation)
+            if not is_valid:
                 return jsonify({
                     "success": False,
-                    "message": "Recommendations file not found",
-                    "error": f"No recommendations for {date_str}"
-                }), 404
-            
-            with open(suggestions_path, "r") as f:
-                suggestions = json.load(f)
-            
-            recommendations = suggestions.get("recommendations", [])
-            
-            if rec_id < 0 or rec_id >= len(recommendations):
-                return jsonify({
-                    "success": False,
-                    "message": "Invalid recommendation_id",
-                    "error": f"recommendation_id {rec_id} out of range"
+                    "message": "Invalid recommendation format",
+                    "error": f"Validation failed: {validation_error}"
                 }), 400
-            
-            recommendation = recommendations[rec_id]
             
             # Check if already blocked
             if recommendation.get("blocked", False):
                 return jsonify({
                     "success": False,
                     "message": "Recommendation is blocked",
-                    "error": "This recommendation was blocked by guardrails"
+                    "error": recommendation.get("block_reason", "This recommendation was blocked by guardrails")
                 }), 400
             
+            # Convert dict to Recommendation object
+            try:
+                rec_obj = dict_to_recommendation(recommendation)
+            except (ValueError, TypeError) as e:
+                return jsonify({
+                    "success": False,
+                    "message": "Failed to convert recommendation",
+                    "error": str(e)
+                }), 500
+            
             # Initialize executor
-            google_ads_client = get_google_ads_client(config)
-            executor = Executor(config, config.db_path, google_ads_client)
+            # Only initialize Google Ads client for live execution, not dry-run
+            google_ads_client = None
+            if not dry_run:
+                try:
+                    google_ads_client = get_google_ads_client(config)
+                except FileNotFoundError as e:
+                    return jsonify({
+                        "success": False,
+                        "message": "Google Ads credentials not found",
+                        "error": "Please configure Google Ads API credentials in secrets/google-ads.yaml"
+                    }), 500
+                except Exception as e:
+                    return jsonify({
+                        "success": False,
+                        "message": "Google Ads authentication failed",
+                        "error": str(e)
+                    }), 500
             
-            # Execute
-            results = executor.execute([recommendation], dry_run=dry_run)
-            result = results[0]
+            executor = Executor(config.customer_id, config.db_path, google_ads_client)
             
-            # Return result
+            # Execute (pass Recommendation object, not dict)
+            try:
+                execution_summary = executor.execute([rec_obj], dry_run=dry_run)
+                # Executor returns: {"total": 1, "successful": 1, "failed": 0, "results": [...]}
+                
+                # Check if any recommendations were executable
+                if len(execution_summary["results"]) == 0:
+                    return jsonify({
+                        "success": False,
+                        "message": "This recommendation type cannot be executed via the dashboard",
+                        "error": "Non-executable action type (e.g., review recommendations)"
+                    }), 400
+                
+                result = execution_summary["results"][0]
+            except Exception as e:
+                return jsonify({
+                    "success": False,
+                    "message": "Execution failed",
+                    "error": str(e)
+                }), 500
+            
+            # Return result (result is a dict, not an object)
             return jsonify({
-                "success": result.success,
-                "message": result.message,
-                "change_id": result.change_id,
-                "error": None if result.success else result.message
+                "success": result["success"],
+                "message": result["message"],
+                "change_id": result.get("change_id"),
+                "error": result.get("error")
             })
             
         except Exception as e:
@@ -295,7 +387,7 @@ def init_routes(app):
             
             # Initialize executor
             google_ads_client = get_google_ads_client(config)
-            executor = Executor(config, config.db_path, google_ads_client)
+            executor = Executor(config.customer_id, config.db_path, google_ads_client)
             
             # Execute all valid recommendations
             recs_only = [r[1] for r in recommendations_to_execute]
@@ -1006,15 +1098,58 @@ def init_routes(app):
                         pass
 
             rec_count = len(kw_recs)
-
-            # Add index as id for each recommendation (for execution API)
+            
+            # Map dashboard action types to executor-compatible types
+            action_type_map = {
+                'keyword_pause': 'pause_keyword',
+                'keyword_bid_decrease': 'update_keyword_bid',
+                'keyword_bid_increase': 'update_keyword_bid',
+                'keyword_bid_hold': 'update_keyword_bid',
+                'add_keyword_exact': 'add_keyword',
+                'add_keyword_phrase': 'add_keyword',
+                'add_negative_exact': 'add_negative_keyword',
+            }
+            
+            # Build explicit dict mapping (avoids asdict() serialization issues)
+            # Use None-safe defaults to prevent JavaScript/sorting errors
+            keywords_cache = []
             for idx, rec in enumerate(kw_recs):
-                rec.id = idx
+                # Map action type
+                mapped_action_type = action_type_map.get(rec.action_type, rec.action_type)
+                
+                keywords_cache.append({
+                    'id': idx,
+                    'rule_id': rec.rule_id,
+                    'rule_name': rec.rule_name,
+                    'entity_type': rec.entity_type,
+                    'entity_id': rec.entity_id,
+                    'action_type': mapped_action_type,
+                    'risk_tier': rec.risk_tier,
+                    'confidence': rec.confidence or 0.0,
+                    'current_value': rec.current_value,  # Can be None - handled by template
+                    'recommended_value': rec.recommended_value,  # Can be None - handled by template
+                    'change_pct': rec.change_pct,  # Can be None - handled by template
+                    'rationale': rec.rationale or '',
+                    'campaign_name': rec.campaign_name or '',
+                    'blocked': rec.blocked or False,
+                    'block_reason': rec.block_reason or '',
+                    'priority': rec.priority if rec.priority is not None else 50,
+                    'constitution_refs': rec.constitution_refs or [],
+                    'guardrails_checked': rec.guardrails_checked or [],
+                    'evidence': rec.evidence if rec.evidence else {},
+                    'triggering_diagnosis': rec.triggering_diagnosis or '',
+                    'triggering_confidence': rec.triggering_confidence or 0.0,
+                    'expected_impact': rec.expected_impact or '',
+                })
+            
+            # Store in cache for execution API (live recommendations)
+            # Using server-side cache instead of session cookies (no size limit!)
+            current_app.config['RECOMMENDATIONS_CACHE']['keywords'] = keywords_cache
 
-            # Group recommendations
+            # Group recommendations using cache dicts (which have 'id' field for template)
             groups = {}
-            for rec in sorted(kw_recs, key=lambda r: r.priority):
-                prefix = rec.rule_id.rsplit("-", 1)[0]
+            for rec_dict in sorted(keywords_cache, key=lambda r: r['priority']):
+                prefix = rec_dict['rule_id'].rsplit("-", 1)[0]
                 group_map = {
                     "KW-PAUSE": "Keyword Pause",
                     "KW-BID": "Keyword Bid Adjustments",
@@ -1025,7 +1160,7 @@ def init_routes(app):
                 gname = group_map.get(prefix, prefix)
                 if gname not in groups:
                     groups[gname] = []
-                groups[gname].append(rec)
+                groups[gname].append(rec_dict)
 
             group_order = [
                 "Keyword Pause", "Keyword Bid Adjustments",
@@ -1185,9 +1320,18 @@ def init_routes(app):
                     "ad_group_name": r.ad_group_name,
                     "current_value": r.current_value,
                     "recommended_value": r.recommended_value,
+                    "evidence": r.evidence if r.evidence else {},
                 }
                 for r in recommendations_list
             ]
+            
+            # Add ID enumeration for frontend (needed for execution API)
+            for i, rec in enumerate(recommendations):
+                rec['id'] = i
+            
+            # Store in cache for execution API (live recommendations)
+            # Using server-side cache instead of session cookies (no size limit!)
+            current_app.config['RECOMMENDATIONS_CACHE']['ads'] = recommendations
 
             # Group recommendations by category
             pause_recs = [r for r in recommendations if r["action_type"] == "pause_ad"]
@@ -1439,24 +1583,63 @@ def init_routes(app):
                 
                 # Try running a few rules (safe mode - catch errors)
                 if len(products_df) > 0:
-                    # Example: Try to get high ROAS products
-                    high_roas = products_df[products_df['roas_w30'] > 4]
+                    # Filter: High ROAS + must have clicks/cost data
+                    high_roas = products_df[
+                        (products_df['roas_w30'] > 1) & 
+                        (products_df['clicks_w30_sum'] > 0) &
+                        (products_df['cost_micros_w30_sum'] > 0)
+                    ]
+                    
                     for _, row in high_roas.head(10).iterrows():
+                        # Calculate current bid proxy from avg CPC
+                        clicks = row['clicks_w30_sum']
+                        cost_micros = row['cost_micros_w30_sum']
+                        avg_cpc_micros = cost_micros / clicks
+                        current_bid_dollars = avg_cpc_micros / 1_000_000
+                        recommended_bid_dollars = current_bid_dollars * 1.15  # +15% increase
+                        
                         recommendations_list.append({
                             "rule_id": "SHOP-BID-001",
+                            "rule_name": "High ROAS Product Bid Increase",
                             "entity_type": "product",
                             "entity_id": row['product_id'],
-                            "entity_name": row['product_title'],
-                            "action_type": "Increase Bid",
-                            "current_value": "Current bid",
-                            "proposed_value": "+15% bid",
-                            "reasoning": f"High ROAS ({row['roas_w30']:.2f}) indicates strong performance",
+                            "action_type": "update_product_bid",
+                            "risk_tier": "low",
                             "confidence": 0.85,
-                            "risk_tier": "LOW",
+                            "current_value": current_bid_dollars,
+                            "recommended_value": recommended_bid_dollars,
+                            "change_pct": 0.15,
+                            "rationale": f"High ROAS ({row['roas_w30']:.2f}) indicates strong performance. Recommend +15% bid increase.",
+                            "campaign_name": None,
+                            "blocked": False,
+                            "block_reason": None,
+                            "priority": 50,
+                            "constitution_refs": [],
+                            "guardrails_checked": [],
+                            "evidence": {
+                                "product_id": row['product_id'],
+                                "product_title": row['product_title'],
+                                "roas_w30": float(row['roas_w30']),
+                                "clicks_w30": int(row['clicks_w30_sum']),
+                                "conversions_w30": int(row['conversions_w30_sum']),
+                                "cost_w30": float(row['cost_micros_w30_sum']) / 1_000_000,
+                                "avg_cpc_dollars": current_bid_dollars,
+                            },
+                            "triggering_diagnosis": "HIGH_ROAS_PRODUCT",
+                            "triggering_confidence": 0.85,
+                            "expected_impact": f"Increase visibility for high-performing product (ROAS: {row['roas_w30']:.2f})",
                         })
             except Exception as e:
                 # If recommendations fail, continue with empty list
                 pass
+            
+            # Add ID enumeration for frontend (needed for execution API)
+            for i, rec in enumerate(recommendations_list):
+                rec['id'] = i
+            
+            # Store in cache for execution API (live recommendations)
+            # Using server-side cache instead of session cookies (no size limit!)
+            current_app.config['RECOMMENDATIONS_CACHE']['shopping'] = recommendations_list
             
             # Summary stats
             total_products = len(products_list)

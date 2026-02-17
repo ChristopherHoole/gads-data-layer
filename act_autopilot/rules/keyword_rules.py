@@ -454,6 +454,14 @@ def kw_bid_003_hold_low_data(ctx: RuleContext) -> Optional[Recommendation]:
 
     keyword_id = str(ctx.features.get("keyword_id"))
     keyword_text = ctx.features.get("keyword_text", "")
+    
+    # Get current bid for executor
+    current_bid_micros = _safe_float(ctx.features.get("cpc_bid_micros"))
+    current_bid_dollars = current_bid_micros / 1_000_000 if current_bid_micros > 0 else 0.0
+    
+    # Skip if keyword has no bid set (can't hold a non-existent bid)
+    if current_bid_dollars <= 0:
+        return None
 
     return Recommendation(
         rule_id="KW-BID-003",
@@ -463,8 +471,8 @@ def kw_bid_003_hold_low_data(ctx: RuleContext) -> Optional[Recommendation]:
         action_type="keyword_bid_hold",
         risk_tier="low",
         confidence=0.80,
-        current_value=None,
-        recommended_value=None,
+        current_value=current_bid_dollars,
+        recommended_value=current_bid_dollars,
         change_pct=0.0,
         rationale=(
             f"Keyword '{keyword_text}' has insufficient data for bid changes. "
@@ -475,7 +483,9 @@ def kw_bid_003_hold_low_data(ctx: RuleContext) -> Optional[Recommendation]:
             "match_type": ctx.features.get("match_type", ""),
             "campaign_id": str(ctx.features.get("campaign_id")),
             "campaign_name": ctx.features.get("campaign_name", "Unknown"),
+            "ad_group_id": str(ctx.features.get("ad_group_id")) if ctx.features.get("ad_group_id") else None,
             "clicks_w7": clicks_w7,
+            "clicks_30d": _safe_float(ctx.features.get("clicks_w30_sum")),
             "conversions_w30": _safe_float(ctx.features.get("conversions_w30_sum")),
             "low_data_clicks_7d": ctx.features.get("low_data_clicks_7d"),
             "low_data_conversions_30d": ctx.features.get("low_data_conversions_30d"),

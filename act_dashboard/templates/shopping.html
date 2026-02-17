@@ -597,7 +597,7 @@ function executeShoppingRecommendation(recId, dryRun) {
             },
             body: JSON.stringify({
                 recommendation_id: recId,
-                date_str: dateStr,
+                page: 'shopping',
                 dry_run: dryRun
             })
         })
