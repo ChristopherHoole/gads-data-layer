@@ -1581,62 +1581,44 @@ def init_routes(app):
                         AND snapshot_date = ?
                 """, (cfg.customer_id, snapshot_date)).df()
                 
-                # Try running a few rules (safe mode - catch errors)
+                # Call shopping rules (matches keywords/ads pattern)
                 if len(products_df) > 0:
-                    # Filter: High ROAS + must have clicks/cost data
-                    high_roas = products_df[
-                        (products_df['roas_w30'] > 1) & 
-                        (products_df['clicks_w30_sum'] > 0) &
-                        (products_df['cost_micros_w30_sum'] > 0)
-                    ]
+                    # Convert DataFrame to list of dicts for rules
+                    product_list = products_df.to_dict('records')
                     
-                    for _, row in high_roas.head(10).iterrows():
-                        # Calculate current bid proxy from avg CPC
-                        clicks = row['clicks_w30_sum']
-                        cost_micros = row['cost_micros_w30_sum']
-                        avg_cpc_micros = cost_micros / clicks
-                        current_bid_dollars = avg_cpc_micros / 1_000_000
-                        recommended_bid_dollars = current_bid_dollars * 1.15  # +15% increase
-                        
+                    # Apply rules (returns Recommendation objects)
+                    shop_recs = shopping_rules.apply_rules(product_list, ctx=None)
+                    
+                    # Convert Recommendation objects to dicts for cache
+                    # (matches keywords pattern - explicit field mapping)
+                    for idx, rec in enumerate(shop_recs):
                         recommendations_list.append({
-                            "rule_id": "SHOP-BID-001",
-                            "rule_name": "High ROAS Product Bid Increase",
-                            "entity_type": "product",
-                            "entity_id": row['product_id'],
-                            "action_type": "update_product_bid",
-                            "risk_tier": "low",
-                            "confidence": 0.85,
-                            "current_value": current_bid_dollars,
-                            "recommended_value": recommended_bid_dollars,
-                            "change_pct": 0.15,
-                            "rationale": f"High ROAS ({row['roas_w30']:.2f}) indicates strong performance. Recommend +15% bid increase.",
-                            "campaign_name": None,
-                            "blocked": False,
-                            "block_reason": None,
-                            "priority": 50,
-                            "constitution_refs": [],
-                            "guardrails_checked": [],
-                            "evidence": {
-                                "product_id": row['product_id'],
-                                "product_title": row['product_title'],
-                                "ad_group_id": "unknown",  # Placeholder - executor requires this field
-                                "roas_w30": float(row['roas_w30']),
-                                "clicks_w30": int(row['clicks_w30_sum']),
-                                "conversions_w30": int(row['conversions_w30_sum']),
-                                "cost_w30": float(row['cost_micros_w30_sum']) / 1_000_000,
-                                "avg_cpc_dollars": current_bid_dollars,
-                            },
-                            "triggering_diagnosis": "HIGH_ROAS_PRODUCT",
-                            "triggering_confidence": 0.85,
-                            "expected_impact": f"Increase visibility for high-performing product (ROAS: {row['roas_w30']:.2f})",
+                            'id': idx,
+                            'rule_id': rec.rule_id,
+                            'rule_name': rec.rule_name,
+                            'entity_type': rec.entity_type,
+                            'entity_id': rec.entity_id,
+                            'action_type': rec.action_type,
+                            'risk_tier': rec.risk_tier,
+                            'confidence': rec.confidence or 0.0,
+                            'current_value': rec.current_value,
+                            'recommended_value': rec.recommended_value,
+                            'change_pct': rec.change_pct,
+                            'rationale': rec.rationale or '',
+                            'campaign_name': rec.campaign_name or '',
+                            'blocked': rec.blocked or False,
+                            'block_reason': rec.block_reason or '',
+                            'priority': rec.priority if rec.priority is not None else 50,
+                            'constitution_refs': rec.constitution_refs or [],
+                            'guardrails_checked': rec.guardrails_checked or [],
+                            'evidence': rec.evidence if rec.evidence else {},
+                            'triggering_diagnosis': rec.triggering_diagnosis or '',
+                            'triggering_confidence': rec.triggering_confidence or 0.0,
+                            'expected_impact': rec.expected_impact or '',
                         })
             except Exception as e:
                 # If recommendations fail, continue with empty list
                 pass
-            
-            # Add ID enumeration for frontend (needed for execution API)
-            for i, rec in enumerate(recommendations_list):
-                rec['id'] = i
             
             # Store in cache for execution API (live recommendations)
             # Using server-side cache instead of session cookies (no size limit!)
