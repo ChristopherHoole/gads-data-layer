@@ -1619,6 +1619,7 @@ def init_routes(app):
                             "evidence": {
                                 "product_id": row['product_id'],
                                 "product_title": row['product_title'],
+                                "ad_group_id": "unknown",  # Placeholder - executor requires this field
                                 "roas_w30": float(row['roas_w30']),
                                 "clicks_w30": int(row['clicks_w30_sum']),
                                 "conversions_w30": int(row['conversions_w30_sum']),
