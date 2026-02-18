@@ -8,6 +8,7 @@ from act_dashboard.routes.shared import get_current_config, get_available_client
 import duckdb
 import json
 from datetime import date
+from typing import Optional
 
 bp = Blueprint('recommendations', __name__)
 
@@ -15,8 +16,16 @@ bp = Blueprint('recommendations', __name__)
 @bp.route("/recommendations")
 @bp.route("/recommendations/<date_str>")
 @login_required
-def recommendations(date_str=None):
-    """Recommendations page for viewing and approving suggestions."""
+def recommendations(date_str: Optional[str] = None) -> str:
+    """
+    Recommendations page for viewing and approving suggestions.
+    
+    Args:
+        date_str: Date string in ISO format (YYYY-MM-DD), uses today if None
+        
+    Returns:
+        Rendered recommendations template
+    """
     config = get_current_config()
     clients = get_available_clients()
     current_client_path = session.get("current_client_config")
@@ -98,8 +107,13 @@ def recommendations(date_str=None):
 
 @bp.route("/changes")
 @login_required
-def changes():
-    """Change history page showing all executed changes."""
+def changes() -> str:
+    """
+    Change history page showing all executed changes.
+    
+    Returns:
+        Rendered changes template
+    """
     config = get_current_config()
     clients = get_available_clients()
     current_client_path = session.get("current_client_config")

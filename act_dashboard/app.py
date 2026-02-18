@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from act_dashboard.routes import register_blueprints
 from act_dashboard.auth import init_auth
 from act_dashboard.cache import ExpiringCache
+from act_dashboard.config_validator import validate_all_configs, print_validation_errors
 
 
 def discover_clients():
@@ -64,6 +65,16 @@ def create_app():
         "DASHBOARD_SECRET_KEY", "dev-secret-key-change-in-production"
     )
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=24)
+
+    # Validate all client configs on startup (Phase 2d)
+    config_dir = Path("configs")
+    is_valid, errors = validate_all_configs(config_dir)
+    
+    if not is_valid:
+        print_validation_errors(errors)
+        print("\n⚠️  WARNING: Some configs have errors. App will start but those clients may not work.\n")
+        # Uncomment next line to prevent startup with invalid configs:
+        # raise ValueError("Invalid client configurations detected")
 
     # Discover available clients
     clients = discover_clients()

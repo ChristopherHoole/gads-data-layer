@@ -2,17 +2,23 @@
 Settings page route - client configuration.
 """
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, Response
 from act_dashboard.auth import login_required
 from act_dashboard.routes.shared import get_current_config, get_available_clients
+from typing import Union
 
 bp = Blueprint('settings', __name__)
 
 
 @bp.route("/settings", methods=["GET", "POST"])
 @login_required
-def settings():
-    """Settings page for editing client configuration."""
+def settings() -> Union[str, Response]:
+    """
+    Settings page for editing client configuration.
+    
+    Returns:
+        Rendered settings template or redirect after save
+    """
     config = get_current_config()
     clients = get_available_clients()
     current_client_path = session.get("current_client_config")

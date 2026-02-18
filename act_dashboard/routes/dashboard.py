@@ -8,14 +8,20 @@ from act_dashboard.routes.shared import get_current_config, get_available_client
 import duckdb
 import json
 from datetime import date
+from typing import Any
 
 bp = Blueprint('dashboard', __name__)
 
 
 @bp.route("/")
 @login_required
-def home():
-    """Dashboard home page with overview stats."""
+def home() -> str:
+    """
+    Dashboard home page with overview stats.
+    
+    Returns:
+        Rendered dashboard template
+    """
     config = get_current_config()
     clients = get_available_clients()
     current_client_path = session.get("current_client_config")
