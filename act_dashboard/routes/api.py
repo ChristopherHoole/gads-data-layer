@@ -11,8 +11,43 @@ from act_autopilot.executor import Executor
 import duckdb
 import json
 from datetime import datetime, date
+from time import time
 
 bp = Blueprint('api', __name__)
+
+
+def check_rate_limit(key, limit=10, window=60):
+    """
+    Check if rate limit is exceeded.
+    
+    Args:
+        key: Unique key for this endpoint/user
+        limit: Maximum requests allowed
+        window: Time window in seconds
+        
+    Returns:
+        (allowed, remaining, reset_time) tuple
+    """
+    now = time()
+    rate_limit_data = current_app.config.setdefault('RATE_LIMIT_DATA', {})
+    
+    if key not in rate_limit_data:
+        rate_limit_data[key] = []
+    
+    # Remove expired timestamps
+    rate_limit_data[key] = [ts for ts in rate_limit_data[key] if now - ts < window]
+    
+    # Check if limit exceeded
+    if len(rate_limit_data[key]) >= limit:
+        oldest = min(rate_limit_data[key])
+        reset_time = oldest + window
+        return False, 0, int(reset_time - now)
+    
+    # Add current request
+    rate_limit_data[key].append(now)
+    remaining = limit - len(rate_limit_data[key])
+    return True, remaining, window
+
 
 
 @bp.route("/execute-recommendation", methods=["POST"])
@@ -37,6 +72,19 @@ def execute_recommendation():
         }
     """
     try:
+        # Rate limit: 10 requests per minute per IP
+        ip_address = request.remote_addr or 'unknown'
+        rate_key = f"execute:{ip_address}"
+        allowed, remaining, reset_seconds = check_rate_limit(rate_key, limit=10, window=60)
+        
+        if not allowed:
+            return jsonify({
+                "success": False,
+                "message": "Rate limit exceeded",
+                "error": f"Maximum 10 requests per minute. Try again in {reset_seconds} seconds.",
+                "retry_after": reset_seconds
+            }), 429
+        
         data = request.get_json()
         rec_id = data.get("recommendation_id")
         date_str = data.get("date_str")  # Optional - for file-based recommendations
@@ -219,6 +267,19 @@ def execute_batch():
         }
     """
     try:
+        # Rate limit: 10 requests per minute per IP (stricter for batch)
+        ip_address = request.remote_addr or 'unknown'
+        rate_key = f"execute-batch:{ip_address}"
+        allowed, remaining, reset_seconds = check_rate_limit(rate_key, limit=5, window=60)
+        
+        if not allowed:
+            return jsonify({
+                "success": False,
+                "message": "Rate limit exceeded",
+                "error": f"Maximum 5 batch requests per minute. Try again in {reset_seconds} seconds.",
+                "retry_after": reset_seconds
+            }), 429
+        
         data = request.get_json()
         rec_ids = data.get("recommendation_ids", [])
         date_str = data.get("date_str")

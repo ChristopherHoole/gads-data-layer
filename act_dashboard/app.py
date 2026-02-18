@@ -4,6 +4,8 @@ Flask web interface supporting multiple Google Ads clients.
 """
 
 from flask import Flask
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from datetime import timedelta
 import os
 import sys
@@ -82,6 +84,17 @@ def create_app():
     # Using server-side cache instead of session cookies (no size limit!)
     if 'RECOMMENDATIONS_CACHE' not in app.config:
         app.config['RECOMMENDATIONS_CACHE'] = {}
+
+    # Initialize rate limiter (Phase 1f)
+    # Default: 200 requests per day, 50 per hour
+    # Execution endpoints have stricter limits (10 per minute)
+    limiter = Limiter(
+        app=app,
+        key_func=get_remote_address,
+        default_limits=["200 per day", "50 per hour"],
+        storage_uri="memory://",
+    )
+    app.config['LIMITER'] = limiter
 
     # Register all route blueprints (Phase 1 complete - all 16 routes migrated)
     register_blueprints(app)
