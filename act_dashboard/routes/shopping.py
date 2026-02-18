@@ -1,5 +1,6 @@
 """
 Shopping page route - shopping campaigns, products, feed quality, and recommendations.
+Refactored into smaller, focused functions.
 """
 
 from flask import Blueprint, render_template, session
@@ -10,20 +11,306 @@ from act_dashboard.routes.shared import (
     recommendation_to_dict,
     cache_recommendations
 )
+from typing import List, Dict, Any, Tuple
 import duckdb
 
 bp = Blueprint('shopping', __name__)
 
 
+def load_shopping_campaigns(conn, customer_id: str, snapshot_date) -> List[Dict[str, Any]]:
+    """
+    Load shopping campaign data for last 30 days.
+    
+    Args:
+        conn: Database connection
+        customer_id: Customer ID
+        snapshot_date: Snapshot date
+        
+    Returns:
+        List of campaign dictionaries
+    """
+    campaigns = conn.execute("""
+        SELECT 
+            campaign_id,
+            campaign_name,
+            campaign_priority,
+            feed_label,
+            SUM(impressions) as impressions,
+            SUM(clicks) as clicks,
+            SUM(cost_micros) as cost_micros,
+            SUM(conversions) as conversions,
+            SUM(conversions_value) as conv_value
+        FROM raw_shopping_campaign_daily
+        WHERE customer_id = ?
+            AND snapshot_date BETWEEN ? - INTERVAL 30 DAYS AND ?
+        GROUP BY campaign_id, campaign_name, campaign_priority, feed_label
+        ORDER BY SUM(cost_micros) DESC
+    """, (customer_id, snapshot_date, snapshot_date)).fetchall()
+    
+    campaigns_list = []
+    for c in campaigns:
+        cost = float(c[6] or 0) / 1_000_000
+        conv_value = float(c[8] or 0) / 1_000_000
+        roas = conv_value / cost if cost > 0 else 0
+        
+        # Map priority
+        priority_map = {0: "Low", 1: "Medium", 2: "High"}
+        priority_str = priority_map.get(c[2], "Unknown")
+        
+        campaigns_list.append({
+            "campaign_id": c[0],
+            "campaign_name": c[1],
+            "priority": priority_str,
+            "priority_num": c[2],
+            "feed_label": c[3] or "None",
+            "impressions": int(c[4] or 0),
+            "clicks": int(c[5] or 0),
+            "cost": cost,
+            "conversions": float(c[7] or 0),
+            "conv_value": conv_value,
+            "roas": roas,
+        })
+    
+    return campaigns_list
+
+
+def load_shopping_products(conn, customer_id: str, snapshot_date) -> List[Dict[str, Any]]:
+    """
+    Load product features for current snapshot.
+    
+    Args:
+        conn: Database connection
+        customer_id: Customer ID
+        snapshot_date: Snapshot date
+        
+    Returns:
+        List of product dictionaries
+    """
+    products = conn.execute("""
+        SELECT 
+            product_id,
+            product_title,
+            product_brand,
+            product_category,
+            availability,
+            impressions_w30_sum,
+            clicks_w30_sum,
+            cost_micros_w30_sum,
+            conversions_w30_sum,
+            conversions_value_w30_sum,
+            ctr_w30,
+            cvr_w30,
+            roas_w30,
+            stock_out_flag,
+            stock_out_days_w30,
+            feed_quality_score,
+            has_price_mismatch,
+            has_disapproval,
+            new_product_flag,
+            days_live,
+            low_data_flag
+        FROM analytics.product_features_daily
+        WHERE snapshot_date = ?
+            AND customer_id = ?
+        ORDER BY cost_micros_w30_sum DESC
+        LIMIT 200
+    """, (snapshot_date, customer_id)).fetchall()
+    
+    products_list = []
+    for p in products:
+        products_list.append({
+            "product_id": p[0],
+            "product_title": p[1],
+            "product_brand": p[2],
+            "product_category": p[3],
+            "availability": p[4],
+            "impressions": int(p[5] or 0),
+            "clicks": int(p[6] or 0),
+            "cost": float(p[7] or 0) / 1_000_000,
+            "conversions": float(p[8] or 0),
+            "conv_value": float(p[9] or 0) / 1_000_000,
+            "ctr": float(p[10] or 0) * 100,
+            "cvr": float(p[11] or 0) * 100,
+            "roas": float(p[12] or 0),
+            "stock_out_flag": bool(p[13]),
+            "stock_out_days": int(p[14] or 0),
+            "feed_quality": float(p[15] or 0) * 100,
+            "price_mismatch": bool(p[16]),
+            "disapproved": bool(p[17]),
+            "is_new": bool(p[18]),
+            "days_live": int(p[19] or 0),
+            "low_data": bool(p[20]),
+        })
+    
+    return products_list
+
+
+def load_feed_quality_data(conn, customer_id: str, snapshot_date) -> Tuple[Dict[str, int], List[Dict]]:
+    """
+    Load feed quality statistics and issues.
+    
+    Args:
+        conn: Database connection
+        customer_id: Customer ID
+        snapshot_date: Snapshot date
+        
+    Returns:
+        Tuple of (quality_stats, feed_issues_list)
+    """
+    # Get quality stats
+    feed_quality = conn.execute("""
+        SELECT 
+            approval_status,
+            price_mismatch,
+            COUNT(*) as count
+        FROM raw_product_feed_quality
+        WHERE customer_id = ?
+            AND snapshot_date = ?
+        GROUP BY approval_status, price_mismatch
+    """, (customer_id, snapshot_date)).fetchall()
+    
+    total_feed_products = sum(f[2] for f in feed_quality)
+    approved_count = sum(f[2] for f in feed_quality if f[0] == 'APPROVED' and not f[1])
+    disapproved_count = sum(f[2] for f in feed_quality if f[0] == 'DISAPPROVED')
+    price_mismatch_count = sum(f[2] for f in feed_quality if f[1])
+    
+    pct_approved = (approved_count / total_feed_products * 100) if total_feed_products > 0 else 0
+    pct_disapproved = (disapproved_count / total_feed_products * 100) if total_feed_products > 0 else 0
+    pct_price_mismatch = (price_mismatch_count / total_feed_products * 100) if total_feed_products > 0 else 0
+    
+    quality_stats = {
+        'total_feed_products': total_feed_products,
+        'pct_approved': pct_approved,
+        'pct_disapproved': pct_disapproved,
+        'pct_price_mismatch': pct_price_mismatch,
+    }
+    
+    # Get products with issues
+    feed_issues = conn.execute("""
+        SELECT 
+            f.product_id,
+            p.product_title,
+            p.product_brand,
+            f.approval_status,
+            f.price_mismatch,
+            f.disapproval_reasons
+        FROM raw_product_feed_quality f
+        LEFT JOIN analytics.product_features_daily p 
+            ON f.product_id = p.product_id AND f.customer_id = p.customer_id
+        WHERE f.customer_id = ?
+            AND f.snapshot_date = ?
+            AND (f.approval_status != 'APPROVED' OR f.price_mismatch = TRUE)
+        ORDER BY f.approval_status DESC
+        LIMIT 100
+    """, (customer_id, snapshot_date)).fetchall()
+    
+    feed_issues_list = []
+    for f in feed_issues:
+        issues = []
+        if f[3] == 'DISAPPROVED':
+            issues.append('Disapproved')
+        if f[4]:
+            issues.append('Price Mismatch')
+        
+        feed_issues_list.append({
+            "product_id": f[0],
+            "product_title": f[1] or "Unknown",
+            "product_brand": f[2] or "Unknown",
+            "approval_status": f[3],
+            "price_mismatch": f[4],
+            "disapproval_reasons": f[5] if f[5] else [],
+            "issues": ", ".join(issues),
+        })
+    
+    return quality_stats, feed_issues_list
+
+
+def generate_shopping_recommendations(conn, customer_id: str, snapshot_date) -> List[Dict[str, Any]]:
+    """
+    Generate shopping recommendations using shopping rules.
+    
+    Args:
+        conn: Database connection
+        customer_id: Customer ID
+        snapshot_date: Snapshot date
+        
+    Returns:
+        List of recommendation dictionaries
+    """
+    recommendations_list = []
+    
+    try:
+        from act_autopilot.rules import shopping_rules
+        
+        products_df = conn.execute("""
+            SELECT *
+            FROM analytics.product_features_daily
+            WHERE customer_id = ?
+                AND snapshot_date = ?
+        """, (customer_id, snapshot_date)).df()
+        
+        if len(products_df) > 0:
+            product_list = products_df.to_dict('records')
+            shop_recs = shopping_rules.apply_rules(product_list, ctx=None)
+            
+            # Convert using helper
+            recommendations_list = [
+                recommendation_to_dict(rec, index=idx)
+                for idx, rec in enumerate(shop_recs)
+            ]
+    except Exception:
+        pass
+    
+    return recommendations_list
+
+
+def compute_product_summary(products_list: List[Dict]) -> Dict[str, Any]:
+    """
+    Compute summary statistics for products.
+    
+    Args:
+        products_list: List of product dictionaries
+        
+    Returns:
+        Dictionary of summary stats
+    """
+    total_products = len(products_list)
+    total_cost = sum(p["cost"] for p in products_list)
+    total_conversions = sum(p["conversions"] for p in products_list)
+    total_conv_value = sum(p["conv_value"] for p in products_list)
+    avg_roas = total_conv_value / total_cost if total_cost > 0 else 0
+    
+    out_of_stock = sum(1 for p in products_list if p["stock_out_flag"])
+    price_mismatches = sum(1 for p in products_list if p["price_mismatch"])
+    disapproved = sum(1 for p in products_list if p["disapproved"])
+    feed_issues_count = out_of_stock + price_mismatches + disapproved
+    
+    return {
+        'total_products': total_products,
+        'total_cost': total_cost,
+        'total_conversions': total_conversions,
+        'total_conv_value': total_conv_value,
+        'avg_roas': avg_roas,
+        'out_of_stock': out_of_stock,
+        'price_mismatches': price_mismatches,
+        'disapproved': disapproved,
+        'feed_issues_count': feed_issues_count,
+    }
+
+
 @bp.route("/shopping")
 @login_required
 def shopping():
-    """Shopping dashboard with 4 tabs: Campaigns, Products, Feed Quality, Recommendations."""
+    """
+    Shopping dashboard with 4 tabs: Campaigns, Products, Feed Quality, Recommendations.
+    
+    Main coordinator function - delegates to helper functions.
+    """
     try:
-        # Get common page context (replaces 3 lines)
+        # Get common page context
         cfg, clients, current_client_path = get_page_context()
         
-        # Note: Shopping uses read_only=True, so we do manual connection here
+        # Note: Shopping uses read_only=True
         conn = duckdb.connect(cfg.db_path, read_only=True)
         
         # Get latest snapshot date
@@ -45,207 +332,19 @@ def shopping():
         
         snapshot_date = snapshot_date[0]
         
-        # ==================== TAB 1: CAMPAIGNS ====================
-        campaigns = conn.execute("""
-            SELECT 
-                campaign_id,
-                campaign_name,
-                campaign_priority,
-                feed_label,
-                SUM(impressions) as impressions,
-                SUM(clicks) as clicks,
-                SUM(cost_micros) as cost_micros,
-                SUM(conversions) as conversions,
-                SUM(conversions_value) as conv_value
-            FROM raw_shopping_campaign_daily
-            WHERE customer_id = ?
-                AND snapshot_date BETWEEN ? - INTERVAL 30 DAYS AND ?
-            GROUP BY campaign_id, campaign_name, campaign_priority, feed_label
-            ORDER BY SUM(cost_micros) DESC
-        """, (cfg.customer_id, snapshot_date, snapshot_date)).fetchall()
-        
-        campaigns_list = []
-        for c in campaigns:
-            cost = float(c[6] or 0) / 1_000_000
-            conv_value = float(c[8] or 0) / 1_000_000
-            roas = conv_value / cost if cost > 0 else 0
-            
-            # Map priority
-            priority_map = {0: "Low", 1: "Medium", 2: "High"}
-            priority_str = priority_map.get(c[2], "Unknown")
-            
-            campaigns_list.append({
-                "campaign_id": c[0],
-                "campaign_name": c[1],
-                "priority": priority_str,
-                "priority_num": c[2],
-                "feed_label": c[3] or "None",
-                "impressions": int(c[4] or 0),
-                "clicks": int(c[5] or 0),
-                "cost": cost,
-                "conversions": float(c[7] or 0),
-                "conv_value": conv_value,
-                "roas": roas,
-            })
-        
-        # ==================== TAB 2: PRODUCTS ====================
-        products = conn.execute("""
-            SELECT 
-                product_id,
-                product_title,
-                product_brand,
-                product_category,
-                availability,
-                impressions_w30_sum,
-                clicks_w30_sum,
-                cost_micros_w30_sum,
-                conversions_w30_sum,
-                conversions_value_w30_sum,
-                ctr_w30,
-                cvr_w30,
-                roas_w30,
-                stock_out_flag,
-                stock_out_days_w30,
-                feed_quality_score,
-                has_price_mismatch,
-                has_disapproval,
-                new_product_flag,
-                days_live,
-                low_data_flag
-            FROM analytics.product_features_daily
-            WHERE snapshot_date = ?
-                AND customer_id = ?
-            ORDER BY cost_micros_w30_sum DESC
-            LIMIT 200
-        """, (snapshot_date, cfg.customer_id)).fetchall()
-        
-        products_list = []
-        for p in products:
-            products_list.append({
-                "product_id": p[0],
-                "product_title": p[1],
-                "product_brand": p[2],
-                "product_category": p[3],
-                "availability": p[4],
-                "impressions": int(p[5] or 0),
-                "clicks": int(p[6] or 0),
-                "cost": float(p[7] or 0) / 1_000_000,
-                "conversions": float(p[8] or 0),
-                "conv_value": float(p[9] or 0) / 1_000_000,
-                "ctr": float(p[10] or 0) * 100,
-                "cvr": float(p[11] or 0) * 100,
-                "roas": float(p[12] or 0),
-                "stock_out_flag": bool(p[13]),
-                "stock_out_days": int(p[14] or 0),
-                "feed_quality": float(p[15] or 0) * 100,
-                "price_mismatch": bool(p[16]),
-                "disapproved": bool(p[17]),
-                "is_new": bool(p[18]),
-                "days_live": int(p[19] or 0),
-                "low_data": bool(p[20]),
-            })
-        
-        # ==================== TAB 3: FEED QUALITY ====================
-        feed_quality = conn.execute("""
-            SELECT 
-                approval_status,
-                price_mismatch,
-                COUNT(*) as count
-            FROM raw_product_feed_quality
-            WHERE customer_id = ?
-                AND snapshot_date = ?
-            GROUP BY approval_status, price_mismatch
-        """, (cfg.customer_id, snapshot_date)).fetchall()
-        
-        total_feed_products = sum(f[2] for f in feed_quality)
-        approved_count = sum(f[2] for f in feed_quality if f[0] == 'APPROVED' and not f[1])
-        disapproved_count = sum(f[2] for f in feed_quality if f[0] == 'DISAPPROVED')
-        price_mismatch_count = sum(f[2] for f in feed_quality if f[1])
-        
-        pct_approved = (approved_count / total_feed_products * 100) if total_feed_products > 0 else 0
-        pct_disapproved = (disapproved_count / total_feed_products * 100) if total_feed_products > 0 else 0
-        pct_price_mismatch = (price_mismatch_count / total_feed_products * 100) if total_feed_products > 0 else 0
-        
-        # Get products with issues
-        feed_issues = conn.execute("""
-            SELECT 
-                f.product_id,
-                p.product_title,
-                p.product_brand,
-                f.approval_status,
-                f.price_mismatch,
-                f.disapproval_reasons
-            FROM raw_product_feed_quality f
-            LEFT JOIN analytics.product_features_daily p 
-                ON f.product_id = p.product_id AND f.customer_id = p.customer_id
-            WHERE f.customer_id = ?
-                AND f.snapshot_date = ?
-                AND (f.approval_status != 'APPROVED' OR f.price_mismatch = TRUE)
-            ORDER BY f.approval_status DESC
-            LIMIT 100
-        """, (cfg.customer_id, snapshot_date)).fetchall()
-        
-        feed_issues_list = []
-        for f in feed_issues:
-            issues = []
-            if f[3] == 'DISAPPROVED':
-                issues.append('Disapproved')
-            if f[4]:
-                issues.append('Price Mismatch')
-            
-            feed_issues_list.append({
-                "product_id": f[0],
-                "product_title": f[1] or "Unknown",
-                "product_brand": f[2] or "Unknown",
-                "approval_status": f[3],
-                "price_mismatch": f[4],
-                "disapproval_reasons": f[5] if f[5] else [],
-                "issues": ", ".join(issues),
-            })
-        
-        # ==================== TAB 4: RECOMMENDATIONS ====================
-        recommendations_list = []
-        
-        # Try to generate recommendations (may be empty if rules don't fire)
-        try:
-            from act_autopilot.rules import shopping_rules
-            
-            products_df = conn.execute("""
-                SELECT *
-                FROM analytics.product_features_daily
-                WHERE customer_id = ?
-                    AND snapshot_date = ?
-            """, (cfg.customer_id, snapshot_date)).df()
-            
-            # Call shopping rules
-            if len(products_df) > 0:
-                product_list = products_df.to_dict('records')
-                shop_recs = shopping_rules.apply_rules(product_list, ctx=None)
-                
-                # Convert using helper (replaces 25+ lines)
-                recommendations_list = [
-                    recommendation_to_dict(rec, index=idx)
-                    for idx, rec in enumerate(shop_recs)
-                ]
-        except Exception:
-            pass
-        
-        # Store in cache using helper (replaces 1 line)
-        cache_recommendations('shopping', recommendations_list)
-        
-        # Summary stats
-        total_products = len(products_list)
-        total_cost = sum(p["cost"] for p in products_list)
-        total_conversions = sum(p["conversions"] for p in products_list)
-        total_conv_value = sum(p["conv_value"] for p in products_list)
-        avg_roas = total_conv_value / total_cost if total_cost > 0 else 0
-        
-        out_of_stock = sum(1 for p in products_list if p["stock_out_flag"])
-        price_mismatches = sum(1 for p in products_list if p["price_mismatch"])
-        disapproved = sum(1 for p in products_list if p["disapproved"])
-        feed_issues_count = out_of_stock + price_mismatches + disapproved
+        # Load all data
+        campaigns_list = load_shopping_campaigns(conn, cfg.customer_id, snapshot_date)
+        products_list = load_shopping_products(conn, cfg.customer_id, snapshot_date)
+        quality_stats, feed_issues_list = load_feed_quality_data(conn, cfg.customer_id, snapshot_date)
+        recommendations_list = generate_shopping_recommendations(conn, cfg.customer_id, snapshot_date)
         
         conn.close()
+        
+        # Store recommendations in cache
+        cache_recommendations('shopping', recommendations_list)
+        
+        # Compute product summary
+        product_summary = compute_product_summary(products_list)
         
         return render_template(
             "shopping.html",
@@ -258,20 +357,20 @@ def shopping():
             total_campaigns=len(campaigns_list),
             # Tab 2: Products
             products=products_list,
-            total_products=total_products,
-            total_cost=total_cost,
-            total_conversions=total_conversions,
-            total_conv_value=total_conv_value,
-            avg_roas=avg_roas,
-            out_of_stock=out_of_stock,
-            price_mismatches=price_mismatches,
-            disapproved=disapproved,
-            feed_issues_count=feed_issues_count,
+            total_products=product_summary['total_products'],
+            total_cost=product_summary['total_cost'],
+            total_conversions=product_summary['total_conversions'],
+            total_conv_value=product_summary['total_conv_value'],
+            avg_roas=product_summary['avg_roas'],
+            out_of_stock=product_summary['out_of_stock'],
+            price_mismatches=product_summary['price_mismatches'],
+            disapproved=product_summary['disapproved'],
+            feed_issues_count=product_summary['feed_issues_count'],
             # Tab 3: Feed Quality
-            total_feed_products=total_feed_products,
-            pct_approved=pct_approved,
-            pct_disapproved=pct_disapproved,
-            pct_price_mismatch=pct_price_mismatch,
+            total_feed_products=quality_stats['total_feed_products'],
+            pct_approved=quality_stats['pct_approved'],
+            pct_disapproved=quality_stats['pct_disapproved'],
+            pct_price_mismatch=quality_stats['pct_price_mismatch'],
             feed_issues=feed_issues_list,
             # Tab 4: Recommendations
             recommendations=recommendations_list,
