@@ -8,13 +8,31 @@ Shows in tab alongside main content
   <div class="container-fluid py-4">
     
     <!-- Header -->
+    {% set rule_categories = rules|map(attribute='category')|unique|list %}
+    {% if 'BUDGET' in rule_categories or 'BID' in rule_categories or 'STATUS' in rule_categories %}
+      {% set page_title = 'Campaign Optimization Rules' %}
+      {% set page_desc = 'Active rules monitoring and optimizing your campaigns' %}
+    {% elif 'KEYWORD' in rule_categories %}
+      {% set page_title = 'Keyword Optimization Rules' %}
+      {% set page_desc = 'Active rules monitoring and optimizing your keywords' %}
+    {% elif 'AD' in rule_categories %}
+      {% set page_title = 'Ad Optimization Rules' %}
+      {% set page_desc = 'Active rules monitoring and optimizing your ads' %}
+    {% elif 'SHOPPING' in rule_categories %}
+      {% set page_title = 'Shopping Optimization Rules' %}
+      {% set page_desc = 'Active rules monitoring and optimizing your shopping campaigns' %}
+    {% else %}
+      {% set page_title = 'Optimization Rules' %}
+      {% set page_desc = 'Active rules monitoring and optimizing your account' %}
+    {% endif %}
+    
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h4 class="mb-1">
           <i class="bi bi-lightning-charge-fill text-warning"></i>
-          Campaign Optimization Rules
+          {{ page_title }}
         </h4>
-        <p class="text-muted mb-0">Active rules monitoring and optimizing your campaigns</p>
+        <p class="text-muted mb-0">{{ page_desc }}</p>
       </div>
       <div>
         <span class="badge bg-primary fs-6">{{ rules|length }} Total Rules</span>
@@ -23,45 +41,38 @@ Shows in tab alongside main content
 
     {% if rules and rules|length > 0 %}
       
-      <!-- Summary Cards -->
+      <!-- Summary Cards - Dynamic Categories -->
+      {% set all_categories = rules|map(attribute='category')|unique|list|sort %}
       <div class="row mb-4">
-        {% set budget_count = rules|selectattr('category', 'equalto', 'BUDGET')|list|length %}
-        {% set bid_count = rules|selectattr('category', 'equalto', 'BID')|list|length %}
-        {% set status_count = rules|selectattr('category', 'equalto', 'STATUS')|list|length %}
-        
-        <div class="col-md-4">
-          <div class="card border-primary">
-            <div class="card-body text-center">
-              <i class="bi bi-cash-stack text-primary" style="font-size: 2rem;"></i>
-              <h2 class="mt-2 mb-0">{{ budget_count }}</h2>
-              <p class="text-muted mb-0">Budget Rules</p>
+        {% for category in all_categories[:3] %}
+          <div class="col-md-{{ 12 // ([all_categories|length, 3]|min) }}">
+            <div class="card border-primary">
+              <div class="card-body text-center">
+                {% if category == 'BUDGET' %}
+                  <i class="bi bi-cash-stack text-primary" style="font-size: 2rem;"></i>
+                {% elif category == 'BID' %}
+                  <i class="bi bi-sliders text-info" style="font-size: 2rem;"></i>
+                {% elif category == 'STATUS' %}
+                  <i class="bi bi-play-pause text-success" style="font-size: 2rem;"></i>
+                {% elif category == 'KEYWORD' %}
+                  <i class="bi bi-key text-primary" style="font-size: 2rem;"></i>
+                {% elif category == 'AD' %}
+                  <i class="bi bi-file-text text-info" style="font-size: 2rem;"></i>
+                {% elif category == 'SHOPPING' %}
+                  <i class="bi bi-cart text-success" style="font-size: 2rem;"></i>
+                {% else %}
+                  <i class="bi bi-gear text-secondary" style="font-size: 2rem;"></i>
+                {% endif %}
+                <h2 class="mt-2 mb-0">{{ rules|selectattr('category', 'equalto', category)|list|length }}</h2>
+                <p class="text-muted mb-0">{{ category|title }} Rules</p>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div class="col-md-4">
-          <div class="card border-info">
-            <div class="card-body text-center">
-              <i class="bi bi-sliders text-info" style="font-size: 2rem;"></i>
-              <h2 class="mt-2 mb-0">{{ bid_count }}</h2>
-              <p class="text-muted mb-0">Bid Rules</p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-md-4">
-          <div class="card border-success">
-            <div class="card-body text-center">
-              <i class="bi bi-play-pause text-success" style="font-size: 2rem;"></i>
-              <h2 class="mt-2 mb-0">{{ status_count }}</h2>
-              <p class="text-muted mb-0">Status Rules</p>
-            </div>
-          </div>
-        </div>
+        {% endfor %}
       </div>
 
-      <!-- Rules by Category -->
-      {% for category in ['BUDGET', 'BID', 'STATUS'] %}
+      <!-- Rules by Category - Dynamic -->
+      {% for category in all_categories %}
         {% set category_rules = rules|selectattr('category', 'equalto', category)|list %}
         
         {% if category_rules|length > 0 %}
@@ -74,6 +85,14 @@ Shows in tab alongside main content
                   <i class="bi bi-sliders text-info"></i> Bid Adjustment Rules
                 {% elif category == 'STATUS' %}
                   <i class="bi bi-play-pause text-success"></i> Campaign Status Rules
+                {% elif category == 'KEYWORD' %}
+                  <i class="bi bi-key text-primary"></i> Keyword Rules
+                {% elif category == 'AD' %}
+                  <i class="bi bi-file-text text-info"></i> Ad Rules
+                {% elif category == 'SHOPPING' %}
+                  <i class="bi bi-cart text-success"></i> Shopping Rules
+                {% else %}
+                  <i class="bi bi-gear text-secondary"></i> {{ category|title }} Rules
                 {% endif %}
                 <span class="badge bg-secondary ms-2">{{ category_rules|length }}</span>
               </h5>
@@ -183,22 +202,40 @@ Shows in tab alongside main content
         
       {% endfor %}
 
-      <!-- Additional Info Card -->
+      <!-- Additional Info Card - Dynamic -->
       <div class="card border-info">
         <div class="card-body">
           <h6 class="card-title">
             <i class="bi bi-info-circle text-info"></i>
-            About Campaign Optimization Rules
+            About {{ page_title }}
           </h6>
           <p class="card-text mb-2">
-            These rules continuously monitor your campaigns and generate recommendations based on performance data, 
+            These rules continuously monitor your account and generate recommendations based on performance data, 
             account configuration, and the Constitution's safety guardrails.
           </p>
-          <ul class="small text-muted mb-0">
-            <li><strong>Budget Rules:</strong> Adjust daily budgets based on ROAS and spend patterns</li>
-            <li><strong>Bid Rules:</strong> Modify target ROAS/CPA to optimize campaign efficiency</li>
-            <li><strong>Status Rules:</strong> Pause or enable campaigns based on performance thresholds</li>
-          </ul>
+          
+          {% if all_categories %}
+            <ul class="small text-muted mb-0">
+              {% if 'BUDGET' in all_categories %}
+                <li><strong>Budget Rules:</strong> Adjust daily budgets based on ROAS and spend patterns</li>
+              {% endif %}
+              {% if 'BID' in all_categories %}
+                <li><strong>Bid Rules:</strong> Modify target ROAS/CPA to optimize campaign efficiency</li>
+              {% endif %}
+              {% if 'STATUS' in all_categories %}
+                <li><strong>Status Rules:</strong> Pause or enable campaigns based on performance thresholds</li>
+              {% endif %}
+              {% if 'KEYWORD' in all_categories %}
+                <li><strong>Keyword Rules:</strong> Pause, adjust bids, or review keywords based on performance</li>
+              {% endif %}
+              {% if 'AD' in all_categories %}
+                <li><strong>Ad Rules:</strong> Pause or review ads based on CTR, conversion rates, and spend</li>
+              {% endif %}
+              {% if 'SHOPPING' in all_categories %}
+                <li><strong>Shopping Rules:</strong> Optimize product groups and bids for shopping campaigns</li>
+              {% endif %}
+            </ul>
+          {% endif %}
         </div>
       </div>
 
@@ -210,7 +247,7 @@ Shows in tab alongside main content
           <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
           <h5 class="mt-3 mb-2">No Rules Configured</h5>
           <p class="text-muted mb-4">
-            Campaign optimization rules have not been set up yet.<br>
+            Optimization rules have not been set up yet.<br>
             Rules will appear here once they are configured in the system.
           </p>
           <a href="/settings" class="btn btn-primary">

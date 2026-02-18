@@ -1,0 +1,633 @@
+{% extends "base_bootstrap.html" %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Page Header with Date Filter -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Keywords</h1>
+    <div class="btn-group" role="group">
+      <a href="/keywords?days=7&match_type={{ match_type }}" 
+         class="btn btn-sm {% if days == 7 %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        Last 7 days
+      </a>
+      <a href="/keywords?days=30&match_type={{ match_type }}" 
+         class="btn btn-sm {% if days == 30 %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        Last 30 days
+      </a>
+      <a href="/keywords?days=90&match_type={{ match_type }}" 
+         class="btn btn-sm {% if days == 90 %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        Last 90 days
+      </a>
+    </div>
+  </div>
+  
+  <!-- Tabs: Keywords | Rules -->
+  <ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item">
+      <button class="nav-link active" id="keywords-tab-button" data-bs-toggle="tab" data-bs-target="#keywords-tab" type="button">
+        Keywords ({{ total_keywords }})
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" id="rules-tab-button" data-bs-toggle="tab" data-bs-target="#rules-tab" type="button">
+        ⚡ Rules ({{ rules|length }})
+      </button>
+    </li>
+  </ul>
+  
+  <!-- Tab Content -->
+  <div class="tab-content">
+    
+    <!-- KEYWORDS TAB -->
+    <div class="tab-pane fade show active" id="keywords-tab" role="tabpanel">
+      
+      <!-- Metrics Bar (8 cards) -->
+      <div class="row g-3 mb-3">
+        <div class="col-md-3">
+          <div class="card h-100">
+            <div class="card-body">
+              <h6 class="text-muted mb-2">All Keywords</h6>
+              <h3 class="mb-1">{{ metrics.total_keywords }}</h3>
+              <small class="text-muted">
+                <span class="text-success">{{ metrics.active_keywords }}</span> active, 
+                <span class="text-secondary">{{ metrics.paused_keywords }}</span> paused
+              </small>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-1">
+          <div class="card h-100">
+            <div class="card-body">
+              <h6 class="text-muted mb-2 small">Clicks</h6>
+              <h4 class="mb-0">{{ "{:,}".format(metrics.clicks) }}</h4>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-2">
+          <div class="card h-100">
+            <div class="card-body">
+              <h6 class="text-muted mb-2 small">Cost</h6>
+              <h4 class="mb-0">${{ "{:,.2f}".format(metrics.cost) }}</h4>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-1">
+          <div class="card h-100">
+            <div class="card-body">
+              <h6 class="text-muted mb-2 small">Conv.</h6>
+              <h4 class="mb-0">{{ metrics.conversions }}</h4>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-2">
+          <div class="card h-100">
+            <div class="card-body">
+              <h6 class="text-muted mb-2 small">CPA</h6>
+              <h4 class="mb-0">
+                {% if metrics.cpa > 0 %}
+                  ${{ "{:.2f}".format(metrics.cpa) }}
+                {% else %}
+                  <span class="text-muted">$0.00</span>
+                {% endif %}
+              </h4>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-1">
+          <div class="card h-100">
+            <div class="card-body">
+              <h6 class="text-muted mb-2 small">Avg QS</h6>
+              <h4 class="mb-0">
+                {% if metrics.avg_qs > 0 %}
+                  <span class="{% if metrics.avg_qs >= 7 %}text-success{% elif metrics.avg_qs >= 5 %}text-warning{% else %}text-danger{% endif %}">
+                    {{ "{:.1f}".format(metrics.avg_qs) }}
+                  </span>
+                {% else %}
+                  <span class="text-muted">N/A</span>
+                {% endif %}
+              </h4>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-2">
+          <div class="card h-100 {% if metrics.wasted_spend > 100 %}border-danger{% endif %}">
+            <div class="card-body">
+              <h6 class="text-muted mb-2 small">Wasted Spend</h6>
+              <h4 class="mb-0 {% if metrics.wasted_spend > 100 %}text-danger{% endif %}">
+                ${{ "{:.2f}".format(metrics.wasted_spend) }}
+              </h4>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Cards Row (QS Distribution, Low Data, Wasted Spend) -->
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header">
+              <h6 class="mb-0">Quality Score Distribution</h6>
+            </div>
+            <div class="card-body">
+              {% if qs_distribution and qs_distribution|length > 0 %}
+                <table class="table table-sm mb-0">
+                  <thead>
+                    <tr>
+                      <th>QS Range</th>
+                      <th class="text-end">Count</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in qs_distribution %}
+                      <tr>
+                        <td>
+                          {% if row[0] == '8-10' %}
+                            <span class="badge bg-success">{{ row[0] }}</span>
+                          {% elif row[0] == '5-7' %}
+                            <span class="badge bg-warning">{{ row[0] }}</span>
+                          {% elif row[0] == '1-4' %}
+                            <span class="badge bg-danger">{{ row[0] }}</span>
+                          {% else %}
+                            <span class="badge bg-secondary">{{ row[0] }}</span>
+                          {% endif %}
+                        </td>
+                        <td class="text-end">{{ row[1] }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              {% else %}
+                <p class="text-muted mb-0">No QS data available</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="card {% if low_data_count > 50 %}border-warning{% endif %}">
+            <div class="card-header">
+              <h6 class="mb-0">Low Data Keywords</h6>
+            </div>
+            <div class="card-body">
+              <div class="text-center">
+                <h2 class="{% if low_data_count > 50 %}text-warning{% endif %}">
+                  {{ low_data_count }}
+                </h2>
+                <p class="text-muted mb-0">Keywords flagged as low data</p>
+                {% if low_data_count > 50 %}
+                  <small class="text-warning d-block mt-2">⚠️ Consider pausing or increasing bids</small>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="card {% if wasted_spend > 100 %}border-danger{% endif %}">
+            <div class="card-header">
+              <h6 class="mb-0">Wasted Spend ({{ days }}d)</h6>
+            </div>
+            <div class="card-body">
+              <div class="text-center">
+                <h2 class="{% if wasted_spend > 100 %}text-danger{% else %}text-success{% endif %}">
+                  ${{ "{:.2f}".format(wasted_spend) }}
+                </h2>
+                <p class="text-muted mb-0">Spend with 0 conversions</p>
+                {% if wasted_spend > 100 %}
+                  <small class="text-danger d-block mt-2">⚠️ High wasted spend detected</small>
+                {% elif wasted_spend > 0 %}
+                  <small class="text-muted d-block mt-2">Some spend without conversions</small>
+                {% else %}
+                  <small class="text-success d-block mt-2">✓ No wasted spend</small>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Match Type Filter & Bulk Actions -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="btn-group" role="group">
+          <a href="/keywords?days={{ days }}&page={{ page }}&per_page={{ per_page }}&match_type=all" 
+             class="btn btn-sm {% if match_type == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            All
+          </a>
+          <a href="/keywords?days={{ days }}&page={{ page }}&per_page={{ per_page }}&match_type=exact" 
+             class="btn btn-sm {% if match_type == 'exact' %}btn-success{% else %}btn-outline-success{% endif %}">
+            Exact
+          </a>
+          <a href="/keywords?days={{ days }}&page={{ page }}&per_page={{ per_page }}&match_type=phrase" 
+             class="btn btn-sm {% if match_type == 'phrase' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            Phrase
+          </a>
+          <a href="/keywords?days={{ days }}&page={{ page }}&per_page={{ per_page }}&match_type=broad" 
+             class="btn btn-sm {% if match_type == 'broad' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+            Broad
+          </a>
+        </div>
+        
+        <div>
+          <button class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Keywords
+          </button>
+          <button id="bulk-edit-btn" class="btn btn-sm btn-secondary" style="display:none;">
+            <i class="bi bi-pencil"></i> Bulk Edit (<span id="bulk-count">0</span>)
+          </button>
+        </div>
+      </div>
+      
+      <!-- Keywords Table -->
+      <div class="card mb-3">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 30px;">
+                  <input type="checkbox" id="select-all" class="form-check-input">
+                </th>
+                <th>Keyword</th>
+                <th style="width: 100px;">Match Type</th>
+                <th style="width: 80px;">Status</th>
+                <th style="width: 180px;">Campaign</th>
+                <th style="width: 150px;">Ad Group</th>
+                <th style="width: 80px;">Max CPC</th>
+                <th style="width: 70px;">
+                  QS
+                  <button class="btn btn-sm btn-link p-0 ms-1" id="qs-expand-all" title="Expand all Quality Scores">
+                    <i class="bi bi-chevron-down"></i>
+                  </button>
+                </th>
+                <th style="width: 80px;" class="text-end">Clicks</th>
+                <th style="width: 90px;" class="text-end">Cost</th>
+                <th style="width: 70px;" class="text-end">Conv.</th>
+                <th style="width: 80px;" class="text-end">CPA</th>
+                <th style="width: 80px;" class="text-end">ROAS</th>
+                <th style="width: 100px;">AI Insight</th>
+                <th style="width: 60px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if keywords and keywords|length > 0 %}
+                {% for kw in keywords %}
+                  <tr>
+                    <td>
+                      <input type="checkbox" class="form-check-input keyword-checkbox" value="{{ kw[0] }}">
+                    </td>
+                    <td>
+                      <strong>{{ kw[1] }}</strong>
+                    </td>
+                    <td>
+                      {% if kw[2] == 'EXACT' %}
+                        <span class="badge rounded-pill bg-success">Exact</span>
+                      {% elif kw[2] == 'PHRASE' %}
+                        <span class="badge rounded-pill bg-primary">Phrase</span>
+                      {% elif kw[2] == 'BROAD' %}
+                        <span class="badge rounded-pill bg-warning text-dark">Broad</span>
+                      {% else %}
+                        <span class="badge rounded-pill bg-secondary">{{ kw[2] }}</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if kw[3] == 'ENABLED' %}
+                        <span class="badge bg-success">Active</span>
+                      {% elif kw[3] == 'PAUSED' %}
+                        <span class="badge bg-secondary">Paused</span>
+                      {% else %}
+                        <span class="badge bg-danger">{{ kw[3] }}</span>
+                      {% endif %}
+                    </td>
+                    <td class="text-muted small">{{ kw[4] }}</td>
+                    <td class="text-muted small">{{ kw[5] }}</td>
+                    <td>${{ "{:.2f}".format(kw[6]) if kw[6] else "0.00" }}</td>
+                    <td>
+                      {% set qs = kw[7] if kw[7] else 0 %}
+                      <div class="d-flex align-items-center">
+                        <span class="{% if qs >= 8 %}text-success{% elif qs >= 5 %}text-warning{% elif qs >= 1 %}text-danger{% else %}text-muted{% endif %} me-1">
+                          {{ qs if qs else 'N/A' }}
+                        </span>
+                        {% if qs > 0 %}
+                          <button class="btn btn-sm btn-link p-0 qs-expand" data-keyword-id="{{ kw[0] }}" title="Show QS breakdown">
+                            <i class="bi bi-chevron-down"></i>
+                          </button>
+                        {% endif %}
+                      </div>
+                      
+                      <!-- Hidden QS details row -->
+                      {% if qs > 0 %}
+                        <div class="qs-details small mt-1" id="qs-{{ kw[0] }}" style="display:none;">
+                          <div class="text-muted">
+                            <small class="d-block">LP: <span class="{% if kw[8] and kw[8] >= 8 %}text-success{% elif kw[8] and kw[8] >= 5 %}text-warning{% elif kw[8] %}text-danger{% endif %}">{{ kw[8] if kw[8] else 'N/A' }}</span></small>
+                            <small class="d-block">Ad Rel: <span class="{% if kw[9] and kw[9] >= 8 %}text-success{% elif kw[9] and kw[9] >= 5 %}text-warning{% elif kw[9] %}text-danger{% endif %}">{{ kw[9] if kw[9] else 'N/A' }}</span></small>
+                            <small class="d-block">CTR: <span class="{% if kw[10] and kw[10] >= 8 %}text-success{% elif kw[10] and kw[10] >= 5 %}text-warning{% elif kw[10] %}text-danger{% endif %}">{{ kw[10] if kw[10] else 'N/A' }}</span></small>
+                          </div>
+                        </div>
+                      {% endif %}
+                    </td>
+                    <td class="text-end">{{ "{:,}".format(kw[11]|int) if kw[11] else "0" }}</td>
+                    <td class="text-end">${{ "{:.2f}".format(kw[12]) if kw[12] else "0.00" }}</td>
+                    <td class="text-end">{{ kw[13]|int if kw[13] else "0" }}</td>
+                    <td class="text-end">
+                      {% if kw[14] and kw[14] > 0 %}
+                        ${{ "{:.2f}".format(kw[14]) }}
+                      {% else %}
+                        <span class="text-muted">$0.00</span>
+                      {% endif %}
+                    </td>
+                    <td class="text-end">
+                      {% if kw[15] and kw[15] > 0 %}
+                        <span class="{% if kw[15] >= 3 %}text-success{% elif kw[15] >= 2 %}text-warning{% else %}text-danger{% endif %}">
+                          {{ "{:.2f}".format(kw[15]) }}x
+                        </span>
+                      {% else %}
+                        <span class="text-muted">0.00x</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <span class="badge bg-light text-muted">-</span>
+                    </td>
+                    <td>
+                      <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                          <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                          <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2"></i>Edit Max CPC</a></li>
+                          <li><a class="dropdown-item" href="#"><i class="bi bi-pause-circle me-2"></i>Pause Keyword</a></li>
+                          <li><a class="dropdown-item" href="#"><i class="bi bi-graph-up me-2"></i>View Performance</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-x-circle me-2"></i>Add to Negatives</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="15" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                    <p class="mt-2 mb-0">No keywords found</p>
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Pagination Footer -->
+        <div class="card-footer d-flex justify-content-between align-items-center">
+          <div class="text-muted small">
+            Showing {{ ((page-1) * per_page) + 1 if keywords and keywords|length > 0 else 0 }} - {{ ((page-1) * per_page) + keywords|length }} of {{ total_keywords }}
+          </div>
+          
+          <div class="btn-group btn-group-sm" role="group">
+            <a href="/keywords?days={{ days }}&page={{ page }}&per_page=10&match_type={{ match_type }}" 
+               class="btn {% if per_page == 10 %}btn-primary{% else %}btn-outline-secondary{% endif %}">10</a>
+            <a href="/keywords?days={{ days }}&page={{ page }}&per_page=25&match_type={{ match_type }}" 
+               class="btn {% if per_page == 25 %}btn-primary{% else %}btn-outline-secondary{% endif %}">25</a>
+            <a href="/keywords?days={{ days }}&page={{ page }}&per_page=50&match_type={{ match_type }}" 
+               class="btn {% if per_page == 50 %}btn-primary{% else %}btn-outline-secondary{% endif %}">50</a>
+            <a href="/keywords?days={{ days }}&page={{ page }}&per_page=100&match_type={{ match_type }}" 
+               class="btn {% if per_page == 100 %}btn-primary{% else %}btn-outline-secondary{% endif %}">100</a>
+          </div>
+          
+          <nav>
+            <ul class="pagination pagination-sm mb-0">
+              {% if page > 1 %}
+                <li class="page-item">
+                  <a class="page-link" href="/keywords?days={{ days }}&page={{ page - 1 }}&per_page={{ per_page }}&match_type={{ match_type }}">Previous</a>
+                </li>
+              {% else %}
+                <li class="page-item disabled">
+                  <span class="page-link">Previous</span>
+                </li>
+              {% endif %}
+              
+              {% for p in range(1, total_pages + 1) %}
+                {% if total_pages <= 10 or (p <= 3) or (p >= total_pages - 2) or (p >= page - 1 and p <= page + 1) %}
+                  <li class="page-item {% if p == page %}active{% endif %}">
+                    <a class="page-link" href="/keywords?days={{ days }}&page={{ p }}&per_page={{ per_page }}&match_type={{ match_type }}">{{ p }}</a>
+                  </li>
+                {% elif p == 4 or p == total_pages - 3 %}
+                  <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                  </li>
+                {% endif %}
+              {% endfor %}
+              
+              {% if page < total_pages %}
+                <li class="page-item">
+                  <a class="page-link" href="/keywords?days={{ days }}&page={{ page + 1 }}&per_page={{ per_page }}&match_type={{ match_type }}">Next</a>
+                </li>
+              {% else %}
+                <li class="page-item disabled">
+                  <span class="page-link">Next</span>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+      </div>
+      
+      <!-- Search Terms Section (Collapsible) -->
+      <div class="card mb-3">
+        <div class="card-header" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#search-terms-section">
+          <div class="d-flex align-items-center">
+            <i class="bi bi-chevron-right me-2" id="search-terms-icon"></i>
+            <strong>Search Terms ({{ search_terms|length }})</strong>
+            <small class="text-muted ms-2">- Actual queries that triggered your keywords</small>
+          </div>
+        </div>
+        
+        <div id="search-terms-section" class="collapse">
+          <div class="card-body p-0">
+            {% if search_terms and search_terms|length > 0 %}
+              <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Search Term</th>
+                      <th style="width: 100px;">Status</th>
+                      <th style="width: 180px;">Triggered Keyword</th>
+                      <th style="width: 100px;">Match Type</th>
+                      <th style="width: 80px;" class="text-end">Clicks</th>
+                      <th style="width: 90px;" class="text-end">Cost</th>
+                      <th style="width: 70px;" class="text-end">Conv.</th>
+                      <th style="width: 70px;" class="text-end">CVR</th>
+                      <th style="width: 100px;">AI Insight</th>
+                      <th style="width: 220px;">Quick Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for st in search_terms[:100] %}
+                      <tr>
+                        <td><strong>{{ st.search_term }}</strong></td>
+                        <td>
+                          {% if st.search_term_status == 'ADDED' %}
+                            <span class="badge bg-success">Added</span>
+                          {% else %}
+                            <span class="badge bg-secondary">None</span>
+                          {% endif %}
+                        </td>
+                        <td class="text-muted small">{{ st.keyword_text }}</td>
+                        <td>
+                          {% if st.match_type == 'EXACT' %}
+                            <span class="badge rounded-pill bg-success">Exact</span>
+                          {% elif st.match_type == 'PHRASE' %}
+                            <span class="badge rounded-pill bg-primary">Phrase</span>
+                          {% elif st.match_type == 'BROAD' %}
+                            <span class="badge rounded-pill bg-warning text-dark">Broad</span>
+                          {% endif %}
+                        </td>
+                        <td class="text-end">{{ "{:,}".format(st.clicks|int) if st.clicks else "0" }}</td>
+                        <td class="text-end">${{ "{:.2f}".format(st.cost_dollars) if st.cost_dollars else "0.00" }}</td>
+                        <td class="text-end">{{ st.conversions|int if st.conversions else "0" }}</td>
+                        <td class="text-end">
+                          {% if st.cvr and st.cvr > 0 %}
+                            {{ "{:.2f}".format(st.cvr * 100) }}%
+                          {% else %}
+                            <span class="text-muted">0.00%</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          <span class="badge bg-light text-muted">-</span>
+                        </td>
+                        <td>
+                          <button class="btn btn-sm btn-success me-1">
+                            <i class="bi bi-plus-circle"></i> Add as KW
+                          </button>
+                          <button class="btn btn-sm btn-danger">
+                            <i class="bi bi-x-circle"></i> Add Negative
+                          </button>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div class="text-center text-muted py-4">
+                <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                <p class="mt-2 mb-0">No search terms data available</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      
+      <!-- Rules Summary Card -->
+      {% include 'components/rules_card.html' %}
+      
+    </div>
+    
+    <!-- RULES TAB -->
+    {% include 'components/rules_tab.html' %}
+    
+  </div>
+</div>
+
+<!-- Rules Sidebar (always rendered, collapsed by default) -->
+{% include 'components/rules_sidebar.html' %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Select all checkbox logic
+document.getElementById('select-all').addEventListener('change', function() {
+  const checkboxes = document.querySelectorAll('.keyword-checkbox');
+  checkboxes.forEach(cb => cb.checked = this.checked);
+  toggleBulkEdit();
+});
+
+// Show/hide bulk edit button
+document.querySelectorAll('.keyword-checkbox').forEach(cb => {
+  cb.addEventListener('change', toggleBulkEdit);
+});
+
+function toggleBulkEdit() {
+  const checked = document.querySelectorAll('.keyword-checkbox:checked').length;
+  const bulkBtn = document.getElementById('bulk-edit-btn');
+  const countSpan = document.getElementById('bulk-count');
+  
+  if (checked > 0) {
+    bulkBtn.style.display = 'inline-block';
+    countSpan.textContent = checked;
+  } else {
+    bulkBtn.style.display = 'none';
+  }
+}
+
+// QS expansion - individual
+document.querySelectorAll('.qs-expand').forEach(btn => {
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    const kwId = this.getAttribute('data-keyword-id');
+    const details = document.getElementById('qs-' + kwId);
+    const icon = this.querySelector('i');
+    
+    if (details.style.display === 'none') {
+      details.style.display = 'block';
+      icon.classList.remove('bi-chevron-down');
+      icon.classList.add('bi-chevron-up');
+    } else {
+      details.style.display = 'none';
+      icon.classList.remove('bi-chevron-up');
+      icon.classList.add('bi-chevron-down');
+    }
+  });
+});
+
+// QS expansion - expand all
+document.getElementById('qs-expand-all').addEventListener('click', function(e) {
+  e.preventDefault();
+  const allDetails = document.querySelectorAll('.qs-details');
+  const allButtons = document.querySelectorAll('.qs-expand i');
+  const thisIcon = this.querySelector('i');
+  const isExpanded = thisIcon.classList.contains('bi-chevron-up');
+  
+  if (isExpanded) {
+    // Collapse all
+    allDetails.forEach(d => d.style.display = 'none');
+    allButtons.forEach(i => {
+      i.classList.remove('bi-chevron-up');
+      i.classList.add('bi-chevron-down');
+    });
+    thisIcon.classList.remove('bi-chevron-up');
+    thisIcon.classList.add('bi-chevron-down');
+  } else {
+    // Expand all
+    allDetails.forEach(d => d.style.display = 'block');
+    allButtons.forEach(i => {
+      i.classList.remove('bi-chevron-down');
+      i.classList.add('bi-chevron-up');
+    });
+    thisIcon.classList.remove('bi-chevron-down');
+    thisIcon.classList.add('bi-chevron-up');
+  }
+});
+
+// Search terms collapse icon toggle
+const searchTermsHeader = document.querySelector('[data-bs-target="#search-terms-section"]');
+if (searchTermsHeader) {
+  searchTermsHeader.addEventListener('click', function() {
+    const icon = document.getElementById('search-terms-icon');
+    setTimeout(() => {
+      if (document.getElementById('search-terms-section').classList.contains('show')) {
+        icon.classList.remove('bi-chevron-right');
+        icon.classList.add('bi-chevron-down');
+      } else {
+        icon.classList.remove('bi-chevron-down');
+        icon.classList.add('bi-chevron-right');
+      }
+    }, 100);
+  });
+}
+</script>
+{% endblock %}

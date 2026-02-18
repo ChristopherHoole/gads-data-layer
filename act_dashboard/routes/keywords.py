@@ -1,9 +1,10 @@
 """
 Keywords page route - keyword performance and recommendations.
 Refactored into smaller, focused functions.
+Chat 21d: Redesigned with Bootstrap 5, pagination, filters, rule visibility
 """
 
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
 from act_dashboard.auth import login_required
 from act_dashboard.routes.shared import (
     get_page_context,
@@ -12,6 +13,7 @@ from act_dashboard.routes.shared import (
     recommendation_to_dict,
     cache_recommendations
 )
+from act_dashboard.routes.rule_helpers import get_rules_for_page
 from datetime import date, timedelta
 from typing import List, Dict, Any, Tuple
 import duckdb
@@ -313,76 +315,245 @@ def group_keyword_recommendations(recommendations: List[Dict[str, Any]]) -> List
 @login_required
 def keywords():
     """
-    Keyword performance page with search terms and recommendations.
+    Keywords page with Bootstrap 5, date filtering, pagination, match type filter, and rule visibility.
     
-    Main coordinator function - delegates to helper functions.
+    URL Parameters:
+        days: 7, 30, or 90 (default: 7)
+        page: Page number (default: 1)
+        per_page: Rows per page - 10, 25, 50, 100 (default: 25)
+        match_type: 'all', 'exact', 'phrase', 'broad' (default: 'all')
+    
+    Chat 21d: Complete redesign with search terms integration and rule visibility
     """
+    # Get URL parameters
+    days = request.args.get('days', default=7, type=int)
+    page = request.args.get('page', default=1, type=int)
+    per_page = request.args.get('per_page', default=25, type=int)
+    match_type = request.args.get('match_type', default='all', type=str).lower()
+    
+    # Validate parameters
+    if days not in [7, 30, 90]:
+        days = 7
+    if page < 1:
+        page = 1
+    if per_page not in [10, 25, 50, 100]:
+        per_page = 25
+    if match_type not in ['all', 'exact', 'phrase', 'broad']:
+        match_type = 'all'
+    
     # Get common page context
     config, clients, current_client_path = get_page_context()
-
+    
     # Get database connection
     conn = get_db_connection(config)
-
+    
     # Determine snapshot date (latest available)
     snap_row = conn.execute("""
         SELECT MAX(snapshot_date) FROM analytics.keyword_features_daily
         WHERE customer_id = ?
     """, [config.customer_id]).fetchone()
     snapshot_date = snap_row[0] if snap_row and snap_row[0] else date.today()
-
-    # Target CPA from config
-    target_cpa = float(config.target_cpa) if config.target_cpa else 25.0
-
-    # Load keyword features
-    keywords_list = load_keyword_features(conn, config.customer_id, snapshot_date)
     
-    # Compute summary stats
-    summary = compute_keyword_summary(keywords_list)
+    # Determine which rolling window columns to use based on days
+    # For 7 days: use _w7 columns
+    # For 30 days: use _w30 columns  
+    # For 90 days: use _w30 columns (w90 doesn't exist yet)
+    window_suffix = 'w7' if days == 7 else 'w30'
     
-    # Extract campaign list for filter
-    campaigns = extract_campaign_list(keywords_list)
-    
-    # Load search terms
-    search_terms = load_search_terms(conn, config.customer_id, snapshot_date)
-    
-    conn.close()
-
-    # Generate recommendations
-    rec_groups = []
-    rec_count = 0
+    # QUERY 1: Metrics Bar (8 metrics)
     try:
-        recommendations = generate_keyword_recommendations(
-            keywords_list, search_terms, config, current_client_path, snapshot_date
-        )
-        rec_count = len(recommendations)
+        metrics_row = conn.execute(f"""
+            SELECT 
+                COUNT(DISTINCT keyword_id) as total_keywords,
+                COUNT(DISTINCT CASE WHEN status = 'ENABLED' THEN keyword_id END) as active_keywords,
+                COUNT(DISTINCT CASE WHEN status = 'PAUSED' THEN keyword_id END) as paused_keywords,
+                SUM(clicks_{window_suffix}_sum) as clicks,
+                SUM(cost_micros_{window_suffix}_sum)/1000000 as cost,
+                SUM(conversions_{window_suffix}_sum) as conversions,
+                SUM(cost_micros_{window_suffix}_sum)/1000000/NULLIF(SUM(conversions_{window_suffix}_sum), 0) as cpa,
+                AVG(quality_score) as avg_qs
+            FROM analytics.keyword_features_daily
+            WHERE customer_id = ?
+              AND snapshot_date = ?
+        """, [config.customer_id, snapshot_date]).fetchone()
         
-        # Store in cache
-        cache_recommendations('keywords', recommendations)
-        
-        # Group recommendations
-        rec_groups = group_keyword_recommendations(recommendations)
-        
+        metrics = {
+            'total_keywords': int(metrics_row[0] or 0),
+            'active_keywords': int(metrics_row[1] or 0),
+            'paused_keywords': int(metrics_row[2] or 0),
+            'clicks': int(metrics_row[3] or 0),
+            'cost': float(metrics_row[4] or 0),
+            'conversions': int(metrics_row[5] or 0),
+            'cpa': float(metrics_row[6] or 0),
+            'avg_qs': float(metrics_row[7] or 0),
+        }
     except Exception as e:
-        print(f"[Dashboard] Keyword recommendations error: {e}")
+        print(f"[Keywords] Metrics query error: {e}")
+        metrics = {
+            'total_keywords': 0, 'active_keywords': 0, 'paused_keywords': 0,
+            'clicks': 0, 'cost': 0, 'conversions': 0, 'cpa': 0, 'avg_qs': 0
+        }
+    
+    # Calculate wasted spend (keywords with 0 conversions but >$0 cost)
+    try:
+        wasted_row = conn.execute(f"""
+            SELECT SUM(cost_micros_{window_suffix}_sum) / 1000000 as wasted
+            FROM analytics.keyword_features_daily
+            WHERE customer_id = ?
+              AND snapshot_date = ?
+              AND conversions_{window_suffix}_sum = 0
+              AND cost_micros_{window_suffix}_sum > 0
+        """, [config.customer_id, snapshot_date]).fetchone()
+        wasted_spend = float(wasted_row[0] or 0)
+    except Exception as e:
+        print(f"[Keywords] Wasted spend query error: {e}")
+        wasted_spend = 0
+    
+    metrics['wasted_spend'] = wasted_spend
+    
+    # QUERY 2: Total Count (for pagination, with match type filter)
+    count_query = """
+        SELECT COUNT(DISTINCT keyword_id) as total
+        FROM analytics.keyword_features_daily
+        WHERE customer_id = ?
+          AND snapshot_date = ?
+    """
+    count_params = [config.customer_id, snapshot_date]
+    
+    if match_type != 'all':
+        count_query += " AND UPPER(match_type) = ?"
+        count_params.append(match_type.upper())
+    
+    try:
+        total_count = conn.execute(count_query, count_params).fetchone()[0] or 0
+    except Exception as e:
+        print(f"[Keywords] Count query error: {e}")
+        total_count = 0
+    
+    # Calculate pagination
+    total_pages = max(1, (total_count + per_page - 1) // per_page)
+    if page > total_pages:
+        page = total_pages
+    offset = (page - 1) * per_page
+    
+    # QUERY 3: Keywords Table (with pagination and match type filter)
+    keywords_query = f"""
+        SELECT 
+            keyword_id,
+            keyword_text,
+            match_type,
+            status,
+            campaign_name,
+            ad_group_name,
+            bid_micros / 1000000 as max_cpc,
+            quality_score,
+            quality_score_landing_page as landing_page_score,
+            quality_score_relevance as ad_relevance_score,
+            quality_score_creative as expected_ctr_score,
+            clicks_{window_suffix}_sum as clicks,
+            cost_micros_{window_suffix}_sum / 1000000 as cost,
+            conversions_{window_suffix}_sum as conversions,
+            cpa_{window_suffix} / 1000000 as cpa,
+            roas_{window_suffix} as roas
+        FROM analytics.keyword_features_daily
+        WHERE customer_id = ?
+          AND snapshot_date = ?
+    """
+    keywords_params = [config.customer_id, snapshot_date]
+    
+    if match_type != 'all':
+        keywords_query += " AND UPPER(match_type) = ?"
+        keywords_params.append(match_type.upper())
+    
+    keywords_query += f"""
+        ORDER BY cost_micros_{window_suffix}_sum DESC
+        LIMIT ? OFFSET ?
+    """
+    keywords_params.extend([per_page, offset])
+    
+    try:
+        keywords = conn.execute(keywords_query, keywords_params).fetchall()
+    except Exception as e:
+        print(f"[Keywords] Keywords table query error: {e}")
         import traceback
         traceback.print_exc()
-
+        keywords = []
+    
+    # QUERY 4: QS Distribution (for card)
+    try:
+        qs_distribution = conn.execute("""
+            SELECT 
+                CASE 
+                    WHEN quality_score >= 8 THEN '8-10'
+                    WHEN quality_score >= 5 THEN '5-7'
+                    WHEN quality_score >= 1 THEN '1-4'
+                    ELSE 'N/A'
+                END as qs_range,
+                COUNT(DISTINCT keyword_id) as count
+            FROM analytics.keyword_features_daily
+            WHERE customer_id = ?
+              AND snapshot_date = ?
+            GROUP BY qs_range
+            ORDER BY qs_range DESC
+        """, [config.customer_id, snapshot_date]).fetchall()
+    except Exception as e:
+        print(f"[Keywords] QS distribution query error: {e}")
+        qs_distribution = []
+    
+    # QUERY 5: Low Data Count (for card)
+    try:
+        low_data_row = conn.execute("""
+            SELECT COUNT(DISTINCT keyword_id) as low_data_count
+            FROM analytics.keyword_features_daily
+            WHERE customer_id = ?
+              AND snapshot_date = ?
+              AND low_data_flag = true
+        """, [config.customer_id, snapshot_date]).fetchone()
+        low_data_count = int(low_data_row[0] or 0)
+    except Exception as e:
+        print(f"[Keywords] Low data count query error: {e}")
+        low_data_count = 0
+    
+    # QUERY 6: Search Terms (collapsible section)
+    try:
+        search_terms = load_search_terms(conn, config.customer_id, snapshot_date)
+    except Exception as e:
+        print(f"[Keywords] Search terms query error: {e}")
+        search_terms = []
+    
+    # Close database connection
+    conn.close()
+    
+    # QUERY 7: Get Rules for Keywords Page
+    try:
+        rules = get_rules_for_page('keyword', customer_id=config.customer_id)
+    except Exception as e:
+        print(f"[Keywords] Rules query error: {e}")
+        import traceback
+        traceback.print_exc()
+        rules = []
+    
+    # Render template with new Bootstrap 5 design
     return render_template(
-        "keywords.html",
+        'keywords_new.html',
+        # Client context
         client_name=config.client_name,
         available_clients=clients,
         current_client_config=current_client_path,
+        # Filter parameters
+        days=days,
+        page=page,
+        per_page=per_page,
+        match_type=match_type,
+        total_pages=total_pages,
+        # Data
         snapshot_date=str(snapshot_date),
-        target_cpa=target_cpa,
-        keywords=keywords_list,
+        metrics=metrics,
+        keywords=keywords,
+        total_keywords=total_count,
+        qs_distribution=qs_distribution,
+        low_data_count=low_data_count,
+        wasted_spend=wasted_spend,
         search_terms=search_terms,
-        campaigns=campaigns,
-        active_count=summary['active_count'],
-        low_qs_count=summary['low_qs_count'],
-        low_data_count=summary['low_data_count'],
-        wasted_spend_dollars=summary['wasted_spend_dollars'],
-        avg_cpa_dollars=summary['avg_cpa_dollars'],
-        avg_qs=summary['avg_qs'],
-        rec_groups=rec_groups,
-        rec_count=rec_count,
+        rules=rules,
     )

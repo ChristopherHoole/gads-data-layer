@@ -170,8 +170,8 @@ def extract_rules_from_module(module_name: str, category: str) -> List[Dict[str,
                 continue
             
             # Skip helper functions that don't follow rule naming pattern
-            # Rule functions typically: category_NNN_description
-            if not re.match(r'^[a-z]+_\d{3}_', name):
+            # Rule functions: category_NNN_description OR category_action_NNN
+            if not re.search(r'_\d{3}(?:_|$)', name):
                 continue
             
             # Format metadata
