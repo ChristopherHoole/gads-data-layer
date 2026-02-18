@@ -2,10 +2,15 @@
 Keywords page route - keyword performance and recommendations.
 """
 
-from flask import Blueprint, render_template, session, current_app
+from flask import Blueprint, render_template
 from act_dashboard.auth import login_required
-from act_dashboard.routes.shared import get_current_config, get_available_clients
-import duckdb
+from act_dashboard.routes.shared import (
+    get_page_context,
+    get_db_connection,
+    build_autopilot_config,
+    recommendation_to_dict,
+    cache_recommendations
+)
 from datetime import date, timedelta
 
 bp = Blueprint('keywords', __name__)
@@ -15,16 +20,11 @@ bp = Blueprint('keywords', __name__)
 @login_required
 def keywords():
     """Keyword performance page with search terms and recommendations."""
-    config = get_current_config()
-    clients = get_available_clients()
-    current_client_path = session.get("current_client_config")
+    # Get common page context (replaces 3 lines)
+    config, clients, current_client_path = get_page_context()
 
-    conn = duckdb.connect(config.db_path)
-    ro_path = config.db_path.replace("warehouse.duckdb", "warehouse_readonly.duckdb")
-    try:
-        conn.execute(f"ATTACH '{ro_path}' AS ro (READ_ONLY);")
-    except Exception:
-        pass  # Already attached or not available
+    # Get database connection (replaces 5 lines)
+    conn = get_db_connection(config)
 
     # Determine snapshot date (latest available)
     snap_row = conn.execute("""
@@ -130,39 +130,15 @@ def keywords():
     rec_groups = []
     rec_count = 0
     try:
-        from act_lighthouse.config import load_client_config
         from act_lighthouse.keyword_diagnostics import compute_campaign_averages
-        from act_autopilot.models import AutopilotConfig, RuleContext, _safe_float
+        from act_autopilot.models import RuleContext
         from act_autopilot.rules.keyword_rules import KEYWORD_RULES, SEARCH_TERM_RULES
 
-        lh_cfg = load_client_config(
-            session.get("current_client_config")
-            or current_app.config.get("DEFAULT_CLIENT")
-        )
-        raw = lh_cfg.raw or {}
-        targets = raw.get("targets", {})
-        ap_config = AutopilotConfig(
-            customer_id=lh_cfg.customer_id,
-            automation_mode=raw.get("automation_mode", "suggest"),
-            risk_tolerance=raw.get("risk_tolerance", "conservative"),
-            daily_spend_cap=lh_cfg.spend_caps.daily or 0,
-            monthly_spend_cap=lh_cfg.spend_caps.monthly or 0,
-            brand_is_protected=False,
-            protected_entities=[],
-            client_name=lh_cfg.client_id,
-            client_type=lh_cfg.client_type or "ecom",
-            primary_kpi=lh_cfg.primary_kpi or "roas",
-            target_roas=targets.get("target_roas"),
-            target_cpa=targets.get("target_cpa", 25),
-        )
+        # Build AutopilotConfig (replaces 20+ lines)
+        ap_config = build_autopilot_config(current_client_path)
 
         # Compute campaign averages for enrichment
-        ro_path = config.db_path.replace("warehouse.duckdb", "warehouse_readonly.duckdb")
-        conn2 = duckdb.connect(config.db_path)
-        try:
-            conn2.execute(f"ATTACH '{ro_path}' AS ro (READ_ONLY);")
-        except Exception:
-            pass
+        conn2 = get_db_connection(config)
         avg_ctrs, avg_cvrs = compute_campaign_averages(
             conn2, config.customer_id, snapshot_date, 7
         )
@@ -229,43 +205,18 @@ def keywords():
             'add_negative_exact': 'add_negative_keyword',
         }
         
-        # Build explicit dict mapping (avoids asdict() serialization issues)
-        # Use None-safe defaults to prevent JavaScript/sorting errors
+        # Convert recommendations to dicts (replaces 25+ lines)
         keywords_cache = []
         for idx, rec in enumerate(kw_recs):
+            rec_dict = recommendation_to_dict(rec, index=idx)
             # Map action type
-            mapped_action_type = action_type_map.get(rec.action_type, rec.action_type)
-            
-            keywords_cache.append({
-                'id': idx,
-                'rule_id': rec.rule_id,
-                'rule_name': rec.rule_name,
-                'entity_type': rec.entity_type,
-                'entity_id': rec.entity_id,
-                'action_type': mapped_action_type,
-                'risk_tier': rec.risk_tier,
-                'confidence': rec.confidence or 0.0,
-                'current_value': rec.current_value,  # Can be None - handled by template
-                'recommended_value': rec.recommended_value,  # Can be None - handled by template
-                'change_pct': rec.change_pct,  # Can be None - handled by template
-                'rationale': rec.rationale or '',
-                'campaign_name': rec.campaign_name or '',
-                'blocked': rec.blocked or False,
-                'block_reason': rec.block_reason or '',
-                'priority': rec.priority if rec.priority is not None else 50,
-                'constitution_refs': rec.constitution_refs or [],
-                'guardrails_checked': rec.guardrails_checked or [],
-                'evidence': rec.evidence if rec.evidence else {},
-                'triggering_diagnosis': rec.triggering_diagnosis or '',
-                'triggering_confidence': rec.triggering_confidence or 0.0,
-                'expected_impact': rec.expected_impact or '',
-            })
+            rec_dict['action_type'] = action_type_map.get(rec.action_type, rec.action_type)
+            keywords_cache.append(rec_dict)
         
-        # Store in cache for execution API (live recommendations)
-        # Using server-side cache instead of session cookies (no size limit!)
-        current_app.config['RECOMMENDATIONS_CACHE']['keywords'] = keywords_cache
+        # Store in cache (replaces 1 line but more explicit)
+        cache_recommendations('keywords', keywords_cache)
 
-        # Group recommendations using cache dicts (which have 'id' field for template)
+        # Group recommendations
         groups = {}
         for rec_dict in sorted(keywords_cache, key=lambda r: r['priority']):
             prefix = rec_dict['rule_id'].rsplit("-", 1)[0]

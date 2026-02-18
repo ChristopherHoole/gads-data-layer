@@ -2,9 +2,14 @@
 Shopping page route - shopping campaigns, products, feed quality, and recommendations.
 """
 
-from flask import Blueprint, render_template, session, current_app
+from flask import Blueprint, render_template, session
 from act_dashboard.auth import login_required
-from act_dashboard.routes.shared import get_current_config, get_available_clients
+from act_dashboard.routes.shared import (
+    get_page_context,
+    get_available_clients,
+    recommendation_to_dict,
+    cache_recommendations
+)
 import duckdb
 
 bp = Blueprint('shopping', __name__)
@@ -15,7 +20,10 @@ bp = Blueprint('shopping', __name__)
 def shopping():
     """Shopping dashboard with 4 tabs: Campaigns, Products, Feed Quality, Recommendations."""
     try:
-        cfg = get_current_config()
+        # Get common page context (replaces 3 lines)
+        cfg, clients, current_client_path = get_page_context()
+        
+        # Note: Shopping uses read_only=True, so we do manual connection here
         conn = duckdb.connect(cfg.db_path, read_only=True)
         
         # Get latest snapshot date
@@ -30,8 +38,8 @@ def shopping():
             return render_template(
                 "shopping.html",
                 client_name=cfg.client_name,
-                available_clients=get_available_clients(),
-                current_client_config=session.get("current_client_config"),
+                available_clients=clients,
+                current_client_config=current_client_path,
                 error="No Shopping data available. Run Shopping Lighthouse first.",
             )
         
@@ -201,7 +209,6 @@ def shopping():
         # Try to generate recommendations (may be empty if rules don't fire)
         try:
             from act_autopilot.rules import shopping_rules
-            import pandas as pd
             
             products_df = conn.execute("""
                 SELECT *
@@ -210,48 +217,21 @@ def shopping():
                     AND snapshot_date = ?
             """, (cfg.customer_id, snapshot_date)).df()
             
-            # Call shopping rules (matches keywords/ads pattern)
+            # Call shopping rules
             if len(products_df) > 0:
-                # Convert DataFrame to list of dicts for rules
                 product_list = products_df.to_dict('records')
-                
-                # Apply rules (returns Recommendation objects)
                 shop_recs = shopping_rules.apply_rules(product_list, ctx=None)
                 
-                # Convert Recommendation objects to dicts for cache
-                # (matches keywords pattern - explicit field mapping)
-                for idx, rec in enumerate(shop_recs):
-                    recommendations_list.append({
-                        'id': idx,
-                        'rule_id': rec.rule_id,
-                        'rule_name': rec.rule_name,
-                        'entity_type': rec.entity_type,
-                        'entity_id': rec.entity_id,
-                        'action_type': rec.action_type,
-                        'risk_tier': rec.risk_tier,
-                        'confidence': rec.confidence or 0.0,
-                        'current_value': rec.current_value,
-                        'recommended_value': rec.recommended_value,
-                        'change_pct': rec.change_pct,
-                        'rationale': rec.rationale or '',
-                        'campaign_name': rec.campaign_name or '',
-                        'blocked': rec.blocked or False,
-                        'block_reason': rec.block_reason or '',
-                        'priority': rec.priority if rec.priority is not None else 50,
-                        'constitution_refs': rec.constitution_refs or [],
-                        'guardrails_checked': rec.guardrails_checked or [],
-                        'evidence': rec.evidence if rec.evidence else {},
-                        'triggering_diagnosis': rec.triggering_diagnosis or '',
-                        'triggering_confidence': rec.triggering_confidence or 0.0,
-                        'expected_impact': rec.expected_impact or '',
-                    })
-        except Exception as e:
-            # If recommendations fail, continue with empty list
+                # Convert using helper (replaces 25+ lines)
+                recommendations_list = [
+                    recommendation_to_dict(rec, index=idx)
+                    for idx, rec in enumerate(shop_recs)
+                ]
+        except Exception:
             pass
         
-        # Store in cache for execution API (live recommendations)
-        # Using server-side cache instead of session cookies (no size limit!)
-        current_app.config['RECOMMENDATIONS_CACHE']['shopping'] = recommendations_list
+        # Store in cache using helper (replaces 1 line)
+        cache_recommendations('shopping', recommendations_list)
         
         # Summary stats
         total_products = len(products_list)
@@ -270,8 +250,8 @@ def shopping():
         return render_template(
             "shopping.html",
             client_name=cfg.client_name,
-            available_clients=get_available_clients(),
-            current_client_config=session.get("current_client_config"),
+            available_clients=clients,
+            current_client_config=current_client_path,
             snapshot_date=snapshot_date,
             # Tab 1: Campaigns
             campaigns=campaigns_list,
