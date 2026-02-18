@@ -1,165 +1,143 @@
 """
-In-memory caching layer for dashboard performance.
+Expiring cache implementation with TTL (Time To Live).
+
+Prevents stale recommendations from being executed and fixes memory leaks.
 """
 
-import time
-from typing import Any, Optional, Callable
-from functools import wraps
+from time import time
+from typing import Any, Dict, Optional
 
 
-class SimpleCache:
+class ExpiringCache:
     """
-    Simple in-memory cache with TTL (time-to-live).
-
-    Thread-safe is NOT guaranteed - suitable for single-threaded Flask dev server.
-    For production, use Redis or memcached.
+    Cache with automatic expiration after TTL.
+    
+    Stores recommendations with timestamps and automatically removes expired entries.
     """
-
-    def __init__(self, default_ttl: int = 300):
+    
+    def __init__(self, default_ttl: int = 3600):
         """
-        Initialize cache.
-
+        Initialize expiring cache.
+        
         Args:
-            default_ttl: Default time-to-live in seconds (default: 5 minutes)
+            default_ttl: Default time-to-live in seconds (default: 1 hour)
         """
-        self._cache = {}
-        self.default_ttl = default_ttl
-
-    def get(self, key: str) -> Optional[Any]:
+        self._cache: Dict[str, Dict[str, Any]] = {}
+        self._default_ttl = default_ttl
+    
+    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
         """
-        Get value from cache.
-
+        Store a value in cache with expiration.
+        
         Args:
             key: Cache key
-
+            value: Value to store
+            ttl: Time-to-live in seconds (uses default if not specified)
+        """
+        ttl = ttl if ttl is not None else self._default_ttl
+        expires_at = time() + ttl
+        
+        self._cache[key] = {
+            'value': value,
+            'expires_at': expires_at,
+            'created_at': time()
+        }
+    
+    def get(self, key: str, default: Any = None) -> Any:
+        """
+        Retrieve a value from cache.
+        
+        Args:
+            key: Cache key
+            default: Default value if key not found or expired
+            
         Returns:
-            Cached value if exists and not expired, None otherwise
+            Cached value or default
         """
         if key not in self._cache:
-            return None
-
-        value, expiry = self._cache[key]
-
-        if time.time() > expiry:
-            # Expired - remove from cache
+            return default
+        
+        entry = self._cache[key]
+        
+        # Check if expired
+        if time() > entry['expires_at']:
+            # Remove expired entry
             del self._cache[key]
-            return None
-
-        return value
-
-    def set(self, key: str, value: Any, ttl: Optional[int] = None):
+            return default
+        
+        return entry['value']
+    
+    def delete(self, key: str) -> bool:
         """
-        Set value in cache.
-
+        Delete a key from cache.
+        
         Args:
             key: Cache key
-            value: Value to cache
-            ttl: Time-to-live in seconds (None = use default)
+            
+        Returns:
+            True if deleted, False if not found
         """
-        ttl = ttl if ttl is not None else self.default_ttl
-        expiry = time.time() + ttl
-        self._cache[key] = (value, expiry)
-
-    def delete(self, key: str):
-        """Delete key from cache."""
         if key in self._cache:
             del self._cache[key]
-
-    def clear(self):
-        """Clear all cached values."""
+            return True
+        return False
+    
+    def clear(self) -> None:
+        """Clear all cached items."""
         self._cache.clear()
-
-    def size(self) -> int:
-        """Get number of cached items."""
+    
+    def cleanup_expired(self) -> int:
+        """
+        Remove all expired entries.
+        
+        Returns:
+            Number of entries removed
+        """
+        now = time()
+        expired_keys = [
+            key for key, entry in self._cache.items()
+            if now > entry['expires_at']
+        ]
+        
+        for key in expired_keys:
+            del self._cache[key]
+        
+        return len(expired_keys)
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """
+        Get cache statistics.
+        
+        Returns:
+            Dict with cache stats (size, expired count, etc.)
+        """
+        now = time()
+        total = len(self._cache)
+        expired = sum(1 for entry in self._cache.values() if now > entry['expires_at'])
+        active = total - expired
+        
+        return {
+            'total_entries': total,
+            'active_entries': active,
+            'expired_entries': expired,
+            'ttl_seconds': self._default_ttl
+        }
+    
+    def __len__(self) -> int:
+        """Return number of cache entries (including expired)."""
         return len(self._cache)
-
-
-# Global cache instance
-cache = SimpleCache(default_ttl=300)  # 5 minutes
-
-
-def cached(ttl: int = 300, key_prefix: str = ""):
-    """
-    Decorator to cache function results.
-
-    Args:
-        ttl: Time-to-live in seconds
-        key_prefix: Prefix for cache key
-
-    Usage:
-        @cached(ttl=60, key_prefix='dashboard')
-        def get_dashboard_data(customer_id):
-            # expensive operation
-            return data
-    """
-
-    def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            # Generate cache key from function name and arguments
-            key_parts = [key_prefix, func.__name__]
-
-            # Add args to key
-            for arg in args:
-                if isinstance(arg, (str, int, float, bool)):
-                    key_parts.append(str(arg))
-                else:
-                    # For complex objects, use hash
-                    key_parts.append(str(hash(str(arg))))
-
-            # Add kwargs to key (sorted for consistency)
-            for k in sorted(kwargs.keys()):
-                v = kwargs[k]
-                if isinstance(v, (str, int, float, bool)):
-                    key_parts.append(f"{k}:{v}")
-                else:
-                    key_parts.append(f"{k}:{hash(str(v))}")
-
-            cache_key = ":".join(key_parts)
-
-            # Try to get from cache
-            result = cache.get(cache_key)
-            if result is not None:
-                return result
-
-            # Cache miss - call function
-            result = func(*args, **kwargs)
-
-            # Store in cache
-            cache.set(cache_key, result, ttl=ttl)
-
-            return result
-
-        return wrapper
-
-    return decorator
-
-
-def cache_client_config(config_path: str, ttl: int = 300) -> Any:
-    """
-    Cache client config with TTL.
-
-    Args:
-        config_path: Path to config file
-        ttl: Time-to-live in seconds
-
-    Returns:
-        Cached config or newly loaded config
-    """
-    cache_key = f"config:{config_path}"
-
-    # Try cache
-    config = cache.get(cache_key)
-    if config is not None:
-        return config
-
-    # Load from file
-    import yaml
-
-    with open(config_path, "r") as f:
-        config = yaml.safe_load(f)
-
-    # Cache it
-    cache.set(cache_key, config, ttl=ttl)
-
-    return config
+    
+    def __contains__(self, key: str) -> bool:
+        """Check if key exists and is not expired."""
+        return self.get(key) is not None
+    
+    def __setitem__(self, key: str, value: Any) -> None:
+        """Allow dict-like assignment: cache[key] = value"""
+        self.set(key, value)
+    
+    def __getitem__(self, key: str) -> Any:
+        """Allow dict-like access: value = cache[key]"""
+        result = self.get(key)
+        if result is None:
+            raise KeyError(key)
+        return result

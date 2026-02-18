@@ -224,11 +224,25 @@ def execute_recommendation():
             
             result = execution_summary["results"][0]
         except Exception as e:
+            current_app.logger.error(f'Execution failed for rec_id {rec_id}: {str(e)}')
             return jsonify({
                 "success": False,
                 "message": "Execution failed",
                 "error": str(e)
             }), 500
+        
+        # Log execution
+        if result["success"]:
+            current_app.logger.info(
+                f'Execution successful: user={request.remote_addr}, '
+                f'rec_id={rec_id}, page={page or "file"}, '
+                f'dry_run={dry_run}, change_id={result.get("change_id")}'
+            )
+        else:
+            current_app.logger.warning(
+                f'Execution failed: user={request.remote_addr}, '
+                f'rec_id={rec_id}, error={result.get("error")}'
+            )
         
         # Return result (result is a dict, not an object)
         return jsonify({
@@ -239,6 +253,7 @@ def execute_recommendation():
         })
         
     except Exception as e:
+        current_app.logger.error(f'Unexpected error in execute_recommendation: {str(e)}')
         return jsonify({
             "success": False,
             "message": f"Execution failed: {str(e)}",
@@ -373,6 +388,14 @@ def execute_batch():
         try:
             execution_summary = executor.execute(recs_to_execute, dry_run=dry_run)
             
+            # Log batch execution
+            current_app.logger.info(
+                f'Batch execution: user={request.remote_addr}, '
+                f'count={len(rec_ids)}, page={page or "file"}, '
+                f'dry_run={dry_run}, succeeded={execution_summary["successful"]}, '
+                f'failed={execution_summary["failed"]}'
+            )
+            
             return jsonify({
                 "success": True,
                 "results": execution_summary["results"],
@@ -383,6 +406,7 @@ def execute_batch():
                 }
             })
         except Exception as e:
+            current_app.logger.error(f'Batch execution failed: {str(e)}')
             return jsonify({
                 "success": False,
                 "message": "Batch execution failed",
@@ -390,6 +414,7 @@ def execute_batch():
             }), 500
             
     except Exception as e:
+        current_app.logger.error(f'Unexpected error in execute_batch: {str(e)}')
         return jsonify({
             "success": False,
             "message": f"Batch execution failed: {str(e)}",
