@@ -13,8 +13,7 @@ import glob
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from act_dashboard.routes_old import init_routes  # Old monolithic routes (being migrated)
-from act_dashboard.routes import register_blueprints  # New modular blueprints (Phase 1a)
+from act_dashboard.routes import register_blueprints
 from act_dashboard.auth import init_auth
 
 
@@ -79,11 +78,12 @@ def create_app():
     # Initialize authentication
     init_auth(app)
 
-    # Initialize routes
-    init_routes(app)
-    
-    # Register modular blueprints (Phase 1a: auth routes)
-    # This runs alongside init_routes() during migration
+    # Initialize recommendations cache (required by keywords/ads/shopping routes)
+    # Using server-side cache instead of session cookies (no size limit!)
+    if 'RECOMMENDATIONS_CACHE' not in app.config:
+        app.config['RECOMMENDATIONS_CACHE'] = {}
+
+    # Register all route blueprints (Phase 1 complete - all 16 routes migrated)
     register_blueprints(app)
 
     return app
