@@ -7,6 +7,7 @@ Phase 1c: Page routes ✅
 Phase 1d: Final routes ✅ (NEW - COMPLETE!)
 
 ALL 16 ROUTES MIGRATED TO BLUEPRINTS
+Chat 21a: Bootstrap test route ✅
 """
 
 from flask import Flask
@@ -40,8 +41,13 @@ def register_blueprints(app: Flask):
     app.register_blueprint(recommendations.bp)
     app.register_blueprint(settings.bp)
     
+    # Chat 21a: Test Bootstrap route
+    from act_dashboard.routes import test_bootstrap
+    app.register_blueprint(test_bootstrap.bp)
+    
     print("✅ [Phase 1a] Registered auth blueprint (login, logout, switch-client)")
     print("✅ [Phase 1b] Registered api blueprint (execute, batch, status, approve, reject)")
     print("✅ [Phase 1c] Registered page blueprints (keywords, ads, shopping)")
     print("✅ [Phase 1d] Registered final blueprints (dashboard, recommendations, settings)")
-    print("🎉 ALL 16 ROUTES MIGRATED - Phase 1 routes split COMPLETE!")
+    print("✅ [Chat 21a] Registered test blueprint (test-bootstrap)")
+    print("🎉 ALL ROUTES REGISTERED - Phase 1 + Bootstrap test COMPLETE!")

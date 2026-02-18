@@ -1,0 +1,63 @@
+<!-- Top Navbar -->
+<nav class="navbar navbar-expand navbar-light bg-white border-bottom">
+    <div class="container-fluid">
+        <!-- Hamburger Menu (Mobile Only - triggers sidebar offcanvas) -->
+        <button class="btn btn-link d-md-none p-0 me-3 text-dark" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas">
+            <i class="bi bi-list fs-3"></i>
+        </button>
+        
+        <!-- Navbar Content -->
+        <div class="d-flex align-items-center ms-auto">
+            <!-- Client Selector Dropdown (if multiple clients) -->
+            {% if available_clients and available_clients|length > 1 %}
+            <div class="dropdown me-3">
+                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="clientDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-building"></i>
+                    <span class="d-none d-sm-inline ms-1">{{ client_name }}</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="clientDropdown">
+                    {% for client_name_loop, config_path in available_clients %}
+                    <li>
+                        <a class="dropdown-item {% if config_path == current_client_config %}active{% endif %}" href="/switch-client/{{ loop.index0 }}">
+                            {% if config_path == current_client_config %}<i class="bi bi-check-circle-fill me-2"></i>{% endif %}
+                            {{ client_name_loop }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% else %}
+            <!-- Single client - just show name -->
+            <div class="me-3 text-muted small d-none d-sm-block">
+                <i class="bi bi-building"></i> {{ client_name }}
+            </div>
+            {% endif %}
+            
+            <!-- Date Range Picker (Static Placeholder) -->
+            <div class="dropdown me-3">
+                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="dateRangeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-calendar3"></i>
+                    <span class="d-none d-sm-inline ms-1">Last 7 days</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dateRangeDropdown">
+                    <li><a class="dropdown-item active" href="#"><i class="bi bi-check-circle-fill me-2"></i>Last 7 days</a></li>
+                    <li><a class="dropdown-item" href="#">Last 30 days</a></li>
+                    <li><a class="dropdown-item" href="#">Last 90 days</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#">Custom range...</a></li>
+                </ul>
+            </div>
+            
+            <!-- User Menu Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="userMenuDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-person-circle"></i>
+                    <span class="d-none d-lg-inline ms-1">User</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuDropdown">
+                    <li><a class="dropdown-item" href="/logout"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
