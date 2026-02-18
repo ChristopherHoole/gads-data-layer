@@ -45,9 +45,14 @@ def register_blueprints(app: Flask):
     from act_dashboard.routes import test_bootstrap
     app.register_blueprint(test_bootstrap.bp)
     
+    # Chat 21c: Campaigns page with rule visibility
+    from act_dashboard.routes import campaigns
+    app.register_blueprint(campaigns.bp)
+    
     print("✅ [Phase 1a] Registered auth blueprint (login, logout, switch-client)")
     print("✅ [Phase 1b] Registered api blueprint (execute, batch, status, approve, reject)")
     print("✅ [Phase 1c] Registered page blueprints (keywords, ads, shopping)")
     print("✅ [Phase 1d] Registered final blueprints (dashboard, recommendations, settings)")
     print("✅ [Chat 21a] Registered test blueprint (test-bootstrap)")
-    print("🎉 ALL ROUTES REGISTERED - Phase 1 + Bootstrap test COMPLETE!")
+    print("✅ [Chat 21c] Registered campaigns blueprint")
+    print("🎉 ALL ROUTES REGISTERED - Phase 1 + Bootstrap test + Campaigns COMPLETE!")

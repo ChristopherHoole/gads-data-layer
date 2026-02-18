@@ -1,0 +1,361 @@
+<!-- 
+Rules Sidebar Component - Chat 21c
+Collapsible right sidebar showing rules at a glance
+Default state: Collapsed
+Click to expand and view all rules
+Click outside or press ESC to close
+-->
+
+<!-- Backdrop overlay -->
+<div id="rulesSidebarBackdrop" class="rules-sidebar-backdrop" onclick="toggleRulesSidebar()" style="display: none;"></div>
+
+<div id="rulesSidebar" class="rules-sidebar collapsed">
+  <!-- Collapsed State - Vertical Toggle Button -->
+  <div class="rules-toggle-collapsed">
+    <button class="btn btn-sm btn-primary rules-toggle-btn" onclick="toggleRulesSidebar()" title="View Rules">
+      <i class="bi bi-lightning-charge-fill"></i>
+      <span class="rules-count-badge">{{ rules|length }}</span>
+    </button>
+    <div class="rules-label-vertical">RULES</div>
+  </div>
+
+  <!-- Expanded State - Full Sidebar -->
+  <div class="rules-sidebar-content">
+    <!-- Header -->
+    <div class="rules-header">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0">
+          <i class="bi bi-lightning-charge-fill text-warning"></i>
+          Campaign Rules
+        </h5>
+        <button type="button" 
+                class="btn btn-danger btn-sm" 
+                onclick="toggleRulesSidebar()"
+                style="font-weight: 600; padding: 6px 12px;">
+          <i class="bi bi-x-lg"></i> Close
+        </button>
+      </div>
+      <p class="text-muted small mb-0">
+        Active optimization rules • 
+        <span class="text-muted" style="font-size: 11px;">Press ESC or click outside to close</span>
+      </p>
+    </div>
+
+    <!-- Rules List -->
+    <div class="rules-list">
+      {% if rules and rules|length > 0 %}
+        {% for rule in rules %}
+          <div class="rule-item">
+            <!-- Rule ID Badge and Name -->
+            <div class="d-flex justify-content-between align-items-start mb-1">
+              <span class="badge bg-secondary me-2">{{ rule.rule_id }}</span>
+              {% if rule.enabled %}
+                <span class="badge bg-success">Enabled</span>
+              {% else %}
+                <span class="badge bg-secondary">Disabled</span>
+              {% endif %}
+            </div>
+            
+            <!-- Rule Name (truncated) -->
+            <div class="rule-name mb-1">
+              {% if rule.name|length > 40 %}
+                {{ rule.name[:40] }}...
+              {% else %}
+                {{ rule.name }}
+              {% endif %}
+            </div>
+            
+            <!-- First Threshold (if exists) -->
+            {% if rule.thresholds and rule.thresholds|length > 0 %}
+              <div class="rule-threshold text-muted small">
+                <i class="bi bi-arrow-right-circle"></i>
+                {{ rule.thresholds[0] }}
+              </div>
+            {% endif %}
+            
+            <!-- Risk Tier Badge -->
+            <div class="mt-1">
+              {% if rule.risk_tier == 'low' %}
+                <span class="badge bg-success-subtle text-success-emphasis">Low Risk</span>
+              {% elif rule.risk_tier == 'medium' %}
+                <span class="badge bg-warning-subtle text-warning-emphasis">Medium Risk</span>
+              {% elif rule.risk_tier == 'high' %}
+                <span class="badge bg-danger-subtle text-danger-emphasis">High Risk</span>
+              {% else %}
+                <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ rule.risk_tier|title }}</span>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <!-- Empty State -->
+        <div class="text-center text-muted py-4">
+          <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+          <p class="mb-0 mt-2 small">No rules configured yet</p>
+          <small class="text-muted">Rules will appear here once configured</small>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Footer with Action Button -->
+    <div class="rules-footer">
+      <a href="#rules-tab" class="btn btn-sm btn-primary w-100" onclick="switchToRulesTab(event)">
+        <i class="bi bi-list-ul"></i>
+        View All Rule Details
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- CSS Styles for Rules Sidebar -->
+<style>
+/* Backdrop */
+.rules-sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1039;
+  transition: opacity 0.3s ease;
+}
+
+.rules-sidebar {
+  position: fixed;
+  right: 0;
+  top: 56px; /* Below navbar */
+  height: calc(100vh - 56px);
+  z-index: 1040;
+  transition: width 0.3s ease;
+}
+
+/* Collapsed State */
+.rules-sidebar.collapsed {
+  width: 50px;
+}
+
+.rules-sidebar.collapsed .rules-sidebar-content {
+  display: none;
+}
+
+.rules-sidebar.collapsed .rules-toggle-collapsed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 20px;
+  background: white;
+  border-left: 1px solid #dee2e6;
+  height: 100%;
+}
+
+/* Expanded State */
+.rules-sidebar.expanded {
+  width: 350px;
+  background: white;
+  border-left: 1px solid #dee2e6;
+  box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+}
+
+.rules-sidebar.expanded .rules-toggle-collapsed {
+  display: none;
+}
+
+.rules-sidebar.expanded .rules-sidebar-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Toggle Button Collapsed State */
+.rules-toggle-btn {
+  position: relative;
+  padding: 10px 12px;
+  border-radius: 4px;
+}
+
+.rules-count-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #dc3545;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.rules-label-vertical {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  margin-top: 15px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6c757d;
+  letter-spacing: 2px;
+}
+
+/* Header */
+.rules-header {
+  padding: 20px;
+  border-bottom: 1px solid #dee2e6;
+  background: #f8f9fa;
+}
+
+.rules-header .btn-danger {
+  transition: all 0.2s ease;
+}
+
+.rules-header .btn-danger:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
+}
+
+/* Rules List */
+.rules-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px;
+}
+
+.rule-item {
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  background: #ffffff;
+  transition: box-shadow 0.2s ease;
+}
+
+.rule-item:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.rule-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #212529;
+  line-height: 1.4;
+}
+
+.rule-threshold {
+  font-size: 12px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Footer */
+.rules-footer {
+  padding: 15px;
+  border-top: 1px solid #dee2e6;
+  background: #f8f9fa;
+}
+
+/* Scrollbar Styling */
+.rules-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.rules-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.rules-list::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.rules-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Responsive: Hide on small screens */
+@media (max-width: 768px) {
+  .rules-sidebar {
+    display: none;
+  }
+}
+</style>
+
+<!-- JavaScript for Toggle Functionality -->
+<script>
+function toggleRulesSidebar() {
+  const sidebar = document.getElementById('rulesSidebar');
+  const backdrop = document.getElementById('rulesSidebarBackdrop');
+  
+  if (sidebar.classList.contains('collapsed')) {
+    // Open sidebar
+    sidebar.classList.remove('collapsed');
+    sidebar.classList.add('expanded');
+    if (backdrop) backdrop.style.display = 'block';
+    // Add event listeners when opening
+    setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+      document.addEventListener('keydown', handleEscKey);
+    }, 100);
+  } else {
+    // Close sidebar
+    sidebar.classList.remove('expanded');
+    sidebar.classList.add('collapsed');
+    if (backdrop) backdrop.style.display = 'none';
+    // Remove event listeners when closing
+    document.removeEventListener('click', handleClickOutside);
+    document.removeEventListener('keydown', handleEscKey);
+  }
+}
+
+// Close sidebar when clicking outside
+function handleClickOutside(event) {
+  const sidebar = document.getElementById('rulesSidebar');
+  const toggleBtn = event.target.closest('.rules-toggle-btn');
+  
+  // Don't close if clicking the toggle button or inside the sidebar
+  if (!toggleBtn && !sidebar.contains(event.target) && sidebar.classList.contains('expanded')) {
+    toggleRulesSidebar();
+  }
+}
+
+// Close sidebar when pressing ESC key
+function handleEscKey(event) {
+  if (event.key === 'Escape') {
+    const sidebar = document.getElementById('rulesSidebar');
+    if (sidebar && sidebar.classList.contains('expanded')) {
+      toggleRulesSidebar();
+    }
+  }
+}
+
+function switchToRulesTab(event) {
+  event.preventDefault();
+  
+  // Activate Rules tab
+  const rulesTabBtn = document.getElementById('rules-tab-btn');
+  if (rulesTabBtn) {
+    const tab = new bootstrap.Tab(rulesTabBtn);
+    tab.show();
+  }
+  
+  // Collapse sidebar
+  const sidebar = document.getElementById('rulesSidebar');
+  const backdrop = document.getElementById('rulesSidebarBackdrop');
+  if (sidebar) {
+    sidebar.classList.remove('expanded');
+    sidebar.classList.add('collapsed');
+    if (backdrop) backdrop.style.display = 'none';
+    // Remove event listeners
+    document.removeEventListener('click', handleClickOutside);
+    document.removeEventListener('keydown', handleEscKey);
+  }
+  
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>

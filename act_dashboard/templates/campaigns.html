@@ -1,0 +1,394 @@
+{% extends "base_bootstrap.html" %}
+
+{% block title %}Campaigns - {{ client_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  
+  <!-- Page Header with Tabs -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Campaigns</h2>
+  </div>
+  
+  <!-- Tab Navigation -->
+  <ul class="nav nav-tabs mb-3" id="campaignsTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="campaigns-tab-btn" data-bs-toggle="tab" data-bs-target="#campaigns-tab" type="button" role="tab">
+        <i class="bi bi-bar-chart"></i> Campaigns ({{ total_campaigns }})
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="rules-tab-btn" data-bs-toggle="tab" data-bs-target="#rules-tab" type="button" role="tab">
+        <i class="bi bi-lightning-charge-fill text-warning"></i> Rules ({{ rules|length }})
+      </button>
+    </li>
+  </ul>
+
+  <!-- Tab Content -->
+  <div class="tab-content" id="campaignsTabContent">
+    
+    <!-- CAMPAIGNS TAB -->
+    <div class="tab-pane fade show active" id="campaigns-tab" role="tabpanel">
+      
+      <!-- Metrics Bar -->
+      <div class="row mb-3">
+        <!-- Clicks -->
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Clicks</h6>
+              <h3 class="mb-0">{{ "{:,}".format(metrics.total_clicks) }}</h3>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Impressions -->
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Impressions</h6>
+              <h3 class="mb-0">{{ "{:,}".format(metrics.total_impressions) }}</h3>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Cost -->
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Cost</h6>
+              <h3 class="mb-0">${{ "{:,.2f}".format(metrics.total_spend) }}</h3>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Conversions -->
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Conversions</h6>
+              <h3 class="mb-0">{{ "{:,.1f}".format(metrics.total_conversions) }}</h3>
+            </div>
+          </div>
+        </div>
+        
+        <!-- ROAS -->
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">ROAS</h6>
+              <h3 class="mb-0 {% if metrics.overall_roas >= 3 %}text-success{% elif metrics.overall_roas >= 2 %}text-warning{% else %}text-danger{% endif %}">
+                {{ "{:.2f}".format(metrics.overall_roas) }}x
+              </h3>
+            </div>
+          </div>
+        </div>
+        
+        <!-- CPA -->
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">CPA</h6>
+              <h3 class="mb-0">${{ "{:.2f}".format(metrics.overall_cpa) }}</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters and Actions Bar -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <!-- Date Filter -->
+        <div class="btn-group" role="group">
+          <a href="/campaigns?days=7&per_page={{ per_page }}" class="btn btn-sm {% if days == 7 %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            Last 7 days
+          </a>
+          <a href="/campaigns?days=30&per_page={{ per_page }}" class="btn btn-sm {% if days == 30 %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            Last 30 days
+          </a>
+          <a href="/campaigns?days=90&per_page={{ per_page }}" class="btn btn-sm {% if days == 90 %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            Last 90 days
+          </a>
+        </div>
+        
+        <!-- Actions -->
+        <div>
+          <button id="bulk-edit-btn" class="btn btn-sm btn-secondary me-2" style="display:none;">
+            <i class="bi bi-pencil"></i> Bulk Edit
+          </button>
+          <button class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-circle"></i> Create Campaign
+          </button>
+        </div>
+      </div>
+
+      <!-- Campaigns Table -->
+      {% if campaigns and campaigns|length > 0 %}
+        <div class="card">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 40px;">
+                    <input type="checkbox" id="select-all" class="form-check-input">
+                  </th>
+                  <th>Campaign Name</th>
+                  <th>Status</th>
+                  <th>Type</th>
+                  <th class="text-end">Budget</th>
+                  <th class="text-end">Spend ({{ days }}d)</th>
+                  <th class="text-end">Clicks</th>
+                  <th class="text-end">Impressions</th>
+                  <th class="text-end">CTR</th>
+                  <th class="text-end">Conv.</th>
+                  <th class="text-end">ROAS</th>
+                  <th class="text-end">CPA</th>
+                  <th style="width: 100px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for campaign in campaigns %}
+                  <tr>
+                    <!-- Checkbox -->
+                    <td>
+                      <input type="checkbox" class="form-check-input campaign-checkbox" 
+                             data-campaign-id="{{ campaign.campaign_id }}">
+                    </td>
+                    
+                    <!-- Campaign Name -->
+                    <td>
+                      <strong>{{ campaign.campaign_name }}</strong>
+                    </td>
+                    
+                    <!-- Status -->
+                    <td>
+                      {% if campaign.campaign_status == 'ENABLED' %}
+                        <span class="badge bg-success">Active</span>
+                      {% elif campaign.campaign_status == 'PAUSED' %}
+                        <span class="badge bg-secondary">Paused</span>
+                      {% else %}
+                        <span class="badge bg-danger">Removed</span>
+                      {% endif %}
+                    </td>
+                    
+                    <!-- Type -->
+                    <td>
+                      {% if campaign.channel_type == 'SEARCH' %}
+                        <span class="badge bg-info">Search</span>
+                      {% elif campaign.channel_type == 'SHOPPING' %}
+                        <span class="badge bg-primary">Shopping</span>
+                      {% elif campaign.channel_type == 'DISPLAY' %}
+                        <span class="badge bg-warning text-dark">Display</span>
+                      {% else %}
+                        <span class="badge bg-secondary">{{ campaign.channel_type }}</span>
+                      {% endif %}
+                    </td>
+                    
+                    <!-- Budget -->
+                    <td class="text-end">
+                      ${{ "{:,.2f}".format(campaign.daily_budget) }}
+                    </td>
+                    
+                    <!-- Spend -->
+                    <td class="text-end">
+                      ${{ "{:,.2f}".format(campaign.spend) }}
+                    </td>
+                    
+                    <!-- Clicks -->
+                    <td class="text-end">
+                      {{ "{:,}".format(campaign.clicks) }}
+                    </td>
+                    
+                    <!-- Impressions -->
+                    <td class="text-end">
+                      {{ "{:,}".format(campaign.impressions) }}
+                    </td>
+                    
+                    <!-- CTR -->
+                    <td class="text-end">
+                      {{ "{:.2f}".format(campaign.ctr) }}%
+                    </td>
+                    
+                    <!-- Conversions -->
+                    <td class="text-end">
+                      {{ "{:.1f}".format(campaign.conversions) }}
+                    </td>
+                    
+                    <!-- ROAS with color coding -->
+                    <td class="text-end">
+                      {% if campaign.roas >= 3 %}
+                        <span class="text-success fw-bold">{{ "{:.2f}".format(campaign.roas) }}</span>
+                      {% elif campaign.roas >= 2 %}
+                        <span class="text-warning fw-bold">{{ "{:.2f}".format(campaign.roas) }}</span>
+                      {% elif campaign.roas > 0 %}
+                        <span class="text-danger fw-bold">{{ "{:.2f}".format(campaign.roas) }}</span>
+                      {% else %}
+                        <span class="text-muted">0.00</span>
+                      {% endif %}
+                    </td>
+                    
+                    <!-- CPA -->
+                    <td class="text-end">
+                      {% if campaign.cpa > 0 %}
+                        ${{ "{:.2f}".format(campaign.cpa) }}
+                      {% else %}
+                        <span class="text-muted">-</span>
+                      {% endif %}
+                    </td>
+                    
+                    <!-- Actions Dropdown -->
+                    <td>
+                      <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                          Actions
+                        </button>
+                        <ul class="dropdown-menu">
+                          <li><a class="dropdown-item" href="#"><i class="bi bi-pencil"></i> Edit Budget</a></li>
+                          <li><a class="dropdown-item" href="#"><i class="bi bi-pause"></i> Pause Campaign</a></li>
+                          <li><a class="dropdown-item" href="#"><i class="bi bi-graph-up"></i> View Details</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item" href="#"><i class="bi bi-box-arrow-up-right"></i> View in Google Ads</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Footer -->
+          <div class="card-footer">
+            <div class="row align-items-center">
+              <!-- Showing X-Y of Z -->
+              <div class="col-md-4">
+                <small class="text-muted">
+                  Showing {{ (page-1)*per_page + 1 }}-{{ [page*per_page, total_campaigns]|min }} of {{ total_campaigns }}
+                </small>
+              </div>
+              
+              <!-- Per Page Selector -->
+              <div class="col-md-4 text-center">
+                <div class="btn-group btn-group-sm" role="group">
+                  <a href="/campaigns?days={{ days }}&page=1&per_page=10" 
+                     class="btn {% if per_page == 10 %}btn-primary{% else %}btn-outline-secondary{% endif %}">10</a>
+                  <a href="/campaigns?days={{ days }}&page=1&per_page=25" 
+                     class="btn {% if per_page == 25 %}btn-primary{% else %}btn-outline-secondary{% endif %}">25</a>
+                  <a href="/campaigns?days={{ days }}&page=1&per_page=50" 
+                     class="btn {% if per_page == 50 %}btn-primary{% else %}btn-outline-secondary{% endif %}">50</a>
+                  <a href="/campaigns?days={{ days }}&page=1&per_page=100" 
+                     class="btn {% if per_page == 100 %}btn-primary{% else %}btn-outline-secondary{% endif %}">100</a>
+                </div>
+              </div>
+              
+              <!-- Page Navigation -->
+              <div class="col-md-4">
+                <nav aria-label="Page navigation">
+                  <ul class="pagination pagination-sm justify-content-end mb-0">
+                    {% if page > 1 %}
+                      <li class="page-item">
+                        <a class="page-link" href="/campaigns?days={{ days }}&page={{ page - 1 }}&per_page={{ per_page }}">
+                          Previous
+                        </a>
+                      </li>
+                    {% else %}
+                      <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
+                      </li>
+                    {% endif %}
+                    
+                    {% for p in range(1, total_pages + 1) %}
+                      {% if p == page %}
+                        <li class="page-item active">
+                          <span class="page-link">{{ p }}</span>
+                        </li>
+                      {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+                        <li class="page-item">
+                          <a class="page-link" href="/campaigns?days={{ days }}&page={{ p }}&per_page={{ per_page }}">
+                            {{ p }}
+                          </a>
+                        </li>
+                      {% elif p == page - 3 or p == page + 3 %}
+                        <li class="page-item disabled">
+                          <span class="page-link">...</span>
+                        </li>
+                      {% endif %}
+                    {% endfor %}
+                    
+                    {% if page < total_pages %}
+                      <li class="page-item">
+                        <a class="page-link" href="/campaigns?days={{ days }}&page={{ page + 1 }}&per_page={{ per_page }}">
+                          Next
+                        </a>
+                      </li>
+                    {% else %}
+                      <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                      </li>
+                    {% endif %}
+                  </ul>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      {% else %}
+        <!-- Empty State -->
+        <div class="card">
+          <div class="card-body text-center py-5">
+            <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+            <h5 class="mt-3 mb-2">No Campaigns Found</h5>
+            <p class="text-muted mb-4">
+              No campaigns found for the selected date range.<br>
+              Data will appear once campaigns are synced from Google Ads.
+            </p>
+            <button class="btn btn-primary">
+              <i class="bi bi-arrow-clockwise"></i> Sync Campaigns
+            </button>
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Rules Summary Card -->
+      {% include 'components/rules_card.html' %}
+
+    </div>
+
+    <!-- RULES TAB -->
+    {% include 'components/rules_tab.html' %}
+
+  </div>
+</div>
+
+<!-- Rules Sidebar (always rendered, collapsed by default) -->
+{% include 'components/rules_sidebar.html' %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Select all checkbox logic
+document.getElementById('select-all').addEventListener('change', function() {
+  const checkboxes = document.querySelectorAll('.campaign-checkbox');
+  checkboxes.forEach(cb => cb.checked = this.checked);
+  toggleBulkEdit();
+});
+
+// Show/hide bulk edit button based on selection
+document.querySelectorAll('.campaign-checkbox').forEach(cb => {
+  cb.addEventListener('change', toggleBulkEdit);
+});
+
+function toggleBulkEdit() {
+  const checkedCount = document.querySelectorAll('.campaign-checkbox:checked').length;
+  const bulkBtn = document.getElementById('bulk-edit-btn');
+  if (checkedCount > 0) {
+    bulkBtn.style.display = 'inline-block';
+    bulkBtn.textContent = `Bulk Edit (${checkedCount})`;
+  } else {
+    bulkBtn.style.display = 'none';
+  }
+}
+</script>
+{% endblock %}

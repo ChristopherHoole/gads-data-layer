@@ -1,0 +1,157 @@
+<!-- 
+Rules Summary Card Component - Chat 21c
+Displays on main page showing active rules at a glance
+Provides quick access to detailed rules view
+-->
+
+<div class="card mt-3 border-warning">
+  <div class="card-header bg-warning-subtle d-flex justify-content-between align-items-center">
+    <h6 class="mb-0">
+      <i class="bi bi-lightning-charge-fill text-warning"></i>
+      Active Optimization Rules
+    </h6>
+    <span class="badge bg-warning text-dark">{{ rules|length }} rules</span>
+  </div>
+  
+  <div class="card-body">
+    {% if rules and rules|length > 0 %}
+      
+      <!-- Rule Category Breakdown -->
+      <div class="row text-center mb-3">
+        {% set budget_count = rules|selectattr('category', 'equalto', 'BUDGET')|list|length %}
+        {% set bid_count = rules|selectattr('category', 'equalto', 'BID')|list|length %}
+        {% set status_count = rules|selectattr('category', 'equalto', 'STATUS')|list|length %}
+        
+        <div class="col-4">
+          <div class="rules-stat-item">
+            <div class="h2 mb-0 text-primary">{{ budget_count }}</div>
+            <small class="text-muted">Budget</small>
+          </div>
+        </div>
+        
+        <div class="col-4">
+          <div class="rules-stat-item">
+            <div class="h2 mb-0 text-info">{{ bid_count }}</div>
+            <small class="text-muted">Bid</small>
+          </div>
+        </div>
+        
+        <div class="col-4">
+          <div class="rules-stat-item">
+            <div class="h2 mb-0 text-success">{{ status_count }}</div>
+            <small class="text-muted">Status</small>
+          </div>
+        </div>
+      </div>
+      
+      <hr>
+      
+      <!-- Quick Stats -->
+      <div class="row small mb-3">
+        {% set enabled_count = rules|selectattr('enabled', 'equalto', true)|list|length %}
+        {% set low_risk_count = rules|selectattr('risk_tier', 'equalto', 'low')|list|length %}
+        
+        <div class="col-6">
+          <div class="d-flex align-items-center">
+            <i class="bi bi-check-circle-fill text-success me-2"></i>
+            <span class="text-muted">{{ enabled_count }} enabled</span>
+          </div>
+        </div>
+        
+        <div class="col-6">
+          <div class="d-flex align-items-center">
+            <i class="bi bi-shield-check text-success me-2"></i>
+            <span class="text-muted">{{ low_risk_count }} low risk</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Top Rules Preview (show first 3) -->
+      <div class="mb-3">
+        <small class="text-muted fw-bold">Top Active Rules:</small>
+        <div class="mt-2">
+          {% for rule in rules[:3] %}
+            <div class="d-flex align-items-start mb-2 pb-2 border-bottom">
+              <span class="badge bg-secondary me-2" style="font-size: 9px;">{{ rule.rule_id }}</span>
+              <div class="flex-grow-1">
+                <div class="small fw-bold text-dark">
+                  {% if rule.name|length > 35 %}
+                    {{ rule.name[:35] }}...
+                  {% else %}
+                    {{ rule.name }}
+                  {% endif %}
+                </div>
+                {% if rule.thresholds and rule.thresholds|length > 0 %}
+                  <div class="text-muted" style="font-size: 11px;">
+                    <i class="bi bi-arrow-right-circle"></i>
+                    {{ rule.thresholds[0][:40] }}{% if rule.thresholds[0]|length > 40 %}...{% endif %}
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+          
+          {% if rules|length > 3 %}
+            <small class="text-muted">+ {{ rules|length - 3 }} more rules</small>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- Action Buttons -->
+      <div class="d-grid gap-2">
+        <button type="button" class="btn btn-sm btn-outline-warning" onclick="toggleRulesSidebar()">
+          <i class="bi bi-list-ul"></i>
+          View All Rules
+        </button>
+        
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="switchToRulesTab(event)">
+          <i class="bi bi-info-circle"></i>
+          View Rule Details
+        </button>
+      </div>
+      
+    {% else %}
+      
+      <!-- Empty State -->
+      <div class="text-center py-3">
+        <i class="bi bi-inbox text-muted" style="font-size: 2.5rem;"></i>
+        <p class="text-muted mb-2 mt-2">No rules configured yet</p>
+        <small class="text-muted">
+          Campaign optimization rules will appear here once configured
+        </small>
+      </div>
+      
+    {% endif %}
+  </div>
+  
+  <!-- Footer with Last Update -->
+  <div class="card-footer bg-light text-muted small">
+    <i class="bi bi-clock-history"></i>
+    Rules engine active and monitoring
+  </div>
+</div>
+
+<!-- Custom Styles for Rules Card -->
+<style>
+.rules-stat-item {
+  padding: 10px 0;
+}
+
+.rules-stat-item .h2 {
+  font-weight: 700;
+}
+
+.rules-stat-item small {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.border-warning {
+  border-width: 2px !important;
+}
+
+.bg-warning-subtle {
+  background-color: rgba(255, 193, 7, 0.1) !important;
+}
+</style>
