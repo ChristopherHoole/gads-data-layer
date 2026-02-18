@@ -1,8 +1,8 @@
 # PROJECT ROADMAP - Google Ads Data Layer (ACT Dashboard)
 
-**Last Updated:** 2026-02-18 06:15 PM  
-**Current Phase:** Chat 21 (Dashboard UI Overhaul) - 37.5% Complete 🔥  
-**Overall Completion:** 73% (Foundation + Polish + Dashboard Started)  
+**Last Updated:** 2026-02-18 09:35 PM  
+**Current Phase:** Chat 21 (Dashboard UI Overhaul) - 50% Complete 🔥  
+**Overall Completion:** 75% (Foundation + Polish + Dashboard Half Done)  
 **Mode:** 🔥 LEGENDARY - Finishing all 8 chats tonight!
 
 ---
@@ -158,10 +158,10 @@
 
 ## **CHAT 21: DASHBOARD UI OVERHAUL** ⭐⭐⭐ **IN PROGRESS** 🔥
 
-**Status:** IN PROGRESS - 3/8 Sub-chats Complete (37.5%)  
+**Status:** IN PROGRESS - 4/8 Sub-chats Complete (50%) 🎉  
 **Started:** February 18, 2026 11:44 AM  
-**Current Time:** 6:15 PM  
-**Estimated Time:** 20 hours (original) | 10-12 hours (actual pace)  
+**Current Time:** 9:35 PM  
+**Time Invested:** ~7 hours 10 minutes  
 **Framework:** Bootstrap 5  
 **Strategy:** Google Ads-inspired UI (familiar UX patterns, ACT branding)  
 **Mode:** 🔥 LEGENDARY - Finishing all 8 tonight!
@@ -207,8 +207,8 @@
 
 ### **Chat 21c: Campaigns View + Rule Visibility System** ✅ COMPLETE
 **Time:** ~100 minutes (vs 70 min estimated) | **Efficiency:** 70%  
-**Commit:** READY TO COMMIT (handoff received)  
-**Completed:** Feb 18, 6:00 PM
+**Commit:** 3ab82a2  
+**Completed:** Feb 18, 6:50 PM
 
 **Delivered:**
 - **Rule Visibility System** (reusable for ALL pages):
@@ -230,29 +230,60 @@
 **Major Achievement:** Rule system built once, reusable on all future pages!  
 **Quality:** Production-ready, 100% feature completion, all tests passed
 
-### **Chat 21d: Keywords View** 📋 NEXT (Starting ~6:15 PM)
-**Estimated Time:** 70 minutes  
-**Dependencies:** Rule system ✅ (from 21c)
+### **Chat 21d: Keywords View + Full Rule Integration** ✅ COMPLETE
+**Time:** 125 minutes (95 min initial + 30 min rule fix) | **Efficiency:** 56%  
+**Commit:** f0fbd15  
+**Completed:** Feb 18, 9:35 PM
 
-**Plan:**
-- Keywords table with metrics
-- Search term report integration
-- Quality score indicators
-- Bid adjustment controls
-- Match type filters
-- AI insight badges
-- Rule visibility (3 placements - reuse from 21c)
+**Delivered:**
+- Keywords page fully redesigned with Bootstrap 5
+- **14 keyword rules displaying correctly** across all 3 components (sidebar/tab/card)
+- 15-column keywords table (940 keywords displaying)
+- 8 metrics cards (Keywords, Clicks, Cost, Conversions, CPA, Avg QS, Wasted Spend)
+- Quality Score expansion UI (chevrons present, click functionality pending Chat 21e)
+- Search terms integration (500 terms, collapsible section with 10 columns)
+- Match type filtering (All/Exact/Phrase/Broad with correct badge colors)
+- Pagination (10/25/50/100 per page)
+- Date range filters (7d/30d/90d)
+- QS Distribution card (165/451/303 across 8-10/5-7/1-4 ranges)
+- Low Data Keywords card (599 keywords flagged)
+- Wasted Spend card ($10,714.11 with red warning)
 
-### **Chat 21e: Ad Groups View** 📋 PLANNED
+**Files Modified (5):**
+- routes/keywords.py (570 lines, fixed bid_micros column)
+- templates/keywords_new.html (536 lines, complete Bootstrap 5 redesign)
+- routes/rule_helpers.py (updated regex pattern: `r'_\d{3}(?:_|$)'`)
+- templates/components/rules_tab.html (dynamic category detection)
+- templates/components/rules_card.html (dynamic category detection)
+
+**Issues Fixed (4):**
+1. Keywords table empty (bid_micros vs max_cpc_micros column name)
+2. Rules showing 0 instead of 14 (regex pattern now accepts both formats)
+3. Rules tab hardcoded to campaigns (made fully dynamic with auto-detect)
+4. Bottom card hardcoded categories (applied dynamic detection)
+
+**Technical Improvements:**
+- Regex pattern now accepts: `budget_001_increase` AND `kw_pause_001`
+- Templates auto-detect categories: BUDGET/BID/STATUS/KEYWORD/AD/SHOPPING
+- Backward compatible with all existing rule types
+- Category icons and labels adapt to any page type
+
+**Testing:** All 8 checkpoints passed ✅  
+**Quality:** Production-ready, 14 keyword rules from keyword_rules.py working perfectly
+
+**Known Cosmetic Issues (Non-blocking):**
+- Sidebar title shows "Campaign Rules" instead of "Keyword Rules" (defer to Chat 21h)
+
+### **Chat 21e: Ad Groups View** 📋 NEXT (Starting ~9:40 PM)
 **Estimated Time:** 70 minutes  
-**Dependencies:** Rule system ✅ (from 21c)
+**Dependencies:** Rule system ✅ (from 21c), Keywords complete ✅
 
 **Plan:**
 - Ad Groups table (NEW page, doesn't exist yet)
 - Ad group performance metrics
 - Quality score tracking
 - Bid controls
-- Rule visibility integrated
+- Rule visibility integrated (should work automatically with dynamic system)
 
 ### **Chat 21f: Ads View** 📋 PLANNED
 **Estimated Time:** 70 minutes  
@@ -283,6 +314,7 @@
 **Dependencies:** All pages complete
 
 **Plan:**
+- Fix sidebar titles (Campaign Rules → dynamic based on page)
 - Standardize Chart.js across all pages
 - Responsive testing
 - Cross-browser compatibility
@@ -290,12 +322,12 @@
 - Performance optimization
 - Final polish
 
-**Progress:** 3/8 Sub-chats Complete (37.5%) ✅  
-**Time Invested:** ~5.5 hours total | ~3.5 hours actual work  
-**Code Written:** 3,166 lines (production-ready)  
-**Files Created:** 14 new, 4 modified  
-**Target Completion:** Tonight (~Midnight) 🔥 LEGENDARY MODE  
-**Next:** Chat 21d (Keywords View) - Starting ~6:30 PM
+**Progress:** 4/8 Sub-chats Complete (50%) ✅ HALFWAY THERE! 🎉  
+**Time Invested:** ~7 hours 10 minutes total  
+**Code Written:** 4,702 lines (production-ready)  
+**Files Created:** 15 new, 9 modified  
+**Target Completion:** Tonight (~2:30 AM) 🔥 LEGENDARY MODE CONTINUES  
+**Next:** Chat 21e (Ad Groups View) - Starting ~9:40 PM
 
 ---
 
@@ -399,7 +431,7 @@
 | Foundation (0) | 100% ✅ | Complete |
 | Code Cleanup (1) | 100% ✅ | Complete |
 | Polish (2) | 100% ✅ | Complete |
-| Dashboard UI (21) | 37.5% 🔥 | **IN PROGRESS** |
+| Dashboard UI (21) | 50% 🔥 | **IN PROGRESS** |
 | Future-Proofing (3) | 0% 📋 | Planned |
 | Features (22-28) | 0% 📋 | Planned |
 
@@ -412,23 +444,23 @@
 | Chat 17 | ~3-4 | ✅ Complete |
 | Phase 1 | ~4 | ✅ Complete |
 | Phase 2 | ~2.5 | ✅ Complete |
-| **Chat 21 (so far)** | **~3.5** | **🔥 In Progress** |
-| **TOTAL** | **~38-46 hrs** | **Ongoing** |
+| **Chat 21 (so far)** | **~7.2** | **🔥 In Progress** |
+| **TOTAL** | **~41-50 hrs** | **Ongoing** |
 
 ---
 
 ## 🎯 NEXT MILESTONES
 
-### **Immediate (Next 3 days - 20 hours):**
-- 📋 Chat 21: Dashboard UI Overhaul (Bootstrap 5)
-  - 21a: Bootstrap setup (2 hrs)
-  - 21b: Main dashboard (3 hrs)
-  - 21c: Campaigns view (2 hrs)
-  - 21d: Keywords view (3 hrs)
-  - 21e: Ads view (2 hrs)
-  - 21f: Shopping view (3 hrs)
-  - 21g: AI insights (3 hrs)
-  - 21h: Charts (2 hrs)
+### **Immediate (Tonight - 5 hours remaining):**
+- 🔥 Chat 21: Dashboard UI Overhaul (Bootstrap 5) - 50% COMPLETE
+  - ✅ 21a: Bootstrap setup (50 min)
+  - ✅ 21b: Main dashboard (53 min)
+  - ✅ 21c: Campaigns view (100 min)
+  - ✅ 21d: Keywords view (125 min)
+  - 📋 21e: Ad Groups view (70 min) - NEXT
+  - 📋 21f: Ads view (70 min)
+  - 📋 21g: Shopping view (90 min)
+  - 📋 21h: Polish (60 min)
 
 ### **Short-term (After Dashboard):**
 - 📋 Phase 3: Future-Proofing (10-14 hrs)
@@ -477,26 +509,30 @@
 
 ---
 
-## 🔄 CHANGELOG
+## 📄 CHANGELOG
 
 ### **2026-02-18 (Legendary Session - IN PROGRESS)** 🔥
-**Time:** 11:44 AM - 6:00 PM (6h 16m elapsed, ~3.5h actual work)
+**Time:** 11:44 AM - 9:35 PM (9h 51m elapsed, ~7h 10m actual work)
 
 **Completed:**
 - ✅ Chat 21a: Bootstrap Foundation (50 min) - Commit 5789628
 - ✅ Chat 21b: Main Dashboard (53 min) - Commit 4976a29
-- ✅ Chat 21c: Campaigns + Rule System (~100 min) - PENDING COMMIT
+- ✅ Chat 21c: Campaigns + Rule System (100 min) - Commit 3ab82a2
+- ✅ Chat 21d: Keywords + 14 Rules Working (125 min) - Commit f0fbd15
 
 **Achievements:**
-- 3,166 lines of production code written
+- 4,702 lines of production code written
 - Rule visibility system built (reusable for all pages!)
+- 14 keyword rules displaying correctly across all 3 components
 - Bootstrap 5 fully integrated
 - Real DuckDB data integration working
 - Chart.js performance charts
-- Zero bugs in production
-- 153% efficiency vs original estimates
+- Dynamic category detection system (future-proof for any page)
+- Regex pattern fix enables all rule formats
+- Zero critical bugs in production
+- 50% completion milestone reached! 🎉
 
-**Next:** Continuing with Chats 21d-21h (target: finish all 8 tonight)
+**Next:** Continuing with Chats 21e-21h (target: finish all 8 tonight by ~2:30 AM)
 
 ### **2026-02-18 (Earlier - Planning)**
 - ✅ Completed Phase 1 (all 9 tasks)
@@ -515,6 +551,6 @@
 
 ---
 
-**Last Updated:** 2026-02-18 06:00 PM (Legendary Session - IN PROGRESS 🔥)  
-**Next Update:** After Chat 21d completion (Keywords page)  
-**Target:** Complete all 8 sub-chats tonight (finish by 1 AM)
+**Last Updated:** 2026-02-18 09:35 PM (Legendary Session - 50% Complete! 🎉)  
+**Next Update:** After Chat 21e completion (Ad Groups page)  
+**Target:** Complete all 8 sub-chats tonight (finish by ~2:30 AM) 🔥 LEGENDARY MODE
