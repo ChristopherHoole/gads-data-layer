@@ -6,6 +6,7 @@ from flask import Blueprint, request, jsonify, current_app
 from act_dashboard.auth import login_required
 from act_dashboard.routes.shared import get_current_config, get_google_ads_client
 from act_dashboard.utils import dict_to_recommendation, validate_recommendation_dict
+from act_dashboard.validation import validate_execution_request, validate_batch_execution_request
 from act_autopilot.executor import Executor
 import duckdb
 import json
@@ -56,6 +57,7 @@ def execute_recommendation():
         # Two sources: FILE (main recommendations page) or SESSION (keywords/ads/shopping)
         
         recommendation = None
+        recommendations = []  # Will be populated below
         
         # Option 1: Load from CACHE (live recommendations from keywords/ads/shopping)
         if page:
@@ -69,11 +71,13 @@ def execute_recommendation():
                     "error": f"Please refresh the {page} page to generate recommendations"
                 }), 404
             
-            if rec_id < 0 or rec_id >= len(recommendations):
+            # Validate request against available recommendations
+            is_valid, error_msg = validate_execution_request(data, recommendations)
+            if not is_valid:
                 return jsonify({
                     "success": False,
-                    "message": "Invalid recommendation_id",
-                    "error": f"recommendation_id {rec_id} out of range (cache has {len(recommendations)} recommendations)"
+                    "message": "Invalid execution request",
+                    "error": error_msg
                 }), 400
             
             recommendation = recommendations[rec_id]
@@ -96,11 +100,13 @@ def execute_recommendation():
             
             recommendations = suggestions.get("recommendations", [])
             
-            if rec_id < 0 or rec_id >= len(recommendations):
+            # Validate request against available recommendations
+            is_valid, error_msg = validate_execution_request(data, recommendations)
+            if not is_valid:
                 return jsonify({
                     "success": False,
-                    "message": "Invalid recommendation_id",
-                    "error": f"recommendation_id {rec_id} out of range (file has {len(recommendations)} recommendations)"
+                    "message": "Invalid execution request",
+                    "error": error_msg
                 }), 400
             
             recommendation = recommendations[rec_id]
@@ -255,16 +261,18 @@ def execute_batch():
                 suggestions = json.load(f)
             all_recommendations = suggestions.get("recommendations", [])
         
+        # Validate batch request
+        is_valid, error_msg = validate_batch_execution_request(data, all_recommendations)
+        if not is_valid:
+            return jsonify({
+                "success": False,
+                "message": "Invalid batch request",
+                "error": error_msg
+            }), 400
+        
         # Validate IDs and collect recommendations
         recs_to_execute = []
         for rec_id in rec_ids:
-            if rec_id < 0 or rec_id >= len(all_recommendations):
-                return jsonify({
-                    "success": False,
-                    "message": f"Invalid recommendation_id: {rec_id}",
-                    "error": f"ID {rec_id} out of range"
-                }), 400
-            
             rec_dict = all_recommendations[rec_id]
             
             # Validate and convert
