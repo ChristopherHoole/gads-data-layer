@@ -1,0 +1,402 @@
+{% extends "base_bootstrap.html" %}
+
+{% block title %}Dashboard - Ads Control Tower{% endblock %}
+
+{% block content %}
+<!-- Page Header with Date Picker -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">Dashboard</h1>
+        <p class="text-muted small mb-0">Overview of your Google Ads performance</p>
+    </div>
+    
+    <!-- Date Range Dropdown -->
+    <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dateRangeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-calendar3"></i>
+            {% if days == 7 %}Last 7 days
+            {% elif days == 30 %}Last 30 days
+            {% elif days == 90 %}Last 90 days
+            {% else %}Last 7 days{% endif %}
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dateRangeDropdown">
+            <li><a class="dropdown-item {% if days == 7 %}active{% endif %}" href="/?days=7">Last 7 days</a></li>
+            <li><a class="dropdown-item {% if days == 30 %}active{% endif %}" href="/?days=30">Last 30 days</a></li>
+            <li><a class="dropdown-item {% if days == 90 %}active{% endif %}" href="/?days=90">Last 90 days</a></li>
+        </ul>
+    </div>
+</div>
+
+<!-- Metrics Bar Component -->
+{% include 'components/metrics_bar.html' %}
+
+<!-- Performance Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Performance Trend</h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="/?days=7" class="btn {% if days == 7 %}btn-primary{% else %}btn-outline-secondary{% endif %}">7d</a>
+                        <a href="/?days=30" class="btn {% if days == 30 %}btn-primary{% else %}btn-outline-secondary{% endif %}">30d</a>
+                        <a href="/?days=90" class="btn {% if days == 90 %}btn-primary{% else %}btn-outline-secondary{% endif %}">90d</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="performanceChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Campaigns + Recommendations -->
+<div class="row mb-4">
+    <!-- Top 5 Campaigns -->
+    <div class="col-lg-6 mb-4 mb-lg-0">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">Top Campaigns by Spend</h5>
+            </div>
+            <div class="card-body">
+                {% if top_campaigns|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Campaign</th>
+                                <th class="text-end">Spend</th>
+                                <th class="text-end">Conv.</th>
+                                <th class="text-end">ROAS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for campaign in top_campaigns %}
+                            <tr>
+                                <td>
+                                    <div class="text-truncate" style="max-width: 200px;" title="{{ campaign[1] }}">
+                                        {{ campaign[1] }}
+                                    </div>
+                                    <small class="text-muted">
+                                        {% if campaign[2] and 'ENABLED' in campaign[2] %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% elif campaign[2] and 'PAUSED' in campaign[2] %}
+                                            <span class="badge bg-secondary">Paused</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">{{ campaign[2] }}</span>
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td class="text-end">${{ "{:,.2f}".format(campaign[4]) }}</td>
+                                <td class="text-end">{{ "{:,}".format(campaign[6]|int) }}</td>
+                                <td class="text-end">{{ "{:.2f}".format(campaign[7] or 0) }}x</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                    <p class="mt-2 mb-0">No campaigns found</p>
+                    <small>Data will appear once campaigns are synced</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pending Recommendations -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Pending Recommendations</h5>
+                    <span class="badge bg-primary">{{ recommendations_count }}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if top_recommendations|length > 0 %}
+                <div class="list-group list-group-flush">
+                    {% for rec in top_recommendations %}
+                    <div class="list-group-item px-0">
+                        <div class="d-flex align-items-start">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-lightbulb text-warning" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <div class="fw-bold">{{ rec.get('rule_id', 'Unknown Rule') }}</div>
+                                <div class="text-muted small">
+                                    {{ rec.get('entity_type', 'Campaign') }}: {{ rec.get('entity_name', 'Unknown')[:40] }}...
+                                </div>
+                                {% if rec.get('predicted_lift') %}
+                                <div class="text-success small">
+                                    <i class="bi bi-graph-up-arrow"></i> 
+                                    Impact: +${{ "{:,.0f}".format(rec.get('predicted_lift', 0)) }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-3">
+                    <a href="/recommendations" class="btn btn-primary btn-sm w-100">
+                        Review All {{ recommendations_count }} Recommendations
+                    </a>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-check-circle" style="font-size: 3rem;"></i>
+                    <p class="mt-2 mb-0">No recommendations available</p>
+                    <small>All optimizations are up to date</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Changes + Account Health -->
+<div class="row mb-4">
+    <!-- Recent Changes -->
+    <div class="col-lg-6 mb-4 mb-lg-0">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">Recent Changes</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_changes|length > 0 %}
+                <div class="list-group list-group-flush">
+                    {% for change in recent_changes %}
+                    <div class="list-group-item px-0 border-start border-4 {% if change[7] == 'rolled_back' %}border-danger{% elif change[7] == 'confirmed_good' %}border-success{% else %}border-primary{% endif %} ps-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-bold small">Campaign {{ change[1] }} - {{ change[2]|upper }}</div>
+                                <div class="text-muted small">
+                                    ${{ "{:.2f}".format(change[3]) }} → ${{ "{:.2f}".format(change[4]) }}
+                                    <span class="{% if change[5] > 0 %}text-success{% else %}text-danger{% endif %}">
+                                        ({{ "{:+.0f}".format(change[5] * 100) }}%)
+                                    </span>
+                                </div>
+                                {% if change[7] %}
+                                <div class="mt-1">
+                                    {% if change[7] == 'rolled_back' %}
+                                        <span class="badge bg-danger">Rolled Back</span>
+                                    {% elif change[7] == 'confirmed_good' %}
+                                        <span class="badge bg-success">Confirmed Good</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Monitoring</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">{{ change[0] }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-clock-history" style="font-size: 3rem;"></i>
+                    <p class="mt-2 mb-0">No changes in the last 7 days</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Account Health -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">Account Health</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="card bg-light border-0">
+                            <div class="card-body text-center">
+                                <div class="display-6 fw-bold text-success">{{ active_campaigns_count }}</div>
+                                <div class="text-muted small">Active Campaigns</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-light border-0">
+                            <div class="card-body text-center">
+                                <div class="display-6 fw-bold text-secondary">{{ paused_campaigns_count }}</div>
+                                <div class="text-muted small">Paused Campaigns</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="card bg-light border-0">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="text-muted small">Last Data Sync</div>
+                                        <div class="fw-bold">{{ last_sync_time }}</div>
+                                    </div>
+                                    <i class="bi bi-arrow-repeat text-primary" style="font-size: 2rem;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <a href="/recommendations" class="btn btn-primary w-100">
+                            <i class="bi bi-lightbulb me-2"></i>Review Recommendations
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="/keywords" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-key me-2"></i>Manage Keywords
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="/changes" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-clock-history me-2"></i>View Change History
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js 4.4 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- Performance Chart -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('performanceChart');
+    if (!ctx) return;
+    
+    // Prepare data from backend
+    const dates = {{ trend_data | map(attribute='date') | list | tojson }};
+    const costData = {{ trend_data | map(attribute='cost') | list | tojson }};
+    const conversionsData = {{ trend_data | map(attribute='conversions') | list | tojson }};
+    const roasData = {{ trend_data | map(attribute='roas') | list | tojson }};
+    
+    // Create chart
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [
+                {
+                    label: 'Cost ($)',
+                    data: costData,
+                    borderColor: '#dc3545',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                    yAxisID: 'y',
+                    tension: 0.1
+                },
+                {
+                    label: 'Conversions',
+                    data: conversionsData,
+                    borderColor: '#198754',
+                    backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                    yAxisID: 'y',
+                    tension: 0.1
+                },
+                {
+                    label: 'ROAS',
+                    data: roasData,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    yAxisID: 'y1',
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                if (context.dataset.label === 'Cost ($)') {
+                                    label += '$' + context.parsed.y.toFixed(2);
+                                } else if (context.dataset.label === 'ROAS') {
+                                    label += context.parsed.y.toFixed(2) + 'x';
+                                } else {
+                                    label += Math.round(context.parsed.y);
+                                }
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Cost ($) / Conversions'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toFixed(0);
+                        }
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'ROAS'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value.toFixed(1) + 'x';
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
