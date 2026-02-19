@@ -1,0 +1,567 @@
+{% extends "base_bootstrap.html" %}
+
+{% block title %}Ads - {{ client_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- Page Header -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Ads</h2>
+  </div>
+
+  <!-- Error Alert -->
+  {% if error %}
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle"></i> {{ error }}
+    </div>
+  {% endif %}
+
+  <!-- Tab Navigation -->
+  <ul class="nav nav-tabs mb-3" id="adsTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="ads-tab-btn"
+              data-bs-toggle="tab" data-bs-target="#ads-tab"
+              type="button" role="tab">
+        <i class="bi bi-file-text"></i> Ads ({{ total_ads }})
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="rules-tab-btn"
+              data-bs-toggle="tab" data-bs-target="#rules-tab"
+              type="button" role="tab">
+        <i class="bi bi-lightning-charge-fill text-warning"></i> Rules ({{ rules|length }})
+      </button>
+    </li>
+  </ul>
+
+  <!-- Tab Content -->
+  <div class="tab-content" id="adsTabContent">
+
+    <!-- ================================================================
+         ADS TAB
+         ================================================================ -->
+    <div class="tab-pane fade show active" id="ads-tab" role="tabpanel">
+
+      <!-- Metrics Bar (7 cards) -->
+      <div class="row mb-3">
+
+        <!-- Card 1: Total Ads -->
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Total Ads</h6>
+              <h3 class="mb-0">{{ metrics.total_ads }}</h3>
+              <small class="text-muted">
+                {{ metrics.enabled_count }} active, {{ metrics.paused_count }} paused
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Clicks -->
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Clicks</h6>
+              <h3 class="mb-0">{{ "{:,}".format(metrics.total_clicks) }}</h3>
+              <small class="text-muted">Last {{ days }} days</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Cost -->
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Cost</h6>
+              <h3 class="mb-0">${{ "{:,.2f}".format(metrics.total_cost) }}</h3>
+              <small class="text-muted">Last {{ days }} days</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: Conversions -->
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Conversions</h6>
+              <h3 class="mb-0">{{ "{:.1f}".format(metrics.total_conversions) }}</h3>
+              <small class="text-muted">Last {{ days }} days</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5: CTR -->
+        <div class="col">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">CTR</h6>
+              <h3 class="mb-0">{{ "{:.2f}".format(metrics.overall_ctr) }}%</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 6: CPA -->
+        <div class="col">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">CPA</h6>
+              <h3 class="mb-0">
+                {% if metrics.overall_cpa > 0 %}
+                  ${{ "{:.2f}".format(metrics.overall_cpa) }}
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 7: Ad Strength Summary -->
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Ad Strength</h6>
+              <h3 class="mb-0 {% if metrics.poor_strength_count > 0 %}text-danger{% elif metrics.good_strength_count == metrics.total_ads and metrics.total_ads > 0 %}text-success{% else %}text-warning{% endif %}">
+                {{ metrics.good_strength_count }}/{{ metrics.total_ads }}
+              </h3>
+              <small class="text-muted">
+                Good/Excellent
+                {% if metrics.poor_strength_count > 0 %}
+                  &middot; <span class="text-danger">{{ metrics.poor_strength_count }} Poor</span>
+                {% endif %}
+              </small>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <!-- End Metrics Bar -->
+
+      <!-- Filters Bar -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex gap-2">
+
+          <!-- Date Filter -->
+          <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                    type="button" data-bs-toggle="dropdown">
+              <i class="bi bi-calendar3"></i>
+              {% if days == 7 %}Last 7 Days
+              {% elif days == 30 %}Last 30 Days
+              {% else %}Last 90 Days{% endif %}
+            </button>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item {% if days == 7 %}active{% endif %}"
+                     href="/ads?days=7&per_page={{ per_page }}&status={{ status }}&page=1">Last 7 Days</a></li>
+              <li><a class="dropdown-item {% if days == 30 %}active{% endif %}"
+                     href="/ads?days=30&per_page={{ per_page }}&status={{ status }}&page=1">Last 30 Days</a></li>
+              <li><a class="dropdown-item {% if days == 90 %}active{% endif %}"
+                     href="/ads?days=90&per_page={{ per_page }}&status={{ status }}&page=1">Last 90 Days</a></li>
+            </ul>
+          </div>
+
+          <!-- Status Filter -->
+          <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                    type="button" data-bs-toggle="dropdown">
+              Status:
+              {% if status == 'enabled' %}Enabled
+              {% elif status == 'paused' %}Paused
+              {% else %}All{% endif %}
+            </button>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item {% if status == 'all' %}active{% endif %}"
+                     href="/ads?days={{ days }}&per_page={{ per_page }}&status=all&page=1">All</a></li>
+              <li><a class="dropdown-item {% if status == 'enabled' %}active{% endif %}"
+                     href="/ads?days={{ days }}&per_page={{ per_page }}&status=enabled&page=1">Enabled</a></li>
+              <li><a class="dropdown-item {% if status == 'paused' %}active{% endif %}"
+                     href="/ads?days={{ days }}&per_page={{ per_page }}&status=paused&page=1">Paused</a></li>
+            </ul>
+          </div>
+
+          <!-- Per Page Filter -->
+          <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                    type="button" data-bs-toggle="dropdown">
+              Show: {{ per_page }}
+            </button>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item {% if per_page == 10 %}active{% endif %}"
+                     href="/ads?days={{ days }}&per_page=10&status={{ status }}&page=1">10</a></li>
+              <li><a class="dropdown-item {% if per_page == 25 %}active{% endif %}"
+                     href="/ads?days={{ days }}&per_page=25&status={{ status }}&page=1">25</a></li>
+              <li><a class="dropdown-item {% if per_page == 50 %}active{% endif %}"
+                     href="/ads?days={{ days }}&per_page=50&status={{ status }}&page=1">50</a></li>
+              <li><a class="dropdown-item {% if per_page == 100 %}active{% endif %}"
+                     href="/ads?days={{ days }}&per_page=100&status={{ status }}&page=1">100</a></li>
+            </ul>
+          </div>
+
+        </div>
+
+        <!-- Rules badge -->
+        {% if rules and rules|length > 0 %}
+          <div>
+            <span class="badge bg-warning text-dark">
+              <i class="bi bi-lightning-charge-fill"></i>
+              {{ rules|length }} rules active
+            </span>
+          </div>
+        {% endif %}
+      </div>
+      <!-- End Filters Bar -->
+
+      <!-- Ads Table -->
+      {% if ads and ads|length > 0 %}
+        <div class="card">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 28px;"></th>
+                  <th>Ad</th>
+                  <th>Campaign</th>
+                  <th>Ad Group</th>
+                  <th>Status</th>
+                  <th>Type</th>
+                  <th style="min-width: 140px;">Ad Strength</th>
+                  <th class="text-end">Impr.</th>
+                  <th class="text-end">Clicks</th>
+                  <th class="text-end">CTR</th>
+                  <th class="text-end">Cost</th>
+                  <th class="text-end">Conv.</th>
+                  <th class="text-end">CPA</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for ad in ads %}
+
+                  <!-- Main ad row — clicking anywhere toggles assets -->
+                  <tr class="ad-main-row"
+                      style="cursor: pointer;"
+                      onclick="toggleAssetRow('{{ ad.ad_id }}')">
+
+                    <!-- Expand icon -->
+                    <td class="text-center align-middle">
+                      <i class="bi bi-chevron-right expand-icon"
+                         id="icon-{{ ad.ad_id }}"
+                         style="font-size: 0.75rem; color: #6c757d;"></i>
+                    </td>
+
+                    <!-- Ad identifier (final_url truncated, fallback to ad_id) -->
+                    <td class="align-middle">
+                      <strong class="d-block text-truncate"
+                              style="max-width: 200px;"
+                              title="{{ ad.final_url if ad.final_url else ad.ad_id }}">
+                        {% if ad.final_url %}
+                          {{ ad.final_url | truncate(40, true, '…') }}
+                        {% else %}
+                          Ad {{ ad.ad_id }}
+                        {% endif %}
+                      </strong>
+                    </td>
+
+                    <!-- Campaign -->
+                    <td class="align-middle">
+                      <small class="text-muted d-block text-truncate"
+                             style="max-width: 160px;"
+                             title="{{ ad.campaign_name }}">
+                        {{ ad.campaign_name | truncate(30, true, '…') }}
+                      </small>
+                    </td>
+
+                    <!-- Ad Group -->
+                    <td class="align-middle">
+                      <small class="text-muted d-block text-truncate"
+                             style="max-width: 160px;"
+                             title="{{ ad.ad_group_name }}">
+                        {{ ad.ad_group_name | truncate(30, true, '…') }}
+                      </small>
+                    </td>
+
+                    <!-- Status Badge -->
+                    <td class="align-middle">
+                      {% if ad.status == 'ENABLED' %}
+                        <span class="badge bg-success">Active</span>
+                      {% elif ad.status == 'PAUSED' %}
+                        <span class="badge bg-secondary">Paused</span>
+                      {% elif ad.status == 'REMOVED' %}
+                        <span class="badge bg-danger">Removed</span>
+                      {% else %}
+                        <span class="badge bg-light text-muted">{{ ad.status }}</span>
+                      {% endif %}
+                    </td>
+
+                    <!-- Ad Type (short label) -->
+                    <td class="align-middle">
+                      <small class="text-muted">
+                        {% if ad.ad_type == 'RESPONSIVE_SEARCH_AD' %}RSA
+                        {% elif ad.ad_type == 'EXPANDED_TEXT_AD' %}ETA
+                        {% elif ad.ad_type == 'RESPONSIVE_DISPLAY_AD' %}RDA
+                        {% else %}{{ ad.ad_type | replace('_AD','') | replace('_',' ') | truncate(12) }}
+                        {% endif %}
+                      </small>
+                    </td>
+
+                    <!-- Ad Strength progress bar -->
+                    <td class="align-middle">
+                      {% set strength = ad.ad_strength %}
+                      {% if strength == 'EXCELLENT' %}
+                        <div class="d-flex align-items-center gap-1">
+                          <div class="progress flex-grow-1" style="height:8px;">
+                            <div class="progress-bar bg-primary" style="width:100%;"></div>
+                          </div>
+                          <small class="text-primary fw-bold" style="min-width:62px;">Excellent</small>
+                        </div>
+                      {% elif strength == 'GOOD' %}
+                        <div class="d-flex align-items-center gap-1">
+                          <div class="progress flex-grow-1" style="height:8px;">
+                            <div class="progress-bar bg-success" style="width:75%;"></div>
+                          </div>
+                          <small class="text-success fw-bold" style="min-width:62px;">Good</small>
+                        </div>
+                      {% elif strength == 'AVERAGE' %}
+                        <div class="d-flex align-items-center gap-1">
+                          <div class="progress flex-grow-1" style="height:8px;">
+                            <div class="progress-bar bg-warning" style="width:50%;"></div>
+                          </div>
+                          <small class="text-warning fw-bold" style="min-width:62px;">Average</small>
+                        </div>
+                      {% elif strength == 'POOR' %}
+                        <div class="d-flex align-items-center gap-1">
+                          <div class="progress flex-grow-1" style="height:8px;">
+                            <div class="progress-bar bg-danger" style="width:25%;"></div>
+                          </div>
+                          <small class="text-danger fw-bold" style="min-width:62px;">Poor</small>
+                        </div>
+                      {% else %}
+                        <!-- NULL ad_strength — grey N/A badge, no crash -->
+                        <span class="badge bg-light text-muted border">N/A</span>
+                      {% endif %}
+                    </td>
+
+                    <!-- Impressions (K/M format) -->
+                    <td class="text-end align-middle">
+                      {% if ad.impressions >= 1000000 %}
+                        {{ "{:.1f}".format(ad.impressions / 1000000.0) }}M
+                      {% elif ad.impressions >= 1000 %}
+                        {{ "{:.1f}".format(ad.impressions / 1000.0) }}K
+                      {% else %}
+                        {{ ad.impressions }}
+                      {% endif %}
+                    </td>
+
+                    <!-- Clicks -->
+                    <td class="text-end align-middle">{{ "{:,}".format(ad.clicks) }}</td>
+
+                    <!-- CTR (colour-coded) -->
+                    <td class="text-end align-middle">
+                      <span class="{% if ad.ctr >= 5 %}text-success{% elif ad.ctr >= 2 %}text-warning{% elif ad.ctr > 0 %}text-danger{% endif %}">
+                        {{ "{:.2f}".format(ad.ctr) }}%
+                      </span>
+                    </td>
+
+                    <!-- Cost -->
+                    <td class="text-end align-middle">${{ "{:,.2f}".format(ad.cost) }}</td>
+
+                    <!-- Conversions -->
+                    <td class="text-end align-middle">{{ "{:.1f}".format(ad.conversions) }}</td>
+
+                    <!-- CPA (colour-coded) -->
+                    <td class="text-end align-middle">
+                      {% if ad.cpa > 0 %}
+                        <span class="fw-bold {% if ad.cpa < 25 %}text-success{% elif ad.cpa <= 50 %}text-warning{% else %}text-danger{% endif %}">
+                          ${{ "{:.2f}".format(ad.cpa) }}
+                        </span>
+                      {% else %}
+                        <span class="text-muted">-</span>
+                      {% endif %}
+                    </td>
+
+                  </tr>
+
+                  <!-- Expandable asset detail row (hidden by default) -->
+                  <tr id="assets-{{ ad.ad_id }}" style="display:none;">
+                    <td></td>
+                    <td colspan="12" class="bg-light py-3 px-4">
+                      <div class="row g-3">
+
+                        <!-- Ad Type -->
+                        <div class="col-md-3">
+                          <small class="text-muted fw-bold d-block mb-1">
+                            <i class="bi bi-tag"></i> Ad Type
+                          </small>
+                          <span class="badge bg-info text-dark">
+                            {{ ad.ad_type | replace('_', ' ') | title }}
+                          </span>
+                        </div>
+
+                        <!-- Headlines count -->
+                        <div class="col-md-2">
+                          <small class="text-muted fw-bold d-block mb-1">
+                            <i class="bi bi-type-h1"></i> Headlines
+                          </small>
+                          <span class="fs-5 fw-bold
+                            {% if ad.headlines_count >= 10 %}text-success
+                            {% elif ad.headlines_count >= 5 %}text-warning
+                            {% else %}text-danger{% endif %}">
+                            {{ ad.headlines_count }}
+                          </span>
+                          <small class="text-muted">/ 15 max</small>
+                        </div>
+
+                        <!-- Descriptions count -->
+                        <div class="col-md-2">
+                          <small class="text-muted fw-bold d-block mb-1">
+                            <i class="bi bi-text-paragraph"></i> Descriptions
+                          </small>
+                          <span class="fs-5 fw-bold
+                            {% if ad.descriptions_count >= 3 %}text-success
+                            {% elif ad.descriptions_count >= 2 %}text-warning
+                            {% else %}text-danger{% endif %}">
+                            {{ ad.descriptions_count }}
+                          </span>
+                          <small class="text-muted">/ 4 max</small>
+                        </div>
+
+                        <!-- Final URL -->
+                        <div class="col-md-5">
+                          <small class="text-muted fw-bold d-block mb-1">
+                            <i class="bi bi-link-45deg"></i> Final URL
+                          </small>
+                          {% if ad.final_url %}
+                            <a href="{{ ad.final_url }}"
+                               target="_blank"
+                               class="text-break small"
+                               onclick="event.stopPropagation();">
+                              {{ ad.final_url | truncate(80, true, '…') }}
+                              <i class="bi bi-box-arrow-up-right ms-1" style="font-size:0.7rem;"></i>
+                            </a>
+                          {% else %}
+                            <span class="text-muted small"><em>No URL available</em></span>
+                          {% endif %}
+                        </div>
+
+                      </div>
+                    </td>
+                  </tr>
+
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="card-footer d-flex justify-content-between align-items-center">
+            <div class="text-muted small">
+              Showing
+              {{ ((page - 1) * per_page + 1) }} –
+              {{ [page * per_page, total_ads]|min }}
+              of {{ total_ads }} ads
+            </div>
+            <nav>
+              <ul class="pagination mb-0">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                  <a class="page-link"
+                     href="/ads?days={{ days }}&page={{ page - 1 }}&per_page={{ per_page }}&status={{ status }}">
+                    <i class="bi bi-chevron-left"></i> Previous
+                  </a>
+                </li>
+                {% if total_pages <= 7 %}
+                  {% for p in range(1, total_pages + 1) %}
+                    <li class="page-item {% if p == page %}active{% endif %}">
+                      <a class="page-link"
+                         href="/ads?days={{ days }}&page={{ p }}&per_page={{ per_page }}&status={{ status }}">
+                        {{ p }}
+                      </a>
+                    </li>
+                  {% endfor %}
+                {% else %}
+                  <li class="page-item disabled">
+                    <span class="page-link">{{ page }} / {{ total_pages }}</span>
+                  </li>
+                {% endif %}
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                  <a class="page-link"
+                     href="/ads?days={{ days }}&page={{ page + 1 }}&per_page={{ per_page }}&status={{ status }}">
+                    Next <i class="bi bi-chevron-right"></i>
+                  </a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+
+        </div>
+        <!-- End card -->
+
+      {% else %}
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle"></i>
+          No ads found for the selected filters.
+          {% if status != 'all' %}
+            <a href="/ads?days={{ days }}&per_page={{ per_page }}&status=all"
+               class="alert-link">Clear status filter</a>
+          {% endif %}
+        </div>
+      {% endif %}
+
+    </div>
+    <!-- End Ads Tab -->
+
+  </div>
+  <!-- End Tab Content -->
+
+  <!-- Rules tab: rules_tab.html already wraps itself in
+       <div class="tab-pane fade" id="rules-tab"> so we include
+       it as a direct sibling of tab-content to avoid double-wrapping
+       which causes the inner content to stay faded/hidden. -->
+  {% include 'components/rules_tab.html' %}
+
+</div>
+<!-- End container-fluid -->
+
+<!-- Rules Sidebar -->
+{% include 'components/rules_sidebar.html' %}
+
+<!-- Rules Card (below main content) -->
+<div class="row mt-4">
+  <div class="col-md-12">
+    {% include 'components/rules_card.html' %}
+  </div>
+</div>
+
+<script>
+/**
+ * Toggle expandable asset row for a given ad.
+ * Flips the chevron icon direction and shows/hides the detail row.
+ * Chat 21f — vanilla JS only, zero jQuery.
+ *
+ * @param {string} adId - The ad_id for this row
+ */
+function toggleAssetRow(adId) {
+  const assetRow = document.getElementById('assets-' + adId);
+  const icon     = document.getElementById('icon-'   + adId);
+
+  if (!assetRow) return;
+
+  const isHidden = (assetRow.style.display === 'none' || assetRow.style.display === '');
+
+  if (isHidden) {
+    assetRow.style.display = 'table-row';
+    if (icon) {
+      icon.classList.replace('bi-chevron-right', 'bi-chevron-down');
+      icon.style.color = '#0d6efd';
+    }
+  } else {
+    assetRow.style.display = 'none';
+    if (icon) {
+      icon.classList.replace('bi-chevron-down', 'bi-chevron-right');
+      icon.style.color = '#6c757d';
+    }
+  }
+}
+</script>
+
+{% endblock %}

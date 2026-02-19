@@ -1,9 +1,9 @@
 # PROJECT ROADMAP - Google Ads Data Layer (ACT Dashboard)
 
-**Last Updated:** 2026-02-19 01:00 AM  
-**Current Phase:** Chat 21 (Dashboard UI Overhaul) - 62.5% Complete (5/8) 🔥  
-**Overall Completion:** 77% (Foundation + Polish + Dashboard 62.5% Done)  
-**Mode:** 🔥 LEGENDARY - 5 down, 3 to go!
+**Last Updated:** 2026-02-19 4:15 PM  
+**Current Phase:** Chat 21 (Dashboard UI Overhaul) - 75% Complete (6/8) 🔥  
+**Overall Completion:** ~79% (Foundation + Polish + Dashboard 75% Done)  
+**Mode:** 🔥 LEGENDARY - 6 down, 2 to go!
 
 ---
 
@@ -304,17 +304,46 @@
 
 **Database Pattern:** Uses campaigns.py pattern (SQL date filtering, NOT rolling windows)
 
-### **Chat 21f: Ads View** 📋 PLANNED
-**Estimated Time:** 70 minutes  
-**Dependencies:** Rule system ✅ (from 21c)
+### **Chat 21f: Ads View** ✅ COMPLETE
+**Actual Time:** ~180 minutes (vs 70 min estimated)  
+**Commit:** PENDING  
+**Completed:** February 19, 2026 4:15 PM
 
-**Plan:**
-- Ad performance table redesign
-- Ad strength indicators
-- Asset performance breakdown
-- Preview functionality
-- Ad group grouping
-- Rule visibility integrated
+**Deliverables:**
+- ✅ Ads page fully redesigned with Bootstrap 5
+- ✅ 7 metrics cards (Total Ads, Clicks, Cost, Conversions, CTR, CPA, Ad Strength)
+- ✅ Ad Strength progress bars (Poor=red, Average=yellow, Good=green, Excellent=blue, NULL=N/A badge)
+- ✅ Expandable asset rows (headlines count, descriptions count, final_url, ad type)
+- ✅ Status badges (ENABLED=green, PAUSED=grey, REMOVED=red)
+- ✅ Ad type labels (RSA, ETA, RDA, FTA)
+- ✅ Rules integration (12 rules — sidebar, tab, card all working)
+- ✅ Filters: Date (7/30/90d), Status (all/enabled/paused), Per-page (10/25/50/100)
+- ✅ Python-based pagination (983 ads, 40 pages at 25/page)
+- ✅ All 10 success criteria passing
+
+**Files Created/Modified:**
+- `routes/ads.py` — Full rewrite (correct table, column names, query pattern)
+- `templates/ads_new.html` — New Bootstrap 5 template extending base_bootstrap.html
+
+**Critical DB Architecture Discovery:**
+- `analytics.ad_features_daily` exists ONLY in `warehouse.duckdb` — NOT in the readonly catalog
+- Must query as `analytics.ad_features_daily` (no `ro.` prefix)
+- This table is pre-aggregated with windowed columns (`_7d`, `_30d`, `_90d`) — no GROUP BY needed
+- Column: `ad_status` (not `status`), `headlines`/`descriptions` as VARCHAR[] arrays (use `array_length()`)
+
+**Issues Encountered:**
+1. Wrong table name in Master Chat A1 answer (`ro.analytics.ad_daily` → correct: `analytics.ad_features_daily`) — DB discovery required
+2. Wrong column names (`status` → `ad_status`, `headlines_count` → `array_length(headlines)`)
+3. Wrong query pattern (GROUP BY not needed — pre-aggregated table)
+4. Rules tab blank — double-wrapping `rules_tab.html` in tab-pane div
+5. CTR/CPA card width (`col-md-1` → `col`)
+
+**Known Carry-Forwards to Chat 21h:**
+- Rules card renders below large blank gap on Ads tab (cosmetic)
+- `favicon.ico` 500 error — missing `404.html` template (pre-existing, all pages)
+- `ad_group` page_type warning (pre-existing from Chat 21e)
+
+**Test Data:** 983 ads | 98,762 clicks | $295,933 cost | 4,039 conversions | 4.82% CTR | $73.26 CPA
 
 ### **Chat 21g: Shopping View** 📋 PLANNED
 **Estimated Time:** 90 minutes (4 tabs - complex)  
@@ -341,12 +370,11 @@
 - Performance optimization
 - Final polish
 
-**Progress:** 4/8 Sub-chats Complete (50%) ✅ HALFWAY THERE! 🎉  
-**Time Invested:** ~7 hours 10 minutes total  
-**Code Written:** 4,702 lines (production-ready)  
-**Files Created:** 15 new, 9 modified  
-**Target Completion:** Tonight (~2:30 AM) 🔥 LEGENDARY MODE CONTINUES  
-**Next:** Chat 21e (Ad Groups View) - Starting ~9:40 PM
+**Progress:** 6/8 Sub-chats Complete (75%) ✅  
+**Time Invested:** ~10 hours total  
+**Code Written:** ~5,900 lines (production-ready)  
+**Files Created:** 17 new, 10 modified  
+**Next:** Chat 21g (Shopping View)
 
 ---
 
@@ -450,7 +478,7 @@
 | Foundation (0) | 100% ✅ | Complete |
 | Code Cleanup (1) | 100% ✅ | Complete |
 | Polish (2) | 100% ✅ | Complete |
-| Dashboard UI (21) | 50% 🔥 | **IN PROGRESS** |
+| Dashboard UI (21) | 75% 🔥 | **IN PROGRESS** |
 | Future-Proofing (3) | 0% 📋 | Planned |
 | Features (22-28) | 0% 📋 | Planned |
 
@@ -470,15 +498,15 @@
 
 ## 🎯 NEXT MILESTONES
 
-### **Immediate (Tonight - 5 hours remaining):**
-- 🔥 Chat 21: Dashboard UI Overhaul (Bootstrap 5) - 50% COMPLETE
+### **Immediate (Next up):**
+- 🔥 Chat 21: Dashboard UI Overhaul (Bootstrap 5) - 75% COMPLETE
   - ✅ 21a: Bootstrap setup (50 min)
   - ✅ 21b: Main dashboard (53 min)
   - ✅ 21c: Campaigns view (100 min)
   - ✅ 21d: Keywords view (125 min)
-  - 📋 21e: Ad Groups view (70 min) - NEXT
-  - 📋 21f: Ads view (70 min)
-  - 📋 21g: Shopping view (90 min)
+  - ✅ 21e: Ad Groups view (120 min)
+  - ✅ 21f: Ads view (~180 min)
+  - 📋 21g: Shopping view (90 min) — NEXT
   - 📋 21h: Polish (60 min)
 
 ### **Short-term (After Dashboard):**
@@ -529,6 +557,28 @@
 ---
 
 ## 📄 CHANGELOG
+
+### **2026-02-19 (Afternoon - Chat 21f)**
+
+**Completed:**
+- ✅ Chat 21f: Ads Page Bootstrap 5 Redesign (~180 min)
+
+**Key Achievements:**
+- 983 ads loading with real data (clicks, cost, conversions, CTR, CPA)
+- Ad Strength progress bars with full colour coding
+- Expandable asset rows (headline/description counts, final_url)
+- 12 ad rules fully integrated (sidebar, tab, card)
+- All 10 success criteria passing
+
+**Critical DB Discovery (document for all future workers):**
+- `analytics.ad_features_daily` only exists in `warehouse.duckdb` — NOT in readonly catalog
+- Must use `analytics.*` prefix (not `ro.analytics.*`) for this table
+- Pre-aggregated table: windowed columns `_7d/_30d/_90d`, no GROUP BY needed
+- Column: `ad_status` (not `status`), `headlines`/`descriptions` as VARCHAR[] arrays
+
+**Chat 21 Progress:** 6/8 complete (75%) 🔥
+
+---
 
 ### **2026-02-18/19 (Legendary Session - CONTINUING)** 🔥
 **Time:** 11:44 AM - 1:00 AM+ (13h 16m elapsed, ~8.5h actual work)
