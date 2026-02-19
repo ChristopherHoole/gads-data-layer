@@ -1,0 +1,895 @@
+{% extends "base_bootstrap.html" %}
+
+{% block title %}Shopping - {{ client_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- Page Header -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">
+      <i class="bi bi-cart3 text-primary"></i> Shopping
+    </h2>
+    <div class="text-muted small">Last {{ days }} days</div>
+  </div>
+
+  <!-- Error Alert -->
+  {% if error %}
+  <div class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle"></i> {{ error }}
+  </div>
+  {% endif %}
+
+  <!-- Tab Navigation -->
+  <ul class="nav nav-tabs mb-3" id="shoppingTabs" role="tablist">
+
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {% if active_tab == 'campaigns' %}active{% endif %}"
+              id="tab-btn-campaigns"
+              data-bs-toggle="tab" data-bs-target="#tab-campaigns"
+              type="button" role="tab">
+        <i class="bi bi-bar-chart"></i> Campaigns ({{ total_campaigns }})
+      </button>
+    </li>
+
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {% if active_tab == 'products' %}active{% endif %}"
+              id="tab-btn-products"
+              data-bs-toggle="tab" data-bs-target="#tab-products"
+              type="button" role="tab">
+        <i class="bi bi-box-seam"></i> Products ({{ total_products }})
+      </button>
+    </li>
+
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {% if active_tab == 'feed_quality' %}active{% endif %}"
+              id="tab-btn-feed"
+              data-bs-toggle="tab" data-bs-target="#tab-feed"
+              type="button" role="tab">
+        <i class="bi bi-shield-check"></i> Feed Quality
+      </button>
+    </li>
+
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {% if active_tab == 'rules' %}active{% endif %}"
+              id="tab-btn-rules"
+              data-bs-toggle="tab" data-bs-target="#rules-tab"
+              type="button" role="tab">
+        <i class="bi bi-lightning-charge-fill text-warning"></i> Rules ({{ rules|length }})
+      </button>
+    </li>
+
+  </ul>
+
+  <!-- Tab Content -->
+  <div class="tab-content" id="shoppingTabContent">
+
+    <!-- ================================================================
+         TAB 1: CAMPAIGNS
+         ================================================================ -->
+    <div class="tab-pane fade {% if active_tab == 'campaigns' %}show active{% endif %}"
+         id="tab-campaigns" role="tabpanel">
+
+      <!-- Metrics Bar (6 cards) -->
+      <div class="row mb-3">
+
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Campaigns</h6>
+              <h3 class="mb-0">{{ campaign_metrics.total_campaigns }}</h3>
+              <small class="text-muted">Total campaigns</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Cost</h6>
+              <h3 class="mb-0">${{ "{:,.2f}".format(campaign_metrics.total_cost) }}</h3>
+              <small class="text-muted">Last {{ days }} days</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Conversions</h6>
+              <h3 class="mb-0">{{ "{:,.1f}".format(campaign_metrics.total_conversions) }}</h3>
+              <small class="text-muted">Last {{ days }} days</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">ROAS</h6>
+              <h3 class="mb-0 {% if campaign_metrics.overall_roas >= 3 %}text-success{% elif campaign_metrics.overall_roas >= 2 %}text-warning{% else %}text-danger{% endif %}">
+                {{ "{:.2f}".format(campaign_metrics.overall_roas) }}x
+              </h3>
+              <small class="text-muted">Return on ad spend</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Impressions</h6>
+              <h3 class="mb-0">{{ "{:,}".format(campaign_metrics.total_impressions) }}</h3>
+              <small class="text-muted">Last {{ days }} days</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Conv. Value</h6>
+              <h3 class="mb-0">${{ "{:,.2f}".format(campaign_metrics.total_conv_value) }}</h3>
+              <small class="text-muted">Last {{ days }} days</small>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <!-- End metrics bar -->
+
+      <!-- Filters -->
+      <div class="card mb-3">
+        <div class="card-body py-2">
+          <div class="row align-items-center g-2">
+
+            <!-- Date Range -->
+            <div class="col-auto">
+              <div class="btn-group btn-group-sm" role="group">
+                <a href="/shopping?days=7&page=1&per_page={{ per_page }}&status={{ status }}&tab=campaigns"
+                   class="btn {% if days == 7 %}btn-primary{% else %}btn-outline-secondary{% endif %}">7d</a>
+                <a href="/shopping?days=30&page=1&per_page={{ per_page }}&status={{ status }}&tab=campaigns"
+                   class="btn {% if days == 30 %}btn-primary{% else %}btn-outline-secondary{% endif %}">30d</a>
+                <a href="/shopping?days=90&page=1&per_page={{ per_page }}&status={{ status }}&tab=campaigns"
+                   class="btn {% if days == 90 %}btn-primary{% else %}btn-outline-secondary{% endif %}">90d</a>
+              </div>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="col-auto">
+              <div class="btn-group btn-group-sm" role="group">
+                <a href="/shopping?days={{ days }}&page=1&per_page={{ per_page }}&status=all&tab=campaigns"
+                   class="btn {% if status == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}">All</a>
+                <a href="/shopping?days={{ days }}&page=1&per_page={{ per_page }}&status=enabled&tab=campaigns"
+                   class="btn {% if status == 'enabled' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Enabled</a>
+                <a href="/shopping?days={{ days }}&page=1&per_page={{ per_page }}&status=paused&tab=campaigns"
+                   class="btn {% if status == 'paused' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Paused</a>
+              </div>
+            </div>
+
+            <!-- Per-page -->
+            <div class="col-auto ms-auto">
+              <div class="btn-group btn-group-sm" role="group">
+                <a href="/shopping?days={{ days }}&page=1&per_page=10&status={{ status }}&tab=campaigns"
+                   class="btn {% if per_page == 10 %}btn-primary{% else %}btn-outline-secondary{% endif %}">10</a>
+                <a href="/shopping?days={{ days }}&page=1&per_page=25&status={{ status }}&tab=campaigns"
+                   class="btn {% if per_page == 25 %}btn-primary{% else %}btn-outline-secondary{% endif %}">25</a>
+                <a href="/shopping?days={{ days }}&page=1&per_page=50&status={{ status }}&tab=campaigns"
+                   class="btn {% if per_page == 50 %}btn-primary{% else %}btn-outline-secondary{% endif %}">50</a>
+                <a href="/shopping?days={{ days }}&page=1&per_page=100&status={{ status }}&tab=campaigns"
+                   class="btn {% if per_page == 100 %}btn-primary{% else %}btn-outline-secondary{% endif %}">100</a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {% if campaigns %}
+      <!-- Campaigns Table -->
+      <div class="card">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Campaign</th>
+                  <th style="width:100px;">Status</th>
+                  <th style="width:90px;">Priority</th>
+                  <th style="width:100px;">Budget</th>
+                  <th style="width:110px;">Impressions</th>
+                  <th style="width:80px;">Clicks</th>
+                  <th style="width:100px;">Cost</th>
+                  <th style="width:110px;">Conversions</th>
+                  <th style="width:110px;">Conv. Value</th>
+                  <th style="width:90px;">ROAS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in campaigns %}
+                <tr>
+                  <!-- Campaign Name -->
+                  <td>
+                    <div class="fw-semibold text-dark">{{ c.campaign_name }}</div>
+                    {% if c.feed_label and c.feed_label != 'None' %}
+                    <small class="text-muted">Feed: {{ c.feed_label }}</small>
+                    {% endif %}
+                  </td>
+
+                  <!-- Status Badge -->
+                  <td>
+                    {% if c.status == 'ENABLED' %}
+                      <span class="badge bg-success">Enabled</span>
+                    {% elif c.status == 'PAUSED' %}
+                      <span class="badge bg-secondary">Paused</span>
+                    {% elif c.status == 'REMOVED' %}
+                      <span class="badge bg-danger">Removed</span>
+                    {% else %}
+                      <span class="badge bg-light text-muted">{{ c.status }}</span>
+                    {% endif %}
+                  </td>
+
+                  <!-- Priority Badge -->
+                  <td>
+                    {% if c.priority == 'High' %}
+                      <span class="badge bg-danger">High</span>
+                    {% elif c.priority == 'Medium' %}
+                      <span class="badge bg-warning text-dark">Medium</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Low</span>
+                    {% endif %}
+                  </td>
+
+                  <!-- Budget -->
+                  <td>${{ "{:,.2f}".format(c.daily_budget) }}/d</td>
+
+                  <!-- Impressions -->
+                  <td>{{ "{:,}".format(c.impressions) }}</td>
+
+                  <!-- Clicks -->
+                  <td>{{ "{:,}".format(c.clicks) }}</td>
+
+                  <!-- Cost -->
+                  <td>${{ "{:,.2f}".format(c.cost) }}</td>
+
+                  <!-- Conversions -->
+                  <td>{{ "{:,.1f}".format(c.conversions) }}</td>
+
+                  <!-- Conv. Value -->
+                  <td>${{ "{:,.2f}".format(c.conv_value) }}</td>
+
+                  <!-- ROAS -->
+                  <td>
+                    {% if c.cost > 0 and c.roas > 0 %}
+                      {% if c.roas >= 3 %}
+                        <span class="fw-bold text-success">{{ "{:.2f}".format(c.roas) }}x</span>
+                      {% elif c.roas >= 2 %}
+                        <span class="fw-bold text-warning">{{ "{:.2f}".format(c.roas) }}x</span>
+                      {% else %}
+                        <span class="fw-bold text-danger">{{ "{:.2f}".format(c.roas) }}x</span>
+                      {% endif %}
+                    {% else %}
+                      <span class="badge bg-light text-muted">N/A</span>
+                    {% endif %}
+                  </td>
+
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="card-footer bg-white">
+          <div class="row align-items-center">
+            <div class="col-md-4">
+              <small class="text-muted">
+                Showing {{ ((page - 1) * per_page) + 1 }}–{{ [page * per_page, total_campaigns]|min }}
+                of {{ "{:,}".format(total_campaigns) }} campaigns
+              </small>
+            </div>
+            <div class="col-md-8">
+              <nav aria-label="Campaigns pagination">
+                <ul class="pagination pagination-sm justify-content-end mb-0">
+                  {% if page > 1 %}
+                  <li class="page-item">
+                    <a class="page-link" href="/shopping?days={{ days }}&page={{ page - 1 }}&per_page={{ per_page }}&status={{ status }}&tab=campaigns">Previous</a>
+                  </li>
+                  {% else %}
+                  <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                  {% endif %}
+
+                  {% for p in range(1, total_pages_campaigns + 1) %}
+                    {% if p == page %}
+                      <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+                    {% elif p == 1 or p == total_pages_campaigns or (p >= page - 2 and p <= page + 2) %}
+                      <li class="page-item">
+                        <a class="page-link" href="/shopping?days={{ days }}&page={{ p }}&per_page={{ per_page }}&status={{ status }}&tab=campaigns">{{ p }}</a>
+                      </li>
+                    {% elif p == page - 3 or p == page + 3 %}
+                      <li class="page-item disabled"><span class="page-link">…</span></li>
+                    {% endif %}
+                  {% endfor %}
+
+                  {% if page < total_pages_campaigns %}
+                  <li class="page-item">
+                    <a class="page-link" href="/shopping?days={{ days }}&page={{ page + 1 }}&per_page={{ per_page }}&status={{ status }}&tab=campaigns">Next</a>
+                  </li>
+                  {% else %}
+                  <li class="page-item disabled"><span class="page-link">Next</span></li>
+                  {% endif %}
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <!-- End campaigns table card -->
+
+      {% else %}
+      <!-- Empty State -->
+      <div class="card">
+        <div class="card-body text-center py-5">
+          <i class="bi bi-inbox text-muted" style="font-size:4rem;"></i>
+          <h5 class="mt-3 mb-2">No Shopping Campaign Data</h5>
+          <p class="text-muted">
+            No shopping campaign data found for the last {{ days }} days.<br>
+            Try a longer date range or run the Shopping data pipeline.
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+    <!-- End Campaigns Tab -->
+
+
+    <!-- ================================================================
+         TAB 2: PRODUCTS
+         ================================================================ -->
+    <div class="tab-pane fade {% if active_tab == 'products' %}show active{% endif %}"
+         id="tab-products" role="tabpanel">
+
+      <!-- Fallback Notice -->
+      {% if using_fallback %}
+      <div class="alert alert-info d-flex align-items-center mb-3">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        <div>
+          <strong>Using raw product data.</strong>
+          Feed quality scores and stock flags are unavailable — run the Shopping Lighthouse
+          (<code>setup_shopping_for_dashboard.py</code>) to unlock all columns.
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Metrics Bar (6 cards) -->
+      <div class="row mb-3">
+
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Products</h6>
+              <h3 class="mb-0">{{ product_metrics.total_products }}</h3>
+              <small class="text-muted">Total products</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Cost</h6>
+              <h3 class="mb-0">${{ "{:,.2f}".format(product_metrics.total_cost) }}</h3>
+              <small class="text-muted">Last {{ days }} days</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Conversions</h6>
+              <h3 class="mb-0">{{ "{:,.1f}".format(product_metrics.total_conversions) }}</h3>
+              <small class="text-muted">Last {{ days }} days</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">ROAS</h6>
+              <h3 class="mb-0 {% if product_metrics.overall_roas >= 3 %}text-success{% elif product_metrics.overall_roas >= 2 %}text-warning{% else %}text-danger{% endif %}">
+                {{ "{:.2f}".format(product_metrics.overall_roas) }}x
+              </h3>
+              <small class="text-muted">Return on ad spend</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Out of Stock</h6>
+              <h3 class="mb-0 {% if product_metrics.out_of_stock_count > 0 %}text-danger{% endif %}">
+                {{ product_metrics.out_of_stock_count }}
+              </h3>
+              <small class="text-muted">
+                {% if product_metrics.out_of_stock_count > 0 %}
+                  <span class="text-danger">Needs attention</span>
+                {% else %}
+                  All in stock
+                {% endif %}
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Feed Issues</h6>
+              <h3 class="mb-0 {% if product_metrics.feed_issues_count > 0 %}text-warning{% endif %}">
+                {{ product_metrics.feed_issues_count }}
+              </h3>
+              <small class="text-muted">Price mismatch / disapproved</small>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <!-- End products metrics bar -->
+
+      <!-- Filters -->
+      <div class="card mb-3">
+        <div class="card-body py-2">
+          <div class="row align-items-center g-2">
+
+            <div class="col-auto">
+              <div class="btn-group btn-group-sm" role="group">
+                <a href="/shopping?days=7&page=1&per_page={{ per_page }}&availability={{ availability }}&tab=products"
+                   class="btn {% if days == 7 %}btn-primary{% else %}btn-outline-secondary{% endif %}">7d</a>
+                <a href="/shopping?days=30&page=1&per_page={{ per_page }}&availability={{ availability }}&tab=products"
+                   class="btn {% if days == 30 %}btn-primary{% else %}btn-outline-secondary{% endif %}">30d</a>
+                <a href="/shopping?days=90&page=1&per_page={{ per_page }}&availability={{ availability }}&tab=products"
+                   class="btn {% if days == 90 %}btn-primary{% else %}btn-outline-secondary{% endif %}">90d</a>
+              </div>
+            </div>
+
+            <div class="col-auto">
+              <div class="btn-group btn-group-sm" role="group">
+                <a href="/shopping?days={{ days }}&page=1&per_page={{ per_page }}&availability=all&tab=products"
+                   class="btn {% if availability == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}">All</a>
+                <a href="/shopping?days={{ days }}&page=1&per_page={{ per_page }}&availability=in_stock&tab=products"
+                   class="btn {% if availability == 'in_stock' %}btn-primary{% else %}btn-outline-secondary{% endif %}">In Stock</a>
+                <a href="/shopping?days={{ days }}&page=1&per_page={{ per_page }}&availability=out_of_stock&tab=products"
+                   class="btn {% if availability == 'out_of_stock' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Out of Stock</a>
+                <a href="/shopping?days={{ days }}&page=1&per_page={{ per_page }}&availability=preorder&tab=products"
+                   class="btn {% if availability == 'preorder' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Preorder</a>
+              </div>
+            </div>
+
+            <div class="col-auto ms-auto">
+              <div class="btn-group btn-group-sm" role="group">
+                <a href="/shopping?days={{ days }}&page=1&per_page=10&availability={{ availability }}&tab=products"
+                   class="btn {% if per_page == 10 %}btn-primary{% else %}btn-outline-secondary{% endif %}">10</a>
+                <a href="/shopping?days={{ days }}&page=1&per_page=25&availability={{ availability }}&tab=products"
+                   class="btn {% if per_page == 25 %}btn-primary{% else %}btn-outline-secondary{% endif %}">25</a>
+                <a href="/shopping?days={{ days }}&page=1&per_page=50&availability={{ availability }}&tab=products"
+                   class="btn {% if per_page == 50 %}btn-primary{% else %}btn-outline-secondary{% endif %}">50</a>
+                <a href="/shopping?days={{ days }}&page=1&per_page=100&availability={{ availability }}&tab=products"
+                   class="btn {% if per_page == 100 %}btn-primary{% else %}btn-outline-secondary{% endif %}">100</a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {% if products %}
+      <!-- Products Table -->
+      <div class="card">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Product</th>
+                  <th style="width:100px;">Brand</th>
+                  <th style="width:110px;">Availability</th>
+                  <th style="width:80px;">Clicks</th>
+                  <th style="width:100px;">Cost</th>
+                  <th style="width:110px;">Conversions</th>
+                  <th style="width:110px;">Conv. Value</th>
+                  <th style="width:90px;">ROAS</th>
+                  <th style="width:140px;">Feed Quality</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in products %}
+                <tr>
+                  <!-- Product Title + ID -->
+                  <td>
+                    <div class="fw-semibold text-dark small">
+                      {% if p.product_title|length > 50 %}
+                        {{ p.product_title[:50] }}…
+                      {% else %}
+                        {{ p.product_title }}
+                      {% endif %}
+                    </div>
+                    <small class="text-muted">{{ p.product_id }}</small>
+                  </td>
+
+                  <!-- Brand Badge -->
+                  <td>
+                    {% if p.product_brand %}
+                      <span class="badge bg-light text-dark border">{{ p.product_brand }}</span>
+                    {% else %}
+                      <span class="text-muted">—</span>
+                    {% endif %}
+                  </td>
+
+                  <!-- Availability Badge -->
+                  <td>
+                    {% if p.availability == 'IN_STOCK' %}
+                      <span class="badge bg-success">In Stock</span>
+                    {% elif p.availability == 'OUT_OF_STOCK' %}
+                      <span class="badge bg-danger">Out of Stock</span>
+                    {% elif p.availability == 'PREORDER' %}
+                      <span class="badge bg-warning text-dark">Preorder</span>
+                    {% else %}
+                      <span class="badge bg-secondary">{{ p.availability }}</span>
+                    {% endif %}
+                  </td>
+
+                  <!-- Clicks -->
+                  <td>{{ "{:,}".format(p.clicks) }}</td>
+
+                  <!-- Cost -->
+                  <td>${{ "{:,.2f}".format(p.cost) }}</td>
+
+                  <!-- Conversions -->
+                  <td>{{ "{:,.1f}".format(p.conversions) }}</td>
+
+                  <!-- Conv. Value -->
+                  <td>${{ "{:,.2f}".format(p.conv_value) }}</td>
+
+                  <!-- ROAS -->
+                  <td>
+                    {% if p.cost > 0 and p.roas > 0 %}
+                      {% if p.roas >= 3 %}
+                        <span class="fw-bold text-success">{{ "{:.2f}".format(p.roas) }}x</span>
+                      {% elif p.roas >= 2 %}
+                        <span class="fw-bold text-warning">{{ "{:.2f}".format(p.roas) }}x</span>
+                      {% else %}
+                        <span class="fw-bold text-danger">{{ "{:.2f}".format(p.roas) }}x</span>
+                      {% endif %}
+                    {% else %}
+                      <span class="badge bg-light text-muted">N/A</span>
+                    {% endif %}
+                  </td>
+
+                  <!-- Feed Quality Progress Bar -->
+                  <td>
+                    {% if p.feed_quality is not none %}
+                      <div class="d-flex align-items-center gap-2">
+                        <div class="progress flex-grow-1" style="height:8px;">
+                          <div class="progress-bar
+                            {% if p.feed_quality >= 90 %}bg-success
+                            {% elif p.feed_quality >= 70 %}bg-warning
+                            {% else %}bg-danger{% endif %}"
+                            style="width:{{ p.feed_quality|int }}%;">
+                          </div>
+                        </div>
+                        <small class="text-muted" style="min-width:32px;">{{ p.feed_quality|int }}%</small>
+                      </div>
+                    {% else %}
+                      <span class="text-muted small">N/A</span>
+                    {% endif %}
+                  </td>
+
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="card-footer bg-white">
+          <div class="row align-items-center">
+            <div class="col-md-4">
+              <small class="text-muted">
+                Showing {{ ((page - 1) * per_page) + 1 }}–{{ [page * per_page, total_products]|min }}
+                of {{ "{:,}".format(total_products) }} products
+              </small>
+            </div>
+            <div class="col-md-8">
+              <nav aria-label="Products pagination">
+                <ul class="pagination pagination-sm justify-content-end mb-0">
+                  {% if page > 1 %}
+                  <li class="page-item">
+                    <a class="page-link" href="/shopping?days={{ days }}&page={{ page - 1 }}&per_page={{ per_page }}&availability={{ availability }}&tab=products">Previous</a>
+                  </li>
+                  {% else %}
+                  <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                  {% endif %}
+
+                  {% for p in range(1, total_pages_products + 1) %}
+                    {% if p == page %}
+                      <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+                    {% elif p == 1 or p == total_pages_products or (p >= page - 2 and p <= page + 2) %}
+                      <li class="page-item">
+                        <a class="page-link" href="/shopping?days={{ days }}&page={{ p }}&per_page={{ per_page }}&availability={{ availability }}&tab=products">{{ p }}</a>
+                      </li>
+                    {% elif p == page - 3 or p == page + 3 %}
+                      <li class="page-item disabled"><span class="page-link">…</span></li>
+                    {% endif %}
+                  {% endfor %}
+
+                  {% if page < total_pages_products %}
+                  <li class="page-item">
+                    <a class="page-link" href="/shopping?days={{ days }}&page={{ page + 1 }}&per_page={{ per_page }}&availability={{ availability }}&tab=products">Next</a>
+                  </li>
+                  {% else %}
+                  <li class="page-item disabled"><span class="page-link">Next</span></li>
+                  {% endif %}
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {% else %}
+      <div class="card">
+        <div class="card-body text-center py-5">
+          <i class="bi bi-inbox text-muted" style="font-size:4rem;"></i>
+          <h5 class="mt-3 mb-2">No Product Data</h5>
+          <p class="text-muted">
+            No product data found for the last {{ days }} days.<br>
+            Try a longer date range or run the Shopping data pipeline.
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+    <!-- End Products Tab -->
+
+
+    <!-- ================================================================
+         TAB 3: FEED QUALITY
+         ================================================================ -->
+    <div class="tab-pane fade {% if active_tab == 'feed_quality' %}show active{% endif %}"
+         id="tab-feed" role="tabpanel">
+
+      {% if quality_stats %}
+
+      <!-- 4 Summary Cards -->
+      <div class="row mb-4">
+
+        <!-- Card 1: Approval Status -->
+        <div class="col-md-3">
+          <div class="card h-100">
+            <div class="card-body">
+              <h6 class="card-title text-muted">
+                <i class="bi bi-check-circle text-success"></i> Approval Status
+              </h6>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-success fw-semibold">Approved</span>
+                <span class="badge bg-success">{{ quality_stats.approved_count }}</span>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-danger fw-semibold">Disapproved</span>
+                <span class="badge bg-danger">{{ quality_stats.disapproved_count }}</span>
+              </div>
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="text-warning fw-semibold">Pending</span>
+                <span class="badge bg-warning text-dark">{{ quality_stats.pending_count }}</span>
+              </div>
+              <hr class="my-2">
+              <small class="text-muted">
+                {{ "{:.1f}".format(quality_stats.pct_approved) }}% approved
+                ({{ quality_stats.total }} total)
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Price Mismatches -->
+        <div class="col-md-3">
+          <div class="card h-100">
+            <div class="card-body">
+              <h6 class="card-title text-muted">
+                <i class="bi bi-exclamation-triangle text-warning"></i> Price Mismatches
+              </h6>
+              <h2 class="mb-1 {% if quality_stats.mismatch_count > 0 %}text-danger{% else %}text-success{% endif %}">
+                {{ quality_stats.mismatch_count }}
+              </h2>
+              {% if quality_stats.mismatch_count > 0 %}
+                <span class="badge bg-danger">
+                  {{ "{:.1f}".format(quality_stats.pct_mismatch) }}% of feed
+                </span>
+              {% else %}
+                <span class="badge bg-success">No mismatches</span>
+              {% endif %}
+              <p class="text-muted small mt-2 mb-0">
+                Products where the advertised price doesn't match the landing page.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Top Disapproval Reasons -->
+        <div class="col-md-3">
+          <div class="card h-100">
+            <div class="card-body">
+              <h6 class="card-title text-muted">
+                <i class="bi bi-x-circle text-danger"></i> Top Disapproval Reasons
+              </h6>
+              {% if quality_stats.top_reasons %}
+                {% for reason in quality_stats.top_reasons %}
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <small class="text-dark text-truncate me-2" style="max-width:160px;" title="{{ reason.reason }}">
+                    {{ reason.reason }}
+                  </small>
+                  <span class="badge bg-danger">{{ reason.count }}</span>
+                </div>
+                {% endfor %}
+              {% else %}
+                <p class="text-muted small">No disapproval reasons found.</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: Feed Freshness -->
+        <div class="col-md-3">
+          <div class="card h-100">
+            <div class="card-body">
+              <h6 class="card-title text-muted">
+                <i class="bi bi-clock text-info"></i> Feed Freshness
+              </h6>
+              {% if quality_stats.last_sync %}
+                <div class="mb-2">
+                  {% if quality_stats.freshness_status == 'fresh' %}
+                    <span class="badge bg-success fs-6">
+                      <i class="bi bi-check-circle"></i> Fresh
+                    </span>
+                  {% elif quality_stats.freshness_status == 'stale' %}
+                    <span class="badge bg-warning text-dark fs-6">
+                      <i class="bi bi-exclamation-circle"></i> Stale
+                    </span>
+                  {% else %}
+                    <span class="badge bg-danger fs-6">
+                      <i class="bi bi-x-circle"></i> Old
+                    </span>
+                  {% endif %}
+                </div>
+                <p class="mb-1 small text-muted">Last sync:</p>
+                <p class="mb-1 fw-semibold small">{{ quality_stats.last_sync }}</p>
+                {% if quality_stats.hours_since_sync is not none %}
+                <small class="text-muted">
+                  {{ quality_stats.hours_since_sync }}h ago
+                </small>
+                {% endif %}
+              {% else %}
+                <span class="badge bg-secondary">Unknown</span>
+                <p class="text-muted small mt-2">No sync timestamp available.</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <!-- End 4 summary cards -->
+
+      <!-- Issues Table -->
+      {% if feed_issues %}
+      <div class="card">
+        <div class="card-header bg-light">
+          <h6 class="mb-0">
+            <i class="bi bi-exclamation-circle text-danger"></i>
+            Products With Issues
+            <span class="badge bg-secondary ms-2">{{ feed_issues|length }}</span>
+          </h6>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Product ID</th>
+                  <th style="width:120px;">Approval Status</th>
+                  <th>Issues</th>
+                  <th>Disapproval Reasons</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for issue in feed_issues %}
+                <tr>
+                  <td><code class="small">{{ issue.product_id }}</code></td>
+                  <td>
+                    {% if issue.approval_status == 'DISAPPROVED' %}
+                      <span class="badge bg-danger">Disapproved</span>
+                    {% elif issue.approval_status == 'PENDING' %}
+                      <span class="badge bg-warning text-dark">Pending</span>
+                    {% else %}
+                      <span class="badge bg-secondary">{{ issue.approval_status }}</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% for tag in issue.issue_tags %}
+                      <span class="badge bg-warning text-dark me-1">{{ tag }}</span>
+                    {% endfor %}
+                  </td>
+                  <td>
+                    {% if issue.disapproval_reasons %}
+                      {% for reason in issue.disapproval_reasons[:3] %}
+                        <span class="badge bg-light text-dark border me-1 small">{{ reason }}</span>
+                      {% endfor %}
+                    {% else %}
+                      <span class="text-muted small">—</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {% else %}
+      <div class="card">
+        <div class="card-body text-center py-4">
+          <i class="bi bi-check-circle-fill text-success" style="font-size:3rem;"></i>
+          <h6 class="mt-2">No Feed Issues Found</h6>
+          <p class="text-muted small mb-0">All products are approved with no price mismatches.</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% else %}
+      <!-- Empty State — no feed quality data at all -->
+      <div class="card">
+        <div class="card-body text-center py-5">
+          <i class="bi bi-shield-x text-muted" style="font-size:4rem;"></i>
+          <h5 class="mt-3 mb-2">No Feed Quality Data</h5>
+          <p class="text-muted">
+            Feed quality data hasn't been loaded yet.<br>
+            Run the Shopping data pipeline to populate feed quality information.
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+    <!-- End Feed Quality Tab -->
+
+  </div>
+  <!-- End Tab Content -->
+
+  <!-- Rules tab: rules_tab.html wraps itself in
+       <div class="tab-pane fade" id="rules-tab"> already.
+       Include as DIRECT SIBLING of tab-content — NOT nested inside. -->
+  {% include 'components/rules_tab.html' %}
+
+</div>
+<!-- End container-fluid -->
+
+<!-- Rules Sidebar -->
+{% include 'components/rules_sidebar.html' %}
+
+<!-- Rules Card (below main content) -->
+<div class="row mt-4">
+  <div class="col-md-12">
+    {% include 'components/rules_card.html' %}
+  </div>
+</div>
+
+{% endblock %}
