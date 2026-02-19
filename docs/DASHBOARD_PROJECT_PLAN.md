@@ -4,12 +4,12 @@
 **Timeline:** 20 hours / 3 days  
 **Framework:** Bootstrap 5  
 **Icons:** Bootstrap Icons  
-**Status:** IN PROGRESS - 6/8 Complete (75%) 🔥  
+**Status:** IN PROGRESS - 7/8 Complete (87.5%) 🔥  
 **Started:** February 18, 2026 11:44 AM  
-**Current:** February 19, 2026 4:15 PM  
-**Mode:** LEGENDARY - 6 down, 2 to go!  
+**Current:** February 19, 2026 ~7:00 PM  
+**Mode:** LEGENDARY - 7 down, 1 to go!  
 **Created:** 2026-02-18 02:45 AM  
-**Updated:** 2026-02-19 04:15 PM  
+**Updated:** 2026-02-19 07:00 PM  
 **Location:** Will be moved to `/docs/DASHBOARD_PROJECT_PLAN.md`
 
 ---
@@ -1219,9 +1219,9 @@ act_dashboard/
 **Day 2 (Early Morning / Afternoon):**
 - [x] Chat 21e: Ad Groups View (120 min actual vs 70 min estimated) ✅
 - [x] Chat 21f: Ads View (~180 min actual vs 70 min estimated) ✅
-- [ ] Chat 21g: Shopping View (est. 90 min)
+- [x] Chat 21g: Shopping View + 14 Rules (~150 min actual) ✅
 - [ ] Chat 21h: Polish & Charts (est. 60 min)
-**Progress: 2/4 Day 2 tasks complete | Next: Chat 21g**
+**Progress: 3/4 Day 2 tasks complete | Next: Chat 21h**
 
 **Day 3 (if needed):**
 - [ ] Bug fixes
@@ -1279,24 +1279,26 @@ ORDER BY cost DESC
 
 ## 📊 CURRENT PROGRESS (as of Feb 18, 6:15 PM)
 
-**Completed:** 3/8 chats (37.5%)
+**Completed:** 7/8 chats (87.5%)
 - ✅ Chat 21a: Bootstrap foundation (50 min)
 - ✅ Chat 21b: Main dashboard with real data (53 min)
 - ✅ Chat 21c: Campaigns page + rule system (100 min)
+- ✅ Chat 21d: Keywords view + 14 rules (125 min)
+- ✅ Chat 21e: Ad Groups view (~120 min)
+- ✅ Chat 21f: Ads view (~180 min)
+- ✅ Chat 21g: Shopping view + 14 shopping rules (~150 min)
 
 **Stats:**
-- Files created: 14 new, 4 modified
-- Lines of code: 3,166 (production-ready)
-- Time invested: ~3.5 hours actual work (~5.5 hours elapsed)
-- Commits: 3 (5789628, 4976a29, pending for 21c)
+- Files created: ~25 new, ~15 modified
+- Lines of code: ~8,000+ (production-ready)
+- Time invested: ~13+ hours actual work
+- Commits: 7+
 
-**Next:** Chat 21d (Keywords) starting ~6:30 PM
+**Next:** Chat 21h — Final Polish
 
 ---
 
 **Plan Created:** 2026-02-18 02:45 AM  
-**Last Updated:** 2026-02-18 06:15 PM  
-**Status:** IN PROGRESS 🔥  
-**Status:** READY TO START  
-**Estimated Completion:** 2 days (20 hours)  
-**Next Step:** Chat 21a - Bootstrap Setup
+**Last Updated:** 2026-02-19 07:00 PM  
+**Status:** IN PROGRESS 🔥 — 87.5% Complete  
+**Next Step:** Chat 21h — Final Polish (last page)

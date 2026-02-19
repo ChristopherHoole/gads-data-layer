@@ -1,7 +1,7 @@
 # CHAT WORKING RULES - MANDATORY FOR ALL CHATS
 
-**Version:** 1.0  
-**Last Updated:** 2026-02-17  
+**Version:** 1.1  
+**Last Updated:** 2026-02-19  
 **Applies to:** All Claude chats working on this project
 
 ---
@@ -19,33 +19,41 @@ These rules are MANDATORY and NON-NEGOTIABLE. Violating these rules causes:
 
 ---
 
-## 📋 RULE 1: CODEBASE UPLOAD AT START
+## 📋 RULE 1: MANDATORY UPLOADS AT START OF EVERY CHAT
 
-**MANDATORY FIRST STEP FOR EVERY CHAT:**
+**MANDATORY FIRST STEP FOR EVERY CHAT — ALL 3 UPLOADS REQUIRED:**
 
-Before doing ANYTHING, request:
+Before doing ANYTHING, request all 3 uploads:
 ```
-Please upload the complete codebase as a ZIP file:
-- Location: C:\Users\User\Desktop\gads-data-layer
-- Create ZIP of entire folder
-- Upload here
+Before I begin, I need 3 mandatory uploads:
 
-This allows me to:
-✅ See complete project structure
-✅ Search for files and dependencies
-✅ Understand relationships between components
+1. Codebase ZIP
+   Location: C:\Users\User\Desktop\gads-data-layer
+   (Create ZIP of entire folder and upload here)
+
+2. PROJECT_ROADMAP.md
+   Location: C:\Users\User\Desktop\gads-data-layer\docs\PROJECT_ROADMAP.md
+
+3. CHAT_WORKING_RULES.md
+   Location: C:\Users\User\Desktop\gads-data-layer\docs\CHAT_WORKING_RULES.md
+
+These allow me to:
+✅ See complete project structure (ZIP)
+✅ Understand current project status and completed work (ROADMAP)
+✅ Follow mandatory working rules for this project (RULES)
 ✅ Work from current state, not assumptions
 
-Upload the ZIP now before proceeding.
+Upload all 3 now before I proceed.
 ```
 
-**After ZIP uploaded:**
-1. Extract it
+**After all 3 uploaded:**
+1. Extract ZIP
 2. Use `view` tool to explore structure
-3. Understand what you're working with
-4. THEN begin the actual task
+3. Read PROJECT_ROADMAP.md — understand current status
+4. Read CHAT_WORKING_RULES.md — confirm rules understood
+5. THEN proceed to Phase 2B (5 Questions)
 
-**NEVER skip this step.**
+**NEVER skip any of the 3 uploads. NEVER proceed with only 1 or 2.**
 
 ---
 
@@ -157,7 +165,92 @@ Reply "Proceed" to continue, or give different instructions.
 
 ---
 
-## 📋 RULE 5: SHOW YOUR WORK
+## 📋 RULE 5: 5 QUESTIONS + BUILD PLAN REVIEW BEFORE BUILDING
+
+### **The Rule:**
+**After uploading and reviewing the codebase, PROJECT_ROADMAP.md, and CHAT_WORKING_RULES.md — BEFORE writing any code — the worker MUST complete a two-stage clarification process: (1) send 5 questions to Master Chat, (2) send a detailed build plan to Master Chat for review. Both must be approved before implementation begins.**
+
+### **Why This Rule Exists:**
+- Surfaces unknowns BEFORE they become bugs
+- Prevents mid-build assumptions that cost hours to debug
+- Ensures worker and Master are fully aligned on approach
+- Catches architectural mistakes before any code is written
+- Saves time vs. discovering issues mid-implementation
+
+### **The Full Process:**
+```
+STEP 1:  Worker reviews brief + codebase + docs
+STEP 2:  Worker writes exactly 5 questions (no more, no less)
+STEP 3:  Worker sends questions with header "5 QUESTIONS FOR MASTER CHAT"
+STEP 4:  Worker STOPS — waits for answers
+STEP 5:  User copies questions → pastes in Master Chat
+STEP 6:  Master provides answers
+STEP 7:  User pastes answers back into worker chat
+STEP 8:  Worker creates detailed build plan
+STEP 9:  Worker STOPS — waits for Master Chat review
+STEP 10: User copies detailed build plan → pastes in Master Chat
+STEP 11: Master Chat reviews build plan and provides feedback
+STEP 12: User pastes feedback back into worker chat
+STEP 13: Worker begins implementation
+```
+
+### **Question Format:**
+```
+5 QUESTIONS FOR MASTER CHAT
+
+Q1. [CATEGORY] Question text here?
+Q2. [CATEGORY] Question text here?
+Q3. [CATEGORY] Question text here?
+Q4. [CATEGORY] Question text here?
+Q5. [CATEGORY] Question text here?
+
+Waiting for Master Chat answers before proceeding.
+```
+
+### **Build Plan Format (after receiving Q&A answers):**
+```
+DETAILED BUILD PLAN FOR MASTER CHAT REVIEW
+
+Files to create/modify:
+- [Full path] — [what changes]
+- [Full path] — [what changes]
+
+Step-by-step implementation:
+STEP A: [Task] (~X min)
+  - [Specific action]
+  - [Specific action]
+STEP B: [Task] (~X min)
+  - [Specific action]
+STEP C: Testing (~X min)
+  - [Test 1]
+  - [Test 2]
+
+Total estimated time: X minutes
+Risks / unknowns: [Any remaining concerns]
+
+Waiting for Master Chat approval before starting.
+```
+
+### **Question Categories (use in brackets):**
+- `[DATABASE]` — schema, column names, table existence
+- `[ROUTE]` — existing code, overwrite vs. extend
+- `[DESIGN]` — UI decisions not clear from brief
+- `[RULES]` — rules engine specifics
+- `[SCOPE]` — what's in vs. out of this chat
+
+### **NEVER:**
+- ❌ Ask questions answerable by reading the brief
+- ❌ Ask generic or vague questions
+- ❌ Ask more or fewer than 5 questions
+- ❌ Skip the build plan step after receiving Q&A answers
+- ❌ Begin implementation without Master Chat approving the build plan
+
+### **Enforcement:**
+Master Chat will not review completed work from a worker that skipped either stage of this process. Both the Q&A and the build plan review are mandatory checkpoints.
+
+---
+
+## 📋 RULE 6: SHOW YOUR WORK
 
 ### **The Rule:**
 **Document findings, explain reasoning, show comparisons BEFORE making changes.**
@@ -206,7 +299,7 @@ CHANGES MADE:
 
 ---
 
-## 📋 RULE 6: DEBUGGING PROTOCOL
+## 📋 RULE 7: DEBUGGING PROTOCOL
 
 ### **When Tests Fail:**
 
@@ -256,7 +349,7 @@ FIX: [Exact change needed]
 
 ---
 
-## 📋 RULE 7: ERROR HANDLING
+## 📋 RULE 8: ERROR HANDLING
 
 ### **Every Code Change Must Include:**
 
@@ -304,7 +397,7 @@ except Exception as e:
 
 ---
 
-## 📋 RULE 8: TESTING PROTOCOL
+## 📋 RULE 9: TESTING PROTOCOL
 
 ### **After EVERY code change:**
 
@@ -354,7 +447,7 @@ IF TEST FAILS:
 
 ---
 
-## 📋 RULE 9: DELIVERABLES - DOWNLOADS ONLY
+## 📋 RULE 10: DELIVERABLES - DOWNLOADS ONLY
 
 ### **The Rule:**
 **ALL file edits MUST be provided as download links. NO code in chat.**
@@ -395,7 +488,7 @@ After saving, reply "Saved, ready to test"
 
 ---
 
-## 📋 RULE 10: GIT COMMITS
+## 📋 RULE 11: GIT COMMITS
 
 ### **When to Commit:**
 - After major working milestone
@@ -440,7 +533,7 @@ git push origin main
 
 ---
 
-## 📋 RULE 11: WHEN TO STOP
+## 📋 RULE 12: WHEN TO STOP
 
 ### **Stop Immediately If:**
 - Going in circles (same error 3+ times)
@@ -470,7 +563,7 @@ User, what would you like to do?
 
 ---
 
-## 📋 RULE 12: COMMUNICATION
+## 📋 RULE 13: COMMUNICATION
 
 ### **Tone:**
 - Professional but friendly
@@ -504,7 +597,9 @@ User, what would you like to do?
 - [ ] Have I requested current file version?
 - [ ] Am I using full file paths?
 - [ ] Am I completing one step at a time?
-- [ ] Have I shown my analysis before editing?
+- [ ] Have I sent 5 questions to Master Chat and received answers? (Rule 5)
+- [ ] Have I sent my build plan to Master Chat and received approval? (Rule 5)
+- [ ] Have I shown my analysis before editing? (Rule 6)
 - [ ] Have I included debug logging if testing?
 - [ ] Have I included error handling in code?
 - [ ] Have I specified exact test steps?

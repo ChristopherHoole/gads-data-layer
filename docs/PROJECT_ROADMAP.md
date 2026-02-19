@@ -1,13 +1,13 @@
 # PROJECT ROADMAP - Google Ads Data Layer (ACT Dashboard)
 
-**Last Updated:** 2026-02-19 4:15 PM  
-**Current Phase:** Chat 21 (Dashboard UI Overhaul) - 75% Complete (6/8) 🔥  
-**Overall Completion:** ~79% (Foundation + Polish + Dashboard 75% Done)  
-**Mode:** 🔥 LEGENDARY - 6 down, 2 to go!
+**Last Updated:** 2026-02-19 01:00 AM  
+**Current Phase:** Chat 21 (Dashboard UI Overhaul) - 62.5% Complete (5/8) ðŸ”¥  
+**Overall Completion:** 77% (Foundation + Polish + Dashboard 62.5% Done)  
+**Mode:** ðŸ”¥ LEGENDARY - 5 down, 3 to go!
 
 ---
 
-## 🎯 PROJECT VISION
+## ðŸŽ¯ PROJECT VISION
 
 **Mission:** Build a production-ready, automated Google Ads management dashboard that generates, approves, and executes bid/budget recommendations across Keywords, Ads, and Shopping campaigns.
 
@@ -22,9 +22,9 @@
 
 ---
 
-## ✅ COMPLETED WORK
+## âœ… COMPLETED WORK
 
-### **Phase 0: Foundation (Chats 1-17)** ✅
+### **Phase 0: Foundation (Chats 1-17)** âœ…
 
 **Chats 1-11: Initial Dashboard Development**
 - Basic Flask web application
@@ -48,7 +48,7 @@
 
 ---
 
-### **Phase 1: Code Cleanup & Foundation Hardening** ✅
+### **Phase 1: Code Cleanup & Foundation Hardening** âœ…
 
 **Time Invested:** ~4 hours  
 **Commits:** 5 major commits
@@ -88,7 +88,7 @@
 
 ---
 
-### **Phase 2: Polish & Refactoring** ✅
+### **Phase 2: Polish & Refactoring** âœ…
 
 **Time Invested:** ~2.5 hours  
 **Commits:** 3 major commits
@@ -100,7 +100,7 @@
 
 **Phase 2b: Refactor Long Functions**
 - Created 17 helper functions across 3 files
-- Main functions: 269 → 76 lines (72% reduction)
+- Main functions: 269 â†’ 76 lines (72% reduction)
 - Single Responsibility Principle
 
 **Phase 2c: Add Type Hints**
@@ -116,9 +116,9 @@
 
 ---
 
-## 🔧 IN PROGRESS
+## ðŸ”§ IN PROGRESS
 
-### **Phase 3: Future-Proofing** 📋
+### **Phase 3: Future-Proofing** ðŸ“‹
 
 **Status:** PLANNED  
 **Estimated Time:** 10-14 hours  
@@ -148,23 +148,23 @@
 
 ---
 
-## 🚀 PLANNED WORK
+## ðŸš€ PLANNED WORK
 
-### **Phase 4: Feature Development** 📋
+### **Phase 4: Feature Development** ðŸ“‹
 
 **Priority Order Updated:** Dashboard UI comes FIRST before reports/alerts
 
 ---
 
-## **CHAT 21: DASHBOARD UI OVERHAUL** ⭐⭐⭐ **IN PROGRESS** 🔥
+## **CHAT 21: DASHBOARD UI OVERHAUL** â­â­â­ **IN PROGRESS** ðŸ”¥
 
-**Status:** IN PROGRESS - 4/8 Sub-chats Complete (50%) 🎉  
+**Status:** IN PROGRESS - 4/8 Sub-chats Complete (50%) ðŸŽ‰  
 **Started:** February 18, 2026 11:44 AM  
 **Current Time:** 9:35 PM  
 **Time Invested:** ~7 hours 10 minutes  
 **Framework:** Bootstrap 5  
 **Strategy:** Google Ads-inspired UI (familiar UX patterns, ACT branding)  
-**Mode:** 🔥 LEGENDARY - Finishing all 8 tonight!
+**Mode:** ðŸ”¥ LEGENDARY - Finishing all 8 tonight!
 
 **Why This Comes First:**
 - Foundation for all other features
@@ -174,7 +174,7 @@
 
 **Sub-Phases:**
 
-### **Chat 21a: Bootstrap Setup & Base Template** ✅ COMPLETE
+### **Chat 21a: Bootstrap Setup & Base Template** âœ… COMPLETE
 **Time:** 50 minutes (vs 2 hrs estimated) | **Efficiency:** 240%  
 **Commit:** 5789628  
 **Completed:** Feb 18, 1:05 PM
@@ -189,7 +189,7 @@
 - Test page with comprehensive component showcase
 - **Files:** 7 new, 1 modified | **Code:** 1,032 lines
 
-### **Chat 21b: Main Dashboard Page** ✅ COMPLETE
+### **Chat 21b: Main Dashboard Page** âœ… COMPLETE
 **Time:** 53 minutes (vs 3 hrs estimated) | **Efficiency:** 340%  
 **Commit:** 4976a29  
 **Completed:** Feb 18, 2:06 PM
@@ -205,7 +205,7 @@
 - Date picker wired up (URL-based filtering)
 - **Files:** 1 new, 2 modified | **Code:** 654 lines
 
-### **Chat 21c: Campaigns View + Rule Visibility System** ✅ COMPLETE
+### **Chat 21c: Campaigns View + Rule Visibility System** âœ… COMPLETE
 **Time:** ~100 minutes (vs 70 min estimated) | **Efficiency:** 70%  
 **Commit:** 3ab82a2  
 **Completed:** Feb 18, 6:50 PM
@@ -230,7 +230,7 @@
 **Major Achievement:** Rule system built once, reusable on all future pages!  
 **Quality:** Production-ready, 100% feature completion, all tests passed
 
-### **Chat 21d: Keywords View + Full Rule Integration** ✅ COMPLETE
+### **Chat 21d: Keywords View + Full Rule Integration** âœ… COMPLETE
 **Time:** 125 minutes (95 min initial + 30 min rule fix) | **Efficiency:** 56%  
 **Commit:** f0fbd15  
 **Completed:** Feb 18, 9:35 PM
@@ -268,27 +268,27 @@
 - Backward compatible with all existing rule types
 - Category icons and labels adapt to any page type
 
-**Testing:** All 8 checkpoints passed ✅  
+**Testing:** All 8 checkpoints passed âœ…  
 **Quality:** Production-ready, 14 keyword rules from keyword_rules.py working perfectly
 
 **Known Cosmetic Issues (Non-blocking):**
 - Sidebar title shows "Campaign Rules" instead of "Keyword Rules" (defer to Chat 21h)
 
-### **Chat 21e: Ad Groups View** ✅ COMPLETE
+### **Chat 21e: Ad Groups View** âœ… COMPLETE
 **Actual Time:** 120 minutes (vs 70 min estimated)  
 **Commit:** [PENDING]  
-**Started:** 11:00 PM Feb 18 → **Completed:** 1:00 AM Feb 19
+**Started:** 11:00 PM Feb 18 â†’ **Completed:** 1:00 AM Feb 19
 
 **Deliverables:**
-- ✅ Ad Groups page fully redesigned with Bootstrap 5
-- ✅ 7 metrics cards (Total, Clicks, Cost, Conv., CPA, CTR, Avg Bid)
-- ✅ 12-column responsive table with 400 ad groups
-- ✅ Filters: Date (7/30/90d), Status (all/active/paused), Per-page (10/25/50/100)
-- ✅ Color-coded CPA (green <$25, yellow $25-50, red >$50)
-- ✅ Status badges (green=Active, gray=Paused, red=Removed)
-- ✅ Rules integration (empty state - 0 rules correct, ad_group_rules.py doesn't exist)
-- ✅ Python-based pagination
-- ✅ All 8 success criteria passing
+- âœ… Ad Groups page fully redesigned with Bootstrap 5
+- âœ… 7 metrics cards (Total, Clicks, Cost, Conv., CPA, CTR, Avg Bid)
+- âœ… 12-column responsive table with 400 ad groups
+- âœ… Filters: Date (7/30/90d), Status (all/active/paused), Per-page (10/25/50/100)
+- âœ… Color-coded CPA (green <$25, yellow $25-50, red >$50)
+- âœ… Status badges (green=Active, gray=Paused, red=Removed)
+- âœ… Rules integration (empty state - 0 rules correct, ad_group_rules.py doesn't exist)
+- âœ… Python-based pagination
+- âœ… All 8 success criteria passing
 
 **Files Created:**
 - routes/ad_groups.py (264 lines) - Route with SQL aggregation from ro.analytics.ad_group_daily
@@ -298,56 +298,27 @@
 - routes/__init__.py (4 lines added for blueprint registration)
 
 **Issues Encountered:**
-1. Database table name (analytics.ad_group_daily → ro.analytics.ad_group_daily) - 5 min fix
-2. Template inheritance (base.html → base_bootstrap.html) - 45 min diagnosis, 2 min fix
+1. Database table name (analytics.ad_group_daily â†’ ro.analytics.ad_group_daily) - 5 min fix
+2. Template inheritance (base.html â†’ base_bootstrap.html) - 45 min diagnosis, 2 min fix
 3. Unknown page_type warning (expected, harmless until ad_group_rules.py created)
 
 **Database Pattern:** Uses campaigns.py pattern (SQL date filtering, NOT rolling windows)
 
-### **Chat 21f: Ads View** ✅ COMPLETE
-**Actual Time:** ~180 minutes (vs 70 min estimated)  
-**Commit:** PENDING  
-**Completed:** February 19, 2026 4:15 PM
+### **Chat 21f: Ads View** ðŸ“‹ PLANNED
+**Estimated Time:** 70 minutes  
+**Dependencies:** Rule system âœ… (from 21c)
 
-**Deliverables:**
-- ✅ Ads page fully redesigned with Bootstrap 5
-- ✅ 7 metrics cards (Total Ads, Clicks, Cost, Conversions, CTR, CPA, Ad Strength)
-- ✅ Ad Strength progress bars (Poor=red, Average=yellow, Good=green, Excellent=blue, NULL=N/A badge)
-- ✅ Expandable asset rows (headlines count, descriptions count, final_url, ad type)
-- ✅ Status badges (ENABLED=green, PAUSED=grey, REMOVED=red)
-- ✅ Ad type labels (RSA, ETA, RDA, FTA)
-- ✅ Rules integration (12 rules — sidebar, tab, card all working)
-- ✅ Filters: Date (7/30/90d), Status (all/enabled/paused), Per-page (10/25/50/100)
-- ✅ Python-based pagination (983 ads, 40 pages at 25/page)
-- ✅ All 10 success criteria passing
+**Plan:**
+- Ad performance table redesign
+- Ad strength indicators
+- Asset performance breakdown
+- Preview functionality
+- Ad group grouping
+- Rule visibility integrated
 
-**Files Created/Modified:**
-- `routes/ads.py` — Full rewrite (correct table, column names, query pattern)
-- `templates/ads_new.html` — New Bootstrap 5 template extending base_bootstrap.html
-
-**Critical DB Architecture Discovery:**
-- `analytics.ad_features_daily` exists ONLY in `warehouse.duckdb` — NOT in the readonly catalog
-- Must query as `analytics.ad_features_daily` (no `ro.` prefix)
-- This table is pre-aggregated with windowed columns (`_7d`, `_30d`, `_90d`) — no GROUP BY needed
-- Column: `ad_status` (not `status`), `headlines`/`descriptions` as VARCHAR[] arrays (use `array_length()`)
-
-**Issues Encountered:**
-1. Wrong table name in Master Chat A1 answer (`ro.analytics.ad_daily` → correct: `analytics.ad_features_daily`) — DB discovery required
-2. Wrong column names (`status` → `ad_status`, `headlines_count` → `array_length(headlines)`)
-3. Wrong query pattern (GROUP BY not needed — pre-aggregated table)
-4. Rules tab blank — double-wrapping `rules_tab.html` in tab-pane div
-5. CTR/CPA card width (`col-md-1` → `col`)
-
-**Known Carry-Forwards to Chat 21h:**
-- Rules card renders below large blank gap on Ads tab (cosmetic)
-- `favicon.ico` 500 error — missing `404.html` template (pre-existing, all pages)
-- `ad_group` page_type warning (pre-existing from Chat 21e)
-
-**Test Data:** 983 ads | 98,762 clicks | $295,933 cost | 4,039 conversions | 4.82% CTR | $73.26 CPA
-
-### **Chat 21g: Shopping View** 📋 PLANNED
+### **Chat 21g: Shopping View** ðŸ“‹ PLANNED
 **Estimated Time:** 90 minutes (4 tabs - complex)  
-**Dependencies:** Rule system ✅ (from 21c)
+**Dependencies:** Rule system âœ… (from 21c)
 
 **Plan:**
 - Shopping campaigns table (4 tabs)
@@ -357,12 +328,12 @@
 - Merchant Center integration visuals
 - Rule visibility integrated
 
-### **Chat 21h: Charts & Polish** 📋 PLANNED
+### **Chat 21h: Charts & Polish** ðŸ“‹ PLANNED
 **Estimated Time:** 60 minutes  
 **Dependencies:** All pages complete
 
 **Plan:**
-- Fix sidebar titles (Campaign Rules → dynamic based on page)
+- Fix sidebar titles (Campaign Rules â†’ dynamic based on page)
 - Standardize Chart.js across all pages
 - Responsive testing
 - Cross-browser compatibility
@@ -370,15 +341,16 @@
 - Performance optimization
 - Final polish
 
-**Progress:** 6/8 Sub-chats Complete (75%) ✅  
-**Time Invested:** ~10 hours total  
-**Code Written:** ~5,900 lines (production-ready)  
-**Files Created:** 17 new, 10 modified  
-**Next:** Chat 21g (Shopping View)
+**Progress:** 4/8 Sub-chats Complete (50%) âœ… HALFWAY THERE! ðŸŽ‰  
+**Time Invested:** ~7 hours 10 minutes total  
+**Code Written:** 4,702 lines (production-ready)  
+**Files Created:** 15 new, 9 modified  
+**Target Completion:** Tonight (~2:30 AM) ðŸ”¥ LEGENDARY MODE CONTINUES  
+**Next:** Chat 21e (Ad Groups View) - Starting ~9:40 PM
 
 ---
 
-## **Chat 22: Email Reporting System** ⭐ (2-3 hrs)
+## **Chat 22: Email Reporting System** â­ (2-3 hrs)
 
 **Status:** PLANNED (after Dashboard)  
 **Dependencies:** Needs new dashboard structure
@@ -394,7 +366,7 @@
 
 ---
 
-## **Chat 23: Smart Alerts & Notifications** ⭐ (2-3 hrs)
+## **Chat 23: Smart Alerts & Notifications** â­ (2-3 hrs)
 
 **Status:** PLANNED (after Dashboard)  
 **Dependencies:** Needs new dashboard metrics
@@ -469,57 +441,57 @@
 
 ---
 
-## 📊 PROGRESS METRICS
+## ðŸ“Š PROGRESS METRICS
 
 ### **Overall Status**
 
 | Phase | Completion | Status |
 |-------|------------|--------|
-| Foundation (0) | 100% ✅ | Complete |
-| Code Cleanup (1) | 100% ✅ | Complete |
-| Polish (2) | 100% ✅ | Complete |
-| Dashboard UI (21) | 75% 🔥 | **IN PROGRESS** |
-| Future-Proofing (3) | 0% 📋 | Planned |
-| Features (22-28) | 0% 📋 | Planned |
+| Foundation (0) | 100% âœ… | Complete |
+| Code Cleanup (1) | 100% âœ… | Complete |
+| Polish (2) | 100% âœ… | Complete |
+| Dashboard UI (21) | 50% ðŸ”¥ | **IN PROGRESS** |
+| Future-Proofing (3) | 0% ðŸ“‹ | Planned |
+| Features (22-28) | 0% ðŸ“‹ | Planned |
 
 ### **Time Investment**
 
 | Phase | Hours | Status |
 |-------|-------|--------|
-| Chats 1-11 | ~15-20 | ✅ Complete |
-| Chats 12-16 | ~10-12 | ✅ Complete |
-| Chat 17 | ~3-4 | ✅ Complete |
-| Phase 1 | ~4 | ✅ Complete |
-| Phase 2 | ~2.5 | ✅ Complete |
-| **Chat 21 (so far)** | **~7.2** | **🔥 In Progress** |
+| Chats 1-11 | ~15-20 | âœ… Complete |
+| Chats 12-16 | ~10-12 | âœ… Complete |
+| Chat 17 | ~3-4 | âœ… Complete |
+| Phase 1 | ~4 | âœ… Complete |
+| Phase 2 | ~2.5 | âœ… Complete |
+| **Chat 21 (so far)** | **~7.2** | **ðŸ”¥ In Progress** |
 | **TOTAL** | **~41-50 hrs** | **Ongoing** |
 
 ---
 
-## 🎯 NEXT MILESTONES
+## ðŸŽ¯ NEXT MILESTONES
 
-### **Immediate (Next up):**
-- 🔥 Chat 21: Dashboard UI Overhaul (Bootstrap 5) - 75% COMPLETE
-  - ✅ 21a: Bootstrap setup (50 min)
-  - ✅ 21b: Main dashboard (53 min)
-  - ✅ 21c: Campaigns view (100 min)
-  - ✅ 21d: Keywords view (125 min)
-  - ✅ 21e: Ad Groups view (120 min)
-  - ✅ 21f: Ads view (~180 min)
-  - 📋 21g: Shopping view (90 min) — NEXT
-  - 📋 21h: Polish (60 min)
+### **Immediate (Tonight - 5 hours remaining):**
+- ðŸ”¥ Chat 21: Dashboard UI Overhaul (Bootstrap 5) - 50% COMPLETE
+  - âœ… 21a: Bootstrap setup (50 min)
+  - âœ… 21b: Main dashboard (53 min)
+  - âœ… 21c: Campaigns view (100 min)
+  - âœ… 21d: Keywords view (125 min)
+  - ðŸ“‹ 21e: Ad Groups view (70 min) - NEXT
+  - ðŸ“‹ 21f: Ads view (70 min)
+  - ðŸ“‹ 21g: Shopping view (90 min)
+  - ðŸ“‹ 21h: Polish (60 min)
 
 ### **Short-term (After Dashboard):**
-- 📋 Phase 3: Future-Proofing (10-14 hrs)
-- 📋 Chat 22: Email Reports (2-3 hrs)
-- 📋 Chat 23: Smart Alerts (2-3 hrs)
+- ðŸ“‹ Phase 3: Future-Proofing (10-14 hrs)
+- ðŸ“‹ Chat 22: Email Reports (2-3 hrs)
+- ðŸ“‹ Chat 23: Smart Alerts (2-3 hrs)
 
 ### **Medium-term (After Core Features):**
-- 📋 Chats 24-28: Enhancements & Marketing
+- ðŸ“‹ Chats 24-28: Enhancements & Marketing
 
 ---
 
-## 📝 STRATEGIC DECISIONS
+## ðŸ“ STRATEGIC DECISIONS
 
 ### **Dashboard First Strategy**
 **Decision:** Build Google Ads-inspired dashboard BEFORE reports/alerts
@@ -556,39 +528,17 @@
 
 ---
 
-## 📄 CHANGELOG
+## ðŸ“„ CHANGELOG
 
-### **2026-02-19 (Afternoon - Chat 21f)**
-
-**Completed:**
-- ✅ Chat 21f: Ads Page Bootstrap 5 Redesign (~180 min)
-
-**Key Achievements:**
-- 983 ads loading with real data (clicks, cost, conversions, CTR, CPA)
-- Ad Strength progress bars with full colour coding
-- Expandable asset rows (headline/description counts, final_url)
-- 12 ad rules fully integrated (sidebar, tab, card)
-- All 10 success criteria passing
-
-**Critical DB Discovery (document for all future workers):**
-- `analytics.ad_features_daily` only exists in `warehouse.duckdb` — NOT in readonly catalog
-- Must use `analytics.*` prefix (not `ro.analytics.*`) for this table
-- Pre-aggregated table: windowed columns `_7d/_30d/_90d`, no GROUP BY needed
-- Column: `ad_status` (not `status`), `headlines`/`descriptions` as VARCHAR[] arrays
-
-**Chat 21 Progress:** 6/8 complete (75%) 🔥
-
----
-
-### **2026-02-18/19 (Legendary Session - CONTINUING)** 🔥
+### **2026-02-18/19 (Legendary Session - CONTINUING)** ðŸ”¥
 **Time:** 11:44 AM - 1:00 AM+ (13h 16m elapsed, ~8.5h actual work)
 
 **Completed:**
-- ✅ Chat 21a: Bootstrap Foundation (50 min) - Commit 5789628
-- ✅ Chat 21b: Main Dashboard (53 min) - Commit 4976a29
-- ✅ Chat 21c: Campaigns + Rule System (100 min) - Commit 3ab82a2
-- ✅ Chat 21d: Keywords + 14 Rules Working (125 min) - Commit f0fbd15
-- ✅ Chat 21e: Ad Groups View (120 min) - Commit [PENDING]
+- âœ… Chat 21a: Bootstrap Foundation (50 min) - Commit 5789628
+- âœ… Chat 21b: Main Dashboard (53 min) - Commit 4976a29
+- âœ… Chat 21c: Campaigns + Rule System (100 min) - Commit 3ab82a2
+- âœ… Chat 21d: Keywords + 14 Rules Working (125 min) - Commit f0fbd15
+- âœ… Chat 21e: Ad Groups View (120 min) - Commit [PENDING]
 
 **Achievements:**
 - ~5,300 lines of production code written
@@ -600,20 +550,20 @@
 - Dynamic category detection system (future-proof for any page)
 - Regex pattern fix enables all rule formats
 - Zero critical bugs in production
-- 62.5% completion milestone reached! 🎉
+- 62.5% completion milestone reached! ðŸŽ‰
 - Template inheritance bug diagnosed (base.html vs base_bootstrap.html)
 
-**Next:** Continuing with Chats 21f-21h (Ads, Shopping, Polish)
+**Next:** Chat 21h — Final Polish (last page). Then production deployment prep.
 
 ### **2026-02-18 (Earlier - Planning)**
-- ✅ Completed Phase 1 (all 9 tasks)
-- ✅ Completed Phase 2 (all 4 tasks)
-- ✅ Updated roadmap: Moved Dashboard UI to top priority
-- ✅ Decided on Bootstrap 5 framework
-- ✅ Broke down Dashboard project into 8 sub-phases
-- ✅ Created CHAT_WORKING_RULES.md
-- ✅ Created detailed briefs for each sub-chat
-- ✅ Total planning time: ~2 hours
+- âœ… Completed Phase 1 (all 9 tasks)
+- âœ… Completed Phase 2 (all 4 tasks)
+- âœ… Updated roadmap: Moved Dashboard UI to top priority
+- âœ… Decided on Bootstrap 5 framework
+- âœ… Broke down Dashboard project into 8 sub-phases
+- âœ… Created CHAT_WORKING_RULES.md
+- âœ… Created detailed briefs for each sub-chat
+- âœ… Total planning time: ~2 hours
 
 ### **2026-02-18 (Night - Previous Session)**
 - Created PROJECT_ROADMAP.md
@@ -622,6 +572,6 @@
 
 ---
 
-**Last Updated:** 2026-02-18 09:35 PM (Legendary Session - 50% Complete! 🎉)  
+**Last Updated:** 2026-02-18 09:35 PM (Legendary Session - 50% Complete! ðŸŽ‰)  
 **Next Update:** After Chat 21e completion (Ad Groups page)  
-**Target:** Complete all 8 sub-chats tonight (finish by ~2:30 AM) 🔥 LEGENDARY MODE
+**Target:** Complete all 8 sub-chats tonight (finish by ~2:30 AM) ðŸ”¥ LEGENDARY MODE
