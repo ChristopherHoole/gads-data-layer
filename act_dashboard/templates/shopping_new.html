@@ -10,7 +10,18 @@
     <h2 class="mb-0">
       <i class="bi bi-cart3 text-primary"></i> Shopping
     </h2>
-    <div class="text-muted small">Last {{ days }} days</div>
+  </div>
+
+  <!-- Global Date Filter — applies to all tabs -->
+  <div class="d-flex align-items-center mb-3">
+    <div class="btn-group btn-group-sm" role="group">
+      <a href="/shopping?days=7&page=1&per_page={{ per_page }}&status={{ status }}&tab={{ active_tab }}"
+         class="btn {% if days == 7 %}btn-primary{% else %}btn-outline-secondary{% endif %}">Last 7 days</a>
+      <a href="/shopping?days=30&page=1&per_page={{ per_page }}&status={{ status }}&tab={{ active_tab }}"
+         class="btn {% if days == 30 %}btn-primary{% else %}btn-outline-secondary{% endif %}">Last 30 days</a>
+      <a href="/shopping?days=90&page=1&per_page={{ per_page }}&status={{ status }}&tab={{ active_tab }}"
+         class="btn {% if days == 90 %}btn-primary{% else %}btn-outline-secondary{% endif %}">Last 90 days</a>
+    </div>
   </div>
 
   <!-- Error Alert -->
@@ -71,7 +82,7 @@
          id="tab-campaigns" role="tabpanel">
 
       <!-- Metrics Bar (6 cards) -->
-      <div class="row mb-3">
+      <div class="row mb-3 metrics-bar">
 
         <div class="col-md-2">
           <div class="card">
@@ -142,18 +153,6 @@
       <div class="card mb-3">
         <div class="card-body py-2">
           <div class="row align-items-center g-2">
-
-            <!-- Date Range -->
-            <div class="col-auto">
-              <div class="btn-group btn-group-sm" role="group">
-                <a href="/shopping?days=7&page=1&per_page={{ per_page }}&status={{ status }}&tab=campaigns"
-                   class="btn {% if days == 7 %}btn-primary{% else %}btn-outline-secondary{% endif %}">7d</a>
-                <a href="/shopping?days=30&page=1&per_page={{ per_page }}&status={{ status }}&tab=campaigns"
-                   class="btn {% if days == 30 %}btn-primary{% else %}btn-outline-secondary{% endif %}">30d</a>
-                <a href="/shopping?days=90&page=1&per_page={{ per_page }}&status={{ status }}&tab=campaigns"
-                   class="btn {% if days == 90 %}btn-primary{% else %}btn-outline-secondary{% endif %}">90d</a>
-              </div>
-            </div>
 
             <!-- Status Filter -->
             <div class="col-auto">
@@ -365,7 +364,7 @@
       {% endif %}
 
       <!-- Metrics Bar (6 cards) -->
-      <div class="row mb-3">
+      <div class="row mb-3 metrics-bar">
 
         <div class="col-md-2">
           <div class="card">
@@ -871,13 +870,12 @@
     </div>
     <!-- End Feed Quality Tab -->
 
+    <!-- RULES TAB — inside tab-content so Bootstrap can show/hide it -->
+    {% set page_name = "Shopping" %}
+    {% include 'components/rules_tab.html' %}
+
   </div>
   <!-- End Tab Content -->
-
-  <!-- Rules tab: rules_tab.html wraps itself in
-       <div class="tab-pane fade" id="rules-tab"> already.
-       Include as DIRECT SIBLING of tab-content — NOT nested inside. -->
-  {% include 'components/rules_tab.html' %}
 
 </div>
 <!-- End container-fluid -->

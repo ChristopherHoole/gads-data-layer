@@ -3,28 +3,10 @@
 {% block title %}Dashboard - Ads Control Tower{% endblock %}
 
 {% block content %}
-<!-- Page Header with Date Picker -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="h3 mb-0">Dashboard</h1>
-        <p class="text-muted small mb-0">Overview of your Google Ads performance</p>
-    </div>
-    
-    <!-- Date Range Dropdown -->
-    <div class="dropdown">
-        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dateRangeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="bi bi-calendar3"></i>
-            {% if days == 7 %}Last 7 days
-            {% elif days == 30 %}Last 30 days
-            {% elif days == 90 %}Last 90 days
-            {% else %}Last 7 days{% endif %}
-        </button>
-        <ul class="dropdown-menu" aria-labelledby="dateRangeDropdown">
-            <li><a class="dropdown-item {% if days == 7 %}active{% endif %}" href="/?days=7">Last 7 days</a></li>
-            <li><a class="dropdown-item {% if days == 30 %}active{% endif %}" href="/?days=30">Last 30 days</a></li>
-            <li><a class="dropdown-item {% if days == 90 %}active{% endif %}" href="/?days=90">Last 90 days</a></li>
-        </ul>
-    </div>
+<!-- Page Header -->
+<div class="mb-4">
+    <h1 class="h3 mb-0">Dashboard</h1>
+    <p class="text-muted small mb-0">Overview of your Google Ads performance</p>
 </div>
 
 <!-- Metrics Bar Component -->

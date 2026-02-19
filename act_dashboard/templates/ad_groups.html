@@ -31,7 +31,7 @@
     <div class="tab-pane fade show active" id="ad-groups-tab" role="tabpanel">
       
       <!-- Metrics Bar (7 cards) -->
-      <div class="row mb-3">
+      <div class="row mb-3 metrics-bar">
         <!-- Card 1: Total Ad Groups -->
         <div class="col-md-2">
           <div class="card">
@@ -323,10 +323,9 @@
       
     </div>
     
-    <!-- RULES TAB -->
-    <div class="tab-pane fade" id="rules-tab">
-      {% include 'components/rules_tab.html' %}
-    </div>
+    <!-- RULES TAB — rules_tab.html provides its own tab-pane wrapper -->
+    {% set page_name = "Ad Group" %}
+    {% include 'components/rules_tab.html' %}
     
   </div>
   

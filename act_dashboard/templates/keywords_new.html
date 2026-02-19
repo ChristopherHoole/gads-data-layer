@@ -2,23 +2,9 @@
 
 {% block content %}
 <div class="container-fluid">
-  <!-- Page Header with Date Filter -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
+  <!-- Page Header -->
+  <div class="mb-3">
     <h1 class="h3 mb-0">Keywords</h1>
-    <div class="btn-group" role="group">
-      <a href="/keywords?days=7&match_type={{ match_type }}" 
-         class="btn btn-sm {% if days == 7 %}btn-primary{% else %}btn-outline-primary{% endif %}">
-        Last 7 days
-      </a>
-      <a href="/keywords?days=30&match_type={{ match_type }}" 
-         class="btn btn-sm {% if days == 30 %}btn-primary{% else %}btn-outline-primary{% endif %}">
-        Last 30 days
-      </a>
-      <a href="/keywords?days=90&match_type={{ match_type }}" 
-         class="btn btn-sm {% if days == 90 %}btn-primary{% else %}btn-outline-primary{% endif %}">
-        Last 90 days
-      </a>
-    </div>
   </div>
   
   <!-- Tabs: Keywords | Rules -->
@@ -42,7 +28,7 @@
     <div class="tab-pane fade show active" id="keywords-tab" role="tabpanel">
       
       <!-- Metrics Bar (8 cards) -->
-      <div class="row g-3 mb-3">
+      <div class="row g-3 mb-3 metrics-bar">
         <div class="col-md-3">
           <div class="card h-100">
             <div class="card-body">
@@ -124,6 +110,24 @@
               </h4>
             </div>
           </div>
+        </div>
+      </div>
+      
+      <!-- Filters Bar — below metrics, matching Campaigns page pattern -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="btn-group" role="group">
+          <a href="/keywords?days=7&match_type={{ match_type }}"
+             class="btn btn-sm {% if days == 7 %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            Last 7 days
+          </a>
+          <a href="/keywords?days=30&match_type={{ match_type }}"
+             class="btn btn-sm {% if days == 30 %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            Last 30 days
+          </a>
+          <a href="/keywords?days=90&match_type={{ match_type }}"
+             class="btn btn-sm {% if days == 90 %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            Last 90 days
+          </a>
         </div>
       </div>
       

@@ -1,8 +1,10 @@
 <!-- 
-Rules Tab Component - Chat 21c
+Rules Tab Component - Chat 21c (updated Chat 21h)
 Detailed view of all rules organized by category
 Shows in tab alongside main content
 -->
+
+{% set page_name = page_name | default('Optimization') %}
 
 <div class="tab-pane fade" id="rules-tab" role="tabpanel">
   <div class="container-fluid py-4">
@@ -244,10 +246,10 @@ Shows in tab alongside main content
       <!-- Empty State -->
       <div class="card">
         <div class="card-body text-center py-5">
-          <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
-          <h5 class="mt-3 mb-2">No Rules Configured</h5>
+          <i class="bi bi-lightning text-muted" style="font-size: 4rem;"></i>
+          <h5 class="mt-3 mb-2">No {{ page_name }} Rules Configured</h5>
           <p class="text-muted mb-4">
-            Optimization rules have not been set up yet.<br>
+            {{ page_name }} optimization rules have not been set up yet.<br>
             Rules will appear here once they are configured in the system.
           </p>
           <a href="/settings" class="btn btn-primary">

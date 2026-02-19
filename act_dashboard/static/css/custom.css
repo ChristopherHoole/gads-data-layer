@@ -199,6 +199,15 @@ body {
     margin-right: 0.25rem;
 }
 
+/* Prevent metric bar values from wrapping — targets ONLY the metrics bar row */
+.metrics-bar h3,
+.metrics-bar h4 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: clamp(1rem, 2vw, 1.5rem);
+}
+
 /* Responsive adjustments for metrics */
 @media (max-width: 767px) {
     .metric-value {
@@ -208,6 +217,16 @@ body {
     .metric-label {
         font-size: 0.7rem;
     }
+
+    .metrics-bar h3,
+    .metrics-bar h4 {
+        font-size: clamp(0.875rem, 4vw, 1.25rem);
+    }
+}
+
+/* Unknown / grey risk badge — force white text for readability */
+.badge.bg-secondary {
+    color: #ffffff !important;
 }
 
 /* ----------------------------------------------------------------------------
