@@ -1,0 +1,367 @@
+{% extends "base_bootstrap.html" %}
+
+{% block title %}Ad Groups - {{ client_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  
+  <!-- Page Header with Tabs -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Ad Groups</h2>
+  </div>
+  
+  <!-- Tab Navigation -->
+  <ul class="nav nav-tabs mb-3" id="adGroupsTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="ad-groups-tab-btn" data-bs-toggle="tab" data-bs-target="#ad-groups-tab" type="button" role="tab">
+        <i class="bi bi-bullseye"></i> Ad Groups ({{ total_ad_groups }})
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="rules-tab-btn" data-bs-toggle="tab" data-bs-target="#rules-tab" type="button" role="tab">
+        <i class="bi bi-lightning-charge-fill text-warning"></i> Rules ({{ rules|length }})
+      </button>
+    </li>
+  </ul>
+
+  <!-- Tab Content -->
+  <div class="tab-content" id="adGroupsTabContent">
+    
+    <!-- AD GROUPS TAB -->
+    <div class="tab-pane fade show active" id="ad-groups-tab" role="tabpanel">
+      
+      <!-- Metrics Bar (7 cards) -->
+      <div class="row mb-3">
+        <!-- Card 1: Total Ad Groups -->
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Total Ad Groups</h6>
+              <h3 class="mb-0">{{ metrics.total_ad_groups }}</h3>
+              <small class="text-muted">
+                {{ metrics.active_count }} active, {{ metrics.paused_count }} paused
+              </small>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Card 2: Clicks -->
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Clicks</h6>
+              <h3 class="mb-0">{{ "{:,}".format(metrics.total_clicks) }}</h3>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Card 3: Cost -->
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Cost</h6>
+              <h3 class="mb-0">${{ "{:,.2f}".format(metrics.total_cost) }}</h3>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Card 4: Conversions -->
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Conversions</h6>
+              <h3 class="mb-0">{{ "{:.1f}".format(metrics.total_conversions) }}</h3>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Card 5: CPA (color-coded) -->
+        <div class="col-md-1">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">CPA</h6>
+              <h3 class="mb-0 
+                {% if metrics.overall_cpa > 0 %}
+                  {% if metrics.overall_cpa < 25 %}text-success
+                  {% elif metrics.overall_cpa <= 50 %}text-warning
+                  {% else %}text-danger{% endif %}
+                {% endif %}">
+                {% if metrics.overall_cpa > 0 %}
+                  ${{ "{:.2f}".format(metrics.overall_cpa) }}
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </h3>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Card 6: CTR -->
+        <div class="col-md-1">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">CTR</h6>
+              <h3 class="mb-0">{{ "{:.2f}".format(metrics.overall_ctr) }}%</h3>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Card 7: Avg Bid -->
+        <div class="col-md-2">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-muted mb-1">Avg Bid</h6>
+              <h3 class="mb-0">${{ "{:.2f}".format(metrics.avg_bid) }}</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters and Actions Bar -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex gap-2">
+          <!-- Date Filter -->
+          <div class="btn-group" role="group">
+            <a href="/ad-groups?days=7&per_page={{ per_page }}&status={{ status }}" 
+               class="btn btn-sm {% if days == 7 %}btn-primary{% else %}btn-outline-primary{% endif %}">
+              Last 7 days
+            </a>
+            <a href="/ad-groups?days=30&per_page={{ per_page }}&status={{ status }}" 
+               class="btn btn-sm {% if days == 30 %}btn-primary{% else %}btn-outline-primary{% endif %}">
+              Last 30 days
+            </a>
+            <a href="/ad-groups?days=90&per_page={{ per_page }}&status={{ status }}" 
+               class="btn btn-sm {% if days == 90 %}btn-primary{% else %}btn-outline-primary{% endif %}">
+              Last 90 days
+            </a>
+          </div>
+          
+          <!-- Status Filter -->
+          <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                    type="button" data-bs-toggle="dropdown">
+              Status: 
+              {% if status == 'active' %}Active
+              {% elif status == 'paused' %}Paused
+              {% else %}All{% endif %}
+            </button>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="/ad-groups?days={{ days }}&per_page={{ per_page }}&status=all">All</a></li>
+              <li><a class="dropdown-item" href="/ad-groups?days={{ days }}&per_page={{ per_page }}&status=active">Active</a></li>
+              <li><a class="dropdown-item" href="/ad-groups?days={{ days }}&per_page={{ per_page }}&status=paused">Paused</a></li>
+            </ul>
+          </div>
+          
+          <!-- Per Page Filter -->
+          <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                    type="button" data-bs-toggle="dropdown">
+              Show: {{ per_page }}
+            </button>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="/ad-groups?days={{ days }}&per_page=10&status={{ status }}">10</a></li>
+              <li><a class="dropdown-item" href="/ad-groups?days={{ days }}&per_page=25&status={{ status }}">25</a></li>
+              <li><a class="dropdown-item" href="/ad-groups?days={{ days }}&per_page=50&status={{ status }}">50</a></li>
+              <li><a class="dropdown-item" href="/ad-groups?days={{ days }}&per_page=100&status={{ status }}">100</a></li>
+            </ul>
+          </div>
+        </div>
+        
+        <!-- Actions -->
+        <div>
+          <button id="bulk-edit-btn" class="btn btn-sm btn-secondary me-2" style="display:none;">
+            <i class="bi bi-pencil"></i> Bulk Edit
+          </button>
+        </div>
+      </div>
+
+      <!-- Ad Groups Table -->
+      {% if ad_groups and ad_groups|length > 0 %}
+        <div class="card">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 40px;">
+                    <input type="checkbox" id="select-all" class="form-check-input">
+                  </th>
+                  <th>Ad Group</th>
+                  <th>Campaign</th>
+                  <th>Status</th>
+                  <th class="text-end">Default Bid</th>
+                  <th class="text-end">Target CPA</th>
+                  <th class="text-end">Clicks</th>
+                  <th class="text-end">Impr.</th>
+                  <th class="text-end">Cost</th>
+                  <th class="text-end">Conv.</th>
+                  <th class="text-end">CPA</th>
+                  <th style="width: 100px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for ag in ad_groups %}
+                  <tr>
+                    <!-- Checkbox -->
+                    <td>
+                      <input type="checkbox" class="form-check-input ad-group-checkbox" 
+                             data-ad-group-id="{{ ag.ad_group_id }}">
+                    </td>
+                    
+                    <!-- Ad Group Name -->
+                    <td><strong>{{ ag.ad_group_name }}</strong></td>
+                    
+                    <!-- Campaign Name -->
+                    <td><small class="text-muted">{{ ag.campaign_name }}</small></td>
+                    
+                    <!-- Status Badge -->
+                    <td>
+                      {% if ag.ad_group_status == 'ENABLED' %}
+                        <span class="badge bg-success">Active</span>
+                      {% elif ag.ad_group_status == 'PAUSED' %}
+                        <span class="badge bg-secondary">Paused</span>
+                      {% else %}
+                        <span class="badge bg-danger">Removed</span>
+                      {% endif %}
+                    </td>
+                    
+                    <!-- Default Bid -->
+                    <td class="text-end">
+                      {% if ag.cpc_bid_micros %}
+                        ${{ "{:.2f}".format(ag.cpc_bid_micros / 1000000.0) }}
+                      {% else %}
+                        <span class="text-muted">-</span>
+                      {% endif %}
+                    </td>
+                    
+                    <!-- Target CPA -->
+                    <td class="text-end">
+                      {% if ag.target_cpa_micros %}
+                        ${{ "{:.2f}".format(ag.target_cpa_micros / 1000000.0) }}
+                      {% else %}
+                        <span class="text-muted">Not set</span>
+                      {% endif %}
+                    </td>
+                    
+                    <!-- Clicks -->
+                    <td class="text-end">{{ "{:,}".format(ag.clicks) }}</td>
+                    
+                    <!-- Impressions (K/M format) -->
+                    <td class="text-end">
+                      {% if ag.impressions >= 1000000 %}
+                        {{ "{:.1f}".format(ag.impressions / 1000000.0) }}M
+                      {% elif ag.impressions >= 1000 %}
+                        {{ "{:.1f}".format(ag.impressions / 1000.0) }}K
+                      {% else %}
+                        {{ ag.impressions }}
+                      {% endif %}
+                    </td>
+                    
+                    <!-- Cost -->
+                    <td class="text-end">${{ "{:,.2f}".format(ag.spend) }}</td>
+                    
+                    <!-- Conversions -->
+                    <td class="text-end">{{ "{:.1f}".format(ag.conversions) }}</td>
+                    
+                    <!-- CPA (color-coded) -->
+                    <td class="text-end">
+                      {% if ag.cpa > 0 %}
+                        <span class="
+                          {% if ag.cpa < 25 %}text-success
+                          {% elif ag.cpa <= 50 %}text-warning
+                          {% else %}text-danger{% endif %} fw-bold">
+                          ${{ "{:.2f}".format(ag.cpa) }}
+                        </span>
+                      {% else %}
+                        <span class="text-muted">-</span>
+                      {% endif %}
+                    </td>
+                    
+                    <!-- Actions Dropdown -->
+                    <td>
+                      <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                type="button" data-bs-toggle="dropdown">
+                          Actions
+                        </button>
+                        <ul class="dropdown-menu">
+                          <li><a class="dropdown-item" href="#"><i class="bi bi-pencil"></i> Edit Bid</a></li>
+                          <li><a class="dropdown-item" href="#"><i class="bi bi-pause"></i> Pause</a></li>
+                          <li><a class="dropdown-item" href="#"><i class="bi bi-trash"></i> Remove</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Pagination -->
+          <div class="card-footer d-flex justify-content-between align-items-center">
+            <div>
+              Showing {{ ((page - 1) * per_page + 1) }} - 
+              {{ [page * per_page, total_ad_groups]|min }} of 
+              {{ total_ad_groups }} ad groups
+            </div>
+            <nav>
+              <ul class="pagination mb-0">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                  <a class="page-link" href="/ad-groups?days={{ days }}&page={{ page - 1 }}&per_page={{ per_page }}&status={{ status }}">Previous</a>
+                </li>
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                  <a class="page-link" href="/ad-groups?days={{ days }}&page={{ page + 1 }}&per_page={{ per_page }}&status={{ status }}">Next</a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      {% else %}
+        <div class="alert alert-info">
+          No ad groups found for the selected filters.
+        </div>
+      {% endif %}
+      
+    </div>
+    
+    <!-- RULES TAB -->
+    <div class="tab-pane fade" id="rules-tab">
+      {% include 'components/rules_tab.html' %}
+    </div>
+    
+  </div>
+  
+</div>
+
+<!-- Rules Sidebar -->
+{% include 'components/rules_sidebar.html' %}
+
+<!-- Rules Card (below main content) -->
+<div class="row mt-4">
+  <div class="col-md-12">
+    {% include 'components/rules_card.html' %}
+  </div>
+</div>
+
+<script>
+// Checkbox selection
+document.getElementById('select-all')?.addEventListener('change', function(e) {
+  document.querySelectorAll('.ad-group-checkbox').forEach(cb => {
+    cb.checked = e.target.checked;
+  });
+  toggleBulkEditButton();
+});
+
+document.querySelectorAll('.ad-group-checkbox').forEach(cb => {
+  cb.addEventListener('change', toggleBulkEditButton);
+});
+
+function toggleBulkEditButton() {
+  const checked = document.querySelectorAll('.ad-group-checkbox:checked').length;
+  const btn = document.getElementById('bulk-edit-btn');
+  if (btn) {
+    btn.style.display = checked > 0 ? 'inline-block' : 'none';
+  }
+}
+</script>
+
+{% endblock %}
