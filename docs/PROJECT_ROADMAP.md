@@ -553,7 +553,7 @@
 - 62.5% completion milestone reached! ðŸŽ‰
 - Template inheritance bug diagnosed (base.html vs base_bootstrap.html)
 
-**Next:** Big Dashboard Overhaul (Christopher to define scope). Minor carry-forward: ads_new.html whitespace gap.
+**Next:** Chat 22 — M1: Date Picker (brief ready at docs/CHAT_22_BRIEF.md)
 
 ### **2026-02-18 (Earlier - Planning)**
 - âœ… Completed Phase 1 (all 9 tasks)

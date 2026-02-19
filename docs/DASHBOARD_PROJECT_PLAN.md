@@ -4,12 +4,11 @@
 **Timeline:** 20 hours / 3 days  
 **Framework:** Bootstrap 5  
 **Icons:** Bootstrap Icons  
-**Status:** ✅ COMPLETE - 8/8 (100%) 🏆  
-**Started:** February 18, 2026 11:44 AM  
-**Completed:** February 19, 2026 ~8:30 PM  
-**Mode:** 🏆 LEGENDARY COMPLETE — ALL 8 DONE!  
-**Created:** 2026-02-18 02:45 AM  
-**Updated:** 2026-02-19 08:30 PM  
+**Chat 21 Status:** ✅ COMPLETE - 8/8 (100%) 🏆  
+**Dashboard 3.0 Status:** 🚧 IN PROGRESS — Chat 22 (M1) next  
+**Started:** February 18, 2026  
+**Updated:** 2026-02-19 ~10:00 PM  
+**Mode:** Dashboard 3.0 Phase 1 underway  
 **Location:** Will be moved to `/docs/DASHBOARD_PROJECT_PLAN.md`
 
 ---
@@ -1302,6 +1301,111 @@ ORDER BY cost DESC
 ---
 
 **Plan Created:** 2026-02-18 02:45 AM  
-**Last Updated:** 2026-02-19 08:30 PM  
-**Status:** ✅ COMPLETE — 100% 🏆  
-**Next Step:** Big Dashboard Overhaul (Christopher to define scope)
+---
+
+## DASHBOARD 3.0 PLAN
+
+**Decision:** 2026-02-19. Full modular overhaul of all 6 dashboard pages.  
+**Architecture:** Jinja2 Macros for reusable components.  
+**Workflow:** Build on Campaigns (pilot) → test → roll out to all pages → close chat → next module.
+
+---
+
+### PHASE 1 — UI Overhaul
+
+#### Chat 22: M1 — Date Picker 🚧 NEXT
+**Brief:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_22_BRIEF.md`  
+**Est. time:** 90–120 min  
+**Status:** Brief written ✅ — ready to start
+
+**What gets built:**
+- Remove navbar static date picker
+- New `components/date_filter.html` — Flatpickr calendar + 7d/30d/90d preset buttons
+- Top-right position, consistent across all 6 pages
+- Flask session storage — selection persists across all pages globally
+- Default: 30d. Custom range requires Apply button.
+- `/set-date-range` POST route + `get_date_range_from_session()` in shared.py
+- All 6 routes updated to read from session
+
+**Pages:** Dashboard, Campaigns, Ad Groups, Keywords, Ads, Shopping  
+**Files:** 16 (1 removed, 1 created, 14 modified)
+
+**Pilot:** Campaigns → test fully → rollout to remaining 5 pages
+
+---
+
+#### Chat 23: M2 — Metrics Cards 📋 PLANNED
+**Est. time:** ~90 min  
+**Status:** Outline agreed, detail to be discussed before brief
+
+**What gets built:**
+- Financial Metrics row (always visible): Cost, Revenue, ROAS, BLANK, Conversions, Cost per Conv, Conv Rate, BLANK
+- Actions Metrics row (collapsible): Impressions, Clicks, Avg CPC, Avg CTR, Search Impr Share, Search Top IS, Search Abs Top IS, Click Share
+- Collapse/expand toggle on Actions row — state saved in session
+- Jinja2 macro: `metric_card(label, value, change_pct, format_type)`
+- BLANK slots = placeholders for future metrics
+- Each page passes page-specific data into same macro
+
+**Pilot:** Campaigns → rollout all pages
+
+---
+
+#### Chat 24: M3 — Chart Overhaul 📋 PLANNED
+**Est. time:** ~120 min (most complex module)  
+**Status:** Outline agreed, detail to be discussed before brief
+
+**What gets built:**
+- 4 selectable mini-stat slots above chart area
+- Chart.js renders whichever metrics are selected (max 3 lines)
+- Metric selection persists per page per session
+- Available metrics differ per page (Campaigns vs Shopping vs Keywords etc.)
+- Jinja2 macro: `performance_chart(available_metrics, selected_metrics)`
+
+**Pilot:** Campaigns → rollout all pages
+
+---
+
+#### Chat 25: M4 — Table Overhaul 📋 PLANNED
+**Est. time:** ~120 min  
+**Status:** Outline agreed, detail to be discussed before brief
+
+**What gets built:**
+- Full Campaigns column set per wireframe
+- Freeze first column (Campaign Name) on horizontal scroll
+- Sortable columns
+- All/Enabled/Paused filter
+- 10/25/50/100 rows per page
+- Page-specific column sets per page
+
+**Pilot:** Campaigns → rollout all pages
+
+---
+
+### PHASE 2 — Rules + Actions
+
+#### Chat 26: M5 — Rules Section Upgrade 📋 PLANNED
+Design/wireframe to be discussed before brief written.
+
+#### Chat 27: M6 — Recommendations/Actions Feed 📋 PLANNED
+Design/wireframe to be discussed before brief written.
+
+#### Chat 28: M7 — Action Buttons 📋 PLANNED
+Depends on M6 design decisions.
+
+---
+
+### Dashboard 3.0 Wireframe Reference
+- Wireframe provided by Christopher on 2026-02-19
+- Page structure (top to bottom):
+  1. Page title + tabs — top left
+  2. Date picker + 7d/30d/90d — top right ← M1
+  3. Financial Metrics row (always visible) ← M2
+  4. Actions Metrics row (collapsible) ← M2
+  5. Chart with 4 selectable mini-stats above ← M3
+  6. Data table with full column set ← M4
+
+---
+
+**Last Updated:** 2026-02-19 ~10:00 PM  
+**Status:** Dashboard 3.0 Phase 1 in progress 🚧  
+**Next Step:** Chat 22 — M1: Date Picker (brief ready)
