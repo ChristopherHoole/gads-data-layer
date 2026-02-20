@@ -1,10 +1,9 @@
 # PROJECT ROADMAP - Google Ads Data Layer (ACT Dashboard)
 
-**Last Updated:** 2026-02-19 01:00 AM  
-**Current Phase:** Chat 21 (Dashboard UI Overhaul) - 62.5% Complete (5/8) ðŸ”¥  
-**Overall Completion:** 77% (Foundation + Polish + Dashboard 62.5% Done)  
-**Mode:** ðŸ”¥ LEGENDARY - 5 down, 3 to go!
-
+**Last Updated:** 2026-02-20  
+**Current Phase:** Dashboard 3.0 — M2 ✅ COMPLETE | M3 Chart Overhaul next  
+**Overall Completion:** ~84% (Foundation + Polish + Dashboard 3.0 M1+M2 complete)  
+**Mode:** Dashboard 3.0 Phase 1 in progress 🚧
 ---
 
 ## ðŸŽ¯ PROJECT VISION
@@ -350,35 +349,44 @@
 
 ---
 
-## **Chat 22: Email Reporting System** â­ (2-3 hrs)
+## **Chat 22: Dashboard 3.0 M1 — Date Picker** ✅ COMPLETE
 
-**Status:** PLANNED (after Dashboard)  
-**Dependencies:** Needs new dashboard structure
+**Status:** COMPLETE — 2026-02-19  
+**Commits:** a644fdd (code) + 25c7af5 (docs)  
+**Handoff:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\CHAT_22_HANDOFF.md`
 
-**Features:**
-- Daily/weekly email summaries
-- PDF report generation
-- Scheduled delivery
-- Customizable report templates
-- Uses data from new dashboard views
+**Delivered:**
+- Global Flatpickr date range picker (top-right, all 6 pages)
+- Flask session persistence (replaces URL parameters)
+- 7d/30d/90d presets + custom date range
+- `/set-date-range` POST route + `get_date_range_from_session()` in shared.py
+- All 6 routes updated (raw SQL pages + windowed fallback)
+- 19 files changed
 
-**Technology:** SendGrid or AWS SES + ReportLab for PDFs
+**Known minor issues (carry-forward):**
+- SPEND (0d) header on Campaigns custom range (cosmetic)
+- Dashboard Account Health 0/0 on custom range (medium)
 
 ---
 
-## **Chat 23: Smart Alerts & Notifications** â­ (2-3 hrs)
+## **Chat 23: Dashboard 3.0 M2 — Metrics Cards** ✅ COMPLETE
 
-**Status:** PLANNED (after Dashboard)  
-**Dependencies:** Needs new dashboard metrics
+**Status:** COMPLETE — 2026-02-20  
+**Summary:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\CHAT_23M2_DETAILED_SUMMARY.md`  
+**Handoff:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\CHAT_23M2_HANDOFF.md`
 
-**Features:**
-- Slack/email alerts
-- Budget warnings
-- Performance threshold alerts
-- Anomaly detection alerts
-- Uses metrics from new dashboard
-
-**Technology:** Slack webhooks, email notifications
+**Delivered:**
+- Unified Jinja2 macro system (`metrics_section`) across all 6 pages
+- Financial row (8 cards): Cost | Revenue/Conv Value | ROAS | Wasted Spend/blank | Conversions | CPA | Conv Rate | blank
+- Actions row (8 cards, collapsible): Impressions | Clicks | CPC | CTR | Search IS | Top IS | Abs Top IS | Click Share
+- Sparklines (Chart.js inline) on all cards with data available
+- Change indicators vs prev period (or `—` for windowed pages)
+- Session-persisted collapse state per page
+- IS metrics added to DuckDB schema (4 new columns)
+- Synthetic data refreshed to 2026-02-20 (7,300 rows)
+- Ads page: Ad Strength card in Actions row (240/983 format)
+- Shopping page: two independent macro calls (Campaigns tab + Products tab)
+- 14 files modified total
 
 ---
 
@@ -468,28 +476,29 @@
 
 ---
 
-## ðŸŽ¯ NEXT MILESTONES
+## 🎯 NEXT MILESTONES
 
-### **Immediate (Tonight - 5 hours remaining):**
-- ðŸ”¥ Chat 21: Dashboard UI Overhaul (Bootstrap 5) - 50% COMPLETE
-  - âœ… 21a: Bootstrap setup (50 min)
-  - âœ… 21b: Main dashboard (53 min)
-  - âœ… 21c: Campaigns view (100 min)
-  - âœ… 21d: Keywords view (125 min)
-  - ðŸ“‹ 21e: Ad Groups view (70 min) - NEXT
-  - ðŸ“‹ 21f: Ads view (70 min)
-  - ðŸ“‹ 21g: Shopping view (90 min)
-  - ðŸ“‹ 21h: Polish (60 min)
+### **Immediate:**
+- ✅ Chat 21: Dashboard UI Overhaul — COMPLETE (8/8 pages)
+- ✅ Chat 22: M1 Date Picker — COMPLETE
+- ✅ Chat 23: M2 Metrics Cards — COMPLETE (all 6 pages)
+- 🚧 Chat 24: M3 Chart Overhaul — NEXT
+  - Pilot on Campaigns, then rollout to all pages
+  - Discuss with Master Chat before brief
 
-### **Short-term (After Dashboard):**
-- ðŸ“‹ Phase 3: Future-Proofing (10-14 hrs)
-- ðŸ“‹ Chat 22: Email Reports (2-3 hrs)
-- ðŸ“‹ Chat 23: Smart Alerts (2-3 hrs)
+### **Short-term (Dashboard 3.0 remaining):**
+- 📋 Chat 25: M4 Table Overhaul
+- 📋 Chat 26: M5 Rules Section Upgrade
+- 📋 Chat 27: M6 Actions Feed
+- 📋 Chat 28: M7 Action Buttons
 
-### **Medium-term (After Core Features):**
-- ðŸ“‹ Chats 24-28: Enhancements & Marketing
+### **Medium-term (After Dashboard 3.0):**
+- 📋 Phase 3: Future-Proofing (10-14 hrs)
+- 📋 Email Reports
+- 📋 Smart Alerts
 
 ---
+
 
 ## ðŸ“ STRATEGIC DECISIONS
 
@@ -529,6 +538,17 @@
 ---
 
 ## ðŸ“„ CHANGELOG
+
+### **2026-02-20 (Chat 23 — M2 Metrics Cards)**
+
+**Completed:**
+- ✅ M2 Metrics Cards rollout — all 6 pages
+- IS metrics schema added to DuckDB (4 new columns)
+- Synthetic data refreshed to 2026-02-20 (7,300 rows)
+- Jinja2 macro system: Financial + Actions rows, sparklines, collapse state
+- Page-specific variants: Ads (Ad Strength), Shopping (2 independent macros)
+- 14 files modified
+- Git commit pending
 
 ### **2026-02-18/19 (Legendary Session - CONTINUING)** ðŸ”¥
 **Time:** 11:44 AM - 1:00 AM+ (13h 16m elapsed, ~8.5h actual work)

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>M2 Metrics Cards Wireframe</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; padding: 24px; color: #333; }
+  h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; color: #1a1a2e; }
+  .subtitle { font-size: 12px; color: #666; margin-bottom: 24px; }
+  .page-section { background: #fff; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .page-label { font-size: 13px; font-weight: 700; color: #1a73e8; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e8f0fe; padding-bottom: 8px; }
+  .row-label { font-size: 11px; font-weight: 600; color: #444; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.4px; display: flex; align-items: center; gap: 8px; }
+  .badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+  .badge-always { background: #e8f5e9; color: #2e7d32; }
+
+  /* 9-column grid: 4 cards | 1 separator | 4 cards */
+  .cards-row { display: grid; grid-template-columns: repeat(4, 1fr) 14px repeat(4, 1fr); gap: 6px; margin-bottom: 4px; align-items: stretch; }
+  .cards-separator { display: flex; align-items: center; justify-content: center; }
+  .cards-separator::after { content: ''; display: block; width: 2px; height: 100%; background: #e0e0e0; border-radius: 2px; min-height: 62px; }
+
+  /* Group sub-labels */
+  .group-labels { display: grid; grid-template-columns: repeat(4, 1fr) 14px repeat(4, 1fr); gap: 6px; margin-bottom: 4px; }
+  .group-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #aaa; padding-left: 2px; }
+
+  .card { border-radius: 6px; padding: 8px 10px; min-height: 62px; display: flex; flex-direction: column; justify-content: space-between; }
+  .card-financial { background: #f8f9fe; border: 1.5px solid #c5cae9; }
+  .card-actions { background: #fafffe; border: 1.5px solid #b2dfdb; }
+  .card-blank { background: #f5f5f5; border: 1.5px dashed #ddd; }
+  .card-label { font-size: 9.5px; color: #666; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; line-height: 1.2; }
+  .card-value { font-size: 16px; font-weight: 700; color: #1a1a2e; line-height: 1; }
+  .card-change { font-size: 9px; font-weight: 600; }
+  .change-up { color: #2e7d32; }
+  .change-down { color: #c62828; }
+  .card-blank .card-label { color: #bbb; font-style: italic; }
+
+  /* Option A: thin line + pill toggle */
+  .toggle-divider { position: relative; display: flex; align-items: center; justify-content: center; margin: 10px 0 8px 0; cursor: pointer; }
+  .toggle-divider::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: #e0e0e0; }
+  .toggle-pill { position: relative; background: #fff; border: 1.5px solid #dee2e6; border-radius: 20px; padding: 2px 12px; font-size: 10px; color: #999; font-weight: 600; white-space: nowrap; }
+
+  .toggle-note { font-size: 10px; color: #999; font-style: italic; margin-top: 6px; }
+  .legend { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #555; }
+  .legend-swatch { width: 16px; height: 10px; border-radius: 3px; }
+  .swatch-fin { background: #f8f9fe; border: 1.5px solid #c5cae9; }
+  .swatch-act { background: #fafffe; border: 1.5px solid #b2dfdb; }
+  .swatch-blank { background: #f5f5f5; border: 1.5px dashed #ddd; }
+  .mb8 { margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<h1>M2 — Metrics Cards Wireframe</h1>
+<p class="subtitle">Dashboard 3.0 · Financial row (always visible, two groups) + Actions row (collapsible via pill toggle) · All 6 pages · Change % vs previous equivalent period</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch swatch-fin"></div> Financial / Leads Metrics (always visible)</div>
+  <div class="legend-item"><div class="legend-swatch swatch-act"></div> Actions Metrics (collapsible)</div>
+  <div class="legend-item"><div class="legend-swatch swatch-blank"></div> BLANK placeholder</div>
+</div>
+
+<!-- CAMPAIGNS + DASHBOARD -->
+<div class="page-section">
+  <div class="page-label">📊 Campaigns &amp; Dashboard — identical</div>
+  <div class="row-label mb8">Financial Metrics <span class="badge badge-always">Always visible</span></div>
+  <div class="group-labels">
+    <div class="group-label">Financial</div><div class="group-label"></div><div class="group-label"></div><div class="group-label"></div>
+    <div></div>
+    <div class="group-label">Leads</div><div class="group-label"></div><div class="group-label"></div><div class="group-label"></div>
+  </div>
+  <div class="cards-row">
+    <div class="card card-financial"><div class="card-label">Cost</div><div class="card-value">$183k</div><div class="card-change change-down">↓ -10%</div></div>
+    <div class="card card-financial"><div class="card-label">Revenue</div><div class="card-value">$574k</div><div class="card-change change-up">↑ +5%</div></div>
+    <div class="card card-financial"><div class="card-label">ROAS</div><div class="card-value">3.13x</div><div class="card-change change-up">↑ +3%</div></div>
+    <div class="card card-blank"><div class="card-label">— future —</div></div>
+    <div class="cards-separator"></div>
+    <div class="card card-financial"><div class="card-label">Conversions</div><div class="card-value">18,581</div><div class="card-change change-down">↓ -8%</div></div>
+    <div class="card card-financial"><div class="card-label">Cost / Conv</div><div class="card-value">$9.89</div><div class="card-change change-down">↓ -1%</div></div>
+    <div class="card card-financial"><div class="card-label">Conv Rate</div><div class="card-value">8.14%</div><div class="card-change change-up">↑ +2%</div></div>
+    <div class="card card-blank"><div class="card-label">— future —</div></div>
+  </div>
+  <div class="toggle-divider"><div class="toggle-pill">▼ Actions Metrics</div></div>
+  <div class="cards-row">
+    <div class="card card-actions"><div class="card-label">Impressions</div><div class="card-value">7.65M</div><div class="card-change change-down">↓ -10%</div></div>
+    <div class="card card-actions"><div class="card-label">Clicks</div><div class="card-value">228,833</div><div class="card-change change-down">↓ -10%</div></div>
+    <div class="card card-actions"><div class="card-label">Avg CPC</div><div class="card-value">$0.80</div><div class="card-change change-down">↓ -1%</div></div>
+    <div class="card card-actions"><div class="card-label">Avg CTR</div><div class="card-value">2.99%</div><div class="card-change change-down">↓ -0%</div></div>
+    <div class="cards-separator"></div>
+    <div class="card card-actions"><div class="card-label">Search Impr Share</div><div class="card-value">42.1%</div><div class="card-change change-up">↑ +1%</div></div>
+    <div class="card card-actions"><div class="card-label">Search Top IS</div><div class="card-value">31.5%</div><div class="card-change change-down">↓ -2%</div></div>
+    <div class="card card-actions"><div class="card-label">Search Abs Top IS</div><div class="card-value">18.2%</div><div class="card-change change-down">↓ -3%</div></div>
+    <div class="card card-actions"><div class="card-label">Click Share</div><div class="card-value">22.4%</div><div class="card-change change-up">↑ +1%</div></div>
+  </div>
+</div>
+
+<!-- AD GROUPS -->
+<div class="page-section">
+  <div class="page-label">👥 Ad Groups — same as Campaigns</div>
+  <div class="row-label mb8">Financial Metrics <span class="badge badge-always">Always visible</span></div>
+  <div class="group-labels">
+    <div class="group-label">Financial</div><div class="group-label"></div><div class="group-label"></div><div class="group-label"></div>
+    <div></div>
+    <div class="group-label">Leads</div><div class="group-label"></div><div class="group-label"></div><div class="group-label"></div>
+  </div>
+  <div class="cards-row">
+    <div class="card card-financial"><div class="card-label">Cost</div><div class="card-value">$28.3M</div><div class="card-change change-down">↓ -5%</div></div>
+    <div class="card card-financial"><div class="card-label">Revenue</div><div class="card-value">$88.4M</div><div class="card-change change-up">↑ +3%</div></div>
+    <div class="card card-financial"><div class="card-label">ROAS</div><div class="card-value">3.12x</div><div class="card-change change-up">↑ +2%</div></div>
+    <div class="card card-blank"><div class="card-label">— future —</div></div>
+    <div class="cards-separator"></div>
+    <div class="card card-financial"><div class="card-label">Conversions</div><div class="card-value">384,165</div><div class="card-change change-up">↑ +4%</div></div>
+    <div class="card card-financial"><div class="card-label">Cost / Conv</div><div class="card-value">$73.67</div><div class="card-change change-down">↓ -2%</div></div>
+    <div class="card card-financial"><div class="card-label">Conv Rate</div><div class="card-value">4.07%</div><div class="card-change change-up">↑ +1%</div></div>
+    <div class="card card-blank"><div class="card-label">— future —</div></div>
+  </div>
+  <div class="toggle-divider"><div class="toggle-pill">▼ Actions Metrics</div></div>
+  <div class="cards-row">
+    <div class="card card-actions"><div class="card-label">Impressions</div><div class="card-value">234M</div><div class="card-change change-down">↓ -3%</div></div>
+    <div class="card card-actions"><div class="card-label">Clicks</div><div class="card-value">9.44M</div><div class="card-change change-up">↑ +2%</div></div>
+    <div class="card card-actions"><div class="card-label">Avg CPC</div><div class="card-value">$2.74</div><div class="card-change change-down">↓ -1%</div></div>
+    <div class="card card-actions"><div class="card-label">Avg CTR</div><div class="card-value">4.03%</div><div class="card-change change-up">↑ +1%</div></div>
+    <div class="cards-separator"></div>
+    <div class="card card-actions"><div class="card-label">Search Impr Share</div><div class="card-value">38.4%</div><div class="card-change change-up">↑ +2%</div></div>
+    <div class="card card-actions"><div class="card-label">Search Top IS</div><div class="card-value">28.1%</div><div class="card-change change-down">↓ -1%</div></div>
+    <div class="card card-actions"><div class="card-label">Search Abs Top IS</div><div class="card-value">15.6%</div><div class="card-change change-down">↓ -2%</div></div>
+    <div class="card card-actions"><div class="card-label">Click Share</div><div class="card-value">19.3%</div><div class="card-change change-up">↑ +1%</div></div>
+  </div>
+</div>
+
+<!-- KEYWORDS -->
+<div class="page-section">
+  <div class="page-label">🔑 Keywords — Wasted Spend in slot 4</div>
+  <div class="row-label mb8">Financial Metrics <span class="badge badge-always">Always visible</span></div>
+  <div class="group-labels">
+    <div class="group-label">Financial</div><div class="group-label"></div><div class="group-label"></div><div class="group-label"></div>
+    <div></div>
+    <div class="group-label">Leads</div><div class="group-label"></div><div class="group-label"></div><div class="group-label"></div>
+  </div>
+  <div class="cards-row">
+    <div class="card card-financial"><div class="card-label">Cost</div><div class="card-value">$93.4k</div><div class="card-change change-down">↓ -4%</div></div>
+    <div class="card card-financial"><div class="card-label">Revenue</div><div class="card-value">$293k</div><div class="card-change change-up">↑ +6%</div></div>
+    <div class="card card-financial"><div class="card-label">ROAS</div><div class="card-value">3.14x</div><div class="card-change change-up">↑ +2%</div></div>
+    <div class="card card-financial" style="border-color:#ef9a9a; background:#fff5f5;"><div class="card-label">Wasted Spend</div><div class="card-value" style="color:#c62828;">$10.7k</div><div class="card-change change-down">↑ +12%</div></div>
+    <div class="cards-separator"></div>
+    <div class="card card-financial"><div class="card-label">Conversions</div><div class="card-value">98,203</div><div class="card-change change-up">↑ +3%</div></div>
+    <div class="card card-financial"><div class="card-label">Cost / Conv</div><div class="card-value">$9.47</div><div class="card-change change-down">↓ -1%</div></div>
+    <div class="card card-financial"><div class="card-label">Conv Rate</div><div class="card-value">7.21%</div><div class="card-change change-up">↑ +2%</div></div>
+    <div class="card card-blank"><div class="card-label">— future —</div></div>
+  </div>
+  <div class="toggle-divider"><div class="toggle-pill">▼ Actions Metrics</div></div>
+  <div class="cards-row">
+    <div class="card card-actions"><div class="card-label">Impressions</div><div class="card-value">3.3M</div><div class="card-change change-down">↓ -2%</div></div>
+    <div class="card card-actions"><div class="card-label">Clicks</div><div class="card-value">99,421</div><div class="card-change change-up">↑ +1%</div></div>
+    <div class="card card-actions"><div class="card-label">Avg CPC</div><div class="card-value">$0.94</div><div class="card-change change-down">↓ -3%</div></div>
+    <div class="card card-actions"><div class="card-label">Avg CTR</div><div class="card-value">3.01%</div><div class="card-change change-up">↑ +1%</div></div>
+    <div class="cards-separator"></div>
+    <div class="card card-actions"><div class="card-label">Search Impr Share</div><div class="card-value">44.2%</div><div class="card-change change-up">↑ +3%</div></div>
+    <div class="card card-actions"><div class="card-label">Search Top IS</div><div class="card-value">33.1%</div><div class="card-change change-down">↓ -1%</div></div>
+    <div class="card card-actions"><div class="card-label">Search Abs Top IS</div><div class="card-value">19.8%</div><div class="card-change change-down">↓ -2%</div></div>
+    <div class="card card-actions"><div class="card-label">Click Share</div><div class="card-value">24.1%</div><div class="card-change change-up">↑ +1%</div></div>
+  </div>
+</div>
+
+<!-- ADS -->
+<div class="page-section">
+  <div class="page-label">📢 Ads — Ad Strength in Actions slot 5, 3 BLANKs after</div>
+  <div class="row-label mb8">Financial Metrics <span class="badge badge-always">Always visible</span></div>
+  <div class="group-labels">
+    <div class="group-label">Financial</div><div class="group-label"></div><div class="group-label"></div><div class="group-label"></div>
+    <div></div>
+    <div class="group-label">Leads</div><div class="group-label"></div><div class="group-label"></div><div class="group-label"></div>
+  </div>
+  <div class="cards-row">
+    <div class="card card-financial"><div class="card-label">Cost</div><div class="card-value">$295k</div><div class="card-change change-down">↓ -3%</div></div>
+    <div class="card card-financial"><div class="card-label">Revenue</div><div class="card-value">$922k</div><div class="card-change change-up">↑ +4%</div></div>
+    <div class="card card-financial"><div class="card-label">ROAS</div><div class="card-value">3.12x</div><div class="card-change change-up">↑ +2%</div></div>
+    <div class="card card-blank"><div class="card-label">— future —</div></div>
+    <div class="cards-separator"></div>
+    <div class="card card-financial"><div class="card-label">Conversions</div><div class="card-value">4,039</div><div class="card-change change-up">↑ +5%</div></div>
+    <div class="card card-financial"><div class="card-label">Cost / Conv</div><div class="card-value">$73.26</div><div class="card-change change-down">↓ -1%</div></div>
+    <div class="card card-financial"><div class="card-label">Conv Rate</div><div class="card-value">4.09%</div><div class="card-change change-up">↑ +2%</div></div>
+    <div class="card card-blank"><div class="card-label">— future —</div></div>
+  </div>
+  <div class="toggle-divider"><div class="toggle-pill">▼ Actions Metrics</div></div>
+  <div class="cards-row">
+    <div class="card card-actions"><div class="card-label">Impressions</div><div class="card-value">6.1M</div><div class="card-change change-down">↓ -2%</div></div>
+    <div class="card card-actions"><div class="card-label">Clicks</div><div class="card-value">98,762</div><div class="card-change change-up">↑ +1%</div></div>
+    <div class="card card-actions"><div class="card-label">Avg CPC</div><div class="card-value">$2.99</div><div class="card-change change-down">↓ -1%</div></div>
+    <div class="card card-actions"><div class="card-label">Avg CTR</div><div class="card-value">1.62%</div><div class="card-change change-up">↑ +2%</div></div>
+    <div class="cards-separator"></div>
+    <div class="card card-actions" style="border-color:#ffe082; background:#fffde7;"><div class="card-label">Ad Strength</div><div class="card-value" style="color:#f57f17; font-size:13px;">240/983</div><div class="card-change" style="color:#888; font-size:9px;">Good/Excellent</div></div>
+    <div class="card card-blank"><div class="card-label">— future —</div></div>
+    <div class="card card-blank"><div class="card-label">— future —</div></div>
+    <div class="card card-blank"><div class="card-label">— future —</div></div>
+  </div>
+</div>
+
+<!-- SHOPPING -->
+<div class="page-section">
+  <div class="page-label">🛒 Shopping — Conv Value in slot 2, 4 BLANKs in Actions</div>
+  <div class="row-label mb8">Financial Metrics <span class="badge badge-always">Always visible</span></div>
+  <div class="group-labels">
+    <div class="group-label">Financial</div><div class="group-label"></div><div class="group-label"></div><div class="group-label"></div>
+    <div></div>
+    <div class="group-label">Leads</div><div class="group-label"></div><div class="group-label"></div><div class="group-label"></div>
+  </div>
+  <div class="cards-row">
+    <div class="card card-financial"><div class="card-label">Cost</div><div class="card-value">$955</div><div class="card-change change-down">↓ -2%</div></div>
+    <div class="card card-financial"><div class="card-label">Conv Value</div><div class="card-value">$34.8k</div><div class="card-change change-up">↑ +8%</div></div>
+    <div class="card card-financial"><div class="card-label">ROAS</div><div class="card-value">36.4x</div><div class="card-change change-up">↑ +10%</div></div>
+    <div class="card card-blank"><div class="card-label">— future —</div></div>
+    <div class="cards-separator"></div>
+    <div class="card card-financial"><div class="card-label">Conversions</div><div class="card-value">379</div><div class="card-change change-up">↑ +6%</div></div>
+    <div class="card card-financial"><div class="card-label">Cost / Conv</div><div class="card-value">$2.52</div><div class="card-change change-down">↓ -4%</div></div>
+    <div class="card card-financial"><div class="card-label">Conv Rate</div><div class="card-value">13.6%</div><div class="card-change change-up">↑ +3%</div></div>
+    <div class="card card-blank"><div class="card-label">— future —</div></div>
+  </div>
+  <div class="toggle-divider"><div class="toggle-pill">▼ Actions Metrics</div></div>
+  <div class="cards-row">
+    <div class="card card-actions"><div class="card-label">Impressions</div><div class="card-value">231k</div><div class="card-change change-up">↑ +4%</div></div>
+    <div class="card card-actions"><div class="card-label">Clicks</div><div class="card-value">8,068</div><div class="card-change change-up">↑ +3%</div></div>
+    <div class="card card-actions"><div class="card-label">Avg CPC</div><div class="card-value">$0.12</div><div class="card-change change-down">↓ -1%</div></div>
+    <div class="card card-actions"><div class="card-label">Avg CTR</div><div class="card-value">3.49%</div><div class="card-change change-up">↑ +2%</div></div>
+    <div class="cards-separator"></div>
+    <div class="card card-blank"><div class="card-label">— future —</div></div>
+    <div class="card card-blank"><div class="card-label">— future —</div></div>
+    <div class="card card-blank"><div class="card-label">— future —</div></div>
+    <div class="card card-blank"><div class="card-label">— future —</div></div>
+  </div>
+</div>
+
+<!-- COLLAPSED STATE -->
+<div class="page-section">
+  <div class="page-label">🔽 Collapsed State — Actions row hidden, pill shows ▶ expand</div>
+  <div class="row-label mb8">Financial Metrics <span class="badge badge-always">Always visible</span></div>
+  <div class="group-labels">
+    <div class="group-label">Financial</div><div class="group-label"></div><div class="group-label"></div><div class="group-label"></div>
+    <div></div>
+    <div class="group-label">Leads</div><div class="group-label"></div><div class="group-label"></div><div class="group-label"></div>
+  </div>
+  <div class="cards-row">
+    <div class="card card-financial"><div class="card-label">Cost</div><div class="card-value">$183k</div><div class="card-change change-down">↓ -10%</div></div>
+    <div class="card card-financial"><div class="card-label">Revenue</div><div class="card-value">$574k</div><div class="card-change change-up">↑ +5%</div></div>
+    <div class="card card-financial"><div class="card-label">ROAS</div><div class="card-value">3.13x</div><div class="card-change change-up">↑ +3%</div></div>
+    <div class="card card-blank"><div class="card-label">— future —</div></div>
+    <div class="cards-separator"></div>
+    <div class="card card-financial"><div class="card-label">Conversions</div><div class="card-value">18,581</div><div class="card-change change-down">↓ -8%</div></div>
+    <div class="card card-financial"><div class="card-label">Cost / Conv</div><div class="card-value">$9.89</div><div class="card-change change-down">↓ -1%</div></div>
+    <div class="card card-financial"><div class="card-label">Conv Rate</div><div class="card-value">8.14%</div><div class="card-change change-up">↑ +2%</div></div>
+    <div class="card card-blank"><div class="card-label">— future —</div></div>
+  </div>
+  <div class="toggle-divider"><div class="toggle-pill">▶ Actions Metrics</div></div>
+  <div class="toggle-note">Actions row hidden. Chart area follows immediately after pill. State persists in session across all page navigations.</div>
+</div>
+
+</body>
+</html>

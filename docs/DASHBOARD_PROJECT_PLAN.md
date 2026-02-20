@@ -5,9 +5,9 @@
 **Framework:** Bootstrap 5  
 **Icons:** Bootstrap Icons  
 **Chat 21 Status:** ✅ COMPLETE - 8/8 (100%) 🏆  
-**Dashboard 3.0 Status:** 🚧 IN PROGRESS — M1 ✅ COMPLETE, Chat 23 (M2) next  
+**Dashboard 3.0 Status:** 🚧 IN PROGRESS — M1 ✅ COMPLETE, M2 ✅ COMPLETE, M3 next  
 **Started:** February 18, 2026  
-**Updated:** 2026-02-19 ~10:00 PM  
+**Updated:** 2026-02-20  
 **Mode:** Dashboard 3.0 Phase 1 underway  
 **Location:** Will be moved to `/docs/DASHBOARD_PROJECT_PLAN.md`
 
@@ -1333,19 +1333,24 @@ ORDER BY cost DESC
 
 ---
 
-#### Chat 23: M2 — Metrics Cards 📋 NEXT
-**Est. time:** ~90 min  
-**Status:** Outline agreed — discuss detail with Master Chat before brief written
+#### Chat 23: M2 — Metrics Cards ✅ COMPLETE
+**Status:** COMPLETE — 2026-02-20  
+**Summary:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\CHAT_23M2_DETAILED_SUMMARY.md`  
+**Handoff:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\CHAT_23M2_HANDOFF.md`
 
-**What gets built:**
-- Financial Metrics row (always visible): Cost, Revenue, ROAS, BLANK, Conversions, Cost per Conv, Conv Rate, BLANK
-- Actions Metrics row (collapsible): Impressions, Clicks, Avg CPC, Avg CTR, Search Impr Share, Search Top IS, Search Abs Top IS, Click Share
-- Collapse/expand toggle on Actions row — state saved in session
-- Jinja2 macro: `metric_card(label, value, change_pct, format_type)`
-- BLANK slots = placeholders for future metrics
-- Each page passes page-specific data into same macro
-
-**Pilot:** Campaigns → rollout all pages
+**Delivered:**
+- Financial row (8): Cost | Revenue/Conv Value | ROAS | Wasted Spend/blank | Conversions | CPA | Conv Rate | blank
+- Actions row (8, collapsible): Impressions | Clicks | CPC | CTR | Search IS | Top IS | Abs Top IS | Click Share
+- Sparklines (Chart.js inline) on all cards with data
+- Change indicators vs prev period (or — for windowed pages)
+- Session-persisted collapse state per page ID
+- IS metrics added to DuckDB (4 new columns)
+- Synthetic data refreshed to 2026-02-20 (7,300 rows)
+- Ads: Ad Strength in Actions row (240/983 format, sub_label for poor count)
+- Shopping: two independent macro calls (shopping_campaigns + shopping_products)
+- Invert colour logic: Cost, Cost/Conv, Wasted Spend ↑ = red
+- All 6 pages complete + visually confirmed
+- 14 files modified total (both sessions combined)
 
 ---
 
@@ -1407,4 +1412,4 @@ Depends on M6 design decisions.
 
 **Last Updated:** 2026-02-19 ~10:00 PM  
 **Status:** Dashboard 3.0 Phase 1 in progress 🚧  
-**Next Step:** Chat 23 — M2: Metrics Cards (discuss with Master Chat first)
+**Next Step:** Chat 24 — M3: Chart Overhaul (discuss with Master Chat first)
