@@ -8,6 +8,7 @@
   <!-- Page Header -->
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="mb-0">Ads</h2>
+    {% include 'components/date_filter.html' %}
   </div>
 
   <!-- Error Alert -->
@@ -143,25 +144,6 @@
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div class="d-flex gap-2">
 
-          <!-- Date Filter -->
-          <div class="dropdown">
-            <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
-                    type="button" data-bs-toggle="dropdown">
-              <i class="bi bi-calendar3"></i>
-              {% if days == 7 %}Last 7 Days
-              {% elif days == 30 %}Last 30 Days
-              {% else %}Last 90 Days{% endif %}
-            </button>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item {% if days == 7 %}active{% endif %}"
-                     href="/ads?days=7&per_page={{ per_page }}&status={{ status }}&page=1">Last 7 Days</a></li>
-              <li><a class="dropdown-item {% if days == 30 %}active{% endif %}"
-                     href="/ads?days=30&per_page={{ per_page }}&status={{ status }}&page=1">Last 30 Days</a></li>
-              <li><a class="dropdown-item {% if days == 90 %}active{% endif %}"
-                     href="/ads?days=90&per_page={{ per_page }}&status={{ status }}&page=1">Last 90 Days</a></li>
-            </ul>
-          </div>
-
           <!-- Status Filter -->
           <div class="dropdown">
             <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
@@ -173,11 +155,11 @@
             </button>
             <ul class="dropdown-menu">
               <li><a class="dropdown-item {% if status == 'all' %}active{% endif %}"
-                     href="/ads?days={{ days }}&per_page={{ per_page }}&status=all&page=1">All</a></li>
+                     href="/ads?per_page={{ per_page }}&status=all&page=1">All</a></li>
               <li><a class="dropdown-item {% if status == 'enabled' %}active{% endif %}"
-                     href="/ads?days={{ days }}&per_page={{ per_page }}&status=enabled&page=1">Enabled</a></li>
+                     href="/ads?per_page={{ per_page }}&status=enabled&page=1">Enabled</a></li>
               <li><a class="dropdown-item {% if status == 'paused' %}active{% endif %}"
-                     href="/ads?days={{ days }}&per_page={{ per_page }}&status=paused&page=1">Paused</a></li>
+                     href="/ads?per_page={{ per_page }}&status=paused&page=1">Paused</a></li>
             </ul>
           </div>
 
@@ -189,13 +171,13 @@
             </button>
             <ul class="dropdown-menu">
               <li><a class="dropdown-item {% if per_page == 10 %}active{% endif %}"
-                     href="/ads?days={{ days }}&per_page=10&status={{ status }}&page=1">10</a></li>
+                     href="/ads?per_page=10&status={{ status }}&page=1">10</a></li>
               <li><a class="dropdown-item {% if per_page == 25 %}active{% endif %}"
-                     href="/ads?days={{ days }}&per_page=25&status={{ status }}&page=1">25</a></li>
+                     href="/ads?per_page=25&status={{ status }}&page=1">25</a></li>
               <li><a class="dropdown-item {% if per_page == 50 %}active{% endif %}"
-                     href="/ads?days={{ days }}&per_page=50&status={{ status }}&page=1">50</a></li>
+                     href="/ads?per_page=50&status={{ status }}&page=1">50</a></li>
               <li><a class="dropdown-item {% if per_page == 100 %}active{% endif %}"
-                     href="/ads?days={{ days }}&per_page=100&status={{ status }}&page=1">100</a></li>
+                     href="/ads?per_page=100&status={{ status }}&page=1">100</a></li>
             </ul>
           </div>
 
@@ -465,7 +447,7 @@
               <ul class="pagination mb-0">
                 <li class="page-item {% if page <= 1 %}disabled{% endif %}">
                   <a class="page-link"
-                     href="/ads?days={{ days }}&page={{ page - 1 }}&per_page={{ per_page }}&status={{ status }}">
+                     href="/ads?page={{ page - 1 }}&per_page={{ per_page }}&status={{ status }}">
                     <i class="bi bi-chevron-left"></i> Previous
                   </a>
                 </li>
@@ -473,7 +455,7 @@
                   {% for p in range(1, total_pages + 1) %}
                     <li class="page-item {% if p == page %}active{% endif %}">
                       <a class="page-link"
-                         href="/ads?days={{ days }}&page={{ p }}&per_page={{ per_page }}&status={{ status }}">
+                         href="/ads?page={{ p }}&per_page={{ per_page }}&status={{ status }}">
                         {{ p }}
                       </a>
                     </li>
@@ -485,7 +467,7 @@
                 {% endif %}
                 <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
                   <a class="page-link"
-                     href="/ads?days={{ days }}&page={{ page + 1 }}&per_page={{ per_page }}&status={{ status }}">
+                     href="/ads?page={{ page + 1 }}&per_page={{ per_page }}&status={{ status }}">
                     Next <i class="bi bi-chevron-right"></i>
                   </a>
                 </li>
@@ -501,7 +483,7 @@
           <i class="bi bi-info-circle"></i>
           No ads found for the selected filters.
           {% if status != 'all' %}
-            <a href="/ads?days={{ days }}&per_page={{ per_page }}&status=all"
+            <a href="/ads?per_page={{ per_page }}&status=all"
                class="alert-link">Clear status filter</a>
           {% endif %}
         </div>

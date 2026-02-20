@@ -10,18 +10,7 @@
     <h2 class="mb-0">
       <i class="bi bi-cart3 text-primary"></i> Shopping
     </h2>
-  </div>
-
-  <!-- Global Date Filter — applies to all tabs -->
-  <div class="d-flex align-items-center mb-3">
-    <div class="btn-group btn-group-sm" role="group">
-      <a href="/shopping?days=7&page=1&per_page={{ per_page }}&status={{ status }}&tab={{ active_tab }}"
-         class="btn {% if days == 7 %}btn-primary{% else %}btn-outline-secondary{% endif %}">Last 7 days</a>
-      <a href="/shopping?days=30&page=1&per_page={{ per_page }}&status={{ status }}&tab={{ active_tab }}"
-         class="btn {% if days == 30 %}btn-primary{% else %}btn-outline-secondary{% endif %}">Last 30 days</a>
-      <a href="/shopping?days=90&page=1&per_page={{ per_page }}&status={{ status }}&tab={{ active_tab }}"
-         class="btn {% if days == 90 %}btn-primary{% else %}btn-outline-secondary{% endif %}">Last 90 days</a>
-    </div>
+    {% include 'components/date_filter.html' %}
   </div>
 
   <!-- Error Alert -->
@@ -157,11 +146,11 @@
             <!-- Status Filter -->
             <div class="col-auto">
               <div class="btn-group btn-group-sm" role="group">
-                <a href="/shopping?days={{ days }}&page=1&per_page={{ per_page }}&status=all&tab=campaigns"
+                <a href="/shopping?page=1&per_page={{ per_page }}&status=all&tab=campaigns"
                    class="btn {% if status == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}">All</a>
-                <a href="/shopping?days={{ days }}&page=1&per_page={{ per_page }}&status=enabled&tab=campaigns"
+                <a href="/shopping?page=1&per_page={{ per_page }}&status=enabled&tab=campaigns"
                    class="btn {% if status == 'enabled' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Enabled</a>
-                <a href="/shopping?days={{ days }}&page=1&per_page={{ per_page }}&status=paused&tab=campaigns"
+                <a href="/shopping?page=1&per_page={{ per_page }}&status=paused&tab=campaigns"
                    class="btn {% if status == 'paused' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Paused</a>
               </div>
             </div>
@@ -169,13 +158,13 @@
             <!-- Per-page -->
             <div class="col-auto ms-auto">
               <div class="btn-group btn-group-sm" role="group">
-                <a href="/shopping?days={{ days }}&page=1&per_page=10&status={{ status }}&tab=campaigns"
+                <a href="/shopping?page=1&per_page=10&status={{ status }}&tab=campaigns"
                    class="btn {% if per_page == 10 %}btn-primary{% else %}btn-outline-secondary{% endif %}">10</a>
-                <a href="/shopping?days={{ days }}&page=1&per_page=25&status={{ status }}&tab=campaigns"
+                <a href="/shopping?page=1&per_page=25&status={{ status }}&tab=campaigns"
                    class="btn {% if per_page == 25 %}btn-primary{% else %}btn-outline-secondary{% endif %}">25</a>
-                <a href="/shopping?days={{ days }}&page=1&per_page=50&status={{ status }}&tab=campaigns"
+                <a href="/shopping?page=1&per_page=50&status={{ status }}&tab=campaigns"
                    class="btn {% if per_page == 50 %}btn-primary{% else %}btn-outline-secondary{% endif %}">50</a>
-                <a href="/shopping?days={{ days }}&page=1&per_page=100&status={{ status }}&tab=campaigns"
+                <a href="/shopping?page=1&per_page=100&status={{ status }}&tab=campaigns"
                    class="btn {% if per_page == 100 %}btn-primary{% else %}btn-outline-secondary{% endif %}">100</a>
               </div>
             </div>
@@ -293,7 +282,7 @@
                 <ul class="pagination pagination-sm justify-content-end mb-0">
                   {% if page > 1 %}
                   <li class="page-item">
-                    <a class="page-link" href="/shopping?days={{ days }}&page={{ page - 1 }}&per_page={{ per_page }}&status={{ status }}&tab=campaigns">Previous</a>
+                    <a class="page-link" href="/shopping?page={{ page - 1 }}&per_page={{ per_page }}&status={{ status }}&tab=campaigns">Previous</a>
                   </li>
                   {% else %}
                   <li class="page-item disabled"><span class="page-link">Previous</span></li>
@@ -304,7 +293,7 @@
                       <li class="page-item active"><span class="page-link">{{ p }}</span></li>
                     {% elif p == 1 or p == total_pages_campaigns or (p >= page - 2 and p <= page + 2) %}
                       <li class="page-item">
-                        <a class="page-link" href="/shopping?days={{ days }}&page={{ p }}&per_page={{ per_page }}&status={{ status }}&tab=campaigns">{{ p }}</a>
+                        <a class="page-link" href="/shopping?page={{ p }}&per_page={{ per_page }}&status={{ status }}&tab=campaigns">{{ p }}</a>
                       </li>
                     {% elif p == page - 3 or p == page + 3 %}
                       <li class="page-item disabled"><span class="page-link">…</span></li>
@@ -313,7 +302,7 @@
 
                   {% if page < total_pages_campaigns %}
                   <li class="page-item">
-                    <a class="page-link" href="/shopping?days={{ days }}&page={{ page + 1 }}&per_page={{ per_page }}&status={{ status }}&tab=campaigns">Next</a>
+                    <a class="page-link" href="/shopping?page={{ page + 1 }}&per_page={{ per_page }}&status={{ status }}&tab=campaigns">Next</a>
                   </li>
                   {% else %}
                   <li class="page-item disabled"><span class="page-link">Next</span></li>
@@ -448,37 +437,37 @@
 
             <div class="col-auto">
               <div class="btn-group btn-group-sm" role="group">
-                <a href="/shopping?days=7&page=1&per_page={{ per_page }}&availability={{ availability }}&tab=products"
+                <a href="/shopping?page=1&per_page={{ per_page }}&availability={{ availability }}&tab=products"
                    class="btn {% if days == 7 %}btn-primary{% else %}btn-outline-secondary{% endif %}">7d</a>
-                <a href="/shopping?days=30&page=1&per_page={{ per_page }}&availability={{ availability }}&tab=products"
+                <a href="/shopping?page=1&per_page={{ per_page }}&availability={{ availability }}&tab=products"
                    class="btn {% if days == 30 %}btn-primary{% else %}btn-outline-secondary{% endif %}">30d</a>
-                <a href="/shopping?days=90&page=1&per_page={{ per_page }}&availability={{ availability }}&tab=products"
+                <a href="/shopping?page=1&per_page={{ per_page }}&availability={{ availability }}&tab=products"
                    class="btn {% if days == 90 %}btn-primary{% else %}btn-outline-secondary{% endif %}">90d</a>
               </div>
             </div>
 
             <div class="col-auto">
               <div class="btn-group btn-group-sm" role="group">
-                <a href="/shopping?days={{ days }}&page=1&per_page={{ per_page }}&availability=all&tab=products"
+                <a href="/shopping?page=1&per_page={{ per_page }}&availability=all&tab=products"
                    class="btn {% if availability == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}">All</a>
-                <a href="/shopping?days={{ days }}&page=1&per_page={{ per_page }}&availability=in_stock&tab=products"
+                <a href="/shopping?page=1&per_page={{ per_page }}&availability=in_stock&tab=products"
                    class="btn {% if availability == 'in_stock' %}btn-primary{% else %}btn-outline-secondary{% endif %}">In Stock</a>
-                <a href="/shopping?days={{ days }}&page=1&per_page={{ per_page }}&availability=out_of_stock&tab=products"
+                <a href="/shopping?page=1&per_page={{ per_page }}&availability=out_of_stock&tab=products"
                    class="btn {% if availability == 'out_of_stock' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Out of Stock</a>
-                <a href="/shopping?days={{ days }}&page=1&per_page={{ per_page }}&availability=preorder&tab=products"
+                <a href="/shopping?page=1&per_page={{ per_page }}&availability=preorder&tab=products"
                    class="btn {% if availability == 'preorder' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Preorder</a>
               </div>
             </div>
 
             <div class="col-auto ms-auto">
               <div class="btn-group btn-group-sm" role="group">
-                <a href="/shopping?days={{ days }}&page=1&per_page=10&availability={{ availability }}&tab=products"
+                <a href="/shopping?page=1&per_page=10&availability={{ availability }}&tab=products"
                    class="btn {% if per_page == 10 %}btn-primary{% else %}btn-outline-secondary{% endif %}">10</a>
-                <a href="/shopping?days={{ days }}&page=1&per_page=25&availability={{ availability }}&tab=products"
+                <a href="/shopping?page=1&per_page=25&availability={{ availability }}&tab=products"
                    class="btn {% if per_page == 25 %}btn-primary{% else %}btn-outline-secondary{% endif %}">25</a>
-                <a href="/shopping?days={{ days }}&page=1&per_page=50&availability={{ availability }}&tab=products"
+                <a href="/shopping?page=1&per_page=50&availability={{ availability }}&tab=products"
                    class="btn {% if per_page == 50 %}btn-primary{% else %}btn-outline-secondary{% endif %}">50</a>
-                <a href="/shopping?days={{ days }}&page=1&per_page=100&availability={{ availability }}&tab=products"
+                <a href="/shopping?page=1&per_page=100&availability={{ availability }}&tab=products"
                    class="btn {% if per_page == 100 %}btn-primary{% else %}btn-outline-secondary{% endif %}">100</a>
               </div>
             </div>
@@ -610,7 +599,7 @@
                 <ul class="pagination pagination-sm justify-content-end mb-0">
                   {% if page > 1 %}
                   <li class="page-item">
-                    <a class="page-link" href="/shopping?days={{ days }}&page={{ page - 1 }}&per_page={{ per_page }}&availability={{ availability }}&tab=products">Previous</a>
+                    <a class="page-link" href="/shopping?page={{ page - 1 }}&per_page={{ per_page }}&availability={{ availability }}&tab=products">Previous</a>
                   </li>
                   {% else %}
                   <li class="page-item disabled"><span class="page-link">Previous</span></li>
@@ -621,7 +610,7 @@
                       <li class="page-item active"><span class="page-link">{{ p }}</span></li>
                     {% elif p == 1 or p == total_pages_products or (p >= page - 2 and p <= page + 2) %}
                       <li class="page-item">
-                        <a class="page-link" href="/shopping?days={{ days }}&page={{ p }}&per_page={{ per_page }}&availability={{ availability }}&tab=products">{{ p }}</a>
+                        <a class="page-link" href="/shopping?page={{ p }}&per_page={{ per_page }}&availability={{ availability }}&tab=products">{{ p }}</a>
                       </li>
                     {% elif p == page - 3 or p == page + 3 %}
                       <li class="page-item disabled"><span class="page-link">…</span></li>
@@ -630,7 +619,7 @@
 
                   {% if page < total_pages_products %}
                   <li class="page-item">
-                    <a class="page-link" href="/shopping?days={{ days }}&page={{ page + 1 }}&per_page={{ per_page }}&availability={{ availability }}&tab=products">Next</a>
+                    <a class="page-link" href="/shopping?page={{ page + 1 }}&per_page={{ per_page }}&availability={{ availability }}&tab=products">Next</a>
                   </li>
                   {% else %}
                   <li class="page-item disabled"><span class="page-link">Next</span></li>

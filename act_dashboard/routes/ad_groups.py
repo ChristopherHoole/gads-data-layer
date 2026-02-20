@@ -6,7 +6,7 @@ Chat 21e: New ad groups page with Bootstrap 5 and rule visibility.
 
 from flask import Blueprint, render_template, request
 from act_dashboard.auth import login_required
-from act_dashboard.routes.shared import get_page_context, get_db_connection
+from act_dashboard.routes.shared import get_page_context, get_db_connection, get_date_range_from_session
 from act_dashboard.routes.rule_helpers import get_rules_for_page, count_rules_by_category
 from datetime import date, timedelta
 from typing import List, Dict, Any, Tuple
@@ -15,23 +15,35 @@ import duckdb
 bp = Blueprint('ad_groups', __name__)
 
 
-def load_ad_group_data(conn: duckdb.DuckDBPyConnection, customer_id: str, days: int, status: str) -> List[Dict[str, Any]]:
+def load_ad_group_data(
+    conn: duckdb.DuckDBPyConnection,
+    customer_id: str,
+    days: int = 30,
+    status: str = 'all',
+    date_from: str = None,
+    date_to: str = None,
+) -> List[Dict[str, Any]]:
     """
-    Load ad group data from analytics.ad_group_daily.
-    
+    Load ad group data from ro.analytics.ad_group_daily.
+
     Args:
         conn: Database connection
         customer_id: Customer ID
-        days: Number of days to look back (7/30/90)
+        days: Number of days to look back (7/30/90) — used when date_from/date_to are None
         status: Status filter ('all', 'active', 'paused')
-        
+        date_from: Start date string (YYYY-MM-DD) for custom date range
+        date_to: End date string (YYYY-MM-DD) for custom date range
+
     Returns:
         List of ad group dictionaries with aggregated metrics
     """
-    # Validate days parameter
-    if days not in [7, 30, 90]:
-        days = 7
-    
+    if date_from and date_to:
+        date_filter = f"AND snapshot_date >= '{date_from}' AND snapshot_date <= '{date_to}'"
+    else:
+        if days not in [7, 30, 90]:
+            days = 30
+        date_filter = f"AND snapshot_date >= CURRENT_DATE - INTERVAL '{days} days'"
+
     query = f"""
         SELECT 
             ad_group_id,
@@ -54,7 +66,7 @@ def load_ad_group_data(conn: duckdb.DuckDBPyConnection, customer_id: str, days: 
             COUNT(DISTINCT snapshot_date) as days_in_period
         FROM ro.analytics.ad_group_daily
         WHERE customer_id = ?
-          AND snapshot_date >= CURRENT_DATE - INTERVAL '{days} days'
+          {date_filter}
         GROUP BY ad_group_id, ad_group_name, ad_group_status, 
                  campaign_id, campaign_name, cpc_bid_micros, target_cpa_micros
         ORDER BY spend DESC
@@ -205,27 +217,30 @@ def ad_groups():
     # Get common page context
     config, clients, current_client_path = get_page_context()
     
-    # Get URL parameters
-    days = request.args.get('days', 7, type=int)
+    # Get date range from session (default 30d).
+    active_days, date_from, date_to = get_date_range_from_session()
+    if active_days == 30 and date_from is None and 'days' in request.args:
+        url_days = request.args.get('days', 30, type=int)
+        if url_days in [7, 90]:
+            active_days = url_days
+
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 25, type=int)
     status = request.args.get('status', 'all', type=str)
-    
+
     # Validate parameters
-    if days not in [7, 30, 90]:
-        days = 7
     if per_page not in [10, 25, 50, 100]:
         per_page = 25
     if page < 1:
         page = 1
     if status not in ['all', 'active', 'paused']:
         status = 'all'
-    
+
     # Get database connection
     conn = get_db_connection(config)
-    
+
     # Load ad group data
-    all_ad_groups = load_ad_group_data(conn, config.customer_id, days, status)
+    all_ad_groups = load_ad_group_data(conn, config.customer_id, active_days, status, date_from, date_to)
     
     conn.close()
     
@@ -256,8 +271,12 @@ def ad_groups():
         page=page,
         per_page=per_page,
         total_pages=total_pages,
+        # Date filter
+        days=active_days,
+        active_days=active_days,
+        date_from=date_from,
+        date_to=date_to,
         # Filters
-        days=days,
         status=status,
         # Rules
         rules=rules,

@@ -9,6 +9,7 @@ from act_dashboard.auth import login_required
 from act_dashboard.routes.shared import (
     get_page_context,
     get_db_connection,
+    get_date_range_from_session,
     build_autopilot_config,
     recommendation_to_dict,
     cache_recommendations
@@ -325,15 +326,24 @@ def keywords():
     
     Chat 21d: Complete redesign with search terms integration and rule visibility
     """
-    # Get URL parameters
-    days = request.args.get('days', default=7, type=int)
+    # Get date range from session.
+    # Keywords uses pre-aggregated windowed columns (_w7/_w30).
+    # Custom date ranges are not supported by the schema — fall back to w30.
+    active_days, date_from, date_to = get_date_range_from_session()
+    if date_from and date_to:
+        # Custom range: use 30d window as closest approximation
+        days = 30
+        print("[Keywords] Custom date range selected — using w30 windowed columns as approximation")
+    elif active_days in [7, 30, 90]:
+        days = active_days
+    else:
+        days = 30
+
     page = request.args.get('page', default=1, type=int)
     per_page = request.args.get('per_page', default=25, type=int)
     match_type = request.args.get('match_type', default='all', type=str).lower()
-    
+
     # Validate parameters
-    if days not in [7, 30, 90]:
-        days = 7
     if page < 1:
         page = 1
     if per_page not in [10, 25, 50, 100]:
@@ -542,6 +552,9 @@ def keywords():
         current_client_config=current_client_path,
         # Filter parameters
         days=days,
+        active_days=active_days,
+        date_from=date_from,
+        date_to=date_to,
         page=page,
         per_page=per_page,
         match_type=match_type,

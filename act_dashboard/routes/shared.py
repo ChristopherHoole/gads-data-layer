@@ -2,11 +2,12 @@
 Shared helper functions used across dashboard routes.
 """
 
-from flask import session, current_app
+from flask import session, current_app, request, jsonify, Blueprint
 from act_dashboard.config import DashboardConfig
 from google.ads.googleads.client import GoogleAdsClient
 from pathlib import Path
 import duckdb
+import re
 from typing import Tuple, List, Dict, Any
 
 
@@ -189,3 +190,78 @@ def cache_recommendations(page_name: str, recommendations: List[Dict[str, Any]])
         recommendations: List of recommendation dictionaries
     """
     current_app.config['RECOMMENDATIONS_CACHE'][page_name] = recommendations
+
+
+# ==================== Chat 22: Date Range Session Helpers ====================
+
+_DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+
+
+def get_date_range_from_session() -> Tuple[int, any, any]:
+    """
+    Returns (days, date_from, date_to) tuple from Flask session.
+
+    days      = 7 / 30 / 90 for preset ranges, 0 for custom date range.
+    date_from = None for presets, ISO date string (YYYY-MM-DD) for custom.
+    date_to   = None for presets, ISO date string (YYYY-MM-DD) for custom.
+
+    Default: (30, None, None) if nothing stored in session.
+    """
+    dr = session.get('date_range')
+    if not dr:
+        return (30, None, None)
+
+    range_type = dr.get('type', '30d')
+    if range_type == 'custom':
+        return (0, dr.get('date_from'), dr.get('date_to'))
+
+    days = dr.get('days', 30)
+    if days not in [7, 30, 90]:
+        days = 30
+    return (days, None, None)
+
+
+# Blueprint for shared utility routes
+bp = Blueprint('shared', __name__)
+
+
+@bp.route('/set-date-range', methods=['POST'])
+def set_date_range():
+    """
+    POST /set-date-range
+    Body JSON: { range_type: '7'|'30'|'90'|'custom', date_from?, date_to? }
+    Stores selection in Flask session.
+    Returns JSON: { success: true }
+    """
+    data = request.get_json(silent=True) or request.form
+
+    range_type = str(data.get('range_type', '')).strip()
+
+    if range_type in ('7', '30', '90'):
+        session['date_range'] = {
+            'type': f'{range_type}d',
+            'days': int(range_type),
+            'date_from': None,
+            'date_to': None,
+        }
+        return jsonify({'success': True, 'days': int(range_type)})
+
+    if range_type == 'custom':
+        date_from = str(data.get('date_from', '')).strip()
+        date_to   = str(data.get('date_to',   '')).strip()
+
+        if not _DATE_RE.match(date_from) or not _DATE_RE.match(date_to):
+            return jsonify({'success': False, 'error': 'Invalid date format — expected YYYY-MM-DD'}), 400
+
+        if date_from > date_to:
+            return jsonify({'success': False, 'error': 'date_from must be on or before date_to'}), 400
+
+        session['date_range'] = {
+            'type': 'custom',
+            'days': 0,
+            'date_from': date_from,
+            'date_to': date_to,
+        }
+        return jsonify({'success': True, 'days': 0, 'date_from': date_from, 'date_to': date_to})
+
+    return jsonify({'success': False, 'error': f'Invalid range_type: {range_type!r}'}), 400

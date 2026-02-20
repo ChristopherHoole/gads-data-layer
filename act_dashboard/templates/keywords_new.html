@@ -3,8 +3,9 @@
 {% block content %}
 <div class="container-fluid">
   <!-- Page Header -->
-  <div class="mb-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">Keywords</h1>
+    {% include 'components/date_filter.html' %}
   </div>
   
   <!-- Tabs: Keywords | Rules -->
@@ -113,23 +114,7 @@
         </div>
       </div>
       
-      <!-- Filters Bar — below metrics, matching Campaigns page pattern -->
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <div class="btn-group" role="group">
-          <a href="/keywords?days=7&match_type={{ match_type }}"
-             class="btn btn-sm {% if days == 7 %}btn-primary{% else %}btn-outline-primary{% endif %}">
-            Last 7 days
-          </a>
-          <a href="/keywords?days=30&match_type={{ match_type }}"
-             class="btn btn-sm {% if days == 30 %}btn-primary{% else %}btn-outline-primary{% endif %}">
-            Last 30 days
-          </a>
-          <a href="/keywords?days=90&match_type={{ match_type }}"
-             class="btn btn-sm {% if days == 90 %}btn-primary{% else %}btn-outline-primary{% endif %}">
-            Last 90 days
-          </a>
-        </div>
-      </div>
+
       
       <!-- Cards Row (QS Distribution, Low Data, Wasted Spend) -->
       <div class="row g-3 mb-3">
@@ -219,19 +204,19 @@
       <!-- Match Type Filter & Bulk Actions -->
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div class="btn-group" role="group">
-          <a href="/keywords?days={{ days }}&page={{ page }}&per_page={{ per_page }}&match_type=all" 
+          <a href="/keywords?page={{ page }}&per_page={{ per_page }}&match_type=all" 
              class="btn btn-sm {% if match_type == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">
             All
           </a>
-          <a href="/keywords?days={{ days }}&page={{ page }}&per_page={{ per_page }}&match_type=exact" 
+          <a href="/keywords?page={{ page }}&per_page={{ per_page }}&match_type=exact" 
              class="btn btn-sm {% if match_type == 'exact' %}btn-success{% else %}btn-outline-success{% endif %}">
             Exact
           </a>
-          <a href="/keywords?days={{ days }}&page={{ page }}&per_page={{ per_page }}&match_type=phrase" 
+          <a href="/keywords?page={{ page }}&per_page={{ per_page }}&match_type=phrase" 
              class="btn btn-sm {% if match_type == 'phrase' %}btn-primary{% else %}btn-outline-primary{% endif %}">
             Phrase
           </a>
-          <a href="/keywords?days={{ days }}&page={{ page }}&per_page={{ per_page }}&match_type=broad" 
+          <a href="/keywords?page={{ page }}&per_page={{ per_page }}&match_type=broad" 
              class="btn btn-sm {% if match_type == 'broad' %}btn-warning{% else %}btn-outline-warning{% endif %}">
             Broad
           </a>
@@ -391,13 +376,13 @@
           </div>
           
           <div class="btn-group btn-group-sm" role="group">
-            <a href="/keywords?days={{ days }}&page={{ page }}&per_page=10&match_type={{ match_type }}" 
+            <a href="/keywords?page={{ page }}&per_page=10&match_type={{ match_type }}" 
                class="btn {% if per_page == 10 %}btn-primary{% else %}btn-outline-secondary{% endif %}">10</a>
-            <a href="/keywords?days={{ days }}&page={{ page }}&per_page=25&match_type={{ match_type }}" 
+            <a href="/keywords?page={{ page }}&per_page=25&match_type={{ match_type }}" 
                class="btn {% if per_page == 25 %}btn-primary{% else %}btn-outline-secondary{% endif %}">25</a>
-            <a href="/keywords?days={{ days }}&page={{ page }}&per_page=50&match_type={{ match_type }}" 
+            <a href="/keywords?page={{ page }}&per_page=50&match_type={{ match_type }}" 
                class="btn {% if per_page == 50 %}btn-primary{% else %}btn-outline-secondary{% endif %}">50</a>
-            <a href="/keywords?days={{ days }}&page={{ page }}&per_page=100&match_type={{ match_type }}" 
+            <a href="/keywords?page={{ page }}&per_page=100&match_type={{ match_type }}" 
                class="btn {% if per_page == 100 %}btn-primary{% else %}btn-outline-secondary{% endif %}">100</a>
           </div>
           
@@ -405,7 +390,7 @@
             <ul class="pagination pagination-sm mb-0">
               {% if page > 1 %}
                 <li class="page-item">
-                  <a class="page-link" href="/keywords?days={{ days }}&page={{ page - 1 }}&per_page={{ per_page }}&match_type={{ match_type }}">Previous</a>
+                  <a class="page-link" href="/keywords?page={{ page - 1 }}&per_page={{ per_page }}&match_type={{ match_type }}">Previous</a>
                 </li>
               {% else %}
                 <li class="page-item disabled">
@@ -416,7 +401,7 @@
               {% for p in range(1, total_pages + 1) %}
                 {% if total_pages <= 10 or (p <= 3) or (p >= total_pages - 2) or (p >= page - 1 and p <= page + 1) %}
                   <li class="page-item {% if p == page %}active{% endif %}">
-                    <a class="page-link" href="/keywords?days={{ days }}&page={{ p }}&per_page={{ per_page }}&match_type={{ match_type }}">{{ p }}</a>
+                    <a class="page-link" href="/keywords?page={{ p }}&per_page={{ per_page }}&match_type={{ match_type }}">{{ p }}</a>
                   </li>
                 {% elif p == 4 or p == total_pages - 3 %}
                   <li class="page-item disabled">
@@ -427,7 +412,7 @@
               
               {% if page < total_pages %}
                 <li class="page-item">
-                  <a class="page-link" href="/keywords?days={{ days }}&page={{ page + 1 }}&per_page={{ per_page }}&match_type={{ match_type }}">Next</a>
+                  <a class="page-link" href="/keywords?page={{ page + 1 }}&per_page={{ per_page }}&match_type={{ match_type }}">Next</a>
                 </li>
               {% else %}
                 <li class="page-item disabled">

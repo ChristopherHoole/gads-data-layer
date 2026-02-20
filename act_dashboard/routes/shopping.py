@@ -20,7 +20,7 @@ Key decisions (from Master Chat answers):
 
 from flask import Blueprint, render_template, request
 from act_dashboard.auth import login_required
-from act_dashboard.routes.shared import get_page_context, get_db_connection
+from act_dashboard.routes.shared import get_page_context, get_db_connection, get_date_range_from_session
 from act_dashboard.routes.rule_helpers import get_rules_for_page, count_rules_by_category
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Tuple, Optional
@@ -37,12 +37,15 @@ def load_shopping_campaigns(
     conn: duckdb.DuckDBPyConnection,
     customer_id: str,
     days: int,
-    status_filter: str
+    status_filter: str,
+    date_filter: str = None,
 ) -> List[Dict[str, Any]]:
     """
     Load shopping campaign data from raw_shopping_campaign_daily.
     LEFT JOINs analytics.campaign_daily to get campaign_status.
+    Accepts optional date_filter string for custom date ranges.
     """
+    _date_clause = date_filter if date_filter else f"AND s.snapshot_date >= CURRENT_DATE - INTERVAL '{days} days'"
     query = f"""
         SELECT
             s.campaign_id,
@@ -66,12 +69,12 @@ def load_shopping_campaigns(
             ) = 1
         ) cd ON cd.campaign_id = s.campaign_id
         WHERE s.customer_id = ?
-          AND s.snapshot_date >= CURRENT_DATE - INTERVAL '{days} days'
+          {{_date_clause}}
         GROUP BY
             s.campaign_id, s.campaign_name, s.campaign_priority,
             s.feed_label, cd.campaign_status
         ORDER BY cost DESC
-    """
+    """.format(_date_clause=_date_clause)
 
     rows = None
     cols = None
@@ -97,7 +100,7 @@ def load_shopping_campaigns(
                     SUM(conversions_value) / 1000000.0  AS conv_value
                 FROM raw_shopping_campaign_daily
                 WHERE customer_id = ?
-                  AND snapshot_date >= CURRENT_DATE - INTERVAL '{days} days'
+                  AND (snapshot_date >= CURRENT_DATE - INTERVAL '30 days')
                 GROUP BY campaign_id, campaign_name, campaign_priority, feed_label
                 ORDER BY cost DESC
             """
@@ -527,19 +530,31 @@ def shopping():
         availability: all / in_stock / out_of_stock / preorder  (Products tab)
         tab:          campaigns / products / feed_quality / rules
     """
-    days         = request.args.get('days',         default=30,    type=int)
+    # Get date range from session (default 30d).
+    # Campaigns tab supports custom date ranges (raw SQL).
+    # Products tab uses windowed columns — custom range falls back to w30.
+    active_days, date_from, date_to = get_date_range_from_session()
+    if date_from and date_to:
+        days = 0  # signals custom range to campaign SQL builder
+    elif active_days in [7, 30, 90]:
+        days = active_days
+    else:
+        days = 30
+
     page         = request.args.get('page',         default=1,     type=int)
     per_page     = request.args.get('per_page',     default=25,    type=int)
     status       = request.args.get('status',       default='all', type=str).lower()
     availability = request.args.get('availability', default='all', type=str).lower()
     active_tab   = request.args.get('tab',          default='campaigns', type=str).lower()
 
-    if days     not in [7, 30, 90]:                                    days     = 30
     if per_page not in [10, 25, 50, 100]:                              per_page = 25
     if page     < 1:                                                   page     = 1
     if status   not in ['all', 'enabled', 'paused']:                   status   = 'all'
     if availability not in ['all', 'in_stock', 'out_of_stock', 'preorder']: availability = 'all'
     if active_tab not in ['campaigns', 'products', 'feed_quality', 'rules']: active_tab = 'campaigns'
+
+    # Days value for Products tab (windowed cols only support 7/30/90)
+    products_days = days if days in [7, 30, 90] else 30
 
     _empty_ctx = dict(
         campaigns=[], campaign_metrics=compute_campaign_metrics([]),
@@ -549,7 +564,8 @@ def shopping():
         using_fallback=False,
         quality_stats=None, feed_issues=[],
         rules=[], rule_counts={},
-        days=days, page=page, per_page=per_page,
+        days=days, active_days=active_days, date_from=date_from, date_to=date_to,
+        page=page, per_page=per_page,
         status=status, availability=availability, active_tab=active_tab,
     )
 
@@ -568,7 +584,14 @@ def shopping():
 
     # ── Campaigns ──
     try:
-        all_campaigns    = load_shopping_campaigns(conn, config.customer_id, days, status)
+        # Campaigns tab: build date filter (supports custom range)
+        if date_from and date_to:
+            _camp_days = 30  # placeholder — overridden by date_filter below
+            _camp_date_filter = f"AND s.snapshot_date >= '{date_from}' AND s.snapshot_date <= '{date_to}'"
+        else:
+            _camp_days = days
+            _camp_date_filter = None
+        all_campaigns    = load_shopping_campaigns(conn, config.customer_id, _camp_days, status, _camp_date_filter)
         campaign_metrics = compute_campaign_metrics(all_campaigns)
         campaigns_pg, total_campaigns, total_pages_campaigns = apply_pagination(
             all_campaigns, page, per_page
@@ -583,7 +606,7 @@ def shopping():
     # ── Products ──
     try:
         all_products, using_fallback = load_products(
-            conn, config.customer_id, days, availability
+            conn, config.customer_id, products_days, availability
         )
         product_metrics = compute_product_metrics(all_products)
         products_pg, total_products, total_pages_products = apply_pagination(
@@ -645,6 +668,9 @@ def shopping():
         rule_counts=rule_counts,
         # Filters / state
         days=days,
+        active_days=active_days,
+        date_from=date_from,
+        date_to=date_to,
         page=page,
         per_page=per_page,
         status=status,

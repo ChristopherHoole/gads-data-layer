@@ -4,7 +4,7 @@ Dashboard home page route - overview stats.
 
 from flask import Blueprint, render_template, session, request
 from act_dashboard.auth import login_required
-from act_dashboard.routes.shared import get_current_config, get_available_clients
+from act_dashboard.routes.shared import get_current_config, get_available_clients, get_date_range_from_session
 import duckdb
 import json
 from datetime import date, datetime
@@ -44,11 +44,30 @@ def home() -> str:
     clients = get_available_clients()
     current_client_path = session.get("current_client_config")
     
-    # Get date range parameter (default: 7 days)
-    days = request.args.get('days', 7, type=int)
-    # Ensure valid values (prevents SQL injection)
-    if days not in [7, 30, 90]:
-        days = 7
+    # Get date range from session (default 30d).
+    # Fall back to URL param only if session has no preference yet.
+    active_days, date_from, date_to = get_date_range_from_session()
+    if active_days == 30 and date_from is None and 'days' in request.args:
+        url_days = request.args.get('days', 30, type=int)
+        if url_days in [7, 90]:
+            active_days = url_days
+
+    # Build date filter clauses for all queries.
+    if date_from and date_to:
+        date_filter = f"AND snapshot_date >= '{date_from}' AND snapshot_date <= '{date_to}'"
+        from datetime import timedelta as _td
+        from datetime import datetime as _dt
+        _df = _dt.strptime(date_from, '%Y-%m-%d').date()
+        _dt2 = _dt.strptime(date_to, '%Y-%m-%d').date()
+        _span = (_dt2 - _df).days + 1
+        _prev_to = (_df - _td(days=1)).isoformat()
+        _prev_from = (_df - _td(days=_span)).isoformat()
+        prev_filter = f"AND snapshot_date >= '{_prev_from}' AND snapshot_date <= '{_prev_to}'"
+        days = 0
+    else:
+        days = active_days
+        date_filter = f"AND snapshot_date >= CURRENT_DATE - INTERVAL '{days} days'"
+        prev_filter = f"AND snapshot_date >= CURRENT_DATE - INTERVAL '{days * 2} days' AND snapshot_date < CURRENT_DATE - INTERVAL '{days} days'"
 
     # Connect to database
     conn = duckdb.connect(config.db_path, read_only=True)
@@ -65,7 +84,7 @@ def home() -> str:
         SUM(cost_micros) / 1000000 / NULLIF(SUM(conversions), 0) as cpa
     FROM analytics.campaign_daily
     WHERE customer_id = ?
-      AND snapshot_date >= CURRENT_DATE - INTERVAL '{days} days'
+      {date_filter}
       AND snapshot_date < CURRENT_DATE
     """
     current = conn.execute(current_query, [config.customer_id]).fetchone()
@@ -81,8 +100,7 @@ def home() -> str:
         SUM(cost_micros) / 1000000 / NULLIF(SUM(conversions), 0) as cpa
     FROM analytics.campaign_daily
     WHERE customer_id = ?
-      AND snapshot_date >= CURRENT_DATE - INTERVAL '{days * 2} days'
-      AND snapshot_date < CURRENT_DATE - INTERVAL '{days} days'
+      {prev_filter}
     """
     previous = conn.execute(previous_query, [config.customer_id]).fetchone()
     
@@ -111,7 +129,7 @@ def home() -> str:
         SUM(conversions_value) / NULLIF(SUM(cost_micros) / 1000000, 0) as roas
     FROM analytics.campaign_daily
     WHERE customer_id = ?
-      AND snapshot_date >= CURRENT_DATE - INTERVAL '{days} days'
+      {date_filter}
     GROUP BY snapshot_date
     ORDER BY snapshot_date
     """
@@ -141,7 +159,7 @@ def home() -> str:
         SUM(conversions_value) / NULLIF(SUM(cost_micros) / 1000000, 0) as roas
     FROM analytics.campaign_daily
     WHERE customer_id = ?
-      AND snapshot_date >= CURRENT_DATE - INTERVAL '{days} days'
+      {date_filter}
     GROUP BY campaign_id, campaign_name, campaign_status, channel_type
     ORDER BY spend DESC
     LIMIT 5
@@ -240,7 +258,10 @@ def home() -> str:
         client_name=config.client_name,
         available_clients=clients,
         current_client_config=current_client_path,
-        days=days,
+        days=active_days,
+        active_days=active_days,
+        date_from=date_from,
+        date_to=date_to,
         metrics=metrics,
         trend_data=trend_data,
         top_campaigns=top_campaigns,

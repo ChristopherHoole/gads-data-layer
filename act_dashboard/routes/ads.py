@@ -15,6 +15,7 @@ from act_dashboard.auth import login_required
 from act_dashboard.routes.shared import (
     get_page_context,
     get_db_connection,
+    get_date_range_from_session,
 )
 from act_dashboard.routes.rule_helpers import get_rules_for_page, count_rules_by_category
 from typing import List, Dict, Any, Tuple
@@ -238,14 +239,23 @@ def ads():
         per_page: Rows per page 10/25/50/100 (default: 25)
         status:   'all', 'enabled', 'paused' (default: 'all')
     """
-    # Get URL parameters
-    days     = request.args.get('days',     default=30,    type=int)
+    # Get date range from session.
+    # Ads uses pre-aggregated windowed columns (_7d/_30d/_90d).
+    # Custom date ranges are not supported by the schema — fall back to 30d.
+    active_days, date_from, date_to = get_date_range_from_session()
+    if date_from and date_to:
+        days = 30
+        print("[Ads] Custom date range selected — using 30d windowed columns as approximation")
+    elif active_days in [7, 30, 90]:
+        days = active_days
+    else:
+        days = 30
+
     page     = request.args.get('page',     default=1,     type=int)
     per_page = request.args.get('per_page', default=25,    type=int)
     status   = request.args.get('status',   default='all', type=str).lower()
 
     # Validate parameters
-    if days     not in [7, 30, 90]:                  days     = 30
     if per_page not in [10, 25, 50, 100]:            per_page = 25
     if page     < 1:                                 page     = 1
     if status   not in ['all', 'enabled', 'paused']: status   = 'all'
@@ -300,6 +310,9 @@ def ads():
         total_pages=total_pages,
         # Filters
         days=days,
+        active_days=active_days,
+        date_from=date_from,
+        date_to=date_to,
         status=status,
         # Rules
         rules=rules,
