@@ -1,4 +1,5 @@
 {% extends "base_bootstrap.html" %}
+{% from "macros/metrics_cards.html" import metrics_section %}
 
 {% block content %}
 <div class="container-fluid">
@@ -28,91 +29,8 @@
     <!-- KEYWORDS TAB -->
     <div class="tab-pane fade show active" id="keywords-tab" role="tabpanel">
       
-      <!-- Metrics Bar (8 cards) -->
-      <div class="row g-3 mb-3 metrics-bar">
-        <div class="col-md-3">
-          <div class="card h-100">
-            <div class="card-body">
-              <h6 class="text-muted mb-2">All Keywords</h6>
-              <h3 class="mb-1">{{ metrics.total_keywords }}</h3>
-              <small class="text-muted">
-                <span class="text-success">{{ metrics.active_keywords }}</span> active, 
-                <span class="text-secondary">{{ metrics.paused_keywords }}</span> paused
-              </small>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-md-1">
-          <div class="card h-100">
-            <div class="card-body">
-              <h6 class="text-muted mb-2 small">Clicks</h6>
-              <h4 class="mb-0">{{ "{:,}".format(metrics.clicks) }}</h4>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-md-2">
-          <div class="card h-100">
-            <div class="card-body">
-              <h6 class="text-muted mb-2 small">Cost</h6>
-              <h4 class="mb-0">${{ "{:,.2f}".format(metrics.cost) }}</h4>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-md-1">
-          <div class="card h-100">
-            <div class="card-body">
-              <h6 class="text-muted mb-2 small">Conv.</h6>
-              <h4 class="mb-0">{{ metrics.conversions }}</h4>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-md-2">
-          <div class="card h-100">
-            <div class="card-body">
-              <h6 class="text-muted mb-2 small">CPA</h6>
-              <h4 class="mb-0">
-                {% if metrics.cpa > 0 %}
-                  ${{ "{:.2f}".format(metrics.cpa) }}
-                {% else %}
-                  <span class="text-muted">$0.00</span>
-                {% endif %}
-              </h4>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-md-1">
-          <div class="card h-100">
-            <div class="card-body">
-              <h6 class="text-muted mb-2 small">Avg QS</h6>
-              <h4 class="mb-0">
-                {% if metrics.avg_qs > 0 %}
-                  <span class="{% if metrics.avg_qs >= 7 %}text-success{% elif metrics.avg_qs >= 5 %}text-warning{% else %}text-danger{% endif %}">
-                    {{ "{:.1f}".format(metrics.avg_qs) }}
-                  </span>
-                {% else %}
-                  <span class="text-muted">N/A</span>
-                {% endif %}
-              </h4>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-md-2">
-          <div class="card h-100 {% if metrics.wasted_spend > 100 %}border-danger{% endif %}">
-            <div class="card-body">
-              <h6 class="text-muted mb-2 small">Wasted Spend</h6>
-              <h4 class="mb-0 {% if metrics.wasted_spend > 100 %}text-danger{% endif %}">
-                ${{ "{:.2f}".format(metrics.wasted_spend) }}
-              </h4>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- M2 Metrics Cards -->
+      {{ metrics_section(financial_cards, actions_cards, 'keywords', metrics_collapsed) }}
       
 
       

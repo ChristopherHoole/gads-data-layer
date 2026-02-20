@@ -26,6 +26,11 @@ RAW_CAMPAIGN_DAILY_COLS: List[str] = [
     "conversions_value",
     "all_conversions",
     "all_conversions_value",
+    # Chat 23 M2: Impression Share metrics
+    "search_impression_share",
+    "search_top_impression_share",
+    "search_absolute_top_impression_share",
+    "click_share",
 ]
 
 SNAP_CAMPAIGN_DAILY_COLS: List[str] = RAW_CAMPAIGN_DAILY_COLS.copy()
@@ -125,6 +130,31 @@ def connect_warehouse(settings_or_path: Any) -> duckdb.DuckDBPyConnection:
     return duckdb.connect(db_path)
 
 
+def migrate_add_is_columns(conn: duckdb.DuckDBPyConnection) -> None:
+    """
+    Chat 23 M2: Add 4 Impression Share columns to raw_campaign_daily and
+    snap_campaign_daily if they do not already exist.
+
+    Uses try/except per column — safe to re-run. DuckDB 1.1.0 does not support
+    ALTER TABLE ADD COLUMN IF NOT EXISTS, so we catch the error instead.
+    """
+    is_columns = [
+        ("search_impression_share",                "DOUBLE"),
+        ("search_top_impression_share",             "DOUBLE"),
+        ("search_absolute_top_impression_share",    "DOUBLE"),
+        ("click_share",                             "DOUBLE"),
+    ]
+    tables = ["raw_campaign_daily", "snap_campaign_daily", "snap_ad_group_daily", "snap_keyword_daily"]
+
+    for table in tables:
+        for col_name, col_type in is_columns:
+            try:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_type};")
+            except Exception:
+                # Column already exists — safe to ignore
+                pass
+
+
 def init_warehouse(conn: duckdb.DuckDBPyConnection) -> None:
     # Base tables
     conn.execute("""
@@ -143,7 +173,11 @@ def init_warehouse(conn: duckdb.DuckDBPyConnection) -> None:
             conversions DOUBLE,
             conversions_value DOUBLE,
             all_conversions DOUBLE,
-            all_conversions_value DOUBLE
+            all_conversions_value DOUBLE,
+            search_impression_share DOUBLE,
+            search_top_impression_share DOUBLE,
+            search_absolute_top_impression_share DOUBLE,
+            click_share DOUBLE
         );
         """)
 
@@ -163,9 +197,16 @@ def init_warehouse(conn: duckdb.DuckDBPyConnection) -> None:
             conversions DOUBLE,
             conversions_value DOUBLE,
             all_conversions DOUBLE,
-            all_conversions_value DOUBLE
+            all_conversions_value DOUBLE,
+            search_impression_share DOUBLE,
+            search_top_impression_share DOUBLE,
+            search_absolute_top_impression_share DOUBLE,
+            click_share DOUBLE
         );
         """)
+
+    # Migrate existing tables to add IS columns (safe to re-run)
+    migrate_add_is_columns(conn)
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS snap_campaign_config (
@@ -173,6 +214,33 @@ def init_warehouse(conn: duckdb.DuckDBPyConnection) -> None:
             customer_id VARCHAR,
             config_path VARCHAR,
             config_yaml VARCHAR
+        );
+        """)
+
+
+    # Chat 23 M2: Ad Group daily snapshot table
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS snap_ad_group_daily (
+            run_id VARCHAR,
+            ingested_at TIMESTAMP,
+            customer_id VARCHAR,
+            snapshot_date DATE,
+            campaign_id BIGINT,
+            campaign_name VARCHAR,
+            ad_group_id BIGINT,
+            ad_group_name VARCHAR,
+            ad_group_status VARCHAR,
+            cpc_bid_micros BIGINT,
+            target_cpa_micros BIGINT,
+            impressions BIGINT,
+            clicks BIGINT,
+            cost_micros BIGINT,
+            conversions DOUBLE,
+            conversions_value DOUBLE,
+            search_impression_share DOUBLE,
+            search_top_impression_share DOUBLE,
+            search_absolute_top_impression_share DOUBLE,
+            click_share DOUBLE
         );
         """)
 
@@ -208,10 +276,73 @@ def init_warehouse(conn: duckdb.DuckDBPyConnection) -> None:
             CASE WHEN impressions > 0 THEN clicks * 1.0 / impressions ELSE NULL END AS ctr,
             CASE WHEN clicks > 0 THEN (cost_micros / 1000000.0) / clicks ELSE NULL END AS cpc,
             CASE WHEN impressions > 0 THEN (cost_micros / 1000.0) / impressions ELSE NULL END AS cpm,
-            CASE WHEN cost_micros > 0 THEN conversions * 1.0 / (cost_micros / 1000000.0) ELSE NULL END AS roas
+            CASE WHEN cost_micros > 0 THEN conversions * 1.0 / (cost_micros / 1000000.0) ELSE NULL END AS roas,
+            -- Chat 23 M2: Impression Share metrics
+            search_impression_share,
+            search_top_impression_share,
+            search_absolute_top_impression_share,
+            click_share
         FROM snap_campaign_daily;
         """)
 
+
+
+    # Chat 23 M2: Ad Group analytics view
+    conn.execute("""
+        CREATE OR REPLACE VIEW analytics.ad_group_daily AS
+        SELECT
+            run_id,
+            ingested_at,
+            customer_id,
+            snapshot_date,
+            campaign_id,
+            campaign_name,
+            ad_group_id,
+            ad_group_name,
+            ad_group_status,
+            cpc_bid_micros,
+            target_cpa_micros,
+            impressions,
+            clicks,
+            cost_micros,
+            cost_micros / 1000000.0 AS cost,
+            conversions,
+            conversions_value,
+            CASE WHEN impressions > 0 THEN clicks * 1.0 / impressions ELSE NULL END AS ctr,
+            CASE WHEN clicks > 0 THEN (cost_micros / 1000000.0) / clicks ELSE NULL END AS cpc,
+            CASE WHEN cost_micros > 0 THEN conversions_value / (cost_micros / 1000000.0) ELSE NULL END AS roas,
+            CASE WHEN conversions > 0 THEN (cost_micros / 1000000.0) / conversions ELSE NULL END AS cpa,
+            search_impression_share,
+            search_top_impression_share,
+            search_absolute_top_impression_share,
+            click_share
+        FROM snap_ad_group_daily;
+        """)
+
+
+    # Chat 23 M2: Keyword analytics view (with IS columns)
+    conn.execute("""
+        CREATE OR REPLACE VIEW analytics.keyword_daily AS
+        SELECT
+            run_id, ingested_at, customer_id, snapshot_date,
+            campaign_id, campaign_name, ad_group_id, ad_group_name,
+            keyword_id, keyword_text, match_type, status,
+            quality_score, quality_score_creative,
+            quality_score_landing_page, quality_score_relevance,
+            bid_micros, first_page_cpc_micros, top_of_page_cpc_micros,
+            impressions, clicks, cost_micros,
+            cost_micros / 1000000.0 AS cost,
+            conversions, conversions_value,
+            CASE WHEN impressions > 0 THEN clicks * 1.0 / impressions ELSE NULL END AS ctr,
+            CASE WHEN clicks > 0 THEN (cost_micros / 1000000.0) / clicks ELSE NULL END AS cpc,
+            CASE WHEN cost_micros > 0 THEN conversions_value / (cost_micros / 1000000.0) ELSE NULL END AS roas,
+            CASE WHEN conversions > 0 THEN (cost_micros / 1000000.0) / conversions ELSE NULL END AS cpa,
+            search_impression_share,
+            search_top_impression_share,
+            search_absolute_top_impression_share,
+            click_share
+        FROM snap_keyword_daily;
+        """)
 
 # -----------------------------
 # Delete + insert (idempotent)

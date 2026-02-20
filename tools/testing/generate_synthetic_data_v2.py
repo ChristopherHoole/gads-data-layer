@@ -3,6 +3,7 @@ Synthetic data generator v2 - 20 campaigns, 365 days
 Generates realistic Google Ads campaign data for testing
 
 FIXED: Bug #4 - Volatile campaigns now generate actual variance
+Chat 23 M2: Added 4 Impression Share columns to INSERT
 """
 
 import random
@@ -14,8 +15,8 @@ import duckdb
 
 # Configuration
 CUSTOMER_ID = "9999999999"
-START_DATE = date(2025, 2, 13)
-END_DATE = date(2026, 2, 12)
+END_DATE = date.today()
+START_DATE = END_DATE - timedelta(days=364)
 DAYS = 365
 
 # Campaign scenarios (20 total)
@@ -310,6 +311,22 @@ def generate_campaign_day(campaign, current_date, day_index):
     # Lost IS rank
     lost_is_rank = random.uniform(0.05, 0.15)
 
+    # --- Chat 23 M2: Impression Share metrics ---
+    # search_impression_share: realistic range 0.30–0.90, budget-constrained lower
+    if scenario == "budget_constrained":
+        search_is = round(random.uniform(0.30, 0.60), 4)
+    else:
+        search_is = round(random.uniform(0.50, 0.90), 4)
+
+    # search_top_impression_share: always <= search_is
+    search_top_is = round(random.uniform(0.20, search_is * 0.85), 4)
+
+    # search_absolute_top_impression_share: always <= search_top_is
+    search_abs_top_is = round(random.uniform(0.05, search_top_is * 0.75), 4)
+
+    # click_share: loosely correlated with impression share
+    click_share = round(random.uniform(search_is * 0.4, search_is * 0.9), 4)
+
     return {
         "customer_id": CUSTOMER_ID,
         "snapshot_date": current_date,
@@ -327,9 +344,11 @@ def generate_campaign_day(campaign, current_date, day_index):
         "cvr": round(cvr, 4),
         "cpa": round(cpa, 2) if conversions > 0 else None,
         "roas": round(roas, 2),
-        "search_impression_share": round(random.uniform(0.6, 0.9), 4),
-        "search_budget_lost_impression_share": round(lost_is_budget, 4),
-        "search_rank_lost_impression_share": round(lost_is_rank, 4),
+        # IS metrics (schema columns)
+        "search_impression_share": search_is,
+        "search_top_impression_share": search_top_is,
+        "search_absolute_top_impression_share": search_abs_top_is,
+        "click_share": click_share,
     }
 
 
@@ -356,13 +375,15 @@ def write_to_duckdb(rows):
     # Clear existing synthetic data from BASE TABLE
     conn.execute("DELETE FROM snap_campaign_daily WHERE customer_id = '9999999999'")
 
-    # Insert into BASE TABLE (only raw columns)
+    # Insert into BASE TABLE — includes 4 IS columns (Chat 23 M2)
     insert_sql = """
         INSERT INTO snap_campaign_daily (
-            run_id, ingested_at, customer_id, snapshot_date, campaign_id, campaign_name, campaign_status,
-            channel_type, impressions, clicks, cost_micros, conversions, conversions_value,
-            all_conversions, all_conversions_value
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            run_id, ingested_at, customer_id, snapshot_date, campaign_id, campaign_name,
+            campaign_status, channel_type, impressions, clicks, cost_micros, conversions,
+            conversions_value, all_conversions, all_conversions_value,
+            search_impression_share, search_top_impression_share,
+            search_absolute_top_impression_share, click_share
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
 
     # Insert in batches
@@ -374,21 +395,25 @@ def write_to_duckdb(rows):
             conn.execute(
                 insert_sql,
                 [
-                    "synthetic-v2-FIXED",  # run_id (marked as FIXED)
-                    "2026-02-14 11:00:00",  # ingested_at
+                    "synthetic-v2-M2",           # run_id — updated for Chat 23 M2
+                    "2026-02-20 11:00:00",        # ingested_at
                     row["customer_id"],
                     row["snapshot_date"],
                     row["campaign_id"],
                     row["campaign_name"],
                     row["campaign_status"],
-                    "SEARCH",  # channel_type
+                    "SEARCH",                     # channel_type
                     row["impressions"],
                     row["clicks"],
                     row["cost_micros"],
                     row["conversions"],
                     row["conversions_value"],
-                    row["conversions"],  # all_conversions (same as conversions)
-                    row["conversions_value"],  # all_conversions_value
+                    row["conversions"],           # all_conversions
+                    row["conversions_value"],     # all_conversions_value
+                    row["search_impression_share"],
+                    row["search_top_impression_share"],
+                    row["search_absolute_top_impression_share"],
+                    row["click_share"],
                 ],
             )
 
@@ -405,11 +430,12 @@ def write_to_duckdb(rows):
 
 
 def main():
-    print("Generating synthetic data v2 (FIXED - Bug #4)...")
+    print("Generating synthetic data v2 (Chat 23 M2 — IS columns added)...")
     print(f"  Campaigns: {len(CAMPAIGNS)}")
     print(f"  Date range: {START_DATE} to {END_DATE} ({DAYS} days)")
     print(f"  Expected rows: {len(CAMPAIGNS) * DAYS}")
-    print(f"  FIX: Volatile campaigns now generate actual variance\n")
+    print(f"  NEW: search_impression_share, search_top_impression_share,")
+    print(f"       search_absolute_top_impression_share, click_share\n")
 
     rows = generate_all_data()
     print(f"✅ Generated {len(rows)} rows\n")
@@ -418,12 +444,19 @@ def main():
     row_count = write_to_duckdb(rows)
     print(f"✅ Wrote {row_count} rows to analytics.campaign_daily\n")
 
-    print("DONE. Run refresh_readonly.ps1 to update browsing DB.")
-    print("\nTo verify volatile variance, run:")
-    print("  SELECT campaign_id, STDDEV(cost_micros)/AVG(cost_micros) as cv")
-    print("  FROM snap_campaign_daily")
-    print("  WHERE campaign_id IN ('3013','3014','3015')")
-    print("  GROUP BY campaign_id;")
+    print("DONE. Next steps:")
+    print("  1. Copy-Item -Force warehouse.duckdb warehouse_readonly.duckdb")
+    print("  2. Verify IS columns with the SQL check below\n")
+    print("Verification SQL:")
+    print("  SELECT")
+    print("    COUNT(*) as total_rows,")
+    print("    AVG(search_impression_share) as avg_search_is,")
+    print("    AVG(search_top_impression_share) as avg_top_is,")
+    print("    AVG(search_absolute_top_impression_share) as avg_abs_top_is,")
+    print("    AVG(click_share) as avg_click_share,")
+    print("    COUNT(CASE WHEN search_impression_share IS NULL THEN 1 END) as null_is_count")
+    print("  FROM analytics.campaign_daily")
+    print("  WHERE customer_id = '9999999999';")
 
 
 if __name__ == "__main__":

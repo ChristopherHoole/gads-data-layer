@@ -20,7 +20,7 @@ Key decisions (from Master Chat answers):
 
 from flask import Blueprint, render_template, request
 from act_dashboard.auth import login_required
-from act_dashboard.routes.shared import get_page_context, get_db_connection, get_date_range_from_session
+from act_dashboard.routes.shared import get_page_context, get_db_connection, get_date_range_from_session, get_metrics_collapsed
 from act_dashboard.routes.rule_helpers import get_rules_for_page, count_rules_by_category
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Tuple, Optional
@@ -160,6 +160,7 @@ def compute_campaign_metrics(campaigns: List[Dict]) -> Dict[str, Any]:
             'total_campaigns': 0, 'total_cost': 0.0,
             'total_conversions': 0.0, 'overall_roas': 0.0,
             'total_impressions': 0, 'total_conv_value': 0.0,
+            'total_clicks': 0,
         }
     total_cost       = sum(c['cost'] for c in campaigns)
     total_conv_value = sum(c['conv_value'] for c in campaigns)
@@ -170,6 +171,7 @@ def compute_campaign_metrics(campaigns: List[Dict]) -> Dict[str, Any]:
         'overall_roas':      total_conv_value / total_cost if total_cost > 0 else 0.0,
         'total_impressions': sum(c['impressions'] for c in campaigns),
         'total_conv_value':  total_conv_value,
+        'total_clicks':      sum(c['clicks'] for c in campaigns),
     }
 
 
@@ -516,6 +518,116 @@ def apply_pagination(
 # ROUTE
 # =============================================================================
 
+
+
+# ==================== Chat 23 M2: Metrics Cards ====================
+
+def _fmt_sh(value, fmt):
+    if value is None:
+        return '—'
+    if fmt == 'count_label':
+        return str(value)
+    v = float(value)
+    if fmt == 'currency':
+        if v >= 1_000_000: return f'${v/1_000_000:.1f}M'
+        if v >= 1_000: return f'${v/1_000:.1f}k'
+        return f'${v:,.2f}'
+    if fmt in ('percentage', 'rate'): return f'{v:.1f}%'
+    if fmt == 'ratio': return f'{v:.2f}x'
+    if fmt == 'number':
+        if v >= 1_000_000: return f'{v/1_000_000:.2f}M'
+        if v >= 1_000: return f'{v/1_000:.1f}k'
+        return f'{v:,.0f}'
+    return str(v)
+
+
+def _card_sh(label, value, fmt, invert=False, card_type='financial', sub_label=None):
+    return {
+        'label': label,
+        'value_display': _fmt_sh(value, fmt),
+        'change_pct': None,
+        'sparkline_data': None,
+        'format_type': fmt,
+        'invert_colours': invert,
+        'card_type': card_type,
+        'sub_label': sub_label,
+    }
+
+
+def _blank_sh(card_type='financial'):
+    return {
+        'label': '', 'value_display': '', 'change_pct': None,
+        'sparkline_data': None, 'format_type': 'blank',
+        'invert_colours': False, 'card_type': card_type, 'sub_label': None,
+    }
+
+
+def build_campaign_metrics_cards(cm):
+    total_cost       = cm.get('total_cost', 0) or 0
+    total_conv_value = cm.get('total_conv_value', 0) or 0
+    total_convs      = cm.get('total_conversions', 0) or 0
+    total_impr       = cm.get('total_impressions', 0) or 0
+    total_clicks     = cm.get('total_clicks', 0) or 0
+    roas             = cm.get('overall_roas', 0) or 0
+    cpa              = (total_cost / total_convs)         if total_convs > 0    else None
+    cvr              = (total_convs / total_clicks * 100) if total_clicks > 0   else None
+    cpc              = (total_cost / total_clicks)        if total_clicks > 0   else None
+    ctr              = (total_clicks / total_impr * 100)  if total_impr > 0     else None
+    financial_cards = [
+        _card_sh('Cost',         total_cost,       'currency',    invert=True),
+        _card_sh('Conv Value',   total_conv_value, 'currency'),
+        _card_sh('ROAS',         roas,             'ratio'),
+        _blank_sh('financial'),
+        _card_sh('Conversions',  total_convs,      'number'),
+        _card_sh('Cost / Conv',  cpa,              'currency',    invert=True),
+        _card_sh('Conv Rate',    cvr,              'percentage'),
+        _blank_sh('financial'),
+    ]
+    actions_cards = [
+        _card_sh('Impressions',  total_impr,   'number',     card_type='actions'),
+        _card_sh('Clicks',       total_clicks, 'number',     card_type='actions'),
+        _card_sh('Avg CPC',      cpc,          'currency',   card_type='actions'),
+        _card_sh('Avg CTR',      ctr,          'percentage', card_type='actions'),
+        _blank_sh('actions'),
+        _blank_sh('actions'),
+        _blank_sh('actions'),
+        _blank_sh('actions'),
+    ]
+    return financial_cards, actions_cards
+
+
+def build_product_metrics_cards(pm):
+    total_cost    = pm.get('total_cost', 0) or 0
+    total_convs   = pm.get('total_conversions', 0) or 0
+    roas          = pm.get('overall_roas', 0) or 0
+    oos           = pm.get('out_of_stock_count', 0) or 0
+    feed_issues   = pm.get('feed_issues_count', 0) or 0
+    total_prods   = pm.get('total_products', 0) or 0
+    oos_sub       = 'Needs attention' if oos > 0 else 'All in stock'
+    issues_sub    = 'Price mismatch/disapproved' if feed_issues > 0 else 'No issues'
+    financial_cards = [
+        _card_sh('Cost',          total_cost,  'currency',  invert=True),
+        _card_sh('ROAS',          roas,        'ratio'),
+        _blank_sh('financial'),
+        _card_sh('Out of Stock',  oos,         'number',    invert=True, sub_label=oos_sub),
+        _card_sh('Conversions',   total_convs, 'number'),
+        _blank_sh('financial'),
+        _blank_sh('financial'),
+        _blank_sh('financial'),
+    ]
+    actions_cards = [
+        _card_sh('Products',    total_prods,  'number',  card_type='actions'),
+        _card_sh('Feed Issues', feed_issues,  'number',  card_type='actions', invert=True, sub_label=issues_sub),
+        _blank_sh('actions'),
+        _blank_sh('actions'),
+        _blank_sh('actions'),
+        _blank_sh('actions'),
+        _blank_sh('actions'),
+        _blank_sh('actions'),
+    ]
+    return financial_cards, actions_cards
+
+
 @bp.route('/shopping')
 @login_required
 def shopping():
@@ -643,6 +755,11 @@ def shopping():
         f"feed_issues={len(feed_issues)}, rules={len(rules)}"
     )
 
+    # M2: Build metrics cards
+    camp_financial_cards, camp_actions_cards = build_campaign_metrics_cards(campaign_metrics)
+    prod_financial_cards, prod_actions_cards = build_product_metrics_cards(product_metrics)
+    metrics_collapsed = get_metrics_collapsed('shopping')
+
     return render_template(
         'shopping_new.html',
         client_name=config.client_name,
@@ -676,4 +793,10 @@ def shopping():
         status=status,
         availability=availability,
         active_tab=active_tab,
+        # M2: Metrics cards
+        camp_financial_cards=camp_financial_cards,
+        camp_actions_cards=camp_actions_cards,
+        prod_financial_cards=prod_financial_cards,
+        prod_actions_cards=prod_actions_cards,
+        metrics_collapsed=metrics_collapsed,
     )

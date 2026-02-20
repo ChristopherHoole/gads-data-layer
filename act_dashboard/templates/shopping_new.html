@@ -1,4 +1,5 @@
 {% extends "base_bootstrap.html" %}
+{% from "macros/metrics_cards.html" import metrics_section %}
 
 {% block title %}Shopping - {{ client_name }}{% endblock %}
 
@@ -70,73 +71,8 @@
     <div class="tab-pane fade {% if active_tab == 'campaigns' %}show active{% endif %}"
          id="tab-campaigns" role="tabpanel">
 
-      <!-- Metrics Bar (6 cards) -->
-      <div class="row mb-3 metrics-bar">
-
-        <div class="col-md-2">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">Campaigns</h6>
-              <h3 class="mb-0">{{ campaign_metrics.total_campaigns }}</h3>
-              <small class="text-muted">Total campaigns</small>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-2">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">Cost</h6>
-              <h3 class="mb-0">${{ "{:,.2f}".format(campaign_metrics.total_cost) }}</h3>
-              <small class="text-muted">Last {{ days }} days</small>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-2">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">Conversions</h6>
-              <h3 class="mb-0">{{ "{:,.1f}".format(campaign_metrics.total_conversions) }}</h3>
-              <small class="text-muted">Last {{ days }} days</small>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-2">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">ROAS</h6>
-              <h3 class="mb-0 {% if campaign_metrics.overall_roas >= 3 %}text-success{% elif campaign_metrics.overall_roas >= 2 %}text-warning{% else %}text-danger{% endif %}">
-                {{ "{:.2f}".format(campaign_metrics.overall_roas) }}x
-              </h3>
-              <small class="text-muted">Return on ad spend</small>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-2">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">Impressions</h6>
-              <h3 class="mb-0">{{ "{:,}".format(campaign_metrics.total_impressions) }}</h3>
-              <small class="text-muted">Last {{ days }} days</small>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-2">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">Conv. Value</h6>
-              <h3 class="mb-0">${{ "{:,.2f}".format(campaign_metrics.total_conv_value) }}</h3>
-              <small class="text-muted">Last {{ days }} days</small>
-            </div>
-          </div>
-        </div>
-
-      </div>
-      <!-- End metrics bar -->
+      <!-- M2 Campaigns Metrics Cards -->
+      {{ metrics_section(camp_financial_cards, camp_actions_cards, 'shopping_campaigns', metrics_collapsed) }}
 
       <!-- Filters -->
       <div class="card mb-3">
@@ -352,83 +288,8 @@
       </div>
       {% endif %}
 
-      <!-- Metrics Bar (6 cards) -->
-      <div class="row mb-3 metrics-bar">
-
-        <div class="col-md-2">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">Products</h6>
-              <h3 class="mb-0">{{ product_metrics.total_products }}</h3>
-              <small class="text-muted">Total products</small>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-2">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">Cost</h6>
-              <h3 class="mb-0">${{ "{:,.2f}".format(product_metrics.total_cost) }}</h3>
-              <small class="text-muted">Last {{ days }} days</small>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-2">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">Conversions</h6>
-              <h3 class="mb-0">{{ "{:,.1f}".format(product_metrics.total_conversions) }}</h3>
-              <small class="text-muted">Last {{ days }} days</small>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-2">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">ROAS</h6>
-              <h3 class="mb-0 {% if product_metrics.overall_roas >= 3 %}text-success{% elif product_metrics.overall_roas >= 2 %}text-warning{% else %}text-danger{% endif %}">
-                {{ "{:.2f}".format(product_metrics.overall_roas) }}x
-              </h3>
-              <small class="text-muted">Return on ad spend</small>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-2">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">Out of Stock</h6>
-              <h3 class="mb-0 {% if product_metrics.out_of_stock_count > 0 %}text-danger{% endif %}">
-                {{ product_metrics.out_of_stock_count }}
-              </h3>
-              <small class="text-muted">
-                {% if product_metrics.out_of_stock_count > 0 %}
-                  <span class="text-danger">Needs attention</span>
-                {% else %}
-                  All in stock
-                {% endif %}
-              </small>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-2">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">Feed Issues</h6>
-              <h3 class="mb-0 {% if product_metrics.feed_issues_count > 0 %}text-warning{% endif %}">
-                {{ product_metrics.feed_issues_count }}
-              </h3>
-              <small class="text-muted">Price mismatch / disapproved</small>
-            </div>
-          </div>
-        </div>
-
-      </div>
-      <!-- End products metrics bar -->
+      <!-- M2 Products Metrics Cards -->
+      {{ metrics_section(prod_financial_cards, prod_actions_cards, 'shopping_products', metrics_collapsed) }}
 
       <!-- Filters -->
       <div class="card mb-3">

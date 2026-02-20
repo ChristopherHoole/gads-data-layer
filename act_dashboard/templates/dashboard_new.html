@@ -1,4 +1,5 @@
 {% extends "base_bootstrap.html" %}
+{% from "macros/metrics_cards.html" import metrics_section %}
 
 {% block title %}Dashboard - Ads Control Tower{% endblock %}
 
@@ -12,8 +13,8 @@
     {% include 'components/date_filter.html' %}
 </div>
 
-<!-- Metrics Bar Component -->
-{% include 'components/metrics_bar.html' %}
+<!-- M2 Metrics Cards -->
+{{ metrics_section(financial_cards, actions_cards, 'dashboard', metrics_collapsed) }}
 
 <!-- Performance Chart -->
 <div class="row mb-4">

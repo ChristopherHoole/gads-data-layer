@@ -1,4 +1,5 @@
 {% extends "base_bootstrap.html" %}
+{% from "macros/metrics_cards.html" import metrics_section %}
 
 {% block title %}Ads - {{ client_name }}{% endblock %}
 
@@ -44,101 +45,8 @@
          ================================================================ -->
     <div class="tab-pane fade show active" id="ads-tab" role="tabpanel">
 
-      <!-- Metrics Bar (7 cards) -->
-      <div class="row mb-3 metrics-bar">
-
-        <!-- Card 1: Total Ads -->
-        <div class="col-md-2">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">Total Ads</h6>
-              <h3 class="mb-0">{{ metrics.total_ads }}</h3>
-              <small class="text-muted">
-                {{ metrics.enabled_count }} active, {{ metrics.paused_count }} paused
-              </small>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 2: Clicks -->
-        <div class="col-md-2">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">Clicks</h6>
-              <h3 class="mb-0">{{ "{:,}".format(metrics.total_clicks) }}</h3>
-              <small class="text-muted">Last {{ days }} days</small>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 3: Cost -->
-        <div class="col-md-2">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">Cost</h6>
-              <h3 class="mb-0">${{ "{:,.2f}".format(metrics.total_cost) }}</h3>
-              <small class="text-muted">Last {{ days }} days</small>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 4: Conversions -->
-        <div class="col-md-2">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">Conversions</h6>
-              <h3 class="mb-0">{{ "{:.1f}".format(metrics.total_conversions) }}</h3>
-              <small class="text-muted">Last {{ days }} days</small>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 5: CTR -->
-        <div class="col">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">CTR</h6>
-              <h3 class="mb-0">{{ "{:.2f}".format(metrics.overall_ctr) }}%</h3>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 6: CPA -->
-        <div class="col">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">CPA</h6>
-              <h3 class="mb-0">
-                {% if metrics.overall_cpa > 0 %}
-                  ${{ "{:.2f}".format(metrics.overall_cpa) }}
-                {% else %}
-                  <span class="text-muted">-</span>
-                {% endif %}
-              </h3>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 7: Ad Strength Summary -->
-        <div class="col-md-2">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="text-muted mb-1">Ad Strength</h6>
-              <h3 class="mb-0 {% if metrics.poor_strength_count > 0 %}text-danger{% elif metrics.good_strength_count == metrics.total_ads and metrics.total_ads > 0 %}text-success{% else %}text-warning{% endif %}">
-                {{ metrics.good_strength_count }}/{{ metrics.total_ads }}
-              </h3>
-              <small class="text-muted">
-                Good/Excellent
-                {% if metrics.poor_strength_count > 0 %}
-                  &middot; <span class="text-danger">{{ metrics.poor_strength_count }} Poor</span>
-                {% endif %}
-              </small>
-            </div>
-          </div>
-        </div>
-
-      </div>
-      <!-- End Metrics Bar -->
+      <!-- M2 Metrics Cards -->
+      {{ metrics_section(financial_cards, actions_cards, 'ads', metrics_collapsed) }}
 
       <!-- Filters Bar -->
       <div class="d-flex justify-content-between align-items-center mb-3">

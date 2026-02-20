@@ -1,0 +1,378 @@
+{#
+  metrics_cards.html — M2 Metrics Cards Macros
+  Chat 23: Dashboard 3.0 Phase 1
+
+  Macros:
+    metric_card(card, canvas_id)       — renders a single card
+    metrics_section(financial_cards, actions_cards, page_id, metrics_collapsed)
+                                       — renders the full two-row component
+
+  Card dict shape (built by route):
+    label          str     — display label e.g. "Cost"
+    value_display  str     — pre-formatted value e.g. "$183k", "3.13x", "42.1%"
+    change_pct     float|None — % change vs previous period; None = show dash
+    sparkline_data list[float]|None — daily values for sparkline (oldest→newest)
+    format_type    str     — 'currency'|'number'|'percentage'|'ratio'|'blank'
+    invert_colours bool    — True for Cost, CPA, Wasted Spend
+    card_type      str     — 'financial' or 'actions'
+    sub_label      str|None — secondary label shown below value (Ad Strength only)
+#}
+
+{# ─────────────────────────────────────────────────────────────────────────── #}
+{# MACRO: metric_card                                                           #}
+{# ─────────────────────────────────────────────────────────────────────────── #}
+{% macro metric_card(card, canvas_id) %}
+{% if card.format_type == 'blank' %}
+<div class="m2-card m2-card-blank">
+  <div class="m2-card-inner">
+    <div class="m2-card-label text-muted fst-italic">—</div>
+  </div>
+</div>
+{% else %}
+<div class="m2-card m2-card-{{ card.card_type }}">
+  <div class="m2-card-inner">
+
+    {# Label #}
+    <div class="m2-card-label">{{ card.label }}</div>
+
+    {# Value #}
+    <div class="m2-card-value {% if card.format_type == 'ratio' %}m2-value-ratio{% endif %}">
+      {{ card.value_display }}
+    </div>
+
+    {# Sub-label (Ad Strength only) #}
+    {% if card.sub_label %}
+    <div class="m2-card-sublabel">{{ card.sub_label }}</div>
+    {% endif %}
+
+    {# Change indicator #}
+    <div class="m2-card-change">
+      {% if card.change_pct is none %}
+        <span class="m2-change-neutral">—</span>
+      {% else %}
+        {% set pct = card.change_pct | round(1) %}
+        {% if pct > 0 %}
+          {% if card.invert_colours %}
+            <span class="m2-change-red">↑ +{{ pct }}%</span>
+          {% else %}
+            <span class="m2-change-green">↑ +{{ pct }}%</span>
+          {% endif %}
+        {% elif pct < 0 %}
+          {% if card.invert_colours %}
+            <span class="m2-change-green">↓ {{ pct }}%</span>
+          {% else %}
+            <span class="m2-change-red">↓ {{ pct }}%</span>
+          {% endif %}
+        {% else %}
+          <span class="m2-change-neutral">→ 0%</span>
+        {% endif %}
+      {% endif %}
+    </div>
+
+  </div>
+
+  {# Sparkline canvas — only rendered if data provided #}
+  {% if card.sparkline_data and card.sparkline_data | length > 1 %}
+  <div class="m2-sparkline-wrap">
+    <canvas id="{{ canvas_id }}"
+            class="m2-sparkline"
+            height="32"
+            data-sparkline="{{ card.sparkline_data | tojson }}"
+            data-invert="{{ 'true' if card.invert_colours else 'false' }}"></canvas>
+  </div>
+  {% endif %}
+
+</div>
+{% endif %}
+{% endmacro %}
+
+
+{# ─────────────────────────────────────────────────────────────────────────── #}
+{# MACRO: metrics_section                                                       #}
+{# ─────────────────────────────────────────────────────────────────────────── #}
+{% macro metrics_section(financial_cards, actions_cards, page_id, metrics_collapsed) %}
+
+{# ── Scoped CSS (m2- prefix avoids collisions) ─────────────────────────── #}
+<style>
+/* M2 Metrics Cards — Chat 23 */
+.m2-wrapper { margin-bottom: 1rem; }
+
+/* 9-column grid: 4 cards | 14px separator | 4 cards */
+.m2-cards-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) 14px repeat(4, 1fr);
+  gap: 6px;
+  align-items: stretch;
+  margin-bottom: 4px;
+}
+.m2-group-labels-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) 14px repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 3px;
+}
+.m2-group-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #aaa;
+  padding-left: 2px;
+}
+.m2-separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.m2-separator::after {
+  content: '';
+  display: block;
+  width: 2px;
+  height: 100%;
+  background: #e0e0e0;
+  border-radius: 2px;
+  min-height: 80px;
+}
+.m2-separator-hidden::after {
+  background: transparent;
+}
+
+/* Cards */
+.m2-card {
+  border-radius: 6px;
+  padding: 8px 10px 0 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 95px;
+}
+.m2-card-financial {
+  background: #f8f9fe;
+  border: 1.5px solid #c5cae9;
+}
+.m2-card-actions {
+  background: #fafffe;
+  border: 1.5px solid #b2dfdb;
+}
+.m2-card-blank {
+  background: #f5f5f5;
+  border: 1.5px dashed #ddd;
+  min-height: 95px;
+}
+.m2-card-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.m2-card-label {
+  font-size: 9.5px;
+  color: #666;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+}
+.m2-card-value {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1.1;
+  margin-top: 2px;
+}
+.m2-value-ratio {
+  font-size: 13px;
+  color: #f57f17;
+}
+.m2-card-sublabel {
+  font-size: 9px;
+  color: #888;
+  font-weight: 600;
+  line-height: 1;
+}
+.m2-card-change {
+  font-size: 9.5px;
+  font-weight: 600;
+  margin-top: 1px;
+  min-height: 14px;
+}
+.m2-change-green  { color: #198754; }
+.m2-change-red    { color: #dc3545; }
+.m2-change-neutral { color: #adb5bd; }
+
+/* Sparkline */
+.m2-sparkline-wrap {
+  margin-top: 4px;
+  padding-bottom: 0;
+  overflow: hidden;
+  border-radius: 0 0 4px 4px;
+  line-height: 0;
+}
+.m2-sparkline {
+  width: 100% !important;
+  display: block;
+}
+
+/* Pill toggle divider */
+.m2-toggle-divider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px 0 8px 0;
+  cursor: pointer;
+  user-select: none;
+}
+.m2-toggle-divider::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 1px;
+  background: #dee2e6;
+}
+.m2-toggle-pill {
+  position: relative;
+  background: #fff;
+  border: 1.5px solid #dee2e6;
+  border-radius: 20px;
+  padding: 3px 14px;
+  font-size: 10px;
+  color: #6c757d;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+.m2-toggle-divider:hover .m2-toggle-pill {
+  border-color: #adb5bd;
+  color: #495057;
+}
+</style>
+
+<div class="m2-wrapper">
+
+  {# ── Financial row ───────────────────────────────────────────────────── #}
+  {# Group sub-labels #}
+  <div class="m2-group-labels-row">
+    <div class="m2-group-label">Financial</div>
+    <div></div><div></div><div></div>
+    <div></div>{# separator column #}
+    <div class="m2-group-label">Leads</div>
+    <div></div><div></div><div></div>
+  </div>
+
+  {# Financial cards grid #}
+  <div class="m2-cards-row">
+    {% for card in financial_cards %}
+      {% if loop.index0 == 4 %}
+        <div class="m2-separator"></div>
+      {% endif %}
+      {{ metric_card(card, page_id ~ '_fin_' ~ loop.index) }}
+    {% endfor %}
+  </div>
+
+  {# ── Pill toggle ─────────────────────────────────────────────────────── #}
+  <div class="m2-toggle-divider"
+       id="m2-toggle-{{ page_id }}"
+       onclick="m2Toggle('{{ page_id }}')">
+    <div class="m2-toggle-pill" id="m2-pill-{{ page_id }}">
+      {{ '▶ Actions Metrics' if metrics_collapsed else '▼ Actions Metrics' }}
+    </div>
+  </div>
+
+  {# ── Actions row ─────────────────────────────────────────────────────── #}
+  <div class="m2-cards-row"
+       id="m2-actions-{{ page_id }}"
+       {% if metrics_collapsed %}style="display:none"{% endif %}>
+    {% for card in actions_cards %}
+      {% if loop.index0 == 4 %}
+        <div class="m2-separator m2-separator-hidden"></div>
+      {% endif %}
+      {{ metric_card(card, page_id ~ '_act_' ~ loop.index) }}
+    {% endfor %}
+  </div>
+
+</div>{# end .m2-wrapper #}
+
+{# ── Sparkline initialisation ────────────────────────────────────────────── #}
+<script>
+(function() {
+  function initM2Sparklines() {
+    document.querySelectorAll('canvas[data-sparkline]').forEach(function(canvas) {
+      if (canvas.dataset.m2Init) return;  // skip already initialised
+      canvas.dataset.m2Init = '1';
+
+      var raw = canvas.dataset.sparkline;
+      var data;
+      try { data = JSON.parse(raw); } catch(e) { return; }
+      if (!data || data.length < 2) return;
+
+      var invert  = canvas.dataset.invert === 'true';
+      var first   = data[0];
+      var last    = data[data.length - 1];
+      var trend   = last - first;
+      var colour  = '#adb5bd'; // flat / neutral grey
+      if (trend > 0)       colour = invert ? '#dc3545' : '#198754';
+      else if (trend < 0)  colour = invert ? '#198754' : '#dc3545';
+
+      // Set canvas width explicitly to parent width
+      canvas.width = canvas.parentElement.offsetWidth || 200;
+
+      new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels: data.map(function(_, i) { return i; }),
+          datasets: [{
+            data: data,
+            borderColor: colour,
+            borderWidth: 1.5,
+            pointRadius: 0,
+            fill: false,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: false,
+          animation: false,
+          plugins: {
+            legend:  { display: false },
+            tooltip: { enabled: false }
+          },
+          scales: {
+            x: { display: false },
+            y: { display: false }
+          }
+        }
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initM2Sparklines);
+  } else {
+    initM2Sparklines();
+  }
+})();
+
+// Pill toggle — collapses/expands Actions row and persists state to session
+function m2Toggle(pageId) {
+  var actions = document.getElementById('m2-actions-' + pageId);
+  var pill    = document.getElementById('m2-pill-'    + pageId);
+  if (!actions || !pill) return;
+
+  var isCurrentlyHidden = (actions.style.display === 'none');
+  actions.style.display = isCurrentlyHidden ? '' : 'none';
+  pill.textContent = isCurrentlyHidden ? '▼ Actions Metrics' : '▶ Actions Metrics';
+
+  // Persist to Flask session
+  fetch('/set-metrics-collapse', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      page_id: pageId,
+      collapsed: !isCurrentlyHidden
+    })
+  }).catch(function() {});  // silent fail — UI already updated
+}
+</script>
+
+{% endmacro %}

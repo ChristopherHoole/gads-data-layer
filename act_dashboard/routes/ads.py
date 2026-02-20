@@ -16,6 +16,7 @@ from act_dashboard.routes.shared import (
     get_page_context,
     get_db_connection,
     get_date_range_from_session,
+    get_metrics_collapsed,
 )
 from act_dashboard.routes.rule_helpers import get_rules_for_page, count_rules_by_category
 from typing import List, Dict, Any, Tuple
@@ -227,6 +228,107 @@ def apply_pagination(
     return ads[start:end], total_count, total_pages
 
 
+
+
+# ==================== Chat 23 M2: Metrics Cards ====================
+
+def _fmt_ads(value, fmt):
+    if value is None:
+        return '—'
+    if fmt == 'ad_strength':
+        return str(value)  # pre-formatted string e.g. "24/30"
+    v = float(value)
+    if fmt == 'currency':
+        if v >= 1_000_000: return f'${v/1_000_000:.1f}M'
+        if v >= 1_000: return f'${v/1_000:.1f}k'
+        return f'${v:,.2f}'
+    if fmt in ('percentage', 'rate'): return f'{v:.1f}%'
+    if fmt == 'ratio': return f'{v:.2f}x'
+    if fmt == 'number':
+        if v >= 1_000_000: return f'{v/1_000_000:.2f}M'
+        if v >= 1_000: return f'{v/1_000:.1f}k'
+        return f'{v:,.0f}'
+    return str(v)
+
+
+def _card_ads(label, value, sparkline, fmt, invert=False, card_type='financial', sub_label=None):
+    """Ads cards have no prev period — change_pct always None (dash)."""
+    return {
+        'label': label,
+        'value_display': _fmt_ads(value, fmt),
+        'change_pct': None,
+        'sparkline_data': sparkline,
+        'format_type': fmt,
+        'invert_colours': invert,
+        'card_type': card_type,
+        'sub_label': sub_label,
+    }
+
+
+def _blank_ads(card_type='financial'):
+    return {
+        'label': '', 'value_display': '', 'change_pct': None,
+        'sparkline_data': None, 'format_type': 'blank',
+        'invert_colours': False, 'card_type': card_type, 'sub_label': None,
+    }
+
+
+def load_ads_metrics_cards(conn, customer_id, days, all_ads):
+    """
+    Build financial_cards and actions_cards for Ads page.
+
+    Uses pre-computed all_ads list for summary values (already loaded).
+    Sparklines from ad_features_daily won't be available — pass None/empty.
+
+    Financial (8): Cost | Revenue | ROAS | Ad Strength | Conversions | CPA | Conv Rate | BLANK
+    Actions  (8): Impressions | Clicks | Avg CPC | Avg CTR | 4 blanks (no IS at ad level)
+    """
+    if not all_ads:
+        return [_blank_ads('financial')] * 8, [_blank_ads('actions')] * 8
+
+    suffix = '7d' if days == 7 else ('90d' if days == 90 else '30d')
+
+    total_cost        = sum(a['cost']        for a in all_ads)
+    total_revenue     = sum(a.get('conversions_value', 0) or 0 for a in all_ads)
+    total_conversions = sum(a['conversions'] for a in all_ads)
+    total_impressions = sum(a['impressions'] for a in all_ads)
+    total_clicks      = sum(a['clicks']      for a in all_ads)
+
+    roas     = (total_revenue / total_cost)                  if total_cost > 0        else None
+    cpa      = (total_cost / total_conversions)              if total_conversions > 0  else None
+    cvr      = (total_conversions / total_clicks * 100)      if total_clicks > 0       else None
+    cpc      = (total_cost / total_clicks)                   if total_clicks > 0       else None
+    ctr      = (total_clicks / total_impressions * 100)      if total_impressions > 0  else None
+
+    good_strength  = sum(1 for a in all_ads if a.get('ad_strength') in ('GOOD', 'EXCELLENT'))
+    poor_strength  = sum(1 for a in all_ads if a.get('ad_strength') == 'POOR')
+    total_ads      = len(all_ads)
+    strength_label = f"{good_strength}/{total_ads}"
+    strength_sub   = f"{poor_strength} Poor" if poor_strength > 0 else "Good/Excellent"
+
+    financial_cards = [
+        _card_ads('Cost',          total_cost,        None, 'currency',     invert=True),
+        _card_ads('Revenue',       total_revenue,     None, 'currency'),
+        _card_ads('ROAS',          roas,              None, 'ratio'),
+        _blank_ads('financial'),
+        _card_ads('Conversions',   total_conversions, None, 'number'),
+        _card_ads('Cost / Conv',   cpa,               None, 'currency',     invert=True),
+        _card_ads('Conv Rate',     cvr,               None, 'percentage'),
+        _blank_ads('financial'),
+    ]
+    actions_cards = [
+        _card_ads('Impressions',   total_impressions, None, 'number',       card_type='actions'),
+        _card_ads('Clicks',        total_clicks,      None, 'number',       card_type='actions'),
+        _card_ads('Avg CPC',       cpc,               None, 'currency',     card_type='actions'),
+        _card_ads('Avg CTR',       ctr,               None, 'percentage',   card_type='actions'),
+        _card_ads('Ad Strength',   strength_label,    None, 'ad_strength',  card_type='actions', sub_label=strength_sub),
+        _blank_ads('actions'),
+        _blank_ads('actions'),
+        _blank_ads('actions'),
+    ]
+    return financial_cards, actions_cards
+
+
 @bp.route("/ads")
 @login_required
 def ads():
@@ -268,6 +370,11 @@ def ads():
 
     # Load all ad data for selected window
     all_ads = load_ad_data(conn, config.customer_id, days)
+
+    # M2: Metrics cards (pass all_ads before status filter for totals)
+    financial_cards, actions_cards = load_ads_metrics_cards(
+        conn, config.customer_id, days, all_ads
+    )
 
     conn.close()
 
@@ -319,4 +426,8 @@ def ads():
         rule_counts=rule_counts,
         # Error
         error=None,
+        # M2: Metrics cards
+        financial_cards=financial_cards,
+        actions_cards=actions_cards,
+        metrics_collapsed=get_metrics_collapsed('ads'),
     )

@@ -12,7 +12,8 @@ from act_dashboard.routes.shared import (
     get_date_range_from_session,
     build_autopilot_config,
     recommendation_to_dict,
-    cache_recommendations
+    cache_recommendations,
+    get_metrics_collapsed
 )
 from act_dashboard.routes.rule_helpers import get_rules_for_page
 from datetime import date, timedelta
@@ -312,6 +313,173 @@ def group_keyword_recommendations(recommendations: List[Dict[str, Any]]) -> List
     return rec_groups
 
 
+
+
+# ==================== Chat 23 M2: Metrics Cards ====================
+
+def _fmt_kw(value, fmt):
+    if value is None:
+        return '—'
+    v = float(value)
+    if fmt == 'currency':
+        if v >= 1_000_000: return f'${v/1_000_000:.1f}M'
+        if v >= 1_000: return f'${v/1_000:.1f}k'
+        return f'${v:,.2f}'
+    if fmt in ('percentage', 'rate'): return f'{v:.1f}%'
+    if fmt == 'ratio': return f'{v:.2f}x'
+    if fmt == 'number':
+        if v >= 1_000_000: return f'{v/1_000_000:.2f}M'
+        if v >= 1_000: return f'{v/1_000:.1f}k'
+        return f'{v:,.0f}'
+    return str(v)
+
+
+def _card_kw(label, value, sparkline, fmt, invert=False, card_type='financial'):
+    """Keywords cards have no prev period — change_pct always None (dash)."""
+    return {
+        'label': label,
+        'value_display': _fmt_kw(value, fmt),
+        'change_pct': None,
+        'sparkline_data': sparkline,
+        'format_type': fmt,
+        'invert_colours': invert,
+        'card_type': card_type,
+        'sub_label': None,
+    }
+
+
+def _blank_kw(card_type='financial'):
+    return {
+        'label': '', 'value_display': '', 'change_pct': None,
+        'sparkline_data': None, 'format_type': 'blank',
+        'invert_colours': False, 'card_type': card_type, 'sub_label': None,
+    }
+
+
+def load_keyword_metrics_cards(conn, customer_id, window_suffix, snapshot_date, active_days):
+    """
+    Build financial_cards and actions_cards for Keywords page.
+
+    Uses keyword_features_daily windowed columns for summary values.
+    Uses ro.analytics.keyword_daily for sparklines (falls back to empty if unavailable).
+
+    No prev period comparison — change indicators show dash (None).
+
+    Financial (8): Cost | Revenue | ROAS | Wasted Spend | Conversions | CPA | Conv Rate | BLANK
+    Actions  (8): Impressions | Clicks | Avg CPC | Avg CTR |
+                  Search IS | Search Top IS | Search Abs Top IS | Click Share
+    """
+    # Summary values from keyword_features_daily windowed columns
+    try:
+        summary = conn.execute(f"""
+            SELECT
+                SUM(cost_micros_{window_suffix}_sum) / 1000000.0                                AS cost,
+                SUM(conversion_value_{window_suffix}_sum)                                        AS revenue,
+                SUM(conversion_value_{window_suffix}_sum)
+                    / NULLIF(SUM(cost_micros_{window_suffix}_sum) / 1000000.0, 0)               AS roas,
+                SUM(conversions_{window_suffix}_sum)                                             AS conversions,
+                (SUM(cost_micros_{window_suffix}_sum) / 1000000.0)
+                    / NULLIF(SUM(conversions_{window_suffix}_sum), 0)                            AS cpa,
+                SUM(clicks_{window_suffix}_sum) * 1.0
+                    / NULLIF(SUM(impressions_{window_suffix}_sum), 0)                            AS cvr,
+                SUM(impressions_{window_suffix}_sum)                                             AS impressions,
+                SUM(clicks_{window_suffix}_sum)                                                  AS clicks,
+                (SUM(cost_micros_{window_suffix}_sum) / 1000000.0)
+                    / NULLIF(SUM(clicks_{window_suffix}_sum), 0)                                 AS cpc,
+                SUM(clicks_{window_suffix}_sum) * 1.0
+                    / NULLIF(SUM(impressions_{window_suffix}_sum), 0)                            AS ctr,
+                -- Wasted spend: cost on keywords with 0 conversions
+                SUM(CASE WHEN conversions_{window_suffix}_sum = 0 AND cost_micros_{window_suffix}_sum > 0
+                    THEN cost_micros_{window_suffix}_sum / 1000000.0 ELSE 0 END)                AS wasted_spend
+            FROM ro.analytics.keyword_features_daily
+            WHERE customer_id = ?
+              AND snapshot_date = ?
+        """, [customer_id, snapshot_date]).fetchone()
+    except Exception as e:
+        print(f"[Keywords M2] Summary query error: {e}")
+        summary = None
+
+    def _v(row, i): return float(row[i]) if row and row[i] is not None else None
+    def pct(val): return val * 100 if val is not None else None
+
+    c = [_v(summary, i) for i in range(11)] if summary else [None] * 11
+
+    # Sparklines from keyword_daily (summed across all keywords per day)
+    spark_days = active_days if active_days in [7, 30, 90] else 30
+    try:
+        spark_rows = conn.execute(f"""
+            SELECT
+                snapshot_date,
+                SUM(cost_micros) / 1000000.0                                                     AS cost,
+                SUM(conversions_value)                                                            AS revenue,
+                SUM(conversions_value) / NULLIF(SUM(cost_micros) / 1000000.0, 0)                 AS roas,
+                SUM(conversions)                                                                  AS conversions,
+                (SUM(cost_micros) / 1000000.0) / NULLIF(SUM(conversions), 0)                     AS cpa,
+                SUM(clicks) * 1.0 / NULLIF(SUM(impressions), 0)                                  AS cvr,
+                SUM(impressions)                                                                  AS impressions,
+                SUM(clicks)                                                                       AS clicks,
+                (SUM(cost_micros) / 1000000.0) / NULLIF(SUM(clicks), 0)                          AS cpc,
+                SUM(clicks) * 1.0 / NULLIF(SUM(impressions), 0)                                  AS ctr,
+                AVG(search_impression_share)                                                      AS search_is,
+                AVG(search_top_impression_share)                                                  AS search_top_is,
+                AVG(search_absolute_top_impression_share)                                         AS search_abs_top_is,
+                AVG(click_share)                                                                  AS click_share
+            FROM ro.analytics.keyword_daily
+            WHERE customer_id = ?
+              AND snapshot_date >= CURRENT_DATE - INTERVAL '{spark_days} days'
+              AND snapshot_date < CURRENT_DATE
+            GROUP BY snapshot_date
+            ORDER BY snapshot_date ASC
+        """, [customer_id]).fetchall()
+    except Exception as e:
+        print(f"[Keywords M2] Sparkline query error (keyword_daily may not exist): {e}")
+        spark_rows = []
+
+    def _spark(col_idx, scale=1.0):
+        return [float(r[col_idx]) * scale if r[col_idx] is not None else 0.0 for r in spark_rows]
+
+    financial_cards = [
+        _card_kw('Cost',          c[0],       _spark(1),        'currency',   invert=True),
+        _card_kw('Revenue',       c[1],       _spark(2),        'currency'),
+        _card_kw('ROAS',          c[2],       _spark(3),        'ratio'),
+        _card_kw('Wasted Spend',  c[10],      _spark(1),        'currency',   invert=True),  # wasted has no daily spark — reuse cost shape
+        _card_kw('Conversions',   c[3],       _spark(4),        'number'),
+        _card_kw('Cost / Conv',   c[4],       _spark(5),        'currency',   invert=True),
+        _card_kw('Conv Rate',     pct(c[5]),  _spark(6, 100.0), 'percentage'),
+        _blank_kw('financial'),
+    ]
+    # IS summary from keyword_daily over the window period
+    try:
+        is_row = conn.execute(f"""
+            SELECT
+                AVG(search_impression_share)             AS search_is,
+                AVG(search_top_impression_share)         AS search_top_is,
+                AVG(search_absolute_top_impression_share) AS search_abs_top_is,
+                AVG(click_share)                         AS click_share
+            FROM ro.analytics.keyword_daily
+            WHERE customer_id = ?
+              AND snapshot_date >= CURRENT_DATE - INTERVAL '{spark_days} days'
+              AND snapshot_date < CURRENT_DATE
+        """, [customer_id]).fetchone()
+    except Exception as e:
+        print(f"[Keywords M2] IS query error: {{e}}")
+        is_row = None
+
+    def _is(row, i): return float(row[i]) * 100 if row and row[i] is not None else None
+
+    actions_cards = [
+        _card_kw('Impressions',       c[6],           _spark(7),         'number',     card_type='actions'),
+        _card_kw('Clicks',            c[7],           _spark(8),         'number',     card_type='actions'),
+        _card_kw('Avg CPC',           c[8],           _spark(9),         'currency',   card_type='actions'),
+        _card_kw('Avg CTR',           pct(c[9]),      _spark(10, 100.0), 'percentage', card_type='actions'),
+        _card_kw('Search Impr Share', _is(is_row, 0), _spark(11, 100.0), 'percentage', card_type='actions'),
+        _card_kw('Search Top IS',     _is(is_row, 1), _spark(12, 100.0), 'percentage', card_type='actions'),
+        _card_kw('Search Abs Top IS', _is(is_row, 2), _spark(13, 100.0), 'percentage', card_type='actions'),
+        _card_kw('Click Share',       _is(is_row, 3), _spark(14, 100.0), 'percentage', card_type='actions'),
+    ]
+    return financial_cards, actions_cards
+
+
 @bp.route("/keywords")
 @login_required
 def keywords():
@@ -531,6 +699,11 @@ def keywords():
         print(f"[Keywords] Search terms query error: {e}")
         search_terms = []
     
+    # M2: Metrics cards
+    financial_cards, actions_cards = load_keyword_metrics_cards(
+        conn, config.customer_id, window_suffix, snapshot_date, active_days
+    )
+
     # Close database connection
     conn.close()
     
@@ -569,4 +742,8 @@ def keywords():
         wasted_spend=wasted_spend,
         search_terms=search_terms,
         rules=rules,
+        # M2: Metrics cards
+        financial_cards=financial_cards,
+        actions_cards=actions_cards,
+        metrics_collapsed=get_metrics_collapsed('keywords'),
     )

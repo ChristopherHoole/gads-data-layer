@@ -265,3 +265,44 @@ def set_date_range():
         return jsonify({'success': True, 'days': 0, 'date_from': date_from, 'date_to': date_to})
 
     return jsonify({'success': False, 'error': f'Invalid range_type: {range_type!r}'}), 400
+
+
+# ==================== Chat 23 M2: Metrics Collapse Session Helpers ====================
+
+
+def get_metrics_collapsed(page_id: str) -> bool:
+    """
+    Returns the collapsed state for the Actions row on a given page.
+
+    Args:
+        page_id: Page identifier string e.g. 'campaigns', 'keywords'
+
+    Returns:
+        True if Actions row is collapsed, False (default) if expanded.
+    """
+    collapsed_map = session.get('metrics_collapsed', {})
+    return bool(collapsed_map.get(page_id, False))
+
+
+@bp.route('/set-metrics-collapse', methods=['POST'])
+def set_metrics_collapse():
+    """
+    POST /set-metrics-collapse
+    Body JSON: { page_id: str, collapsed: bool }
+    Stores per-page collapse state in session['metrics_collapsed'][page_id].
+    Returns JSON: { success: true }
+    """
+    data = request.get_json(silent=True) or {}
+
+    page_id = str(data.get('page_id', '')).strip()
+    collapsed = bool(data.get('collapsed', False))
+
+    if not page_id:
+        return jsonify({'success': False, 'error': 'page_id is required'}), 400
+
+    # Read existing map, update, write back (Flask session requires reassignment)
+    collapsed_map = dict(session.get('metrics_collapsed', {}))
+    collapsed_map[page_id] = collapsed
+    session['metrics_collapsed'] = collapsed_map
+
+    return jsonify({'success': True, 'page_id': page_id, 'collapsed': collapsed})

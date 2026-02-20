@@ -427,6 +427,11 @@ def _generate_daily_keyword_row(
         "cost_micros": cost_micros,
         "conversions": conversions,
         "conversions_value": conv_value,
+        # Chat 23 M2: IS metrics — correlated to QS and impressions
+        "search_impression_share":              round(min(1.0, impressions / max(1, impressions) * np.random.uniform(0.40, 0.90)), 4),
+        "search_top_impression_share":          round(min(1.0, np.random.uniform(0.20, 0.55)), 4),
+        "search_absolute_top_impression_share": round(min(1.0, np.random.uniform(0.08, 0.28)), 4),
+        "click_share":                          round(min(1.0, np.random.uniform(0.30, 0.75)), 4),
     }
 
 
@@ -705,6 +710,8 @@ def generate_all():
         "quality_score_relevance", "bid_micros", "first_page_cpc_micros",
         "top_of_page_cpc_micros", "impressions", "clicks", "cost_micros",
         "conversions", "conversions_value",
+        "search_impression_share", "search_top_impression_share",
+        "search_absolute_top_impression_share", "click_share",
     ]
 
     cols_sql = ", ".join(KEYWORD_COLS)
