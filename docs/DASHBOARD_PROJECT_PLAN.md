@@ -1354,18 +1354,28 @@ ORDER BY cost DESC
 
 ---
 
-#### Chat 24: M3 — Chart Overhaul 📋 PLANNED
-**Est. time:** ~120 min (most complex module)  
-**Status:** Outline agreed, detail to be discussed before brief
+#### Chat 24: M3 — Chart Overhaul ✅ COMPLETE
+**Date:** 2026-02-20  
+**Status:** COMPLETE ✅  
+**Summary:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\CHAT_24_DETAILED_SUMMARY.md`  
+**Handoff:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\CHAT_24_HANDOFF.md`  
+**Wireframe:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\M3_WIREFRAME.html`
 
-**What gets built:**
-- 4 selectable mini-stat slots above chart area
-- Chart.js renders whichever metrics are selected (max 3 lines)
-- Metric selection persists per page per session
-- Available metrics differ per page (Campaigns vs Shopping vs Keywords etc.)
-- Jinja2 macro: `performance_chart(available_metrics, selected_metrics)`
+**Delivered:**
+- Reusable `performance_chart.html` Jinja2 macro on all 6 pages
+- Dual Y-axis: Y1 left ($) = Cost + Avg CPC | Y2 right (count) = Impressions + Clicks
+- Each axis auto-hides when all its metrics are inactive
+- 4 toggleable slots (Google Ads style click-to-toggle)
+- Default: Cost + Clicks active on first load
+- Session-persisted per page (`chart_metrics_<page_id>`)
+- POST /set-chart-metrics — no page reload on toggle
+- Empty state message when 0 metrics active
+- Dashboard: replaced legacy Performance Trend chart
+- Shopping: Campaigns tab only
+- Keywords + Ads: account-level campaign_daily (no per-entity daily table)
+- 10 route/template files modified
 
-**Pilot:** Campaigns → rollout all pages
+**Next Step:** Chat 25 — M4 Table Overhaul (discuss with Master Chat first)
 
 ---
 
@@ -1410,6 +1420,6 @@ Depends on M6 design decisions.
 
 ---
 
-**Last Updated:** 2026-02-19 ~10:00 PM  
-**Status:** Dashboard 3.0 Phase 1 in progress 🚧  
-**Next Step:** Chat 24 — M3: Chart Overhaul (discuss with Master Chat first)
+**Last Updated:** 2026-02-20  
+**Status:** Dashboard 3.0 Phase 1 — M1 ✅ M2 ✅ M3 ✅ | M4 next  
+**Next Step:** Chat 25 — M4 Table Overhaul (discuss with Master Chat first)

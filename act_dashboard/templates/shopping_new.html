@@ -1,5 +1,6 @@
 {% extends "base_bootstrap.html" %}
 {% from "macros/metrics_cards.html" import metrics_section %}
+{% from "macros/performance_chart.html" import performance_chart %}
 
 {% block title %}Shopping - {{ client_name }}{% endblock %}
 
@@ -73,6 +74,9 @@
 
       <!-- M2 Campaigns Metrics Cards -->
       {{ metrics_section(camp_financial_cards, camp_actions_cards, 'shopping_campaigns', metrics_collapsed) }}
+
+      <!-- M3 Performance Chart -->
+      {{ performance_chart(chart_data, active_metrics, 'shopping') }}
 
       <!-- Filters -->
       <div class="card mb-3">

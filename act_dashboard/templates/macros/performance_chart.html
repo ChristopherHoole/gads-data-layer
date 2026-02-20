@@ -1,0 +1,345 @@
+{#
+  performance_chart macro — Dashboard 3.0 M3
+  Chat 24 | 2026-02-20
+
+  Usage:
+    {% from "macros/performance_chart.html" import performance_chart %}
+    {{ performance_chart(chart_data, active_metrics, page_id) }}
+
+  Args:
+    chart_data     : dict with keys: dates, cost, impressions, clicks, avg_cpc
+                     Each metric key maps to:
+                       { values: [...], total: float, change_pct: float|None, axis: 'y1'|'y2' }
+    active_metrics : list of active metric keys e.g. ['cost', 'clicks']
+    page_id        : string e.g. 'campaigns' — used for session key + JS chart instance id
+#}
+
+{% macro performance_chart(chart_data, active_metrics, page_id) %}
+
+{# ── Config ───────────────────────────────────────────────────────────────── #}
+{% set slots = [
+  {
+    'key':        'cost',
+    'label':      'Cost',
+    'axis':       'y1',
+    'axis_label': 'Y1 · $',
+    'axis_side':  'left',
+    'color':      '#dc3545',
+    'bg':         '#fff5f5',
+    'border':     '#dc3545',
+    'active_cls': 'pmc-active-cost',
+    'fmt':        'currency'
+  },
+  {
+    'key':        'impressions',
+    'label':      'Impressions',
+    'axis':       'y2',
+    'axis_label': 'Y2 · count',
+    'axis_side':  'right',
+    'color':      '#0d6efd',
+    'bg':         '#f0f4ff',
+    'border':     '#0d6efd',
+    'active_cls': 'pmc-active-impr',
+    'fmt':        'number'
+  },
+  {
+    'key':        'clicks',
+    'label':      'Clicks',
+    'axis':       'y2',
+    'axis_label': 'Y2 · count',
+    'axis_side':  'right',
+    'color':      '#198754',
+    'bg':         '#f0fff4',
+    'border':     '#198754',
+    'active_cls': 'pmc-active-clicks',
+    'fmt':        'number'
+  },
+  {
+    'key':        'avg_cpc',
+    'label':      'Avg CPC',
+    'axis':       'y1',
+    'axis_label': 'Y1 · $',
+    'axis_side':  'left',
+    'color':      '#fd7e14',
+    'bg':         '#fff8f0',
+    'border':     '#fd7e14',
+    'active_cls': 'pmc-active-cpc',
+    'fmt':        'currency'
+  }
+] %}
+
+{# ── Formatting helper (Jinja) ────────────────────────────────────────────── #}
+{# Used for slot total display #}
+{# ── Unique chart ID per page ─────────────────────────────────────────────── #}
+{% set chart_id = 'pmcChart_' ~ page_id %}
+{% set wrapper_id = 'pmcWrapper_' ~ page_id %}
+
+<div class="mb-4" id="{{ wrapper_id }}">
+
+  {# ── Slot cards row ────────────────────────────────────────────────────── #}
+  <div class="row g-2 mb-2">
+    {% for slot in slots %}
+      {% set is_active = slot.key in active_metrics %}
+      {% set metric = chart_data.get(slot.key, {}) %}
+      {% set total = metric.get('total') %}
+      {% set chg = metric.get('change_pct') %}
+      <div class="col-3">
+        <div class="pmc-slot {% if is_active %}{{ slot.active_cls }}{% else %}pmc-inactive{% endif %}"
+             data-page="{{ page_id }}"
+             data-metric="{{ slot.key }}"
+             data-color="{{ slot.color }}"
+             data-axis="{{ slot.axis }}"
+             onclick="pmcToggleSlot(this)"
+             style="background:white;border:2px solid #e9ecef;border-radius:8px;padding:12px 16px;cursor:pointer;transition:all 0.15s ease;position:relative;user-select:none;{% if is_active %}border-color:{{ slot.border }};background:{{ slot.bg }};{% else %}opacity:0.5;{% endif %}">
+
+          {# Active dot top-right #}
+          <div class="pmc-dot" style="position:absolute;top:10px;right:10px;width:10px;height:10px;border-radius:50%;background:{{ slot.color }};display:{% if is_active %}block{% else %}none{% endif %};"></div>
+
+          {# Axis badge bottom-right #}
+          <span style="position:absolute;bottom:8px;right:10px;font-size:9px;font-weight:700;letter-spacing:0.5px;padding:1px 5px;border-radius:4px;{% if slot.axis == 'y1' %}background:#f8d7da;color:#842029;{% else %}background:#cfe2ff;color:#084298;{% endif %}">{{ slot.axis_label }}</span>
+
+          <div style="font-size:11px;color:#6c757d;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">{{ slot.label }}</div>
+          {# Inline format total value — no nested macro (Jinja2 doesn't support them) #}
+          {% if total is none %}
+            {% set _fv = '—' %}
+          {% elif slot.fmt == 'currency' %}
+            {% if total >= 1000000 %}{% set _fv = '$' ~ "%.1f"|format(total / 1000000) ~ 'M' %}
+            {% elif total >= 1000 %}{% set _fv = '$' ~ "%.1f"|format(total / 1000) ~ 'k' %}
+            {% else %}{% set _fv = '$' ~ "%.2f"|format(total) %}{% endif %}
+          {% elif slot.fmt == 'number' %}
+            {% if total >= 1000000 %}{% set _fv = "%.2f"|format(total / 1000000) ~ 'M' %}
+            {% elif total >= 1000 %}{% set _fv = "%.1f"|format(total / 1000) ~ 'k' %}
+            {% else %}{% set _fv = "%d"|format(total) %}{% endif %}
+          {% else %}
+            {% set _fv = total|string %}
+          {% endif %}
+          <div style="font-size:22px;font-weight:700;color:#212529;line-height:1.2;margin:2px 0;padding-bottom:18px;">{{ _fv }}</div>
+
+          {# Change indicator #}
+          {% if chg is none %}
+            <div style="font-size:12px;color:#6c757d;">—</div>
+          {% elif chg > 0 %}
+            <div style="font-size:12px;color:{% if slot.key in ('cost','avg_cpc') %}#dc3545{% else %}#198754{% endif %};">
+              <i class="bi bi-arrow-up"></i> {{ "%.1f"|format(chg|abs) }}%
+            </div>
+          {% elif chg < 0 %}
+            <div style="font-size:12px;color:{% if slot.key in ('cost','avg_cpc') %}#198754{% else %}#dc3545{% endif %};">
+              <i class="bi bi-arrow-down"></i> {{ "%.1f"|format(chg|abs) }}%
+            </div>
+          {% else %}
+            <div style="font-size:12px;color:#6c757d;">— 0%</div>
+          {% endif %}
+
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  {# ── Chart card ────────────────────────────────────────────────────────── #}
+  <div style="background:white;border:1px solid #e9ecef;border-radius:8px;padding:20px;position:relative;">
+    <canvas id="{{ chart_id }}" style="display:{% if active_metrics|length > 0 %}block{% else %}none{% endif %};"></canvas>
+    <div id="pmcEmpty_{{ page_id }}" style="display:{% if active_metrics|length == 0 %}block{% else %}none{% endif %};text-align:center;padding:60px 20px;color:#adb5bd;font-size:13px;">
+      <i class="bi bi-bar-chart" style="font-size:32px;display:block;margin-bottom:8px;"></i>
+      Select a metric above to show chart
+    </div>
+  </div>
+
+</div>
+
+{# ── Inline JS ─────────────────────────────────────────────────────────────── #}
+<script>
+(function() {
+  // Chart.js loads after {# block content #} in base_bootstrap.html.
+  // Poll until Chart is available before initialising.
+  function waitForChart(cb) {
+    if (typeof Chart !== 'undefined') { cb(); }
+    else { setTimeout(function() { waitForChart(cb); }, 30); }
+  }
+
+  const PAGE_ID  = {{ page_id | tojson }};
+  const CHART_ID = 'pmcChart_' + PAGE_ID;
+
+  waitForChart(function() {
+
+  // ── Dataset config ────────────────────────────────────────────────────────
+  const SLOT_CFG = {
+    cost:        { label: 'Cost ($)',     color: '#dc3545', axis: 'y1', idx: 0 },
+    impressions: { label: 'Impressions',  color: '#0d6efd', axis: 'y2', idx: 1 },
+    clicks:      { label: 'Clicks',       color: '#198754', axis: 'y2', idx: 2 },
+    avg_cpc:     { label: 'Avg CPC ($)',  color: '#fd7e14', axis: 'y1', idx: 3 }
+  };
+
+  const ACTIVE_CLASS = {
+    cost:        'pmc-active-cost',
+    impressions: 'pmc-active-impr',
+    clicks:      'pmc-active-clicks',
+    avg_cpc:     'pmc-active-cpc'
+  };
+
+  const ACTIVE_BORDER = {
+    cost:        '#dc3545',
+    impressions: '#0d6efd',
+    clicks:      '#198754',
+    avg_cpc:     '#fd7e14'
+  };
+
+  const ACTIVE_BG = {
+    cost:        '#fff5f5',
+    impressions: '#f0f4ff',
+    clicks:      '#f0fff4',
+    avg_cpc:     '#fff8f0'
+  };
+
+  // ── Chart data injected from Flask ────────────────────────────────────────
+  const dates       = {{ chart_data.get('dates', []) | tojson }};
+  const rawValues   = {
+    cost:        {{ chart_data.get('cost',        {}).get('values', []) | tojson }},
+    impressions: {{ chart_data.get('impressions', {}).get('values', []) | tojson }},
+    clicks:      {{ chart_data.get('clicks',      {}).get('values', []) | tojson }},
+    avg_cpc:     {{ chart_data.get('avg_cpc',     {}).get('values', []) | tojson }}
+  };
+
+  // ── Initial active state from session (server) ────────────────────────────
+  let activeMetrics = new Set({{ active_metrics | tojson }});
+
+  // ── Build Chart.js datasets ───────────────────────────────────────────────
+  function makeDatasets() {
+    return Object.entries(SLOT_CFG).map(([key, cfg]) => ({
+      label:           cfg.label,
+      data:            rawValues[key] || [],
+      borderColor:     cfg.color,
+      backgroundColor: cfg.color + '0F',  // ~6% opacity
+      borderWidth:     2,
+      pointRadius:     0,
+      tension:         0.3,
+      yAxisID:         cfg.axis,
+      hidden:          !activeMetrics.has(key)
+    }));
+  }
+
+  // ── Y-axis visibility helpers ─────────────────────────────────────────────
+  function y1Active() { return activeMetrics.has('cost') || activeMetrics.has('avg_cpc'); }
+  function y2Active() { return activeMetrics.has('impressions') || activeMetrics.has('clicks'); }
+
+  // ── Create chart ──────────────────────────────────────────────────────────
+  const canvas = document.getElementById(CHART_ID);
+  if (!canvas) return;
+
+  const pmcChart = new Chart(canvas, {
+    type: 'line',
+    data: { labels: dates, datasets: makeDatasets() },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: { font: { size: 11 }, boxWidth: 12 }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              const key = Object.keys(SLOT_CFG).find(k => SLOT_CFG[k].idx === ctx.datasetIndex);
+              const v = ctx.parsed.y;
+              if (v === null || v === undefined) return ctx.dataset.label + ': —';
+              if (key === 'cost' || key === 'avg_cpc') return ctx.dataset.label + ': $' + v.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+              if (v >= 1000000) return ctx.dataset.label + ': ' + (v/1000000).toFixed(1) + 'M';
+              if (v >= 1000)    return ctx.dataset.label + ': ' + (v/1000).toFixed(1) + 'k';
+              return ctx.dataset.label + ': ' + v.toLocaleString();
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { font: { size: 10 }, maxTicksLimit: 8 },
+          grid:  { display: false }
+        },
+        y1: {
+          type:     'linear',
+          position: 'left',
+          display:  y1Active(),
+          ticks: {
+            font: { size: 10 },
+            callback: v => '$' + (v >= 1000 ? (v/1000).toFixed(1)+'k' : v.toFixed(2))
+          },
+          grid:  { color: '#f0f0f0' },
+          title: { display: true, text: '$ · Cost / Avg CPC', font: { size: 10 }, color: '#dc3545' }
+        },
+        y2: {
+          type:     'linear',
+          position: 'right',
+          display:  y2Active(),
+          ticks: {
+            font: { size: 10 },
+            callback: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'k' : v
+          },
+          grid:  { drawOnChartArea: false },
+          title: { display: true, text: 'Count · Impr / Clicks', font: { size: 10 }, color: '#0d6efd' }
+        }
+      }
+    }
+  });
+
+  // ── Update axis visibility + empty state ──────────────────────────────────
+  function updateChart() {
+    const y1 = y1Active();
+    const y2 = y2Active();
+    const any = y1 || y2;
+
+    pmcChart.options.scales.y1.display = y1;
+    pmcChart.options.scales.y2.display = y2;
+    pmcChart.update();
+
+    canvas.style.display = any ? 'block' : 'none';
+    document.getElementById('pmcEmpty_' + PAGE_ID).style.display = any ? 'none' : 'block';
+  }
+
+  // ── Session POST (fire-and-forget) ────────────────────────────────────────
+  function saveSession() {
+    fetch('/set-chart-metrics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ page_id: PAGE_ID, metrics: Array.from(activeMetrics) })
+    }).catch(() => {});  // non-blocking — chart works even if POST fails
+  }
+
+  // ── Toggle handler (called from onclick) ──────────────────────────────────
+  window.pmcToggleSlot = function(el) {
+    const metric = el.dataset.metric;
+    if (!metric) return;
+
+    const isActive = activeMetrics.has(metric);
+
+    if (isActive) {
+      // Deactivate
+      activeMetrics.delete(metric);
+      el.style.borderColor = '#e9ecef';
+      el.style.background  = 'white';
+      el.style.opacity     = '0.5';
+      el.querySelector('.pmc-dot').style.display = 'none';
+      // Hide dataset
+      pmcChart.data.datasets[SLOT_CFG[metric].idx].hidden = true;
+    } else {
+      // Activate
+      activeMetrics.add(metric);
+      el.style.borderColor = ACTIVE_BORDER[metric];
+      el.style.background  = ACTIVE_BG[metric];
+      el.style.opacity     = '1';
+      el.querySelector('.pmc-dot').style.display = 'block';
+      // Show dataset
+      pmcChart.data.datasets[SLOT_CFG[metric].idx].hidden = false;
+    }
+
+    updateChart();
+    saveSession();
+  };
+
+  }); // end waitForChart
+
+})();
+</script>
+
+{% endmacro %}

@@ -306,3 +306,63 @@ def set_metrics_collapse():
     session['metrics_collapsed'] = collapsed_map
 
     return jsonify({'success': True, 'page_id': page_id, 'collapsed': collapsed})
+
+
+# ==================== Chat 24 M3: Chart Metrics Session Helpers ====================
+
+
+def get_chart_metrics(page_id: str) -> List[str]:
+    """
+    Returns the active chart metric keys for a given page.
+
+    Args:
+        page_id: Page identifier string e.g. 'campaigns', 'keywords'
+
+    Returns:
+        List of active metric keys. Default: ['cost', 'clicks']
+    """
+    key = f'chart_metrics_{page_id}'
+    stored = session.get(key)
+    if stored and isinstance(stored, list):
+        # Validate — only allow known metric keys
+        valid = {'cost', 'impressions', 'clicks', 'avg_cpc'}
+        filtered = [m for m in stored if m in valid]
+        if filtered:
+            return filtered
+    return ['cost', 'clicks']
+
+
+def set_chart_metrics(page_id: str, metrics: List[str]) -> None:
+    """
+    Saves active chart metric keys for a given page to session.
+
+    Args:
+        page_id: Page identifier string e.g. 'campaigns'
+        metrics: List of metric keys to store
+    """
+    valid = {'cost', 'impressions', 'clicks', 'avg_cpc'}
+    filtered = [m for m in metrics if m in valid]
+    session[f'chart_metrics_{page_id}'] = filtered
+
+
+@bp.route('/set-chart-metrics', methods=['POST'])
+def set_chart_metrics_route():
+    """
+    POST /set-chart-metrics
+    Body JSON: { page_id: str, metrics: [str, ...] }
+    Stores active chart metrics in session per page.
+    Returns JSON: { status: 'ok' }
+    """
+    data = request.get_json(silent=True) or {}
+
+    page_id = str(data.get('page_id', '')).strip()
+    metrics = data.get('metrics', [])
+
+    if not page_id:
+        return jsonify({'status': 'error', 'error': 'page_id is required'}), 400
+
+    if not isinstance(metrics, list):
+        return jsonify({'status': 'error', 'error': 'metrics must be a list'}), 400
+
+    set_chart_metrics(page_id, metrics)
+    return jsonify({'status': 'ok', 'page_id': page_id, 'metrics': get_chart_metrics(page_id)})

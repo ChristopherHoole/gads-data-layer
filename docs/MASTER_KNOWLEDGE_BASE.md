@@ -10,9 +10,10 @@
 ## EXECUTIVE SUMMARY
 
 ### Current State (Feb 20, 2026)
-- **Overall Completion:** ~85%
-- **Phase:** Dashboard 3.0 — M2 complete ✅, M3 (Chart Overhauls) NEXT
+- **Overall Completion:** ~87%
+- **Phase:** Dashboard 3.0 — M3 complete ✅, M4 (Table Overhaul) NEXT
 - **Active Development:** Dashboard 3.0 modular improvements
+- **Templating:** Jinja2 Macros (metrics_section M2 + performance_chart M3)
 
 ### Tech Stack
 - **Backend:** Python 3.11, Flask
@@ -96,6 +97,37 @@ Known issues (non-blocking):
 Pending git commit message:
   feat(dashboard): M2 metrics cards rollout - all 6 pages complete
   Chat-23 | Module-M2 | Status: COMPLETE
+
+---
+
+### Chat 24 — M3: Chart Overhaul ✅
+**Date:** 2026-02-20 | **Commit:** Pending
+
+Reusable `performance_chart.html` Jinja2 macro on all 6 pages:
+- Dual Y-axis: Y1 left ($) = Cost + Avg CPC; Y2 right (count) = Impressions + Clicks
+- Each axis auto-hides when all its metrics are inactive
+- 4 toggleable slots: click to show/hide line (Google Ads style)
+- Default active: Cost + Clicks
+- Session key: `chart_metrics_<page_id>` | POST /set-chart-metrics (no reload)
+- Empty state shown when 0 metrics active
+- Dashboard: replaced legacy Performance Trend chart
+- Shopping: Campaigns tab only
+- Keywords + Ads: account-level campaign_daily (no per-entity daily table)
+
+Data sources:
+| Page | Table |
+|------|-------|
+| Dashboard | analytics.campaign_daily (no ro. prefix) |
+| Campaigns | ro.analytics.campaign_daily |
+| Ad Groups | ro.analytics.ad_group_daily |
+| Keywords | ro.analytics.campaign_daily (account proxy) |
+| Ads | ro.analytics.campaign_daily (account proxy) |
+| Shopping | ro.analytics.campaign_daily (account proxy) |
+
+Files modified (10): shared.py + 6 routes + dashboard_new.html + ad_groups.html + keywords_new.html + ads_new.html + shopping_new.html
+New file: macros/performance_chart.html
+
+**Critical lesson:** Helper functions MUST be placed BEFORE @bp.route decorator. Inserting between decorator and def registers the helper as the route handler (silent Flask bug).
 
 ---
 
@@ -222,8 +254,8 @@ Rule Visibility System (Chat 21c — reusable on all pages):
 |--------|------|--------|
 | M1: Date Range Picker | 22 | ✅ COMPLETE |
 | M2: Metrics Cards | 23 | ✅ COMPLETE |
-| M3: Chart Overhauls | 24 | 📋 NEXT |
-| M4: Table Improvements | 25 | 📋 PLANNED |
+| M3: Chart Overhauls | 24 | ✅ COMPLETE |
+| M4: Table Improvements | 25 | 🚧 NEXT |
 | M5: Rules Panel Upgrades | 26 | 📋 PLANNED |
 | M6: Action Buttons | 27 | 📋 PLANNED |
 
@@ -251,6 +283,7 @@ Rule Visibility System (Chat 21c — reusable on all pages):
 What's working:
 - All 6 dashboard pages with real/synthetic data
 - Metrics cards: Financial + Actions on every page
+- Performance chart: dual-axis, 4 toggleable metrics, session-persisted, all 6 pages
 - Sparklines + change indicators on date-range pages
 - IS metrics in Actions row
 - Ad Strength on Ads page
@@ -261,7 +294,7 @@ What's working:
 - Constitution execution engine
 
 Pending:
-- Chat 23 git commit (approved, 17 files)
+- Chat 23 + Chat 24 git commits pending
 - Ads Revenue fix (future chat)
 - 404.html (future chat)
 - Chat 15 deferred work (executor compatibility)
@@ -271,7 +304,6 @@ Pending:
 ## FUTURE ROADMAP
 
 Immediate (Dashboard 3.0):
-- Chat 24: M3 Chart Overhauls
 - Chat 25: M4 Table Improvements
 - Chat 26: M5 Rules Panel
 - Chat 27: M6 Action Buttons
@@ -302,4 +334,4 @@ Medium-term:
 ---
 
 **Version:** 3.0 | **Last Updated:** 2026-02-20  
-**Next Step:** Chat 24 — M3 Chart Overhauls
+**Next Step:** Chat 25 — M4 Table Overhaul (discuss with Master Chat first)

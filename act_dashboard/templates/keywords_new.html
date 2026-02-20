@@ -1,5 +1,6 @@
 {% extends "base_bootstrap.html" %}
 {% from "macros/metrics_cards.html" import metrics_section %}
+{% from "macros/performance_chart.html" import performance_chart %}
 
 {% block content %}
 <div class="container-fluid">
@@ -31,6 +32,9 @@
       
       <!-- M2 Metrics Cards -->
       {{ metrics_section(financial_cards, actions_cards, 'keywords', metrics_collapsed) }}
+
+      <!-- M3 Performance Chart -->
+      {{ performance_chart(chart_data, active_metrics, 'keywords') }}
       
 
       

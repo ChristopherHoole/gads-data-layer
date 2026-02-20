@@ -1,5 +1,6 @@
 {% extends "base_bootstrap.html" %}
 {% from "macros/metrics_cards.html" import metrics_section %}
+{% from "macros/performance_chart.html" import performance_chart %}
 
 {% block title %}Dashboard - Ads Control Tower{% endblock %}
 
@@ -16,22 +17,8 @@
 <!-- M2 Metrics Cards -->
 {{ metrics_section(financial_cards, actions_cards, 'dashboard', metrics_collapsed) }}
 
-<!-- Performance Chart -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-white">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Performance Trend</h5>
-                    <span class="text-muted small">{% if active_days == 0 %}{{ date_from }} to {{ date_to }}{% else %}Last {{ active_days }} days{% endif %}</span>
-                </div>
-            </div>
-            <div class="card-body">
-                <canvas id="performanceChart" height="80"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- M3 Performance Chart -->
+{{ performance_chart(chart_data, active_metrics, 'dashboard') }}
 
 <!-- Top Campaigns + Recommendations -->
 <div class="row mb-4">
@@ -263,122 +250,4 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
-<!-- Chart.js 4.4 CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-<!-- Performance Chart -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('performanceChart');
-    if (!ctx) return;
-    
-    // Prepare data from backend
-    const dates = {{ trend_data | map(attribute='date') | list | tojson }};
-    const costData = {{ trend_data | map(attribute='cost') | list | tojson }};
-    const conversionsData = {{ trend_data | map(attribute='conversions') | list | tojson }};
-    const roasData = {{ trend_data | map(attribute='roas') | list | tojson }};
-    
-    // Create chart
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: dates,
-            datasets: [
-                {
-                    label: 'Cost ($)',
-                    data: costData,
-                    borderColor: '#dc3545',
-                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                    yAxisID: 'y',
-                    tension: 0.1
-                },
-                {
-                    label: 'Conversions',
-                    data: conversionsData,
-                    borderColor: '#198754',
-                    backgroundColor: 'rgba(25, 135, 84, 0.1)',
-                    yAxisID: 'y',
-                    tension: 0.1
-                },
-                {
-                    label: 'ROAS',
-                    data: roasData,
-                    borderColor: '#0d6efd',
-                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                    yAxisID: 'y1',
-                    tension: 0.1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            interaction: {
-                mode: 'index',
-                intersect: false
-            },
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top'
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
-                            }
-                            if (context.parsed.y !== null) {
-                                if (context.dataset.label === 'Cost ($)') {
-                                    label += '$' + context.parsed.y.toFixed(2);
-                                } else if (context.dataset.label === 'ROAS') {
-                                    label += context.parsed.y.toFixed(2) + 'x';
-                                } else {
-                                    label += Math.round(context.parsed.y);
-                                }
-                            }
-                            return label;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    title: {
-                        display: true,
-                        text: 'Cost ($) / Conversions'
-                    },
-                    ticks: {
-                        callback: function(value) {
-                            return '$' + value.toFixed(0);
-                        }
-                    }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    title: {
-                        display: true,
-                        text: 'ROAS'
-                    },
-                    grid: {
-                        drawOnChartArea: false
-                    },
-                    ticks: {
-                        callback: function(value) {
-                            return value.toFixed(1) + 'x';
-                        }
-                    }
-                }
-            }
-        }
-    });
-});
-</script>
-{% endblock %}

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M3 Chart Overhaul — Wireframe v2</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  body { background: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  .legend-box { background: white; border: 2px solid #e9ecef; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px; font-size: 13px; }
+  .legend-item { display: inline-flex; align-items: center; gap: 6px; margin-right: 20px; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .section-label { font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #adb5bd; margin-bottom: 6px; }
+
+  .metric-slot { background: white; border: 2px solid #e9ecef; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.15s ease; position: relative; user-select: none; }
+  .metric-slot:hover { border-color: #adb5bd; }
+  .metric-slot.active-cost   { border-color: #dc3545; background: #fff5f5; }
+  .metric-slot.active-impr   { border-color: #0d6efd; background: #f0f4ff; }
+  .metric-slot.active-clicks { border-color: #198754; background: #f0fff4; }
+  .metric-slot.active-cpc    { border-color: #fd7e14; background: #fff8f0; }
+  .metric-slot.inactive { opacity: 0.5; }
+
+  .slot-label { font-size: 11px; color: #6c757d; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .slot-value { font-size: 22px; font-weight: 700; color: #212529; line-height: 1.2; margin: 2px 0; }
+  .slot-change { font-size: 12px; }
+  .slot-change.up-bad    { color: #dc3545; }
+  .slot-change.down-bad  { color: #dc3545; }
+
+  .slot-dot { position: absolute; top: 10px; right: 10px; width: 10px; height: 10px; border-radius: 50%; display: none; }
+  .metric-slot.active-cost   .slot-dot { display: block; background: #dc3545; }
+  .metric-slot.active-impr   .slot-dot { display: block; background: #0d6efd; }
+  .metric-slot.active-clicks .slot-dot { display: block; background: #198754; }
+  .metric-slot.active-cpc    .slot-dot { display: block; background: #fd7e14; }
+
+  .axis-badge { position: absolute; bottom: 8px; right: 10px; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; padding: 1px 5px; border-radius: 4px; }
+  .axis-badge.left  { background: #f8d7da; color: #842029; }
+  .axis-badge.right { background: #cfe2ff; color: #084298; }
+
+  .chart-card { background: white; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; position: relative; }
+  .chart-empty-msg { display:none; text-align:center; padding: 60px 20px; color:#adb5bd; font-size:13px; }
+  .chart-empty-msg i { font-size: 32px; display:block; margin-bottom:8px; }
+
+  .wf-section { background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+  .wf-section-title { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #6c757d; padding-bottom: 10px; border-bottom: 1px solid #f0f0f0; margin-bottom: 12px; }
+  .state-demo { border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; background: #fff; }
+  .state-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-bottom: 10px; }
+
+  .callout { background: #fff3cd; border-left: 3px solid #ffc107; border-radius: 4px; padding: 8px 12px; font-size: 12px; color: #664d03; margin-top: 10px; }
+  .callout.info { background: #cff4fc; border-color: #0dcaf0; color: #055160; }
+  .callout.success { background: #d1e7dd; border-color: #198754; color: #0a3622; }
+
+  hr.wf-divider { border-color: #dee2e6; margin: 32px 0; }
+  .page-header { background: white; border-bottom: 1px solid #dee2e6; padding: 20px 0; margin-bottom: 28px; }
+  .page-header h1 { font-size: 22px; font-weight: 700; margin: 0; }
+  .page-header .subtitle { font-size: 13px; color: #6c757d; margin: 4px 0 0; }
+
+  .axis-status-bar { display:flex; gap:20px; font-size:12px; margin-bottom:8px; padding: 6px 12px; background:#f8f9fa; border-radius:6px; }
+  .axis-pill { padding: 2px 10px; border-radius:10px; font-weight:600; font-size:11px; }
+  .axis-pill.on  { background:#d1e7dd; color:#0a3622; }
+  .axis-pill.off { background:#f8d7da; color:#842029; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="container-fluid px-4">
+    <div class="d-flex align-items-center gap-3">
+      <div>
+        <h1>📊 M3 — Chart Overhaul Wireframe <span style="font-size:14px;color:#6c757d;">v2 · Dual Axis</span></h1>
+        <div class="subtitle">Dashboard 3.0 · Chat 24 · Y1 left = $ (Cost + Avg CPC) · Y2 right = Count (Impressions + Clicks)</div>
+      </div>
+      <span class="badge bg-warning text-dark ms-auto">WIREFRAME — For approval only</span>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid px-4">
+
+  <!-- LEGEND -->
+  <div class="legend-box">
+    <strong style="font-size:12px;">AXIS ASSIGNMENT</strong>&nbsp;&nbsp;
+    <span class="legend-item"><span class="legend-dot" style="background:#dc3545"></span> Cost → Y1 left ($)</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#fd7e14"></span> Avg CPC → Y1 left ($)</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#0d6efd"></span> Impressions → Y2 right (count)</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#198754"></span> Clicks → Y2 right (count)</span>
+    <span style="font-size:12px;color:#6c757d;margin-left:10px;">Each axis hides when all its metrics are inactive.</span>
+  </div>
+
+  <!-- ══ SECTION 1: INTERACTIVE DEMO ══ -->
+  <div class="section-label">Section 1 — Interactive demo (click slots to toggle)</div>
+  <div class="wf-section mb-4">
+    <div class="wf-section-title">Live dual-axis behaviour — all 4 slots clickable</div>
+
+    <div class="row g-2 mb-2">
+      <div class="col-3">
+        <div class="metric-slot active-cost" onclick="toggleSlot(this,'cost')">
+          <div class="slot-dot"></div>
+          <span class="axis-badge left">Y1 · $</span>
+          <div class="slot-label">Cost</div>
+          <div class="slot-value">$199.9k</div>
+          <div class="slot-change up-bad"><i class="bi bi-arrow-up"></i> 1.5%</div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="metric-slot active-impr" onclick="toggleSlot(this,'impr')">
+          <div class="slot-dot"></div>
+          <span class="axis-badge right">Y2 · count</span>
+          <div class="slot-label">Impressions</div>
+          <div class="slot-value">8.33M</div>
+          <div class="slot-change down-bad"><i class="bi bi-arrow-down"></i> 1.5%</div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="metric-slot active-clicks" onclick="toggleSlot(this,'clicks')">
+          <div class="slot-dot"></div>
+          <span class="axis-badge right">Y2 · count</span>
+          <div class="slot-label">Clicks</div>
+          <div class="slot-value">249.0k</div>
+          <div class="slot-change down-bad"><i class="bi bi-arrow-down"></i> 1.5%</div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="metric-slot inactive" onclick="toggleSlot(this,'cpc')">
+          <div class="slot-dot"></div>
+          <span class="axis-badge left">Y1 · $</span>
+          <div class="slot-label">Avg CPC</div>
+          <div class="slot-value">$0.80</div>
+          <div class="slot-change">— 0%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Axis status -->
+    <div class="axis-status-bar">
+      <span>Axis status:</span>
+      <span>Y1 (left · $): <span id="y1pill" class="axis-pill on">ACTIVE</span></span>
+      <span>Y2 (right · count): <span id="y2pill" class="axis-pill on">ACTIVE</span></span>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-card">
+      <canvas id="dualChart"></canvas>
+      <div class="chart-empty-msg" id="emptyMsg">
+        <i class="bi bi-bar-chart"></i>
+        Select a metric above to show chart
+      </div>
+    </div>
+
+    <div class="callout success mt-3">
+      <strong>Try these combos:</strong>
+      All 4 → both axes. Cost + Avg CPC only → right axis hides. Impressions + Clicks only → left axis hides. All off → empty state.
+    </div>
+  </div>
+
+  <hr class="wf-divider">
+
+  <!-- ══ SECTION 2: AXIS RULES ══ -->
+  <div class="section-label">Section 2 — Axis logic (confirmed + locked)</div>
+  <div class="wf-section mb-4">
+    <div class="wf-section-title">Assignment + show/hide rules</div>
+    <div class="row g-3">
+      <div class="col-md-5">
+        <div class="state-demo">
+          <div class="state-label">Axis assignment</div>
+          <table class="table table-sm mb-0" style="font-size:13px;">
+            <thead class="table-light"><tr><th>Metric</th><th>Axis</th><th>Colour</th></tr></thead>
+            <tbody>
+              <tr><td>Cost</td><td>Y1 · Left ($)</td><td><span style="color:#dc3545;">● red</span></td></tr>
+              <tr><td>Avg CPC</td><td>Y1 · Left ($)</td><td><span style="color:#fd7e14;">● orange</span></td></tr>
+              <tr><td>Impressions</td><td>Y2 · Right (count)</td><td><span style="color:#0d6efd;">● blue</span></td></tr>
+              <tr><td>Clicks</td><td>Y2 · Right (count)</td><td><span style="color:#198754;">● green</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="col-md-7">
+        <div class="state-demo">
+          <div class="state-label">Axis show/hide rules</div>
+          <table class="table table-sm mb-0" style="font-size:13px;">
+            <thead class="table-light"><tr><th>Active metrics</th><th>Y1 (left)</th><th>Y2 (right)</th></tr></thead>
+            <tbody>
+              <tr><td>All 4</td><td>✅ show</td><td>✅ show</td></tr>
+              <tr><td>Cost + Avg CPC only</td><td>✅ show</td><td>❌ hidden</td></tr>
+              <tr><td>Impressions + Clicks only</td><td>❌ hidden</td><td>✅ show</td></tr>
+              <tr><td>Any cross-axis combo</td><td>✅ show</td><td>✅ show</td></tr>
+              <tr><td>None</td><td>❌ hidden</td><td>❌ hidden — empty state</td></tr>
+            </tbody>
+          </table>
+          <div class="callout info mt-2">
+            <strong>Scale benefit:</strong> Cost ($199k) and Avg CPC ($0.80) share Y1 — Chart.js auto-scales both visible. Same for Impressions (8.33M) and Clicks (249k) on Y2. No normalisation needed.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="wf-divider">
+
+  <!-- ══ SECTION 3: PAGE CONTEXT ══ -->
+  <div class="section-label">Section 3 — Position in page</div>
+  <div class="wf-section mb-4">
+    <div class="wf-section-title">Campaigns page — M3 sits between M2 and M4</div>
+    <div style="background:#f8f9fa;border:1px dashed #dee2e6;border-radius:6px;padding:10px 14px;color:#adb5bd;font-size:12px;margin-bottom:8px;">← M1: Date picker</div>
+    <div style="background:#f8f9fa;border:1px dashed #dee2e6;border-radius:6px;padding:10px 14px;color:#adb5bd;font-size:12px;margin-bottom:8px;">← M2: Financial + Actions metric rows</div>
+    <div style="border:2px solid #0d6efd;border-radius:8px;padding:14px;background:#f0f4ff;margin-bottom:8px;">
+      <div style="font-size:11px;font-weight:700;color:#0d6efd;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">← M3: Chart section (this module)</div>
+      <div class="row g-2 mb-2">
+        <div class="col-3"><div class="metric-slot active-cost" style="cursor:default;"><div class="slot-dot"></div><span class="axis-badge left">Y1·$</span><div class="slot-label">Cost</div><div class="slot-value" style="font-size:16px;">$199.9k</div></div></div>
+        <div class="col-3"><div class="metric-slot active-impr" style="cursor:default;"><div class="slot-dot"></div><span class="axis-badge right">Y2·count</span><div class="slot-label">Impressions</div><div class="slot-value" style="font-size:16px;">8.33M</div></div></div>
+        <div class="col-3"><div class="metric-slot inactive" style="cursor:default;"><span class="axis-badge right">Y2·count</span><div class="slot-label">Clicks</div><div class="slot-value" style="font-size:16px;">249.0k</div></div></div>
+        <div class="col-3"><div class="metric-slot inactive" style="cursor:default;"><span class="axis-badge left">Y1·$</span><div class="slot-label">Avg CPC</div><div class="slot-value" style="font-size:16px;">$0.80</div></div></div>
+      </div>
+      <div class="chart-card" style="padding:12px;"><canvas id="contextChart" height="70"></canvas></div>
+    </div>
+    <div style="background:#f8f9fa;border:1px dashed #dee2e6;border-radius:6px;padding:10px 14px;color:#adb5bd;font-size:12px;">← M4: Data table (next module)</div>
+  </div>
+
+  <hr class="wf-divider">
+
+  <!-- ══ SECTION 4: PAGE VARIANTS ══ -->
+  <div class="section-label">Section 4 — Page-by-page data sources</div>
+  <div class="wf-section mb-4">
+    <div class="wf-section-title">Same UI on all 6 pages — only query differs</div>
+    <table class="table table-sm" style="font-size:13px;">
+      <thead class="table-light"><tr><th>Page</th><th>Query</th><th>Date range</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Dashboard</strong></td><td>campaign_daily (all summed)</td><td>Session range</td><td>Replaces existing Performance Trend chart</td></tr>
+        <tr><td><strong>Campaigns</strong></td><td>campaign_daily (all summed)</td><td>Session range</td><td>✅ Pilot page</td></tr>
+        <tr><td><strong>Ad Groups</strong></td><td>ad_group_daily (all summed)</td><td>Session range</td><td>Same macro</td></tr>
+        <tr><td><strong>Keywords</strong></td><td>keyword_features_daily (windowed)</td><td>30d window</td><td>Change % shows —</td></tr>
+        <tr><td><strong>Ads</strong></td><td>ad-level daily data</td><td>30d window</td><td>Change % shows —</td></tr>
+        <tr><td><strong>Shopping</strong></td><td>shopping_campaign_daily (synthetic)</td><td>Session range</td><td>Synthetic until account activated</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="wf-divider">
+
+  <!-- ══ SECTION 5: ARCHITECTURE ══ -->
+  <div class="section-label">Section 5 — Macro + data structure</div>
+  <div class="wf-section mb-4">
+    <div class="wf-section-title">What the worker builds</div>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="state-demo">
+          <div class="state-label">Macro call</div>
+          <pre style="font-size:12px;background:#f8f9fa;padding:12px;border-radius:6px;margin:0;">{{ performance_chart(
+    chart_data,
+    active_metrics,
+    page_id
+) }}</pre>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="state-demo">
+          <div class="state-label">chart_data dict</div>
+          <pre style="font-size:12px;background:#f8f9fa;padding:12px;border-radius:6px;margin:0;">{
+  'dates': ['2026-01-01',...],
+  'cost': {
+    'values': [1200, 1350,...],
+    'total': 199900,
+    'change_pct': -1.5,
+    'axis': 'y1'
+  },
+  'impressions': {
+    'values': [84000,...],
+    'total': 8330000,
+    'change_pct': -1.5,
+    'axis': 'y2'
+  },
+  'clicks':  {..., 'axis':'y2'},
+  'avg_cpc': {..., 'axis':'y1'}
+}</pre>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="state-demo">
+          <div class="state-label">Session + POST route</div>
+          <pre style="font-size:12px;background:#f8f9fa;padding:12px;border-radius:6px;margin:0;">session key:
+'chart_metrics_campaigns'
+= ['cost', 'impressions']
+
+Default (first load):
+['cost', 'clicks']
+
+POST /set-chart-metrics
+{ page_id, metrics[] }
+
+In shared.py:
+get_chart_metrics(page_id)
+set_chart_metrics(page_id,m)</pre>
+          <div class="callout info mt-2">No page reload. Chart updates client-side on each slot click. Session updated via POST in background.</div>
+        </div>
+      </div>
+    </div>
+    <div class="callout mt-3"><strong>15 files total.</strong> New: macros/performance_chart.html. Modified: shared.py + 6 routes + 6 templates + generate_synthetic_data_v2.py. Same pattern as M2.</div>
+  </div>
+
+  <div style="height:40px;"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Synthetic data
+function genDays(n) {
+  const dates=[], d=new Date('2026-01-21');
+  for(let i=0;i<n;i++){dates.push(d.toISOString().slice(0,10));d.setDate(d.getDate()+1);}
+  return dates;
+}
+function genLine(base,noise,n){return Array.from({length:n},()=>+(base+(Math.random()-.5)*noise).toFixed(2));}
+
+const N=30, dates=genDays(N);
+const costData  = genLine(2000,600,N);
+const imprData  = genLine(280000,80000,N);
+const clickData = genLine(8300,2000,N);
+const cpcData   = genLine(0.80,0.15,N);
+
+const DS_IDX    = {cost:0,impr:1,clicks:2,cpc:3};
+const ACT_CLASS = {cost:'active-cost',impr:'active-impr',clicks:'active-clicks',cpc:'active-cpc'};
+let active = {cost:true,impr:true,clicks:true,cpc:false};
+
+// Interactive chart
+const iChart = new Chart(document.getElementById('dualChart'),{
+  type:'line',
+  data:{
+    labels:dates,
+    datasets:[
+      {label:'Cost ($)',    data:costData,  borderColor:'#dc3545',backgroundColor:'rgba(220,53,69,0.06)',  borderWidth:2,pointRadius:0,tension:0.3,yAxisID:'y1',hidden:false},
+      {label:'Impressions', data:imprData,  borderColor:'#0d6efd',backgroundColor:'rgba(13,110,253,0.06)',borderWidth:2,pointRadius:0,tension:0.3,yAxisID:'y2',hidden:false},
+      {label:'Clicks',      data:clickData, borderColor:'#198754',backgroundColor:'rgba(25,135,84,0.06)', borderWidth:2,pointRadius:0,tension:0.3,yAxisID:'y2',hidden:false},
+      {label:'Avg CPC ($)', data:cpcData,   borderColor:'#fd7e14',backgroundColor:'rgba(253,126,20,0.06)',borderWidth:2,pointRadius:0,tension:0.3,yAxisID:'y1',hidden:true},
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:true,
+    plugins:{legend:{display:true,position:'top',labels:{font:{size:11},boxWidth:12}}},
+    scales:{
+      x:{ticks:{font:{size:10},maxTicksLimit:8},grid:{display:false}},
+      y1:{type:'linear',position:'left', display:true,ticks:{font:{size:10},callback:v=>'$'+v.toLocaleString()},grid:{color:'#f0f0f0'},title:{display:true,text:'$ · Left axis',font:{size:10},color:'#dc3545'}},
+      y2:{type:'linear',position:'right',display:true,ticks:{font:{size:10},callback:v=>v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?(v/1000).toFixed(0)+'k':v},grid:{drawOnChartArea:false},title:{display:true,text:'Count · Right axis',font:{size:10},color:'#0d6efd'}}
+    }
+  }
+});
+
+function updateAxes(){
+  const y1 = active.cost||active.cpc;
+  const y2 = active.impr||active.clicks;
+  iChart.options.scales.y1.display = y1;
+  iChart.options.scales.y2.display = y2;
+
+  document.getElementById('y1pill').textContent = y1?'ACTIVE':'HIDDEN';
+  document.getElementById('y1pill').className   = 'axis-pill '+(y1?'on':'off');
+  document.getElementById('y2pill').textContent = y2?'ACTIVE':'HIDDEN';
+  document.getElementById('y2pill').className   = 'axis-pill '+(y2?'on':'off');
+
+  const any = y1||y2;
+  document.getElementById('dualChart').style.display  = any?'block':'none';
+  document.getElementById('emptyMsg').style.display   = any?'none':'block';
+  iChart.update();
+}
+
+function toggleSlot(el,metric){
+  const wasActive = !el.classList.contains('inactive');
+  if(wasActive){
+    el.classList.remove(ACT_CLASS[metric]);
+    el.classList.add('inactive');
+    iChart.data.datasets[DS_IDX[metric]].hidden = true;
+    active[metric]=false;
+  } else {
+    el.classList.remove('inactive');
+    el.classList.add(ACT_CLASS[metric]);
+    iChart.data.datasets[DS_IDX[metric]].hidden = false;
+    active[metric]=true;
+  }
+  updateAxes();
+}
+
+// Context chart (static)
+new Chart(document.getElementById('contextChart'),{
+  type:'line',
+  data:{labels:dates,datasets:[
+    {label:'Cost ($)',    data:costData, borderColor:'#dc3545',backgroundColor:'rgba(220,53,69,0.05)',   borderWidth:2,pointRadius:0,tension:0.3,yAxisID:'y1'},
+    {label:'Impressions', data:imprData, borderColor:'#0d6efd',backgroundColor:'rgba(13,110,253,0.05)',borderWidth:2,pointRadius:0,tension:0.3,yAxisID:'y2'},
+  ]},
+  options:{
+    responsive:true,maintainAspectRatio:true,
+    plugins:{legend:{display:true,position:'top',labels:{font:{size:9},boxWidth:10}}},
+    scales:{
+      x:{ticks:{font:{size:9},maxTicksLimit:6},grid:{display:false}},
+      y1:{type:'linear',position:'left', ticks:{font:{size:9},callback:v=>'$'+v.toLocaleString()},grid:{color:'#f0f0f0'}},
+      y2:{type:'linear',position:'right',ticks:{font:{size:9},callback:v=>v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?(v/1000).toFixed(0)+'k':v},grid:{drawOnChartArea:false}}
+    }
+  }
+});
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 {% extends "base_bootstrap.html" %}
 {% from "macros/metrics_cards.html" import metrics_section %}
+{% from "macros/performance_chart.html" import performance_chart %}
 
 {% block title %}Campaigns - {{ client_name }}{% endblock %}
 
@@ -34,6 +35,9 @@
       
       <!-- M2 Metrics Cards -->
       {{ metrics_section(financial_cards, actions_cards, 'campaigns', metrics_collapsed) }}
+
+      <!-- M3 Performance Chart -->
+      {{ performance_chart(chart_data, active_metrics, 'campaigns') }}
 
       <!-- Filters and Actions Bar -->
       <div class="d-flex justify-content-between align-items-center mb-3">

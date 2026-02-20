@@ -13,7 +13,8 @@ from act_dashboard.routes.shared import (
     build_autopilot_config,
     recommendation_to_dict,
     cache_recommendations,
-    get_metrics_collapsed
+    get_metrics_collapsed,
+    get_chart_metrics
 )
 from act_dashboard.routes.rule_helpers import get_rules_for_page
 from datetime import date, timedelta
@@ -480,6 +481,67 @@ def load_keyword_metrics_cards(conn, customer_id, window_suffix, snapshot_date, 
     return financial_cards, actions_cards
 
 
+# ==================== Chat 24 M3: Chart Data Builder ====================
+
+def _build_kw_chart_data(conn, customer_id: str, active_days: int, date_from=None, date_to=None) -> dict:
+    """
+    Chart data for Keywords page. Uses ro.analytics.campaign_daily (account-level).
+    Builds date filter strings from session date params.
+    """
+    _empty = {
+        'dates': [],
+        'cost':        {'values': [], 'total': None, 'change_pct': None, 'axis': 'y1'},
+        'impressions': {'values': [], 'total': None, 'change_pct': None, 'axis': 'y2'},
+        'clicks':      {'values': [], 'total': None, 'change_pct': None, 'axis': 'y2'},
+        'avg_cpc':     {'values': [], 'total': None, 'change_pct': None, 'axis': 'y1'},
+    }
+    from datetime import timedelta as _td, datetime as _dt2
+    if date_from and date_to:
+        _df = _dt2.strptime(date_from, '%Y-%m-%d').date()
+        _dt2v = _dt2.strptime(date_to, '%Y-%m-%d').date()
+        _span = (_dt2v - _df).days + 1
+        _prev_to = (_df - _td(days=1)).isoformat()
+        _prev_from = (_df - _td(days=_span)).isoformat()
+        df = f"AND snapshot_date >= '{date_from}' AND snapshot_date <= '{date_to}'"
+        pf = f"AND snapshot_date >= '{_prev_from}' AND snapshot_date <= '{_prev_to}'"
+    else:
+        d = active_days if active_days in [7, 30, 90] else 30
+        df = f"AND snapshot_date >= CURRENT_DATE - INTERVAL '{d} days'"
+        pf = f"AND snapshot_date >= CURRENT_DATE - INTERVAL '{d*2} days' AND snapshot_date < CURRENT_DATE - INTERVAL '{d} days'"
+    q_daily = f"""
+        SELECT snapshot_date,
+               SUM(cost_micros)/1000000.0 AS cost,
+               SUM(impressions) AS impressions,
+               SUM(clicks) AS clicks,
+               (SUM(cost_micros)/1000000.0)/NULLIF(SUM(clicks),0) AS avg_cpc
+        FROM ro.analytics.campaign_daily
+        WHERE customer_id = ? {df}
+        GROUP BY snapshot_date ORDER BY snapshot_date ASC
+    """
+    q_cur = f"SELECT SUM(cost_micros)/1000000.0, SUM(impressions), SUM(clicks) FROM ro.analytics.campaign_daily WHERE customer_id = ? {df}"
+    q_prv = f"SELECT SUM(cost_micros)/1000000.0, SUM(impressions), SUM(clicks) FROM ro.analytics.campaign_daily WHERE customer_id = ? {pf}"
+    try:
+        rows = conn.execute(q_daily, [customer_id]).fetchall()
+        cur  = conn.execute(q_cur,   [customer_id]).fetchone()
+        prv  = conn.execute(q_prv,   [customer_id]).fetchone()
+    except Exception as e:
+        print(f"[Keywords M3] chart data error: {e}")
+        return _empty
+    def _f(r, i): return float(r[i]) if r and r[i] is not None else None
+    def _chg(c, p): return ((c-p)/p*100) if c is not None and p else None
+    c_cost=_f(cur,0); c_impr=_f(cur,1); c_clicks=_f(cur,2)
+    p_cost=_f(prv,0); p_impr=_f(prv,1); p_clicks=_f(prv,2)
+    c_cpc=(c_cost/c_clicks) if c_cost and c_clicks else None
+    p_cpc=(p_cost/p_clicks) if p_cost and p_clicks else None
+    return {
+        'dates': [str(r[0]) for r in rows],
+        'cost':        {'values':[float(r[1] or 0) for r in rows],'total':c_cost,  'change_pct':_chg(c_cost,  p_cost),  'axis':'y1'},
+        'impressions': {'values':[float(r[2] or 0) for r in rows],'total':c_impr,  'change_pct':_chg(c_impr,  p_impr),  'axis':'y2'},
+        'clicks':      {'values':[float(r[3] or 0) for r in rows],'total':c_clicks,'change_pct':_chg(c_clicks,p_clicks),'axis':'y2'},
+        'avg_cpc':     {'values':[float(r[4] or 0) for r in rows],'total':c_cpc,   'change_pct':_chg(c_cpc,   p_cpc),   'axis':'y1'},
+    }
+
+
 @bp.route("/keywords")
 @login_required
 def keywords():
@@ -704,6 +766,9 @@ def keywords():
         conn, config.customer_id, window_suffix, snapshot_date, active_days
     )
 
+    # M3: Chart data
+    chart_data = _build_kw_chart_data(conn, config.customer_id, active_days, date_from, date_to)
+
     # Close database connection
     conn.close()
     
@@ -746,4 +811,7 @@ def keywords():
         financial_cards=financial_cards,
         actions_cards=actions_cards,
         metrics_collapsed=get_metrics_collapsed('keywords'),
+        # M3: Chart
+        chart_data=chart_data,
+        active_metrics=get_chart_metrics('keywords'),
     )

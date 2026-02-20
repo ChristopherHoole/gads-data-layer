@@ -10,7 +10,7 @@ from flask import Blueprint, render_template, request
 from act_dashboard.auth import login_required
 from act_dashboard.routes.shared import (
     get_page_context, get_db_connection, get_date_range_from_session,
-    get_metrics_collapsed,
+    get_metrics_collapsed, get_chart_metrics,
 )
 from act_dashboard.routes.rule_helpers import get_rules_for_page, count_rules_by_category
 from datetime import date, timedelta, datetime
@@ -457,6 +457,134 @@ def _empty_cards() -> Tuple[List[Dict], List[Dict]]:
     return fin, act
 
 
+# ==================== Chat 24 M3: Chart Data Builder ====================
+
+def build_chart_data(
+    conn: duckdb.DuckDBPyConnection,
+    customer_id: str,
+    active_days: int,
+    date_from: Optional[str],
+    date_to: Optional[str],
+) -> Dict[str, Any]:
+    """
+    Build chart_data dict for the M3 performance_chart macro.
+
+    Queries ro.analytics.campaign_daily for daily cost/impressions/clicks
+    and derives avg_cpc per day. Computes period totals and change_pct
+    vs previous period for all 4 metrics.
+
+    avg_cpc total = total_cost / total_clicks (never sum of daily values).
+
+    Returns:
+        chart_data dict with keys: dates, cost, impressions, clicks, avg_cpc
+    """
+    current_filter, prev_filter = _build_date_filters(active_days, date_from, date_to)
+
+    _empty = {
+        'dates': [],
+        'cost':        {'values': [], 'total': None, 'change_pct': None, 'axis': 'y1'},
+        'impressions': {'values': [], 'total': None, 'change_pct': None, 'axis': 'y2'},
+        'clicks':      {'values': [], 'total': None, 'change_pct': None, 'axis': 'y2'},
+        'avg_cpc':     {'values': [], 'total': None, 'change_pct': None, 'axis': 'y1'},
+    }
+
+    # ── Daily values (current period) ────────────────────────────────────────
+    q_daily = f"""
+        SELECT
+            snapshot_date,
+            SUM(cost_micros) / 1000000.0                                    AS cost,
+            SUM(impressions)                                                 AS impressions,
+            SUM(clicks)                                                      AS clicks,
+            (SUM(cost_micros) / 1000000.0) / NULLIF(SUM(clicks), 0)        AS avg_cpc
+        FROM ro.analytics.campaign_daily
+        WHERE customer_id = ?
+          {current_filter}
+        GROUP BY snapshot_date
+        ORDER BY snapshot_date ASC
+    """
+
+    # ── Current period totals ─────────────────────────────────────────────────
+    q_current = f"""
+        SELECT
+            SUM(cost_micros) / 1000000.0                                    AS cost,
+            SUM(impressions)                                                 AS impressions,
+            SUM(clicks)                                                      AS clicks
+        FROM ro.analytics.campaign_daily
+        WHERE customer_id = ?
+          {current_filter}
+    """
+
+    # ── Previous period totals ────────────────────────────────────────────────
+    q_prev = f"""
+        SELECT
+            SUM(cost_micros) / 1000000.0                                    AS cost,
+            SUM(impressions)                                                 AS impressions,
+            SUM(clicks)                                                      AS clicks
+        FROM ro.analytics.campaign_daily
+        WHERE customer_id = ?
+          {prev_filter}
+    """
+
+    try:
+        daily_rows = conn.execute(q_daily,   [customer_id]).fetchall()
+        cur        = conn.execute(q_current, [customer_id]).fetchone()
+        prv        = conn.execute(q_prev,    [customer_id]).fetchone()
+    except Exception as e:
+        print(f"[Campaigns M3] Error building chart data: {e}")
+        import traceback
+        traceback.print_exc()
+        return _empty
+
+    def _f(row, i): return float(row[i]) if row and row[i] is not None else None
+
+    # Current / previous totals
+    c_cost  = _f(cur, 0)
+    c_impr  = _f(cur, 1)
+    c_clicks= _f(cur, 2)
+    p_cost  = _f(prv, 0)
+    p_impr  = _f(prv, 1)
+    p_clicks= _f(prv, 2)
+
+    # avg_cpc totals: total_cost / total_clicks
+    c_cpc = (c_cost / c_clicks) if c_cost and c_clicks else None
+    p_cpc = (p_cost / p_clicks) if p_cost and p_clicks else None
+
+    # Daily series
+    dates      = [str(row[0]) for row in daily_rows]
+    cost_vals  = [float(row[1]) if row[1] is not None else 0.0 for row in daily_rows]
+    impr_vals  = [float(row[2]) if row[2] is not None else 0.0 for row in daily_rows]
+    click_vals = [float(row[3]) if row[3] is not None else 0.0 for row in daily_rows]
+    cpc_vals   = [float(row[4]) if row[4] is not None else 0.0 for row in daily_rows]
+
+    return {
+        'dates': dates,
+        'cost': {
+            'values':     cost_vals,
+            'total':      c_cost,
+            'change_pct': _calculate_change_pct(c_cost,   p_cost),
+            'axis':       'y1',
+        },
+        'impressions': {
+            'values':     impr_vals,
+            'total':      c_impr,
+            'change_pct': _calculate_change_pct(c_impr,   p_impr),
+            'axis':       'y2',
+        },
+        'clicks': {
+            'values':     click_vals,
+            'total':      c_clicks,
+            'change_pct': _calculate_change_pct(c_clicks, p_clicks),
+            'axis':       'y2',
+        },
+        'avg_cpc': {
+            'values':     cpc_vals,
+            'total':      c_cpc,
+            'change_pct': _calculate_change_pct(c_cpc,    p_cpc),
+            'axis':       'y1',
+        },
+    }
+
+
 # ==================== Main route ====================
 
 @bp.route("/campaigns")
@@ -493,6 +621,9 @@ def campaigns():
     financial_cards, actions_cards = load_metrics_cards_data(
         conn, config.customer_id, active_days, date_from, date_to
     )
+
+    # M3: Chart data
+    chart_data = build_chart_data(conn, config.customer_id, active_days, date_from, date_to)
 
     conn.close()
 
@@ -544,4 +675,7 @@ def campaigns():
         # Rules
         rules=rules,
         rule_counts=rule_counts,
+        # M3: Chart
+        chart_data=chart_data,
+        active_metrics=get_chart_metrics('campaigns'),
     )

@@ -1,8 +1,8 @@
 # PROJECT ROADMAP - Google Ads Data Layer (ACT Dashboard)
 
 **Last Updated:** 2026-02-20  
-**Current Phase:** Dashboard 3.0 — M2 ✅ COMPLETE | M3 Chart Overhaul next  
-**Overall Completion:** ~84% (Foundation + Polish + Dashboard 3.0 M1+M2 complete)  
+**Current Phase:** Dashboard 3.0 — M3 ✅ COMPLETE | M4 Table Overhaul next  
+**Overall Completion:** ~87% (Foundation + Polish + Dashboard 3.0 M1+M2+M3 complete)  
 **Mode:** Dashboard 3.0 Phase 1 in progress 🚧
 ---
 
@@ -390,14 +390,27 @@
 
 ---
 
-## **Chat 24: Keywords Enhancement** (1-2 hrs)
+## **Chat 24: Dashboard 3.0 M3 — Chart Overhaul** ✅ COMPLETE
 
-**Status:** PLANNED
+**Status:** COMPLETE — 2026-02-20
+**Summary:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\CHAT_24_DETAILED_SUMMARY.md`
+**Handoff:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\CHAT_24_HANDOFF.md`
 
-**Features:**
-- Add bid data to synthetic DB
-- Complete keyword execution infrastructure
-- Enhanced keyword tracking
+**Delivered:**
+- Reusable `performance_chart.html` Jinja2 macro deployed to all 6 pages
+- Dual Y-axis: Y1 left ($) for Cost + Avg CPC; Y2 right (count) for Impressions + Clicks
+- 4 toggleable metric slots above each chart (click to show/hide line)
+- Each axis auto-hides when all its metrics are inactive
+- Default: Cost + Clicks active on first load
+- Session-persisted selection per page (`chart_metrics_<page_id>`)
+- Empty state message when 0 metrics active
+- POST /set-chart-metrics endpoint (no page reload on toggle)
+- Dashboard: replaced legacy Performance Trend chart
+- Shopping: chart on Campaigns tab only
+- Keywords + Ads: use account-level campaign_daily (no per-entity daily table)
+- 10 route/template files modified
+
+**Key lesson:** Route decorator must be immediately adjacent to function — inserting helpers between @bp.route and def breaks Flask silently
 
 ---
 
@@ -482,12 +495,10 @@
 - ✅ Chat 21: Dashboard UI Overhaul — COMPLETE (8/8 pages)
 - ✅ Chat 22: M1 Date Picker — COMPLETE
 - ✅ Chat 23: M2 Metrics Cards — COMPLETE (all 6 pages)
-- 🚧 Chat 24: M3 Chart Overhaul — NEXT
-  - Pilot on Campaigns, then rollout to all pages
-  - Discuss with Master Chat before brief
+- ✅ Chat 24: M3 Chart Overhaul — COMPLETE
 
 ### **Short-term (Dashboard 3.0 remaining):**
-- 📋 Chat 25: M4 Table Overhaul
+- 🚧 Chat 25: M4 Table Overhaul — NEXT
 - 📋 Chat 26: M5 Rules Section Upgrade
 - 📋 Chat 27: M6 Actions Feed
 - 📋 Chat 28: M7 Action Buttons
@@ -538,6 +549,15 @@
 ---
 
 ## ðŸ“„ CHANGELOG
+
+### **2026-02-20 (Chat 24 — M3 Chart Overhaul)**
+
+**Completed:**
+- ✅ M3 Chart Overhaul — all 6 pages
+- Dual-axis Chart.js macro (performance_chart.html)
+- Session-persisted metric toggle per page
+- 10 files modified
+- Git commit pending
 
 ### **2026-02-20 (Chat 23 — M2 Metrics Cards)**
 

@@ -4,7 +4,7 @@ Dashboard home page route - overview stats.
 
 from flask import Blueprint, render_template, session, request
 from act_dashboard.auth import login_required
-from act_dashboard.routes.shared import get_current_config, get_available_clients, get_date_range_from_session, get_metrics_collapsed
+from act_dashboard.routes.shared import get_current_config, get_available_clients, get_date_range_from_session, get_metrics_collapsed, get_chart_metrics
 import duckdb
 import json
 from datetime import date, datetime
@@ -221,6 +221,85 @@ def load_dashboard_metrics_cards(conn, customer_id, date_filter, prev_filter):
     return financial_cards, actions_cards
 
 
+# ==================== Chat 24 M3: Chart Data Builder ====================
+
+def _build_dashboard_chart_data(conn, customer_id: str, date_filter: str, prev_filter: str) -> dict:
+    """
+    Build chart_data dict for the M3 performance_chart macro on the Dashboard page.
+
+    Uses analytics.campaign_daily (no ro. prefix — matches dashboard.py pattern).
+    date_filter and prev_filter are pre-built SQL fragments (already computed in home()).
+
+    avg_cpc total = total_cost / total_clicks (never sum of daily avg_cpc values).
+    """
+    _empty = {
+        'dates': [],
+        'cost':        {'values': [], 'total': None, 'change_pct': None, 'axis': 'y1'},
+        'impressions': {'values': [], 'total': None, 'change_pct': None, 'axis': 'y2'},
+        'clicks':      {'values': [], 'total': None, 'change_pct': None, 'axis': 'y2'},
+        'avg_cpc':     {'values': [], 'total': None, 'change_pct': None, 'axis': 'y1'},
+    }
+
+    q_daily = f"""
+        SELECT
+            snapshot_date,
+            SUM(cost_micros) / 1000000.0                             AS cost,
+            SUM(impressions)                                          AS impressions,
+            SUM(clicks)                                               AS clicks,
+            (SUM(cost_micros) / 1000000.0) / NULLIF(SUM(clicks), 0) AS avg_cpc
+        FROM analytics.campaign_daily
+        WHERE customer_id = ?
+          {date_filter}
+        GROUP BY snapshot_date
+        ORDER BY snapshot_date ASC
+    """
+
+    q_current = f"""
+        SELECT
+            SUM(cost_micros) / 1000000.0  AS cost,
+            SUM(impressions)              AS impressions,
+            SUM(clicks)                   AS clicks
+        FROM analytics.campaign_daily
+        WHERE customer_id = ?
+          {date_filter}
+    """
+
+    q_prev = f"""
+        SELECT
+            SUM(cost_micros) / 1000000.0  AS cost,
+            SUM(impressions)              AS impressions,
+            SUM(clicks)                   AS clicks
+        FROM analytics.campaign_daily
+        WHERE customer_id = ?
+          {prev_filter}
+    """
+
+    try:
+        daily_rows = conn.execute(q_daily,   [customer_id]).fetchall()
+        cur        = conn.execute(q_current, [customer_id]).fetchone()
+        prv        = conn.execute(q_prev,    [customer_id]).fetchone()
+    except Exception as e:
+        print(f"[Dashboard M3] Error building chart data: {e}")
+        return _empty
+
+    def _f(row, i): return float(row[i]) if row and row[i] is not None else None
+
+    c_cost   = _f(cur, 0); c_impr = _f(cur, 1); c_clicks = _f(cur, 2)
+    p_cost   = _f(prv, 0); p_impr = _f(prv, 1); p_clicks = _f(prv, 2)
+    c_cpc = (c_cost / c_clicks) if c_cost and c_clicks else None
+    p_cpc = (p_cost / p_clicks) if p_cost and p_clicks else None
+
+    def _chg(c, p): return ((c - p) / p * 100) if c is not None and p else None
+
+    return {
+        'dates': [str(row[0]) for row in daily_rows],
+        'cost':        {'values': [float(r[1] or 0) for r in daily_rows], 'total': c_cost,   'change_pct': _chg(c_cost,   p_cost),   'axis': 'y1'},
+        'impressions': {'values': [float(r[2] or 0) for r in daily_rows], 'total': c_impr,   'change_pct': _chg(c_impr,   p_impr),   'axis': 'y2'},
+        'clicks':      {'values': [float(r[3] or 0) for r in daily_rows], 'total': c_clicks, 'change_pct': _chg(c_clicks, p_clicks), 'axis': 'y2'},
+        'avg_cpc':     {'values': [float(r[4] or 0) for r in daily_rows], 'total': c_cpc,    'change_pct': _chg(c_cpc,    p_cpc),    'axis': 'y1'},
+    }
+
+
 @bp.route("/")
 @login_required
 def home() -> str:
@@ -310,31 +389,8 @@ def home() -> str:
         'cpa_change': calculate_change_pct(current[5], previous[5]),
     }
 
-    # Query 3: Daily performance trend (for chart)
-    trend_query = f"""
-    SELECT
-        snapshot_date,
-        SUM(cost_micros) / 1000000 as cost,
-        SUM(conversions) as conversions,
-        SUM(conversions_value) / NULLIF(SUM(cost_micros) / 1000000, 0) as roas
-    FROM analytics.campaign_daily
-    WHERE customer_id = ?
-      {date_filter}
-    GROUP BY snapshot_date
-    ORDER BY snapshot_date
-    """
-    trend_raw = conn.execute(trend_query, [config.customer_id]).fetchall()
-    
-    # Format trend data with readable dates
-    trend_data = [
-        {
-            'date': row[0].strftime('%b %d') if isinstance(row[0], (date, datetime)) else str(row[0]),
-            'cost': float(row[1] or 0),
-            'conversions': int(row[2] or 0),
-            'roas': float(row[3] or 0)
-        }
-        for row in trend_raw
-    ]
+    # Query 3: M3 chart data (replaces legacy trend_data)
+    chart_data = _build_dashboard_chart_data(conn, config.customer_id, date_filter, prev_filter)
 
     # Query 4: Top 5 campaigns by spend
     top_campaigns_query = f"""
@@ -458,7 +514,7 @@ def home() -> str:
         date_from=date_from,
         date_to=date_to,
         metrics=metrics,
-        trend_data=trend_data,
+        trend_data=None,  # removed — replaced by M3 chart
         top_campaigns=top_campaigns,
         recommendations_count=recommendations_count,
         top_recommendations=top_recommendations,
@@ -470,4 +526,7 @@ def home() -> str:
         financial_cards=financial_cards,
         actions_cards=actions_cards,
         metrics_collapsed=get_metrics_collapsed('dashboard'),
+        # M3: Chart
+        chart_data=chart_data,
+        active_metrics=get_chart_metrics('dashboard'),
     )

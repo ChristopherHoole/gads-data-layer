@@ -6,7 +6,7 @@ Chat 21e: New ad groups page with Bootstrap 5 and rule visibility.
 
 from flask import Blueprint, render_template, request
 from act_dashboard.auth import login_required
-from act_dashboard.routes.shared import get_page_context, get_db_connection, get_date_range_from_session, get_metrics_collapsed
+from act_dashboard.routes.shared import get_page_context, get_db_connection, get_date_range_from_session, get_metrics_collapsed, get_chart_metrics
 from act_dashboard.routes.rule_helpers import get_rules_for_page, count_rules_by_category
 from datetime import date, timedelta
 from typing import List, Dict, Any, Tuple
@@ -364,6 +364,63 @@ def load_ad_group_metrics_cards(conn, customer_id, date_filter, prev_filter):
     return financial_cards, actions_cards
 
 
+# ==================== Chat 24 M3: Chart Data Builder ====================
+
+def _build_ag_chart_data(conn, customer_id: str, date_filter: str, prev_filter: str) -> dict:
+    """
+    Build chart_data dict for M3 performance_chart macro on Ad Groups page.
+    Uses ro.analytics.ad_group_daily (account-level totals per day).
+    avg_cpc total = total_cost / total_clicks.
+    """
+    _empty = {
+        'dates': [],
+        'cost':        {'values': [], 'total': None, 'change_pct': None, 'axis': 'y1'},
+        'impressions': {'values': [], 'total': None, 'change_pct': None, 'axis': 'y2'},
+        'clicks':      {'values': [], 'total': None, 'change_pct': None, 'axis': 'y2'},
+        'avg_cpc':     {'values': [], 'total': None, 'change_pct': None, 'axis': 'y1'},
+    }
+    q_daily = f"""
+        SELECT snapshot_date,
+               SUM(cost_micros)/1000000.0 AS cost,
+               SUM(impressions)           AS impressions,
+               SUM(clicks)                AS clicks,
+               (SUM(cost_micros)/1000000.0)/NULLIF(SUM(clicks),0) AS avg_cpc
+        FROM ro.analytics.ad_group_daily
+        WHERE customer_id = ? {date_filter}
+        GROUP BY snapshot_date ORDER BY snapshot_date ASC
+    """
+    q_cur = f"""
+        SELECT SUM(cost_micros)/1000000.0, SUM(impressions), SUM(clicks)
+        FROM ro.analytics.ad_group_daily
+        WHERE customer_id = ? {date_filter}
+    """
+    q_prv = f"""
+        SELECT SUM(cost_micros)/1000000.0, SUM(impressions), SUM(clicks)
+        FROM ro.analytics.ad_group_daily
+        WHERE customer_id = ? {prev_filter}
+    """
+    try:
+        rows = conn.execute(q_daily, [customer_id]).fetchall()
+        cur  = conn.execute(q_cur,   [customer_id]).fetchone()
+        prv  = conn.execute(q_prv,   [customer_id]).fetchone()
+    except Exception as e:
+        print(f"[AdGroups M3] chart data error: {e}")
+        return _empty
+    def _f(r, i): return float(r[i]) if r and r[i] is not None else None
+    def _chg(c, p): return ((c-p)/p*100) if c is not None and p else None
+    c_cost=_f(cur,0); c_impr=_f(cur,1); c_clicks=_f(cur,2)
+    p_cost=_f(prv,0); p_impr=_f(prv,1); p_clicks=_f(prv,2)
+    c_cpc=(c_cost/c_clicks) if c_cost and c_clicks else None
+    p_cpc=(p_cost/p_clicks) if p_cost and p_clicks else None
+    return {
+        'dates': [str(r[0]) for r in rows],
+        'cost':        {'values':[float(r[1] or 0) for r in rows],'total':c_cost,  'change_pct':_chg(c_cost,  p_cost),  'axis':'y1'},
+        'impressions': {'values':[float(r[2] or 0) for r in rows],'total':c_impr,  'change_pct':_chg(c_impr,  p_impr),  'axis':'y2'},
+        'clicks':      {'values':[float(r[3] or 0) for r in rows],'total':c_clicks,'change_pct':_chg(c_clicks,p_clicks),'axis':'y2'},
+        'avg_cpc':     {'values':[float(r[4] or 0) for r in rows],'total':c_cpc,   'change_pct':_chg(c_cpc,   p_cpc),   'axis':'y1'},
+    }
+
+
 @bp.route("/ad-groups")
 @login_required
 def ad_groups():
@@ -424,6 +481,9 @@ def ad_groups():
         conn, config.customer_id, _date_filter, _prev_filter
     )
 
+    # M3: Chart data
+    chart_data = _build_ag_chart_data(conn, config.customer_id, _date_filter, _prev_filter)
+
     conn.close()
     
     # Calculate metrics bar (for all ad groups after filtering)
@@ -467,4 +527,7 @@ def ad_groups():
         financial_cards=financial_cards,
         actions_cards=actions_cards,
         metrics_collapsed=get_metrics_collapsed('ad_groups'),
+        # M3: Chart
+        chart_data=chart_data,
+        active_metrics=get_chart_metrics('ad_groups'),
     )
