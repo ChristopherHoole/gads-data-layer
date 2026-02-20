@@ -5,7 +5,7 @@
 **Framework:** Bootstrap 5  
 **Icons:** Bootstrap Icons  
 **Chat 21 Status:** ✅ COMPLETE - 8/8 (100%) 🏆  
-**Dashboard 3.0 Status:** 🚧 IN PROGRESS — Chat 22 (M1) next  
+**Dashboard 3.0 Status:** 🚧 IN PROGRESS — M1 ✅ COMPLETE, Chat 23 (M2) next  
 **Started:** February 18, 2026  
 **Updated:** 2026-02-19 ~10:00 PM  
 **Mode:** Dashboard 3.0 Phase 1 underway  
@@ -1318,25 +1318,24 @@ ORDER BY cost DESC
 **Est. time:** 90–120 min  
 **Status:** Brief written ✅ — ready to start
 
-**What gets built:**
-- Remove navbar static date picker
-- New `components/date_filter.html` — Flatpickr calendar + 7d/30d/90d preset buttons
+**What was built:**
+- Navbar static date picker removed
+- `components/date_filter.html` — Flatpickr + 7d/30d/90d presets + Apply button
 - Top-right position, consistent across all 6 pages
-- Flask session storage — selection persists across all pages globally
-- Default: 30d. Custom range requires Apply button.
+- Flask session persistence — global, default 30d
 - `/set-date-range` POST route + `get_date_range_from_session()` in shared.py
-- All 6 routes updated to read from session
+- All 6 routes updated — raw SQL pages get full custom range, windowed pages fall back to 30d
+- 19 files changed
 
-**Pages:** Dashboard, Campaigns, Ad Groups, Keywords, Ads, Shopping  
-**Files:** 16 (1 removed, 1 created, 14 modified)
-
-**Pilot:** Campaigns → test fully → rollout to remaining 5 pages
+**Carry-forward issues:**
+1. `SPEND (0d)` header on Campaigns custom range — LOW cosmetic
+2. Dashboard Account Health 0/0 on custom range — MEDIUM
 
 ---
 
-#### Chat 23: M2 — Metrics Cards 📋 PLANNED
+#### Chat 23: M2 — Metrics Cards 📋 NEXT
 **Est. time:** ~90 min  
-**Status:** Outline agreed, detail to be discussed before brief
+**Status:** Outline agreed — discuss detail with Master Chat before brief written
 
 **What gets built:**
 - Financial Metrics row (always visible): Cost, Revenue, ROAS, BLANK, Conversions, Cost per Conv, Conv Rate, BLANK
@@ -1408,4 +1407,4 @@ Depends on M6 design decisions.
 
 **Last Updated:** 2026-02-19 ~10:00 PM  
 **Status:** Dashboard 3.0 Phase 1 in progress 🚧  
-**Next Step:** Chat 22 — M1: Date Picker (brief ready)
+**Next Step:** Chat 23 — M2: Metrics Cards (discuss with Master Chat first)

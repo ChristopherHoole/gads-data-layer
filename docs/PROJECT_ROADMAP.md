@@ -553,7 +553,8 @@
 - 62.5% completion milestone reached! ðŸŽ‰
 - Template inheritance bug diagnosed (base.html vs base_bootstrap.html)
 
-**Next:** Chat 22 — M1: Date Picker (brief ready at docs/CHAT_22_BRIEF.md)
+**Next:** Chat 23 — M2: Metrics Cards. Discuss with Master Chat before brief.
+**Carry-forward:** 2 known issues from Chat 22 (SPEND 0d header, Account Health 0/0).
 
 ### **2026-02-18 (Earlier - Planning)**
 - âœ… Completed Phase 1 (all 9 tasks)
