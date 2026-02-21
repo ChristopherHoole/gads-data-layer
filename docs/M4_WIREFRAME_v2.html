@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M4 — Table Overhaul Wireframe v2</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<style>
+body{background:#f8f9fa;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;}
+.page-header{background:white;border-bottom:1px solid #dee2e6;padding:16px 24px;margin-bottom:24px;}
+.page-header h1{font-size:20px;font-weight:700;margin:0;}
+.page-header .sub{font-size:12px;color:#6c757d;margin-top:3px;}
+.section-label{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#adb5bd;margin-bottom:6px;margin-top:28px;}
+.wf-section{background:white;border:1px solid #dee2e6;border-radius:8px;padding:16px;margin-bottom:16px;}
+.wf-section-title{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6c757d;padding-bottom:8px;border-bottom:1px solid #f0f0f0;margin-bottom:12px;}
+.callout{background:#fff3cd;border-left:3px solid #ffc107;border-radius:4px;padding:8px 12px;font-size:12px;color:#664d03;margin-top:8px;}
+.callout.info{background:#cff4fc;border-color:#0dcaf0;color:#055160;}
+.callout.success{background:#d1e7dd;border-color:#198754;color:#0a3622;}
+.callout.danger{background:#f8d7da;border-color:#dc3545;color:#842029;}
+hr.wf-divider{border-color:#dee2e6;margin:28px 0;}
+.table-wrapper{overflow-x:auto;max-height:380px;overflow-y:auto;border:1px solid #dee2e6;border-radius:6px;position:relative;}
+.act-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;margin:0;white-space:nowrap;}
+.act-table thead th{position:sticky;top:0;background:#f8f9fa;border-bottom:2px solid #dee2e6;padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;z-index:2;cursor:pointer;user-select:none;}
+.act-table thead th:hover{background:#e9ecef;}
+.act-table thead th.sorted-asc::after{content:' ↑';color:#0d6efd;}
+.act-table thead th.sorted-desc::after{content:' ↓';color:#0d6efd;}
+.act-table thead th.no-sort{cursor:default;}
+.act-table thead th.no-sort:hover{background:#f8f9fa;}
+.act-table th:first-child,.act-table td:first-child{position:sticky;left:0;z-index:3;background:white;border-right:2px solid #dee2e6;min-width:160px;max-width:200px;}
+.act-table thead th:first-child{z-index:4;background:#f8f9fa;}
+.act-table tbody td{padding:7px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle;}
+.act-table tbody tr:hover td{background:#f8f9fa;}
+.act-table tbody tr:hover td:first-child{background:#f0f4ff;}
+.sticky-overlay{position:absolute;top:0;left:0;width:162px;height:100%;background:rgba(13,110,253,0.05);border-right:2px solid #0d6efd;pointer-events:none;z-index:5;}
+.sticky-label{position:absolute;top:4px;left:4px;background:#0d6efd;color:white;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;pointer-events:none;z-index:6;}
+.table-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.pagination-bar{display:flex;align-items:center;justify-content:space-between;margin-top:8px;font-size:12px;color:#6c757d;}
+.pagination{margin:0;}
+.page-link{font-size:12px;padding:3px 8px;}
+.page-tabs .nav-link{font-size:12px;padding:6px 14px;color:#6c757d;border-radius:6px 6px 0 0;}
+.page-tabs .nav-link.active{background:white;color:#0d6efd;font-weight:600;border:1px solid #dee2e6;border-bottom:1px solid white;}
+.col-spec{font-size:12px;}
+.col-spec td,.col-spec th{padding:4px 8px;}
+tr.sticky-row{background:#fff3cd!important;font-weight:700;}
+tr.new-col td{background:#fef2f2;}
+tr.calc-col td{background:#f3f4f6;}
+tr.note-col td{background:#fffbeb;}
+.gap-exists{display:inline-block;background:#d1e7dd;color:#0a3622;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;}
+.gap-calc{display:inline-block;background:#e2e3e5;color:#343a40;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;}
+.gap-new{display:inline-block;background:#f8d7da;color:#842029;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;}
+.gap-note{display:inline-block;background:#fef9c3;color:#713f12;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;}
+.roas-good{color:#198754;font-weight:700;}
+.roas-ok{color:#fd7e14;font-weight:700;}
+.roas-bad{color:#dc3545;font-weight:700;}
+.new-header{color:#dc3545!important;}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="d-flex align-items-center gap-3">
+    <div>
+      <h1>📋 M4 — Table Overhaul Wireframe <span style="font-size:13px;color:#6c757d;">v2 — Live DB verified</span></h1>
+      <div class="sub">Dashboard 3.0 · Chat 25 · Server-side sort · Sticky first col · Full Google Ads column sets · Gap analysis from live warehouse.duckdb</div>
+    </div>
+    <span class="badge bg-warning text-dark ms-auto" style="font-size:12px;">WIREFRAME — For approval</span>
+  </div>
+</div>
+
+<div class="container-fluid px-4">
+
+  <!-- LEGEND -->
+  <div class="wf-section mb-3" style="background:#fff8f0;border-color:#fd7e14;">
+    <strong style="font-size:12px;">LEGEND</strong>&nbsp;&nbsp;
+    <span class="gap-exists">EXISTS</span> Already in live DB &nbsp;
+    <span class="gap-calc">CALC</span> Derived from existing columns &nbsp;
+    <span class="gap-new">NEW COLUMN</span> Add to schema + synthetic generator &nbsp;
+    <span class="gap-note">⚠ NAME DIFFERS</span> Exists but column name is different from spec &nbsp;
+    <span style="background:#fff3cd;border:1px solid #ffc107;border-radius:3px;padding:1px 6px;font-size:11px;">📌</span> Sticky — frozen on scroll &nbsp;
+    <span style="color:#dc3545;font-weight:700;">Red col header</span> = new column, shows "—" until Step A done
+  </div>
+
+  <!-- KEY CORRECTIONS BOX -->
+  <div class="wf-section mb-3" style="border-color:#198754;background:#f0fdf4;">
+    <div class="wf-section-title" style="color:#198754;">✅ Key findings from live DB inspection</div>
+    <div class="row g-2" style="font-size:12px;">
+      <div class="col-md-4">
+        <strong>Better than expected:</strong><br>
+        • campaign_daily already has all_conversions + all_conversions_value<br>
+        • All 4 IS columns already exist in campaign_daily AND ad_group_daily<br>
+        • ad_features_daily already has campaign_name + ad_group_name — no JOINs needed for Ads page
+      </div>
+      <div class="col-md-4">
+        <strong>Corrections to original wireframe:</strong><br>
+        • Ads page uses <code>ad_features_daily</code> (not ad_daily — table doesn't exist)<br>
+        • Ads table is windowed — use 30d columns (impressions_30d, clicks_30d etc)<br>
+        • Keyword QS col names differ: quality_score_creative = Exp. CTR, quality_score_relevance = Ad relevance
+      </div>
+      <div class="col-md-4">
+        <strong>Shopping problem:</strong><br>
+        • shopping_campaign_daily has 0 rows — no synthetic data exists<br>
+        • Schema also missing 10 columns<br>
+        • Worker must build new shopping generator as part of Step A
+      </div>
+    </div>
+  </div>
+
+  <hr class="wf-divider">
+
+  <!-- SECTION 1: INTERACTIVE DEMO -->
+  <div class="section-label">Section 1 — Interactive Campaigns table (scroll right — 24 columns — red headers = new columns)</div>
+  <div class="wf-section">
+    <div class="wf-section-title">Campaigns — 24 columns — only 2 are new (optimization_score, bid_strategy_type)</div>
+    <div class="table-toolbar">
+      <div class="btn-group">
+        <button class="btn btn-sm btn-primary" onclick="setFilter('all',this)">All (20)</button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="setFilter('ENABLED',this)">Enabled (14)</button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="setFilter('PAUSED',this)">Paused (6)</button>
+      </div>
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <span style="font-size:12px;color:#6c757d;">Rows:</span>
+        <select class="form-select form-select-sm" style="width:70px;"><option>10</option><option selected>25</option><option>50</option><option>100</option></select>
+      </div>
+    </div>
+    <div style="position:relative;">
+      <div class="sticky-overlay"></div>
+      <div class="sticky-label">📌 STICKY</div>
+      <div class="table-wrapper">
+        <table class="act-table">
+          <thead><tr>
+            <th id="h-name" class="sorted-asc" onclick="srt('name','h-name')">Campaign</th>
+            <th class="no-sort">Status</th>
+            <th class="no-sort">Type</th>
+            <th id="h-cost" onclick="srt('cost','h-cost')">Cost</th>
+            <th id="h-cv" onclick="srt('cv','h-cv')">Conv. value</th>
+            <th id="h-conv" onclick="srt('conv','h-conv')">Conv.</th>
+            <th id="h-roas" onclick="srt('roas','h-roas')">Conv. val/cost</th>
+            <th id="h-cpa" onclick="srt('cpa','h-cpa')">Cost/conv.</th>
+            <th id="h-cvr" onclick="srt('cvr','h-cvr')">Conv. rate</th>
+            <th id="h-aconv" onclick="srt('aconv','h-aconv')">All conv.</th>
+            <th id="h-acpa" onclick="srt('acpa','h-acpa')">Cost/all conv.</th>
+            <th id="h-acvr" onclick="srt('acvr','h-acvr')">All conv. rate</th>
+            <th id="h-acv" onclick="srt('acv','h-acv')">All conv. value</th>
+            <th id="h-acvrc" onclick="srt('acvrc','h-acvrc')">All cv/cost</th>
+            <th id="h-impr" onclick="srt('impr','h-impr')">Impr.</th>
+            <th id="h-clicks" onclick="srt('clicks','h-clicks')">Clicks</th>
+            <th id="h-cpc" onclick="srt('cpc','h-cpc')">Avg. CPC</th>
+            <th id="h-ctr" onclick="srt('ctr','h-ctr')">CTR</th>
+            <th id="h-sis" onclick="srt('sis','h-sis')">Search IS</th>
+            <th id="h-tis" onclick="srt('tis','h-tis')">Top IS</th>
+            <th id="h-atis" onclick="srt('atis','h-atis')">Abs. Top IS</th>
+            <th id="h-cs" onclick="srt('cs','h-cs')">Click share</th>
+            <th class="no-sort new-header">Opt. score ⚠</th>
+            <th class="no-sort new-header">Bid strategy ⚠</th>
+          </tr></thead>
+          <tbody id="dtbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="pagination-bar mt-2">
+      <span id="dinfo">Showing 1–20 of 20</span>
+      <nav><ul class="pagination pagination-sm mb-0">
+        <li class="page-item disabled"><a class="page-link">‹</a></li>
+        <li class="page-item active"><a class="page-link">1</a></li>
+        <li class="page-item disabled"><a class="page-link">›</a></li>
+      </ul></nav>
+    </div>
+    <div class="callout mt-2"><strong>22 of 24 columns already exist in live DB.</strong> Only Opt. score and Bid strategy (red headers) need adding. Scroll right to see all columns. Click any black header to sort.</div>
+  </div>
+
+  <hr class="wf-divider">
+
+  <!-- SECTION 2: COLUMN SPECS -->
+  <div class="section-label">Section 2 — Full column specs per page — verified against live DB (click tabs)</div>
+
+  <ul class="nav page-tabs mb-0" style="border-bottom:1px solid #dee2e6;">
+    <li class="nav-item"><a class="nav-link active" href="#" onclick="showTab('tc',this);return false;">Campaigns (24) — 2 new</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" onclick="showTab('ta',this);return false;">Ad Groups (26) — 5 new</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" onclick="showTab('tk',this);return false;">Keywords (17) — 3 new</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" onclick="showTab('tads',this);return false;">Ads (22) — 2 new</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" onclick="showTab('tsh',this);return false;">Shopping — 10 new + 0 rows</a></li>
+  </ul>
+
+  <!-- CAMPAIGNS -->
+  <div id="tc" class="wf-section" style="border-radius:0 8px 8px 8px;margin-top:0;border-top:none;">
+    <div class="wf-section-title">Campaigns — analytics.campaign_daily — 7,300 rows ✅</div>
+    <table class="table table-sm col-spec"><thead class="table-light"><tr><th>#</th><th>Column</th><th>Live DB column</th><th>Status</th><th>Sort</th></tr></thead><tbody>
+      <tr class="sticky-row"><td>1</td><td>📌 Campaign</td><td>campaign_name</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>2</td><td>Status</td><td>campaign_status</td><td><span class="gap-exists">EXISTS</span></td><td>—</td></tr>
+      <tr><td>3</td><td>Type</td><td>channel_type</td><td><span class="gap-exists">EXISTS</span></td><td>—</td></tr>
+      <tr><td>4</td><td>Cost</td><td>cost</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>5</td><td>Conv. value</td><td>conversions_value</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>6</td><td>Conversions</td><td>conversions</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr class="calc-col"><td>7</td><td>Conv. value / cost</td><td>conversions_value / cost</td><td><span class="gap-calc">CALC</span></td><td>✅</td></tr>
+      <tr class="calc-col"><td>8</td><td>Cost / conv.</td><td>cost / conversions</td><td><span class="gap-calc">CALC</span></td><td>✅</td></tr>
+      <tr class="calc-col"><td>9</td><td>Conv. rate</td><td>conversions / clicks</td><td><span class="gap-calc">CALC</span></td><td>✅</td></tr>
+      <tr><td>10</td><td>All conv.</td><td>all_conversions</td><td><span class="gap-exists">EXISTS</span> ✅ already in DB</td><td>✅</td></tr>
+      <tr class="calc-col"><td>11</td><td>Cost / all conv.</td><td>cost / all_conversions</td><td><span class="gap-calc">CALC</span></td><td>✅</td></tr>
+      <tr class="calc-col"><td>12</td><td>All conv. rate</td><td>all_conversions / clicks</td><td><span class="gap-calc">CALC</span></td><td>✅</td></tr>
+      <tr><td>13</td><td>All conv. value</td><td>all_conversions_value</td><td><span class="gap-exists">EXISTS</span> ✅ already in DB</td><td>✅</td></tr>
+      <tr class="calc-col"><td>14</td><td>All conv. value / cost</td><td>all_conversions_value / cost</td><td><span class="gap-calc">CALC</span></td><td>✅</td></tr>
+      <tr><td>15</td><td>Impr.</td><td>impressions</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>16</td><td>Clicks</td><td>clicks</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>17</td><td>Avg. CPC</td><td>cpc</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>18</td><td>CTR</td><td>ctr</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>19</td><td>Search impr. share</td><td>search_impression_share</td><td><span class="gap-exists">EXISTS</span> ✅ Chat 23</td><td>✅</td></tr>
+      <tr><td>20</td><td>Search top IS</td><td>search_top_impression_share</td><td><span class="gap-exists">EXISTS</span> ✅ Chat 23</td><td>✅</td></tr>
+      <tr><td>21</td><td>Search abs. top IS</td><td>search_absolute_top_impression_share</td><td><span class="gap-exists">EXISTS</span> ✅ Chat 23</td><td>✅</td></tr>
+      <tr><td>22</td><td>Click share</td><td>click_share</td><td><span class="gap-exists">EXISTS</span> ✅ Chat 23</td><td>✅</td></tr>
+      <tr class="new-col"><td>23</td><td>Optimisation score</td><td>optimization_score</td><td><span class="gap-new">NEW COLUMN</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>24</td><td>Bid strategy type</td><td>bid_strategy_type</td><td><span class="gap-new">NEW COLUMN</span></td><td>—</td></tr>
+    </tbody></table>
+    <div class="callout success mt-2">22 of 24 columns already exist. <strong>Only 2 new columns needed: optimization_score, bid_strategy_type.</strong></div>
+  </div>
+
+  <!-- AD GROUPS -->
+  <div id="ta" class="wf-section" style="display:none;border-radius:0 8px 8px 8px;margin-top:0;border-top:none;">
+    <div class="wf-section-title">Ad Groups — analytics.ad_group_daily — 23,725 rows ✅</div>
+    <table class="table table-sm col-spec"><thead class="table-light"><tr><th>#</th><th>Column</th><th>Live DB column</th><th>Status</th><th>Sort</th></tr></thead><tbody>
+      <tr class="sticky-row"><td>1</td><td>📌 Ad group</td><td>ad_group_name</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>2</td><td>Campaign</td><td>campaign_name</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>3</td><td>Status</td><td>ad_group_status</td><td><span class="gap-exists">EXISTS</span></td><td>—</td></tr>
+      <tr><td>4</td><td>Target CPA</td><td>target_cpa_micros / 1e6</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>5</td><td>Ad group type</td><td>ad_group_type</td><td><span class="gap-new">NEW COLUMN</span></td><td>—</td></tr>
+      <tr><td>6</td><td>Cost</td><td>cost</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>7</td><td>Conv. value</td><td>conversions_value</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>8</td><td>Conversions</td><td>conversions</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr class="calc-col"><td>9</td><td>Conv. value / cost</td><td>conversions_value / cost</td><td><span class="gap-calc">CALC</span></td><td>✅</td></tr>
+      <tr><td>10</td><td>Cost / conv.</td><td>cpa</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr class="calc-col"><td>11</td><td>Conv. rate</td><td>conversions / clicks</td><td><span class="gap-calc">CALC</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>12</td><td>All conv.</td><td>all_conversions</td><td><span class="gap-new">NEW COLUMN</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>13</td><td>Cost / all conv.</td><td>cost / all_conversions</td><td><span class="gap-new">NEW COLUMN</span> (CALC once added)</td><td>✅</td></tr>
+      <tr class="new-col"><td>14</td><td>All conv. rate</td><td>all_conversions / clicks</td><td><span class="gap-new">NEW COLUMN</span> (CALC once added)</td><td>✅</td></tr>
+      <tr class="new-col"><td>15</td><td>All conv. value</td><td>all_conversions_value</td><td><span class="gap-new">NEW COLUMN</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>16</td><td>All conv. value / cost</td><td>all_conversions_value / cost</td><td><span class="gap-new">NEW COLUMN</span> (CALC once added)</td><td>✅</td></tr>
+      <tr><td>17</td><td>Impr.</td><td>impressions</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>18</td><td>Clicks</td><td>clicks</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>19</td><td>Avg. CPC</td><td>cpc</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>20</td><td>CTR</td><td>ctr</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>21</td><td>Search impr. share</td><td>search_impression_share</td><td><span class="gap-exists">EXISTS</span> ✅</td><td>✅</td></tr>
+      <tr><td>22</td><td>Search top IS</td><td>search_top_impression_share</td><td><span class="gap-exists">EXISTS</span> ✅</td><td>✅</td></tr>
+      <tr><td>23</td><td>Search abs. top IS</td><td>search_absolute_top_impression_share</td><td><span class="gap-exists">EXISTS</span> ✅</td><td>✅</td></tr>
+      <tr><td>24</td><td>Click share</td><td>click_share</td><td><span class="gap-exists">EXISTS</span> ✅</td><td>✅</td></tr>
+      <tr class="new-col"><td>25</td><td>Optimisation score</td><td>optimization_score</td><td><span class="gap-new">NEW COLUMN</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>26</td><td>Bid strategy type</td><td>bid_strategy_type</td><td><span class="gap-new">NEW COLUMN</span></td><td>—</td></tr>
+    </tbody></table>
+    <div class="callout danger mt-2"><strong>5 new columns needed:</strong> ad_group_type, all_conversions, all_conversions_value, optimization_score, bid_strategy_type</div>
+  </div>
+
+  <!-- KEYWORDS -->
+  <div id="tk" class="wf-section" style="display:none;border-radius:0 8px 8px 8px;margin-top:0;border-top:none;">
+    <div class="wf-section-title">Keywords — analytics.keyword_daily — 77,368 rows ✅</div>
+    <table class="table table-sm col-spec"><thead class="table-light"><tr><th>#</th><th>Column</th><th>Live DB column</th><th>Status</th><th>Sort</th></tr></thead><tbody>
+      <tr class="sticky-row"><td>1</td><td>📌 Keyword (+ match type pill)</td><td>keyword_text + match_type</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>2</td><td>All conv. value</td><td>all_conversions_value</td><td><span class="gap-new">NEW COLUMN</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>3</td><td>All conv. value / cost</td><td>all_conversions_value / cost</td><td><span class="gap-new">NEW COLUMN</span> (CALC once added)</td><td>✅</td></tr>
+      <tr><td>4</td><td>Impr.</td><td>impressions</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>5</td><td>Clicks</td><td>clicks</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>6</td><td>Avg. CPC</td><td>cpc</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>7</td><td>CTR</td><td>ctr</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>8</td><td>Search impr. share</td><td>search_impression_share</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>9</td><td>Search top IS</td><td>search_top_impression_share</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>10</td><td>Search abs. top IS</td><td>search_absolute_top_impression_share</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>11</td><td>Click share</td><td>click_share</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>12</td><td>Quality Score</td><td>quality_score</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr class="note-col"><td>13</td><td>Exp. CTR</td><td>quality_score_creative</td><td><span class="gap-note">⚠ NAME DIFFERS</span> col is quality_score_creative</td><td>✅</td></tr>
+      <tr><td>14</td><td>Landing page exp.</td><td>quality_score_landing_page</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr class="note-col"><td>15</td><td>Ad relevance</td><td>quality_score_relevance</td><td><span class="gap-note">⚠ NAME DIFFERS</span> col is quality_score_relevance</td><td>✅</td></tr>
+      <tr class="new-col"><td>16</td><td>Bid strategy type</td><td>bid_strategy_type</td><td><span class="gap-new">NEW COLUMN</span></td><td>—</td></tr>
+      <tr class="new-col"><td>17</td><td>Final URL</td><td>final_url</td><td><span class="gap-new">NEW COLUMN</span></td><td>—</td></tr>
+    </tbody></table>
+    <div class="callout danger mt-2"><strong>3 new columns needed:</strong> all_conversions_value, bid_strategy_type, final_url</div>
+    <div class="callout mt-1">⚠ Quality score sub-columns use different names in DB: <code>quality_score_creative</code> (Exp. CTR) and <code>quality_score_relevance</code> (Ad relevance). Worker must map these correctly in route query.</div>
+  </div>
+
+  <!-- ADS -->
+  <div id="tads" class="wf-section" style="display:none;border-radius:0 8px 8px 8px;margin-top:0;border-top:none;">
+    <div class="wf-section-title">Ads — analytics.ad_features_daily — 983 rows ✅ — uses 30d windowed columns</div>
+    <div class="callout info mb-3">Table is <strong>ad_features_daily</strong> (not ad_daily — does not exist). Uses windowed columns (impressions_30d, clicks_30d, cost_micros_30d etc). campaign_name and ad_group_name already in the table — no JOINs needed.</div>
+    <table class="table table-sm col-spec"><thead class="table-light"><tr><th>#</th><th>Column</th><th>Live DB column</th><th>Status</th><th>Sort</th></tr></thead><tbody>
+      <tr class="sticky-row"><td>1</td><td>📌 Ad (final URL)</td><td>final_url</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>2</td><td>Campaign</td><td>campaign_name</td><td><span class="gap-exists">EXISTS</span> ✅ no JOIN needed</td><td>✅</td></tr>
+      <tr><td>3</td><td>Ad Group</td><td>ad_group_name</td><td><span class="gap-exists">EXISTS</span> ✅ no JOIN needed</td><td>✅</td></tr>
+      <tr><td>4</td><td>Status</td><td>ad_status</td><td><span class="gap-exists">EXISTS</span></td><td>—</td></tr>
+      <tr><td>5</td><td>Ad type</td><td>ad_type</td><td><span class="gap-exists">EXISTS</span></td><td>—</td></tr>
+      <tr><td>6</td><td>Cost</td><td>cost_micros_30d / 1e6</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>7</td><td>Conv. value</td><td>conversions_value_30d</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>8</td><td>Conversions</td><td>conversions_30d</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr class="calc-col"><td>9</td><td>Conv. value / cost</td><td>CALC from 30d cols</td><td><span class="gap-calc">CALC</span></td><td>✅</td></tr>
+      <tr><td>10</td><td>Cost / conv.</td><td>cpa_30d / 1e6</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>11</td><td>Conv. rate</td><td>cvr_30d</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>12</td><td>All conv.</td><td>all_conversions_30d</td><td><span class="gap-new">NEW COLUMN</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>13</td><td>Cost / all conv.</td><td>CALC once added</td><td><span class="gap-new">NEW COLUMN</span> (CALC)</td><td>✅</td></tr>
+      <tr class="new-col"><td>14</td><td>All conv. rate</td><td>CALC once added</td><td><span class="gap-new">NEW COLUMN</span> (CALC)</td><td>✅</td></tr>
+      <tr class="new-col"><td>15</td><td>All conv. value</td><td>all_conversions_value_30d</td><td><span class="gap-new">NEW COLUMN</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>16</td><td>All conv. value / cost</td><td>CALC once added</td><td><span class="gap-new">NEW COLUMN</span> (CALC)</td><td>✅</td></tr>
+      <tr><td>17</td><td>Impr.</td><td>impressions_30d</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>18</td><td>Clicks</td><td>clicks_30d</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr class="calc-col"><td>19</td><td>Avg. CPC</td><td>cost_micros_30d / clicks_30d</td><td><span class="gap-calc">CALC</span></td><td>✅</td></tr>
+      <tr><td>20</td><td>CTR</td><td>ctr_30d</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>21</td><td>Ad strength</td><td>ad_strength</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>22</td><td>Final URL</td><td>final_url</td><td><span class="gap-exists">EXISTS</span></td><td>—</td></tr>
+    </tbody></table>
+    <div class="callout danger mt-2"><strong>2 new columns needed:</strong> all_conversions_30d, all_conversions_value_30d</div>
+  </div>
+
+  <!-- SHOPPING -->
+  <div id="tsh" class="wf-section" style="display:none;border-radius:0 8px 8px 8px;margin-top:0;border-top:none;">
+    <div class="wf-section-title">Shopping — analytics.shopping_campaign_daily — ⚠ 0 ROWS — needs full generator build</div>
+    <div class="callout danger mb-3"><strong>shopping_campaign_daily has 0 synthetic rows and is missing 10 columns.</strong> Worker must build a new generator (generate_synthetic_shopping_v2.py) as part of Step A before this page can work. Column set matches Campaigns exactly.</div>
+    <table class="table table-sm col-spec"><thead class="table-light"><tr><th>#</th><th>Column</th><th>Live DB column</th><th>Status</th><th>Sort</th></tr></thead><tbody>
+      <tr class="sticky-row"><td>1</td><td>📌 Campaign</td><td>campaign_name</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>2</td><td>Status</td><td>campaign_status</td><td><span class="gap-new">NEW COLUMN</span></td><td>—</td></tr>
+      <tr class="new-col"><td>3</td><td>Type / channel</td><td>channel_type</td><td><span class="gap-new">NEW COLUMN</span></td><td>—</td></tr>
+      <tr><td>4</td><td>Cost</td><td>cost_micros / 1e6</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>5</td><td>Conv. value</td><td>conversions_value</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>6</td><td>Conversions</td><td>conversions</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr class="calc-col"><td>7</td><td>Conv. value / cost</td><td>CALC</td><td><span class="gap-calc">CALC</span></td><td>✅</td></tr>
+      <tr class="calc-col"><td>8</td><td>Cost / conv.</td><td>CALC</td><td><span class="gap-calc">CALC</span></td><td>✅</td></tr>
+      <tr class="calc-col"><td>9</td><td>Conv. rate</td><td>CALC</td><td><span class="gap-calc">CALC</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>10</td><td>All conv.</td><td>all_conversions</td><td><span class="gap-new">NEW COLUMN</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>11</td><td>Cost / all conv.</td><td>CALC once added</td><td><span class="gap-new">NEW COLUMN</span> (CALC)</td><td>✅</td></tr>
+      <tr class="new-col"><td>12</td><td>All conv. rate</td><td>CALC once added</td><td><span class="gap-new">NEW COLUMN</span> (CALC)</td><td>✅</td></tr>
+      <tr class="new-col"><td>13</td><td>All conv. value</td><td>all_conversions_value</td><td><span class="gap-new">NEW COLUMN</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>14</td><td>All conv. value / cost</td><td>CALC once added</td><td><span class="gap-new">NEW COLUMN</span> (CALC)</td><td>✅</td></tr>
+      <tr><td>15</td><td>Impr.</td><td>impressions</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>16</td><td>Clicks</td><td>clicks</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>17</td><td>Avg. CPC</td><td>cpc</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr><td>18</td><td>CTR</td><td>ctr</td><td><span class="gap-exists">EXISTS</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>19</td><td>Search impr. share</td><td>search_impression_share</td><td><span class="gap-new">NEW COLUMN</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>20</td><td>Search top IS</td><td>search_top_impression_share</td><td><span class="gap-new">NEW COLUMN</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>21</td><td>Search abs. top IS</td><td>search_absolute_top_impression_share</td><td><span class="gap-new">NEW COLUMN</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>22</td><td>Click share</td><td>click_share</td><td><span class="gap-new">NEW COLUMN</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>23</td><td>Optimisation score</td><td>optimization_score</td><td><span class="gap-new">NEW COLUMN</span></td><td>✅</td></tr>
+      <tr class="new-col"><td>24</td><td>Bid strategy type</td><td>bid_strategy_type</td><td><span class="gap-new">NEW COLUMN</span></td><td>—</td></tr>
+    </tbody></table>
+    <div class="callout danger mt-2"><strong>10 new columns + 0 rows.</strong> Worker builds generate_synthetic_shopping_v2.py in Step A. Modelled on generate_synthetic_data_v2.py (20 shopping campaigns × 365 days).</div>
+  </div>
+
+  <hr class="wf-divider">
+
+  <!-- SECTION 3: DATA PREP SUMMARY -->
+  <div class="section-label">Section 3 — Step A data prep summary (verified against live DB)</div>
+  <div class="wf-section">
+    <div class="wf-section-title">New columns per table — total 22 across 5 tables</div>
+    <table class="table table-sm" style="font-size:12px;">
+      <thead class="table-light"><tr><th>Table</th><th>Rows</th><th>New columns</th><th>Synthetic generator to update</th></tr></thead>
+      <tbody>
+        <tr><td>analytics.campaign_daily</td><td>7,300 ✅</td><td>optimization_score, bid_strategy_type</td><td>generate_synthetic_data_v2.py</td></tr>
+        <tr><td>analytics.ad_group_daily</td><td>23,725 ✅</td><td>ad_group_type, all_conversions, all_conversions_value, optimization_score, bid_strategy_type</td><td>generate_synthetic_ad_group_data.py</td></tr>
+        <tr><td>analytics.keyword_daily</td><td>77,368 ✅</td><td>all_conversions_value, bid_strategy_type, final_url</td><td>generate_synthetic_keywords.py</td></tr>
+        <tr><td>analytics.ad_features_daily</td><td>983 ✅</td><td>all_conversions_30d, all_conversions_value_30d</td><td>generate_synthetic_ads.py</td></tr>
+        <tr style="background:#fef2f2;"><td>analytics.shopping_campaign_daily</td><td><strong>0 ⚠</strong></td><td>campaign_status, channel_type, all_conversions, all_conversions_value, search_impression_share, search_top_impression_share, search_absolute_top_impression_share, click_share, optimization_score, bid_strategy_type</td><td><strong>NEW: generate_synthetic_shopping_v2.py</strong></td></tr>
+      </tbody>
+    </table>
+    <div class="callout"><strong>Step A verification:</strong> After each generator runs, worker must run DESCRIBE analytics.[table] and confirm all new columns exist before touching any route or template files.</div>
+  </div>
+
+  <hr class="wf-divider">
+
+  <!-- SECTION 4: SORT + FILES -->
+  <div class="section-label">Section 4 — Sort behaviour + build order</div>
+  <div class="wf-section">
+    <div class="row g-3">
+      <div class="col-md-5">
+        <div class="wf-section-title">Server-side sort URL pattern</div>
+        <code style="font-size:12px;background:#f8f9fa;padding:8px;border-radius:4px;display:block;line-height:2;">/campaigns?sort_by=cost&sort_dir=desc&page=1&per_page=25&status=all</code>
+        <div style="font-size:12px;margin-top:10px;line-height:1.9;">
+          Click unsorted col → sort DESC + reset page 1<br>
+          Click sorted DESC → flip ASC<br>
+          Click sorted ASC → flip DESC<br>
+          New sort always resets to page 1
+        </div>
+        <div class="callout info mt-2">
+          <strong>Default sort per page:</strong><br>
+          Campaigns / Ad Groups / Keywords / Shopping → cost DESC<br>
+          Ads → impressions_30d DESC
+        </div>
+      </div>
+      <div class="col-md-7">
+        <div class="wf-section-title">Build order — 13 files total + 1 new generator</div>
+        <table class="table table-sm" style="font-size:12px;">
+          <thead class="table-light"><tr><th>Step</th><th>File(s)</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr style="background:#fff3cd;font-weight:700;"><td>A</td><td colspan="2">DATA PREP — do first, verify before Step B</td></tr>
+            <tr><td>A1</td><td>generate_synthetic_data_v2.py</td><td>Add optimization_score, bid_strategy_type</td></tr>
+            <tr><td>A2</td><td>generate_synthetic_ad_group_data.py</td><td>Add 5 columns</td></tr>
+            <tr><td>A3</td><td>generate_synthetic_keywords.py</td><td>Add 3 columns</td></tr>
+            <tr><td>A4</td><td>generate_synthetic_ads.py</td><td>Add 2 columns</td></tr>
+            <tr style="background:#fef2f2;"><td>A5</td><td>generate_synthetic_shopping_v2.py (NEW)</td><td>Build from scratch — 20 campaigns × 365d</td></tr>
+            <tr style="background:#fff3cd;font-weight:700;"><td>B</td><td colspan="2">PILOT — Campaigns page</td></tr>
+            <tr><td>B1</td><td>routes/campaigns.py</td><td>Add sort params, update query</td></tr>
+            <tr><td>B2</td><td>templates/campaigns.html</td><td>Full 24-col table, sticky, sort headers</td></tr>
+            <tr><td>B3</td><td>static/css/custom.css</td><td>Sticky + sort CSS (shared, done once)</td></tr>
+            <tr style="background:#fff3cd;font-weight:700;"><td>C–F</td><td colspan="2">ROLLOUT — one page at a time, test each before next</td></tr>
+            <tr><td>C</td><td>routes/ad_groups.py + templates/ad_groups.html</td><td></td></tr>
+            <tr><td>D</td><td>routes/keywords.py + templates/keywords_new.html</td><td>Map QS col names</td></tr>
+            <tr><td>E</td><td>routes/ads.py + templates/ads_new.html</td><td>Use ad_features_daily + 30d cols</td></tr>
+            <tr><td>F</td><td>routes/shopping.py + templates/shopping_new.html</td><td>Depends on A5 completing</td></tr>
+          </tbody>
+        </table>
+        <div class="callout success"><strong>14 files total (13 modified + 1 new generator).</strong> Dashboard untouched.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:40px;"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const D=[
+  {name:'Growth Strong',status:'ENABLED',type:'SEARCH',cost:6272,cv:22643,conv:839,impr:261345,clicks:7829,sis:.67,tis:.39,atis:.17,cs:.43},
+  {name:'Growth Moderate',status:'ENABLED',type:'SEARCH',cost:5015,cv:16650,conv:588,impr:208952,clicks:6257,sis:.61,tis:.35,atis:.15,cs:.38},
+  {name:'Brand Exact',status:'ENABLED',type:'SEARCH',cost:1235,cv:10003,conv:420,impr:45230,clicks:3421,sis:.91,tis:.88,atis:.72,cs:.89},
+  {name:'Competitor Targeting',status:'ENABLED',type:'SEARCH',cost:2100,cv:4410,conv:140,impr:98200,clicks:1820,sis:.42,tis:.21,atis:.08,cs:.29},
+  {name:'Stable ROAS 2.0',status:'ENABLED',type:'SEARCH',cost:3800,cv:7790,conv:310,impr:175000,clicks:4200,sis:.55,tis:.28,atis:.11,cs:.33},
+  {name:'Stable ROAS 4.0',status:'ENABLED',type:'SEARCH',cost:2900,cv:11890,conv:280,impr:130000,clicks:3100,sis:.58,tis:.31,atis:.13,cs:.35},
+  {name:'Shopping Best Sellers',status:'ENABLED',type:'SHOPPING',cost:4500,cv:23400,conv:450,impr:320000,clicks:5500,sis:.71,tis:.44,atis:.22,cs:.48},
+  {name:'Shopping New Arrivals',status:'PAUSED',type:'SHOPPING',cost:800,cv:1440,conv:60,impr:62000,clicks:900,sis:.33,tis:.15,atis:.06,cs:.21},
+  {name:'Display Retargeting',status:'ENABLED',type:'DISPLAY',cost:1100,cv:1650,conv:45,impr:480000,clicks:600,sis:null,tis:null,atis:null,cs:null},
+  {name:'PMax All Products',status:'ENABLED',type:'PERFORMANCE_MAX',cost:5800,cv:22620,conv:520,impr:290000,clicks:6800,sis:.64,tis:.38,atis:.16,cs:.41},
+  {name:'Low Budget Test',status:'PAUSED',type:'SEARCH',cost:120,cv:144,conv:8,impr:9800,clicks:180,sis:.22,tis:.09,atis:.03,cs:.14},
+  {name:'High Intent KWs',status:'ENABLED',type:'SEARCH',cost:2200,cv:9900,conv:230,impr:88000,clicks:2800,sis:.72,tis:.46,atis:.21,cs:.51},
+  {name:'Seasonal Promo',status:'PAUSED',type:'SEARCH',cost:450,cv:1260,conv:30,impr:28000,clicks:520,sis:.31,tis:.13,atis:.05,cs:.18},
+  {name:'Awareness Display',status:'PAUSED',type:'DISPLAY',cost:300,cv:270,conv:5,impr:180000,clicks:200,sis:null,tis:null,atis:null,cs:null},
+  {name:'RLSA Converters',status:'ENABLED',type:'SEARCH',cost:1600,cv:9280,conv:175,impr:62000,clicks:1900,sis:.78,tis:.51,atis:.24,cs:.59},
+  {name:'Generic Broad',status:'PAUSED',type:'SEARCH',cost:280,cv:308,conv:14,impr:24000,clicks:340,sis:.25,tis:.10,atis:.04,cs:.16},
+  {name:'Mobile Bid Adj.',status:'ENABLED',type:'SEARCH',cost:1300,cv:4160,conv:110,impr:52000,clicks:1600,sis:.56,tis:.29,atis:.12,cs:.34},
+  {name:'Video Discovery',status:'ENABLED',type:'DISPLAY',cost:900,cv:2160,conv:40,impr:320000,clicks:700,sis:null,tis:null,atis:null,cs:null},
+  {name:'Exact Match Only',status:'ENABLED',type:'SEARCH',cost:1900,cv:9120,conv:200,impr:76000,clicks:2300,sis:.69,tis:.43,atis:.20,cs:.47},
+  {name:'NB Phrase Catch-all',status:'PAUSED',type:'SEARCH',cost:200,cv:280,conv:10,impr:16000,clicks:240,sis:.19,tis:.07,atis:.02,cs:.12},
+];
+D.forEach(r=>{
+  r.roas=r.cost>0?r.cv/r.cost:0;
+  r.cpa=r.conv>0?r.cost/r.conv:0;
+  r.cvr=r.clicks>0?r.conv/r.clicks:0;
+  r.ctr=r.impr>0?r.clicks/r.impr:0;
+  r.cpc=r.clicks>0?r.cost/r.clicks:0;
+  r.aconv=r.conv*1.10;
+  r.acv=r.cv*1.10;
+  r.acpa=r.aconv>0?r.cost/r.aconv:0;
+  r.acvr=r.clicks>0?r.aconv/r.clicks:0;
+  r.acvrc=r.cost>0?r.acv/r.cost:0;
+});
+let sc='name',sd='asc',sf='all';
+const dash='<span style="color:#adb5bd;">—</span>';
+const pct=v=>v==null?dash:(v*100).toFixed(1)+'%';
+const cur=v=>'$'+v.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+const roasCls=v=>v>=3?'roas-good':v>=2?'roas-ok':'roas-bad';
+const stB=s=>s==='ENABLED'?'<span class="badge bg-success" style="font-size:10px;">Active</span>':'<span class="badge bg-secondary" style="font-size:10px;">Paused</span>';
+const tyB=t=>{const labels={SEARCH:'Search',SHOPPING:'Shopping',DISPLAY:'Display',PERFORMANCE_MAX:'PMax'};return`<span style="font-size:12px;color:#6c757d;">${labels[t]||t}</span>`;};
+const strats=['TARGET_CPA','TARGET_ROAS','MAXIMIZE_CONVERSIONS','MAXIMIZE_CONVERSION_VALUE','MANUAL_CPC'];
+function render(){
+  let data=[...D];
+  if(sf!=='all') data=data.filter(r=>r.status===sf);
+  const dir=sd==='asc'?1:-1;
+  data.sort((a,b)=>{let av=a[sc],bv=b[sc];if(av==null&&bv==null)return 0;if(av==null)return 1;if(bv==null)return-1;if(typeof av==='string'){av=av.toLowerCase();bv=bv.toLowerCase();}return av>bv?dir:av<bv?-dir:0;});
+  document.getElementById('dtbody').innerHTML=data.map((r,i)=>`<tr>
+    <td><strong>${r.name}</strong></td>
+    <td>${stB(r.status)}</td><td>${tyB(r.type)}</td>
+    <td>${cur(r.cost)}</td><td>${cur(r.cv)}</td><td>${r.conv.toLocaleString()}</td>
+    <td><span class="${roasCls(r.roas)}">${r.roas.toFixed(2)}x</span></td>
+    <td>${r.cpa>0?cur(r.cpa):dash}</td><td>${(r.cvr*100).toFixed(2)}%</td>
+    <td>${r.aconv.toFixed(0)}</td><td>${r.acpa>0?cur(r.acpa):dash}</td><td>${(r.acvr*100).toFixed(2)}%</td>
+    <td>${cur(r.acv)}</td><td><span class="${roasCls(r.acvrc)}">${r.acvrc.toFixed(2)}x</span></td>
+    <td>${r.impr.toLocaleString()}</td><td>${r.clicks.toLocaleString()}</td>
+    <td>$${r.cpc.toFixed(2)}</td><td>${(r.ctr*100).toFixed(2)}%</td>
+    <td>${pct(r.sis)}</td><td>${pct(r.tis)}</td><td>${pct(r.atis)}</td><td>${pct(r.cs)}</td>
+    <td><span style="color:#198754;font-weight:600;">${(0.5+Math.random()*0.45).toFixed(2)}</span></td>
+    <td style="font-size:11px;color:#6c757d;">${strats[i%strats.length]}</td>
+  </tr>`).join('');
+  document.querySelectorAll('.act-table thead th').forEach(th=>th.classList.remove('sorted-asc','sorted-desc'));
+  const th=document.getElementById('h-'+sc);if(th)th.classList.add(sd==='asc'?'sorted-asc':'sorted-desc');
+  document.getElementById('dinfo').textContent=`Showing 1–${data.length} of ${data.length}`;
+}
+function srt(col,id){if(sc===col)sd=sd==='asc'?'desc':'asc';else{sc=col;sd='desc';}render();}
+function setFilter(v,btn){sf=v;document.querySelectorAll('.btn-group .btn').forEach(b=>b.className='btn btn-sm btn-outline-secondary');btn.className='btn btn-sm btn-primary';render();}
+function showTab(t,link){
+  ['tc','ta','tk','tads','tsh'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  document.getElementById(t).style.display='block';
+  document.querySelectorAll('.page-tabs .nav-link').forEach(l=>l.classList.remove('active'));
+  link.classList.add('active');
+}
+render();
+</script>
+</body>
+</html>

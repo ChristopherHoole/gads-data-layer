@@ -5,7 +5,7 @@
 **Framework:** Bootstrap 5  
 **Icons:** Bootstrap Icons  
 **Chat 21 Status:** ✅ COMPLETE - 8/8 (100%) 🏆  
-**Dashboard 3.0 Status:** 🚧 IN PROGRESS — M1 ✅ COMPLETE, M2 ✅ COMPLETE, M3 next  
+**Dashboard 3.0 Status:** 🚧 IN PROGRESS — M1 ✅ M2 ✅ M3 ✅ M4 ✅ COMPLETE, M5 next  
 **Started:** February 18, 2026  
 **Updated:** 2026-02-20  
 **Mode:** Dashboard 3.0 Phase 1 underway  
@@ -1379,19 +1379,36 @@ ORDER BY cost DESC
 
 ---
 
-#### Chat 25: M4 — Table Overhaul 📋 PLANNED
-**Est. time:** ~120 min  
-**Status:** Outline agreed, detail to be discussed before brief
+#### Chat 25: M4 — Table Overhaul ✅ COMPLETE
+**Date:** 2026-02-21
+**Status:** COMPLETE ✅
+**Summary:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\CHAT_25_DETAILED_SUMMARY.md`
+**Handoff:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\CHAT_25_HANDOFF.md`
+**Wireframe:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\M4_WIREFRAME_v2.html`
 
-**What gets built:**
-- Full Campaigns column set per wireframe
-- Freeze first column (Campaign Name) on horizontal scroll
-- Sortable columns
-- All/Enabled/Paused filter
-- 10/25/50/100 rows per page
-- Page-specific column sets per page
+**Delivered:**
+- Full Google Ads UI column sets on all 5 pages (Campaigns/Ad Groups/Keywords/Ads/Shopping)
+- Server-side sort (sort_by/sort_dir URL params → SQL ORDER BY) on all sortable columns
+- CSS sticky first column on all pages (position:sticky, no JS library)
+- All/Enabled/Paused status filter standardised across all pages
+- 10/25/50/100 rows per page standardised across all pages
+- ALLOWED_*_SORT whitelists on every route (SQL injection prevention)
+- Shopping page migrated from legacy raw_shopping_campaign_daily to ro.analytics.shopping_campaign_daily
+- Ad Strength rendered as progress bar on Ads page (Excellent/Good/Average/Poor)
+- Keywords: match type pill inside Keyword column, QS colour coding (green/orange/red/grey)
+- 5 synthetic data generators run (A1–A5), new generator built for Shopping
+- 16 files total (15 modified + 1 new generator)
 
-**Pilot:** Campaigns → rollout all pages
+**Column specs (locked — do not change without Master Chat approval):**
+| Page | Cols | Sticky |
+|---|---|---|
+| Campaigns | 24 | Campaign name |
+| Ad Groups | 26 | Ad Group name |
+| Keywords | 17 | Keyword |
+| Ads | 24 | Ad (final_url) |
+| Shopping | 24 | Campaign name |
+
+**Next Step:** Chat 26 — M5 Rules Section Upgrade (discuss with Master Chat first)
 
 ---
 
@@ -1420,6 +1437,6 @@ Depends on M6 design decisions.
 
 ---
 
-**Last Updated:** 2026-02-20  
-**Status:** Dashboard 3.0 Phase 1 — M1 ✅ M2 ✅ M3 ✅ | M4 next  
-**Next Step:** Chat 25 — M4 Table Overhaul (discuss with Master Chat first)
+**Last Updated:** 2026-02-21  
+**Status:** Dashboard 3.0 Phase 1 — M1 ✅ M2 ✅ M3 ✅ M4 ✅ | M5 next  
+**Next Step:** Chat 26 — M5 Rules Section Upgrade (discuss with Master Chat first)

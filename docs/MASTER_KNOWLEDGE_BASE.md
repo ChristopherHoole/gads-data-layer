@@ -9,9 +9,9 @@
 
 ## EXECUTIVE SUMMARY
 
-### Current State (Feb 20, 2026)
-- **Overall Completion:** ~87%
-- **Phase:** Dashboard 3.0 — M3 complete ✅, M4 (Table Overhaul) NEXT
+### Current State (Feb 21, 2026)
+- **Overall Completion:** ~90%
+- **Phase:** Dashboard 3.0 — M4 complete ✅, M5 Rules Section Upgrade NEXT
 - **Active Development:** Dashboard 3.0 modular improvements
 - **Templating:** Jinja2 Macros (metrics_section M2 + performance_chart M3)
 
@@ -100,6 +100,41 @@ Pending git commit message:
 
 ---
 
+### Chat 25 — M4: Table Overhaul ✅
+**Date:** 2026-02-21 | **Commit:** pending
+
+Full Google Ads UI column sets across all 5 pages, server-side sort, sticky first column:
+- Campaigns: 24 cols (unchanged, reference standard)
+- Ad Groups: 26 cols — `ro.analytics.ad_group_daily`
+- Keywords: 17 cols — `ro.analytics.keyword_features_daily` (windowed), match type pill inside keyword col
+- Ads: 24 cols — `ro.analytics.ad_features_daily` (30d windowed), ad strength progress bar
+- Shopping: 24 cols — migrated from `raw_shopping_campaign_daily` to `ro.analytics.shopping_campaign_daily`
+
+Sort pattern: URL params (sort_by/sort_dir) → ALLOWED_*_SORT whitelist → SQL ORDER BY + LIMIT/OFFSET
+Sticky: CSS `position:sticky` on first th/td, no JS library
+
+Database state post-Chat 25:
+| Table | Rows | Cols |
+|---|---|---|
+| analytics.campaign_daily | 7,300 | 21 |
+| analytics.ad_group_daily | 23,725 | 30 |
+| analytics.keyword_daily | 77,368 | 33 |
+| analytics.ad_features_daily | 983 | 51 |
+| analytics.shopping_campaign_daily | 7,300 | 26 |
+
+New file: `tools/testing/generate_synthetic_shopping_v2.py`
+
+Key lessons:
+- Generators live in `tools/testing/` not `scripts/`
+- Always validate Jinja syntax before deploying: `python3 -c "from jinja2 import Environment, FileSystemLoader; env = Environment(loader=FileSystemLoader('.')); env.get_template('template.html'); print('OK')"`
+- Column specs vary per page — never assume Campaigns spec applies everywhere
+
+Known expected states (not bugs):
+- All Conv. columns show `—` — all_conversions pipeline not yet built
+- Shopping IS/Opt. Score/Click Share show `—` — NULL in SQL, pending real data
+
+---
+
 ### Chat 24 — M3: Chart Overhaul ✅
 **Date:** 2026-02-20 | **Commit:** Pending
 
@@ -172,24 +207,43 @@ gads-data-layer/
 
 CRITICAL: Always use ro.analytics.* prefix in dashboard queries.
 
-### analytics.campaign_daily
+### analytics.campaign_daily (7,300 rows, 21 cols)
 snapshot_date, customer_id, campaign_id, campaign_name, campaign_type, status,
 budget_micros, target_cpa_micros, target_roas, clicks, impressions, cost_micros,
 conversions, conversions_value, rolling windows (w7/w14/w30/w90)
 + IS columns (added Chat 23): search_impression_share, search_top_impression_share,
   search_absolute_top_impression_share, click_share
++ M4 columns (added Chat 25): optimization_score, bid_strategy_type
 
-### analytics.keyword_daily
-keyword_text, match_type, max_cpc_micros, quality_score (1-10),
-quality_score_landing_page, quality_score_ad_relevance, quality_score_expected_ctr
-
-### analytics.ad_daily
-ad_type, ad_strength (POOR/AVERAGE/GOOD/EXCELLENT), headlines_count, final_url
-
-### analytics.ad_group_daily
+### analytics.ad_group_daily (23,725 rows, 30 cols)
 ad_group_name, campaign_name, cpc_bid_micros, target_cpa_micros
++ IS columns (added Chat 23): search_impression_share, search_top_impression_share,
+  search_absolute_top_impression_share, click_share
++ M4 columns (added Chat 25): ad_group_type, all_conversions, all_conversions_value,
+  optimization_score, bid_strategy_type
+NOTE: ad_group_daily is a VIEW over snap_ad_group_daily
 
-### analytics.shopping_campaign_daily, product_features_daily (76 features), feed_quality_daily
+### analytics.keyword_daily (77,368 rows, 33 cols)
+keyword_text, match_type, max_cpc_micros, quality_score (1-10),
+quality_score_landing_page, quality_score_creative (= Exp. CTR),
+quality_score_relevance (= Ad relevance)
++ M4 columns (added Chat 25): all_conversions_value, bid_strategy_type, final_url
+NOTE: Routes use keyword_features_daily (windowed) not keyword_daily (raw)
+
+### analytics.ad_features_daily (983 rows, 51 cols)
+ad_type, ad_strength (POOR/AVERAGE/GOOD/EXCELLENT), headlines_count, final_url
+campaign_name, ad_group_name (already in table — no JOINs needed)
+Windowed 30d: impressions_30d, clicks_30d, cost_micros_30d, conversions_30d,
+  conversions_value_30d, ctr_30d, cvr_30d, cpa_30d, roas_30d
++ M4 columns (added Chat 25): all_conversions_30d, all_conversions_value_30d
+NOTE: Table is ad_features_daily — ad_daily does NOT exist
+
+### analytics.shopping_campaign_daily (7,300 rows, 26 cols)
+Full shopping campaign data — M4 generator built from scratch
++ M4 columns (added Chat 25): campaign_status, channel_type, all_conversions,
+  all_conversions_value, search_impression_share, search_top_impression_share,
+  search_absolute_top_impression_share, click_share, optimization_score, bid_strategy_type
+
 ### analytics.change_log — audit trail
 
 ---
@@ -255,8 +309,8 @@ Rule Visibility System (Chat 21c — reusable on all pages):
 | M1: Date Range Picker | 22 | ✅ COMPLETE |
 | M2: Metrics Cards | 23 | ✅ COMPLETE |
 | M3: Chart Overhauls | 24 | ✅ COMPLETE |
-| M4: Table Improvements | 25 | 🚧 NEXT |
-| M5: Rules Panel Upgrades | 26 | 📋 PLANNED |
+| M4: Table Overhaul | 25 | ✅ COMPLETE |
+| M5: Rules Panel Upgrades | 26 | 🚧 NEXT |
 | M6: Action Buttons | 27 | 📋 PLANNED |
 
 ---
@@ -269,16 +323,22 @@ Rule Visibility System (Chat 21c — reusable on all pages):
 | DB query fails | Use ro.analytics.* not analytics.* |
 | Route replacement fails | Match exact quote style of @bp.route decorator |
 | Shopping metrics missing | Add total_clicks to compute_campaign_metrics() |
-| Ad Strength in wrong row | Actions row ONLY |
+| Ad Strength in wrong row | Actions row ONLY (M2 cards) |
 | Collapse state lost | POST to /set-metrics-collapse |
 | Rules showing 0 | Use r'_\d{3}(?:_|$)' regex |
 | Ad group table empty | Use cpc_bid_micros not bid_micros |
+| Generator scripts not found | They are in tools/testing/ — not scripts/ |
+| Sort not working on full dataset | Must be SQL-side ORDER BY, not Python-side |
+| New sort column not working | Must add to ALLOWED_*_SORT whitelist in route |
+| Jinja template 500 error | Validate syntax before deploying: `python3 -c "from jinja2 import Environment, FileSystemLoader; env = Environment(loader=FileSystemLoader('.')); env.get_template('template.html'); print('OK')"` |
+| ad_daily table not found | Does not exist — use ad_features_daily |
+| Shopping data empty | Check compute_campaign_metrics() key names match schema (conversions_value not conv_value) |
 
 ---
 
 ## CURRENT STATUS
 
-### Overall: ~85% Complete
+### Overall: ~90% Complete
 
 What's working:
 - All 6 dashboard pages with real/synthetic data
@@ -292,12 +352,17 @@ What's working:
 - Rules visibility system
 - Authentication + client switching
 - Constitution execution engine
+- M4 tables: full Google Ads column sets on all 5 pages
+- Server-side sort on all sortable columns
+- CSS sticky first column on all pages
+- Status filter + per-page controls standardised
 
 Pending:
-- Chat 23 + Chat 24 git commits pending
+- M3 + M4 git commits pending
+- All Conv. pipeline (populating all_conversions across all tables)
+- Shopping IS/Opt. Score (columns exist but NULL — pending real data)
 - Ads Revenue fix (future chat)
-- 404.html (future chat)
-- Chat 15 deferred work (executor compatibility)
+- 404.html template missing (pre-existing)
 
 ---
 
@@ -333,5 +398,5 @@ Medium-term:
 
 ---
 
-**Version:** 3.0 | **Last Updated:** 2026-02-20  
-**Next Step:** Chat 25 — M4 Table Overhaul (discuss with Master Chat first)
+**Version:** 4.0 | **Last Updated:** 2026-02-21  
+**Next Step:** Chat 26 — M5 Rules Section Upgrade (discuss with Master Chat first)

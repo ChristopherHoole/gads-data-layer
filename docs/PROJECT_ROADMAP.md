@@ -1,8 +1,8 @@
 # PROJECT ROADMAP - Google Ads Data Layer (ACT Dashboard)
 
-**Last Updated:** 2026-02-20  
-**Current Phase:** Dashboard 3.0 — M3 ✅ COMPLETE | M4 Table Overhaul next  
-**Overall Completion:** ~87% (Foundation + Polish + Dashboard 3.0 M1+M2+M3 complete)  
+**Last Updated:** 2026-02-21  
+**Current Phase:** Dashboard 3.0 — M4 ✅ COMPLETE | M5 Rules Section Upgrade next  
+**Overall Completion:** ~90% (Foundation + Polish + Dashboard 3.0 M1+M2+M3+M4 complete)  
 **Mode:** Dashboard 3.0 Phase 1 in progress 🚧
 ---
 
@@ -414,15 +414,42 @@
 
 ---
 
-## **Chat 25: Data Quality Monitoring** (2-3 hrs)
+## **Chat 25: Dashboard 3.0 M4 — Table Overhaul** ✅ COMPLETE
 
-**Status:** PLANNED
+**Status:** COMPLETE — 2026-02-21
+**Summary:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\CHAT_25_DETAILED_SUMMARY.md`
+**Handoff:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\CHAT_25_HANDOFF.md`
+**Wireframe:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\M4_WIREFRAME_v2.html`
 
-**Features:**
-- Tracking health checks
-- Data freshness monitoring
-- Anomaly detection
-- Data quality dashboards
+**Delivered:**
+- Full Google Ads UI column sets on all 5 pages
+- Server-side sort (sort_by/sort_dir URL params + SQL ORDER BY) on all sortable columns
+- CSS sticky first column on all pages (position:sticky, no JS library)
+- All/Enabled/Paused filter standardised across all pages
+- 10/25/50/100 rows per page standardised across all pages
+- SQL injection prevention via ALLOWED_*_SORT whitelists on every route
+- Shopping page migrated from legacy `raw_shopping_campaign_daily` to `ro.analytics.shopping_campaign_daily`
+- 5 synthetic data generators run (A1–A5), warehouse_readonly.duckdb synced
+- New generator: `tools/testing/generate_synthetic_shopping_v2.py`
+
+**Column specs locked:**
+- Campaigns: 24 cols | Ad Groups: 26 cols | Keywords: 17 cols | Ads: 24 cols | Shopping: 24 cols
+
+**Database state after Chat 25:**
+| Table | Rows | Cols |
+|---|---|---|
+| analytics.campaign_daily | 7,300 | 21 |
+| analytics.ad_group_daily | 23,725 | 30 |
+| analytics.keyword_daily | 77,368 | 33 |
+| analytics.ad_features_daily | 983 | 51 |
+| analytics.shopping_campaign_daily | 7,300 | 26 |
+
+**Known states (expected, not bugs):**
+- All Conv. columns show `—` on all pages — all_conversions not yet populated by generators
+- Shopping IS/Opt. Score/Click Share show `—` — NULL in SQL pending real data
+- favicon.ico 500 errors — pre-existing (missing 404.html template)
+
+**Files modified (16):** 6 route files, 5 template files, 4 generator files, 1 new generator
 
 ---
 
@@ -496,10 +523,10 @@
 - ✅ Chat 22: M1 Date Picker — COMPLETE
 - ✅ Chat 23: M2 Metrics Cards — COMPLETE (all 6 pages)
 - ✅ Chat 24: M3 Chart Overhaul — COMPLETE
+- ✅ Chat 25: M4 Table Overhaul — COMPLETE (all 5 pages)
 
 ### **Short-term (Dashboard 3.0 remaining):**
-- 🚧 Chat 25: M4 Table Overhaul — NEXT
-- 📋 Chat 26: M5 Rules Section Upgrade
+- 🚧 Chat 26: M5 Rules Section Upgrade — NEXT
 - 📋 Chat 27: M6 Actions Feed
 - 📋 Chat 28: M7 Action Buttons
 
@@ -549,6 +576,20 @@
 ---
 
 ## ðŸ“„ CHANGELOG
+
+### **2026-02-21 (Chat 25 — M4 Table Overhaul)**
+
+**Completed:**
+- ✅ M4 Table Overhaul — all 5 pages (Campaigns, Ad Groups, Keywords, Ads, Shopping)
+- Full Google Ads UI column sets per page (24/26/17/24/24 cols)
+- Server-side sort via SQL ORDER BY on all sortable columns
+- CSS sticky first column on all pages
+- ALLOWED_*_SORT whitelists prevent SQL injection on all routes
+- Shopping migrated to ro.analytics.shopping_campaign_daily
+- 5 generators run (A1–A5), warehouse_readonly.duckdb synced
+- New generator: generate_synthetic_shopping_v2.py
+- Keywords column count corrected (24→17 during chat)
+- 16 files modified total
 
 ### **2026-02-20 (Chat 24 — M3 Chart Overhaul)**
 

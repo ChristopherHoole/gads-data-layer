@@ -1,7 +1,7 @@
 # CHAT WORKING RULES - MANDATORY FOR ALL CHATS
 
-**Version:** 1.1  
-**Last Updated:** 2026-02-19  
+**Version:** 1.2  
+**Last Updated:** 2026-02-21  
 **Applies to:** All Claude chats working on this project
 
 ---
@@ -444,6 +444,15 @@ IF TEST FAILS:
 - ❌ Proceed if tests fail
 - ❌ Say "it should work" without actual test
 - ❌ Test only one scenario (test multiple)
+- ❌ Deploy a modified Jinja template without first validating syntax
+
+**Jinja Template Validation (mandatory after any template edit):**
+```powershell
+cd C:\Users\User\Desktop\gads-data-layer
+.\.venv\Scripts\Activate.ps1
+python -c "from jinja2 import Environment, FileSystemLoader; env = Environment(loader=FileSystemLoader('act_dashboard/templates')); env.get_template('your_template.html'); print('Jinja OK')"
+```
+If this throws an error, fix the template before proceeding.
 
 ---
 
