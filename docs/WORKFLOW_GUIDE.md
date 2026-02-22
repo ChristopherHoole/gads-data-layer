@@ -1,8 +1,8 @@
 # WORKFLOW GUIDE - MASTER & WORKER CHAT OPERATIONS
 
-**Version:** 1.1  
+**Version:** 1.2  
 **Created:** 2026-02-19  
-**Updated:** 2026-02-19  
+**Updated:** 2026-02-22  
 **Purpose:** Define systematic processes for Master + Worker chat coordination  
 **Audience:** Master Chat (primary), Worker Chats (reference)
 
@@ -71,6 +71,137 @@
 4. **Thorough Testing** - Workers test before reporting complete
 5. **Documentation First** - Update docs before starting new work
 6. **Escalate Early** - Don't waste >1 hour debugging alone
+
+---
+
+## 🔄 THE 15-STEP WORKER CHAT WORKFLOW
+
+This is the MANDATORY workflow for every worker chat. No steps may be skipped.
+
+---
+
+### STEP 1 — Master writes brief
+Master Chat produces a comprehensive CHAT_XX_BRIEF.md covering:
+- Objective and context
+- Full list of deliverables (files to create/modify with full Windows paths)
+- Technical constraints and critical rules
+- Success criteria checklist
+- Estimated time
+- Handoff requirements
+
+---
+
+### STEP 2 — Uploads to worker chat
+The following are ALL uploaded to the new worker chat before any work begins:
+-  — the task brief
+- 
+- 
+- 
+- 
+- Codebase as a ZIP ()
+
+---
+
+### STEP 3 — Worker reads and produces 5 questions
+Worker Chat reads ALL uploaded documents and the brief thoroughly.
+Worker identifies gaps, ambiguities, or risks and produces exactly **5 clarifying questions**.
+These questions must be specific and answerable — not vague.
+
+---
+
+### STEP 4 — Worker STOPS and sends 5 questions to Master
+Worker Chat stops work completely and sends the 5 questions to Master Chat.
+Worker does NOT proceed until answers are received.
+
+---
+
+### STEP 5 — Master answers 5 questions
+Master Chat reviews the 5 questions and provides clear, direct answers.
+Answers are sent back to Worker Chat.
+
+---
+
+### STEP 6 — Worker creates detailed build plan
+Worker Chat uses the brief + answers to produce a detailed, step-by-step build plan.
+The build plan must specify:
+- Every file to be created or edited (full Windows path)
+- The order of operations
+- How each deliverable satisfies the brief
+- Any risks or dependencies called out
+
+---
+
+### STEP 7 — Build plan sent to Master for review
+Worker sends the detailed build plan to Master Chat.
+Worker does NOT start coding until Master approves.
+
+---
+
+### STEP 8 — Master approves build plan → Worker starts work
+Master reviews the build plan. If approved, Worker begins implementation.
+If not approved, Master provides feedback and Worker revises.
+
+---
+
+### STEP 9 — Implementation: 1 step at a time, 1 file at a time
+Worker implements the build plan one step at a time, one file at a time.
+
+**Rules during implementation:**
+- Before editing ANY existing file → Worker asks Christopher to upload the current version
+- Worker edits the file and returns the COMPLETE file (never snippets)
+- Every file delivered includes its FULL Windows path
+- If the step can be tested → Worker provides fresh PowerShell commands
+- Worker waits for confirmation before moving to next step
+
+---
+
+### STEP 10 — Worker creates detailed completion summary
+Once all work is done and tested, Worker creates a detailed summary covering:
+- Every file created or modified (full paths)
+- What was built and how it works
+- Test results
+- Any known issues or deviations from the brief
+
+---
+
+### STEP 11 — Detailed summary sent to Master for review
+Worker sends the detailed summary to Master Chat.
+Master reviews against the brief and success criteria.
+
+---
+
+### STEP 12 — If approved: Worker creates handoff documents
+Master approves summary → Worker creates two documents:
+-  — comprehensive technical record
+-  — context for the next worker chat
+
+Both saved to: 
+
+---
+
+### STEP 13 — Handoff docs sent to Master for approval
+Worker sends both handoff documents to Master Chat for review.
+Master checks they are complete, accurate, and useful for future chats.
+
+---
+
+### STEP 14 — Master updates project documentation
+Master Chat updates ALL 4 project docs to reflect completed work:
+-  — any new lessons or pitfalls
+-  — module/chat status updated
+-  — architecture, lessons, current state
+-  — progress, changelog, next steps
+
+---
+
+### STEP 15 — Git commit
+Master instructs Christopher to commit and push.
+
+**Commit message format:**
+
+
+Christopher runs:
+
 
 ---
 
