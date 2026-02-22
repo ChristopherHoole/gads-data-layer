@@ -1,8 +1,8 @@
 # PROJECT ROADMAP - Google Ads Data Layer (ACT Dashboard)
 
 **Last Updated:** 2026-02-22  
-**Current Phase:** Dashboard 3.0 — M6 ✅ COMPLETE | M7 Accept/Decline/Modify next  
-**Overall Completion:** ~95% (Foundation + Polish + Dashboard 3.0 M1+M2+M3+M4+M5+M6 complete)  
+**Current Phase:** Dashboard 3.0 — M7 ✅ COMPLETE | M8 Changes + Monitoring next  
+**Overall Completion:** ~96% (Foundation + Polish + Dashboard 3.0 M1+M2+M3+M4+M5+M6+M7 complete)  
 **Mode:** Dashboard 3.0 Phase 2 in progress 🚧
 ---
 
@@ -531,17 +531,24 @@
 
 ---
 
-## **Chat 28: M7 — Accept/Decline/Modify Wiring** 🎯 NEXT
+## **Chat 28: M7 — Accept/Decline/Modify Wiring** ✅ COMPLETE
 
-**Status:** PLANNED
+**Status:** COMPLETE ✅ — 2026-02-22
+**Summary:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_28_DETAILED_SUMMARY.md`
+**Handoff:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_28_HANDOFF.md`
 
-**Deliverables:**
-- POST `/recommendations/<id>/accept` — transitions to monitoring or successful, writes to changes table
+**Delivered:**
+- POST `/recommendations/<id>/accept` — transitions pending → monitoring or successful (based on `monitoring_days` in rules_config.json)
 - POST `/recommendations/<id>/decline` — marks declined, removes card client-side
 - POST `/recommendations/<id>/modify` — Bootstrap modal for editing proposed value, then accepts
-- Card removal animations + badge count updates
-- Toast confirmations
-- Constitution cooldown enforcement on accept
+- Card removal animations + badge count updates + toast confirmations
+- New `changes` table created in warehouse.duckdb — full audit trail of user actions
+- `monitoring_days: 0` added to all 13 rules in rules_config.json
+- **4-tab UI** on both `/recommendations` and `/campaigns`: Pending / Monitoring / Successful / Declined
+- History tab removed — replaced by Successful + Declined card tabs
+- Summary strip updated: 4 counts (Pending / Monitoring / Successful / Declined)
+- Read-only card variants for Monitoring (progress bar), Successful (outcome block green), Declined (outcome block grey, opacity 0.55)
+- 4 files changed: rules_config.json, recommendations.py, recommendations.html, campaigns.html
 
 ---
 
@@ -584,8 +591,8 @@
 
 ### **Short-term (Dashboard 3.0 remaining):**
 - ✅ Chat 27: M6 Recommendations Engine + UI — COMPLETE
-- 🎯 Chat 28: M7 Accept/Decline/Modify wiring — NEXT
-- 📋 Chat 29: M8 Changes + Monitoring page
+- ✅ Chat 28: M7 Accept/Decline/Modify wiring + 4-tab UI — COMPLETE
+- 🎯 Chat 29: M8 Changes + Monitoring page — NEXT
 - 📋 Chat 30: M9 Search Terms / Keywords recommendations
 
 ### **Medium-term (After Dashboard 3.0):**
@@ -634,6 +641,24 @@
 ---
 
 ## ðŸ“„ CHANGELOG
+
+### **2026-02-22 (Chat 28 — M7 Accept/Decline/Modify + 4-Tab UI)**
+
+**Completed:**
+- ✅ M7 Part 1: Action buttons wired — Accept/Decline/Modify POST routes live
+- ✅ M7 Part 2: 4-tab Recommendations UI replacing 3-tab server-side layout
+- `changes` table created in warehouse.duckdb — audit trail for all user actions
+- `monitoring_days: 0` added to all 13 rules in rules_config.json
+- Accept route: transitions pending → monitoring (if monitoring_days > 0) or successful (if 0)
+- Decline route: transitions pending → declined, sets accepted_at
+- Modify route: updates proposed_value then proceeds as accept
+- Card animations: fade+slide out on action, badge decrements, toast confirmations
+- 4-tab UI: Pending (action buttons) / Monitoring (progress bar, read-only) / Successful (green outcome block, read-only) / Declined (grey, opacity 0.55, read-only)
+- History tab removed entirely — replaced by Successful + Declined tabs
+- Summary strip updated to 4 counts on both pages
+- Both /recommendations and /campaigns pages updated
+- NULL `accepted_at` on old synthetic declined rows — expected, not a bug
+- 4 files changed (rules_config.json, recommendations.py, recommendations.html, campaigns.html)
 
 ### **2026-02-22 (Chat 27 — M6 Recommendations Engine + UI)**
 

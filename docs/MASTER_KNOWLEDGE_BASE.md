@@ -1,6 +1,6 @@
 # MASTER KNOWLEDGE BASE - ADS CONTROL TOWER (A.C.T)
 
-**Version:** 5.0  
+**Version:** 7.0  
 **Created:** 2026-02-19  
 **Updated:** 2026-02-22  
 **Purpose:** Complete project context for Master Chat coordination
@@ -10,8 +10,8 @@
 ## EXECUTIVE SUMMARY
 
 ### Current State (Feb 22, 2026)
-- **Overall Completion:** ~95%
-- **Phase:** Dashboard 3.0 — M6 complete ✅, M7 Accept/Decline/Modify NEXT
+- **Overall Completion:** ~96%
+- **Phase:** Dashboard 3.0 — M7 complete ✅, M8 Changes + Monitoring NEXT
 - **Active Development:** Dashboard 3.0 modular improvements
 - **Templating:** Jinja2 Macros (metrics_section M2 + performance_chart M3)
 
@@ -379,11 +379,39 @@ Rule Visibility System (Chat 21c — reusable on all pages):
 | M4: Table Overhaul | 25 | ✅ COMPLETE |
 | M5: Rules Tab (Campaigns pilot) | 26 | ✅ COMPLETE |
 | M6: Recommendations Engine + UI | 27 | ✅ COMPLETE |
-| M7: Accept/Decline/Modify | 28 | 🎯 NEXT |
-| M8: Changes + Monitoring | 29 | 📋 PLANNED |
+| M7: Accept/Decline/Modify + 4-Tab UI | 28 | ✅ COMPLETE |
+| M8: Changes + Monitoring | 29 | 🎯 NEXT |
 | M9: Search Terms | 30 | 📋 PLANNED |
 
 ---
+
+### Chat 28 — M7: Accept/Decline/Modify + 4-Tab UI ✅
+**Date:** 2026-02-22 | **Summary:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_28_DETAILED_SUMMARY.md` | **Handoff:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_28_HANDOFF.md`
+
+**Part 1 — Action Buttons:**
+- 3 POST routes: accept / decline / modify (live, tested)
+- `changes` table created in warehouse.duckdb — audit trail for all user actions
+- `monitoring_days: 0` added to all 13 rules in rules_config.json
+- Accept: pending → monitoring (monitoring_days > 0) or successful (monitoring_days = 0)
+- Decline: pending → declined, sets accepted_at
+- Modify: updates proposed_value then accepts (same status logic)
+- Card animations: fade+slide out, badge decrements, toast confirmations
+
+**Part 2 — 4-Tab UI:**
+- Replaces 3-tab server-side layout (Pending / Monitoring / History)
+- New tabs: Pending (action buttons) / Monitoring (read-only, progress bar) / Successful (read-only, green outcome block) / Declined (read-only, grey, opacity 0.55)
+- History tab removed entirely
+- Pure JS tab switching — no page reload (recommendations.html: server-side Jinja, campaigns.html: JS fetch from /cards endpoint)
+- Summary strip updated: 4 counts on both pages
+- Both /recommendations and /campaigns updated
+
+**Architecture decisions:**
+- recommendations.html: server-side Jinja passes all 4 groups, JS shows/hides divs
+- campaigns.html: JS fetch from /recommendations/cards (pre-existing pattern maintained)
+- Declined date: accepted_at (set during decline route)
+- Successful "Completed" date: resolved_at (NULL fallback to accepted_at only)
+
+**Test results:** 0 Pending / 4 Monitoring / 54 Successful / 8 Declined — all tabs confirmed ✅
 
 ### Chat 27 — M6: Recommendations Engine + UI ✅
 **Date:** 2026-02-22 | **Commit:** Pending ()  
@@ -448,7 +476,7 @@ Rule Visibility System (Chat 21c — reusable on all pages):
 
 ## CURRENT STATUS
 
-### Overall: ~92% Complete
+### Overall: ~96% Complete
 
 What's working:
 - All 6 dashboard pages with real/synthetic data
@@ -464,6 +492,9 @@ What's working:
 - **rules_config.json + rules_api.py CRUD** (Chat 26)
 - **M6 Recommendations Engine + global page + Campaigns tab** (Chat 27)
 - **recommendations table in warehouse.duckdb** (Chat 27)
+- **M7 Accept/Decline/Modify action buttons — live POST routes** (Chat 28)
+- **M7 4-tab Recommendations UI on /recommendations + /campaigns** (Chat 28)
+- **changes audit table in warehouse.duckdb** (Chat 28)
 - Authentication + client switching
 - Constitution execution engine
 - M4 tables: full Google Ads column sets on all 5 pages
@@ -472,20 +503,20 @@ What's working:
 - Status filter + per-page controls standardised
 
 Pending:
-- M7 Accept/Decline/Modify button wiring (Chat 28)
+- M8 Changes + Monitoring page (Chat 29)
 - M5 Rules tab rollout to Ad Groups, Keywords, Ads, Shopping (future chat)
+- Enable monitoring_days > 0 on specific rules to test full monitoring flow
+- Connect accept/modify routes to Google Ads API execution engine (live changes)
 - Campaign scope pill name resolution (future chat)
 - All Conv. pipeline (populating all_conversions across all tables)
 - Shopping IS/Opt. Score (columns exist but NULL)
 - Ads Revenue fix (future chat)
-- 404.html template missing (pre-existing)
 
 ---
 
 ## FUTURE ROADMAP
 
 Immediate (Dashboard 3.0):
-- Chat 28: M7 Accept/Decline/Modify wiring
 - Chat 29: M8 Change History + Monitoring (merged screen)
 - Chat 30: M9 Keywords Search Terms tab
 
@@ -519,8 +550,12 @@ Medium-term:
 14. recommendations table must live in writable warehouse.duckdb — never in readonly analytics DB
 15. Engine proxy columns must be logged when used — do not silently substitute
 16. Duplicate prevention: always check (campaign_id, rule_id) before insert — engine run 2 must return SkippedDuplicate, not new rows
+17. Verify actual DB column names before writing routes — brief column names may differ from schema (e.g. acted_at vs accepted_at, monitoring_start_date vs monitoring_ends_at)
+18. Tab switching approach depends on page: recommendations.html uses server-side Jinja + JS show/hide; campaigns.html uses JS fetch from /cards endpoint — match the pre-existing pattern per page
+19. Datetime fields from DuckDB can be Python datetime objects or ISO strings — use `| string | truncate(10, True, '')` in Jinja to safely extract date portion
+20. NULL dates on old synthetic rows are expected — do not treat as bugs; document clearly in handoff
 
 ---
 
-**Version:** 6.0 | **Last Updated:** 2026-02-22  
-**Next Step:** Chat 28 — M7 Accept/Decline/Modify wiring
+**Version:** 7.0 | **Last Updated:** 2026-02-22  
+**Next Step:** Chat 29 — M8 Changes + Monitoring page

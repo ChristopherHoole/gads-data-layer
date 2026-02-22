@@ -1,6 +1,6 @@
 # CHAT WORKING RULES - MANDATORY FOR ALL CHATS
 
-**Version:** 1.3  
+**Version:** 1.4  
 **Last Updated:** 2026-02-22  
 **Applies to:** All Claude chats working on this project
 
@@ -619,7 +619,7 @@ User, what would you like to do?
 
 ---
 
-## KNOWN PITFALLS (Updated Chat 27)
+## KNOWN PITFALLS (Updated Chat 28)
 
 | Problem | Fix |
 |---------|-----|
@@ -630,6 +630,10 @@ User, what would you like to do?
 | Inline card rendering | Use /cards JSON endpoint + JS rendering — do not reload full page |
 | Duplicate recommendations | Check (campaign_id, rule_id) before insert — engine run 2 must return SkippedDuplicate |
 | Flask route decorator broken | Never insert helper functions between @bp.route decorator and its function |
+| Brief column names differ from schema | Always verify actual DB column names before writing — e.g. brief said `acted_at` but schema has `accepted_at` |
+| Tab switching approach mismatch | recommendations.html uses server-side Jinja + JS show/hide; campaigns.html uses JS fetch from /cards — match the pre-existing pattern per page, don't change the other page's approach |
+| Datetime formatting from DuckDB | Fields can be Python datetime objects or ISO strings — use `\| string \| truncate(10, True, '')` in Jinja to safely extract YYYY-MM-DD in all cases |
+| NULL dates on old rows | Synthetic data predating new routes has NULL timestamps — handle gracefully, show fallback, document as expected behaviour not a bug |
 
 ---
 

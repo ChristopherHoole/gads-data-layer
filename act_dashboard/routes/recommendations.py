@@ -1,17 +1,17 @@
 """
-Recommendations routes — Chat 27 (M6)
+Recommendations routes — Chat 28 (M7)
 
-Replaces the old JSON-file-based /recommendations route with a
-DuckDB-backed implementation reading from the `recommendations` table.
+Adds 3 POST action routes wired to recommendation cards:
+    POST /recommendations/<rec_id>/accept
+    POST /recommendations/<rec_id>/decline
+    POST /recommendations/<rec_id>/modify
 
-Routes:
-    GET  /recommendations          — Global recommendations page (3 tabs)
-    POST /recommendations/run      — Trigger engine, returns JSON
-    GET  /recommendations/data     — JSON endpoint for tab counts/data
-    GET  /changes                  — Change history (preserved from pre-Chat 27)
+All other routes preserved from Chat 27.
 """
 
-from datetime import datetime
+import json
+import os
+from datetime import datetime, timedelta
 from typing import Optional
 
 import duckdb
@@ -26,10 +26,125 @@ from act_dashboard.routes.shared import (
 
 bp = Blueprint("recommendations", __name__)
 
+# Path to rules config — relative to this file's package root
+_RULES_CONFIG_PATH = os.path.join(
+    os.path.dirname(__file__),        # act_dashboard/routes/
+    "..", "..", "act_autopilot",       # act_autopilot/
+    "rules_config.json"
+)
+
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def _ensure_changes_table(conn):
+    """Create the writable changes table in warehouse.duckdb if it doesn't exist."""
+    conn.execute("""
+        CREATE SEQUENCE IF NOT EXISTS changes_seq START 1
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS changes (
+            change_id       INTEGER DEFAULT nextval('changes_seq'),
+            customer_id     VARCHAR NOT NULL,
+            campaign_id     VARCHAR,
+            campaign_name   VARCHAR,
+            rule_id         VARCHAR,
+            action_type     VARCHAR,
+            old_value       DOUBLE,
+            new_value       DOUBLE,
+            justification   VARCHAR,
+            executed_by     VARCHAR,
+            executed_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            dry_run         BOOLEAN DEFAULT FALSE,
+            status          VARCHAR DEFAULT 'completed'
+        )
+    """)
+
+
+def _load_monitoring_days(rule_id):
+    """
+    Read rules_config.json and return monitoring_days for the given rule_id.
+    Returns 0 if rule not found or field missing.
+    """
+    try:
+        path = os.path.normpath(_RULES_CONFIG_PATH)
+        with open(path, "r") as f:
+            rules = json.load(f)
+        for rule in rules:
+            if rule.get("rule_id") == rule_id:
+                return int(rule.get("monitoring_days", 0))
+    except Exception as e:
+        print("[RECOMMENDATIONS] Could not load rules_config.json: {}".format(e))
+    return 0
+
+
+def _load_rec_by_id(conn, rec_id, customer_id):
+    """
+    Load a single recommendation row by rec_id + customer_id.
+    Returns dict or None.
+    """
+    rows = conn.execute("""
+        SELECT
+            rec_id, rule_id, rule_type, campaign_id, campaign_name,
+            customer_id, status, action_direction, action_magnitude,
+            current_value, proposed_value, trigger_summary, confidence,
+            generated_at, accepted_at, monitoring_ends_at, resolved_at,
+            outcome_metric, created_at, updated_at
+        FROM recommendations
+        WHERE rec_id = ? AND customer_id = ?
+    """, [rec_id, customer_id]).fetchall()
+
+    if not rows:
+        return None
+
+    columns = [
+        "rec_id", "rule_id", "rule_type", "campaign_id", "campaign_name",
+        "customer_id", "status", "action_direction", "action_magnitude",
+        "current_value", "proposed_value", "trigger_summary", "confidence",
+        "generated_at", "accepted_at", "monitoring_ends_at", "resolved_at",
+        "outcome_metric", "created_at", "updated_at",
+    ]
+    return dict(zip(columns, rows[0]))
+
+
+def _write_changes_row(conn, rec, executed_by, justification=None, new_value_override=None):
+    """Write a single audit row to the changes table."""
+    _ensure_changes_table(conn)
+
+    # Determine action_type from rule_type
+    rule_type = rec.get("rule_type", "")
+    if rule_type == "budget":
+        action_type = "budget_change"
+    elif rule_type == "bid":
+        action_type = "bid_change"
+    else:
+        action_type = "status_change"
+
+    old_value = rec.get("current_value")
+    new_value = new_value_override if new_value_override is not None else rec.get("proposed_value")
+
+    jst = justification or rec.get("action_direction", "")
+
+    conn.execute("""
+        INSERT INTO changes (
+            customer_id, campaign_id, campaign_name, rule_id,
+            action_type, old_value, new_value, justification,
+            executed_by, executed_at, dry_run, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, 'completed')
+    """, [
+        str(rec.get("customer_id", "")),
+        str(rec.get("campaign_id", "")),
+        rec.get("campaign_name", ""),
+        rec.get("rule_id", ""),
+        action_type,
+        old_value,
+        new_value,
+        jst,
+        executed_by,
+        datetime.now(),
+    ])
+
 
 def _get_recommendations_data(config, status_filter=None, limit=200):
     """
@@ -97,34 +212,25 @@ def _get_summary(config):
             [cid]
         ).fetchone()[0]
 
-        resolved = conn.execute("""
-            SELECT
-                COUNT(*) FILTER (WHERE status = 'successful') AS successful,
-                COUNT(*) FILTER (WHERE status IN ('successful', 'reverted')) AS accepted
-            FROM recommendations
-            WHERE customer_id = ?
-              AND resolved_at >= CURRENT_TIMESTAMP - INTERVAL 30 DAYS
-        """, [cid]).fetchone()
-
-        successful_count = resolved[0] or 0
-        accepted_count   = resolved[1] or 0
-        success_rate = round((successful_count / accepted_count * 100)) if accepted_count > 0 else 0
-
-        last_run_row = conn.execute(
-            "SELECT MAX(generated_at) FROM recommendations WHERE customer_id = ?",
+        successful = conn.execute(
+            "SELECT COUNT(*) FROM recommendations WHERE customer_id = ? AND status = 'successful'",
             [cid]
-        ).fetchone()
-        last_run = last_run_row[0] if last_run_row else None
+        ).fetchone()[0]
+
+        declined = conn.execute(
+            "SELECT COUNT(*) FROM recommendations WHERE customer_id = ? AND status = 'declined'",
+            [cid]
+        ).fetchone()[0]
 
         return {
-            "pending":      pending,
-            "monitoring":   monitoring,
-            "success_rate": success_rate,
-            "last_run":     last_run,
+            "pending":    pending,
+            "monitoring": monitoring,
+            "successful": successful,
+            "declined":   declined,
         }
     except Exception as e:
         print("[RECOMMENDATIONS] Error building summary: {}".format(e))
-        return {"pending": 0, "monitoring": 0, "success_rate": 0, "last_run": None}
+        return {"pending": 0, "monitoring": 0, "successful": 0, "declined": 0}
     finally:
         conn.close()
 
@@ -225,49 +331,186 @@ def _enrich_rec(rec):
 
 
 # ---------------------------------------------------------------------------
-# Routes
+# Action routes — Chat 28
+# ---------------------------------------------------------------------------
+
+@bp.route("/recommendations/<rec_id>/accept", methods=["POST"])
+@login_required
+def recommendation_accept(rec_id):
+    """Accept a pending recommendation. Transitions to monitoring or successful."""
+    config = get_current_config()
+    conn = get_db_connection(config, read_only=False)
+    try:
+        rec = _load_rec_by_id(conn, rec_id, config.customer_id)
+        if not rec:
+            return jsonify({"success": False, "message": "Recommendation not found."}), 404
+        if rec["status"] != "pending":
+            return jsonify({"success": False, "message": "Recommendation is not pending."}), 400
+
+        now = datetime.now()
+        monitoring_days = _load_monitoring_days(rec["rule_id"])
+
+        if monitoring_days > 0:
+            new_status = "monitoring"
+            monitoring_ends = now + timedelta(days=monitoring_days)
+            conn.execute("""
+                UPDATE recommendations
+                SET status = ?, accepted_at = ?, monitoring_ends_at = ?, updated_at = ?
+                WHERE rec_id = ? AND customer_id = ?
+            """, [new_status, now, monitoring_ends, now, rec_id, config.customer_id])
+        else:
+            new_status = "successful"
+            conn.execute("""
+                UPDATE recommendations
+                SET status = ?, accepted_at = ?, resolved_at = ?, updated_at = ?
+                WHERE rec_id = ? AND customer_id = ?
+            """, [new_status, now, now, now, rec_id, config.customer_id])
+
+        _write_changes_row(conn, rec, executed_by="user_accept")
+
+        return jsonify({
+            "success":    True,
+            "new_status": new_status,
+            "message":    "Recommendation accepted — status set to {}.".format(new_status),
+        })
+    except Exception as e:
+        print("[RECOMMENDATIONS] Accept error: {}".format(e))
+        return jsonify({"success": False, "message": "Error: {}".format(e)}), 500
+    finally:
+        conn.close()
+
+
+@bp.route("/recommendations/<rec_id>/decline", methods=["POST"])
+@login_required
+def recommendation_decline(rec_id):
+    """Decline a pending recommendation."""
+    config = get_current_config()
+    conn = get_db_connection(config, read_only=False)
+    try:
+        rec = _load_rec_by_id(conn, rec_id, config.customer_id)
+        if not rec:
+            return jsonify({"success": False, "message": "Recommendation not found."}), 404
+        if rec["status"] != "pending":
+            return jsonify({"success": False, "message": "Recommendation is not pending."}), 400
+
+        now = datetime.now()
+        conn.execute("""
+            UPDATE recommendations
+            SET status = 'declined', accepted_at = ?, updated_at = ?
+            WHERE rec_id = ? AND customer_id = ?
+        """, [now, now, rec_id, config.customer_id])
+
+        return jsonify({
+            "success": True,
+            "message": "Recommendation declined.",
+        })
+    except Exception as e:
+        print("[RECOMMENDATIONS] Decline error: {}".format(e))
+        return jsonify({"success": False, "message": "Error: {}".format(e)}), 500
+    finally:
+        conn.close()
+
+
+@bp.route("/recommendations/<rec_id>/modify", methods=["POST"])
+@login_required
+def recommendation_modify(rec_id):
+    """Modify proposed_value then accept a pending recommendation."""
+    config = get_current_config()
+
+    data = request.get_json(silent=True)
+    if not data or "new_value" not in data:
+        return jsonify({"success": False, "message": "Missing new_value in request body."}), 400
+
+    try:
+        new_value = float(data["new_value"])
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "message": "new_value must be a number."}), 400
+
+    conn = get_db_connection(config, read_only=False)
+    try:
+        rec = _load_rec_by_id(conn, rec_id, config.customer_id)
+        if not rec:
+            return jsonify({"success": False, "message": "Recommendation not found."}), 404
+        if rec["status"] != "pending":
+            return jsonify({"success": False, "message": "Recommendation is not pending."}), 400
+
+        now = datetime.now()
+        monitoring_days = _load_monitoring_days(rec["rule_id"])
+
+        # Update proposed_value first
+        conn.execute("""
+            UPDATE recommendations
+            SET proposed_value = ?, updated_at = ?
+            WHERE rec_id = ? AND customer_id = ?
+        """, [new_value, now, rec_id, config.customer_id])
+
+        # Then transition status (same as accept)
+        if monitoring_days > 0:
+            new_status = "monitoring"
+            monitoring_ends = now + timedelta(days=monitoring_days)
+            conn.execute("""
+                UPDATE recommendations
+                SET status = ?, accepted_at = ?, monitoring_ends_at = ?, updated_at = ?
+                WHERE rec_id = ? AND customer_id = ?
+            """, [new_status, now, monitoring_ends, now, rec_id, config.customer_id])
+        else:
+            new_status = "successful"
+            conn.execute("""
+                UPDATE recommendations
+                SET status = ?, accepted_at = ?, resolved_at = ?, updated_at = ?
+                WHERE rec_id = ? AND customer_id = ?
+            """, [new_status, now, now, now, rec_id, config.customer_id])
+
+        _write_changes_row(
+            conn, rec,
+            executed_by="user_modify",
+            justification="Modified before accepting",
+            new_value_override=new_value,
+        )
+
+        return jsonify({
+            "success":    True,
+            "new_status": new_status,
+            "message":    "Recommendation modified and accepted — status set to {}.".format(new_status),
+        })
+    except Exception as e:
+        print("[RECOMMENDATIONS] Modify error: {}".format(e))
+        return jsonify({"success": False, "message": "Error: {}".format(e)}), 500
+    finally:
+        conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Routes — preserved from Chat 27
 # ---------------------------------------------------------------------------
 
 @bp.route("/recommendations")
 @login_required
 def recommendations():
     """
-    Global Recommendations page — 3 tabs: Pending / Monitoring / History.
-    Query param: ?tab=pending|monitoring|history  (default: pending)
+    Global Recommendations page — 4 tabs: Pending / Monitoring / Successful / Declined.
+    Tab switching is pure JS — no query param routing needed.
     """
     config              = get_current_config()
     clients             = get_available_clients()
     current_client_path = session.get("current_client_config")
-    active_tab          = request.args.get("tab", "pending")
 
-    summary         = _get_summary(config)
-    pending_recs    = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="pending")]
-    monitoring_recs = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="monitoring")]
-    history_recs    = [_enrich_rec(r) for r in _get_recommendations_data(
-        config,
-        status_filter=["successful", "reverted", "declined"],
-        limit=100,
-    )]
-
-    # Success rate banner for history tab (30d window already in _get_summary,
-    # but compute here from full history_recs list for the banner)
-    successful_count     = sum(1 for r in history_recs if r["status"] == "successful")
-    accepted_count       = sum(1 for r in history_recs if r["status"] in ("successful", "reverted"))
-    history_success_rate = round(successful_count / accepted_count * 100) if accepted_count > 0 else 0
+    summary          = _get_summary(config)
+    pending_recs     = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="pending")]
+    monitoring_recs  = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="monitoring")]
+    successful_recs  = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="successful", limit=200)]
+    declined_recs    = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="declined",   limit=200)]
 
     return render_template(
         "recommendations.html",
         client_name=config.client_name,
         available_clients=clients,
         current_client_config=current_client_path,
-        active_tab=active_tab,
         summary=summary,
         pending_recs=pending_recs,
         monitoring_recs=monitoring_recs,
-        history_recs=history_recs,
-        history_success_rate=history_success_rate,
-        history_successful_count=successful_count,
-        history_accepted_count=accepted_count,
+        successful_recs=successful_recs,
+        declined_recs=declined_recs,
     )
 
 
@@ -331,13 +574,15 @@ def recommendations_data():
 @login_required
 def recommendations_cards():
     """
-    JSON endpoint returning enriched pending + monitoring cards.
+    JSON endpoint returning enriched recommendation cards by status.
     Used by the Campaigns page Recommendations tab for inline card rendering.
     """
     config = get_current_config()
 
     pending_recs    = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="pending")]
     monitoring_recs = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="monitoring")]
+    successful_recs = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="successful", limit=200)]
+    declined_recs   = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="declined",   limit=200)]
 
     def _serialise(rec):
         """Convert datetime fields to ISO strings for JSON serialisation."""
@@ -352,6 +597,8 @@ def recommendations_cards():
     return jsonify({
         "pending":    [_serialise(r) for r in pending_recs],
         "monitoring": [_serialise(r) for r in monitoring_recs],
+        "successful": [_serialise(r) for r in successful_recs],
+        "declined":   [_serialise(r) for r in declined_recs],
     })
 
 

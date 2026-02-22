@@ -355,16 +355,16 @@
     <!-- RECOMMENDATIONS TAB -->
     <div class="tab-pane fade" id="recommendations-tab" role="tabpanel">
 
-      <!-- Summary strip -->
-      <div class="row g-3 mb-4" id="rec-summary-strip">
+      <!-- Summary strip: 4 status counts -->
+      <div class="row g-3 mb-4">
         <div class="col-6 col-md-3">
           <div class="card border-0 shadow-sm h-100">
             <div class="card-body d-flex align-items-center gap-3">
-              <div style="width:40px;height:40px;border-radius:50%;background:#e8f0fe;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#4a6fa5" viewBox="0 0 16 16"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-3.5a.5.5 0 0 1 .5.5v3.793l1.854 1.853a.5.5 0 0 1-.708.708l-2-2A.5.5 0 0 1 7.5 11V5a.5.5 0 0 1 .5-.5z"/></svg>
+              <div style="width:40px;height:40px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               </div>
               <div>
-                <div class="fw-bold fs-4 lh-1" id="rec-pending-count">—</div>
+                <div class="fw-bold fs-4 lh-1" id="cam-count-pending" style="color:#0d6efd;">—</div>
                 <div class="text-muted" style="font-size:12px;">Pending</div>
               </div>
             </div>
@@ -373,11 +373,11 @@
         <div class="col-6 col-md-3">
           <div class="card border-0 shadow-sm h-100">
             <div class="card-body d-flex align-items-center gap-3">
-              <div style="width:40px;height:40px;border-radius:50%;background:#f3e8fd;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#7c3aed" viewBox="0 0 16 16"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
+              <div style="width:40px;height:40px;border-radius:50%;background:#ede9fe;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               </div>
               <div>
-                <div class="fw-bold fs-4 lh-1" id="rec-monitoring-count">—</div>
+                <div class="fw-bold fs-4 lh-1" id="cam-count-monitoring" style="color:#6d28d9;">—</div>
                 <div class="text-muted" style="font-size:12px;">Monitoring</div>
               </div>
             </div>
@@ -386,12 +386,12 @@
         <div class="col-6 col-md-3">
           <div class="card border-0 shadow-sm h-100">
             <div class="card-body d-flex align-items-center gap-3">
-              <div style="width:40px;height:40px;border-radius:50%;background:#e6f4ea;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#1a7f37" viewBox="0 0 16 16"><path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/></svg>
+              <div style="width:40px;height:40px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
               <div>
-                <div class="fw-bold fs-4 lh-1" id="rec-success-rate">—</div>
-                <div class="text-muted" style="font-size:12px;">Success rate (30d)</div>
+                <div class="fw-bold fs-4 lh-1" id="cam-count-successful" style="color:#15803d;">—</div>
+                <div class="text-muted" style="font-size:12px;">Successful</div>
               </div>
             </div>
           </div>
@@ -399,23 +399,23 @@
         <div class="col-6 col-md-3">
           <div class="card border-0 shadow-sm h-100">
             <div class="card-body d-flex align-items-center gap-3">
-              <div style="width:40px;height:40px;border-radius:50%;background:#fff3e0;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#b45309" viewBox="0 0 16 16"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
+              <div style="width:40px;height:40px;border-radius:50%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </div>
               <div>
-                <div class="fw-bold lh-1" id="rec-last-run" style="font-size:14px;">—</div>
-                <div class="text-muted" style="font-size:12px;">Last run</div>
+                <div class="fw-bold fs-4 lh-1" id="cam-count-declined" style="color:#6b7280;">—</div>
+                <div class="text-muted" style="font-size:12px;">Declined</div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Section header -->
+      <!-- Section header with run button -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;">
         <div>
           <h5 style="font-size:16px;font-weight:600;margin:0 0 4px;color:#1a1d23;">Campaign Recommendations</h5>
-          <p style="margin:0;color:#6b7280;font-size:13px;">Pending and active monitoring for this page. <a href="/recommendations?tab=history" style="color:#0d6efd;text-decoration:none;">View full history →</a></p>
+          <p style="margin:0;color:#6b7280;font-size:13px;">All recommendation stages for this account. <a href="/recommendations" style="color:#0d6efd;text-decoration:none;">View full page →</a></p>
         </div>
         <button id="cam-run-engine-btn" onclick="camRunEngine()" style="background:white;border:1px solid #d0d5dd;border-radius:6px;padding:6px 14px;font-size:13px;cursor:pointer;color:#374151;display:flex;align-items:center;gap:6px;white-space:nowrap;">
           <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg>
@@ -423,20 +423,60 @@
         </button>
       </div>
 
-      <!-- Pending section -->
-      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#374151;margin-bottom:14px;display:flex;align-items:center;gap:10px;padding-left:10px;border-left:3px solid #0d6efd;">
-        Pending <span style="font-size:12px;font-weight:600;background:#f3f4f6;color:#6b7280;border-radius:10px;padding:1px 8px;" id="cam-pending-badge">—</span>
-      </div>
-      <div id="cam-pending-cards" style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:28px;">
-        <div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px;grid-column:1/-1;">Loading...</div>
+      <!-- Inner 4-tab bar -->
+      <div style="display:flex;border-bottom:1px solid #e5e9f0;margin-bottom:20px;">
+        <button id="cam-btn-pending" onclick="camSwitchTab('pending')"
+          style="padding:8px 18px;font-size:13px;font-weight:500;color:#8a93a2;cursor:pointer;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;background:transparent;display:flex;align-items:center;gap:6px;"
+          class="cam-inner-tab active-cam-tab">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Pending <span id="cam-badge-pending" style="background:#e9ecef;color:#495057;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:600;">—</span>
+        </button>
+        <button id="cam-btn-monitoring" onclick="camSwitchTab('monitoring')"
+          style="padding:8px 18px;font-size:13px;font-weight:500;color:#8a93a2;cursor:pointer;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;background:transparent;display:flex;align-items:center;gap:6px;"
+          class="cam-inner-tab">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Monitoring <span id="cam-badge-monitoring" style="background:#fff3cd;color:#7c3700;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:600;">—</span>
+        </button>
+        <button id="cam-btn-successful" onclick="camSwitchTab('successful')"
+          style="padding:8px 18px;font-size:13px;font-weight:500;color:#8a93a2;cursor:pointer;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;background:transparent;display:flex;align-items:center;gap:6px;"
+          class="cam-inner-tab">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Successful <span id="cam-badge-successful" style="background:#dcfce7;color:#15803d;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:600;">—</span>
+        </button>
+        <button id="cam-btn-declined" onclick="camSwitchTab('declined')"
+          style="padding:8px 18px;font-size:13px;font-weight:500;color:#8a93a2;cursor:pointer;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;background:transparent;display:flex;align-items:center;gap:6px;"
+          class="cam-inner-tab">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Declined <span id="cam-badge-declined" style="background:#f3f4f6;color:#6b7280;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:600;">—</span>
+        </button>
       </div>
 
-      <!-- Monitoring section -->
-      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#374151;margin-bottom:14px;display:flex;align-items:center;gap:10px;padding-left:10px;border-left:3px solid #7c3aed;">
-        Monitoring <span style="font-size:12px;font-weight:600;background:#f3f4f6;color:#6b7280;border-radius:10px;padding:1px 8px;" id="cam-monitoring-badge">—</span>
+      <!-- Pending cards -->
+      <div id="cam-tab-pending">
+        <div id="cam-pending-cards" style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:28px;">
+          <div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px;grid-column:1/-1;">Loading...</div>
+        </div>
       </div>
-      <div id="cam-monitoring-cards" style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:28px;">
-        <div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px;grid-column:1/-1;">Loading...</div>
+
+      <!-- Monitoring cards -->
+      <div id="cam-tab-monitoring" style="display:none;">
+        <div id="cam-monitoring-cards" style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:28px;">
+          <div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px;grid-column:1/-1;">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Successful cards -->
+      <div id="cam-tab-successful" style="display:none;">
+        <div id="cam-successful-cards" style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:28px;">
+          <div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px;grid-column:1/-1;">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Declined cards -->
+      <div id="cam-tab-declined" style="display:none;">
+        <div id="cam-declined-cards" style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:28px;">
+          <div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px;grid-column:1/-1;">Loading...</div>
+        </div>
       </div>
 
     </div>
@@ -447,92 +487,191 @@
 <!-- Rules Sidebar (always rendered, collapsed by default) -->
 {% include 'components/rules_sidebar.html' %}
 
+<!-- CAMPAIGN RECOMMENDATIONS MODIFY MODAL -->
+<div class="modal fade" id="camModifyModal" tabindex="-1" aria-labelledby="camModifyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="camModifyModalLabel">Modify Recommendation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label text-muted" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Rule</label>
+          <div id="cam-modal-rule" style="font-size:14px;font-weight:600;color:#1a1d23;"></div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label text-muted" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Campaign</label>
+          <div id="cam-modal-campaign" style="font-size:14px;color:#344054;"></div>
+        </div>
+        <div class="mb-3">
+          <label for="cam-modal-value" class="form-label" style="font-size:13px;font-weight:600;">New Proposed Value</label>
+          <input type="number" step="any" class="form-control" id="cam-modal-value" placeholder="Enter new value">
+          <div class="form-text">Enter your adjusted value before accepting.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success" id="cam-modal-accept-btn" onclick="camSubmitModify()">Accept with Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CAMPAIGN REC TOAST CONTAINER -->
+<div id="cam-toast-wrap" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// Recommendations tab: load summary + cards on click
+// ── Inner tab switcher ──────────────────────────────────────────────────────
+const CAM_TABS = ['pending','monitoring','successful','declined'];
+function camSwitchTab(name) {
+  CAM_TABS.forEach(t => {
+    document.getElementById('cam-tab-' + t).style.display = (t === name) ? '' : 'none';
+    const btn = document.getElementById('cam-btn-' + t);
+    if (btn) {
+      btn.style.color      = (t === name) ? '#0d6efd' : '#8a93a2';
+      btn.style.borderBottomColor = (t === name) ? '#0d6efd' : 'transparent';
+    }
+  });
+}
+// Activate pending by default when recommendations tab is clicked
 document.getElementById('recommendations-tab-btn').addEventListener('click', function() {
-  loadRecSummary();
+  camSwitchTab('pending');
   loadRecCards();
 });
 
-function loadRecSummary() {
-  fetch('/recommendations/data')
-    .then(r => r.json())
-    .then(d => {
-      document.getElementById('rec-pending-count').textContent = d.pending ?? '—';
-      document.getElementById('rec-monitoring-count').textContent = d.monitoring ?? '—';
-      document.getElementById('rec-success-rate').textContent = d.success_rate != null ? d.success_rate + '%' : '—';
-      if (d.last_run) {
-        const dt = new Date(d.last_run);
-        document.getElementById('rec-last-run').textContent = dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-      }
-    })
-    .catch(() => {});
-}
-
+// ── Load cards from /recommendations/cards ───────────────────────────────────
 function loadRecCards() {
   fetch('/recommendations/cards')
     .then(r => r.json())
     .then(d => {
       renderPendingCards(d.pending || []);
       renderMonitoringCards(d.monitoring || []);
-      document.getElementById('cam-pending-badge').textContent = (d.pending || []).length;
-      document.getElementById('cam-monitoring-badge').textContent = (d.monitoring || []).length;
+      renderSuccessfulCards(d.successful || []);
+      renderDeclinedCards(d.declined || []);
+      const n = v => String(v || 0);
+      document.getElementById('cam-count-pending').textContent    = n((d.pending||[]).length);
+      document.getElementById('cam-count-monitoring').textContent = n((d.monitoring||[]).length);
+      document.getElementById('cam-count-successful').textContent = n((d.successful||[]).length);
+      document.getElementById('cam-count-declined').textContent   = n((d.declined||[]).length);
+      document.getElementById('cam-badge-pending').textContent    = n((d.pending||[]).length);
+      document.getElementById('cam-badge-monitoring').textContent = n((d.monitoring||[]).length);
+      document.getElementById('cam-badge-successful').textContent = n((d.successful||[]).length);
+      document.getElementById('cam-badge-declined').textContent   = n((d.declined||[]).length);
     })
     .catch(() => {
-      document.getElementById('cam-pending-cards').innerHTML = '<div style="text-align:center;padding:24px;color:#9ca3af;font-size:13px;grid-column:1/-1;">Failed to load.</div>';
-      document.getElementById('cam-monitoring-cards').innerHTML = '<div style="text-align:center;padding:24px;color:#9ca3af;font-size:13px;grid-column:1/-1;">Failed to load.</div>';
+      ['pending','monitoring','successful','declined'].forEach(t => {
+        const el = document.getElementById('cam-' + t + '-cards');
+        if (el) el.innerHTML = '<div style="text-align:center;padding:24px;color:#9ca3af;font-size:13px;grid-column:1/-1;">Failed to load.</div>';
+      });
     });
 }
 
-// Type colours per wireframe spec
+// ── Type / confidence style helpers ──────────────────────────────────────────
 const TYPE_STYLES = {
-  budget: {
-    bar: '#1d4ed8',
-    tagColor: '#1d4ed8',
-    displayName: 'Budget',
-    changeBg: 'linear-gradient(135deg,#eff6ff,#dbeafe)',
-    changeBorder: '#bfdbfe',
-    iconBg: '#dbeafe',
-  },
-  bid: {
-    bar: '#15803d',
-    tagColor: '#15803d',
-    displayName: 'Bid Target',
-    changeBg: 'linear-gradient(135deg,#f0fdf4,#dcfce7)',
-    changeBorder: '#bbf7d0',
-    iconBg: '#dcfce7',
-  },
-  status: {
-    bar: '#dc3545',
-    tagColor: '#dc3545',
-    displayName: 'Status',
-    changeBg: 'linear-gradient(135deg,#fff7ed,#ffedd5)',
-    changeBorder: '#fed7aa',
-    iconBg: '#ffedd5',
-  },
+  budget: { bar:'#1d4ed8', tagColor:'#1d4ed8', displayName:'Budget', changeBg:'linear-gradient(135deg,#eff6ff,#dbeafe)', changeBorder:'#bfdbfe', iconBg:'#dbeafe', iconStroke:'#1d4ed8' },
+  bid:    { bar:'#15803d', tagColor:'#15803d', displayName:'Bid Target', changeBg:'linear-gradient(135deg,#f0fdf4,#dcfce7)', changeBorder:'#bbf7d0', iconBg:'#dcfce7', iconStroke:'#15803d' },
+  status: { bar:'#dc3545', tagColor:'#dc3545', displayName:'Status', changeBg:'linear-gradient(135deg,#fff7ed,#ffedd5)', changeBorder:'#fed7aa', iconBg:'#ffedd5', iconStroke:'#dc3545' },
 };
+const CONF_STYLES = { high:{bg:'#dcfce7',color:'#15803d'}, medium:{bg:'#fef9c3',color:'#854d0e'}, low:{bg:'#fee2e2',color:'#991b1b'} };
 
-const CONF_STYLES = {
-  high:   {bg:'#dcfce7', color:'#15803d'},
-  medium: {bg:'#fef9c3', color:'#854d0e'},
-  low:    {bg:'#fee2e2', color:'#991b1b'},
-};
-
-function directionIcon(dir, iconBg) {
-  const color = dir === 'increase' ? '#15803d' : dir === 'decrease' ? '#dc2626' : '#6b7280';
-  const path = dir === 'increase'
-    ? 'M8 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L7.5 2.707V14.5a.5.5 0 0 0 .5.5z'
+function directionIcon(dir, iconBg, iconStroke) {
+  const color = dir === 'increase' ? (iconStroke||'#1d4ed8') : dir === 'decrease' ? (iconStroke||'#1d4ed8') : '#6b7280';
+  const pts = dir === 'increase'
+    ? 'points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"'
     : dir === 'decrease'
-    ? 'M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1z'
-    : 'M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z';
+    ? 'points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"'
+    : 'x1="5" y1="12" x2="19" y2="12"';
+  const tag = dir === 'hold' ? 'line' : 'polyline';
   return `<div style="width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:${iconBg};">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="${color}" viewBox="0 0 16 16"><path fill-rule="evenodd" d="${path}"/></svg>
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><${tag} ${pts}/></svg>
   </div>`;
 }
 
+// ── camShowToast ──────────────────────────────────────────────────────────────
+function camShowToast(msg, type) {
+  const wrap = document.getElementById('cam-toast-wrap');
+  if (!wrap) return;
+  const t = document.createElement('div');
+  t.style.cssText = 'padding:12px 18px;border-radius:8px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.12);display:flex;align-items:center;gap:8px;color:white;margin-top:4px;';
+  t.style.background = type === 'success' ? '#15803d' : type === 'muted' ? '#374151' : '#dc3545';
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 3500);
+}
+
+// ── camRemoveCard ─────────────────────────────────────────────────────────────
+function camRemoveCard(recId) {
+  const card = document.getElementById('cam-card-' + recId);
+  if (!card) return;
+  card.style.opacity = '0'; card.style.transform = 'scale(0.96)'; card.style.transition = 'opacity .3s,transform .3s';
+  setTimeout(() => {
+    card.remove();
+    const grid = document.getElementById('cam-pending-cards');
+    if (grid) {
+      const remaining = grid.querySelectorAll('[id^="cam-card-"]').length;
+      document.getElementById('cam-badge-pending').textContent    = remaining;
+      document.getElementById('cam-count-pending').textContent    = remaining;
+      if (remaining === 0) grid.innerHTML = '<div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px;grid-column:1/-1;">All pending recommendations have been actioned.</div>';
+    }
+  }, 320);
+}
+
+// ── camAcceptRec / camDeclineRec / camOpenModifyModal / camSubmitModify ────────
+let _camModifyRecId = null;
+function camAcceptRec(recId, btn) {
+  btn.disabled = true; btn.style.opacity = '0.65';
+  fetch('/recommendations/' + recId + '/accept', {method:'POST', headers:{'Content-Type':'application/json'}})
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) { camShowToast(d.message || 'Recommendation accepted.', 'success'); camRemoveCard(recId); }
+      else { camShowToast('Error: '+d.message,'error'); btn.disabled=false; btn.style.opacity=''; }
+    })
+    .catch(err => { camShowToast('Request failed: '+err,'error'); btn.disabled=false; btn.style.opacity=''; });
+}
+function camDeclineRec(recId, btn) {
+  btn.disabled = true; btn.style.opacity = '0.65';
+  fetch('/recommendations/' + recId + '/decline', {method:'POST', headers:{'Content-Type':'application/json'}})
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) { camShowToast('Recommendation declined.', 'muted'); camRemoveCard(recId); }
+      else { camShowToast('Error: '+d.message,'error'); btn.disabled=false; btn.style.opacity=''; }
+    })
+    .catch(err => { camShowToast('Request failed: '+err,'error'); btn.disabled=false; btn.style.opacity=''; });
+}
+function camOpenModifyModal(btn) {
+  _camModifyRecId = btn.dataset.recId;
+  document.getElementById('cam-modal-rule').textContent     = btn.dataset.recRule;
+  document.getElementById('cam-modal-campaign').textContent = btn.dataset.recCampaign;
+  document.getElementById('cam-modal-value').value          = btn.dataset.recValue;
+  new bootstrap.Modal(document.getElementById('camModifyModal')).show();
+}
+function camSubmitModify() {
+  if (!_camModifyRecId) return;
+  const newVal = parseFloat(document.getElementById('cam-modal-value').value);
+  if (isNaN(newVal)) { camShowToast('Please enter a valid number.', 'error'); return; }
+  const btn = document.getElementById('cam-modal-accept-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  fetch('/recommendations/' + _camModifyRecId + '/modify', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({new_value:newVal})
+  })
+    .then(r => r.json())
+    .then(d => {
+      btn.disabled=false; btn.textContent='Accept with Changes';
+      if (d.success) {
+        bootstrap.Modal.getInstance(document.getElementById('camModifyModal')).hide();
+        camShowToast(d.message || 'Modified and accepted.', 'success');
+        camRemoveCard(_camModifyRecId);
+        _camModifyRecId = null;
+      } else { camShowToast('Error: '+d.message,'error'); }
+    })
+    .catch(err => { btn.disabled=false; btn.textContent='Accept with Changes'; camShowToast('Request failed: '+err,'error'); });
+}
+
+// ── renderPendingCards ────────────────────────────────────────────────────────
 function renderPendingCards(recs) {
   const el = document.getElementById('cam-pending-cards');
   if (!recs.length) {
@@ -543,87 +682,78 @@ function renderPendingCards(recs) {
     const ts = TYPE_STYLES[r.rule_type] || TYPE_STYLES.status;
     const cs = CONF_STYLES[r.confidence] || CONF_STYLES.low;
     return `
-    <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;">
+    <div id="cam-card-${r.rec_id}" style="background:white;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;transition:opacity .3s,transform .3s;">
       <div style="height:4px;background:${ts.bar};"></div>
       <div style="padding:16px 18px;flex:1;display:flex;flex-direction:column;gap:10px;">
-
-        <!-- Header -->
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
           <div>
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:${ts.tagColor};margin-bottom:3px;">${ts.displayName}</div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:${ts.tagColor};margin-bottom:3px;">${ts.displayName}</div>
             <div style="font-size:14px;font-weight:600;color:#1a1d23;">${r.campaign_name}</div>
           </div>
-          <span style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap;background:#dbeafe;color:#1d4ed8;">● Pending</span>
+          <span style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap;background:#dbeafe;color:#1d4ed8;">&#9679; Pending</span>
         </div>
-
-        <!-- Change block -->
         <div style="border-radius:8px;padding:11px 14px;display:flex;align-items:center;gap:12px;border:1px solid ${ts.changeBorder};background:${ts.changeBg};">
-          ${directionIcon(r.action_direction, ts.iconBg)}
+          ${directionIcon(r.action_direction, ts.iconBg, ts.iconStroke)}
           <div>
             <div style="font-size:13px;font-weight:600;color:#1a1d23;">${r.action_label}</div>
-            <div style="font-size:12px;color:#6b7280;margin-top:2px;">${r.value_label ? r.value_label + (r.value_suffix ? ' ' + r.value_suffix : '') : '—'} &nbsp;·&nbsp; 7-day cooldown after</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:2px;">${r.value_label ? r.value_label + (r.value_suffix ? ' ' + r.value_suffix : '') : '—'} &nbsp;&middot;&nbsp; 7-day cooldown after</div>
           </div>
         </div>
-
-        <!-- Trigger block -->
         <div style="background:#f8f9fa;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#344054;line-height:1.7;">
-          <div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:4px;letter-spacing:0.02em;">Why this triggered</div>
+          <div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:4px;">Why this triggered</div>
           ${r.trigger_summary}
         </div>
-
-        <!-- Footer -->
         <div style="border-top:1px solid #e5e7eb;padding-top:10px;margin-top:auto;display:flex;flex-direction:column;gap:8px;">
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
             <span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;background:${cs.bg};color:${cs.color};">${r.confidence} confidence</span>
             <span style="font-size:11px;padding:3px 9px;border-radius:12px;font-weight:500;background:#f0f7ff;color:#0d6efd;">Campaigns</span>
             <span style="font-size:11px;color:#9ca3af;">${r.generated_ago}</span>
-            <span style="font-size:11px;color:#92400e;background:#fef3c7;border-radius:4px;padding:2px 7px;margin-left:auto;">Buttons active in Chat 28</span>
           </div>
           <div style="display:flex;gap:6px;">
-            <button disabled style="background:white;border:1px solid #d1d5db;color:#374151;border-radius:6px;padding:7px 16px;font-size:13px;font-weight:600;flex:1;opacity:0.5;cursor:not-allowed;">Modify</button>
-            <button disabled style="background:white;border:1px solid #fca5a5;color:#dc3545;border-radius:6px;padding:7px 16px;font-size:13px;font-weight:600;flex:1;opacity:0.5;cursor:not-allowed;">Decline</button>
-            <button disabled style="background:#15803d;border:none;color:white;border-radius:6px;padding:7px 16px;font-size:13px;font-weight:600;flex:1;opacity:0.5;cursor:not-allowed;">Accept</button>
+            <button onclick="camOpenModifyModal(this)"
+              data-rec-id="${r.rec_id}" data-rec-rule="${r.rule_id ? r.rule_id.replace(/_/g,' ') : ''}"
+              data-rec-campaign="${r.campaign_name}" data-rec-value="${r.proposed_value || 0}"
+              style="background:white;border:1px solid #d1d5db;color:#374151;border-radius:6px;padding:7px 16px;font-size:13px;font-weight:600;flex:1;cursor:pointer;">Modify</button>
+            <button onclick="camDeclineRec('${r.rec_id}', this)"
+              style="background:white;border:1px solid #fca5a5;color:#dc3545;border-radius:6px;padding:7px 16px;font-size:13px;font-weight:600;flex:1;cursor:pointer;">Decline</button>
+            <button onclick="camAcceptRec('${r.rec_id}', this)"
+              style="background:#15803d;border:none;color:white;border-radius:6px;padding:7px 16px;font-size:13px;font-weight:600;flex:1;cursor:pointer;">Accept</button>
           </div>
         </div>
-
       </div>
     </div>`;
   }).join('');
 }
 
+// ── renderMonitoringCards ─────────────────────────────────────────────────────
 function renderMonitoringCards(recs) {
   const el = document.getElementById('cam-monitoring-cards');
   if (!recs.length) {
-    el.innerHTML = '<div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px;grid-column:1/-1;">No recommendations in monitoring.</div>';
+    el.innerHTML = '<div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px;grid-column:1/-1;">No recommendations currently being monitored.</div>';
     return;
   }
   el.innerHTML = recs.map(r => {
-    const ts = TYPE_STYLES[r.rule_type] || TYPE_STYLES.status;
     const cs = CONF_STYLES[r.confidence] || CONF_STYLES.low;
+    const ts = TYPE_STYLES[r.rule_type] || TYPE_STYLES.status;
+    const acceptedDate = r.accepted_at ? r.accepted_at.substring(0,10) : '—';
     return `
-    <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;">
+    <div style="background:white;border:1px solid #bfdbfe;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;">
       <div style="height:4px;background:linear-gradient(90deg,#0d6efd,#7c3aed);"></div>
       <div style="padding:16px 18px;flex:1;display:flex;flex-direction:column;gap:10px;">
-
-        <!-- Header -->
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
           <div>
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:${ts.tagColor};margin-bottom:3px;">${ts.displayName}</div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6d28d9;margin-bottom:3px;">${ts.displayName}</div>
             <div style="font-size:14px;font-weight:600;color:#1a1d23;">${r.campaign_name}</div>
           </div>
-          <span style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap;background:#ede9fe;color:#6d28d9;">● Monitoring</span>
+          <span style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap;background:#ede9fe;color:#6d28d9;">&#9679; Monitoring</span>
         </div>
-
-        <!-- Change block -->
         <div style="border-radius:8px;padding:11px 14px;display:flex;align-items:center;gap:12px;border:1px solid ${ts.changeBorder};background:${ts.changeBg};">
-          ${directionIcon(r.action_direction, ts.iconBg)}
+          ${directionIcon(r.action_direction, ts.iconBg, ts.iconStroke)}
           <div>
             <div style="font-size:13px;font-weight:600;color:#1a1d23;">${r.action_label}</div>
-            <div style="font-size:12px;color:#6b7280;margin-top:2px;">${r.value_label ? r.value_label + (r.value_suffix ? ' ' + r.value_suffix : '') : '—'}</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:2px;">${r.value_label || ''} &nbsp;&middot;&nbsp; Accepted ${acceptedDate}</div>
           </div>
         </div>
-
-        <!-- Monitoring block -->
         <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:12px 14px;">
           <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
             <span style="font-size:12px;font-weight:600;color:#5b21b6;">Monitoring period</span>
@@ -633,51 +763,136 @@ function renderMonitoringCards(recs) {
             <div style="height:6px;background:linear-gradient(90deg,#6d28d9,#0d6efd);border-radius:3px;width:${r.monitoring_progress_pct}%;"></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:7px 10px;font-size:12px;color:#15803d;">✓ ROAS holds → kept in place</div>
-            <div style="background:#fff1f2;border:1px solid #fecaca;border-radius:6px;padding:7px 10px;font-size:12px;color:#991b1b;">↩ ROAS drops → auto-reverted</div>
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:7px 10px;font-size:12px;color:#15803d;">&#10003; ROAS holds &rarr; kept in place</div>
+            <div style="background:#fff1f2;border:1px solid #fecaca;border-radius:6px;padding:7px 10px;font-size:12px;color:#991b1b;">&#8617; ROAS drops &rarr; auto-reverted</div>
           </div>
         </div>
-
-        <!-- Footer -->
         <div style="border-top:1px solid #e5e7eb;padding-top:10px;margin-top:auto;">
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
             <span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;background:${cs.bg};color:${cs.color};">${r.confidence} confidence</span>
             <span style="font-size:11px;color:#9ca3af;">${r.monitoring_remaining}d remaining</span>
+            <span style="font-size:12px;color:#9ca3af;font-style:italic;margin-left:auto;">&#128274; Read only</span>
           </div>
         </div>
-
       </div>
     </div>`;
   }).join('');
 }
 
+// ── renderSuccessfulCards ─────────────────────────────────────────────────────
+function renderSuccessfulCards(recs) {
+  const el = document.getElementById('cam-successful-cards');
+  if (!recs.length) {
+    el.innerHTML = '<div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px;grid-column:1/-1;">No successful recommendations yet.</div>';
+    return;
+  }
+  el.innerHTML = recs.map(r => {
+    const ts = TYPE_STYLES[r.rule_type] || TYPE_STYLES.status;
+    const cs = CONF_STYLES[r.confidence] || CONF_STYLES.low;
+    const acceptedDate  = r.accepted_at  ? r.accepted_at.substring(0,10)  : '—';
+    const resolvedDate  = r.resolved_at  ? r.resolved_at.substring(0,10)  : null;
+    const outcomeSub    = resolvedDate ? `Accepted ${acceptedDate} &nbsp;&middot;&nbsp; Completed ${resolvedDate}` : `Accepted ${acceptedDate}`;
+    return `
+    <div style="background:white;border:1px solid #bbf7d0;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;">
+      <div style="height:4px;background:#15803d;"></div>
+      <div style="padding:16px 18px;flex:1;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+          <div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:${ts.tagColor};margin-bottom:3px;">${ts.displayName}</div>
+            <div style="font-size:14px;font-weight:600;color:#1a1d23;">${r.campaign_name}</div>
+          </div>
+          <span style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap;background:#dcfce7;color:#15803d;">&#10003; Successful</span>
+        </div>
+        <div style="border-radius:8px;padding:11px 14px;display:flex;align-items:center;gap:12px;border:1px solid ${ts.changeBorder};background:${ts.changeBg};">
+          ${directionIcon(r.action_direction, ts.iconBg, ts.iconStroke)}
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#1a1d23;">${r.action_label}</div>
+            ${r.value_label ? `<div style="font-size:12px;color:#6b7280;margin-top:2px;"><strong>${r.value_label}</strong></div>` : ''}
+          </div>
+        </div>
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#15803d;">Change completed successfully</div>
+            <div style="font-size:12px;color:#8a93a2;margin-top:2px;">${outcomeSub}</div>
+          </div>
+        </div>
+        <div style="border-top:1px solid #e5e7eb;padding-top:10px;margin-top:auto;">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;background:${cs.bg};color:${cs.color};">${r.confidence} confidence</span>
+            <span style="font-size:11px;color:#9ca3af;">Accepted ${acceptedDate}</span>
+            <span style="font-size:12px;color:#9ca3af;font-style:italic;margin-left:auto;">&#9989; Completed</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── renderDeclinedCards ───────────────────────────────────────────────────────
+function renderDeclinedCards(recs) {
+  const el = document.getElementById('cam-declined-cards');
+  if (!recs.length) {
+    el.innerHTML = '<div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px;grid-column:1/-1;">No declined recommendations.</div>';
+    return;
+  }
+  el.innerHTML = recs.map(r => {
+    const cs = CONF_STYLES[r.confidence] || CONF_STYLES.low;
+    const genDate     = r.generated_at ? r.generated_at.substring(0,10) : '—';
+    const declinedDate = r.accepted_at  ? r.accepted_at.substring(0,10)  : '—';
+    return `
+    <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;opacity:0.55;">
+      <div style="height:4px;background:#9ca3af;"></div>
+      <div style="padding:16px 18px;flex:1;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+          <div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;margin-bottom:3px;">Declined</div>
+            <div style="font-size:14px;font-weight:600;color:#1a1d23;">${r.campaign_name}</div>
+          </div>
+          <span style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap;background:#f3f4f6;color:#6b7280;">Declined</span>
+        </div>
+        <div style="border-radius:8px;padding:11px 14px;display:flex;align-items:center;gap:12px;border:1px solid #e5e7eb;background:#f9fafb;">
+          <div style="width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#f3f4f6;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#1a1d23;">${r.action_label}</div>
+            ${r.value_label ? `<div style="font-size:12px;color:#6b7280;margin-top:2px;">${r.value_label}</div>` : ''}
+          </div>
+        </div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#6b7280;">Declined by user</div>
+            <div style="font-size:12px;color:#8a93a2;margin-top:2px;">Generated ${genDate} &nbsp;&middot;&nbsp; Declined ${declinedDate}</div>
+          </div>
+        </div>
+        <div style="border-top:1px solid #e5e7eb;padding-top:10px;margin-top:auto;">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;background:${cs.bg};color:${cs.color};">${r.confidence} confidence</span>
+            <span style="font-size:11px;color:#9ca3af;">Declined ${declinedDate}</span>
+            <span style="font-size:12px;color:#9ca3af;font-style:italic;margin-left:auto;">&#10006; Declined</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── camRunEngine ──────────────────────────────────────────────────────────────
 function camRunEngine() {
   const btn = document.getElementById('cam-run-engine-btn');
-  btn.disabled = true;
-  btn.textContent = 'Running...';
+  btn.disabled = true; btn.textContent = 'Running...';
   fetch('/recommendations/run', {method:'POST'})
     .then(r => r.json())
     .then(d => {
       btn.disabled = false;
       btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg> Run Recommendations Now';
-      if (typeof showToast === 'function') showToast(d.success ? 'success' : 'danger', d.message || 'Engine complete.');
-      loadRecSummary();
-      loadRecCards();
+      camShowToast(d.success ? (d.message || 'Engine complete.') : ('Error: '+(d.message||'unknown')), d.success ? 'success' : 'error');
+      if (d.success) loadRecCards();
     })
     .catch(() => { btn.disabled = false; btn.textContent = 'Run Recommendations Now'; });
 }
-
-// Select all checkbox logic
-document.getElementById('select-all').addEventListener('change', function() {
-  const checkboxes = document.querySelectorAll('.campaign-checkbox');
-  checkboxes.forEach(cb => cb.checked = this.checked);
-  toggleBulkEdit();
-});
-
-// Show/hide bulk edit button based on selection
-document.querySelectorAll('.campaign-checkbox').forEach(cb => {
-  cb.addEventListener('change', toggleBulkEdit);
-});
 
 function toggleBulkEdit() {
   const checkedCount = document.querySelectorAll('.campaign-checkbox:checked').length;

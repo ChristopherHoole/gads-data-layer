@@ -5,7 +5,7 @@
 **Framework:** Bootstrap 5  
 **Icons:** Bootstrap Icons  
 **Chat 21 Status:** ✅ COMPLETE - 8/8 (100%) 🏆  
-**Dashboard 3.0 Status:** 🚧 IN PROGRESS — M1 ✅ M2 ✅ M3 ✅ M4 ✅ M5 ✅ M6 ✅ COMPLETE, M7 next  
+**Dashboard 3.0 Status:** 🚧 IN PROGRESS — M1 ✅ M2 ✅ M3 ✅ M4 ✅ M5 ✅ M6 ✅ M7 ✅ COMPLETE, M8 next  
 **Started:** February 18, 2026  
 **Updated:** 2026-02-22  
 **Mode:** Dashboard 3.0 Phase 1 underway  
@@ -1460,17 +1460,25 @@ ORDER BY cost DESC
 
 **Test results:** Generated=48 ✅ | SkippedDuplicate=48 ✅ | All HTTP 200 ✅
 
-#### Chat 28: M7 — Accept/Decline/Modify Wiring 🎯 NEXT
-#### Chat 28: M7 — Accept/Decline/Modify Wiring 🎯 NEXT
-**Status:** PLANNED
+#### Chat 28: M7 — Accept/Decline/Modify Wiring + 4-Tab UI ✅ COMPLETE
+**Date:** 2026-02-22
+**Status:** COMPLETE ✅
+**Summary:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_28_DETAILED_SUMMARY.md`
+**Handoff:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_28_HANDOFF.md`
+**Wireframe:** `C:\Users\User\Desktop\gads-data-layer\docs\M7_4TAB_WIREFRAME.html`
 
-**Deliverables:**
-- POST /recommendations/<id>/accept — monitoring transition or successful, writes to changes table
-- POST /recommendations/<id>/decline — marks declined, removes card client-side  
-- POST /recommendations/<id>/modify — Bootstrap modal + accepts with edited value
-- Card removal animations + badge count updates
-- Toast confirmations
-- Constitution cooldown enforcement on accept
+**Delivered:**
+- Accept / Decline / Modify POST routes — fully wired, tested, live
+- `changes` audit table created in warehouse.duckdb
+- `monitoring_days: 0` added to all 13 rules in rules_config.json
+- Card fade+slide animations, badge decrements, toast confirmations
+- 4-tab UI: Pending (action buttons) / Monitoring (progress bar, read-only) / Successful (green, read-only) / Declined (grey/faded, read-only)
+- History tab removed entirely — replaced by Successful + Declined tabs
+- Summary strip updated to 4 counts on both pages
+- Both /recommendations and /campaigns fully updated
+- 4 files changed (rules_config.json, recommendations.py, recommendations.html, campaigns.html)
+
+**Next Step:** Chat 29 — M8 Changes + Monitoring page
 
 ---
 
@@ -1487,5 +1495,5 @@ ORDER BY cost DESC
 ---
 
 **Last Updated:** 2026-02-22  
-**Status:** Dashboard 3.0 — M1 ✅ M2 ✅ M3 ✅ M4 ✅ M5 ✅ M6 ✅ | M7 next  
-**Next Step:** Chat 28 — M7 Accept/Decline/Modify wiring
+**Status:** Dashboard 3.0 — M1 ✅ M2 ✅ M3 ✅ M4 ✅ M5 ✅ M6 ✅ M7 ✅ | M8 next  
+**Next Step:** Chat 29 — M8 Changes + Monitoring page
