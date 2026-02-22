@@ -25,6 +25,21 @@ START_DATE    = END_DATE - timedelta(days=364)
 
 random.seed(42)
 
+# ── M4: New column value pools ───────────────────────────────────────────────
+BID_STRATEGY_TYPES = [
+    "TARGET_CPA",
+    "TARGET_ROAS",
+    "MAXIMIZE_CONVERSIONS",
+    "MAXIMIZE_CONVERSION_VALUE",
+    "MANUAL_CPC",
+]
+
+AD_GROUP_TYPES = [
+    "SEARCH_STANDARD",
+    "SHOPPING_PRODUCT_ADS",
+    "DISPLAY_STANDARD",
+]
+
 # ── Campaign / Ad Group structure ────────────────────────────────────────────
 # Mirrors the 20 synthetic campaigns from generate_synthetic_data_v2.py
 # Each campaign gets 2-4 ad groups
@@ -129,6 +144,12 @@ def generate_ad_group_day(ag_id, ag_name, ag_status, camp_id, camp_name, cpc_bid
         "search_top_impression_share":          top_is,
         "search_absolute_top_impression_share": abs_is,
         "click_share":                          cs,
+        # M4: new columns
+        "ad_group_type":                        random.choice(AD_GROUP_TYPES),
+        "all_conversions":                      round(conversions * random.uniform(1.05, 1.15), 2),
+        "all_conversions_value":                round(conversions_value * random.uniform(1.05, 1.15), 2),
+        "optimization_score":                   round(random.uniform(0.50, 0.95), 4),
+        "bid_strategy_type":                    random.choice(BID_STRATEGY_TYPES),
     }
 
 
@@ -157,12 +178,29 @@ def main():
             search_impression_share DOUBLE,
             search_top_impression_share DOUBLE,
             search_absolute_top_impression_share DOUBLE,
-            click_share DOUBLE
+            click_share DOUBLE,
+            ad_group_type VARCHAR,
+            all_conversions DOUBLE,
+            all_conversions_value DOUBLE,
+            optimization_score DOUBLE,
+            bid_strategy_type VARCHAR
         );
     """)
 
-    # Ensure analytics schema + view
+    # Ensure analytics schema
     conn.execute("CREATE SCHEMA IF NOT EXISTS analytics;")
+
+    # M4: Add new columns BEFORE recreating the view (view must see all columns)
+    for col_def in [
+        "ad_group_type VARCHAR",
+        "all_conversions DOUBLE",
+        "all_conversions_value DOUBLE",
+        "optimization_score DOUBLE",
+        "bid_strategy_type VARCHAR",
+    ]:
+        conn.execute(f"ALTER TABLE snap_ad_group_daily ADD COLUMN IF NOT EXISTS {col_def}")
+
+    # Recreate view (now safe — all columns exist in base table)
     conn.execute("""
         CREATE OR REPLACE VIEW analytics.ad_group_daily AS
         SELECT
@@ -180,7 +218,12 @@ def main():
             search_impression_share,
             search_top_impression_share,
             search_absolute_top_impression_share,
-            click_share
+            click_share,
+            ad_group_type,
+            all_conversions,
+            all_conversions_value,
+            optimization_score,
+            bid_strategy_type
         FROM snap_ad_group_daily;
     """)
 
@@ -199,6 +242,8 @@ def main():
         "impressions", "clicks", "cost_micros", "conversions", "conversions_value",
         "search_impression_share", "search_top_impression_share",
         "search_absolute_top_impression_share", "click_share",
+        "ad_group_type", "all_conversions", "all_conversions_value",
+        "optimization_score", "bid_strategy_type",
     ]
 
     rows = []

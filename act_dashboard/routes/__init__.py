@@ -57,7 +57,11 @@ def register_blueprints(app: Flask):
     # Chat 22: Shared utility routes (/set-date-range)
     from act_dashboard.routes import shared
     app.register_blueprint(shared.bp)
-    
+
+    # Chat 26 (M5): Rules API — CRUD for rules_config.json
+    from act_dashboard.routes import rules_api
+    app.register_blueprint(rules_api.bp)
+
     print("✅ [Phase 1a] Registered auth blueprint (login, logout, switch-client)")
     print("✅ [Phase 1b] Registered api blueprint (execute, batch, status, approve, reject)")
     print("✅ [Phase 1c] Registered page blueprints (keywords, ads, shopping)")
@@ -66,4 +70,5 @@ def register_blueprints(app: Flask):
     print("✅ [Chat 21c] Registered campaigns blueprint")
     print("✅ [Chat 21e] Registered ad_groups blueprint")
     print("✅ [Chat 22] Registered shared blueprint (set-date-range)")
-    print("🎉 ALL ROUTES REGISTERED - Phase 1 + Bootstrap test + Campaigns + Ad Groups + Date Range COMPLETE!")
+    print("✅ [Chat 26 M5] Registered rules_api blueprint (GET/POST/PUT/DELETE /api/rules)")
+    print("🎉 ALL ROUTES REGISTERED - Phase 1 + Bootstrap + Campaigns + Ad Groups + Date Range + Rules API COMPLETE!")

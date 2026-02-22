@@ -1,9 +1,9 @@
 # PROJECT ROADMAP - Google Ads Data Layer (ACT Dashboard)
 
-**Last Updated:** 2026-02-21  
-**Current Phase:** Dashboard 3.0 — M4 ✅ COMPLETE | M5 Rules Section Upgrade next  
-**Overall Completion:** ~90% (Foundation + Polish + Dashboard 3.0 M1+M2+M3+M4 complete)  
-**Mode:** Dashboard 3.0 Phase 1 in progress 🚧
+**Last Updated:** 2026-02-22  
+**Current Phase:** Dashboard 3.0 — M5 ✅ COMPLETE | M6 Recommendations Tab next  
+**Overall Completion:** ~92% (Foundation + Polish + Dashboard 3.0 M1+M2+M3+M4+M5 complete)  
+**Mode:** Dashboard 3.0 Phase 2 in progress 🚧
 ---
 
 ## ðŸŽ¯ PROJECT VISION
@@ -453,19 +453,48 @@
 
 ---
 
-## **Chat 26: Onboarding Wizard** (3-4 hrs)
+## **Chat 26: Dashboard 3.0 M5 — Card-Based Rules Tab** ✅ COMPLETE
 
-**Status:** PLANNED
+**Status:** COMPLETE — 2026-02-22
+**Summary:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\CHAT_26_DETAILED_SUMMARY.md`
+**Handoff:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\CHAT_26_HANDOFF.md`
+**Wireframe:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\M5_WIREFRAME_v3.html`
 
-**Features:**
-- New client setup flow
-- Google Ads connection wizard
-- Step-by-step configuration
-- Validation and testing
+**Delivered:**
+- Replaced dense table-based Rules tab with fully interactive card-based UI (Campaigns page pilot)
+- 13 rule cards across 3 sections: Budget (6) / Bid (4) / Status (3)
+- 4px colour-coded top border per type: blue=budget, green=bid, red=status
+- Rule naming convention: "Budget 1" / "Bid 1" / "Status 1"
+- Condition block (IF/AND logic) + Action block (gradient, icon, description) per card
+- Toggle switches — enable/disable, persists to rules_config.json
+- Add/Edit Rule slide-in drawer: 5-step form (Type → Scope → Condition → Action → Settings) + live preview
+- Campaign picker wired to `/api/campaigns-list` (live from warehouse)
+- Campaign-specific scope with OVERRIDES BLANKET tag
+- Filter bar: All / Budget / Bid / Status / Blanket only / Campaign-specific only / Active only
+- Recommendations placeholder tab (Chat 27 scope)
+- All icons inline SVG — no Bootstrap Icons CDN dependency
+- Full CRUD tested: Add / Edit / Toggle / Delete all passing
+
+**Architecture:**
+- Dual-layer: `rules_config.json` (UI config) + Python execution functions (untouched)
+- `rules_api.py` Flask Blueprint — 6 routes (GET/POST/PUT/DELETE + /api/campaigns-list)
+- Path: `Path(__file__).parent.parent.parent` to reach project root from routes/
+
+**Files created/modified (6):**
+- `act_autopilot/rules_config.json` — CREATED (13 rules seeded)
+- `act_dashboard/routes/rules_api.py` — CREATED
+- `act_dashboard/routes/__init__.py` — MODIFIED
+- `act_dashboard/routes/campaigns.py` — MODIFIED
+- `act_dashboard/templates/campaigns.html` — MODIFIED (3-tab structure)
+- `act_dashboard/templates/components/rules_tab.html` — REPLACED
+
+**Known states (not bugs):**
+- Campaign scope pill shows campaign_id not name — name resolution Chat 27 scope
+- Rule numbering gaps after deletes are cosmetic — rule_id is the true identifier
 
 ---
 
-## **Chat 27: Documentation & Training** (3-4 hrs)
+## **Chat 27: M6 — Recommendations Tab** 📋 NEXT
 
 **Status:** PLANNED
 
@@ -524,11 +553,13 @@
 - ✅ Chat 23: M2 Metrics Cards — COMPLETE (all 6 pages)
 - ✅ Chat 24: M3 Chart Overhaul — COMPLETE
 - ✅ Chat 25: M4 Table Overhaul — COMPLETE (all 5 pages)
+- ✅ Chat 26: M5 Rules Tab — COMPLETE (Campaigns pilot)
 
 ### **Short-term (Dashboard 3.0 remaining):**
-- 🚧 Chat 26: M5 Rules Section Upgrade — NEXT
-- 📋 Chat 27: M6 Actions Feed
-- 📋 Chat 28: M7 Action Buttons
+- 🚧 Chat 27: M6 Recommendations Tab — NEXT
+- 📋 Chat 28: M6 rollout to Ad Groups, Keywords, Ads, Shopping
+- 📋 Chat 29: M7 Change History + Monitoring (merged screen)
+- 📋 Chat 30: Keywords Search Terms tab
 
 ### **Medium-term (After Dashboard 3.0):**
 - 📋 Phase 3: Future-Proofing (10-14 hrs)
@@ -576,6 +607,19 @@
 ---
 
 ## ðŸ“„ CHANGELOG
+
+### **2026-02-22 (Chat 26 — M5 Card-Based Rules Tab)**
+
+**Completed:**
+- ✅ M5 Rules Tab — Campaigns page (card-based UI replacing dense table)
+- Full CRUD: add/edit/toggle/delete via slide-in drawer
+- rules_config.json created (13 rules seeded in M5 data model)
+- rules_api.py Blueprint with 6 routes
+- Campaign picker wired to live warehouse data
+- Dual-layer: JSON (UI config) + Python (execution, untouched)
+- Recommendations placeholder tab added (Chat 27 scope)
+- Inline SVG icons — no Bootstrap Icons CDN
+- 6 files created/modified
 
 ### **2026-02-21 (Chat 25 — M4 Table Overhaul)**
 

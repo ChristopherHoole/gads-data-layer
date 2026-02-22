@@ -17,12 +17,21 @@
   <ul class="nav nav-tabs mb-3" id="campaignsTabs" role="tablist">
     <li class="nav-item" role="presentation">
       <button class="nav-link active" id="campaigns-tab-btn" data-bs-toggle="tab" data-bs-target="#campaigns-tab" type="button" role="tab">
-        <i class="bi bi-bar-chart"></i> Campaigns ({{ total_campaigns }})
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" class="me-1"><path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/></svg>
+        Campaigns ({{ total_campaigns }})
       </button>
     </li>
     <li class="nav-item" role="presentation">
       <button class="nav-link" id="rules-tab-btn" data-bs-toggle="tab" data-bs-target="#rules-tab" type="button" role="tab">
-        <i class="bi bi-lightning-charge-fill text-warning"></i> Rules ({{ rules|length }})
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#ffc107" viewBox="0 0 16 16" class="me-1"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg>
+        Rules ({{ rules_config|length }})
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="recommendations-tab-btn" data-bs-toggle="tab" data-bs-target="#recommendations-tab" type="button" role="tab">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" class="me-1"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-3.5a.5.5 0 0 1 .5.5v3.793l1.854 1.853a.5.5 0 0 1-.708.708l-2-2A.5.5 0 0 1 7.5 11V5a.5.5 0 0 1 .5-.5z"/></svg>
+        Recommendations
+        <span class="badge bg-secondary ms-1" style="font-size:10px;">Chat 27</span>
       </button>
     </li>
   </ul>
@@ -39,10 +48,20 @@
       <!-- M3 Performance Chart -->
       {{ performance_chart(chart_data, active_metrics, 'campaigns') }}
 
-      <!-- Filters and Actions Bar -->
+      <!-- M4: Status filter + per-page controls -->
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <div></div>
-        <!-- Actions -->
+        <div class="d-flex align-items-center gap-2">
+          <!-- Status filter -->
+          <div class="btn-group btn-group-sm" role="group">
+            <a href="/campaigns?page=1&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status=all"
+               class="btn {% if status == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}">All</a>
+            <a href="/campaigns?page=1&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status=enabled"
+               class="btn {% if status == 'enabled' %}btn-success{% else %}btn-outline-secondary{% endif %}">Enabled</a>
+            <a href="/campaigns?page=1&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status=paused"
+               class="btn {% if status == 'paused' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">Paused</a>
+          </div>
+          <small class="text-muted">{{ total_campaigns }} campaigns</small>
+        </div>
         <div>
           <button id="bulk-edit-btn" class="btn btn-sm btn-secondary me-2" style="display:none;">
             <i class="bi bi-pencil"></i> Bulk Edit
@@ -53,137 +72,213 @@
         </div>
       </div>
 
-      <!-- Campaigns Table -->
+      <!-- M4 Campaigns Table -->
       {% if campaigns and campaigns|length > 0 %}
-        <div class="card">
-          <div class="table-responsive">
-            <table class="table table-hover mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th style="width: 40px;">
+
+        {# ── Sort helper macro ── #}
+        {%- macro sort_link(col, label) -%}
+          {%- if sort_by == col -%}
+            {%- set next_dir = 'asc' if sort_dir == 'desc' else 'desc' -%}
+            {%- set icon = '↑' if sort_dir == 'asc' else '↓' -%}
+            <a href="/campaigns?page=1&per_page={{ per_page }}&sort_by={{ col }}&sort_dir={{ next_dir }}&status={{ status }}"
+               class="text-decoration-none text-primary fw-bold">{{ label }} {{ icon }}</a>
+          {%- else -%}
+            <a href="/campaigns?page=1&per_page={{ per_page }}&sort_by={{ col }}&sort_dir=desc&status={{ status }}"
+               class="text-decoration-none text-muted">{{ label }}</a>
+          {%- endif -%}
+        {%- endmacro -%}
+
+        <div class="card shadow-sm">
+          <div style="overflow-x:auto; overflow-y:auto; max-height:70vh; position:relative;">
+            <table class="table table-hover table-sm mb-0"
+                   style="min-width:2600px; border-collapse:separate; border-spacing:0; font-size:12px; white-space:nowrap;">
+              <thead style="position:sticky; top:0; z-index:4;">
+                <tr style="background:#f8f9fa;">
+                  <th style="width:36px; min-width:36px; max-width:36px; position:sticky; left:0; z-index:5; background:#f8f9fa; padding:7px 8px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">
                     <input type="checkbox" id="select-all" class="form-check-input">
                   </th>
-                  <th>Campaign Name</th>
-                  <th>Status</th>
-                  <th>Type</th>
-                  <th class="text-end">Budget</th>
-                  <th class="text-end">Spend ({{ days }}d)</th>
-                  <th class="text-end">Clicks</th>
-                  <th class="text-end">Impressions</th>
-                  <th class="text-end">CTR</th>
-                  <th class="text-end">Conv.</th>
-                  <th class="text-end">ROAS</th>
-                  <th class="text-end">CPA</th>
-                  <th style="width: 100px;">Actions</th>
+                  <th style="min-width:220px; position:sticky; left:36px; z-index:5; background:#f8f9fa; box-shadow:2px 0 4px rgba(0,0,0,0.08); padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">
+                    {{ sort_link('campaign_name', 'Campaign') }}
+                  </th>
+                  <th style="min-width:80px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">Status</th>
+                  <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">Type</th>
+                  <th style="min-width:100px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('cost', 'Cost') }}</th>
+                  <th style="min-width:110px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('conversions_value', 'Conv. Value') }}</th>
+                  <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('conversions', 'Conv.') }}</th>
+                  <th style="min-width:80px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('conv_value_per_cost', 'ROAS') }}</th>
+                  <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('cost_per_conv', 'CPA') }}</th>
+                  <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('conv_rate', 'Conv Rate') }}</th>
+                  <th style="min-width:100px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('all_conversions', 'All Conv.') }}</th>
+                  <th style="min-width:110px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('cost_per_all_conv', 'Cost/All Conv.') }}</th>
+                  <th style="min-width:110px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('all_conv_rate', 'All Conv Rate') }}</th>
+                  <th style="min-width:120px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('all_conversions_value', 'All Conv. Val') }}</th>
+                  <th style="min-width:130px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('all_conv_value_per_cost', 'All Conv. Val/Cost') }}</th>
+                  <th style="min-width:100px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('impressions', 'Impr.') }}</th>
+                  <th style="min-width:80px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('clicks', 'Clicks') }}</th>
+                  <th style="min-width:80px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('avg_cpc', 'Avg CPC') }}</th>
+                  <th style="min-width:70px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('ctr', 'CTR') }}</th>
+                  <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('search_impression_share', 'Search IS') }}</th>
+                  <th style="min-width:80px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('search_top_impression_share', 'Top IS') }}</th>
+                  <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('search_absolute_top_impression_share', 'Abs Top IS') }}</th>
+                  <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('click_share', 'Click Share') }}</th>
+                  <th style="min-width:100px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:center;">{{ sort_link('optimization_score', 'Opt. Score') }}</th>
+                  <th style="min-width:160px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">Bid Strategy</th>
+                  <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:center;">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {% for campaign in campaigns %}
-                  <tr>
-                    <!-- Checkbox -->
-                    <td>
-                      <input type="checkbox" class="form-check-input campaign-checkbox" 
-                             data-campaign-id="{{ campaign.campaign_id }}">
-                    </td>
-                    
-                    <!-- Campaign Name -->
-                    <td>
-                      <strong>{{ campaign.campaign_name }}</strong>
-                    </td>
-                    
-                    <!-- Status -->
-                    <td>
-                      {% if campaign.campaign_status == 'ENABLED' %}
-                        <span class="badge bg-success">Active</span>
-                      {% elif campaign.campaign_status == 'PAUSED' %}
-                        <span class="badge bg-secondary">Paused</span>
+                {% for c in campaigns %}
+                <tr>
+                  <!-- Checkbox (sticky) -->
+                  <td style="width:36px; min-width:36px; max-width:36px; position:sticky; left:0; z-index:2; background:#ffffff;">
+                    <input type="checkbox" class="form-check-input campaign-checkbox" data-campaign-id="{{ c.campaign_id }}">
+                  </td>
+
+                  <!-- Campaign Name (sticky) -->
+                  <td style="position:sticky; left:36px; z-index:2; background:#ffffff; box-shadow:2px 0 4px rgba(0,0,0,0.08);">
+                    <strong>{{ c.campaign_name }}</strong><br>
+                    <small class="text-muted font-monospace">{{ c.campaign_id }}</small>
+                  </td>
+
+                  <!-- Status -->
+                  <td>
+                    {% if c.campaign_status == 'ENABLED' %}
+                      <span class="badge bg-success">Active</span>
+                    {% elif c.campaign_status == 'PAUSED' %}
+                      <span class="badge bg-secondary">Paused</span>
+                    {% else %}
+                      <span class="badge bg-danger">Removed</span>
+                    {% endif %}
+                  </td>
+
+                  <!-- Type (plain text, no pill) -->
+                  <td><small>{{ c.channel_type | title }}</small></td>
+
+                  <!-- Cost -->
+                  <td class="text-end">${{ "{:,.2f}".format(c.cost or 0) }}</td>
+
+                  <!-- Conv. Value -->
+                  <td class="text-end">${{ "{:,.2f}".format(c.conversions_value or 0) }}</td>
+
+                  <!-- Conversions -->
+                  <td class="text-end">{{ "{:.1f}".format(c.conversions or 0) }}</td>
+
+                  <!-- ROAS -->
+                  <td class="text-end">
+                    {% if c.conv_value_per_cost is not none %}
+                      {% if c.conv_value_per_cost >= 3 %}
+                        <span class="text-success fw-bold">{{ "{:.2f}".format(c.conv_value_per_cost) }}x</span>
+                      {% elif c.conv_value_per_cost >= 2 %}
+                        <span class="text-warning fw-bold">{{ "{:.2f}".format(c.conv_value_per_cost) }}x</span>
                       {% else %}
-                        <span class="badge bg-danger">Removed</span>
+                        <span class="text-danger fw-bold">{{ "{:.2f}".format(c.conv_value_per_cost) }}x</span>
                       {% endif %}
-                    </td>
-                    
-                    <!-- Type -->
-                    <td>
-                      {% if campaign.channel_type == 'SEARCH' %}
-                        <span class="badge bg-info">Search</span>
-                      {% elif campaign.channel_type == 'SHOPPING' %}
-                        <span class="badge bg-primary">Shopping</span>
-                      {% elif campaign.channel_type == 'DISPLAY' %}
-                        <span class="badge bg-warning text-dark">Display</span>
-                      {% else %}
-                        <span class="badge bg-secondary">{{ campaign.channel_type }}</span>
-                      {% endif %}
-                    </td>
-                    
-                    <!-- Budget -->
-                    <td class="text-end">
-                      ${{ "{:,.2f}".format(campaign.daily_budget) }}
-                    </td>
-                    
-                    <!-- Spend -->
-                    <td class="text-end">
-                      ${{ "{:,.2f}".format(campaign.spend) }}
-                    </td>
-                    
-                    <!-- Clicks -->
-                    <td class="text-end">
-                      {{ "{:,}".format(campaign.clicks) }}
-                    </td>
-                    
-                    <!-- Impressions -->
-                    <td class="text-end">
-                      {{ "{:,}".format(campaign.impressions) }}
-                    </td>
-                    
-                    <!-- CTR -->
-                    <td class="text-end">
-                      {{ "{:.2f}".format(campaign.ctr) }}%
-                    </td>
-                    
-                    <!-- Conversions -->
-                    <td class="text-end">
-                      {{ "{:.1f}".format(campaign.conversions) }}
-                    </td>
-                    
-                    <!-- ROAS with color coding -->
-                    <td class="text-end">
-                      {% if campaign.roas >= 3 %}
-                        <span class="text-success fw-bold">{{ "{:.2f}".format(campaign.roas) }}</span>
-                      {% elif campaign.roas >= 2 %}
-                        <span class="text-warning fw-bold">{{ "{:.2f}".format(campaign.roas) }}</span>
-                      {% elif campaign.roas > 0 %}
-                        <span class="text-danger fw-bold">{{ "{:.2f}".format(campaign.roas) }}</span>
-                      {% else %}
-                        <span class="text-muted">0.00</span>
-                      {% endif %}
-                    </td>
-                    
-                    <!-- CPA -->
-                    <td class="text-end">
-                      {% if campaign.cpa > 0 %}
-                        ${{ "{:.2f}".format(campaign.cpa) }}
-                      {% else %}
-                        <span class="text-muted">-</span>
-                      {% endif %}
-                    </td>
-                    
-                    <!-- Actions Dropdown -->
-                    <td>
-                      <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                          Actions
-                        </button>
-                        <ul class="dropdown-menu">
-                          <li><a class="dropdown-item" href="#"><i class="bi bi-pencil"></i> Edit Budget</a></li>
-                          <li><a class="dropdown-item" href="#"><i class="bi bi-pause"></i> Pause Campaign</a></li>
-                          <li><a class="dropdown-item" href="#"><i class="bi bi-graph-up"></i> View Details</a></li>
-                          <li><hr class="dropdown-divider"></li>
-                          <li><a class="dropdown-item" href="#"><i class="bi bi-box-arrow-up-right"></i> View in Google Ads</a></li>
-                        </ul>
+                    {% else %}
+                      <span class="text-muted">—</span>
+                    {% endif %}
+                  </td>
+
+                  <!-- CPA -->
+                  <td class="text-end">
+                    {% if c.cost_per_conv is not none %}${{ "{:.2f}".format(c.cost_per_conv) }}{% else %}<span class="text-muted">—</span>{% endif %}
+                  </td>
+
+                  <!-- Conv Rate -->
+                  <td class="text-end">
+                    {% if c.conv_rate is not none %}{{ "{:.2f}".format(c.conv_rate * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
+                  </td>
+
+                  <!-- All Conv. -->
+                  <td class="text-end">{{ "{:.1f}".format(c.all_conversions or 0) }}</td>
+
+                  <!-- Cost / All Conv. -->
+                  <td class="text-end">
+                    {% if c.cost_per_all_conv is not none %}${{ "{:.2f}".format(c.cost_per_all_conv) }}{% else %}<span class="text-muted">—</span>{% endif %}
+                  </td>
+
+                  <!-- All Conv Rate -->
+                  <td class="text-end">
+                    {% if c.all_conv_rate is not none %}{{ "{:.2f}".format(c.all_conv_rate * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
+                  </td>
+
+                  <!-- All Conv. Value -->
+                  <td class="text-end">${{ "{:,.2f}".format(c.all_conversions_value or 0) }}</td>
+
+                  <!-- All Conv. Val / Cost -->
+                  <td class="text-end">
+                    {% if c.all_conv_value_per_cost is not none %}{{ "{:.2f}".format(c.all_conv_value_per_cost) }}x{% else %}<span class="text-muted">—</span>{% endif %}
+                  </td>
+
+                  <!-- Impressions -->
+                  <td class="text-end">{{ "{:,}".format((c.impressions or 0)|int) }}</td>
+
+                  <!-- Clicks -->
+                  <td class="text-end">{{ "{:,}".format((c.clicks or 0)|int) }}</td>
+
+                  <!-- Avg CPC -->
+                  <td class="text-end">
+                    {% if c.avg_cpc is not none %}${{ "{:.2f}".format(c.avg_cpc) }}{% else %}<span class="text-muted">—</span>{% endif %}
+                  </td>
+
+                  <!-- CTR -->
+                  <td class="text-end">
+                    {% if c.ctr is not none %}{{ "{:.2f}".format(c.ctr * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
+                  </td>
+
+                  <!-- Search IS -->
+                  <td class="text-end">
+                    {% if c.search_impression_share is not none %}{{ "{:.1f}".format(c.search_impression_share * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
+                  </td>
+
+                  <!-- Top IS -->
+                  <td class="text-end">
+                    {% if c.search_top_impression_share is not none %}{{ "{:.1f}".format(c.search_top_impression_share * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
+                  </td>
+
+                  <!-- Abs Top IS -->
+                  <td class="text-end">
+                    {% if c.search_absolute_top_impression_share is not none %}{{ "{:.1f}".format(c.search_absolute_top_impression_share * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
+                  </td>
+
+                  <!-- Click Share -->
+                  <td class="text-end">
+                    {% if c.click_share is not none %}{{ "{:.1f}".format(c.click_share * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
+                  </td>
+
+                  <!-- Opt. Score -->
+                  <td class="text-center">
+                    {% if c.optimization_score is not none %}
+                      {% set pct = (c.optimization_score * 100)|round|int %}
+                      <div class="d-flex align-items-center justify-content-center gap-1">
+                        <div class="progress" style="width:50px; height:6px;">
+                          <div class="progress-bar {% if pct >= 80 %}bg-success{% elif pct >= 60 %}bg-warning{% else %}bg-danger{% endif %}"
+                               style="width:{{ pct }}%"></div>
+                        </div>
+                        <small>{{ pct }}%</small>
                       </div>
-                    </td>
-                  </tr>
+                    {% else %}
+                      <span class="text-muted">—</span>
+                    {% endif %}
+                  </td>
+
+                  <!-- Bid Strategy -->
+                  <td><small class="text-muted">{{ c.bid_strategy_type or '—' }}</small></td>
+
+                  <!-- Actions -->
+                  <td class="text-center">
+                    <div class="dropdown">
+                      <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                              data-bs-toggle="dropdown">Actions</button>
+                      <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-pencil"></i> Edit Budget</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-pause"></i> Pause</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-graph-up"></i> View Details</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-box-arrow-up-right"></i> Google Ads</a></li>
+                      </ul>
+                    </div>
+                  </td>
+                </tr>
                 {% endfor %}
               </tbody>
             </table>
@@ -192,72 +287,39 @@
           <!-- Pagination Footer -->
           <div class="card-footer">
             <div class="row align-items-center">
-              <!-- Showing X-Y of Z -->
               <div class="col-md-4">
                 <small class="text-muted">
-                  Showing {{ (page-1)*per_page + 1 }}-{{ [page*per_page, total_campaigns]|min }} of {{ total_campaigns }}
+                  Showing {{ (page-1)*per_page + 1 }}–{{ [page*per_page, total_campaigns]|min }} of {{ total_campaigns }}
                 </small>
               </div>
-              
-              <!-- Per Page Selector -->
               <div class="col-md-4 text-center">
-                <div class="btn-group btn-group-sm" role="group">
-                  <a href="/campaigns?page=1&per_page=10" 
-                     class="btn {% if per_page == 10 %}btn-primary{% else %}btn-outline-secondary{% endif %}">10</a>
-                  <a href="/campaigns?page=1&per_page=25" 
-                     class="btn {% if per_page == 25 %}btn-primary{% else %}btn-outline-secondary{% endif %}">25</a>
-                  <a href="/campaigns?page=1&per_page=50" 
-                     class="btn {% if per_page == 50 %}btn-primary{% else %}btn-outline-secondary{% endif %}">50</a>
-                  <a href="/campaigns?page=1&per_page=100" 
-                     class="btn {% if per_page == 100 %}btn-primary{% else %}btn-outline-secondary{% endif %}">100</a>
+                <div class="btn-group btn-group-sm">
+                  {% for n in [10, 25, 50, 100] %}
+                    <a href="/campaigns?page=1&per_page={{ n }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}"
+                       class="btn {% if per_page == n %}btn-primary{% else %}btn-outline-secondary{% endif %}">{{ n }}</a>
+                  {% endfor %}
                 </div>
               </div>
-              
-              <!-- Page Navigation -->
               <div class="col-md-4">
-                <nav aria-label="Page navigation">
+                <nav>
                   <ul class="pagination pagination-sm justify-content-end mb-0">
-                    {% if page > 1 %}
-                      <li class="page-item">
-                        <a class="page-link" href="/campaigns?page={{ page - 1 }}&per_page={{ per_page }}">
-                          Previous
-                        </a>
-                      </li>
-                    {% else %}
-                      <li class="page-item disabled">
-                        <span class="page-link">Previous</span>
-                      </li>
-                    {% endif %}
-                    
+                    <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                      <a class="page-link" href="/campaigns?page={{ page-1 }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}">Previous</a>
+                    </li>
                     {% for p in range(1, total_pages + 1) %}
                       {% if p == page %}
-                        <li class="page-item active">
-                          <span class="page-link">{{ p }}</span>
-                        </li>
+                        <li class="page-item active"><span class="page-link">{{ p }}</span></li>
                       {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
                         <li class="page-item">
-                          <a class="page-link" href="/campaigns?page={{ p }}&per_page={{ per_page }}">
-                            {{ p }}
-                          </a>
+                          <a class="page-link" href="/campaigns?page={{ p }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}">{{ p }}</a>
                         </li>
                       {% elif p == page - 3 or p == page + 3 %}
-                        <li class="page-item disabled">
-                          <span class="page-link">...</span>
-                        </li>
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
                       {% endif %}
                     {% endfor %}
-                    
-                    {% if page < total_pages %}
-                      <li class="page-item">
-                        <a class="page-link" href="/campaigns?page={{ page + 1 }}&per_page={{ per_page }}">
-                          Next
-                        </a>
-                      </li>
-                    {% else %}
-                      <li class="page-item disabled">
-                        <span class="page-link">Next</span>
-                      </li>
-                    {% endif %}
+                    <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+                      <a class="page-link" href="/campaigns?page={{ page+1 }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}">Next</a>
+                    </li>
                   </ul>
                 </nav>
               </div>
@@ -289,6 +351,17 @@
 
     <!-- RULES TAB -->
     {% include 'components/rules_tab.html' %}
+
+    <!-- RECOMMENDATIONS TAB (placeholder — Chat 27 scope) -->
+    <div class="tab-pane fade" id="recommendations-tab" role="tabpanel">
+      <div class="text-center py-5">
+        <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" fill="#adb5bd" viewBox="0 0 16 16" class="mb-3"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-3.5a.5.5 0 0 1 .5.5v3.793l1.854 1.853a.5.5 0 0 1-.708.708l-2-2A.5.5 0 0 1 7.5 11V5a.5.5 0 0 1 .5-.5z"/></svg>
+        <h4 class="text-muted mb-2">💡 Recommendations</h4>
+        <p class="text-muted mb-1">Auto-generated daily from rules engine.</p>
+        <p class="text-muted mb-3">Accept / Decline / Modify actions.</p>
+        <span class="badge bg-secondary px-3 py-2" style="font-size:13px;">Chat 27 scope — coming soon</span>
+      </div>
+    </div>
 
   </div>
 </div>

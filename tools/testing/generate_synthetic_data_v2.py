@@ -97,6 +97,16 @@ CAMPAIGNS = [
 ]
 
 
+# M4: Bid strategy types for campaigns
+BID_STRATEGY_TYPES = [
+    "TARGET_CPA",
+    "TARGET_ROAS",
+    "MAXIMIZE_CONVERSIONS",
+    "MAXIMIZE_CONVERSION_VALUE",
+    "MANUAL_CPC",
+]
+
+
 def generate_stable(campaign, day_index, base_metrics):
     """Stable performance with minor daily noise"""
     target_roas = campaign.get("target_roas", 3.0)
@@ -349,6 +359,9 @@ def generate_campaign_day(campaign, current_date, day_index):
         "search_top_impression_share": search_top_is,
         "search_absolute_top_impression_share": search_abs_top_is,
         "click_share": click_share,
+        # M4: new columns
+        "optimization_score": round(random.uniform(0.50, 0.95), 4),
+        "bid_strategy_type": random.choice(BID_STRATEGY_TYPES),
     }
 
 
@@ -375,15 +388,20 @@ def write_to_duckdb(rows):
     # Clear existing synthetic data from BASE TABLE
     conn.execute("DELETE FROM snap_campaign_daily WHERE customer_id = '9999999999'")
 
-    # Insert into BASE TABLE — includes 4 IS columns (Chat 23 M2)
+    # M4: Add new columns if not already present
+    conn.execute("ALTER TABLE snap_campaign_daily ADD COLUMN IF NOT EXISTS optimization_score DOUBLE")
+    conn.execute("ALTER TABLE snap_campaign_daily ADD COLUMN IF NOT EXISTS bid_strategy_type VARCHAR")
+
+    # Insert into BASE TABLE — includes 4 IS columns (Chat 23 M2) + 2 new cols (M4)
     insert_sql = """
         INSERT INTO snap_campaign_daily (
             run_id, ingested_at, customer_id, snapshot_date, campaign_id, campaign_name,
             campaign_status, channel_type, impressions, clicks, cost_micros, conversions,
             conversions_value, all_conversions, all_conversions_value,
             search_impression_share, search_top_impression_share,
-            search_absolute_top_impression_share, click_share
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            search_absolute_top_impression_share, click_share,
+            optimization_score, bid_strategy_type
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
 
     # Insert in batches
@@ -414,6 +432,8 @@ def write_to_duckdb(rows):
                     row["search_top_impression_share"],
                     row["search_absolute_top_impression_share"],
                     row["click_share"],
+                    row["optimization_score"],
+                    row["bid_strategy_type"],
                 ],
             )
 
@@ -430,12 +450,11 @@ def write_to_duckdb(rows):
 
 
 def main():
-    print("Generating synthetic data v2 (Chat 23 M2 — IS columns added)...")
+    print("Generating synthetic data v2 (M4 — optimization_score + bid_strategy_type added)...")
     print(f"  Campaigns: {len(CAMPAIGNS)}")
     print(f"  Date range: {START_DATE} to {END_DATE} ({DAYS} days)")
     print(f"  Expected rows: {len(CAMPAIGNS) * DAYS}")
-    print(f"  NEW: search_impression_share, search_top_impression_share,")
-    print(f"       search_absolute_top_impression_share, click_share\n")
+    print(f"  NEW (M4): optimization_score, bid_strategy_type\n")
 
     rows = generate_all_data()
     print(f"✅ Generated {len(rows)} rows\n")

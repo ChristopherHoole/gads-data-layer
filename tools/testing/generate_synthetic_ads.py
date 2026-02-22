@@ -377,49 +377,59 @@ def main():
     print(f"  {len(ad_rows)} ad performance rows")
     
     # Insert ad group data
+    # NOTE: analytics.ad_group_daily is now a VIEW over snap_ad_group_daily (created in A2).
+    # Insert into the base table with named columns only — computed cols (ctr/cpc/cpa/roas) live in VIEW.
     print("\n[SyntheticAds] Inserting ad group data...")
     ro_con.executemany("""
-        INSERT OR REPLACE INTO analytics.ad_group_daily VALUES (
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-        )
+        INSERT INTO snap_ad_group_daily (
+            run_id, ingested_at, customer_id, snapshot_date,
+            campaign_id, campaign_name, ad_group_id, ad_group_name,
+            ad_group_status, ad_group_type, cpc_bid_micros, target_cpa_micros,
+            impressions, clicks, cost_micros, conversions, conversions_value
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, [
-        (r['customer_id'], r['snapshot_date'], r['campaign_id'], r['campaign_name'],
+        ('synthetic-ads-v1', '2026-02-21 00:00:00',
+         r['customer_id'], r['snapshot_date'], r['campaign_id'], r['campaign_name'],
          r['ad_group_id'], r['ad_group_name'], r['ad_group_status'], r['ad_group_type'],
-         r['cpc_bid_micros'], r['target_cpa_micros'], r['target_roas'],
-         r['impressions'], r['clicks'], r['cost_micros'], r['conversions'], r['conversions_value'],
-         r['ctr'], r['cpc'], r['cpa'], r['roas'])
+         r['cpc_bid_micros'], r['target_cpa_micros'],
+         r['impressions'], r['clicks'], r['cost_micros'], r['conversions'], r['conversions_value'])
         for r in ad_group_rows
     ])
     
     # Insert ad data
-    print("[SyntheticAds] Inserting ad data...")
-    ro_con.executemany("""
-        INSERT OR REPLACE INTO analytics.ad_daily VALUES (
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-        )
-    """, [
-        (r['customer_id'], r['snapshot_date'], r['campaign_id'], r['campaign_name'],
-         r['ad_group_id'], r['ad_group_name'], r['ad_id'], r['ad_type'], r['ad_status'],
-         r['ad_strength'], r['headlines'], r['descriptions'], r['final_url'],
-         r['impressions'], r['clicks'], r['cost_micros'], r['conversions'], r['conversions_value'],
-         r['ctr'], r['cpc'], r['cvr'], r['cpa'], r['roas'])
-        for r in ad_rows
-    ])
+    # NOTE: analytics.ad_daily does not exist — ads live in analytics.ad_features_daily
+    # (populated by act_lighthouse/ad_features.py). Skipping this insert for M4.
+    print("[SyntheticAds] Skipping ad_daily insert — table does not exist (use ad_features_daily).")
     
     # Verify
     ag_count = ro_con.execute("SELECT COUNT(DISTINCT ad_group_id) FROM analytics.ad_group_daily WHERE customer_id = ?", [CUSTOMER_ID]).fetchone()[0]
-    ad_count = ro_con.execute("SELECT COUNT(DISTINCT ad_id) FROM analytics.ad_daily WHERE customer_id = ?", [CUSTOMER_ID]).fetchone()[0]
     ag_row_count = ro_con.execute("SELECT COUNT(*) FROM analytics.ad_group_daily WHERE customer_id = ?", [CUSTOMER_ID]).fetchone()[0]
-    ad_row_count = ro_con.execute("SELECT COUNT(*) FROM analytics.ad_daily WHERE customer_id = ?", [CUSTOMER_ID]).fetchone()[0]
     
-    print(f"\n✅ Synthetic ad data generated:")
+    print(f"\n✅ Synthetic ad group data generated:")
     print(f"  Ad groups: {ag_count}")
-    print(f"  Ads: {ad_count}")
     print(f"  Ad group rows: {ag_row_count}")
-    print(f"  Ad rows: {ad_row_count}")
     
     ro_con.close()
     print("\n✅ Part 4 Complete")
+
+    # M4: Add all_conversions_30d + all_conversions_value_30d to ad_features_daily
+    print("\n[M4] Updating analytics.ad_features_daily with new 30d columns...")
+    rw_con = duckdb.connect("warehouse.duckdb")
+    rw_con.execute("ALTER TABLE analytics.ad_features_daily ADD COLUMN IF NOT EXISTS all_conversions_30d DOUBLE")
+    rw_con.execute("ALTER TABLE analytics.ad_features_daily ADD COLUMN IF NOT EXISTS all_conversions_value_30d DOUBLE")
+    rw_con.execute("""
+        UPDATE analytics.ad_features_daily
+        SET
+            all_conversions_30d       = conversions_30d * (1.05 + random() * 0.10),
+            all_conversions_value_30d = conversions_value_30d * (1.05 + random() * 0.10)
+        WHERE customer_id = ?
+    """, [CUSTOMER_ID])
+    count = rw_con.execute(
+        "SELECT COUNT(*) FROM analytics.ad_features_daily WHERE customer_id = ? AND all_conversions_30d IS NOT NULL",
+        [CUSTOMER_ID]
+    ).fetchone()[0]
+    rw_con.close()
+    print(f"  ✅ Updated {count} rows in ad_features_daily")
 
 
 if __name__ == '__main__':

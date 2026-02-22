@@ -5,9 +5,9 @@
 **Framework:** Bootstrap 5  
 **Icons:** Bootstrap Icons  
 **Chat 21 Status:** ✅ COMPLETE - 8/8 (100%) 🏆  
-**Dashboard 3.0 Status:** 🚧 IN PROGRESS — M1 ✅ M2 ✅ M3 ✅ M4 ✅ COMPLETE, M5 next  
+**Dashboard 3.0 Status:** 🚧 IN PROGRESS — M1 ✅ M2 ✅ M3 ✅ M4 ✅ M5 ✅ COMPLETE, M6 next  
 **Started:** February 18, 2026  
-**Updated:** 2026-02-20  
+**Updated:** 2026-02-22  
 **Mode:** Dashboard 3.0 Phase 1 underway  
 **Location:** Will be moved to `/docs/DASHBOARD_PROJECT_PLAN.md`
 
@@ -1414,11 +1414,36 @@ ORDER BY cost DESC
 
 ### PHASE 2 — Rules + Actions
 
-#### Chat 26: M5 — Rules Section Upgrade 📋 PLANNED
-Design/wireframe to be discussed before brief written.
+#### Chat 26: M5 — Rules Section Upgrade ✅ COMPLETE
+**Date:** 2026-02-22
+**Status:** COMPLETE ✅
+**Summary:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\CHAT_26_DETAILED_SUMMARY.md`
+**Handoff:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\CHAT_26_HANDOFF.md`
+**Wireframe:** `C:\\Users\\User\\Desktop\\gads-data-layer\\docs\\M5_WIREFRAME_v3.html`
 
-#### Chat 27: M6 — Recommendations/Actions Feed 📋 PLANNED
-Design/wireframe to be discussed before brief written.
+**Delivered:**
+- Replaced dense table-based Rules tab with M5 card-based UI (Campaigns pilot)
+- 13 rule cards: Budget (6) / Bid (4) / Status (3)
+- 4px colour-coded top border, condition block, action block, toggle, edit/delete per card
+- Rule naming: "Budget 1" / "Bid 1" / "Status 1"
+- Add/Edit slide-in drawer — 5-step form + live preview
+- Full CRUD via `rules_api.py` Blueprint — persists to `rules_config.json`
+- Campaign picker wired to `/api/campaigns-list` (live from warehouse)
+- Campaign-specific scope + OVERRIDES BLANKET tag
+- Filter bar: All / Budget / Bid / Status / Blanket / Specific / Active
+- Recommendations placeholder tab (Chat 27 scope)
+- Inline SVG icons — no Bootstrap Icons CDN
+- Dual-layer: JSON (UI config) / Python (execution, untouched)
+- All 7 CRUD tests passed
+
+**Key architectural decision:** `rules_config.json` is the UI config layer only. Python execution files in `act_autopilot/rules/*.py` are never touched by the UI. These two layers must remain separate.
+
+**Next Step:** Chat 27 — M6 Recommendations Tab (discuss with Master Chat first)
+
+---
+
+#### Chat 27: M6 — Recommendations/Actions Feed 📋 NEXT
+Wireframe/design to be discussed with Master Chat before brief written.
 
 #### Chat 28: M7 — Action Buttons 📋 PLANNED
 Depends on M6 design decisions.
@@ -1437,6 +1462,6 @@ Depends on M6 design decisions.
 
 ---
 
-**Last Updated:** 2026-02-21  
-**Status:** Dashboard 3.0 Phase 1 — M1 ✅ M2 ✅ M3 ✅ M4 ✅ | M5 next  
-**Next Step:** Chat 26 — M5 Rules Section Upgrade (discuss with Master Chat first)
+**Last Updated:** 2026-02-22  
+**Status:** Dashboard 3.0 — M1 ✅ M2 ✅ M3 ✅ M4 ✅ M5 ✅ | M6 next  
+**Next Step:** Chat 27 — M6 Recommendations Tab (discuss with Master Chat first)

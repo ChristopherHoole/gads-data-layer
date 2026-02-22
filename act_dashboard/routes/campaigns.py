@@ -13,6 +13,7 @@ from act_dashboard.routes.shared import (
     get_metrics_collapsed, get_chart_metrics,
 )
 from act_dashboard.routes.rule_helpers import get_rules_for_page, count_rules_by_category
+from act_dashboard.routes.rules_api import load_rules
 from datetime import date, timedelta, datetime
 from typing import List, Dict, Any, Tuple, Optional
 import duckdb
@@ -20,84 +21,151 @@ import duckdb
 bp = Blueprint('campaigns', __name__)
 
 
-# ==================== Existing helpers (unchanged) ====================
+# ==================== M4: SQL-side sort/filter/paginate ====================
 
-def load_campaign_data(
+# Allowed sort columns — whitelisted to prevent SQL injection
+ALLOWED_SORT_COLS = {
+    'campaign_name', 'cost', 'conversions_value', 'conversions',
+    'conv_value_per_cost', 'cost_per_conv', 'conv_rate',
+    'all_conversions', 'cost_per_all_conv', 'all_conv_rate',
+    'all_conversions_value', 'all_conv_value_per_cost',
+    'impressions', 'clicks', 'avg_cpc', 'ctr',
+    'search_impression_share', 'search_top_impression_share',
+    'search_absolute_top_impression_share', 'click_share',
+    'optimization_score',
+}
+
+
+def load_campaigns_m4(
     conn: duckdb.DuckDBPyConnection,
     customer_id: str,
-    days: int = 30,
-    date_from: str = None,
-    date_to: str = None,
-) -> List[Dict[str, Any]]:
+    date_from: Optional[str],
+    date_to: Optional[str],
+    active_days: int,
+    sort_by: str = 'cost',
+    sort_dir: str = 'desc',
+    page: int = 1,
+    per_page: int = 25,
+    status: str = 'all',
+) -> Tuple[List[Dict[str, Any]], int, int]:
     """
-    Load campaign data from ro.analytics.campaign_daily.
+    M4: Load campaign data with SQL-side sort, filter, and pagination.
+    Returns (campaigns_page, total_count, total_pages).
     """
+    # Validate sort col (injection prevention)
+    if sort_by not in ALLOWED_SORT_COLS:
+        sort_by = 'cost'
+    sort_dir = 'asc' if sort_dir == 'asc' else 'desc'
+
+    # Date filter
     if date_from and date_to:
         date_filter = f"AND snapshot_date >= '{date_from}' AND snapshot_date <= '{date_to}'"
     else:
-        if days not in [7, 30, 90]:
-            days = 30
+        days = active_days if active_days in [7, 30, 90] else 30
         date_filter = f"AND snapshot_date >= CURRENT_DATE - INTERVAL '{days} days'"
 
-    query = f"""
-        SELECT
-            campaign_id,
-            campaign_name,
-            campaign_status,
-            channel_type,
-            SUM(cost_micros) / 1000000.0 as spend,
-            SUM(clicks) as clicks,
-            SUM(impressions) as impressions,
-            CASE WHEN SUM(impressions) > 0
-                 THEN (SUM(clicks)::DOUBLE / SUM(impressions)) * 100
-                 ELSE 0 END as ctr,
-            SUM(conversions) as conversions,
-            SUM(conversions_value) as conversion_value,
-            CASE WHEN SUM(cost_micros) > 0
-                 THEN SUM(conversions_value) / (SUM(cost_micros) / 1000000.0)
-                 ELSE 0 END as roas,
-            CASE WHEN SUM(conversions) > 0
-                 THEN (SUM(cost_micros) / 1000000.0) / SUM(conversions)
-                 ELSE 0 END as cpa,
-            COUNT(DISTINCT snapshot_date) as days_in_period
-        FROM ro.analytics.campaign_daily
-        WHERE customer_id = ?
-          {date_filter}
-        GROUP BY campaign_id, campaign_name, campaign_status, channel_type
-        ORDER BY spend DESC
+    # Status filter
+    if status == 'enabled':
+        status_filter = "AND campaign_status = 'ENABLED'"
+    elif status == 'paused':
+        status_filter = "AND campaign_status = 'PAUSED'"
+    else:
+        status_filter = ""
+
+    offset = (page - 1) * per_page
+
+    base_query = f"""
+        WITH agg AS (
+            SELECT
+                campaign_id,
+                campaign_name,
+                campaign_status,
+                channel_type,
+                ANY_VALUE(optimization_score)                                       AS optimization_score,
+                ANY_VALUE(bid_strategy_type)                                        AS bid_strategy_type,
+                SUM(cost_micros) / 1000000.0                                        AS cost,
+                SUM(conversions_value)                                              AS conversions_value,
+                SUM(conversions)                                                    AS conversions,
+                SUM(all_conversions)                                                AS all_conversions,
+                SUM(all_conversions_value)                                          AS all_conversions_value,
+                SUM(impressions)                                                    AS impressions,
+                SUM(clicks)                                                         AS clicks,
+                CASE WHEN SUM(impressions) > 0
+                     THEN SUM(clicks)::DOUBLE / SUM(impressions) ELSE NULL END      AS ctr,
+                CASE WHEN SUM(clicks) > 0
+                     THEN (SUM(cost_micros) / 1000000.0) / SUM(clicks) ELSE NULL END AS avg_cpc,
+                CASE WHEN SUM(cost_micros) > 0
+                     THEN SUM(conversions_value) / (SUM(cost_micros) / 1000000.0)
+                     ELSE NULL END                                                  AS conv_value_per_cost,
+                CASE WHEN SUM(conversions) > 0
+                     THEN (SUM(cost_micros) / 1000000.0) / SUM(conversions)
+                     ELSE NULL END                                                  AS cost_per_conv,
+                CASE WHEN SUM(clicks) > 0
+                     THEN SUM(conversions) / SUM(clicks) ELSE NULL END              AS conv_rate,
+                CASE WHEN SUM(all_conversions) > 0
+                     THEN (SUM(cost_micros) / 1000000.0) / SUM(all_conversions)
+                     ELSE NULL END                                                  AS cost_per_all_conv,
+                CASE WHEN SUM(clicks) > 0
+                     THEN SUM(all_conversions) / SUM(clicks) ELSE NULL END          AS all_conv_rate,
+                CASE WHEN SUM(cost_micros) > 0
+                     THEN SUM(all_conversions_value) / (SUM(cost_micros) / 1000000.0)
+                     ELSE NULL END                                                  AS all_conv_value_per_cost,
+                AVG(search_impression_share)                                        AS search_impression_share,
+                AVG(search_top_impression_share)                                    AS search_top_impression_share,
+                AVG(search_absolute_top_impression_share)                           AS search_absolute_top_impression_share,
+                AVG(click_share)                                                    AS click_share
+            FROM ro.analytics.campaign_daily
+            WHERE customer_id = ?
+              {date_filter}
+              {status_filter}
+            GROUP BY campaign_id, campaign_name, campaign_status, channel_type
+        )
+    """
+
+    count_query = base_query + "SELECT COUNT(*) FROM agg"
+    data_query = base_query + f"""
+        SELECT * FROM agg
+        ORDER BY {sort_by} {sort_dir} NULLS LAST
+        LIMIT {per_page} OFFSET {offset}
     """
 
     try:
-        rows = conn.execute(query, [customer_id]).fetchall()
+        total_count = conn.execute(count_query, [customer_id]).fetchone()[0]
+        total_pages = max(1, (total_count + per_page - 1) // per_page)
+
+        rows = conn.execute(data_query, [customer_id]).fetchall()
         cols = [d[0] for d in conn.description]
 
         campaigns = []
         for row in rows:
-            campaign_dict = dict(zip(cols, row))
-            campaign_dict['campaign_id'] = str(campaign_dict.get('campaign_id', ''))
-            campaign_dict['campaign_name'] = str(campaign_dict.get('campaign_name', 'Unknown'))
-            campaign_dict['campaign_status'] = str(campaign_dict.get('campaign_status', 'UNKNOWN'))
-            campaign_dict['channel_type'] = str(campaign_dict.get('channel_type', 'UNKNOWN'))
-            campaign_dict['spend'] = float(campaign_dict.get('spend') or 0)
-            campaign_dict['clicks'] = int(campaign_dict.get('clicks') or 0)
-            campaign_dict['impressions'] = int(campaign_dict.get('impressions') or 0)
-            campaign_dict['ctr'] = float(campaign_dict.get('ctr') or 0)
-            campaign_dict['conversions'] = float(campaign_dict.get('conversions') or 0)
-            campaign_dict['conversion_value'] = float(campaign_dict.get('conversion_value') or 0)
-            campaign_dict['roas'] = float(campaign_dict.get('roas') or 0)
-            campaign_dict['cpa'] = float(campaign_dict.get('cpa') or 0)
-            days_in_period = int(campaign_dict.get('days_in_period') or 1)
-            campaign_dict['daily_budget'] = campaign_dict['spend'] / days_in_period if days_in_period > 0 else 0
-            campaigns.append(campaign_dict)
+            d = dict(zip(cols, row))
+            d['campaign_id']     = str(d.get('campaign_id', ''))
+            d['campaign_name']   = str(d.get('campaign_name', 'Unknown'))
+            d['campaign_status'] = str(d.get('campaign_status', 'UNKNOWN'))
+            d['channel_type']    = str(d.get('channel_type', 'UNKNOWN'))
+            d['bid_strategy_type'] = str(d.get('bid_strategy_type') or '—')
+            # Numeric fields — safe float/None
+            for f in ['cost', 'conversions_value', 'conversions', 'all_conversions',
+                      'all_conversions_value', 'impressions', 'clicks', 'ctr', 'avg_cpc',
+                      'conv_value_per_cost', 'cost_per_conv', 'conv_rate',
+                      'cost_per_all_conv', 'all_conv_rate', 'all_conv_value_per_cost',
+                      'search_impression_share', 'search_top_impression_share',
+                      'search_absolute_top_impression_share', 'click_share',
+                      'optimization_score']:
+                val = d.get(f)
+                d[f] = float(val) if val is not None else None
+            campaigns.append(d)
 
-        return campaigns
+        return campaigns, total_count, total_pages
 
     except Exception as e:
-        print(f"[Campaigns] Error loading campaign data: {e}")
+        print(f"[Campaigns M4] Error: {e}")
         import traceback
         traceback.print_exc()
-        return []
+        return [], 0, 1
 
+
+# ==================== Legacy helpers (kept for metrics bar) ====================
 
 def compute_metrics_bar(campaigns: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Calculate aggregated metrics for metrics bar."""
@@ -114,11 +182,12 @@ def compute_metrics_bar(campaigns: List[Dict[str, Any]]) -> Dict[str, Any]:
             'overall_cpa': 0.0,
         }
 
-    total_spend = sum(c['spend'] for c in campaigns)
-    total_clicks = sum(c['clicks'] for c in campaigns)
-    total_impressions = sum(c['impressions'] for c in campaigns)
-    total_conversions = sum(c['conversions'] for c in campaigns)
-    total_conversion_value = sum(c['conversion_value'] for c in campaigns)
+    # M4: field names are 'cost' and 'conversions_value' (not 'spend'/'conversion_value')
+    total_spend = sum(c.get('cost') or 0 for c in campaigns)
+    total_clicks = sum(c.get('clicks') or 0 for c in campaigns)
+    total_impressions = sum(c.get('impressions') or 0 for c in campaigns)
+    total_conversions = sum(c.get('conversions') or 0 for c in campaigns)
+    total_conversion_value = sum(c.get('conversions_value') or 0 for c in campaigns)
     avg_ctr = (total_clicks / total_impressions * 100) if total_impressions > 0 else 0
     overall_roas = (total_conversion_value / total_spend) if total_spend > 0 else 0
     overall_cpa = (total_spend / total_conversions) if total_conversions > 0 else 0
@@ -593,8 +662,8 @@ def campaigns():
     """
     Campaigns page - campaign performance with rule visibility.
 
-    Chat 23 M2: Now passes financial_cards, actions_cards, metrics_collapsed
-    to template for the standardised metrics cards component.
+    M4: SQL-side sort (sort_by/sort_dir URL params), status filter,
+    standardised per_page options. M1/M2/M3 context unchanged.
     """
     config, clients, current_client_path = get_page_context()
 
@@ -604,9 +673,18 @@ def campaigns():
         if url_days in [7, 90]:
             active_days = url_days
 
-    page = request.args.get('page', 1, type=int)
+    # M4: sort/filter/pagination params
+    sort_by  = request.args.get('sort_by', 'cost')
+    sort_dir = request.args.get('sort_dir', 'desc')
+    status   = request.args.get('status', 'all')
+    page     = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 25, type=int)
 
+    if sort_by not in ALLOWED_SORT_COLS:
+        sort_by = 'cost'
+    sort_dir = 'asc' if sort_dir == 'asc' else 'desc'
+    if status not in ('all', 'enabled', 'paused'):
+        status = 'all'
     if per_page not in [10, 25, 50, 100]:
         per_page = 25
     if page < 1:
@@ -614,10 +692,13 @@ def campaigns():
 
     conn = get_db_connection(config)
 
-    # Existing campaign table data
-    all_campaigns = load_campaign_data(conn, config.customer_id, active_days, date_from, date_to)
+    # M4: SQL-side sort/paginate
+    campaigns_paginated, total_campaigns, total_pages = load_campaigns_m4(
+        conn, config.customer_id, date_from, date_to, active_days,
+        sort_by=sort_by, sort_dir=sort_dir, page=page, per_page=per_page, status=status,
+    )
 
-    # M2: Metrics cards data
+    # M2: Metrics cards data (uses full dataset — unaffected by table pagination)
     financial_cards, actions_cards = load_metrics_cards_data(
         conn, config.customer_id, active_days, date_from, date_to
     )
@@ -627,20 +708,13 @@ def campaigns():
 
     conn.close()
 
-    metrics = compute_metrics_bar(all_campaigns)
-
-    campaigns_paginated, total_campaigns, total_pages = apply_pagination(
-        all_campaigns, page, per_page
-    )
+    # Metrics bar — compute from paginated slice (approximate, kept for template compat)
+    metrics = compute_metrics_bar(campaigns_paginated)
 
     rules = get_rules_for_page('campaign', config.customer_id)
     rule_counts = count_rules_by_category(rules)
-
-    active_campaigns  = sum(1 for c in all_campaigns if c['campaign_status'] == 'ENABLED')
-    paused_campaigns  = sum(1 for c in all_campaigns if c['campaign_status'] == 'PAUSED')
-    search_campaigns  = sum(1 for c in all_campaigns if c['channel_type'] == 'SEARCH')
-    shopping_campaigns = sum(1 for c in all_campaigns if c['channel_type'] == 'SHOPPING')
-    display_campaigns = sum(1 for c in all_campaigns if c['channel_type'] == 'DISPLAY')
+    # M5: Load rules_config.json for card-based Rules tab
+    rules_config = load_rules()
 
     return render_template(
         "campaigns.html",
@@ -657,6 +731,10 @@ def campaigns():
         financial_cards=financial_cards,
         actions_cards=actions_cards,
         metrics_collapsed=get_metrics_collapsed('campaigns'),
+        # M4: Sort state (passed to template for header indicators)
+        sort_by=sort_by,
+        sort_dir=sort_dir,
+        status=status,
         # Pagination
         page=page,
         per_page=per_page,
@@ -666,15 +744,11 @@ def campaigns():
         active_days=active_days,
         date_from=date_from,
         date_to=date_to,
-        # Campaign counts
-        active_campaigns=active_campaigns,
-        paused_campaigns=paused_campaigns,
-        search_campaigns=search_campaigns,
-        shopping_campaigns=shopping_campaigns,
-        display_campaigns=display_campaigns,
         # Rules
         rules=rules,
         rule_counts=rule_counts,
+        # M5: Rules config for card-based Rules tab
+        rules_config=rules_config,
         # M3: Chart
         chart_data=chart_data,
         active_metrics=get_chart_metrics('campaigns'),

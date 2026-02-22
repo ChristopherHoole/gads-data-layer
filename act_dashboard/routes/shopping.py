@@ -33,122 +33,112 @@ bp = Blueprint('shopping', __name__)
 # TAB 1: CAMPAIGNS
 # =============================================================================
 
+ALLOWED_SHOPPING_SORT = {
+    'campaign_name', 'cost', 'conversions_value', 'conversions',
+    'conv_value_per_cost', 'cost_per_conv', 'conv_rate',
+    'all_conversions', 'all_conversions_value',
+    'impressions', 'clicks', 'avg_cpc', 'ctr',
+    'search_impression_share', 'search_top_impression_share',
+    'search_absolute_top_impression_share', 'click_share',
+    'optimization_score',
+}
+
+
 def load_shopping_campaigns(
     conn: duckdb.DuckDBPyConnection,
     customer_id: str,
     days: int,
     status_filter: str,
     date_filter: str = None,
+    sort_by: str = 'cost',
+    sort_dir: str = 'desc',
 ) -> List[Dict[str, Any]]:
     """
-    Load shopping campaign data from raw_shopping_campaign_daily.
-    LEFT JOINs analytics.campaign_daily to get campaign_status.
-    Accepts optional date_filter string for custom date ranges.
+    Load shopping campaign data from ro.analytics.shopping_campaign_daily.
+    24-column set matching Campaigns page. Columns not yet in schema → NULL.
     """
-    _date_clause = date_filter if date_filter else f"AND s.snapshot_date >= CURRENT_DATE - INTERVAL '{days} days'"
+    _date_clause = date_filter if date_filter else f"AND snapshot_date >= CURRENT_DATE - INTERVAL '{days} days'"
+
     query = f"""
         SELECT
-            s.campaign_id,
-            s.campaign_name,
-            s.campaign_priority,
-            s.feed_label,
-            COALESCE(cd.campaign_status, 'UNKNOWN')    AS campaign_status,
-            0.0                                         AS daily_budget,
-            SUM(s.impressions)                          AS impressions,
-            SUM(s.clicks)                               AS clicks,
-            SUM(s.cost_micros) / 1000000.0              AS cost,
-            SUM(s.conversions)                          AS conversions,
-            SUM(s.conversions_value) / 1000000.0        AS conv_value
-        FROM raw_shopping_campaign_daily s
-        LEFT JOIN (
-            SELECT campaign_id, campaign_status
-            FROM analytics.campaign_daily
-            WHERE customer_id = ?
-            QUALIFY ROW_NUMBER() OVER (
-                PARTITION BY campaign_id ORDER BY snapshot_date DESC
-            ) = 1
-        ) cd ON cd.campaign_id = s.campaign_id
-        WHERE s.customer_id = ?
-          {{_date_clause}}
-        GROUP BY
-            s.campaign_id, s.campaign_name, s.campaign_priority,
-            s.feed_label, cd.campaign_status
-        ORDER BY cost DESC
-    """.format(_date_clause=_date_clause)
-
-    rows = None
-    cols = None
+            campaign_id,
+            campaign_name,
+            campaign_status,
+            'SHOPPING'                                                        AS channel_type,
+            SUM(cost_micros) / 1000000.0                                      AS cost,
+            SUM(conversions_value)                                            AS conversions_value,
+            SUM(conversions)                                                  AS conversions,
+            CASE WHEN SUM(cost_micros) > 0
+                 THEN SUM(conversions_value) / (SUM(cost_micros) / 1000000.0)
+                 ELSE NULL END                                                AS conv_value_per_cost,
+            CASE WHEN SUM(conversions) > 0
+                 THEN (SUM(cost_micros) / 1000000.0) / SUM(conversions)
+                 ELSE NULL END                                                AS cost_per_conv,
+            CASE WHEN SUM(clicks) > 0
+                 THEN SUM(conversions) * 1.0 / SUM(clicks)
+                 ELSE NULL END                                                AS conv_rate,
+            NULL                                                              AS all_conversions,
+            NULL                                                              AS cost_per_all_conv,
+            NULL                                                              AS all_conv_rate,
+            NULL                                                              AS all_conversions_value,
+            NULL                                                              AS all_conv_value_per_cost,
+            SUM(impressions)                                                  AS impressions,
+            SUM(clicks)                                                       AS clicks,
+            CASE WHEN SUM(clicks) > 0
+                 THEN (SUM(cost_micros) / 1000000.0) / SUM(clicks)
+                 ELSE NULL END                                                AS avg_cpc,
+            CASE WHEN SUM(impressions) > 0
+                 THEN SUM(clicks) * 1.0 / SUM(impressions)
+                 ELSE NULL END                                                AS ctr,
+            NULL                                                              AS search_impression_share,
+            NULL                                                              AS search_top_impression_share,
+            NULL                                                              AS search_absolute_top_impression_share,
+            NULL                                                              AS click_share,
+            NULL                                                              AS optimization_score,
+            NULL                                                              AS bid_strategy_type
+        FROM ro.analytics.shopping_campaign_daily
+        WHERE customer_id = ?
+          {_date_clause}
+        GROUP BY campaign_id, campaign_name, campaign_status
+        ORDER BY {sort_by} {sort_dir} NULLS LAST
+    """
 
     try:
-        rows = conn.execute(query, [customer_id, customer_id]).fetchall()
+        rows = conn.execute(query, [customer_id]).fetchall()
         cols = [d[0] for d in conn.description]
     except Exception as e:
-        print(f"[Shopping Campaigns] JOIN query error: {e} — trying fallback")
-        try:
-            fallback_query = f"""
-                SELECT
-                    campaign_id,
-                    campaign_name,
-                    campaign_priority,
-                    feed_label,
-                    'UNKNOWN'                           AS campaign_status,
-                    0.0                                 AS daily_budget,
-                    SUM(impressions)                    AS impressions,
-                    SUM(clicks)                         AS clicks,
-                    SUM(cost_micros) / 1000000.0        AS cost,
-                    SUM(conversions)                    AS conversions,
-                    SUM(conversions_value) / 1000000.0  AS conv_value
-                FROM raw_shopping_campaign_daily
-                WHERE customer_id = ?
-                  AND (snapshot_date >= CURRENT_DATE - INTERVAL '30 days')
-                GROUP BY campaign_id, campaign_name, campaign_priority, feed_label
-                ORDER BY cost DESC
-            """
-            rows = conn.execute(fallback_query, [customer_id]).fetchall()
-            cols = [
-                'campaign_id', 'campaign_name', 'campaign_priority', 'feed_label',
-                'campaign_status', 'daily_budget',
-                'impressions', 'clicks', 'cost', 'conversions', 'conv_value'
-            ]
-        except Exception as e2:
-            print(f"[Shopping Campaigns] Fallback query error: {e2}")
-            return []
-
-    if rows is None:
+        print(f"[Shopping Campaigns] Query error: {e}")
+        import traceback; traceback.print_exc()
         return []
-
-    priority_map = {0: 'Low', 1: 'Medium', 2: 'High'}
 
     campaigns = []
     for row in rows:
         d = dict(zip(cols, row))
-        cost       = float(d.get('cost') or 0)
-        conv_value = float(d.get('conv_value') or 0)
-        roas       = conv_value / cost if cost > 0 else 0.0
-        priority   = int(d.get('campaign_priority') or 0)
         status_raw = str(d.get('campaign_status') or 'UNKNOWN').upper()
 
-        campaigns.append({
-            'campaign_id':   str(d.get('campaign_id', '')),
-            'campaign_name': str(d.get('campaign_name') or 'Unknown'),
-            'priority':      priority_map.get(priority, 'Unknown'),
-            'priority_num':  priority,
-            'feed_label':    str(d.get('feed_label') or 'None'),
-            'status':        status_raw,
-            'daily_budget':  float(d.get('daily_budget') or 0),
-            'impressions':   int(d.get('impressions') or 0),
-            'clicks':        int(d.get('clicks') or 0),
-            'cost':          cost,
-            'conversions':   float(d.get('conversions') or 0),
-            'conv_value':    conv_value,
-            'roas':          roas,
-        })
+        # Python-side status filter
+        if status_filter == 'enabled' and status_raw != 'ENABLED':
+            continue
+        if status_filter == 'paused' and status_raw != 'PAUSED':
+            continue
 
-    # Python-side status filter
-    if status_filter == 'enabled':
-        campaigns = [c for c in campaigns if c['status'] == 'ENABLED']
-    elif status_filter == 'paused':
-        campaigns = [c for c in campaigns if c['status'] == 'PAUSED']
+        for f in ['cost', 'conversions_value', 'conversions', 'conv_value_per_cost',
+                  'cost_per_conv', 'conv_rate', 'all_conversions', 'cost_per_all_conv',
+                  'all_conv_rate', 'all_conversions_value', 'all_conv_value_per_cost',
+                  'impressions', 'clicks', 'avg_cpc', 'ctr',
+                  'search_impression_share', 'search_top_impression_share',
+                  'search_absolute_top_impression_share', 'click_share',
+                  'optimization_score']:
+            val = d.get(f)
+            d[f] = float(val) if val is not None else None
+
+        d['campaign_id']    = str(d.get('campaign_id', ''))
+        d['campaign_name']  = str(d.get('campaign_name') or 'Unknown')
+        d['status']         = status_raw
+        d['channel_type']   = str(d.get('channel_type') or 'SHOPPING')
+        d['bid_strategy_type'] = str(d.get('bid_strategy_type') or '') if d.get('bid_strategy_type') else None
+
+        campaigns.append(d)
 
     return campaigns
 
@@ -162,16 +152,16 @@ def compute_campaign_metrics(campaigns: List[Dict]) -> Dict[str, Any]:
             'total_impressions': 0, 'total_conv_value': 0.0,
             'total_clicks': 0,
         }
-    total_cost       = sum(c['cost'] for c in campaigns)
-    total_conv_value = sum(c['conv_value'] for c in campaigns)
+    total_cost       = sum(c.get('cost') or 0 for c in campaigns)
+    total_conv_value = sum(c.get('conversions_value') or 0 for c in campaigns)
     return {
         'total_campaigns':   len(campaigns),
         'total_cost':        total_cost,
-        'total_conversions': sum(c['conversions'] for c in campaigns),
+        'total_conversions': sum(c.get('conversions') or 0 for c in campaigns),
         'overall_roas':      total_conv_value / total_cost if total_cost > 0 else 0.0,
-        'total_impressions': sum(c['impressions'] for c in campaigns),
+        'total_impressions': int(sum(c.get('impressions') or 0 for c in campaigns)),
         'total_conv_value':  total_conv_value,
-        'total_clicks':      sum(c['clicks'] for c in campaigns),
+        'total_clicks':      int(sum(c.get('clicks') or 0 for c in campaigns)),
     }
 
 
@@ -718,12 +708,16 @@ def shopping():
     status       = request.args.get('status',       default='all', type=str).lower()
     availability = request.args.get('availability', default='all', type=str).lower()
     active_tab   = request.args.get('tab',          default='campaigns', type=str).lower()
+    sort_by      = request.args.get('sort_by',      default='cost', type=str)
+    sort_dir     = request.args.get('sort_dir',     default='desc', type=str)
 
     if per_page not in [10, 25, 50, 100]:                              per_page = 25
     if page     < 1:                                                   page     = 1
     if status   not in ['all', 'enabled', 'paused']:                   status   = 'all'
     if availability not in ['all', 'in_stock', 'out_of_stock', 'preorder']: availability = 'all'
     if active_tab not in ['campaigns', 'products', 'feed_quality', 'rules']: active_tab = 'campaigns'
+    if sort_by  not in ALLOWED_SHOPPING_SORT:                          sort_by  = 'cost'
+    if sort_dir not in ['asc', 'desc']:                                sort_dir = 'desc'
 
     # Days value for Products tab (windowed cols only support 7/30/90)
     products_days = days if days in [7, 30, 90] else 30
@@ -739,6 +733,7 @@ def shopping():
         days=days, active_days=active_days, date_from=date_from, date_to=date_to,
         page=page, per_page=per_page,
         status=status, availability=availability, active_tab=active_tab,
+        sort_by=sort_by, sort_dir=sort_dir,
     )
 
     try:
@@ -763,7 +758,7 @@ def shopping():
         else:
             _camp_days = days
             _camp_date_filter = None
-        all_campaigns    = load_shopping_campaigns(conn, config.customer_id, _camp_days, status, _camp_date_filter)
+        all_campaigns    = load_shopping_campaigns(conn, config.customer_id, _camp_days, status, _camp_date_filter, sort_by, sort_dir)
         campaign_metrics = compute_campaign_metrics(all_campaigns)
         campaigns_pg, total_campaigns, total_pages_campaigns = apply_pagination(
             all_campaigns, page, per_page
@@ -856,6 +851,8 @@ def shopping():
         status=status,
         availability=availability,
         active_tab=active_tab,
+        sort_by=sort_by,
+        sort_dir=sort_dir,
         # M2: Metrics cards
         camp_financial_cards=camp_financial_cards,
         camp_actions_cards=camp_actions_cards,

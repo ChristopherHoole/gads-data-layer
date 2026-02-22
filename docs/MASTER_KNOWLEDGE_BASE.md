@@ -1,17 +1,17 @@
 # MASTER KNOWLEDGE BASE - ADS CONTROL TOWER (A.C.T)
 
-**Version:** 3.0  
+**Version:** 5.0  
 **Created:** 2026-02-19  
-**Updated:** 2026-02-20  
+**Updated:** 2026-02-22  
 **Purpose:** Complete project context for Master Chat coordination
 
 ---
 
 ## EXECUTIVE SUMMARY
 
-### Current State (Feb 21, 2026)
-- **Overall Completion:** ~90%
-- **Phase:** Dashboard 3.0 — M4 complete ✅, M5 Rules Section Upgrade NEXT
+### Current State (Feb 22, 2026)
+- **Overall Completion:** ~92%
+- **Phase:** Dashboard 3.0 — M5 complete ✅, M6 Recommendations Tab NEXT
 - **Active Development:** Dashboard 3.0 modular improvements
 - **Templating:** Jinja2 Macros (metrics_section M2 + performance_chart M3)
 
@@ -100,6 +100,69 @@ Pending git commit message:
 
 ---
 
+### Chat 26 — M5: Card-Based Rules Tab ✅
+**Date:** 2026-02-22 | **Commit:** pending
+
+Replaced dense table-based Rules tab with fully interactive card-based UI on Campaigns page (pilot):
+
+**Architecture — dual-layer (critical — do not break):**
+- `act_autopilot/rules_config.json` — UI config layer (CRUD via rules_api.py)
+- `act_autopilot/rules/*.py` — execution layer (untouched, Python functions only)
+- These layers are intentionally separate. JSON edits never touch Python execution files.
+
+**UI:**
+- Card grid (auto-fill, min 340px) per rule type section (Budget / Bid / Status)
+- 4px colour-coded top bar: blue=budget, green=bid, red=status
+- Rule naming: "Budget 1" / "Bid 1" / "Status 1" (not BUDGET-001)
+- Condition block (IF/AND highlighted values) + Action block (gradient, icon, description)
+- Campaign-specific cards: blue border + OVERRIDES BLANKET tag
+- Toggle switches persist to JSON
+- Slide-in drawer (480px): 5-step form (Type→Scope→Condition→Action→Settings) + live preview
+- Campaign picker: fetches live from `/api/campaigns-list` → `ro.analytics.campaign_daily`
+- Filter bar: All / Budget / Bid / Status / Blanket only / Campaign-specific only / Active only
+- Recommendations placeholder tab (Chat 27 scope)
+- Inline SVG only — NO Bootstrap Icons CDN
+
+**rules_config.json data model (18 fields per rule):**
+```
+rule_id, rule_type, rule_number, display_name, name
+scope (blanket/specific), campaign_id
+condition_metric, condition_operator, condition_value, condition_unit
+condition_2_metric, condition_2_operator, condition_2_value, condition_2_unit
+action_direction, action_magnitude, risk_level, cooldown_days, enabled
+created_at, updated_at
+```
+
+**rules_api.py routes:**
+| Route | Method | Purpose |
+|---|---|---|
+| `/api/rules` | GET | Return all rules |
+| `/api/rules/add` | POST | Add rule |
+| `/api/rules/<id>/update` | PUT | Edit rule |
+| `/api/rules/<id>/toggle` | PUT | Toggle enabled |
+| `/api/rules/<id>` | DELETE | Delete rule |
+| `/api/campaigns-list` | GET | Campaign names from warehouse |
+
+**Files created/modified:**
+- `act_autopilot/rules_config.json` — CREATED (13 rules seeded from docstrings)
+- `act_dashboard/routes/rules_api.py` — CREATED
+- `act_dashboard/routes/__init__.py` — MODIFIED
+- `act_dashboard/routes/campaigns.py` — MODIFIED (imports load_rules(), passes rules_config)
+- `act_dashboard/templates/campaigns.html` — MODIFIED (3-tab: Campaigns/Rules/Recommendations)
+- `act_dashboard/templates/components/rules_tab.html` — REPLACED
+
+**Bugs fixed:**
+- "budget budget" double word — explicit type→label map: `{budget:'daily budget', bid:'bid target', status:'campaign status'}`
+- Drawer visible on page load — `display:none` + `display:flex` conflict; removed flex from inline style
+- rules_config.json path — `.parent.parent.parent` needed (routes/ is 3 levels from project root)
+- Campaign picker empty — wired to `/api/campaigns-list` fetch on scope card click
+
+**Known states (not bugs):**
+- Scope pill shows campaign_id not name — name resolution is Chat 27 scope
+- Rule numbering gaps after deletes — cosmetic, rule_id is the true identifier
+
+---
+
 ### Chat 25 — M4: Table Overhaul ✅
 **Date:** 2026-02-21 | **Commit:** pending
 
@@ -171,30 +234,34 @@ New file: macros/performance_chart.html
 ### Directory Structure
 ```
 gads-data-layer/
+├── act_autopilot/
+│   ├── rules/                     ← execution layer (Python, never touched by UI)
+│   │   └── *.py
+│   └── rules_config.json          ← UI config layer (M5, Chat 26)
 ├── act_dashboard/
 │   ├── app.py
 │   ├── warehouse_duckdb.py
 │   ├── routes/
-│   │   ├── shared.py          (get_metrics_collapsed, get_date_range)
+│   │   ├── shared.py
 │   │   ├── dashboard.py
 │   │   ├── campaigns.py
 │   │   ├── ad_groups.py
 │   │   ├── keywords.py
 │   │   ├── ads.py
-│   │   └── shopping.py
+│   │   ├── shopping.py
+│   │   └── rules_api.py           ← CRUD + /api/campaigns-list (M5, Chat 26)
 │   └── templates/
 │       ├── base_bootstrap.html     ← ALWAYS USE THIS (never base.html)
 │       ├── macros/
-│       │   └── metrics_cards.html  ← M2 macro
+│       │   ├── metrics_cards.html  ← M2 macro
+│       │   └── performance_chart.html ← M3 macro
 │       └── components/
 │           ├── rules_sidebar.html
-│           ├── rules_tab.html
+│           ├── rules_tab.html      ← REPLACED Chat 26 (M5 card UI)
 │           └── rules_card.html
-├── src/act_autopilot/
-│   ├── executor.py
-│   └── constitution.py
 ├── warehouse.duckdb
-└── generate_synthetic_data_v2.py
+└── tools/testing/
+    └── generate_synthetic_*.py
 ```
 
 ### Customer IDs
@@ -310,8 +377,8 @@ Rule Visibility System (Chat 21c — reusable on all pages):
 | M2: Metrics Cards | 23 | ✅ COMPLETE |
 | M3: Chart Overhauls | 24 | ✅ COMPLETE |
 | M4: Table Overhaul | 25 | ✅ COMPLETE |
-| M5: Rules Panel Upgrades | 26 | 🚧 NEXT |
-| M6: Action Buttons | 27 | 📋 PLANNED |
+| M5: Rules Tab (Campaigns pilot) | 26 | ✅ COMPLETE |
+| M6: Recommendations Tab | 27 | 🚧 NEXT |
 
 ---
 
@@ -330,15 +397,19 @@ Rule Visibility System (Chat 21c — reusable on all pages):
 | Generator scripts not found | They are in tools/testing/ — not scripts/ |
 | Sort not working on full dataset | Must be SQL-side ORDER BY, not Python-side |
 | New sort column not working | Must add to ALLOWED_*_SORT whitelist in route |
-| Jinja template 500 error | Validate syntax before deploying: `python3 -c "from jinja2 import Environment, FileSystemLoader; env = Environment(loader=FileSystemLoader('.')); env.get_template('template.html'); print('OK')"` |
+| Jinja template 500 error | Validate: `python3 -c "from jinja2 import Environment, FileSystemLoader; env = Environment(loader=FileSystemLoader('.')); env.get_template('template.html'); print('OK')"` |
 | ad_daily table not found | Does not exist — use ad_features_daily |
-| Shopping data empty | Check compute_campaign_metrics() key names match schema (conversions_value not conv_value) |
+| Shopping data empty | Check compute_campaign_metrics() key names match schema |
+| rules_config.json not found | Path needs `.parent.parent.parent` — routes/ is 3 levels from project root |
+| Drawer visible on page load | `display:none` + `display:flex` in same inline style — remove flex, let JS add it |
+| Campaign picker empty | Fetch from `/api/campaigns-list` on scope card click — not static HTML |
+| "budget budget" double word | Use explicit type→label map: `{budget:'daily budget', bid:'bid target', status:'campaign status'}` |
 
 ---
 
 ## CURRENT STATUS
 
-### Overall: ~90% Complete
+### Overall: ~92% Complete
 
 What's working:
 - All 6 dashboard pages with real/synthetic data
@@ -349,7 +420,9 @@ What's working:
 - Ad Strength on Ads page
 - Shopping: two independent metric sections
 - Session-based date picker
-- Rules visibility system
+- Rules visibility system (legacy sidebar/tab/card components)
+- **M5 card-based Rules tab on Campaigns page** (Chat 26)
+- **rules_config.json + rules_api.py CRUD** (Chat 26)
 - Authentication + client switching
 - Constitution execution engine
 - M4 tables: full Google Ads column sets on all 5 pages
@@ -358,9 +431,11 @@ What's working:
 - Status filter + per-page controls standardised
 
 Pending:
-- M3 + M4 git commits pending
+- M6 Recommendations tab (Chat 27)
+- M5 Rules tab rollout to Ad Groups, Keywords, Ads, Shopping (future chat)
+- Campaign scope pill name resolution (Chat 27)
 - All Conv. pipeline (populating all_conversions across all tables)
-- Shopping IS/Opt. Score (columns exist but NULL — pending real data)
+- Shopping IS/Opt. Score (columns exist but NULL)
 - Ads Revenue fix (future chat)
 - 404.html template missing (pre-existing)
 
@@ -369,9 +444,10 @@ Pending:
 ## FUTURE ROADMAP
 
 Immediate (Dashboard 3.0):
-- Chat 25: M4 Table Improvements
-- Chat 26: M5 Rules Panel
-- Chat 27: M6 Action Buttons
+- Chat 27: M6 Recommendations Tab
+- Chat 28: M6 rollout to remaining pages
+- Chat 29: M7 Change History + Monitoring (merged screen)
+- Chat 30: Keywords Search Terms tab
 
 Short-term:
 - Phase 5: Unit tests, job queue, DB indexes, CSRF
@@ -395,8 +471,12 @@ Medium-term:
 6. Session state > URL params for picker/collapse
 7. Jinja2 macros: pilot-then-rollout pattern is efficient
 8. Mandatory codebase upload saves hours in worker chats
+9. Files in routes/ are 3 levels deep from project root — use `.parent.parent.parent`
+10. `display:none` + `display:flex` in same inline style — browser uses last one; keep none, let JS add flex
+11. Dual-layer architecture: JSON config (UI) and Python functions (execution) must remain separate — never sync them
+12. Campaign picker must be wired to real data before declaring campaign-specific scope complete
 
 ---
 
-**Version:** 4.0 | **Last Updated:** 2026-02-21  
-**Next Step:** Chat 26 — M5 Rules Section Upgrade (discuss with Master Chat first)
+**Version:** 5.0 | **Last Updated:** 2026-02-22  
+**Next Step:** Chat 27 — M6 Recommendations Tab (discuss with Master Chat first)

@@ -572,6 +572,8 @@ def keywords():
     page = request.args.get('page', default=1, type=int)
     per_page = request.args.get('per_page', default=25, type=int)
     match_type = request.args.get('match_type', default='all', type=str).lower()
+    sort_by  = request.args.get('sort_by',  'cost',  type=str)
+    sort_dir = request.args.get('sort_dir', 'desc',  type=str)
 
     # Validate parameters
     if page < 1:
@@ -580,6 +582,18 @@ def keywords():
         per_page = 25
     if match_type not in ['all', 'exact', 'phrase', 'broad']:
         match_type = 'all'
+
+    ALLOWED_KW_SORT = {
+        'keyword_text', 'campaign_name', 'ad_group_name', 'status',
+        'cost', 'conversions_value', 'conversions', 'conv_value_per_cost',
+        'cpa', 'conv_rate',
+        'impressions', 'clicks', 'avg_cpc', 'ctr',
+        'quality_score', 'expected_ctr_score', 'ad_relevance_score',
+    }
+    if sort_by not in ALLOWED_KW_SORT:
+        sort_by = 'cost'
+    if sort_dir not in ['asc', 'desc']:
+        sort_dir = 'desc'
     
     # Get common page context
     config, clients, current_client_path = get_page_context()
@@ -676,43 +690,73 @@ def keywords():
         page = total_pages
     offset = (page - 1) * per_page
     
-    # QUERY 3: Keywords Table (with pagination and match type filter)
+    # QUERY 3: Keywords Table (with pagination, match type filter, and sort)
     keywords_query = f"""
-        SELECT 
+        SELECT
             keyword_id,
             keyword_text,
             match_type,
-            status,
             campaign_name,
             ad_group_name,
-            bid_micros / 1000000 as max_cpc,
+            status,
+            cost_micros_{window_suffix}_sum / 1000000.0                         AS cost,
+            conversion_value_{window_suffix}_sum                                 AS conversions_value,
+            conversions_{window_suffix}_sum                                      AS conversions,
+            CASE WHEN cost_micros_{window_suffix}_sum > 0
+                 THEN conversion_value_{window_suffix}_sum
+                      / (cost_micros_{window_suffix}_sum / 1000000.0)
+                 ELSE NULL END                                                   AS conv_value_per_cost,
+            cpa_{window_suffix} / 1000000.0                                     AS cpa,
+            CASE WHEN clicks_{window_suffix}_sum > 0
+                 THEN conversions_{window_suffix}_sum * 1.0 / clicks_{window_suffix}_sum
+                 ELSE NULL END                                                   AS conv_rate,
+            impressions_{window_suffix}_sum                                      AS impressions,
+            clicks_{window_suffix}_sum                                           AS clicks,
+            CASE WHEN clicks_{window_suffix}_sum > 0
+                 THEN (cost_micros_{window_suffix}_sum / 1000000.0)
+                      / clicks_{window_suffix}_sum
+                 ELSE NULL END                                                   AS avg_cpc,
+            CASE WHEN impressions_{window_suffix}_sum > 0
+                 THEN clicks_{window_suffix}_sum * 1.0 / impressions_{window_suffix}_sum
+                 ELSE NULL END                                                   AS ctr,
             quality_score,
-            quality_score_landing_page as landing_page_score,
-            quality_score_relevance as ad_relevance_score,
-            quality_score_creative as expected_ctr_score,
-            clicks_{window_suffix}_sum as clicks,
-            cost_micros_{window_suffix}_sum / 1000000 as cost,
-            conversions_{window_suffix}_sum as conversions,
-            cpa_{window_suffix} / 1000000 as cpa,
-            roas_{window_suffix} as roas
+            quality_score_creative                                               AS expected_ctr_score,
+            quality_score_relevance                                              AS ad_relevance_score
         FROM analytics.keyword_features_daily
         WHERE customer_id = ?
           AND snapshot_date = ?
     """
     keywords_params = [config.customer_id, snapshot_date]
-    
+
     if match_type != 'all':
         keywords_query += " AND UPPER(match_type) = ?"
         keywords_params.append(match_type.upper())
-    
+
     keywords_query += f"""
-        ORDER BY cost_micros_{window_suffix}_sum DESC
+        ORDER BY {sort_by} {sort_dir} NULLS LAST
         LIMIT ? OFFSET ?
     """
     keywords_params.extend([per_page, offset])
-    
+
     try:
-        keywords = conn.execute(keywords_query, keywords_params).fetchall()
+        kw_rows = conn.execute(keywords_query, keywords_params).fetchall()
+        kw_cols = [d[0] for d in conn.description]
+        keywords = []
+        for row in kw_rows:
+            d = dict(zip(kw_cols, row))
+            d['keyword_id']       = str(d.get('keyword_id', ''))
+            d['keyword_text']     = str(d.get('keyword_text', ''))
+            d['match_type']       = str(d.get('match_type', ''))
+            d['status']           = str(d.get('status', ''))
+            d['campaign_name']    = str(d.get('campaign_name', ''))
+            d['ad_group_name']    = str(d.get('ad_group_name', ''))
+            for f in ['cost', 'conversions_value', 'conversions', 'conv_value_per_cost',
+                      'cpa', 'conv_rate',
+                      'impressions', 'clicks', 'avg_cpc', 'ctr',
+                      'quality_score', 'expected_ctr_score', 'ad_relevance_score']:
+                val = d.get(f)
+                d[f] = float(val) if val is not None else None
+            keywords.append(d)
     except Exception as e:
         print(f"[Keywords] Keywords table query error: {e}")
         import traceback
@@ -796,6 +840,8 @@ def keywords():
         page=page,
         per_page=per_page,
         match_type=match_type,
+        sort_by=sort_by,
+        sort_dir=sort_dir,
         total_pages=total_pages,
         # Data
         snapshot_date=str(snapshot_date),

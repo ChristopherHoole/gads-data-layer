@@ -85,6 +85,20 @@ CAMPAIGN_NAMES = {
 
 MATCH_TYPES = ["EXACT", "PHRASE", "BROAD"]
 
+# M4: New column value pools
+BID_STRATEGY_TYPES = [
+    "TARGET_CPA",
+    "TARGET_ROAS",
+    "MAXIMIZE_CONVERSIONS",
+    "MAXIMIZE_CONVERSION_VALUE",
+    "MANUAL_CPC",
+]
+
+
+def _url_slug(product_term: str) -> str:
+    """Convert product term to URL slug."""
+    return product_term.lower().replace(" ", "-").replace("&", "and")
+
 # ── Keyword text pools ────────────────────────────────────────────────
 # Realistic keyword stems by industry vertical
 KEYWORD_STEMS = [
@@ -432,6 +446,10 @@ def _generate_daily_keyword_row(
         "search_top_impression_share":          round(min(1.0, np.random.uniform(0.20, 0.55)), 4),
         "search_absolute_top_impression_share": round(min(1.0, np.random.uniform(0.08, 0.28)), 4),
         "click_share":                          round(min(1.0, np.random.uniform(0.30, 0.75)), 4),
+        # M4: new columns
+        "all_conversions_value":  round(conv_value * random.uniform(1.05, 1.15), 2),
+        "bid_strategy_type":      random.choice(BID_STRATEGY_TYPES),
+        "final_url":              "https://example.com/" + _url_slug(PRODUCT_TERMS[kw_config["campaign_id"] % len(PRODUCT_TERMS)]),
     }
 
 
@@ -686,6 +704,14 @@ def generate_all():
 
     # Delete existing synthetic keyword/search term data
     print("  Deleting existing synthetic keyword data...")
+    # M4: Add new columns to existing table if not already present
+    for col_def in [
+        "all_conversions_value DOUBLE",
+        "bid_strategy_type VARCHAR",
+        "final_url VARCHAR",
+    ]:
+        conn.execute(f"ALTER TABLE snap_keyword_daily ADD COLUMN IF NOT EXISTS {col_def}")
+
     conn.execute(
         "DELETE FROM snap_keyword_daily WHERE customer_id = ?", [CUSTOMER_ID]
     )
@@ -712,6 +738,7 @@ def generate_all():
         "conversions", "conversions_value",
         "search_impression_share", "search_top_impression_share",
         "search_absolute_top_impression_share", "click_share",
+        "all_conversions_value", "bid_strategy_type", "final_url",
     ]
 
     cols_sql = ", ".join(KEYWORD_COLS)

@@ -1,297 +1,1061 @@
-<!-- 
-Rules Tab Component - Chat 21c (updated Chat 21h)
-Detailed view of all rules organized by category
-Shows in tab alongside main content
--->
+{#
+  Rules Tab Component — M5 (Chat 26)
+  Full replacement of dense table layout.
+  Card-based layout matching M5_WIREFRAME_v3.html exactly.
+  All icons: inline SVG only. No Bootstrap Icons CDN.
+  Bootstrap 5 only. Vanilla JS only. No jQuery.
+#}
 
-{% set page_name = page_name | default('Optimization') %}
-
+<!-- ════════════════════════════════════════════════════════════
+     RULES TAB PANE
+═══════════════════════════════════════════════════════════════ -->
 <div class="tab-pane fade" id="rules-tab" role="tabpanel">
-  <div class="container-fluid py-4">
-    
-    <!-- Header -->
-    {% set rule_categories = rules|map(attribute='category')|unique|list %}
-    {% if 'BUDGET' in rule_categories or 'BID' in rule_categories or 'STATUS' in rule_categories %}
-      {% set page_title = 'Campaign Optimization Rules' %}
-      {% set page_desc = 'Active rules monitoring and optimizing your campaigns' %}
-    {% elif 'KEYWORD' in rule_categories %}
-      {% set page_title = 'Keyword Optimization Rules' %}
-      {% set page_desc = 'Active rules monitoring and optimizing your keywords' %}
-    {% elif 'AD' in rule_categories %}
-      {% set page_title = 'Ad Optimization Rules' %}
-      {% set page_desc = 'Active rules monitoring and optimizing your ads' %}
-    {% elif 'SHOPPING' in rule_categories %}
-      {% set page_title = 'Shopping Optimization Rules' %}
-      {% set page_desc = 'Active rules monitoring and optimizing your shopping campaigns' %}
-    {% else %}
-      {% set page_title = 'Optimization Rules' %}
-      {% set page_desc = 'Active rules monitoring and optimizing your account' %}
-    {% endif %}
-    
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h4 class="mb-1">
-          <i class="bi bi-lightning-charge-fill text-warning"></i>
-          {{ page_title }}
-        </h4>
-        <p class="text-muted mb-0">{{ page_desc }}</p>
+<div class="container-fluid py-4" id="rules-container">
+
+  <!-- ── Header ─────────────────────────────────────────────── -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h4 class="mb-1 fw-bold">Campaign Optimization Rules</h4>
+      <p class="text-muted mb-0 small">Rules monitor your campaigns and generate optimisation recommendations.</p>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="openAddRuleDrawer()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" class="me-1"><path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/></svg>
+      Add Rule
+    </button>
+  </div>
+
+  <!-- ── Summary Strip ──────────────────────────────────────── -->
+  <div class="d-flex gap-3 mb-3 flex-wrap" id="rules-summary-strip">
+    <div class="rules-stat-pill rules-stat-budget">
+      <span class="rules-stat-count" id="stat-budget-count">0</span>
+      <span class="rules-stat-label">Budget</span>
+    </div>
+    <div class="rules-stat-pill rules-stat-bid">
+      <span class="rules-stat-count" id="stat-bid-count">0</span>
+      <span class="rules-stat-label">Bid</span>
+    </div>
+    <div class="rules-stat-pill rules-stat-status">
+      <span class="rules-stat-count" id="stat-status-count">0</span>
+      <span class="rules-stat-label">Status</span>
+    </div>
+    <div class="rules-stat-pill rules-stat-active ms-auto">
+      <span class="rules-stat-count" id="stat-active-count">0</span>
+      <span class="rules-stat-label">Active</span>
+      <span class="rules-stat-total" id="stat-total-count">/ 0 total</span>
+    </div>
+  </div>
+
+  <!-- ── Filter Bar ─────────────────────────────────────────── -->
+  <div class="d-flex gap-2 mb-4 flex-wrap" id="rules-filter-bar">
+    <button class="btn btn-sm btn-primary rules-filter-btn active" data-filter="all">All</button>
+    <button class="btn btn-sm btn-outline-secondary rules-filter-btn" data-filter="budget">Budget</button>
+    <button class="btn btn-sm btn-outline-secondary rules-filter-btn" data-filter="bid">Bid</button>
+    <button class="btn btn-sm btn-outline-secondary rules-filter-btn" data-filter="status">Status</button>
+    <button class="btn btn-sm btn-outline-secondary rules-filter-btn ms-2" data-filter="blanket">Blanket only</button>
+    <button class="btn btn-sm btn-outline-secondary rules-filter-btn" data-filter="specific">Campaign-specific only</button>
+    <button class="btn btn-sm btn-outline-secondary rules-filter-btn" data-filter="active">Active only</button>
+  </div>
+
+  <!-- ── Loading / Error State ──────────────────────────────── -->
+  <div id="rules-loading" class="text-center py-5" style="display:none;">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="text-muted mt-2 mb-0">Loading rules…</p>
+  </div>
+  <div id="rules-error" class="alert alert-danger" style="display:none;"></div>
+
+  <!-- ── Card Sections ──────────────────────────────────────── -->
+  <div id="rules-sections">
+
+    <!-- Budget Section -->
+    <div class="rules-section mb-4" id="section-budget">
+      <h6 class="rules-section-title">
+        <span class="rules-section-dot" style="background:#0d6efd;"></span>
+        Budget Rules
+        <span class="badge bg-primary ms-1 rules-section-count" id="section-count-budget">0</span>
+      </h6>
+      <div class="rules-card-grid" id="grid-budget"></div>
+    </div>
+
+    <!-- Bid Section -->
+    <div class="rules-section mb-4" id="section-bid">
+      <h6 class="rules-section-title">
+        <span class="rules-section-dot" style="background:#198754;"></span>
+        Bid Rules
+        <span class="badge bg-success ms-1 rules-section-count" id="section-count-bid">0</span>
+      </h6>
+      <div class="rules-card-grid" id="grid-bid"></div>
+    </div>
+
+    <!-- Status Section -->
+    <div class="rules-section mb-4" id="section-status">
+      <h6 class="rules-section-title">
+        <span class="rules-section-dot" style="background:#dc3545;"></span>
+        Status Rules
+        <span class="badge bg-danger ms-1 rules-section-count" id="section-count-status">0</span>
+      </h6>
+      <div class="rules-card-grid" id="grid-status"></div>
+    </div>
+
+  </div><!-- /rules-sections -->
+
+</div><!-- /container -->
+</div><!-- /tab-pane -->
+
+
+<!-- ════════════════════════════════════════════════════════════
+     SLIDE-IN DRAWER (Add / Edit Rule)
+═══════════════════════════════════════════════════════════════ -->
+<div id="rules-drawer-backdrop" onclick="closeRuleDrawer()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1040;"></div>
+
+<div id="rules-drawer" style="display:none; position:fixed; top:0; right:0; width:480px; max-width:100vw; height:100vh; background:#fff; box-shadow:-4px 0 24px rgba(0,0,0,0.15); z-index:1050; overflow-y:auto; flex-direction:column;">
+
+  <!-- Drawer Header -->
+  <div class="d-flex justify-content-between align-items-center px-4 py-3 border-bottom" style="background:#f8f9fa;">
+    <h5 class="mb-0 fw-bold" id="drawer-title">Add Rule</h5>
+    <button onclick="closeRuleDrawer()" class="btn-close" aria-label="Close"></button>
+  </div>
+
+  <!-- Drawer Body -->
+  <div class="px-4 py-3 flex-grow-1" style="overflow-y:auto;">
+
+    <!-- Step 1: Rule Type -->
+    <div class="drawer-step mb-4">
+      <div class="drawer-step-header">
+        <span class="drawer-step-number">1</span>
+        <span class="drawer-step-title">Rule Type</span>
       </div>
-      <div>
-        <span class="badge bg-primary fs-6">{{ rules|length }} Total Rules</span>
+      <select class="form-select" id="drawer-rule-type" onchange="onRuleTypeChange()">
+        <option value="">— Select type —</option>
+        <option value="budget">Budget</option>
+        <option value="bid">Bid</option>
+        <option value="status">Status</option>
+      </select>
+    </div>
+
+    <!-- Step 2: Scope -->
+    <div class="drawer-step mb-4">
+      <div class="drawer-step-header">
+        <span class="drawer-step-number">2</span>
+        <span class="drawer-step-title">Scope</span>
+      </div>
+      <div class="d-flex gap-2 mb-2">
+        <div class="scope-card flex-fill" id="scope-blanket-card" onclick="setScopeCard('blanket')" style="cursor:pointer;">
+          <div class="text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16" class="mb-1"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 2.625 7 7 0 0 0 .041 9.75A7 7 0 1 0 8 1zm0 1a6 6 0 1 1 0 12A6 6 0 0 1 8 2z"/></svg>
+            <div class="fw-semibold small mt-1">All Campaigns</div>
+            <div class="text-muted" style="font-size:11px;">Blanket rule</div>
+          </div>
+        </div>
+        <div class="scope-card flex-fill" id="scope-specific-card" onclick="setScopeCard('specific')" style="cursor:pointer;">
+          <div class="text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16" class="mb-1"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
+            <div class="fw-semibold small mt-1">Campaign-Specific</div>
+            <div class="text-muted" style="font-size:11px;">Overrides blanket</div>
+          </div>
+        </div>
+      </div>
+      <input type="hidden" id="drawer-scope" value="blanket">
+      <!-- Campaign picker (shown only when specific) -->
+      <div id="campaign-picker-row" style="display:none;">
+        <select class="form-select form-select-sm mt-2" id="drawer-campaign-id">
+          <option value="">— Select campaign —</option>
+        </select>
+        <div class="alert alert-info py-2 px-3 mt-2 small mb-0">
+          <strong>Priority:</strong> Campaign-specific rules always override blanket rules on the same campaign.
+        </div>
       </div>
     </div>
 
-    {% if rules and rules|length > 0 %}
-      
-      <!-- Summary Cards - Dynamic Categories -->
-      {% set all_categories = rules|map(attribute='category')|unique|list|sort %}
-      <div class="row mb-4">
-        {% for category in all_categories[:3] %}
-          <div class="col-md-{{ 12 // ([all_categories|length, 3]|min) }}">
-            <div class="card border-primary">
-              <div class="card-body text-center">
-                {% if category == 'BUDGET' %}
-                  <i class="bi bi-cash-stack text-primary" style="font-size: 2rem;"></i>
-                {% elif category == 'BID' %}
-                  <i class="bi bi-sliders text-info" style="font-size: 2rem;"></i>
-                {% elif category == 'STATUS' %}
-                  <i class="bi bi-play-pause text-success" style="font-size: 2rem;"></i>
-                {% elif category == 'KEYWORD' %}
-                  <i class="bi bi-key text-primary" style="font-size: 2rem;"></i>
-                {% elif category == 'AD' %}
-                  <i class="bi bi-file-text text-info" style="font-size: 2rem;"></i>
-                {% elif category == 'SHOPPING' %}
-                  <i class="bi bi-cart text-success" style="font-size: 2rem;"></i>
-                {% else %}
-                  <i class="bi bi-gear text-secondary" style="font-size: 2rem;"></i>
-                {% endif %}
-                <h2 class="mt-2 mb-0">{{ rules|selectattr('category', 'equalto', category)|list|length }}</h2>
-                <p class="text-muted mb-0">{{ category|title }} Rules</p>
-              </div>
-            </div>
-          </div>
-        {% endfor %}
+    <!-- Step 3: Condition -->
+    <div class="drawer-step mb-4">
+      <div class="drawer-step-header">
+        <span class="drawer-step-number">3</span>
+        <span class="drawer-step-title">Condition</span>
       </div>
+      <p class="text-muted small mb-2">When all of these are true:</p>
+      <!-- Condition Row 1 -->
+      <div class="condition-row d-flex gap-1 mb-2 align-items-center">
+        <span class="text-muted small" style="min-width:20px;">IF</span>
+        <select class="form-select form-select-sm" id="cond1-metric" style="flex:2;" onchange="updatePreview()">
+          <option value="">Metric</option>
+          <option value="roas_7d">ROAS (7d)</option>
+          <option value="roas_30d">ROAS (30d)</option>
+          <option value="conversions_7d">Conversions (7d)</option>
+          <option value="conversions_30d">Conversions (30d)</option>
+          <option value="clicks_7d">Clicks (7d)</option>
+          <option value="cost_7d">Cost (7d)</option>
+          <option value="ctr_7d">CTR (7d)</option>
+          <option value="cost_cv_14d">Cost CV (14d)</option>
+          <option value="cost_spike_confidence">Cost Spike Confidence</option>
+          <option value="cost_drop_detected">Cost Drop Detected</option>
+          <option value="cvr_drop_detected">CVR Drop Detected</option>
+          <option value="ctr_drop_detected">CTR Drop Detected</option>
+          <option value="pace_over_cap_detected">Pace Over Cap</option>
+        </select>
+        <select class="form-select form-select-sm" id="cond1-operator" style="flex:1;" onchange="updatePreview()">
+          <option value="">Op</option>
+          <option value="gt">&gt;</option>
+          <option value="gte">≥</option>
+          <option value="lt">&lt;</option>
+          <option value="lte">≤</option>
+          <option value="eq">=</option>
+        </select>
+        <input type="number" class="form-control form-control-sm" id="cond1-value" placeholder="Value" style="flex:1;" oninput="updatePreview()">
+        <select class="form-select form-select-sm" id="cond1-unit" style="flex:1.5;" onchange="updatePreview()">
+          <option value="absolute">absolute</option>
+          <option value="x_target">× target</option>
+        </select>
+      </div>
+      <!-- Condition Row 2 -->
+      <div class="condition-row d-flex gap-1 mb-1 align-items-center">
+        <span class="text-muted small" style="min-width:20px;">AND</span>
+        <select class="form-select form-select-sm" id="cond2-metric" style="flex:2;" onchange="updatePreview()">
+          <option value="">(optional)</option>
+          <option value="roas_7d">ROAS (7d)</option>
+          <option value="roas_30d">ROAS (30d)</option>
+          <option value="conversions_7d">Conversions (7d)</option>
+          <option value="conversions_30d">Conversions (30d)</option>
+          <option value="clicks_7d">Clicks (7d)</option>
+          <option value="cost_7d">Cost (7d)</option>
+          <option value="ctr_7d">CTR (7d)</option>
+          <option value="cost_cv_14d">Cost CV (14d)</option>
+          <option value="cost_spike_confidence">Cost Spike Confidence</option>
+          <option value="cost_drop_detected">Cost Drop Detected</option>
+          <option value="cvr_drop_detected">CVR Drop Detected</option>
+          <option value="ctr_drop_detected">CTR Drop Detected</option>
+          <option value="pace_over_cap_detected">Pace Over Cap</option>
+        </select>
+        <select class="form-select form-select-sm" id="cond2-operator" style="flex:1;" onchange="updatePreview()">
+          <option value="">Op</option>
+          <option value="gt">&gt;</option>
+          <option value="gte">≥</option>
+          <option value="lt">&lt;</option>
+          <option value="lte">≤</option>
+          <option value="eq">=</option>
+        </select>
+        <input type="number" class="form-control form-control-sm" id="cond2-value" placeholder="Value" style="flex:1;" oninput="updatePreview()">
+        <select class="form-select form-select-sm" id="cond2-unit" style="flex:1.5;" onchange="updatePreview()">
+          <option value="absolute">absolute</option>
+          <option value="x_target">× target</option>
+        </select>
+      </div>
+    </div>
 
-      <!-- Rules by Category - Dynamic -->
-      {% for category in all_categories %}
-        {% set category_rules = rules|selectattr('category', 'equalto', category)|list %}
-        
-        {% if category_rules|length > 0 %}
-          <div class="card mb-4">
-            <div class="card-header bg-light">
-              <h5 class="mb-0">
-                {% if category == 'BUDGET' %}
-                  <i class="bi bi-cash-stack text-primary"></i> Budget Rules
-                {% elif category == 'BID' %}
-                  <i class="bi bi-sliders text-info"></i> Bid Adjustment Rules
-                {% elif category == 'STATUS' %}
-                  <i class="bi bi-play-pause text-success"></i> Campaign Status Rules
-                {% elif category == 'KEYWORD' %}
-                  <i class="bi bi-key text-primary"></i> Keyword Rules
-                {% elif category == 'AD' %}
-                  <i class="bi bi-file-text text-info"></i> Ad Rules
-                {% elif category == 'SHOPPING' %}
-                  <i class="bi bi-cart text-success"></i> Shopping Rules
-                {% else %}
-                  <i class="bi bi-gear text-secondary"></i> {{ category|title }} Rules
-                {% endif %}
-                <span class="badge bg-secondary ms-2">{{ category_rules|length }}</span>
-              </h5>
-            </div>
-            
-            <div class="card-body p-0">
-              <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                  <thead class="table-light">
-                    <tr>
-                      <th style="width: 120px;">Rule ID</th>
-                      <th style="width: 250px;">Name</th>
-                      <th>Description</th>
-                      <th style="width: 300px;">Conditions</th>
-                      <th style="width: 100px;">Risk</th>
-                      <th style="width: 100px;">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for rule in category_rules|sort(attribute='rule_id') %}
-                      <tr>
-                        <!-- Rule ID -->
-                        <td>
-                          <span class="badge bg-secondary">{{ rule.rule_id }}</span>
-                        </td>
-                        
-                        <!-- Name -->
-                        <td>
-                          <strong class="text-dark">
-                            {% if rule.name|length > 50 %}
-                              {{ rule.name[:50] }}...
-                            {% else %}
-                              {{ rule.name }}
-                            {% endif %}
-                          </strong>
-                        </td>
-                        
-                        <!-- Description -->
-                        <td>
-                          <small class="text-muted">
-                            {% if rule.description %}
-                              {% if rule.description|length > 80 %}
-                                {{ rule.description[:80] }}...
-                              {% else %}
-                                {{ rule.description }}
-                              {% endif %}
-                            {% else %}
-                              <em>No description available</em>
-                            {% endif %}
-                          </small>
-                        </td>
-                        
-                        <!-- Conditions/Thresholds -->
-                        <td>
-                          {% if rule.thresholds and rule.thresholds|length > 0 %}
-                            <div class="small">
-                              {% for threshold in rule.thresholds[:3] %}
-                                <div class="mb-1">
-                                  <i class="bi bi-check-circle-fill text-success"></i>
-                                  <span class="text-muted">{{ threshold }}</span>
-                                </div>
-                              {% endfor %}
-                              {% if rule.thresholds|length > 3 %}
-                                <div class="text-muted">
-                                  <small><em>+ {{ rule.thresholds|length - 3 }} more conditions</em></small>
-                                </div>
-                              {% endif %}
-                            </div>
-                          {% else %}
-                            <small class="text-muted"><em>No conditions defined</em></small>
-                          {% endif %}
-                        </td>
-                        
-                        <!-- Risk Tier -->
-                        <td>
-                          {% if rule.risk_tier == 'low' %}
-                            <span class="badge bg-success">Low</span>
-                          {% elif rule.risk_tier == 'medium' %}
-                            <span class="badge bg-warning">Medium</span>
-                          {% elif rule.risk_tier == 'high' %}
-                            <span class="badge bg-danger">High</span>
-                          {% else %}
-                            <span class="badge bg-secondary">{{ rule.risk_tier|title }}</span>
-                          {% endif %}
-                        </td>
-                        
-                        <!-- Status -->
-                        <td>
-                          {% if rule.enabled %}
-                            <span class="badge bg-success">
-                              <i class="bi bi-check-circle"></i> Enabled
-                            </span>
-                          {% else %}
-                            <span class="badge bg-secondary">
-                              <i class="bi bi-x-circle"></i> Disabled
-                            </span>
-                          {% endif %}
-                        </td>
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        {% endif %}
-        
-      {% endfor %}
-
-      <!-- Additional Info Card - Dynamic -->
-      <div class="card border-info">
-        <div class="card-body">
-          <h6 class="card-title">
-            <i class="bi bi-info-circle text-info"></i>
-            About {{ page_title }}
-          </h6>
-          <p class="card-text mb-2">
-            These rules continuously monitor your account and generate recommendations based on performance data, 
-            account configuration, and the Constitution's safety guardrails.
-          </p>
-          
-          {% if all_categories %}
-            <ul class="small text-muted mb-0">
-              {% if 'BUDGET' in all_categories %}
-                <li><strong>Budget Rules:</strong> Adjust daily budgets based on ROAS and spend patterns</li>
-              {% endif %}
-              {% if 'BID' in all_categories %}
-                <li><strong>Bid Rules:</strong> Modify target ROAS/CPA to optimize campaign efficiency</li>
-              {% endif %}
-              {% if 'STATUS' in all_categories %}
-                <li><strong>Status Rules:</strong> Pause or enable campaigns based on performance thresholds</li>
-              {% endif %}
-              {% if 'KEYWORD' in all_categories %}
-                <li><strong>Keyword Rules:</strong> Pause, adjust bids, or review keywords based on performance</li>
-              {% endif %}
-              {% if 'AD' in all_categories %}
-                <li><strong>Ad Rules:</strong> Pause or review ads based on CTR, conversion rates, and spend</li>
-              {% endif %}
-              {% if 'SHOPPING' in all_categories %}
-                <li><strong>Shopping Rules:</strong> Optimize product groups and bids for shopping campaigns</li>
-              {% endif %}
-            </ul>
-          {% endif %}
+    <!-- Step 4: Action -->
+    <div class="drawer-step mb-4">
+      <div class="drawer-step-header">
+        <span class="drawer-step-number">4</span>
+        <span class="drawer-step-title">Action</span>
+      </div>
+      <div class="d-flex gap-2">
+        <select class="form-select" id="drawer-direction" onchange="onDirectionChange(); updatePreview();">
+          <option value="">— Direction —</option>
+          <option value="increase">Increase</option>
+          <option value="decrease">Decrease</option>
+          <option value="hold">Hold (no change)</option>
+          <option value="flag">Flag for review</option>
+        </select>
+        <div class="input-group" id="magnitude-input-group">
+          <input type="number" class="form-control" id="drawer-magnitude" placeholder="%" min="0" max="20" step="1" oninput="updatePreview()">
+          <span class="input-group-text">%</span>
         </div>
       </div>
-
-    {% else %}
-      
-      <!-- Empty State -->
-      <div class="card">
-        <div class="card-body text-center py-5">
-          <i class="bi bi-lightning text-muted" style="font-size: 4rem;"></i>
-          <h5 class="mt-3 mb-2">No {{ page_name }} Rules Configured</h5>
-          <p class="text-muted mb-4">
-            {{ page_name }} optimization rules have not been set up yet.<br>
-            Rules will appear here once they are configured in the system.
-          </p>
-          <a href="/settings" class="btn btn-primary">
-            <i class="bi bi-gear"></i>
-            Go to Settings
-          </a>
-        </div>
+      <div class="mt-2 small text-muted">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#ffc107" viewBox="0 0 16 16" class="me-1"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg>
+        Constitution cap: max ±20% per change
       </div>
-      
-    {% endif %}
+    </div>
 
+    <!-- Step 5: Settings -->
+    <div class="drawer-step mb-4">
+      <div class="drawer-step-header">
+        <span class="drawer-step-number">5</span>
+        <span class="drawer-step-title">Settings</span>
+      </div>
+      <div class="mb-3">
+        <label class="form-label small fw-semibold">Rule Name</label>
+        <input type="text" class="form-control" id="drawer-name" placeholder="e.g. Increase budget when ROAS is strong" oninput="updatePreview()">
+      </div>
+      <div class="mb-2">
+        <label class="form-label small fw-semibold">Cooldown Period</label>
+        <select class="form-select" id="drawer-cooldown" onchange="updatePreview()">
+          <option value="7">7 days</option>
+          <option value="14">14 days</option>
+          <option value="30">30 days</option>
+        </select>
+        <div class="form-text">Minimum days between rule triggers on the same campaign.</div>
+      </div>
+      <div class="mb-2">
+        <label class="form-label small fw-semibold">Risk Level</label>
+        <select class="form-select" id="drawer-risk" onchange="updatePreview()">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="unknown">Unknown</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Live Preview -->
+    <div class="rules-preview-box mb-3" id="drawer-preview">
+      <div class="rules-preview-title">Live Preview</div>
+      <div id="preview-content" class="text-muted small">Complete the form above to see your rule.</div>
+    </div>
+
+  </div><!-- /drawer body -->
+
+  <!-- Drawer Footer -->
+  <div class="d-flex gap-2 px-4 py-3 border-top" style="background:#f8f9fa;">
+    <button class="btn btn-secondary flex-fill" onclick="closeRuleDrawer()">Cancel</button>
+    <button class="btn btn-primary flex-fill" id="drawer-save-btn" onclick="saveRule()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" class="me-1"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+      Save Rule
+    </button>
+  </div>
+
+</div><!-- /drawer -->
+
+
+<!-- ════════════════════════════════════════════════════════════
+     TOAST NOTIFICATION
+═══════════════════════════════════════════════════════════════ -->
+<div id="rules-toast" class="toast align-items-center border-0" role="alert" style="position:fixed; bottom:24px; right:24px; z-index:9999; min-width:280px;">
+  <div class="d-flex">
+    <div class="toast-body" id="rules-toast-msg">Done.</div>
+    <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="document.getElementById('rules-toast').classList.remove('show')"></button>
   </div>
 </div>
 
-<!-- Custom Styles for Rules Tab -->
+
+<!-- ════════════════════════════════════════════════════════════
+     STYLES
+═══════════════════════════════════════════════════════════════ -->
 <style>
-#rules-tab .card {
+/* ── Summary Strip ── */
+.rules-stat-pill {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  background: #f8f9fa;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  padding: 8px 16px;
+  border: 1px solid #dee2e6;
 }
+.rules-stat-count { font-size: 20px; font-weight: 700; }
+.rules-stat-label { font-size: 12px; color: #6c757d; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+.rules-stat-total { font-size: 12px; color: #adb5bd; }
+.rules-stat-budget .rules-stat-count { color: #0d6efd; }
+.rules-stat-bid    .rules-stat-count { color: #198754; }
+.rules-stat-status .rules-stat-count { color: #dc3545; }
+.rules-stat-active .rules-stat-count { color: #0d6efd; }
 
-#rules-tab .table tbody tr:hover {
-  background-color: #f8f9fa;
-}
-
-#rules-tab .badge {
-  font-weight: 600;
-}
-
-#rules-tab .card-header {
-  border-bottom: 2px solid #dee2e6;
-}
-
-#rules-tab th {
-  font-weight: 600;
-  font-size: 13px;
+/* ── Section Headers ── */
+.rules-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #495057;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: .6px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rules-section-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* ── Card Grid ── */
+.rules-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+/* ── Rule Card ── */
+.rule-card {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #dee2e6;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  transition: opacity .25s, box-shadow .2s;
+  position: relative;
+}
+.rule-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+.rule-card.rule-disabled { opacity: .45; }
+.rule-card.rule-specific { border-color: #0d6efd; border-width: 2px; }
+
+/* top colour bar */
+.rule-card-bar {
+  height: 4px;
+  width: 100%;
+  display: block;
+}
+
+/* ── Card Body ── */
+.rule-card-body { padding: 14px 16px 10px; }
+.rule-type-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 2px;
+}
+.rule-type-label.budget { color: #0d6efd; }
+.rule-type-label.bid    { color: #198754; }
+.rule-type-label.status { color: #dc3545; }
+.rule-name { font-weight: 700; font-size: 14px; color: #212529; line-height: 1.3; }
+.rule-toggle-wrap { position: absolute; top: 18px; right: 14px; }
+
+/* ── Condition Block ── */
+.rule-condition-block {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 10px 0 8px;
+  font-size: 12px;
   color: #495057;
 }
-
-#rules-tab td {
-  vertical-align: middle;
+.rule-condition-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: #6c757d;
+  margin-bottom: 4px;
 }
+.rule-condition-row { margin-bottom: 2px; }
+
+/* ── Action Block ── */
+.rule-action-block {
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.rule-action-increase { background: linear-gradient(90deg,#d1fae5,#ecfdf5); color: #065f46; }
+.rule-action-decrease { background: linear-gradient(90deg,#fee2e2,#fef2f2); color: #991b1b; }
+.rule-action-hold     { background: linear-gradient(90deg,#e0f2fe,#f0f9ff); color: #075985; }
+.rule-action-flag     { background: linear-gradient(90deg,#fef9c3,#fefce8); color: #92400e; }
+.rule-action-sub      { font-size: 11px; font-weight: 400; margin-top: 2px; opacity: .8; }
+
+/* ── Card Footer ── */
+.rule-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-top: 1px solid #f0f0f0;
+  flex-wrap: wrap;
+}
+.rule-scope-pill {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: #e9ecef;
+  color: #495057;
+  font-weight: 600;
+}
+.rule-risk-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.risk-low    { background: #d1fae5; color: #065f46; }
+.risk-medium { background: #fef3c7; color: #92400e; }
+.risk-high   { background: #fee2e2; color: #991b1b; }
+.risk-unknown{ background: #e9ecef; color: #6c757d; }
+.rule-override-tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #cfe2ff;
+  color: #084298;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+.rule-card-actions { margin-left: auto; display: flex; gap: 4px; }
+.rule-btn-edit, .rule-btn-delete {
+  background: none;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+  padding: 4px 7px;
+  cursor: pointer;
+  transition: all .15s;
+  line-height: 1;
+}
+.rule-btn-edit:hover  { background: #e9ecef; }
+.rule-btn-delete:hover { border-color: #dc3545; color: #dc3545; }
+
+/* ── Empty Section ── */
+.rules-empty-section {
+  color: #adb5bd;
+  font-size: 13px;
+  padding: 20px 0;
+  text-align: center;
+  font-style: italic;
+}
+
+/* ── Drawer Steps ── */
+.drawer-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.drawer-step-number {
+  width: 24px; height: 24px;
+  background: #0d6efd;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.drawer-step-title { font-weight: 700; font-size: 14px; }
+
+/* ── Scope Cards ── */
+.scope-card {
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  padding: 12px;
+  transition: all .15s;
+}
+.scope-card:hover { border-color: #0d6efd; }
+.scope-card.selected { border-color: #0d6efd; background: #f0f5ff; }
+
+/* ── Live Preview ── */
+.rules-preview-box {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.rules-preview-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: #6c757d;
+  margin-bottom: 6px;
+}
+.preview-line { margin-bottom: 3px; font-size: 13px; }
+.preview-label { font-weight: 600; color: #495057; margin-right: 4px; }
 </style>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  'use strict';
+
+  // ── State ──────────────────────────────────────────────────
+  let allRules = [];
+  let currentFilter = 'all';
+  let editingRuleId = null;
+
+  // ── Metric / operator display maps ────────────────────────
+  const METRIC_LABELS = {
+    roas_7d: 'ROAS (7d)', roas_30d: 'ROAS (30d)',
+    conversions_7d: 'Conversions (7d)', conversions_30d: 'Conversions (30d)',
+    clicks_7d: 'Clicks (7d)', cost_7d: 'Cost (7d)', ctr_7d: 'CTR (7d)',
+    cost_cv_14d: 'Cost CV (14d)', cost_spike_confidence: 'Cost Spike Confidence',
+    cost_drop_detected: 'Cost Drop', cvr_drop_detected: 'CVR Drop',
+    ctr_drop_detected: 'CTR Drop', pace_over_cap_detected: 'Pace Over Cap',
+  };
+  const OP_LABELS = { gt: '>', gte: '≥', lt: '<', lte: '≤', eq: '=' };
+  const UNIT_LABELS = { x_target: '× target', absolute: '' };
+  const DIR_LABELS = {
+    increase: 'Increase', decrease: 'Decrease', hold: 'Hold (no change)', flag: 'Flag for review'
+  };
+
+  // ── Init ───────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function () {
+    // Seed from Jinja data if available (avoids initial API round-trip)
+    const seed = {{ rules_config | tojson | safe }};
+    if (seed && seed.length) {
+      allRules = seed;
+      renderAll();
+    } else {
+      fetchRules();
+    }
+    setupFilterBar();
+    // Select blanket by default in drawer
+    setScopeCard('blanket');
+  });
+
+  // ── Fetch rules from API ───────────────────────────────────
+  function fetchRules() {
+    setLoading(true);
+    fetch('/api/rules')
+      .then(r => r.json())
+      .then(data => {
+        allRules = data.rules || [];
+        setLoading(false);
+        renderAll();
+      })
+      .catch(err => {
+        setLoading(false);
+        showError('Failed to load rules: ' + err.message);
+      });
+  }
+
+  // ── Render everything ──────────────────────────────────────
+  function renderAll() {
+    renderSummaryStrip();
+    renderCards();
+  }
+
+  function renderSummaryStrip() {
+    const budget = allRules.filter(r => r.rule_type === 'budget').length;
+    const bid    = allRules.filter(r => r.rule_type === 'bid').length;
+    const status = allRules.filter(r => r.rule_type === 'status').length;
+    const active = allRules.filter(r => r.enabled).length;
+    setText('stat-budget-count', budget);
+    setText('stat-bid-count', bid);
+    setText('stat-status-count', status);
+    setText('stat-active-count', active);
+    setText('stat-total-count', '/ ' + allRules.length + ' total');
+  }
+
+  function renderCards() {
+    const types = ['budget', 'bid', 'status'];
+    types.forEach(type => {
+      const grid = document.getElementById('grid-' + type);
+      const countEl = document.getElementById('section-count-' + type);
+      const filtered = applyFilter(allRules.filter(r => r.rule_type === type));
+      if (countEl) countEl.textContent = filtered.length;
+      if (!grid) return;
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="rules-empty-section">No ' + type + ' rules match the current filter.</div>';
+        return;
+      }
+      grid.innerHTML = filtered.map(buildCardHTML).join('');
+      // Show/hide sections based on type filter
+      const section = document.getElementById('section-' + type);
+      if (section) {
+        const showSection = !['budget','bid','status'].includes(currentFilter) || currentFilter === type;
+        section.style.display = showSection ? '' : 'none';
+      }
+    });
+  }
+
+  function applyFilter(rules) {
+    switch (currentFilter) {
+      case 'budget': return rules; // already filtered by type
+      case 'bid':    return rules;
+      case 'status': return rules;
+      case 'blanket':  return rules.filter(r => r.scope === 'blanket');
+      case 'specific': return rules.filter(r => r.scope === 'specific');
+      case 'active':   return rules.filter(r => r.enabled);
+      default:         return rules;
+    }
+  }
+
+  // ── Build card HTML ────────────────────────────────────────
+  function buildCardHTML(rule) {
+    const typeColors = { budget: '#0d6efd', bid: '#198754', status: '#dc3545' };
+    const color = typeColors[rule.rule_type] || '#6c757d';
+    const isSpecific = rule.scope === 'specific';
+    const isDisabled = !rule.enabled;
+
+    // Condition text
+    let condHTML = '<div class="rule-condition-label">When all of these are true:</div>';
+    if (rule.condition_metric) {
+      const m = METRIC_LABELS[rule.condition_metric] || rule.condition_metric;
+      const op = OP_LABELS[rule.condition_operator] || rule.condition_operator || '';
+      const v = rule.condition_value !== null && rule.condition_value !== undefined ? rule.condition_value : '';
+      const u = UNIT_LABELS[rule.condition_unit] !== undefined ? UNIT_LABELS[rule.condition_unit] : (rule.condition_unit || '');
+      condHTML += `<div class="rule-condition-row">IF ${esc(m)} ${esc(op)} ${esc(v)} ${esc(u)}</div>`;
+    }
+    if (rule.condition_2_metric) {
+      const m = METRIC_LABELS[rule.condition_2_metric] || rule.condition_2_metric;
+      const op = OP_LABELS[rule.condition_2_operator] || rule.condition_2_operator || '';
+      const v = rule.condition_2_value !== null && rule.condition_2_value !== undefined ? rule.condition_2_value : '';
+      const u = UNIT_LABELS[rule.condition_2_unit] !== undefined ? UNIT_LABELS[rule.condition_2_unit] : (rule.condition_2_unit || '');
+      condHTML += `<div class="rule-condition-row">AND ${esc(m)} ${esc(op)} ${esc(v)} ${esc(u)}</div>`;
+    }
+    if (!rule.condition_metric) {
+      condHTML += '<div class="text-muted" style="font-size:11px;font-style:italic;">No conditions defined</div>';
+    }
+
+    // Action text
+    const dir = rule.action_direction || 'hold';
+    const mag = rule.action_magnitude || 0;
+    let actionText = DIR_LABELS[dir] || dir;
+    if (dir === 'increase' || dir === 'decrease') {
+      actionText += ` by ${mag}%`;
+    }
+    const typeLabel = rule.rule_type.charAt(0).toUpperCase() + rule.rule_type.slice(1);
+    const actionTargets = { budget: 'daily budget', bid: 'bid target', status: 'campaign status' };
+    const actionTarget = dir === 'flag' ? 'campaign for review' : (actionTargets[rule.rule_type] || rule.rule_type);
+
+    const actionClass = 'rule-action-' + (dir || 'hold');
+    const subText = `${rule.cooldown_days || 7}-day cooldown`;
+
+    // Scope
+    const scopeIcon = isSpecific
+      ? '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>'
+      : '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="currentColor" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 2.625 7 7 0 0 0 .041 9.75A7 7 0 1 0 8 1zm0 1a6 6 0 1 1 0 12A6 6 0 0 1 8 2z"/></svg>';
+    const scopeLabel = isSpecific ? (rule.campaign_id || 'Campaign-specific') : 'All campaigns';
+
+    const riskClass = 'risk-' + (rule.risk_level || 'unknown');
+    const riskLabel = (rule.risk_level || 'unknown').charAt(0).toUpperCase() + (rule.risk_level || 'unknown').slice(1);
+
+    // Toggle
+    const toggleChecked = rule.enabled ? 'checked' : '';
+    const checkedClass = isDisabled ? 'rule-disabled' : '';
+    const specificClass = isSpecific ? 'rule-specific' : '';
+
+    // Edit / delete SVGs
+    const pencilSVG = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z"/></svg>';
+    const binSVG = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>';
+
+    return `
+<div class="rule-card ${checkedClass} ${specificClass}" id="card-${esc(rule.rule_id)}" data-rule-id="${esc(rule.rule_id)}" data-rule-type="${esc(rule.rule_type)}" data-scope="${esc(rule.scope)}" data-enabled="${rule.enabled}">
+  <span class="rule-card-bar" style="background:${color};"></span>
+  <div class="rule-card-body">
+    <div class="rule-type-label ${esc(rule.rule_type)}">${esc(rule.display_name || '')}</div>
+    <div class="rule-name">${esc(rule.name || '')}</div>
+    <div class="rule-toggle-wrap">
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" ${toggleChecked} onchange="toggleRule('${esc(rule.rule_id)}', this)" title="${rule.enabled ? 'Disable rule' : 'Enable rule'}">
+      </div>
+    </div>
+    <div class="rule-condition-block">${condHTML}</div>
+    <div class="rule-action-block ${actionClass}">
+      ${esc(actionText)} ${actionTarget}
+      <div class="rule-action-sub">${esc(subText)}</div>
+    </div>
+  </div>
+  <div class="rule-card-footer">
+    <span class="rule-scope-pill">${scopeIcon} ${esc(scopeLabel)}</span>
+    <span class="rule-risk-badge ${riskClass}">${esc(riskLabel)}</span>
+    ${isSpecific ? '<span class="rule-override-tag">Overrides blanket</span>' : ''}
+    <div class="rule-card-actions">
+      <button class="rule-btn-edit" onclick="openEditRuleDrawer('${esc(rule.rule_id)}')" title="Edit rule">${pencilSVG}</button>
+      <button class="rule-btn-delete" onclick="deleteRule('${esc(rule.rule_id)}')" title="Delete rule">${binSVG}</button>
+    </div>
+  </div>
+</div>`;
+  }
+
+  // ── Filter bar ─────────────────────────────────────────────
+  function setupFilterBar() {
+    document.querySelectorAll('.rules-filter-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        currentFilter = this.dataset.filter;
+        document.querySelectorAll('.rules-filter-btn').forEach(b => {
+          b.classList.remove('active', 'btn-primary');
+          b.classList.add('btn-outline-secondary');
+        });
+        this.classList.add('active', 'btn-primary');
+        this.classList.remove('btn-outline-secondary');
+        renderCards();
+      });
+    });
+  }
+
+  // ── Toggle ─────────────────────────────────────────────────
+  window.toggleRule = function (ruleId, checkbox) {
+    fetch(`/api/rules/${ruleId}/toggle`, { method: 'PUT' })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) {
+          showToast(data.message || 'Toggle failed', 'danger');
+          checkbox.checked = !checkbox.checked;
+          return;
+        }
+        // Update local state
+        const rule = allRules.find(r => r.rule_id === ruleId);
+        if (rule) rule.enabled = data.enabled;
+        // Update card opacity
+        const card = document.getElementById('card-' + ruleId);
+        if (card) {
+          card.setAttribute('data-enabled', data.enabled);
+          card.classList.toggle('rule-disabled', !data.enabled);
+        }
+        renderSummaryStrip();
+        showToast(data.message, data.enabled ? 'success' : 'secondary');
+      })
+      .catch(err => {
+        showToast('Error: ' + err.message, 'danger');
+        checkbox.checked = !checkbox.checked;
+      });
+  };
+
+  // ── Delete ─────────────────────────────────────────────────
+  window.deleteRule = function (ruleId) {
+    const rule = allRules.find(r => r.rule_id === ruleId);
+    const name = rule ? rule.display_name : ruleId;
+    if (!confirm(`Delete "${name}"?\n\nThis cannot be undone.`)) return;
+
+    fetch(`/api/rules/${ruleId}`, { method: 'DELETE' })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) { showToast(data.message || 'Delete failed', 'danger'); return; }
+        allRules = allRules.filter(r => r.rule_id !== ruleId);
+        renderAll();
+        showToast(data.message, 'success');
+      })
+      .catch(err => showToast('Error: ' + err.message, 'danger'));
+  };
+
+  // ── Drawer: open for ADD ───────────────────────────────────
+  window.openAddRuleDrawer = function () {
+    editingRuleId = null;
+    document.getElementById('drawer-title').textContent = 'Add Rule';
+    document.getElementById('drawer-save-btn').textContent = 'Save Rule';
+    resetDrawer();
+    openDrawer();
+  };
+
+  // ── Drawer: open for EDIT ──────────────────────────────────
+  window.openEditRuleDrawer = function (ruleId) {
+    const rule = allRules.find(r => r.rule_id === ruleId);
+    if (!rule) return;
+    editingRuleId = ruleId;
+    document.getElementById('drawer-title').textContent = 'Edit ' + (rule.display_name || 'Rule');
+    document.getElementById('drawer-save-btn').textContent = 'Update Rule';
+    prefillDrawer(rule);
+    openDrawer();
+  };
+
+  function prefillDrawer(rule) {
+    resetDrawer();
+    setVal('drawer-rule-type', rule.rule_type || '');
+    setScopeCard(rule.scope || 'blanket', rule.campaign_id || null);
+    setVal('cond1-metric', rule.condition_metric || '');
+    setVal('cond1-operator', rule.condition_operator || '');
+    setVal('cond1-value', rule.condition_value !== null && rule.condition_value !== undefined ? rule.condition_value : '');
+    setVal('cond1-unit', rule.condition_unit || 'absolute');
+    setVal('cond2-metric', rule.condition_2_metric || '');
+    setVal('cond2-operator', rule.condition_2_operator || '');
+    setVal('cond2-value', rule.condition_2_value !== null && rule.condition_2_value !== undefined ? rule.condition_2_value : '');
+    setVal('cond2-unit', rule.condition_2_unit || 'absolute');
+    setVal('drawer-direction', rule.action_direction || '');
+    setVal('drawer-magnitude', rule.action_magnitude !== undefined ? rule.action_magnitude : '');
+    setVal('drawer-name', rule.name || '');
+    setVal('drawer-cooldown', rule.cooldown_days || 7);
+    setVal('drawer-risk', rule.risk_level || 'low');
+    onDirectionChange();
+    updatePreview();
+  }
+
+  function resetDrawer() {
+    ['drawer-rule-type','drawer-direction','drawer-name',
+     'cond1-metric','cond1-operator','cond1-value',
+     'cond2-metric','cond2-operator','cond2-value'].forEach(id => setVal(id, ''));
+    setVal('cond1-unit', 'absolute'); setVal('cond2-unit', 'absolute');
+    setVal('drawer-magnitude', ''); setVal('drawer-cooldown', 7); setVal('drawer-risk', 'low');
+    setScopeCard('blanket');
+    onDirectionChange();
+    updatePreview();
+  }
+
+  function openDrawer() {
+    const drawer = document.getElementById('rules-drawer');
+    const backdrop = document.getElementById('rules-drawer-backdrop');
+    drawer.style.display = 'flex';
+    backdrop.style.display = 'block';
+    setTimeout(() => drawer.style.transform = 'translateX(0)', 10);
+  }
+
+  window.closeRuleDrawer = function () {
+    const drawer = document.getElementById('rules-drawer');
+    const backdrop = document.getElementById('rules-drawer-backdrop');
+    drawer.style.display = 'none';
+    backdrop.style.display = 'none';
+    editingRuleId = null;
+  };
+
+  // ── Save rule ──────────────────────────────────────────────
+  window.saveRule = function () {
+    const payload = {
+      rule_type:           getVal('drawer-rule-type'),
+      name:                getVal('drawer-name').trim(),
+      scope:               getVal('drawer-scope'),
+      campaign_id:         getVal('drawer-campaign-id') || null,
+      condition_metric:    getVal('cond1-metric') || null,
+      condition_operator:  getVal('cond1-operator') || null,
+      condition_value:     getVal('cond1-value') !== '' ? parseFloat(getVal('cond1-value')) : null,
+      condition_unit:      getVal('cond1-unit') || null,
+      condition_2_metric:  getVal('cond2-metric') || null,
+      condition_2_operator:getVal('cond2-operator') || null,
+      condition_2_value:   getVal('cond2-value') !== '' ? parseFloat(getVal('cond2-value')) : null,
+      condition_2_unit:    getVal('cond2-unit') || null,
+      action_direction:    getVal('drawer-direction'),
+      action_magnitude:    getVal('drawer-magnitude') !== '' ? parseFloat(getVal('drawer-magnitude')) : 0,
+      cooldown_days:       parseInt(getVal('drawer-cooldown')) || 7,
+      risk_level:          getVal('drawer-risk') || 'unknown',
+      enabled:             true,
+    };
+
+    if (!payload.rule_type) { showToast('Please select a rule type.', 'warning'); return; }
+    if (!payload.name)      { showToast('Please enter a rule name.', 'warning'); return; }
+    if (!payload.action_direction) { showToast('Please select an action direction.', 'warning'); return; }
+
+    const btn = document.getElementById('drawer-save-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    const url    = editingRuleId ? `/api/rules/${editingRuleId}/update` : '/api/rules/add';
+    const method = editingRuleId ? 'PUT' : 'POST';
+
+    fetch(url, {
+      method,
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.textContent = editingRuleId ? 'Update Rule' : 'Save Rule';
+      if (!data.success) { showToast(data.message || 'Save failed', 'danger'); return; }
+
+      if (editingRuleId) {
+        const idx = allRules.findIndex(r => r.rule_id === editingRuleId);
+        if (idx >= 0) allRules[idx] = data.rule;
+      } else {
+        allRules.push(data.rule);
+      }
+      renderAll();
+      closeRuleDrawer();
+      showToast(data.message, 'success');
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.textContent = editingRuleId ? 'Update Rule' : 'Save Rule';
+      showToast('Error: ' + err.message, 'danger');
+    });
+  };
+
+  // ── Scope card selection ───────────────────────────────────
+  window.setScopeCard = function (scope, preselectedCampaignId) {
+    setVal('drawer-scope', scope);
+    document.getElementById('scope-blanket-card').classList.toggle('selected', scope === 'blanket');
+    document.getElementById('scope-specific-card').classList.toggle('selected', scope === 'specific');
+    document.getElementById('campaign-picker-row').style.display = scope === 'specific' ? '' : 'none';
+
+    if (scope === 'specific') {
+      const select = document.getElementById('drawer-campaign-id');
+      // Only fetch if not already populated
+      if (select.options.length <= 1) {
+        select.innerHTML = '<option value="">Loading campaigns…</option>';
+        fetch('/api/campaigns-list')
+          .then(r => r.json())
+          .then(data => {
+            select.innerHTML = '<option value="">— Select campaign —</option>';
+            (data.campaigns || []).forEach(c => {
+              const opt = document.createElement('option');
+              opt.value = c.campaign_id;
+              opt.textContent = c.campaign_name + ' (' + c.campaign_id + ')';
+              select.appendChild(opt);
+            });
+            if (preselectedCampaignId) select.value = preselectedCampaignId;
+          })
+          .catch(() => {
+            select.innerHTML = '<option value="">Failed to load campaigns</option>';
+          });
+      } else if (preselectedCampaignId) {
+        select.value = preselectedCampaignId;
+      }
+    }
+  };
+
+  // ── Direction change (hide magnitude for hold/flag) ────────
+  window.onDirectionChange = function () {
+    const dir = getVal('drawer-direction');
+    const mg = document.getElementById('magnitude-input-group');
+    if (mg) mg.style.display = (dir === 'hold' || dir === 'flag' || dir === '') ? 'none' : '';
+  };
+
+  window.onRuleTypeChange = function () { updatePreview(); };
+
+  // ── Live preview ───────────────────────────────────────────
+  window.updatePreview = function () {
+    const ruleType = getVal('drawer-rule-type');
+    const name = getVal('drawer-name').trim();
+    const direction = getVal('drawer-direction');
+    const magnitude = getVal('drawer-magnitude');
+    const scope = getVal('drawer-scope');
+    const cooldown = getVal('drawer-cooldown');
+
+    const m1 = METRIC_LABELS[getVal('cond1-metric')] || getVal('cond1-metric');
+    const op1 = OP_LABELS[getVal('cond1-operator')] || getVal('cond1-operator');
+    const v1 = getVal('cond1-value');
+    const u1 = UNIT_LABELS[getVal('cond1-unit')] !== undefined ? UNIT_LABELS[getVal('cond1-unit')] : getVal('cond1-unit');
+
+    const m2 = METRIC_LABELS[getVal('cond2-metric')] || '';
+    const op2 = OP_LABELS[getVal('cond2-operator')] || '';
+    const v2 = getVal('cond2-value');
+    const u2 = UNIT_LABELS[getVal('cond2-unit')] !== undefined ? UNIT_LABELS[getVal('cond2-unit')] : getVal('cond2-unit');
+
+    let html = '';
+    if (name) html += `<div class="preview-line"><span class="preview-label">NAME:</span>${esc(name)}</div>`;
+    if (m1 && op1 && v1) html += `<div class="preview-line"><span class="preview-label">IF:</span>${esc(m1)} ${esc(op1)} ${esc(v1)} ${esc(u1)}</div>`;
+    if (m2 && op2 && v2) html += `<div class="preview-line"><span class="preview-label">AND:</span>${esc(m2)} ${esc(op2)} ${esc(v2)} ${esc(u2)}</div>`;
+    if (direction) {
+      const dirLabel = DIR_LABELS[direction] || direction;
+      const magText = (direction === 'increase' || direction === 'decrease') && magnitude ? ` by ${magnitude}%` : '';
+      html += `<div class="preview-line"><span class="preview-label">THEN:</span>${esc(dirLabel)}${magText}</div>`;
+    }
+    if (scope) html += `<div class="preview-line"><span class="preview-label">SCOPE:</span>${scope === 'specific' ? 'Campaign-specific' : 'All campaigns'}</div>`;
+    if (cooldown) html += `<div class="preview-line"><span class="preview-label">COOLDOWN:</span>${cooldown} days</div>`;
+
+    document.getElementById('preview-content').innerHTML = html || '<span class="text-muted small">Complete the form above to see your rule.</span>';
+  };
+
+  // ── UI helpers ─────────────────────────────────────────────
+  function setLoading(show) {
+    const el = document.getElementById('rules-loading');
+    if (el) el.style.display = show ? '' : 'none';
+  }
+  function showError(msg) {
+    const el = document.getElementById('rules-error');
+    if (el) { el.textContent = msg; el.style.display = ''; }
+  }
+  function setVal(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  }
+  function getVal(id) {
+    const el = document.getElementById(id);
+    return el ? el.value : '';
+  }
+  function setText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+  function esc(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function showToast(msg, type) {
+    const toast = document.getElementById('rules-toast');
+    const body  = document.getElementById('rules-toast-msg');
+    if (!toast || !body) return;
+    body.textContent = msg;
+    toast.className = `toast align-items-center text-white border-0 bg-${type || 'primary'}`;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3200);
+  }
+
+})();
+</script>

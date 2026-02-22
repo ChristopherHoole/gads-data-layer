@@ -26,64 +26,62 @@ import duckdb
 bp = Blueprint('ads', __name__)
 
 
+ALLOWED_ADS_SORT = {
+    'final_url', 'campaign_name', 'ad_group_name', 'ad_type', 'ad_strength',
+    'cost', 'conversions_value', 'conversions', 'conv_value_per_cost',
+    'cpa', 'conv_rate', 'all_conversions', 'all_conversions_value',
+    'impressions', 'clicks', 'avg_cpc', 'ctr',
+}
+
+
 def load_ad_data(
     conn: duckdb.DuckDBPyConnection,
     customer_id: str,
-    days: int
+    days: int,
+    sort_by: str = 'impressions',
+    sort_dir: str = 'desc',
 ) -> List[Dict[str, Any]]:
     """
     Load ad data from ro.analytics.ad_features_daily.
-
-    Uses latest snapshot date only (pre-aggregated features table).
-    Reads the correct windowed columns based on the days parameter.
-
-    Table confirmed columns:
-        ad_status, ad_type, ad_strength, headlines (VARCHAR[]),
-        descriptions (VARCHAR[]), final_url,
-        impressions_7d/30d/90d, clicks_7d/30d/90d,
-        cost_micros_7d/30d/90d, conversions_7d/30d/90d
-
-    Args:
-        conn: Database connection
-        customer_id: Customer ID
-        days: Date window — 7, 30, or 90
-
-    Returns:
-        List of ad dictionaries
+    Uses 30d windowed columns. Sort applied SQL-side.
     """
-    # Map days to column suffix
-    if days == 7:
-        suffix = '7d'
-    elif days == 90:
-        suffix = '90d'
-    else:
-        suffix = '30d'  # default
-
+    # Always use 30d — windowed columns only
     query = f"""
         SELECT
             ad_id,
-            campaign_id,
-            ad_group_id,
+            final_url,
             campaign_name,
             ad_group_name,
             ad_status,
             ad_type,
-            ad_strength,
-            array_length(headlines)    AS headlines_count,
-            array_length(descriptions) AS descriptions_count,
-            final_url,
-            impressions_{suffix}       AS impressions,
-            clicks_{suffix}            AS clicks,
-            cost_micros_{suffix}       AS cost_micros,
-            conversions_{suffix}       AS conversions
-        FROM analytics.ad_features_daily
+            cost_micros_30d / 1000000.0                                      AS cost,
+            conversions_value_30d                                             AS conversions_value,
+            conversions_30d                                                   AS conversions,
+            CASE WHEN cost_micros_30d > 0
+                 THEN conversions_value_30d / (cost_micros_30d / 1000000.0)
+                 ELSE NULL END                                                AS conv_value_per_cost,
+            cpa_30d / 1000000.0                                              AS cpa,
+            cvr_30d                                                           AS conv_rate,
+            NULL                                                              AS all_conversions,
+            NULL                                                              AS cost_per_all_conv,
+            NULL                                                              AS all_conv_rate,
+            NULL                                                              AS all_conversions_value,
+            NULL                                                              AS all_conv_value_per_cost,
+            impressions_30d                                                   AS impressions,
+            clicks_30d                                                        AS clicks,
+            CASE WHEN clicks_30d > 0
+                 THEN (cost_micros_30d / 1000000.0) / clicks_30d
+                 ELSE NULL END                                                AS avg_cpc,
+            ctr_30d                                                           AS ctr,
+            ad_strength
+        FROM ro.analytics.ad_features_daily
         WHERE customer_id = ?
           AND snapshot_date = (
               SELECT MAX(snapshot_date)
-              FROM analytics.ad_features_daily
+              FROM ro.analytics.ad_features_daily
               WHERE customer_id = ?
           )
-        ORDER BY cost_micros_{suffix} DESC NULLS LAST
+        ORDER BY {sort_by} {sort_dir} NULLS LAST
     """
 
     try:
@@ -93,35 +91,19 @@ def load_ad_data(
         ads = []
         for row in rows:
             d = dict(zip(cols, row))
-
-            # Calculate cost, CTR, CPA in Python from raw values
-            cost_micros = int(d.get('cost_micros') or 0)
-            impressions = int(d.get('impressions') or 0)
-            clicks      = int(d.get('clicks')      or 0)
-            conversions = float(d.get('conversions') or 0)
-            cost        = cost_micros / 1000000.0
-            ctr         = (clicks / impressions * 100) if impressions > 0 else 0.0
-            cpa         = (cost / conversions)         if conversions  > 0 else 0.0
-
-            # Safe type conversions — use confirmed column names
-            d['ad_id']              = str(d.get('ad_id', ''))
-            d['campaign_id']        = str(d.get('campaign_id', ''))
-            d['ad_group_id']        = str(d.get('ad_group_id', ''))
-            d['campaign_name']      = str(d.get('campaign_name')  or 'Unknown')
-            d['ad_group_name']      = str(d.get('ad_group_name')  or 'Unknown')
-            d['status']             = str(d.get('ad_status')      or 'UNKNOWN')
-            d['ad_type']            = str(d.get('ad_type')        or 'UNKNOWN')
-            d['ad_strength']        = d.get('ad_strength')        # keep None — handled in template
-            d['headlines_count']    = int(d.get('headlines_count')    or 0)
-            d['descriptions_count'] = int(d.get('descriptions_count') or 0)
-            d['final_url']          = str(d.get('final_url')      or '')
-            d['impressions']        = impressions
-            d['clicks']             = clicks
-            d['cost']               = cost
-            d['conversions']        = conversions
-            d['ctr']                = ctr
-            d['cpa']                = cpa
-
+            d['ad_id']         = str(d.get('ad_id', ''))
+            d['final_url']     = str(d.get('final_url')     or '')
+            d['campaign_name'] = str(d.get('campaign_name') or 'Unknown')
+            d['ad_group_name'] = str(d.get('ad_group_name') or 'Unknown')
+            d['status']        = str(d.get('ad_status')     or 'UNKNOWN')
+            d['ad_type']       = str(d.get('ad_type')       or 'UNKNOWN')
+            d['ad_strength']   = str(d.get('ad_strength')   or '')
+            for f in ['cost', 'conversions_value', 'conversions', 'conv_value_per_cost',
+                      'cpa', 'conv_rate', 'all_conversions', 'cost_per_all_conv',
+                      'all_conv_rate', 'all_conversions_value', 'all_conv_value_per_cost',
+                      'impressions', 'clicks', 'avg_cpc', 'ctr']:
+                val = d.get(f)
+                d[f] = float(val) if val is not None else None
             ads.append(d)
 
         return ads
@@ -394,17 +376,8 @@ def _build_ads_chart_data(conn, customer_id: str, active_days: int, date_from=No
 @login_required
 def ads():
     """
-    Ads page - Bootstrap 5 redesign (Chat 21f).
-
-    URL Parameters:
-        days:     Date window 7/30/90 (default: 30)
-        page:     Page number (default: 1)
-        per_page: Rows per page 10/25/50/100 (default: 25)
-        status:   'all', 'enabled', 'paused' (default: 'all')
+    Ads page - Bootstrap 5 redesign (Chat 21f / M4).
     """
-    # Get date range from session.
-    # Ads uses pre-aggregated windowed columns (_7d/_30d/_90d).
-    # Custom date ranges are not supported by the schema — fall back to 30d.
     active_days, date_from, date_to = get_date_range_from_session()
     if date_from and date_to:
         days = 30
@@ -417,48 +390,37 @@ def ads():
     page     = request.args.get('page',     default=1,     type=int)
     per_page = request.args.get('per_page', default=25,    type=int)
     status   = request.args.get('status',   default='all', type=str).lower()
+    sort_by  = request.args.get('sort_by',  default='impressions', type=str)
+    sort_dir = request.args.get('sort_dir', default='desc', type=str)
 
-    # Validate parameters
     if per_page not in [10, 25, 50, 100]:            per_page = 25
     if page     < 1:                                 page     = 1
     if status   not in ['all', 'enabled', 'paused']: status   = 'all'
+    if sort_by  not in ALLOWED_ADS_SORT:             sort_by  = 'impressions'
+    if sort_dir not in ['asc', 'desc']:              sort_dir = 'desc'
 
-    # Get common page context
     config, clients, current_client_path = get_page_context()
-
-    # Get database connection
     conn = get_db_connection(config)
 
-    # Load all ad data for selected window
-    all_ads = load_ad_data(conn, config.customer_id, days)
+    all_ads = load_ad_data(conn, config.customer_id, days, sort_by, sort_dir)
 
-    # M2: Metrics cards (pass all_ads before status filter for totals)
     financial_cards, actions_cards = load_ads_metrics_cards(
         conn, config.customer_id, days, all_ads
     )
 
-    # M3: Chart data
     chart_data = _build_ads_chart_data(conn, config.customer_id, active_days, date_from, date_to)
 
     conn.close()
 
-    # Apply status filter (Python-side)
     filtered_ads = apply_status_filter(all_ads, status)
-
-    # Compute metrics bar from filtered list
     metrics = compute_metrics(filtered_ads)
-
-    # Apply pagination
     ads_paginated, total_ads, total_pages = apply_pagination(filtered_ads, page, per_page)
 
-    # Load rules for this page
     try:
         rules       = get_rules_for_page('ad', customer_id=config.customer_id)
         rule_counts = count_rules_by_category(rules)
     except Exception as e:
         print(f"[Ads] Rules load error: {e}")
-        import traceback
-        traceback.print_exc()
         rules       = []
         rule_counts = {}
 
@@ -466,35 +428,28 @@ def ads():
 
     return render_template(
         'ads_new.html',
-        # Client context
         client_name=config.client_name,
         available_clients=clients,
         current_client_config=current_client_path,
-        # Ad data
         ads=ads_paginated,
         total_ads=total_ads,
-        # Metrics
         metrics=metrics,
-        # Pagination
         page=page,
         per_page=per_page,
         total_pages=total_pages,
-        # Filters
         days=days,
         active_days=active_days,
         date_from=date_from,
         date_to=date_to,
         status=status,
-        # Rules
+        sort_by=sort_by,
+        sort_dir=sort_dir,
         rules=rules,
         rule_counts=rule_counts,
-        # Error
         error=None,
-        # M2: Metrics cards
         financial_cards=financial_cards,
         actions_cards=actions_cards,
         metrics_collapsed=get_metrics_collapsed('ads'),
-        # M3: Chart
         chart_data=chart_data,
         active_metrics=get_chart_metrics('ads'),
     )
