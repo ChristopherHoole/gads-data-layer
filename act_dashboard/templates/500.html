@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>500 — Server Error | ACT</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <style>
+    body {
+      background: #f8f9fa;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .error-card {
+      text-align: center;
+      max-width: 480px;
+      padding: 48px 40px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    }
+    .error-code {
+      font-size: 72px;
+      font-weight: 700;
+      color: #1a1d23;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .error-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 12px;
+    }
+    .error-msg {
+      font-size: 14px;
+      color: #6c757d;
+      margin-bottom: 32px;
+    }
+  </style>
+</head>
+<body>
+  <div class="error-card">
+
+    <!-- ACT Logo -->
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="56" height="56" style="margin-bottom:24px">
+      <circle cx="50" cy="50" r="41" fill="none" stroke="#4285F4" stroke-width="10"/>
+      <circle cx="50" cy="50" r="29" fill="none" stroke="#EA4335" stroke-width="10"/>
+      <circle cx="50" cy="50" r="17" fill="none" stroke="#FBBC05" stroke-width="10"/>
+      <circle cx="50" cy="50" r="10" fill="#34A853"/>
+    </svg>
+
+    <div class="error-code">500</div>
+    <div class="error-title">Something Went Wrong</div>
+    <p class="error-msg">An unexpected server error occurred. The issue has been logged.</p>
+
+    <a href="/" class="btn btn-primary px-4">Back to Dashboard</a>
+
+  </div>
+</body>
+</html>
