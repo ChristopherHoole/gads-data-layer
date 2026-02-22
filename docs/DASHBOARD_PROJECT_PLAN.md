@@ -5,7 +5,7 @@
 **Framework:** Bootstrap 5  
 **Icons:** Bootstrap Icons  
 **Chat 21 Status:** ✅ COMPLETE - 8/8 (100%) 🏆  
-**Dashboard 3.0 Status:** 🚧 IN PROGRESS — M1 ✅ M2 ✅ M3 ✅ M4 ✅ M5 ✅ COMPLETE, M6 next  
+**Dashboard 3.0 Status:** 🚧 IN PROGRESS — M1 ✅ M2 ✅ M3 ✅ M4 ✅ M5 ✅ M6 ✅ COMPLETE, M7 next  
 **Started:** February 18, 2026  
 **Updated:** 2026-02-22  
 **Mode:** Dashboard 3.0 Phase 1 underway  
@@ -1442,11 +1442,35 @@ ORDER BY cost DESC
 
 ---
 
-#### Chat 27: M6 — Recommendations/Actions Feed 📋 NEXT
-Wireframe/design to be discussed with Master Chat before brief written.
+#### Chat 27: M6 — Recommendations Engine + UI ✅ COMPLETE
+**Date:** 2026-02-22  
+**Status:** COMPLETE ✅  
+**Summary:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_27_DETAILED_SUMMARY.md`  
+**Handoff:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_27_HANDOFF.md`  
+**Wireframe:** `C:\Users\User\Desktop\gads-data-layer\docs\M6_WIREFRAME_v5.html`
 
-#### Chat 28: M7 — Action Buttons 📋 PLANNED
-Depends on M6 design decisions.
+**Delivered:**
+- recommendations table in warehouse.duckdb (19 cols) + 22 historical rows seeded
+- recommendations_engine.py: reads rules_config.json, evaluates campaign_features_daily, inserts pending recs. Duplicate prevention on (campaign_id, rule_id).
+- /recommendations/cards JSON endpoint for JS-rendered inline cards
+- Global /recommendations page: 3 tabs (Pending 48 cards / Monitoring 4 / History 22 rows + 67% success banner)
+- Campaigns → Recommendations tab: 2-col card grids matching M6_WIREFRAME_v5 exactly
+- Action buttons built but disabled (opacity 0.5, amber note) — Chat 28 activates them
+- Regression fix: keywords/ad_groups/ads/shopping pages
+
+**Test results:** Generated=48 ✅ | SkippedDuplicate=48 ✅ | All HTTP 200 ✅
+
+#### Chat 28: M7 — Accept/Decline/Modify Wiring 🎯 NEXT
+#### Chat 28: M7 — Accept/Decline/Modify Wiring 🎯 NEXT
+**Status:** PLANNED
+
+**Deliverables:**
+- POST /recommendations/<id>/accept — monitoring transition or successful, writes to changes table
+- POST /recommendations/<id>/decline — marks declined, removes card client-side  
+- POST /recommendations/<id>/modify — Bootstrap modal + accepts with edited value
+- Card removal animations + badge count updates
+- Toast confirmations
+- Constitution cooldown enforcement on accept
 
 ---
 
@@ -1463,5 +1487,5 @@ Depends on M6 design decisions.
 ---
 
 **Last Updated:** 2026-02-22  
-**Status:** Dashboard 3.0 — M1 ✅ M2 ✅ M3 ✅ M4 ✅ M5 ✅ | M6 next  
-**Next Step:** Chat 27 — M6 Recommendations Tab (discuss with Master Chat first)
+**Status:** Dashboard 3.0 — M1 ✅ M2 ✅ M3 ✅ M4 ✅ M5 ✅ M6 ✅ | M7 next  
+**Next Step:** Chat 28 — M7 Accept/Decline/Modify wiring

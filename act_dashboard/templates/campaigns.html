@@ -352,15 +352,93 @@
     <!-- RULES TAB -->
     {% include 'components/rules_tab.html' %}
 
-    <!-- RECOMMENDATIONS TAB (placeholder — Chat 27 scope) -->
+    <!-- RECOMMENDATIONS TAB -->
     <div class="tab-pane fade" id="recommendations-tab" role="tabpanel">
-      <div class="text-center py-5">
-        <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" fill="#adb5bd" viewBox="0 0 16 16" class="mb-3"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-3.5a.5.5 0 0 1 .5.5v3.793l1.854 1.853a.5.5 0 0 1-.708.708l-2-2A.5.5 0 0 1 7.5 11V5a.5.5 0 0 1 .5-.5z"/></svg>
-        <h4 class="text-muted mb-2">💡 Recommendations</h4>
-        <p class="text-muted mb-1">Auto-generated daily from rules engine.</p>
-        <p class="text-muted mb-3">Accept / Decline / Modify actions.</p>
-        <span class="badge bg-secondary px-3 py-2" style="font-size:13px;">Chat 27 scope — coming soon</span>
+
+      <!-- Summary strip -->
+      <div class="row g-3 mb-4" id="rec-summary-strip">
+        <div class="col-6 col-md-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+              <div style="width:40px;height:40px;border-radius:50%;background:#e8f0fe;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#4a6fa5" viewBox="0 0 16 16"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-3.5a.5.5 0 0 1 .5.5v3.793l1.854 1.853a.5.5 0 0 1-.708.708l-2-2A.5.5 0 0 1 7.5 11V5a.5.5 0 0 1 .5-.5z"/></svg>
+              </div>
+              <div>
+                <div class="fw-bold fs-4 lh-1" id="rec-pending-count">—</div>
+                <div class="text-muted" style="font-size:12px;">Pending</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+              <div style="width:40px;height:40px;border-radius:50%;background:#f3e8fd;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#7c3aed" viewBox="0 0 16 16"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
+              </div>
+              <div>
+                <div class="fw-bold fs-4 lh-1" id="rec-monitoring-count">—</div>
+                <div class="text-muted" style="font-size:12px;">Monitoring</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+              <div style="width:40px;height:40px;border-radius:50%;background:#e6f4ea;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#1a7f37" viewBox="0 0 16 16"><path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/></svg>
+              </div>
+              <div>
+                <div class="fw-bold fs-4 lh-1" id="rec-success-rate">—</div>
+                <div class="text-muted" style="font-size:12px;">Success rate (30d)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+              <div style="width:40px;height:40px;border-radius:50%;background:#fff3e0;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#b45309" viewBox="0 0 16 16"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
+              </div>
+              <div>
+                <div class="fw-bold lh-1" id="rec-last-run" style="font-size:14px;">—</div>
+                <div class="text-muted" style="font-size:12px;">Last run</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <!-- Section header -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;">
+        <div>
+          <h5 style="font-size:16px;font-weight:600;margin:0 0 4px;color:#1a1d23;">Campaign Recommendations</h5>
+          <p style="margin:0;color:#6b7280;font-size:13px;">Pending and active monitoring for this page. <a href="/recommendations?tab=history" style="color:#0d6efd;text-decoration:none;">View full history →</a></p>
+        </div>
+        <button id="cam-run-engine-btn" onclick="camRunEngine()" style="background:white;border:1px solid #d0d5dd;border-radius:6px;padding:6px 14px;font-size:13px;cursor:pointer;color:#374151;display:flex;align-items:center;gap:6px;white-space:nowrap;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg>
+          Run Recommendations Now
+        </button>
+      </div>
+
+      <!-- Pending section -->
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#374151;margin-bottom:14px;display:flex;align-items:center;gap:10px;padding-left:10px;border-left:3px solid #0d6efd;">
+        Pending <span style="font-size:12px;font-weight:600;background:#f3f4f6;color:#6b7280;border-radius:10px;padding:1px 8px;" id="cam-pending-badge">—</span>
+      </div>
+      <div id="cam-pending-cards" style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:28px;">
+        <div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px;grid-column:1/-1;">Loading...</div>
+      </div>
+
+      <!-- Monitoring section -->
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#374151;margin-bottom:14px;display:flex;align-items:center;gap:10px;padding-left:10px;border-left:3px solid #7c3aed;">
+        Monitoring <span style="font-size:12px;font-weight:600;background:#f3f4f6;color:#6b7280;border-radius:10px;padding:1px 8px;" id="cam-monitoring-badge">—</span>
+      </div>
+      <div id="cam-monitoring-cards" style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:28px;">
+        <div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px;grid-column:1/-1;">Loading...</div>
+      </div>
+
     </div>
 
   </div>
@@ -373,6 +451,222 @@
 
 {% block extra_js %}
 <script>
+// Recommendations tab: load summary + cards on click
+document.getElementById('recommendations-tab-btn').addEventListener('click', function() {
+  loadRecSummary();
+  loadRecCards();
+});
+
+function loadRecSummary() {
+  fetch('/recommendations/data')
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('rec-pending-count').textContent = d.pending ?? '—';
+      document.getElementById('rec-monitoring-count').textContent = d.monitoring ?? '—';
+      document.getElementById('rec-success-rate').textContent = d.success_rate != null ? d.success_rate + '%' : '—';
+      if (d.last_run) {
+        const dt = new Date(d.last_run);
+        document.getElementById('rec-last-run').textContent = dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      }
+    })
+    .catch(() => {});
+}
+
+function loadRecCards() {
+  fetch('/recommendations/cards')
+    .then(r => r.json())
+    .then(d => {
+      renderPendingCards(d.pending || []);
+      renderMonitoringCards(d.monitoring || []);
+      document.getElementById('cam-pending-badge').textContent = (d.pending || []).length;
+      document.getElementById('cam-monitoring-badge').textContent = (d.monitoring || []).length;
+    })
+    .catch(() => {
+      document.getElementById('cam-pending-cards').innerHTML = '<div style="text-align:center;padding:24px;color:#9ca3af;font-size:13px;grid-column:1/-1;">Failed to load.</div>';
+      document.getElementById('cam-monitoring-cards').innerHTML = '<div style="text-align:center;padding:24px;color:#9ca3af;font-size:13px;grid-column:1/-1;">Failed to load.</div>';
+    });
+}
+
+// Type colours per wireframe spec
+const TYPE_STYLES = {
+  budget: {
+    bar: '#1d4ed8',
+    tagColor: '#1d4ed8',
+    displayName: 'Budget',
+    changeBg: 'linear-gradient(135deg,#eff6ff,#dbeafe)',
+    changeBorder: '#bfdbfe',
+    iconBg: '#dbeafe',
+  },
+  bid: {
+    bar: '#15803d',
+    tagColor: '#15803d',
+    displayName: 'Bid Target',
+    changeBg: 'linear-gradient(135deg,#f0fdf4,#dcfce7)',
+    changeBorder: '#bbf7d0',
+    iconBg: '#dcfce7',
+  },
+  status: {
+    bar: '#dc3545',
+    tagColor: '#dc3545',
+    displayName: 'Status',
+    changeBg: 'linear-gradient(135deg,#fff7ed,#ffedd5)',
+    changeBorder: '#fed7aa',
+    iconBg: '#ffedd5',
+  },
+};
+
+const CONF_STYLES = {
+  high:   {bg:'#dcfce7', color:'#15803d'},
+  medium: {bg:'#fef9c3', color:'#854d0e'},
+  low:    {bg:'#fee2e2', color:'#991b1b'},
+};
+
+function directionIcon(dir, iconBg) {
+  const color = dir === 'increase' ? '#15803d' : dir === 'decrease' ? '#dc2626' : '#6b7280';
+  const path = dir === 'increase'
+    ? 'M8 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L7.5 2.707V14.5a.5.5 0 0 0 .5.5z'
+    : dir === 'decrease'
+    ? 'M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1z'
+    : 'M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z';
+  return `<div style="width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:${iconBg};">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="${color}" viewBox="0 0 16 16"><path fill-rule="evenodd" d="${path}"/></svg>
+  </div>`;
+}
+
+function renderPendingCards(recs) {
+  const el = document.getElementById('cam-pending-cards');
+  if (!recs.length) {
+    el.innerHTML = '<div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px;grid-column:1/-1;">No pending recommendations.</div>';
+    return;
+  }
+  el.innerHTML = recs.map(r => {
+    const ts = TYPE_STYLES[r.rule_type] || TYPE_STYLES.status;
+    const cs = CONF_STYLES[r.confidence] || CONF_STYLES.low;
+    return `
+    <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;">
+      <div style="height:4px;background:${ts.bar};"></div>
+      <div style="padding:16px 18px;flex:1;display:flex;flex-direction:column;gap:10px;">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+          <div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:${ts.tagColor};margin-bottom:3px;">${ts.displayName}</div>
+            <div style="font-size:14px;font-weight:600;color:#1a1d23;">${r.campaign_name}</div>
+          </div>
+          <span style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap;background:#dbeafe;color:#1d4ed8;">● Pending</span>
+        </div>
+
+        <!-- Change block -->
+        <div style="border-radius:8px;padding:11px 14px;display:flex;align-items:center;gap:12px;border:1px solid ${ts.changeBorder};background:${ts.changeBg};">
+          ${directionIcon(r.action_direction, ts.iconBg)}
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#1a1d23;">${r.action_label}</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:2px;">${r.value_label ? r.value_label + (r.value_suffix ? ' ' + r.value_suffix : '') : '—'} &nbsp;·&nbsp; 7-day cooldown after</div>
+          </div>
+        </div>
+
+        <!-- Trigger block -->
+        <div style="background:#f8f9fa;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#344054;line-height:1.7;">
+          <div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:4px;letter-spacing:0.02em;">Why this triggered</div>
+          ${r.trigger_summary}
+        </div>
+
+        <!-- Footer -->
+        <div style="border-top:1px solid #e5e7eb;padding-top:10px;margin-top:auto;display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;background:${cs.bg};color:${cs.color};">${r.confidence} confidence</span>
+            <span style="font-size:11px;padding:3px 9px;border-radius:12px;font-weight:500;background:#f0f7ff;color:#0d6efd;">Campaigns</span>
+            <span style="font-size:11px;color:#9ca3af;">${r.generated_ago}</span>
+            <span style="font-size:11px;color:#92400e;background:#fef3c7;border-radius:4px;padding:2px 7px;margin-left:auto;">Buttons active in Chat 28</span>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button disabled style="background:white;border:1px solid #d1d5db;color:#374151;border-radius:6px;padding:7px 16px;font-size:13px;font-weight:600;flex:1;opacity:0.5;cursor:not-allowed;">Modify</button>
+            <button disabled style="background:white;border:1px solid #fca5a5;color:#dc3545;border-radius:6px;padding:7px 16px;font-size:13px;font-weight:600;flex:1;opacity:0.5;cursor:not-allowed;">Decline</button>
+            <button disabled style="background:#15803d;border:none;color:white;border-radius:6px;padding:7px 16px;font-size:13px;font-weight:600;flex:1;opacity:0.5;cursor:not-allowed;">Accept</button>
+          </div>
+        </div>
+
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderMonitoringCards(recs) {
+  const el = document.getElementById('cam-monitoring-cards');
+  if (!recs.length) {
+    el.innerHTML = '<div style="text-align:center;padding:32px;color:#9ca3af;font-size:13px;grid-column:1/-1;">No recommendations in monitoring.</div>';
+    return;
+  }
+  el.innerHTML = recs.map(r => {
+    const ts = TYPE_STYLES[r.rule_type] || TYPE_STYLES.status;
+    const cs = CONF_STYLES[r.confidence] || CONF_STYLES.low;
+    return `
+    <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;">
+      <div style="height:4px;background:linear-gradient(90deg,#0d6efd,#7c3aed);"></div>
+      <div style="padding:16px 18px;flex:1;display:flex;flex-direction:column;gap:10px;">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+          <div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:${ts.tagColor};margin-bottom:3px;">${ts.displayName}</div>
+            <div style="font-size:14px;font-weight:600;color:#1a1d23;">${r.campaign_name}</div>
+          </div>
+          <span style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap;background:#ede9fe;color:#6d28d9;">● Monitoring</span>
+        </div>
+
+        <!-- Change block -->
+        <div style="border-radius:8px;padding:11px 14px;display:flex;align-items:center;gap:12px;border:1px solid ${ts.changeBorder};background:${ts.changeBg};">
+          ${directionIcon(r.action_direction, ts.iconBg)}
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#1a1d23;">${r.action_label}</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:2px;">${r.value_label ? r.value_label + (r.value_suffix ? ' ' + r.value_suffix : '') : '—'}</div>
+          </div>
+        </div>
+
+        <!-- Monitoring block -->
+        <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:12px 14px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:12px;font-weight:600;color:#5b21b6;">Monitoring period</span>
+            <span style="font-size:12px;color:#6d28d9;font-weight:700;">Day ${r.monitoring_elapsed_days} of ${r.monitoring_total_days}</span>
+          </div>
+          <div style="height:6px;background:#ede9fe;border-radius:3px;margin-bottom:10px;overflow:hidden;">
+            <div style="height:6px;background:linear-gradient(90deg,#6d28d9,#0d6efd);border-radius:3px;width:${r.monitoring_progress_pct}%;"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:7px 10px;font-size:12px;color:#15803d;">✓ ROAS holds → kept in place</div>
+            <div style="background:#fff1f2;border:1px solid #fecaca;border-radius:6px;padding:7px 10px;font-size:12px;color:#991b1b;">↩ ROAS drops → auto-reverted</div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="border-top:1px solid #e5e7eb;padding-top:10px;margin-top:auto;">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;background:${cs.bg};color:${cs.color};">${r.confidence} confidence</span>
+            <span style="font-size:11px;color:#9ca3af;">${r.monitoring_remaining}d remaining</span>
+          </div>
+        </div>
+
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function camRunEngine() {
+  const btn = document.getElementById('cam-run-engine-btn');
+  btn.disabled = true;
+  btn.textContent = 'Running...';
+  fetch('/recommendations/run', {method:'POST'})
+    .then(r => r.json())
+    .then(d => {
+      btn.disabled = false;
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg> Run Recommendations Now';
+      if (typeof showToast === 'function') showToast(d.success ? 'success' : 'danger', d.message || 'Engine complete.');
+      loadRecSummary();
+      loadRecCards();
+    })
+    .catch(() => { btn.disabled = false; btn.textContent = 'Run Recommendations Now'; });
+}
+
 // Select all checkbox logic
 document.getElementById('select-all').addEventListener('change', function() {
   const checkboxes = document.querySelectorAll('.campaign-checkbox');

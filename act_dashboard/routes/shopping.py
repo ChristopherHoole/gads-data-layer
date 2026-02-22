@@ -839,7 +839,7 @@ def shopping():
         quality_stats=quality_stats,
         feed_issues=feed_issues,
         # Tab 4
-        rules=rules,
+        rules_config=[],
         rule_counts=rule_counts,
         # Filters / state
         days=days,

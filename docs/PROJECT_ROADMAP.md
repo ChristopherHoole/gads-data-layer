@@ -1,8 +1,8 @@
 # PROJECT ROADMAP - Google Ads Data Layer (ACT Dashboard)
 
 **Last Updated:** 2026-02-22  
-**Current Phase:** Dashboard 3.0 — M5 ✅ COMPLETE | M6 Recommendations Tab next  
-**Overall Completion:** ~92% (Foundation + Polish + Dashboard 3.0 M1+M2+M3+M4+M5 complete)  
+**Current Phase:** Dashboard 3.0 — M6 ✅ COMPLETE | M7 Accept/Decline/Modify next  
+**Overall Completion:** ~95% (Foundation + Polish + Dashboard 3.0 M1+M2+M3+M4+M5+M6 complete)  
 **Mode:** Dashboard 3.0 Phase 2 in progress 🚧
 ---
 
@@ -494,27 +494,54 @@
 
 ---
 
-## **Chat 27: M6 — Recommendations Tab** 📋 NEXT
+## **Chat 27: M6 — Recommendations Engine + UI** ✅ COMPLETE
+
+**Status:** COMPLETE — 2026-02-22  
+**Commit:** Pending (message: `Chat 27 (M6): Recommendations Engine + UI - engine, global page, campaigns tab`)  
+**Summary:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_27_DETAILED_SUMMARY.md`  
+**Handoff:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_27_HANDOFF.md`  
+**Wireframe:** `C:\Users\User\Desktop\gads-data-layer\docs\M6_WIREFRAME_v5.html`
+
+**Delivered:**
+- `recommendations` table created in `warehouse.duckdb` (19 columns) + 22 historical rows seeded
+- `act_autopilot/recommendations_engine.py` — reads `rules_config.json`, evaluates `ro.analytics.campaign_features_daily`, inserts pending recommendations. Duplicate prevention on (campaign_id, rule_id). Proxy columns for missing schema fields.
+- `act_dashboard/routes/recommendations.py` — 4 routes: GET /recommendations (3-tab UI), POST /recommendations/run, GET /recommendations/data (badge JSON), GET /recommendations/cards (full card data JSON)
+- `act_dashboard/templates/recommendations.html` — full 3-tab global page (Pending 48 cards / Monitoring 4 cards / History 22 rows + 67% success banner)
+- `act_dashboard/templates/campaigns.html` — Recommendations tab replaced: 2-col card grid (Pending + Monitoring), "Run Recommendations Now" button, "View full history →" link, matching M6_WIREFRAME_v5 exactly
+- Regression fix: keywords/ad_groups/ads/shopping routes updated (`rules=rules` → `rules_config=[]`)
+
+**Proxy column mappings (engine):**
+| Needed | Proxy Used |
+|---|---|
+| target_roas | Fallback 4.0 (no column exists) |
+| budget_micros | cost_micros_w7_mean |
+| cost_spike_confidence | anomaly_cost_z >= 2.0 |
+| pace_over_cap_detected | pacing_flag_over_105 |
+| ctr_drop_detected | ctr_w7_vs_prev_pct < -20 |
+| cvr_drop_detected | cvr_w7_vs_prev_pct < -20 |
+
+**Test results:** Generated=48 ✅ | SkippedDuplicate=48 (run 2) ✅ | All endpoints HTTP 200 ✅ | All pages regression-free ✅
+
+**Files created/modified (5):**
+- `tools/testing/setup_recommendations_db.py` — CREATED
+- `act_autopilot/recommendations_engine.py` — CREATED
+- `act_dashboard/routes/recommendations.py` — CREATED
+- `act_dashboard/templates/recommendations.html` — CREATED
+- `act_dashboard/templates/campaigns.html` — MODIFIED
+
+---
+
+## **Chat 28: M7 — Accept/Decline/Modify Wiring** 🎯 NEXT
 
 **Status:** PLANNED
 
 **Deliverables:**
-- User guide (how to use dashboard)
-- Setup guide (installation & configuration)
-- FAQ section
-- Video tutorials (optional)
-
----
-
-## **Chat 28: Marketing Website** (Varies)
-
-**Status:** PLANNED
-
-**Features:**
-- A.C.T product page
-- Case studies
-- Pricing information
-- Demo request form
+- POST `/recommendations/<id>/accept` — transitions to monitoring or successful, writes to changes table
+- POST `/recommendations/<id>/decline` — marks declined, removes card client-side
+- POST `/recommendations/<id>/modify` — Bootstrap modal for editing proposed value, then accepts
+- Card removal animations + badge count updates
+- Toast confirmations
+- Constitution cooldown enforcement on accept
 
 ---
 
@@ -553,13 +580,13 @@
 - ✅ Chat 23: M2 Metrics Cards — COMPLETE (all 6 pages)
 - ✅ Chat 24: M3 Chart Overhaul — COMPLETE
 - ✅ Chat 25: M4 Table Overhaul — COMPLETE (all 5 pages)
-- ✅ Chat 26: M5 Rules Tab — COMPLETE (Campaigns pilot)
+- ✅ Chat 26: M5 Rules Tab — COMPLETE (Campaigns pilot, commit 025986a)
 
 ### **Short-term (Dashboard 3.0 remaining):**
-- 🚧 Chat 27: M6 Recommendations Tab — NEXT
-- 📋 Chat 28: M6 rollout to Ad Groups, Keywords, Ads, Shopping
-- 📋 Chat 29: M7 Change History + Monitoring (merged screen)
-- 📋 Chat 30: Keywords Search Terms tab
+- ✅ Chat 27: M6 Recommendations Engine + UI — COMPLETE
+- 🎯 Chat 28: M7 Accept/Decline/Modify wiring — NEXT
+- 📋 Chat 29: M8 Changes + Monitoring page
+- 📋 Chat 30: M9 Search Terms / Keywords recommendations
 
 ### **Medium-term (After Dashboard 3.0):**
 - 📋 Phase 3: Future-Proofing (10-14 hrs)
@@ -607,6 +634,21 @@
 ---
 
 ## ðŸ“„ CHANGELOG
+
+### **2026-02-22 (Chat 27 — M6 Recommendations Engine + UI)**
+
+**Completed:**
+- ✅ M6 Recommendations Engine + UI — recommendations table, engine, global page, campaigns tab
+- recommendations table created in warehouse.duckdb (19 cols) + 22 historical rows seeded
+- recommendations_engine.py: reads rules_config.json, evaluates campaign_features_daily, inserts pending recs
+- Duplicate prevention on (campaign_id, rule_id) — second run returns SkippedDuplicate=48
+- Proxy column mappings for missing schema fields (target_roas fallback 4.0, budget_micros → cost_micros_w7_mean)
+- Global /recommendations page: 3 tabs (Pending 48 cards / Monitoring 4 / History 22 rows)
+- Campaigns → Recommendations tab: inline 2-col card grids matching M6_WIREFRAME_v5
+- New /recommendations/cards endpoint for JS-rendered inline cards
+- Regression fix: keywords/ad_groups/ads/shopping routes (rules=rules → rules_config=[])
+- 5 files total (4 new, 1 modified)
+- Action buttons (Accept/Decline/Modify) built but disabled — Chat 28 scope
 
 ### **2026-02-22 (Chat 26 — M5 Card-Based Rules Tab)**
 

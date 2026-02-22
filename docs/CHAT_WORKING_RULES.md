@@ -1,7 +1,7 @@
 # CHAT WORKING RULES - MANDATORY FOR ALL CHATS
 
-**Version:** 1.2  
-**Last Updated:** 2026-02-21  
+**Version:** 1.3  
+**Last Updated:** 2026-02-22  
 **Applies to:** All Claude chats working on this project
 
 ---
@@ -616,6 +616,20 @@ User, what would you like to do?
 - [ ] Am I stopping if going in circles?
 
 **Master Chat is watching. Follow these rules.**
+
+---
+
+## KNOWN PITFALLS (Updated Chat 27)
+
+| Problem | Fix |
+|---------|-----|
+| Blueprint not registered | New blueprints MUST be added to __init__.py — never assume pre-registration |
+| Column missing in synthetic data | Verify column existence before building logic — never assume schema matches brief |
+| Missing column fallback | Use proxy/fallback + log it — do not error silently |
+| Recommendations in wrong DB | Write to writable warehouse.duckdb — never write to ro.analytics.* |
+| Inline card rendering | Use /cards JSON endpoint + JS rendering — do not reload full page |
+| Duplicate recommendations | Check (campaign_id, rule_id) before insert — engine run 2 must return SkippedDuplicate |
+| Flask route decorator broken | Never insert helper functions between @bp.route decorator and its function |
 
 ---
 

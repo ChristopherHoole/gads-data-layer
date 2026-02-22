@@ -852,7 +852,7 @@ def keywords():
         low_data_count=low_data_count,
         wasted_spend=wasted_spend,
         search_terms=search_terms,
-        rules=rules,
+        rules_config=[],
         # M2: Metrics cards
         financial_cards=financial_cards,
         actions_cards=actions_cards,

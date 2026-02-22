@@ -444,7 +444,7 @@ def ads():
         status=status,
         sort_by=sort_by,
         sort_dir=sort_dir,
-        rules=rules,
+        rules_config=[],
         rule_counts=rule_counts,
         error=None,
         financial_cards=financial_cards,

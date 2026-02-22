@@ -10,8 +10,8 @@
 ## EXECUTIVE SUMMARY
 
 ### Current State (Feb 22, 2026)
-- **Overall Completion:** ~92%
-- **Phase:** Dashboard 3.0 — M5 complete ✅, M6 Recommendations Tab NEXT
+- **Overall Completion:** ~95%
+- **Phase:** Dashboard 3.0 — M6 complete ✅, M7 Accept/Decline/Modify NEXT
 - **Active Development:** Dashboard 3.0 modular improvements
 - **Templating:** Jinja2 Macros (metrics_section M2 + performance_chart M3)
 
@@ -378,11 +378,50 @@ Rule Visibility System (Chat 21c — reusable on all pages):
 | M3: Chart Overhauls | 24 | ✅ COMPLETE |
 | M4: Table Overhaul | 25 | ✅ COMPLETE |
 | M5: Rules Tab (Campaigns pilot) | 26 | ✅ COMPLETE |
-| M6: Recommendations Tab | 27 | 🚧 NEXT |
+| M6: Recommendations Engine + UI | 27 | ✅ COMPLETE |
+| M7: Accept/Decline/Modify | 28 | 🎯 NEXT |
+| M8: Changes + Monitoring | 29 | 📋 PLANNED |
+| M9: Search Terms | 30 | 📋 PLANNED |
 
 ---
 
-## COMMON PROBLEMS & SOLUTIONS
+### Chat 27 — M6: Recommendations Engine + UI ✅
+**Date:** 2026-02-22 | **Commit:** Pending ()  
+**Summary:**   
+**Handoff:** 
+
+**What was built:**
+-  table in  (19 cols) + 22 historical rows seeded
+-  — reads , evaluates , inserts pending recs. Duplicate prevention on (campaign_id, rule_id).
+-  — 4 routes: GET /recommendations, POST /recommendations/run, GET /recommendations/data, GET /recommendations/cards
+-  — 3-tab global page: Pending (48 cards, 2-col) / Monitoring (4 cards, progress bars) / History (22 rows, 67% success banner)
+-  — Recommendations tab: inline 2-col card grids, Run button, View history link. Matches M6_WIREFRAME_v5.
+
+**Engine proxy column mappings:**
+| Needed | Proxy |
+|---|---|
+| target_roas | Fallback 4.0 (column missing) |
+| budget_micros | cost_micros_w7_mean |
+| cost_spike_confidence | anomaly_cost_z >= 2.0 |
+| pace_over_cap_detected | pacing_flag_over_105 |
+| ctr_drop_detected | ctr_w7_vs_prev_pct < -20 |
+| cvr_drop_detected | cvr_w7_vs_prev_pct < -20 |
+
+**Card anatomy (locked):**
+1. 4px coloured top bar (blue=budget, green=bid, red=status)
+2. Header: rule tag + campaign name + status pill
+3. Change block FIRST (gradient bg by type)
+4. Trigger block SECOND (grey bg, "Why this triggered")
+5. Footer row 1: confidence badge + source pill + age + amber "Buttons active in Chat 28" note
+6. Footer row 2: Modify / Decline / Accept (disabled, opacity 0.5)
+
+**Status pills:** Pending=blue / Monitoring=purple / Successful=green / Reverted=red / Declined=grey
+
+**Test results:** Generated=48 ✅ | SkippedDuplicate=48 ✅ | All HTTP 200 ✅ | All pages regression-free ✅
+
+**Known issues (pre-existing, not Chat 27):** favicon 500, 404.html missing, config validation warnings
+
+---
 
 | Problem | Fix |
 |---------|-----|
@@ -423,6 +462,8 @@ What's working:
 - Rules visibility system (legacy sidebar/tab/card components)
 - **M5 card-based Rules tab on Campaigns page** (Chat 26)
 - **rules_config.json + rules_api.py CRUD** (Chat 26)
+- **M6 Recommendations Engine + global page + Campaigns tab** (Chat 27)
+- **recommendations table in warehouse.duckdb** (Chat 27)
 - Authentication + client switching
 - Constitution execution engine
 - M4 tables: full Google Ads column sets on all 5 pages
@@ -431,9 +472,9 @@ What's working:
 - Status filter + per-page controls standardised
 
 Pending:
-- M6 Recommendations tab (Chat 27)
+- M7 Accept/Decline/Modify button wiring (Chat 28)
 - M5 Rules tab rollout to Ad Groups, Keywords, Ads, Shopping (future chat)
-- Campaign scope pill name resolution (Chat 27)
+- Campaign scope pill name resolution (future chat)
 - All Conv. pipeline (populating all_conversions across all tables)
 - Shopping IS/Opt. Score (columns exist but NULL)
 - Ads Revenue fix (future chat)
@@ -444,10 +485,9 @@ Pending:
 ## FUTURE ROADMAP
 
 Immediate (Dashboard 3.0):
-- Chat 27: M6 Recommendations Tab
-- Chat 28: M6 rollout to remaining pages
-- Chat 29: M7 Change History + Monitoring (merged screen)
-- Chat 30: Keywords Search Terms tab
+- Chat 28: M7 Accept/Decline/Modify wiring
+- Chat 29: M8 Change History + Monitoring (merged screen)
+- Chat 30: M9 Keywords Search Terms tab
 
 Short-term:
 - Phase 5: Unit tests, job queue, DB indexes, CSRF
@@ -475,8 +515,12 @@ Medium-term:
 10. `display:none` + `display:flex` in same inline style — browser uses last one; keep none, let JS add flex
 11. Dual-layer architecture: JSON config (UI) and Python functions (execution) must remain separate — never sync them
 12. Campaign picker must be wired to real data before declaring campaign-specific scope complete
+13. New /recommendations/cards JSON endpoint pattern — JS rendering of inline cards without page reload
+14. recommendations table must live in writable warehouse.duckdb — never in readonly analytics DB
+15. Engine proxy columns must be logged when used — do not silently substitute
+16. Duplicate prevention: always check (campaign_id, rule_id) before insert — engine run 2 must return SkippedDuplicate, not new rows
 
 ---
 
-**Version:** 5.0 | **Last Updated:** 2026-02-22  
-**Next Step:** Chat 27 — M6 Recommendations Tab (discuss with Master Chat first)
+**Version:** 6.0 | **Last Updated:** 2026-02-22  
+**Next Step:** Chat 28 — M7 Accept/Decline/Modify wiring

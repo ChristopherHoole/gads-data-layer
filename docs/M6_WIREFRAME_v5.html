@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M6 Recommendations Wireframe v5</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+  :root {
+    --sidebar-width: 220px;
+    --body-bg: #f4f6f9;
+    --border: #e5e9f0;
+    --muted: #8a93a2;
+    --budget-c: #1d4ed8;
+    --bid-c: #15803d;
+    --status-c: #991b1b;
+  }
+  body { background: var(--body-bg); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; margin: 0; }
+
+  /* SIDEBAR */
+  .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh; background: #1a1d23; z-index: 100; display: flex; flex-direction: column; }
+  .sidebar-brand { padding: 16px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .logo-icon { width: 32px; height: 32px; background: #0d6efd; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; }
+  .logo-text { color: white; font-weight: 600; font-size: 15px; }
+  .sidebar-nav { padding: 12px 0; }
+  .nav-item a { display: flex; align-items: center; gap: 10px; padding: 9px 20px; color: #a0a8b8; text-decoration: none; font-size: 13.5px; transition: all 0.15s; }
+  .nav-item a:hover { background: #2a2d35; color: #fff; }
+  .nav-item a.active { background: rgba(13,110,253,0.15); color: #4d9fff; border-right: 3px solid #0d6efd; }
+  .nav-icon { width: 18px; height: 18px; flex-shrink: 0; }
+  .nav-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 8px 16px; }
+  .nav-badge { background: #0d6efd; color: white; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 700; margin-left: auto; }
+
+  /* MAIN */
+  .main-content { margin-left: var(--sidebar-width); min-height: 100vh; }
+  .topbar { height: 56px; background: white; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: sticky; top: 0; z-index: 50; }
+  .page-title { font-size: 20px; font-weight: 600; color: #1a1d23; }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+  .date-btn { background: #f8f9fa; border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; color: #495057; }
+  .date-btn.active-date { background: #0d6efd; color: white; border-color: #0d6efd; }
+  .page-body { padding: 24px; padding-bottom: 64px; }
+
+  /* PAGE TABS */
+  .page-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .page-tab { padding: 10px 20px; font-size: 13.5px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .page-tab.active { color: #0d6efd; border-bottom-color: #0d6efd; }
+  .tab-badge { background: #e9ecef; color: #495057; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+  .page-tab.active .tab-badge { background: #dbeafe; color: #0d6efd; }
+  .tab-badge-warning { background: #fff3cd; color: #856404; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+
+  /* SUMMARY STRIP */
+  .summary-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
+  .summary-card { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; }
+  .s-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .s-num { font-size: 24px; font-weight: 700; line-height: 1; }
+  .s-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* HEADER ROW */
+  .rec-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 16px; }
+  .rec-header-left h5 { font-size: 16px; font-weight: 600; margin: 0 0 4px; color: #1a1d23; }
+  .rec-header-left p { margin: 0; color: var(--muted); font-size: 13px; }
+  .rec-header-right { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+  /* LAST RUN BAR */
+  .last-run-bar { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; font-size: 13px; color: #344054; }
+  .run-dot { width: 8px; height: 8px; border-radius: 50%; background: #15803d; flex-shrink: 0; }
+
+  /* FILTER BAR */
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+  .filter-btn { background: white; border: 1px solid var(--border); border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: #495057; display: flex; align-items: center; gap: 5px; }
+  .filter-btn.active { background: #0d6efd; border-color: #0d6efd; color: white; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+  /* ============================================================
+     RECOMMENDATION CARD
+  ============================================================ */
+  /* Global: 2-col fixed grid */
+  .rec-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 28px; }
+  /* Per-page: 1-col (narrower content area) */
+  .rec-grid-1 { display: grid; grid-template-columns: 1fr; gap: 14px; margin-bottom: 28px; }
+
+  .rec-card { background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; transition: box-shadow 0.15s, border-color 0.15s; }
+  .rec-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); border-color: #d0d7e0; }
+  .rec-card.card-monitoring { border-color: #bfdbfe; }
+  .rec-card.card-success { border-color: #bbf7d0; }
+  .rec-card.card-reverted { border-color: #fecaca; }
+  .rec-card.card-declined { opacity: 0.55; }
+
+  .rec-top { height: 4px; flex-shrink: 0; }
+  .rt-budget { background: #1d4ed8; }
+  .rt-bid { background: #15803d; }
+  .rt-status { background: #dc3545; }
+  .rt-monitoring { background: linear-gradient(90deg, #0d6efd, #7c3aed); }
+  .rt-success { background: #15803d; }
+  .rt-reverted { background: #dc3545; }
+
+  .rec-body { padding: 16px 18px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+  /* Card header */
+  .rec-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .rec-rule-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
+  .rrt-budget { color: var(--budget-c); }
+  .rrt-bid { color: var(--bid-c); }
+  .rrt-status { color: var(--status-c); }
+  .rec-campaign-name { font-size: 14px; font-weight: 600; color: #1a1d23; }
+
+  /* Status pill */
+  .status-pill { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+  .sp-pending { background: #dbeafe; color: #1d4ed8; }
+  .sp-monitoring { background: #ede9fe; color: #6d28d9; }
+  .sp-success { background: #dcfce7; color: #15803d; }
+  .sp-reverted { background: #fee2e2; color: #991b1b; }
+  .sp-declined { background: #f3f4f6; color: #6b7280; }
+
+  /* Change block — NOW FIRST */
+  .change-block { border-radius: 8px; padding: 11px 14px; display: flex; align-items: center; gap: 12px; border: 1px solid; }
+  .cb-budget { background: linear-gradient(135deg,#eff6ff,#dbeafe); border-color: #bfdbfe; }
+  .cb-bid { background: linear-gradient(135deg,#f0fdf4,#dcfce7); border-color: #bbf7d0; }
+  .cb-status { background: linear-gradient(135deg,#fff7ed,#ffedd5); border-color: #fed7aa; }
+  .change-icon-wrap { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ciw-budget { background: #dbeafe; }
+  .ciw-bid { background: #dcfce7; }
+  .ciw-status { background: #ffedd5; }
+  .change-main { font-size: 13px; font-weight: 600; color: #1a1d23; }
+  .change-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .change-sub strong { color: #1a1d23; }
+
+  /* Trigger block — NOW SECOND */
+  .trigger-block { background: #f8f9fa; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 12.5px; color: #344054; line-height: 1.7; }
+  .trigger-label { font-size: 11px; font-weight: 600; color: #6b7280; margin-bottom: 4px; letter-spacing: 0.02em; }
+  .cond-val { background: white; border: 1px solid #d1d5db; border-radius: 4px; padding: 1px 6px; font-weight: 700; color: #1a1d23; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; }
+
+  /* MONITORING BLOCK */
+  .monitoring-block { background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 8px; padding: 12px 14px; }
+  .mon-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .mon-label { font-size: 12px; font-weight: 600; color: #5b21b6; display: flex; align-items: center; gap: 6px; }
+  .mon-days { font-size: 12px; color: #6d28d9; font-weight: 700; }
+  .mon-bar-wrap { height: 6px; background: #ede9fe; border-radius: 3px; margin-bottom: 10px; overflow: hidden; }
+  .mon-bar { height: 6px; background: linear-gradient(90deg, #6d28d9, #0d6efd); border-radius: 3px; }
+  .mon-outcomes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mon-outcome-pill { border-radius: 6px; padding: 7px 10px; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; }
+  .mop-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+  .mop-revert { background: #fff1f2; border: 1px solid #fecaca; color: #991b1b; }
+
+  /* OUTCOME BLOCK (history cards) */
+  .outcome-block { border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; border: 1px solid; }
+  .ob-success { background: #f0fdf4; border-color: #bbf7d0; }
+  .ob-reverted { background: #fff1f2; border-color: #fecaca; }
+  .outcome-title { font-size: 13px; font-weight: 600; }
+  .ot-success { color: #15803d; }
+  .ot-reverted { color: #991b1b; }
+  .outcome-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* CARD FOOTER — split into 2 rows */
+  .rec-footer { border-top: 1px solid var(--border); padding-top: 10px; margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+  .rec-footer-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .rec-footer-actions { display: flex; gap: 6px; align-items: center; }
+  .conf-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .cb-high { background: #d1fae5; color: #065f46; }
+  .cb-med { background: #fef3c7; color: #92400e; }
+  .cb-low { background: #fee2e2; color: #991b1b; }
+  .rec-age { font-size: 12px; color: var(--muted); }
+  .source-pill { font-size: 11px; padding: 3px 9px; border-radius: 12px; font-weight: 500; background: #f0f7ff; color: #0d6efd; }
+  .chat28-note { font-size: 11px; color: #92400e; background: #fef3c7; border-radius: 4px; padding: 2px 7px; margin-left: auto; white-space: nowrap; }
+
+  /* ACTION BUTTONS — full width row, no chat28 tags inside */
+  .btn-accept { background: #15803d; border: none; color: white; border-radius: 6px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; flex: 1; justify-content: center; }
+  .btn-decline { background: white; border: 1px solid #fca5a5; color: #dc3545; border-radius: 6px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; flex: 1; justify-content: center; }
+  .btn-modify { background: white; border: 1px solid var(--border); color: #374151; border-radius: 6px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; flex: 1; justify-content: center; }
+  .btn-accept:hover { background: #166534; }
+  .btn-decline:hover { background: #fff1f2; }
+  .btn-modify:hover { background: #f9fafb; }
+
+  /* SECTION LABELS (per-page) */
+  .section-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #374151; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; padding-left: 10px; border-left: 3px solid; }
+  .sl-pending { border-color: #0d6efd; }
+  .sl-monitoring { border-color: #7c3aed; }
+  .section-count { font-size: 12px; font-weight: 600; background: #f3f4f6; color: #6b7280; border-radius: 10px; padding: 1px 8px; }
+
+  /* HISTORY TABLE */
+  .history-table { background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .history-table table { width: 100%; border-collapse: collapse; }
+  .history-table th { background: #f8f9fa; border-bottom: 1px solid var(--border); padding: 11px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); text-align: left; white-space: nowrap; }
+  .history-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; color: #344054; vertical-align: middle; }
+  .history-table tr:last-child td { border-bottom: none; }
+  .history-table tbody tr:nth-child(odd) td { background: #fafbfc; }
+  .history-table tbody tr:hover td { background: #f0f7ff; }
+  .outcome-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; flex-shrink: 0; }
+  .od-success { background: #15803d; }
+  .od-reverted { background: #dc3545; }
+  .od-declined { background: #9ca3af; }
+  .od-monitoring { background: #6d28d9; }
+  .success-rate-banner { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 16px; font-size: 13px; color: #15803d; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+
+  /* ANN BAR */
+  .ann-bar { position: fixed; bottom: 0; left: 220px; right: 0; background: #1a1d23; color: #a0a8b8; font-size: 12px; padding: 8px 24px; display: flex; gap: 20px; z-index: 99; align-items: center; flex-wrap: wrap; }
+  .d-none { display: none !important; }
+
+  /* SVG ICON HELPER */
+  svg.ic { display: inline-block; vertical-align: middle; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo-icon">A</div>
+    <div class="logo-text">Ads Control Tower</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item"><a href="#">
+      <svg class="nav-icon ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard</a></div>
+    <div class="nav-item"><a href="#" onclick="showView('campaigns',event)">
+      <svg class="nav-icon ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      Campaigns</a></div>
+    <div class="nav-item"><a href="#">
+      <svg class="nav-icon ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+      Ad Groups</a></div>
+    <div class="nav-item"><a href="#">
+      <svg class="nav-icon ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/></svg>
+      Keywords</a></div>
+    <div class="nav-item"><a href="#">
+      <svg class="nav-icon ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Ads</a></div>
+    <div class="nav-item"><a href="#">
+      <svg class="nav-icon ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 001.95-1.56L23 6H6"/></svg>
+      Shopping</a></div>
+    <div class="nav-divider"></div>
+    <div class="nav-item"><a href="#" class="active" onclick="showView('global',event)">
+      <svg class="nav-icon ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      Recommendations <span class="nav-badge">5</span></a></div>
+    <div class="nav-item"><a href="#">
+      <svg class="nav-icon ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Changes</a></div>
+    <div class="nav-divider"></div>
+    <div class="nav-item"><a href="#">
+      <svg class="nav-icon ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 003.52 15.83"/></svg>
+      Settings</a></div>
+  </nav>
+</div>
+
+<!-- MAIN -->
+<div class="main-content">
+
+  <!-- ==================== GLOBAL RECOMMENDATIONS PAGE ==================== -->
+  <div id="view-global">
+    <div class="topbar">
+      <span class="page-title">Recommendations</span>
+      <div class="topbar-right">
+        <button class="date-btn">
+          <svg width="13" height="13" ic viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Custom range...
+        </button>
+        <button class="date-btn">7d</button>
+        <button class="date-btn active-date">30d</button>
+        <button class="date-btn">90d</button>
+      </div>
+    </div>
+    <div class="page-body">
+
+      <!-- Summary strip -->
+      <div class="summary-strip">
+        <div class="summary-card">
+          <div class="s-icon" style="background:#dbeafe;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div><div class="s-num" style="color:#0d6efd;">5</div><div class="s-label">Pending</div></div>
+        </div>
+        <div class="summary-card">
+          <div class="s-icon" style="background:#ede9fe;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div><div class="s-num" style="color:#6d28d9;">3</div><div class="s-label">Monitoring</div></div>
+        </div>
+        <div class="summary-card">
+          <div class="s-icon" style="background:#dcfce7;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div>
+            <div class="s-num" style="color:#15803d;">75<span style="font-size:14px;font-weight:400;color:var(--muted);">%</span></div>
+            <div class="s-label">Success rate (30d)</div>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="s-icon" style="background:#f3f4f6;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div>
+            <div class="s-num" style="font-size:16px;font-weight:600;color:#374151;line-height:1.2;">06:00 AM</div>
+            <div class="s-label">Last run today</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Global tabs -->
+      <div class="page-tabs">
+        <div class="page-tab active" onclick="switchGlobalTab('pending',this)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Pending <span class="tab-badge-warning">5</span>
+        </div>
+        <div class="page-tab" onclick="switchGlobalTab('monitoring',this)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Monitoring <span class="tab-badge">3</span>
+        </div>
+        <div class="page-tab" onclick="switchGlobalTab('history',this)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          History <span class="tab-badge">20</span>
+        </div>
+      </div>
+
+      <!-- ===== PENDING TAB ===== -->
+      <div id="gtab-pending">
+        <div class="rec-header">
+          <div class="rec-header-left">
+            <h5>Pending Recommendations</h5>
+            <p>Rules ran today at 06:00 AM — 5 recommendations awaiting your decision.</p>
+          </div>
+          <div class="rec-header-right">
+            <span style="font-size:12px;color:var(--muted);">Next auto-run: Tomorrow 06:00 AM</span>
+            <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2" style="font-size:13px;border-color:#d0d5dd;color:#374151;padding:6px 14px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
+              Run Recommendations Now
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <button class="filter-btn active">All (5)</button>
+          <button class="filter-btn"><span class="dot" style="background:#1d4ed8;"></span> Budget (3)</button>
+          <button class="filter-btn"><span class="dot" style="background:#15803d;"></span> Bid (1)</button>
+          <button class="filter-btn"><span class="dot" style="background:#dc3545;"></span> Status (1)</button>
+        </div>
+
+        <div class="rec-grid-2">
+
+          <!-- CARD: Budget increase -->
+          <div class="rec-card">
+            <div class="rec-top rt-budget"></div>
+            <div class="rec-body">
+              <div class="rec-card-header">
+                <div>
+                  <div class="rec-rule-tag rrt-budget">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/></svg>
+                    Budget 1
+                  </div>
+                  <div class="rec-campaign-name">Growth Strong</div>
+                </div>
+                <span class="status-pill sp-pending">● Pending</span>
+              </div>
+
+              <!-- CHANGE FIRST -->
+              <div class="change-block cb-budget">
+                <div class="change-icon-wrap ciw-budget">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                </div>
+                <div>
+                  <div class="change-main">Increase daily budget by 10%</div>
+                  <div class="change-sub">£450 → <strong>£495</strong> &nbsp;·&nbsp; 7-day cooldown after</div>
+                </div>
+              </div>
+
+              <!-- TRIGGER SECOND -->
+              <div class="trigger-block">
+                <div class="trigger-label">Why this triggered</div>
+                ROAS (7d) <span class="cond-val">6.2x</span> &gt; target × 1.15 &nbsp;·&nbsp; Clicks (7d) <span class="cond-val">312</span> ≥ 30
+              </div>
+
+              <div class="rec-footer">
+                <div class="rec-footer-meta">
+                  <span class="conf-badge cb-high">High confidence</span>
+                  <span class="source-pill">Campaigns</span>
+                  <span class="rec-age">Today 06:00 AM</span>
+                  <span class="chat28-note">Buttons active in Chat 28</span>
+                </div>
+                <div class="rec-footer-actions">
+                  <button class="btn-modify">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Modify
+                  </button>
+                  <button class="btn-decline">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    Decline
+                  </button>
+                  <button class="btn-accept">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    Accept
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD: Bid increase -->
+          <div class="rec-card">
+            <div class="rec-top rt-bid"></div>
+            <div class="rec-body">
+              <div class="rec-card-header">
+                <div>
+                  <div class="rec-rule-tag rrt-bid">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    Bid 1
+                  </div>
+                  <div class="rec-campaign-name">Stable ROAS 5.0</div>
+                </div>
+                <span class="status-pill sp-pending">● Pending</span>
+              </div>
+
+              <div class="change-block cb-bid">
+                <div class="change-icon-wrap ciw-bid">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+                </div>
+                <div>
+                  <div class="change-main">Increase tROAS target by 10%</div>
+                  <div class="change-sub">500% → <strong>550%</strong> &nbsp;·&nbsp; 14-day cooldown after</div>
+                </div>
+              </div>
+
+              <div class="trigger-block">
+                <div class="trigger-label">Why this triggered</div>
+                ROAS (30d) <span class="cond-val">5.8x</span> &gt; target × 1.25 &nbsp;·&nbsp; Conversions (30d) <span class="cond-val">22</span> ≥ 15
+              </div>
+
+              <div class="rec-footer">
+                <div class="rec-footer-meta">
+                  <span class="conf-badge cb-med">Medium confidence</span>
+                  <span class="source-pill">Campaigns</span>
+                  <span class="rec-age">Today 06:00 AM</span>
+                  <span class="chat28-note">Buttons active in Chat 28</span>
+                </div>
+                <div class="rec-footer-actions">
+                  <button class="btn-modify">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Modify
+                  </button>
+                  <button class="btn-decline">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    Decline
+                  </button>
+                  <button class="btn-accept">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    Accept
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD: Budget decrease -->
+          <div class="rec-card">
+            <div class="rec-top rt-budget"></div>
+            <div class="rec-body">
+              <div class="rec-card-header">
+                <div>
+                  <div class="rec-rule-tag rrt-budget">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/></svg>
+                    Budget 2
+                  </div>
+                  <div class="rec-campaign-name">Budget Constrained High</div>
+                </div>
+                <span class="status-pill sp-pending">● Pending</span>
+              </div>
+
+              <div class="change-block cb-budget">
+                <div class="change-icon-wrap ciw-budget">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+                </div>
+                <div>
+                  <div class="change-main">Decrease daily budget by 10%</div>
+                  <div class="change-sub">£200 → <strong>£180</strong> &nbsp;·&nbsp; 7-day cooldown after</div>
+                </div>
+              </div>
+
+              <div class="trigger-block">
+                <div class="trigger-label">Why this triggered</div>
+                ROAS (7d) <span class="cond-val">2.1x</span> &lt; target × 0.75 &nbsp;·&nbsp; Conversions (30d) <span class="cond-val">18</span> ≥ 15
+              </div>
+
+              <div class="rec-footer">
+                <div class="rec-footer-meta">
+                  <span class="conf-badge cb-high">High confidence</span>
+                  <span class="source-pill">Campaigns</span>
+                  <span class="rec-age">Today 06:00 AM</span>
+                  <span class="chat28-note">Buttons active in Chat 28</span>
+                </div>
+                <div class="rec-footer-actions">
+                  <button class="btn-modify">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Modify
+                  </button>
+                  <button class="btn-decline">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    Decline
+                  </button>
+                  <button class="btn-accept">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    Accept
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ===== MONITORING TAB ===== -->
+      <div id="gtab-monitoring" class="d-none">
+        <div class="rec-header">
+          <div class="rec-header-left">
+            <h5>Monitoring</h5>
+            <p>Accepted recommendations under observation. If the metric holds the change stays. If it drops it is automatically reverted.</p>
+          </div>
+        </div>
+
+        <div class="rec-grid-2">
+
+          <!-- MONITORING CARD 1 -->
+          <div class="rec-card card-monitoring">
+            <div class="rec-top rt-monitoring"></div>
+            <div class="rec-body">
+              <div class="rec-card-header">
+                <div>
+                  <div class="rec-rule-tag" style="color:#6d28d9;">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/></svg>
+                    Budget 1
+                  </div>
+                  <div class="rec-campaign-name">Growth Strong</div>
+                </div>
+                <span class="status-pill sp-monitoring">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Monitoring
+                </span>
+              </div>
+
+              <div class="change-block cb-budget">
+                <div class="change-icon-wrap ciw-budget">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                </div>
+                <div>
+                  <div class="change-main">Increased daily budget by 10%</div>
+                  <div class="change-sub">£450 → <strong>£495</strong> &nbsp;·&nbsp; Accepted 3 days ago by admin</div>
+                </div>
+              </div>
+
+              <div class="monitoring-block">
+                <div class="mon-top">
+                  <div class="mon-label">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Monitoring period
+                  </div>
+                  <div class="mon-days">Day 3 of 7</div>
+                </div>
+                <div class="mon-bar-wrap"><div class="mon-bar" style="width:43%;"></div></div>
+                <div class="mon-outcomes">
+                  <div class="mon-outcome-pill mop-success">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    ROAS holds → <strong>kept in place</strong>
+                  </div>
+                  <div class="mon-outcome-pill mop-revert">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#991b1b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
+                    ROAS drops → <strong>auto-reverted</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rec-footer">
+                <div class="rec-footer-meta">
+                  <span class="conf-badge cb-high">High confidence</span>
+                  <span class="source-pill">Campaigns</span>
+                  <span class="rec-age">Accepted 2026-02-19</span>
+                  <span style="margin-left:auto;font-size:12px;color:#6d28d9;font-weight:600;">4 days remaining</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MONITORING CARD 2 -->
+          <div class="rec-card card-monitoring">
+            <div class="rec-top rt-monitoring"></div>
+            <div class="rec-body">
+              <div class="rec-card-header">
+                <div>
+                  <div class="rec-rule-tag" style="color:#6d28d9;">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    Bid 1
+                  </div>
+                  <div class="rec-campaign-name">Stable ROAS 5.0</div>
+                </div>
+                <span class="status-pill sp-monitoring">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Monitoring
+                </span>
+              </div>
+
+              <div class="change-block cb-bid">
+                <div class="change-icon-wrap ciw-bid">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+                </div>
+                <div>
+                  <div class="change-main">Increased tROAS target by 10%</div>
+                  <div class="change-sub">500% → <strong>550%</strong> &nbsp;·&nbsp; Accepted 10 days ago by admin</div>
+                </div>
+              </div>
+
+              <div class="monitoring-block">
+                <div class="mon-top">
+                  <div class="mon-label">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Monitoring period
+                  </div>
+                  <div class="mon-days">Day 10 of 14</div>
+                </div>
+                <div class="mon-bar-wrap"><div class="mon-bar" style="width:71%;"></div></div>
+                <div class="mon-outcomes">
+                  <div class="mon-outcome-pill mop-success">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    ROAS holds → <strong>kept in place</strong>
+                  </div>
+                  <div class="mon-outcome-pill mop-revert">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#991b1b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
+                    ROAS drops → <strong>auto-reverted</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rec-footer">
+                <div class="rec-footer-meta">
+                  <span class="conf-badge cb-med">Medium confidence</span>
+                  <span class="source-pill">Campaigns</span>
+                  <span class="rec-age">Accepted 2026-02-12</span>
+                  <span style="margin-left:auto;font-size:12px;color:#6d28d9;font-weight:600;">4 days remaining</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ===== HISTORY TAB ===== -->
+      <div id="gtab-history" class="d-none">
+        <div class="rec-header">
+          <div class="rec-header-left">
+            <h5>Recommendation History</h5>
+            <p>Full log of all recommendations — accepted, declined, successful, and reverted.</p>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <button class="filter-btn active">All (20)</button>
+          <button class="filter-btn"><span class="dot od-success"></span> Successful (9)</button>
+          <button class="filter-btn"><span class="dot od-reverted"></span> Reverted (3)</button>
+          <button class="filter-btn"><span class="dot od-declined"></span> Declined (5)</button>
+          <button class="filter-btn"><span class="dot od-monitoring"></span> Monitoring (3)</button>
+        </div>
+
+        <div class="success-rate-banner">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          75% success rate (30d) — 9 of 12 accepted recommendations were successful
+        </div>
+
+        <div class="history-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Rule</th>
+                <th>Campaign</th>
+                <th>Change Applied</th>
+                <th>Outcome</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="color:var(--muted);white-space:nowrap;">2026-02-19</td>
+                <td><span style="font-size:11px;font-weight:700;color:var(--budget-c);">Budget 1</span></td>
+                <td>Growth Strong</td>
+                <td>Budget +10% &nbsp;£450→£495</td>
+                <td><span class="outcome-dot od-monitoring"></span>Monitoring (Day 3/7)</td>
+                <td style="color:var(--muted);">—</td>
+              </tr>
+              <tr>
+                <td style="color:var(--muted);white-space:nowrap;">2026-02-15</td>
+                <td><span style="font-size:11px;font-weight:700;color:var(--budget-c);">Budget 2</span></td>
+                <td>Budget Constrained High</td>
+                <td>Budget −10% &nbsp;£200→£180</td>
+                <td><span class="outcome-dot od-success"></span>Successful</td>
+                <td style="color:#15803d;font-weight:600;">ROAS +18% after 7d</td>
+              </tr>
+              <tr>
+                <td style="color:var(--muted);white-space:nowrap;">2026-02-12</td>
+                <td><span style="font-size:11px;font-weight:700;color:var(--bid-c);">Bid 1</span></td>
+                <td>Stable ROAS 5.0</td>
+                <td>tROAS +10% &nbsp;500%→550%</td>
+                <td><span class="outcome-dot od-monitoring"></span>Monitoring (Day 10/14)</td>
+                <td style="color:var(--muted);">—</td>
+              </tr>
+              <tr>
+                <td style="color:var(--muted);white-space:nowrap;">2026-02-10</td>
+                <td><span style="font-size:11px;font-weight:700;color:var(--budget-c);">Budget 1</span></td>
+                <td>Growth Moderate</td>
+                <td>Budget +10% &nbsp;£300→£330</td>
+                <td><span class="outcome-dot od-reverted"></span>Reverted</td>
+                <td style="color:#991b1b;font-weight:600;">ROAS −12% after 5d</td>
+              </tr>
+              <tr>
+                <td style="color:var(--muted);white-space:nowrap;">2026-02-08</td>
+                <td><span style="font-size:11px;font-weight:700;color:var(--bid-c);">Bid 2</span></td>
+                <td>Stable ROAS 4.0</td>
+                <td>tROAS −5% &nbsp;400%→380%</td>
+                <td><span class="outcome-dot od-success"></span>Successful</td>
+                <td style="color:#15803d;font-weight:600;">Conv +22% after 14d</td>
+              </tr>
+              <tr>
+                <td style="color:var(--muted);white-space:nowrap;">2026-02-06</td>
+                <td><span style="font-size:11px;font-weight:700;color:var(--status-c);">Status 1</span></td>
+                <td>Low ROAS Brand</td>
+                <td>Flagged for review</td>
+                <td><span class="outcome-dot od-declined"></span>Declined</td>
+                <td style="color:var(--muted);">User declined</td>
+              </tr>
+              <tr>
+                <td style="color:var(--muted);white-space:nowrap;">2026-02-04</td>
+                <td><span style="font-size:11px;font-weight:700;color:var(--budget-c);">Budget 3</span></td>
+                <td>Emergency — Cost Spike</td>
+                <td>Budget −10% &nbsp;£600→£540</td>
+                <td><span class="outcome-dot od-success"></span>Successful</td>
+                <td style="color:#15803d;font-weight:600;">Cost −15% after 7d</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== CAMPAIGNS PAGE ==================== -->
+  <div id="view-campaigns" class="d-none">
+    <div class="topbar">
+      <span class="page-title">Campaigns</span>
+      <div class="topbar-right">
+        <button class="date-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Custom range...
+        </button>
+        <button class="date-btn">7d</button>
+        <button class="date-btn active-date">30d</button>
+        <button class="date-btn">90d</button>
+      </div>
+    </div>
+    <div class="page-body">
+
+      <div class="page-tabs">
+        <div class="page-tab">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          Campaigns <span class="tab-badge">20</span>
+        </div>
+        <div class="page-tab">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Rules <span class="tab-badge">13</span>
+        </div>
+        <div class="page-tab active">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4"/></svg>
+          Recommendations <span class="tab-badge-warning">5 pending</span>
+        </div>
+      </div>
+
+      <div class="rec-header">
+        <div class="rec-header-left">
+          <h5>Campaign Recommendations</h5>
+          <p>Pending and active monitoring for this page. <a href="#" onclick="showView('global',event);setTimeout(()=>switchGlobalTab('history',document.querySelectorAll('#view-global .page-tab')[2]),50);" style="color:#0d6efd;text-decoration:none;">View full history →</a></p>
+        </div>
+        <div class="rec-header-right">
+          <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2" style="font-size:13px;border-color:#d0d5dd;color:#374151;padding:6px 14px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
+            Run Recommendations Now
+          </button>
+        </div>
+      </div>
+
+      <!-- PENDING SECTION -->
+      <div class="section-label sl-pending">
+        Pending <span class="section-count">3</span>
+      </div>
+      <div class="rec-grid-2">
+
+        <div class="rec-card">
+          <div class="rec-top rt-budget"></div>
+          <div class="rec-body">
+            <div class="rec-card-header">
+              <div>
+                <div class="rec-rule-tag rrt-budget">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/></svg>
+                  Budget 1
+                </div>
+                <div class="rec-campaign-name">Growth Strong</div>
+              </div>
+              <span class="status-pill sp-pending">● Pending</span>
+            </div>
+            <div class="change-block cb-budget">
+              <div class="change-icon-wrap ciw-budget">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+              </div>
+              <div>
+                <div class="change-main">Increase daily budget by 10%</div>
+                <div class="change-sub">£450 → <strong>£495</strong> &nbsp;·&nbsp; 7-day cooldown after</div>
+              </div>
+            </div>
+            <div class="trigger-block">
+              <div class="trigger-label">Why this triggered</div>
+              ROAS (7d) <span class="cond-val">6.2x</span> &gt; target × 1.15 &nbsp;·&nbsp; Clicks (7d) <span class="cond-val">312</span> ≥ 30
+            </div>
+            <div class="rec-footer">
+              <div class="rec-footer-meta">
+                <span class="conf-badge cb-high">High confidence</span>
+                <span class="rec-age">Today 06:00 AM</span>
+                <span class="chat28-note">Buttons active in Chat 28</span>
+              </div>
+              <div class="rec-footer-actions">
+                <button class="btn-modify">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  Modify
+                </button>
+                <button class="btn-decline">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  Decline
+                </button>
+                <button class="btn-accept">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Accept
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rec-card">
+          <div class="rec-top rt-bid"></div>
+          <div class="rec-body">
+            <div class="rec-card-header">
+              <div>
+                <div class="rec-rule-tag rrt-bid">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  Bid 1
+                </div>
+                <div class="rec-campaign-name">Stable ROAS 5.0</div>
+              </div>
+              <span class="status-pill sp-pending">● Pending</span>
+            </div>
+            <div class="change-block cb-bid">
+              <div class="change-icon-wrap ciw-bid">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+              </div>
+              <div>
+                <div class="change-main">Increase tROAS target by 10%</div>
+                <div class="change-sub">500% → <strong>550%</strong> &nbsp;·&nbsp; 14-day cooldown after</div>
+              </div>
+            </div>
+            <div class="trigger-block">
+              <div class="trigger-label">Why this triggered</div>
+              ROAS (30d) <span class="cond-val">5.8x</span> &gt; target × 1.25 &nbsp;·&nbsp; Conversions (30d) <span class="cond-val">22</span> ≥ 15
+            </div>
+            <div class="rec-footer">
+              <div class="rec-footer-meta">
+                <span class="conf-badge cb-med">Medium confidence</span>
+                <span class="rec-age">Today 06:00 AM</span>
+                <span class="chat28-note">Buttons active in Chat 28</span>
+              </div>
+              <div class="rec-footer-actions">
+                <button class="btn-modify">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  Modify
+                </button>
+                <button class="btn-decline">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  Decline
+                </button>
+                <button class="btn-accept">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Accept
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- MONITORING SECTION -->
+      <div class="section-label sl-monitoring">
+        Monitoring <span class="section-count">2</span>
+      </div>
+      <div class="rec-grid-2">
+
+        <div class="rec-card card-monitoring">
+          <div class="rec-top rt-monitoring"></div>
+          <div class="rec-body">
+            <div class="rec-card-header">
+              <div>
+                <div class="rec-rule-tag" style="color:#6d28d9;">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/></svg>
+                  Budget 2
+                </div>
+                <div class="rec-campaign-name">Budget Constrained High</div>
+              </div>
+              <span class="status-pill sp-monitoring">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Monitoring
+              </span>
+            </div>
+            <div class="change-block cb-budget">
+              <div class="change-icon-wrap ciw-budget">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+              </div>
+              <div>
+                <div class="change-main">Decreased daily budget by 10%</div>
+                <div class="change-sub">£200 → <strong>£180</strong> &nbsp;·&nbsp; Accepted 4 days ago</div>
+              </div>
+            </div>
+            <div class="monitoring-block">
+              <div class="mon-top">
+                <div class="mon-label">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Monitoring period
+                </div>
+                <div class="mon-days">Day 4 of 7</div>
+              </div>
+              <div class="mon-bar-wrap"><div class="mon-bar" style="width:57%;"></div></div>
+              <div class="mon-outcomes">
+                <div class="mon-outcome-pill mop-success">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  ROAS holds → <strong>kept in place</strong>
+                </div>
+                <div class="mon-outcome-pill mop-revert">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#991b1b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
+                  ROAS drops → <strong>auto-reverted</strong>
+                </div>
+              </div>
+            </div>
+            <div class="rec-footer">
+              <div class="rec-footer-meta">
+                <span class="conf-badge cb-high">High confidence</span>
+                <span class="rec-age">Accepted 2026-02-18</span>
+                <span style="margin-left:auto;font-size:12px;color:#6d28d9;font-weight:600;">3 days remaining</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div><!-- end main -->
+
+<!-- ANN BAR -->
+<div class="ann-bar">
+  <strong style="color:white;">M6 WIREFRAME v5</strong>
+  <span>All fixes: SVG icons · 2-col global / 1-col per-page · change first / trigger second · split footer · no emoji</span>
+  <span>Sidebar: Recommendations = global | Campaigns = per-page tab</span>
+  <span>Global tabs: Pending · Monitoring · History</span>
+</div>
+
+<script>
+function showView(view, e) {
+  if (e) e.preventDefault();
+  ['global','campaigns'].forEach(v => document.getElementById('view-'+v).classList.toggle('d-none', v !== view));
+  document.querySelectorAll('.nav-item a').forEach(a => a.classList.remove('active'));
+  if (view === 'global') document.querySelectorAll('.nav-item a')[6].classList.add('active');
+  if (view === 'campaigns') document.querySelectorAll('.nav-item a')[1].classList.add('active');
+}
+function switchGlobalTab(tab, el) {
+  ['pending','monitoring','history'].forEach(t => {
+    document.getElementById('gtab-'+t).classList.toggle('d-none', t !== tab);
+  });
+  document.querySelectorAll('#view-global .page-tabs .page-tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    this.closest('.filter-bar').querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

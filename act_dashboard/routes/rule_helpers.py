@@ -12,6 +12,7 @@ Chat 21c: Rule visibility system foundation
 
 import re
 import inspect
+import traceback
 from typing import List, Dict, Any, Optional
 
 
@@ -146,13 +147,14 @@ def format_rule_metadata(rule_fn, category: str, rule_id: str = None) -> Dict[st
     }
 
 
-def extract_rules_from_module(module_name: str, category: str) -> List[Dict[str, Any]]:
+def extract_rules_from_module(module_name: str, category: str, func_prefix: str = None) -> List[Dict[str, Any]]:
     """
     Extract all rule functions from a module.
     
     Args:
         module_name: Module to import (e.g., 'act_autopilot.rules.budget_rules')
         category: Rule category for this module
+        func_prefix: Optional prefix filter - only include functions starting with this prefix
         
     Returns:
         List of formatted rule metadata dicts
@@ -169,6 +171,10 @@ def extract_rules_from_module(module_name: str, category: str) -> List[Dict[str,
             if name.startswith('_'):
                 continue
             
+            # Apply prefix filter if specified
+            if func_prefix and not name.startswith(func_prefix):
+                continue
+            
             # Skip helper functions that don't follow rule naming pattern
             # Rule functions: category_NNN_description OR category_action_NNN
             if not re.search(r'_\d{3}(?:_|$)', name):
@@ -179,9 +185,11 @@ def extract_rules_from_module(module_name: str, category: str) -> List[Dict[str,
             rules.append(rule_meta)
             
     except ImportError as e:
-        print(f"[rule_helpers] Warning: Could not import {module_name}: {e}")
+        print(f"[rule_helpers] WARNING: Could not import {module_name}: {e}")
+        traceback.print_exc()
     except Exception as e:
-        print(f"[rule_helpers] Error extracting rules from {module_name}: {e}")
+        print(f"[rule_helpers] ERROR extracting rules from {module_name}: {e}")
+        traceback.print_exc()
     
     return rules
 
@@ -208,6 +216,10 @@ def get_rules_for_page(page_type: str, customer_id: Optional[str] = None) -> Lis
     elif page_type == 'keyword':
         # Keyword rules (includes search term rules)
         all_rules.extend(extract_rules_from_module('act_autopilot.rules.keyword_rules', 'KEYWORD'))
+        
+    elif page_type == 'ad_group':
+        # Ad group rule lives in ad_rules module - filter to adgroup-prefixed functions only
+        all_rules.extend(extract_rules_from_module('act_autopilot.rules.ad_rules', 'AD_GROUP', func_prefix='rule_adgroup'))
         
     elif page_type == 'ad':
         # Ad rules

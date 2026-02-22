@@ -500,7 +500,7 @@ def ad_groups():
         status=status,
         sort_by=sort_by,
         sort_dir=sort_dir,
-        rules=rules,
+        rules_config=[],
         rule_counts=rule_counts,
         financial_cards=financial_cards,
         actions_cards=actions_cards,
