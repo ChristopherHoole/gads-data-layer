@@ -1,7 +1,7 @@
 # CHAT WORKING RULES - MANDATORY FOR ALL CHATS
 
-**Version:** 1.4  
-**Last Updated:** 2026-02-22  
+**Version:** 1.5
+**Last Updated:** 2026-02-23
 **Applies to:** All Claude chats working on this project
 
 ---
@@ -21,39 +21,43 @@ These rules are MANDATORY and NON-NEGOTIABLE. Violating these rules causes:
 
 ## 📋 RULE 1: MANDATORY UPLOADS AT START OF EVERY CHAT
 
-**MANDATORY FIRST STEP FOR EVERY CHAT — ALL 3 UPLOADS REQUIRED:**
+**MANDATORY FIRST STEP FOR EVERY CHAT — ALL 7 UPLOADS REQUIRED:**
 
-Before doing ANYTHING, request all 3 uploads:
+Before doing ANYTHING, confirm all 7 uploads received:
 ```
-Before I begin, I need 3 mandatory uploads:
+Before I begin, I need 7 mandatory uploads:
 
 1. Codebase ZIP
    Location: C:\Users\User\Desktop\gads-data-layer
-   (Create ZIP of entire folder and upload here)
 
-2. PROJECT_ROADMAP.md
+2. CHAT_[N]_BRIEF.md  (the brief for this specific chat)
+   Location: C:\Users\User\Desktop\gads-data-layer\docs\CHAT_[N]_BRIEF.md
+
+3. PROJECT_ROADMAP.md
    Location: C:\Users\User\Desktop\gads-data-layer\docs\PROJECT_ROADMAP.md
 
-3. CHAT_WORKING_RULES.md
+4. CHAT_WORKING_RULES.md
    Location: C:\Users\User\Desktop\gads-data-layer\docs\CHAT_WORKING_RULES.md
 
-These allow me to:
-✅ See complete project structure (ZIP)
-✅ Understand current project status and completed work (ROADMAP)
-✅ Follow mandatory working rules for this project (RULES)
-✅ Work from current state, not assumptions
+5. MASTER_KNOWLEDGE_BASE.md
+   Location: C:\Users\User\Desktop\gads-data-layer\docs\MASTER_KNOWLEDGE_BASE.md
 
-Upload all 3 now before I proceed.
+6. DASHBOARD_PROJECT_PLAN.md
+   Location: C:\Users\User\Desktop\gads-data-layer\docs\DASHBOARD_PROJECT_PLAN.md
+
+7. WORKFLOW_GUIDE.md
+   Location: C:\Users\User\Desktop\gads-data-layer\docs\WORKFLOW_GUIDE.md
 ```
 
-**After all 3 uploaded:**
-1. Extract ZIP
-2. Use `view` tool to explore structure
+**After all 7 uploaded:**
+1. Extract ZIP, explore structure
+2. Read the brief for this chat in full
 3. Read PROJECT_ROADMAP.md — understand current status
 4. Read CHAT_WORKING_RULES.md — confirm rules understood
-5. THEN proceed to Phase 2B (5 Questions)
+5. Read MASTER_KNOWLEDGE_BASE.md — understand architecture and lessons learned
+6. THEN proceed to Rule 5 (5 Questions)
 
-**NEVER skip any of the 3 uploads. NEVER proceed with only 1 or 2.**
+**NEVER skip any of the 7 uploads. NEVER proceed with only some.**
 
 ---
 
@@ -115,12 +119,6 @@ If you catch yourself about to edit a file, ask:
 - ✅ "Upload `C:\Users\User\Desktop\gads-data-layer\act_autopilot\rules\keyword_rules.py`"
 - ✅ "The file is in `C:\Users\User\Desktop\gads-data-layer\act_dashboard\`"
 
-### **Why This Rule Exists:**
-- Prevents ambiguity (multiple files with same name)
-- User knows exactly what to upload/save
-- No confusion about locations
-- Professional communication
-
 ### **Format:**
 ```
 C:\Users\User\Desktop\gads-data-layer\[folder]\[subfolder]\[filename]
@@ -151,35 +149,16 @@ Reply "Proceed" to continue, or give different instructions.
 [STOP - Wait for confirmation]
 ```
 
-### **Why This Rule Exists:**
-- User can course-correct if needed
-- Prevents runaway automation
-- Allows user to verify each step
-- Reduces waste if direction changes
-
-### **Checkpoints:**
-- After analysis/diagnosis
-- After creating files
-- After testing
-- Before major changes
-
 ---
 
 ## 📋 RULE 5: 5 QUESTIONS + BUILD PLAN REVIEW BEFORE BUILDING
 
 ### **The Rule:**
-**After uploading and reviewing the codebase, PROJECT_ROADMAP.md, and CHAT_WORKING_RULES.md — BEFORE writing any code — the worker MUST complete a two-stage clarification process: (1) send 5 questions to Master Chat, (2) send a detailed build plan to Master Chat for review. Both must be approved before implementation begins.**
-
-### **Why This Rule Exists:**
-- Surfaces unknowns BEFORE they become bugs
-- Prevents mid-build assumptions that cost hours to debug
-- Ensures worker and Master are fully aligned on approach
-- Catches architectural mistakes before any code is written
-- Saves time vs. discovering issues mid-implementation
+**After uploading and reviewing all docs — BEFORE writing any code — the worker MUST complete a two-stage clarification process: (1) send 5 questions to Master Chat, (2) send a detailed build plan to Master Chat for review. Both must be approved before implementation begins.**
 
 ### **The Full Process:**
 ```
-STEP 1:  Worker reviews brief + codebase + docs
+STEP 1:  Worker reviews brief + codebase + all 7 docs
 STEP 2:  Worker writes exactly 5 questions (no more, no less)
 STEP 3:  Worker sends questions with header "5 QUESTIONS FOR MASTER CHAT"
 STEP 4:  Worker STOPS — waits for answers
@@ -207,23 +186,20 @@ Q5. [CATEGORY] Question text here?
 Waiting for Master Chat answers before proceeding.
 ```
 
-### **Build Plan Format (after receiving Q&A answers):**
+### **Build Plan Format:**
 ```
 DETAILED BUILD PLAN FOR MASTER CHAT REVIEW
 
 Files to create/modify:
 - [Full path] — [what changes]
-- [Full path] — [what changes]
 
 Step-by-step implementation:
 STEP A: [Task] (~X min)
-  - [Specific action]
   - [Specific action]
 STEP B: [Task] (~X min)
   - [Specific action]
 STEP C: Testing (~X min)
   - [Test 1]
-  - [Test 2]
 
 Total estimated time: X minutes
 Risks / unknowns: [Any remaining concerns]
@@ -231,7 +207,7 @@ Risks / unknowns: [Any remaining concerns]
 Waiting for Master Chat approval before starting.
 ```
 
-### **Question Categories (use in brackets):**
+### **Question Categories:**
 - `[DATABASE]` — schema, column names, table existence
 - `[ROUTE]` — existing code, overwrite vs. extend
 - `[DESIGN]` — UI decisions not clear from brief
@@ -245,206 +221,22 @@ Waiting for Master Chat approval before starting.
 - ❌ Skip the build plan step after receiving Q&A answers
 - ❌ Begin implementation without Master Chat approving the build plan
 
-### **Enforcement:**
-Master Chat will not review completed work from a worker that skipped either stage of this process. Both the Q&A and the build plan review are mandatory checkpoints.
-
 ---
 
 ## 📋 RULE 6: SHOW YOUR WORK
 
-### **The Rule:**
 **Document findings, explain reasoning, show comparisons BEFORE making changes.**
 
-### **Analysis Format:**
-```
-CURRENT STATE:
-- Field X: [current value]
-- Field Y: [current value]
-
-PROBLEM IDENTIFIED:
-- [Specific issue with evidence]
-
-PROPOSED FIX:
-- [Exact change to make]
-
-WHY THIS FIXES IT:
-- [Explanation of how fix addresses problem]
-```
-
-### **Before/After Format:**
-```
-BEFORE (Current Code - Line X):
-[exact current code]
-
-AFTER (New Code):
-[exact new code]
-
-CHANGES MADE:
-✅ [Change 1]
-✅ [Change 2]
-```
-
-### **Comparison Tables:**
-```
-| Field | Required | Keywords Has | Ads Has | Shopping Has |
-|-------|----------|--------------|---------|--------------|
-| id    | Yes      | ❌ Missing   | ✅ Yes  | ✅ Yes       |
-```
-
-### **Why This Rule Exists:**
-- User understands what you're doing
-- User can catch errors before they happen
-- Builds trust
-- Creates documentation trail
-
 ---
 
-## 📋 RULE 7: DEBUGGING PROTOCOL
+## 📋 RULE 7: TESTING - VERIFY BEFORE REPORTING COMPLETE
 
-### **When Tests Fail:**
+**After EVERY code change — mandatory test workflow:**
 
-**MANDATORY DEBUG WORKFLOW:**
-
-1. **Add Debug Logging:**
-```python
-logger.info(f"DEBUG: field_name={field_name}")
-logger.info(f"DEBUG: full_object={full_object}")
-```
-
-2. **Request Test:**
-```
-I've added debug logging to see exact values.
-
-Please:
-1. Save the file
-2. Restart server
-3. Test the action
-4. Copy ALL debug lines from PowerShell
-5. Paste here
-
-This will show us EXACTLY what values are causing the failure.
-```
-
-3. **Analyze Debug Output:**
-```
-DEBUG OUTPUT ANALYSIS:
-- Field X = [value] ← PROBLEM: Should be [expected]
-- Field Y = [value] ← OK
-- Field Z = [value] ← PROBLEM: Is None, should be [type]
-
-ROOT CAUSE: [Specific issue identified]
-
-FIX: [Exact change needed]
-```
-
-4. **Fix and Retest:**
-- Make targeted fix
-- Keep debug logging until confirmed working
-- Remove debug logging after success
-
-### **Never:**
-- ❌ Guess at the problem without debug output
-- ❌ Make changes without seeing actual values
-- ❌ Say "it should work" without testing
-
----
-
-## 📋 RULE 8: ERROR HANDLING
-
-### **Every Code Change Must Include:**
-
-**1. Input Validation:**
-```python
-if not all([required_field1, required_field2]):
-    return {
-        "success": False,
-        "message": "Missing required fields",
-        "error": "Specific field names missing"
-    }
-```
-
-**2. Safe Defaults:**
-```python
-value = rec.get('field') or 'safe_default'
-count = rec.get('count') if rec.get('count') is not None else 0
-```
-
-**3. Empty List/Dict Checks:**
-```python
-if len(results) == 0:
-    return error_response("No results found")
-
-result = results[0]  # Only access after checking length
-```
-
-**4. Try/Except with Specific Errors:**
-```python
-try:
-    result = risky_operation()
-except KeyError as e:
-    logger.error(f"Missing key: {e}")
-    return error_response(f"Missing required key: {e}")
-except Exception as e:
-    logger.error(f"Unexpected error: {e}")
-    return error_response(f"Operation failed: {e}")
-```
-
-### **Never:**
-- ❌ Assume fields exist without checking
-- ❌ Access list[0] without checking length
-- ❌ Use broad `except Exception` without logging
-- ❌ Return generic error messages
-
----
-
-## 📋 RULE 9: TESTING PROTOCOL
-
-### **After EVERY code change:**
-
-**MANDATORY TEST WORKFLOW:**
-
-1. **Specify Exact Test Steps:**
-```
-TESTING INSTRUCTIONS:
-
-1. Save file to: C:\Users\User\Desktop\gads-data-layer\[path]\[file]
-2. Restart server:
-   cd C:\Users\User\Desktop\gads-data-layer
-   .\.venv\Scripts\Activate.ps1
-   python act_dashboard/app.py
-3. Navigate to: http://localhost:5000/[page]
-4. Click "Dry-Run" on first 3 recommendations
-5. Report:
-   - Toast color (green or red)
-   - Toast message
-   - PowerShell output (last 10 lines)
-```
-
-2. **Define Success Criteria:**
-```
-EXPECTED RESULTS:
-✅ Green success toast appears
-✅ PowerShell shows: "successful=1, failed=0"
-✅ No errors in browser console
-```
-
-3. **Handle Failures:**
-```
-IF TEST FAILS:
-1. Do NOT proceed to next step
-2. Request debug output
-3. Analyze failure
-4. Fix issue
-5. Retest
-6. Only proceed when test passes
-```
-
-### **Never:**
-- ❌ Skip testing after code changes
-- ❌ Proceed if tests fail
-- ❌ Say "it should work" without actual test
-- ❌ Test only one scenario (test multiple)
-- ❌ Deploy a modified Jinja template without first validating syntax
+1. Specify exact test steps with PowerShell commands
+2. Define success criteria before testing
+3. Report actual results — never "it should work"
+4. If tests fail: stop, debug, fix, retest before proceeding
 
 **Jinja Template Validation (mandatory after any template edit):**
 ```powershell
@@ -452,149 +244,72 @@ cd C:\Users\User\Desktop\gads-data-layer
 .\.venv\Scripts\Activate.ps1
 python -c "from jinja2 import Environment, FileSystemLoader; env = Environment(loader=FileSystemLoader('act_dashboard/templates')); env.get_template('your_template.html'); print('Jinja OK')"
 ```
-If this throws an error, fix the template before proceeding.
+
+**PowerShell restart command:**
+```powershell
+cd C:\Users\User\Desktop\gads-data-layer
+.\.venv\Scripts\Activate.ps1
+python -m act_dashboard.app
+```
 
 ---
 
-## 📋 RULE 10: DELIVERABLES - DOWNLOADS ONLY
+## 📋 RULE 8: ERROR HANDLING
 
-### **The Rule:**
-**ALL file edits MUST be provided as download links. NO code in chat.**
+Every code change must include: input validation, safe defaults, empty list/dict checks, try/except with specific errors and logging.
 
-### **WRONG:**
-```
-Here's the fixed code:
-[300 lines of Python code in chat]
+---
 
-Copy this and save it to routes.py
-```
+## 📋 RULE 9: DELIVERABLES - COMPLETE FILES ONLY
 
-### **CORRECT:**
-```
-CHANGES MADE:
-✅ Fixed field validation (line 245)
-✅ Added error handling (lines 260-265)
+**ALL file edits MUST be provided as complete, ready-to-use files. NO code snippets in chat.**
 
-[DOWNLOAD LINK - routes.py]
-
-Save to: C:\Users\User\Desktop\gads-data-layer\act_dashboard\routes.py
-
-After saving, reply "Saved, ready to test"
-```
-
-### **Why This Rule Exists:**
-- Code in chat is hard to copy
-- Formatting breaks
-- User can't easily save
-- Download = one click
-- Download = complete file guaranteed
-
-### **Format:**
+Format:
 1. Show summary of changes (bullets)
-2. Provide download link
-3. Specify exact save path
+2. Provide complete file
+3. Specify exact save path (full Windows path)
 4. Request confirmation after save
 
 ---
 
-## 📋 RULE 11: GIT COMMITS
+## 📋 RULE 10: GIT COMMITS
 
-### **When to Commit:**
-- After major working milestone
-- After completing a chat's main goal
-- Before attempting risky changes
-- When user requests
+**When to Commit:** After major working milestone, after completing a chat's main goal, before risky changes, when user requests.
 
-### **Commit Message Format:**
-```
-[Chat Number]: [Brief Description]
-
-WORKING:
-- [Feature 1]: Description
-- [Feature 2]: Description
-
-IN PROGRESS / FIXED:
-- [Issue 1]: What was done
-- [Issue 2]: What was done
-
-FILES MODIFIED:
-- path/to/file1.py (what changed)
-- path/to/file2.py (what changed)
-
-FILES CREATED:
-- path/to/new_file.py
-
-TEST RESULTS:
-- [Test 1]: ✅ / ❌
-- [Test 2]: ✅ / ❌
-
-NEXT: [What should be done next]
-```
-
-### **Git Workflow:**
+**Git Workflow:**
 ```powershell
 cd C:\Users\User\Desktop\gads-data-layer
 git add .
 git status
-git commit -m "[message from above]"
+git commit -m "[message]"
 git push origin main
 ```
 
 ---
 
-## 📋 RULE 12: WHEN TO STOP
+## 📋 RULE 11: WHEN TO STOP
 
-### **Stop Immediately If:**
-- Going in circles (same error 3+ times)
-- 3+ hours on same issue without resolution
-- User expresses frustration
-- Unclear what's causing problem even after debugging
-- Tactical fixes revealing more issues underneath
+**Stop Immediately If:** Going in circles (same error 3+ times), 3+ hours without resolution, user expresses frustration, root cause unclear after debugging.
 
-### **Then:**
-```
-⚠️ STOPPING - Tactical approach not working
-
-We've encountered [problem] which suggests deeper architectural issues.
-
-OPTIONS:
-A) Continue debugging (est. [time])
-B) Stop and create architectural refactor plan
-C) Stop and reassess approach
-
-User, what would you like to do?
-```
-
-### **Never:**
-- ❌ Keep trying same fixes hoping for different results
-- ❌ Make changes without understanding root cause
-- ❌ Waste user's time on fruitless debugging
+Then present options: continue debugging / architectural refactor plan / reassess approach.
 
 ---
 
-## 📋 RULE 13: COMMUNICATION
+## 📋 RULE 12: COMPLETION WORKFLOW
 
-### **Tone:**
-- Professional but friendly
-- Honest about limitations
-- Clear about what you know vs. don't know
-- Admit mistakes immediately
+After all implementation and testing is done:
 
-### **Explanations:**
-- Use simple language
-- Explain WHY, not just WHAT
-- Provide context
-- Break complex topics into steps
+1. Worker writes completion summary (Step 10)
+2. Christopher pastes to Master Chat
+3. Master Chat reviews and approves (or sends back for fixes)
+4. Worker creates two handoff docs:
+   - `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_[N]_DETAILED_SUMMARY.md`
+   - `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_[N]_HANDOFF.md`
+5. Christopher pastes both to Master Chat
+6. Master Chat reviews handoff docs and updates project docs (Steps 14/15)
+7. Master Chat instructs git commit
 
-### **Questions:**
-- Ask specific questions
-- Provide options when appropriate
-- Don't ask what you should already know from files
-
-### **Updates:**
-- Keep user informed of progress
-- Explain what you're doing
-- Set realistic expectations
+**Worker never commits to git directly — always via Master Chat instruction.**
 
 ---
 
@@ -602,24 +317,23 @@ User, what would you like to do?
 
 **Before ANY action, verify:**
 
-- [ ] Have I uploaded codebase ZIP? (if first message)
-- [ ] Have I requested current file version?
-- [ ] Am I using full file paths?
-- [ ] Am I completing one step at a time?
+- [ ] Have all 7 uploads been received and read?
+- [ ] Have I requested current file version before editing? (Rule 2)
+- [ ] Am I using full Windows file paths? (Rule 3)
+- [ ] Am I completing one step at a time and waiting for confirmation? (Rule 4)
 - [ ] Have I sent 5 questions to Master Chat and received answers? (Rule 5)
 - [ ] Have I sent my build plan to Master Chat and received approval? (Rule 5)
 - [ ] Have I shown my analysis before editing? (Rule 6)
-- [ ] Have I included debug logging if testing?
-- [ ] Have I included error handling in code?
-- [ ] Have I specified exact test steps?
-- [ ] Am I providing downloads (not code in chat)?
-- [ ] Am I stopping if going in circles?
+- [ ] Have I included error handling in code? (Rule 8)
+- [ ] Am I providing complete files (not snippets)? (Rule 9)
+- [ ] Have I tested before reporting complete? (Rule 7)
+- [ ] Am I stopping if going in circles? (Rule 11)
 
 **Master Chat is watching. Follow these rules.**
 
 ---
 
-## KNOWN PITFALLS (Updated Chat 28)
+## KNOWN PITFALLS (Updated Chat 29)
 
 | Problem | Fix |
 |---------|-----|
@@ -630,11 +344,16 @@ User, what would you like to do?
 | Inline card rendering | Use /cards JSON endpoint + JS rendering — do not reload full page |
 | Duplicate recommendations | Check (campaign_id, rule_id) before insert — engine run 2 must return SkippedDuplicate |
 | Flask route decorator broken | Never insert helper functions between @bp.route decorator and its function |
-| Brief column names differ from schema | Always verify actual DB column names before writing — e.g. brief said `acted_at` but schema has `accepted_at` |
-| Tab switching approach mismatch | recommendations.html uses server-side Jinja + JS show/hide; campaigns.html uses JS fetch from /cards — match the pre-existing pattern per page, don't change the other page's approach |
-| Datetime formatting from DuckDB | Fields can be Python datetime objects or ISO strings — use `\| string \| truncate(10, True, '')` in Jinja to safely extract YYYY-MM-DD in all cases |
-| NULL dates on old rows | Synthetic data predating new routes has NULL timestamps — handle gracefully, show fallback, document as expected behaviour not a bug |
+| Brief column names differ from schema | Always verify actual DB column names before writing |
+| Tab switching approach mismatch | recommendations.html: server-side Jinja + JS show/hide; campaigns.html: JS fetch from /cards — match pre-existing pattern per page |
+| Datetime formatting from DuckDB | Use `\| string \| truncate(10, True, '')` in Jinja to safely extract YYYY-MM-DD |
+| NULL dates on old rows | Synthetic data predating new routes has NULL timestamps — handle gracefully |
+| Radar "ro catalog does not exist" | Must ATTACH warehouse_readonly.duckdb in Radar connection before querying ro.analytics.* |
+| Radar read-write conflict | Never open warehouse.duckdb with read_only=True if writes needed. Same file, different configs = DuckDB error |
+| changes JOIN to recommendations | No recommendation_id FK in changes table — JOIN on campaign_id + rule_id + QUALIFY ROW_NUMBER() |
+| System Changes tab data | ro.analytics.change_log is empty in synthetic environment — empty state is correct, not a bug |
 
 ---
 
+**Version:** 1.5 | **Last Updated:** 2026-02-23
 **END OF CHAT WORKING RULES**

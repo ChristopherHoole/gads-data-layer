@@ -1,11 +1,10 @@
-import duckdb
-
-con = duckdb.connect("warehouse_readonly.duckdb")
-result = con.execute("PRAGMA table_info('analytics.campaign_daily');").fetchall()
-
-print("Column name | Type")
-print("-" * 50)
-for row in result:
-    print(f"{row[1]:30} {row[2]}")
-
-con.close()
+﻿import duckdb
+conn = duckdb.connect('warehouse.duckdb')
+print('=== changes columns ===')
+for r in conn.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'changes' ORDER BY ordinal_position").fetchall():
+    print(r[0])
+print()
+print('=== executed_by values ===')
+for r in conn.execute("SELECT DISTINCT executed_by FROM changes").fetchall():
+    print(r[0])
+conn.close()

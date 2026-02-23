@@ -13,7 +13,7 @@
   }
 
   /* SUMMARY STRIP */
-  .summary-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
+  .summary-strip { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 24px; }
   .summary-card  { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; }
   .s-icon  { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .s-num   { font-size: 24px; font-weight: 700; line-height: 1; }
@@ -28,6 +28,7 @@
   .tab-badge-orange { background: #fff3cd; color: #7c3700; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
   .tab-badge-green  { background: #dcfce7; color: #15803d; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
   .tab-badge-grey   { background: #f3f4f6; color: #6b7280; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+  .tab-badge-red    { background: #fee2e2; color: #991b1b; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
 
   /* REC HEADER */
   .rec-header         { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 16px; }
@@ -49,6 +50,7 @@
   .rec-card.card-monitoring { border-color: #bfdbfe; }
   .rec-card.card-success    { border-color: #bbf7d0; }
   .rec-card.card-declined   { opacity: 0.55; }
+  .rec-card.card-reverted   { border-color: #fecaca; }
   .rec-card.removing        { opacity: 0; transform: scale(0.96); pointer-events: none; }
 
   /* Top bars */
@@ -59,6 +61,7 @@
   .rt-monitoring { background: linear-gradient(90deg,#0d6efd,#7c3aed); }
   .rt-successful { background: #15803d; }
   .rt-declined   { background: #9ca3af; }
+  .rt-reverted   { background: #dc3545; }
 
   .rec-body { padding: 16px 18px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
 
@@ -70,6 +73,7 @@
   .rrt-status        { color: var(--status-c); }
   .rrt-monitoring    { color: #6d28d9; }
   .rrt-declined      { color: #6b7280; }
+  .rrt-reverted      { color: #991b1b; }
   .rec-campaign-name { font-size: 14px; font-weight: 600; color: #1a1d23; }
 
   /* Status pills */
@@ -78,6 +82,7 @@
   .sp-monitoring { background: #ede9fe; color: #6d28d9; }
   .sp-successful { background: #dcfce7; color: #15803d; }
   .sp-declined   { background: #f3f4f6; color: #6b7280; }
+  .sp-reverted   { background: #fee2e2; color: #991b1b; }
 
   /* Change block */
   .change-block     { border-radius: 8px; padding: 11px 14px; display: flex; align-items: center; gap: 12px; border: 1px solid; }
@@ -111,13 +116,16 @@
   .mop-revert  { background: #fff1f2; border: 1px solid #fecaca; color: #991b1b; }
 
   /* Outcome block */
-  .outcome-block { border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; border: 1px solid; }
-  .ob-success    { background: #f0fdf4; border-color: #bbf7d0; }
-  .ob-declined   { background: #f9fafb; border-color: #e5e7eb; }
-  .outcome-title { font-size: 13px; font-weight: 600; }
-  .ot-success    { color: #15803d; }
-  .ot-declined   { color: #6b7280; }
-  .outcome-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .outcome-block  { border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; border: 1px solid; }
+  .ob-success     { background: #f0fdf4; border-color: #bbf7d0; }
+  .ob-declined    { background: #f9fafb; border-color: #e5e7eb; }
+  .ob-reverted    { background: #fff1f2; border-color: #fecaca; }
+  .outcome-title  { font-size: 13px; font-weight: 600; }
+  .ot-success     { color: #15803d; }
+  .ot-declined    { color: #6b7280; }
+  .ot-reverted    { color: #991b1b; }
+  .outcome-sub    { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .revert-reason  { font-size: 12px; color: #991b1b; margin-top: 4px; font-style: italic; }
 
   /* Footer */
   .rec-footer         { border-top: 1px solid var(--border); padding-top: 10px; margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
@@ -184,6 +192,15 @@
     </div>
   </div>
   <div class="summary-card">
+    <div class="s-icon" style="background:#fee2e2;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
+    </div>
+    <div>
+      <div class="s-num" style="color:#dc3545;">{{ summary.reverted }}</div>
+      <div class="s-label">Reverted</div>
+    </div>
+  </div>
+  <div class="summary-card">
     <div class="s-icon" style="background:#f3f4f6;">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </div>
@@ -207,6 +224,10 @@
   <button class="page-tab" id="btn-tab-successful" onclick="switchTab('successful')">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
     Successful <span class="tab-badge-green" id="tab-badge-successful">{{ successful_recs|length }}</span>
+  </button>
+  <button class="page-tab" id="btn-tab-reverted" onclick="switchTab('reverted')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
+    Reverted <span class="tab-badge-red" id="tab-badge-reverted">{{ reverted_recs|length }}</span>
   </button>
   <button class="page-tab" id="btn-tab-declined" onclick="switchTab('declined')">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -482,6 +503,78 @@
 
 
 {# ════════════════════════════════════════════════════════════════════════════
+   REVERTED TAB
+════════════════════════════════════════════════════════════════════════════ #}
+<div id="tab-reverted" style="display:none;">
+  <div class="rec-header">
+    <div class="rec-header-left">
+      <h5>Reverted</h5>
+      <p>{{ reverted_recs|length }} recommendation{{ 's' if reverted_recs|length != 1 else '' }} auto-reverted by Radar.</p>
+    </div>
+  </div>
+
+  {% if reverted_recs %}
+    <div class="rec-grid-2">
+      {% for rec in reverted_recs %}
+      <div class="rec-card card-reverted">
+        <div class="rec-top rt-reverted"></div>
+        <div class="rec-body">
+          <div class="rec-card-header">
+            <div>
+              <div class="rec-rule-tag rrt-reverted">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#991b1b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
+                {{ rec.rule_id | replace('_',' ') | upper }}
+              </div>
+              <div class="rec-campaign-name">{{ rec.campaign_name }}</div>
+            </div>
+            <span class="status-pill sp-reverted">&#8635; Reverted</span>
+          </div>
+
+          <div class="change-block cb-grey">
+            <div class="change-icon-wrap ciw-grey">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
+            </div>
+            <div>
+              <div class="change-main">{{ rec.action_label }} <span style="font-size:11px;color:#991b1b;font-weight:600;">(then reverted)</span></div>
+              {% if rec.value_label %}<div class="change-sub"><strong>{{ rec.value_label }}</strong></div>{% endif %}
+            </div>
+          </div>
+
+          <div class="outcome-block ob-reverted">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
+            <div>
+              <div class="outcome-title ot-reverted">Auto-reverted by Radar</div>
+              <div class="outcome-sub">
+                Accepted {{ rec.accepted_at | string | truncate(10, True, '') if rec.accepted_at else '—' }}
+                {% if rec.resolved_at %} &nbsp;&#183;&nbsp; Reverted {{ rec.resolved_at | string | truncate(10, True, '') }}{% endif %}
+              </div>
+              {% if rec.revert_reason %}
+              <div class="revert-reason">Reason: {{ rec.revert_reason }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="rec-footer">
+            <div class="rec-footer-meta">
+              <span class="conf-badge cb-{% if rec.confidence=='high'%}high{% elif rec.confidence=='medium'%}med{% else %}low{% endif %}">{{ rec.confidence|title }} confidence</span>
+              <span class="rec-age">Reverted {{ rec.resolved_at | string | truncate(10, True, '') if rec.resolved_at else '—' }}</span>
+              <span class="readonly-label">&#8635; Reverted</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
+      <p>No reverted recommendations.</p>
+    </div>
+  {% endif %}
+</div>
+
+
+{# ════════════════════════════════════════════════════════════════════════════
    DECLINED TAB
 ════════════════════════════════════════════════════════════════════════════ #}
 <div id="tab-declined" style="display:none;">
@@ -590,7 +683,7 @@
 {% block extra_js %}
 <script>
 // ── Tab switching ─────────────────────────────────────────────────────────────
-const TABS = ['pending','monitoring','successful','declined'];
+const TABS = ['pending','monitoring','successful','reverted','declined'];
 function switchTab(name) {
   TABS.forEach(t => {
     document.getElementById('tab-' + t).style.display = (t === name) ? '' : 'none';

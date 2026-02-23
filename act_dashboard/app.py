@@ -134,6 +134,15 @@ def create_app():
     # Register all route blueprints (Phase 1 complete - all 16 routes migrated)
     register_blueprints(app)
 
+    # Chat 29 (M8): Start Radar background monitoring thread
+    # daemon=True ensures thread dies when Flask process exits
+    # Started AFTER register_blueprints so all routes are available first
+    import threading
+    from act_autopilot.radar import radar_loop
+    radar_thread = threading.Thread(target=radar_loop, daemon=True, name="RadarThread")
+    radar_thread.start()
+    print("✅ [Chat 29 M8] Radar background thread started (60s cycle)")
+
     # Centralized error handlers (Phase 1i)
     from flask import jsonify, render_template, request
     

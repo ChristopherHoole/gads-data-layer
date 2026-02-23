@@ -1,232 +1,363 @@
-{% extends "base.html" %}
+{% extends "base_bootstrap.html" %}
 
-{% block title %}Change History - Ads Control Tower{% endblock %}
+{% block title %}Changes — Ads Control Tower{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root {
+    --border: #e5e9f0;
+    --muted:  #8a93a2;
+  }
+
+  /* SUMMARY STRIP */
+  .summary-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
+  .summary-card  { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; }
+  .s-icon  { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .s-num   { font-size: 24px; font-weight: 700; line-height: 1; }
+  .s-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* PAGE TABS */
+  .page-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .page-tab  { padding: 10px 20px; font-size: 13.5px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; display: flex; align-items: center; gap: 6px; white-space: nowrap; background: transparent; border-top: none; border-left: none; border-right: none; }
+  .page-tab:hover { color: #344054; }
+  .page-tab.active { color: #0d6efd; border-bottom-color: #0d6efd; }
+  .tab-badge      { background: #e9ecef; color: #495057; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+  .tab-badge-blue { background: #dbeafe; color: #1d4ed8; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+
+  /* TAB HEADER */
+  .tab-header      { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 16px; }
+  .tab-header h5   { font-size: 16px; font-weight: 600; margin: 0 0 4px; color: #1a1d23; }
+  .tab-header p    { margin: 0; color: var(--muted); font-size: 13px; }
+
+  /* CARD GRID */
+  .ch-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-bottom: 28px; }
+
+  /* CHANGE CARD */
+  .ch-card { background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; transition: box-shadow .15s, border-color .15s; }
+  .ch-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.07); border-color: #d0d7e0; }
+  .ch-top        { height: 4px; flex-shrink: 0; }
+  .rt-budget     { background: #1d4ed8; }
+  .rt-bid        { background: #15803d; }
+  .rt-status     { background: #dc3545; }
+  .rt-system     { background: linear-gradient(90deg,#6d28d9,#0d6efd); }
+  .ch-body       { padding: 16px 18px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+  /* Card header */
+  .ch-card-header   { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .ch-rule-tag      { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 3px; }
+  .rrt-budget       { color: #1d4ed8; }
+  .rrt-bid          { color: #15803d; }
+  .rrt-status       { color: #991b1b; }
+  .rrt-system       { color: #6d28d9; }
+  .ch-campaign-name { font-size: 14px; font-weight: 600; color: #1a1d23; }
+
+  /* Source pill */
+  .source-pill  { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+  .sp-user      { background: #dbeafe; color: #1d4ed8; }
+  .sp-system    { background: #ede9fe; color: #6d28d9; }
+
+  /* Action badge */
+  .action-badge   { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+  .ab-accepted    { background: #dcfce7; color: #15803d; }
+  .ab-modified    { background: #fef3c7; color: #92400e; }
+  .ab-declined    { background: #f3f4f6; color: #6b7280; }
+
+  /* Change block */
+  .change-block     { border-radius: 8px; padding: 11px 14px; display: flex; align-items: center; gap: 12px; border: 1px solid; }
+  .cb-budget        { background: linear-gradient(135deg,#eff6ff,#dbeafe); border-color: #bfdbfe; }
+  .cb-bid           { background: linear-gradient(135deg,#f0fdf4,#dcfce7); border-color: #bbf7d0; }
+  .cb-status        { background: linear-gradient(135deg,#fff7ed,#ffedd5); border-color: #fed7aa; }
+  .cb-grey          { background: #f9fafb; border-color: #e5e7eb; }
+  .change-icon-wrap { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ciw-budget       { background: #dbeafe; }
+  .ciw-bid          { background: #dcfce7; }
+  .ciw-status       { background: #ffedd5; }
+  .ciw-grey         { background: #f3f4f6; }
+  .change-main      { font-size: 13px; font-weight: 600; color: #1a1d23; }
+  .change-sub       { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* Outcome row */
+  .outcome-row      { display: flex; align-items: center; gap: 8px; }
+  .od-dot           { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .od-monitoring    { background: #6d28d9; }
+  .od-success       { background: #15803d; }
+  .od-reverted      { background: #dc3545; }
+  .od-declined      { background: #9ca3af; }
+  .outcome-label    { font-size: 12.5px; font-weight: 600; }
+  .ol-monitoring    { color: #6d28d9; }
+  .ol-success       { color: #15803d; }
+  .ol-reverted      { color: #dc3545; }
+  .ol-declined      { color: #6b7280; }
+
+  /* Footer */
+  .ch-footer      { border-top: 1px solid var(--border); padding-top: 10px; margin-top: auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .conf-badge     { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .cb-high        { background: #d1fae5; color: #065f46; }
+  .cb-med         { background: #fef3c7; color: #92400e; }
+  .cb-low         { background: #fee2e2; color: #991b1b; }
+  .ch-age         { font-size: 12px; color: var(--muted); }
+  .ch-spacer      { margin-left: auto; }
+
+  /* System table */
+  .sys-table       { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .sys-table th    { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-bottom: 1px solid var(--border); background: #f8f9fa; }
+  .sys-table td    { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; color: #344054; }
+  .sys-table tr:last-child td { border-bottom: none; }
+  .sys-table tr:hover td { background: #f8f9fa; }
+  .lever-pill      { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+  .lp-budget       { background: #dbeafe; color: #1d4ed8; }
+  .lp-bid          { background: #dcfce7; color: #15803d; }
+  .lp-status       { background: #ffedd5; color: #991b1b; }
+  .sys-status-pill { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+  .ssp-monitoring  { background: #ede9fe; color: #6d28d9; }
+  .ssp-reverted    { background: #fee2e2; color: #991b1b; }
+  .ssp-successful  { background: #dcfce7; color: #15803d; }
+  .change-arrow    { color: var(--muted); margin: 0 4px; }
+  .change-pct-pos  { color: #15803d; font-weight: 600; }
+  .change-pct-neg  { color: #dc3545; font-weight: 600; }
+
+  /* Empty state */
+  .empty-state   { text-align: center; padding: 48px 24px; color: var(--muted); }
+  .empty-state p { font-size: 14px; margin: 8px 0 0; }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
-    <!-- Page header -->
-    <div>
-        <h1 class="text-3xl font-bold text-gray-900">Change History</h1>
-        <p class="mt-1 text-sm text-gray-500">All executed budget and bid changes</p>
-    </div>
-    
-    <!-- Quick Filter Buttons (Client-side) -->
-    <div class="bg-white shadow rounded-lg p-4">
-        <div class="flex items-center space-x-4">
-            <span class="text-sm font-medium text-gray-700">Quick Filter:</span>
-            <div class="flex space-x-2">
-                <button onclick="filterByStatus('all')" id="filter-all"
-                        class="filter-btn px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white">
-                    All Changes
-                </button>
-                <button onclick="filterByStatus('success')" id="filter-success"
-                        class="filter-btn px-4 py-2 text-sm font-medium rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">
-                    Success Only
-                </button>
-                <button onclick="filterByStatus('failed')" id="filter-failed"
-                        class="filter-btn px-4 py-2 text-sm font-medium rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300">
-                    Failed Only
-                </button>
-            </div>
-            <span class="text-sm text-gray-500" id="visible-count"></span>
-        </div>
-    </div>
-    
-    <!-- Advanced Filters (Server-side) -->
-    <div class="bg-white shadow rounded-lg p-6">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-medium text-gray-700">Advanced Filters</h3>
-            <button onclick="toggleAdvancedFilters()" class="text-sm text-blue-600 hover:text-blue-800">
-                <span id="toggle-text">Show</span>
-            </button>
-        </div>
-        <form method="GET" action="/changes" id="advanced-filters" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-                <label for="search" class="block text-sm font-medium text-gray-700">Search Campaign ID</label>
-                <input type="text" name="search" id="search" value="{{ search }}"
-                       placeholder="Enter campaign ID"
-                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-            </div>
-            
-            <div>
-                <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
-                <select name="status" id="status"
-                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
-                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
-                    <option value="monitoring" {% if status_filter == 'monitoring' %}selected{% endif %}>Monitoring</option>
-                    <option value="rolled_back" {% if status_filter == 'rolled_back' %}selected{% endif %}>Rolled Back</option>
-                    <option value="confirmed_good" {% if status_filter == 'confirmed_good' %}selected{% endif %}>Confirmed Good</option>
-                </select>
-            </div>
-            
-            <div>
-                <label for="lever" class="block text-sm font-medium text-gray-700">Type</label>
-                <select name="lever" id="lever"
-                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                    <option value="all" {% if lever_filter == 'all' %}selected{% endif %}>All</option>
-                    <option value="budget" {% if lever_filter == 'budget' %}selected{% endif %}>Budget</option>
-                    <option value="bid" {% if lever_filter == 'bid' %}selected{% endif %}>Bid</option>
-                </select>
-            </div>
-            
-            <div class="flex items-end">
-                <button type="submit"
-                        class="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    Apply Filters
-                </button>
-            </div>
-        </form>
-    </div>
-    
-    <!-- Changes table -->
-    <div class="bg-white shadow rounded-lg overflow-hidden">
-        {% if changes %}
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Campaign</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rule</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Execution Status</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monitor Status</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                {% for change in changes %}
-                <tr class="change-row hover:bg-gray-50" 
-                    data-status="{% if change[9] == 'rolled_back' %}failed{% else %}success{% endif %}">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {{ change[1] }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {{ change[2] }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if change[3] == 'budget' %}bg-blue-100 text-blue-800{% else %}bg-purple-100 text-purple-800{% endif %}">
-                            {{ change[3]|upper }}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div class="flex items-center space-x-2">
-                            <span>${{ "%.2f"|format(change[4]) }}</span>
-                            <span class="text-gray-400">→</span>
-                            <span>${{ "%.2f"|format(change[5]) }}</span>
-                            <span class="font-medium {% if change[6] > 0 %}text-green-600{% else %}text-red-600{% endif %}">
-                                {{ "{:+.1f}".format(change[6] * 100) }}%
-                            </span>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ change[7] }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        {% if change[9] == 'rolled_back' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                ✗ Failed
-                            </span>
-                        {% else %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                ✓ Success
-                            </span>
-                        {% endif %}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        {% if change[9] == 'rolled_back' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                Rolled Back
-                            </span>
-                        {% elif change[9] == 'confirmed_good' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                Confirmed Good
-                            </span>
-                        {% elif change[9] == 'monitoring' %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                Monitoring
-                            </span>
-                        {% else %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                Active
-                            </span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="p-6 text-center text-gray-500">
-            No changes found matching your filters
-        </div>
-        {% endif %}
-    </div>
-    
-    {% if changes and changes|length == 100 %}
-    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-        <p class="text-sm text-yellow-700">
-            Showing first 100 results. Use filters to narrow down results.
-        </p>
-    </div>
-    {% endif %}
+<div class="py-4">
+
+{# ── PAGE HEADER ────────────────────────────────────────────────────────────── #}
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px;">
+  <div>
+    <h4 style="font-size:20px;font-weight:700;margin:0 0 4px;color:#1a1d23;">Changes</h4>
+    <p style="margin:0;color:var(--muted);font-size:13px;">All budget and bid changes — user actions and system executions.</p>
+  </div>
 </div>
 
+{# ── SUMMARY STRIP ──────────────────────────────────────────────────────────── #}
+<div class="summary-strip">
+  <div class="summary-card">
+    <div class="s-icon" style="background:#dbeafe;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <div>
+      <div class="s-num" style="color:#1d4ed8;">{{ summary.total }}</div>
+      <div class="s-label">Total Actions</div>
+    </div>
+  </div>
+  <div class="summary-card">
+    <div class="s-icon" style="background:#dcfce7;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div>
+      <div class="s-num" style="color:#15803d;">{{ summary.accepted }}</div>
+      <div class="s-label">Accepted</div>
+    </div>
+  </div>
+  <div class="summary-card">
+    <div class="s-icon" style="background:#fef3c7;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </div>
+    <div>
+      <div class="s-num" style="color:#92400e;">{{ summary.modified }}</div>
+      <div class="s-label">Modified</div>
+    </div>
+  </div>
+  <div class="summary-card">
+    <div class="s-icon" style="background:#f3f4f6;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </div>
+    <div>
+      <div class="s-num" style="color:#6b7280;">{{ summary.declined }}</div>
+      <div class="s-label">Declined</div>
+    </div>
+  </div>
+</div>
+
+{# ── TAB BAR ────────────────────────────────────────────────────────────────── #}
+<div class="page-tabs">
+  <button class="page-tab active" id="btn-tab-myactions" onclick="switchTab('myactions')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    My Actions <span class="tab-badge">{{ my_actions|length }}</span>
+  </button>
+  <button class="page-tab" id="btn-tab-system" onclick="switchTab('system')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+    System Changes <span class="tab-badge-blue">{{ system_changes|length }}</span>
+  </button>
+</div>
+
+
+{# ════════════════════════════════════════════════════════════════════════════
+   MY ACTIONS TAB
+════════════════════════════════════════════════════════════════════════════ #}
+<div id="tab-myactions">
+  <div class="tab-header">
+    <div>
+      <h5>My Actions</h5>
+      <p>Recommendations you have accepted, modified, or declined — with their monitoring outcomes.</p>
+    </div>
+  </div>
+
+  {% if my_actions %}
+    <div class="ch-grid">
+      {% for a in my_actions %}
+      <div class="ch-card">
+        <div class="ch-top {{ a.bar_class }}"></div>
+        <div class="ch-body">
+
+          {# Card header #}
+          <div class="ch-card-header">
+            <div>
+              <div class="ch-rule-tag {{ a.rrt_class }}">
+                {% if a.rule_type == 'budget' %}
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/></svg>
+                {% elif a.rule_type == 'bid' %}
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                {% else %}
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="3"/></svg>
+                {% endif %}
+                {{ a.rule_id | replace('_',' ') | upper if a.rule_id else 'CHANGE' }}
+              </div>
+              <div class="ch-campaign-name">{{ a.campaign_name or '—' }}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+              <span class="source-pill {{ a.source_class }}">{{ a.source_label }}</span>
+              <span class="action-badge {{ a.action_badge_class }}">{{ a.action_label_user }}</span>
+            </div>
+          </div>
+
+          {# Change block #}
+          <div class="change-block {{ a.cb_class }}">
+            <div class="change-icon-wrap {{ a.ciw_class }}">
+              {% if a.action_direction == 'increase' %}
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{% if a.rule_type=='budget'%}#1d4ed8{% else %}#15803d{% endif %}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+              {% elif a.action_direction == 'decrease' %}
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{% if a.rule_type=='budget'%}#1d4ed8{% else %}#15803d{% endif %}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+              {% else %}
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              {% endif %}
+            </div>
+            <div>
+              {% if a.value_label %}
+                <div class="change-main">{{ a.value_label }}</div>
+                <div class="change-sub">{{ a.value_suffix }}</div>
+              {% else %}
+                <div class="change-main">{{ a.action_direction | title if a.action_direction else 'Status change' }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          {# Outcome row #}
+          {% if a.rec_status %}
+          <div class="outcome-row">
+            <div class="od-dot {{ a.outcome_dot_class }}"></div>
+            <span class="outcome-label ol-{{ a.rec_status }}">
+              {% if a.rec_status == 'monitoring' %}Monitoring in progress
+              {% elif a.rec_status == 'successful' %}Change successful
+              {% elif a.rec_status == 'reverted' %}Auto-reverted by Radar{% if a.revert_reason %} — <span style="font-weight:400;font-style:italic;color:#991b1b;">{{ a.revert_reason }}</span>{% endif %}
+              {% elif a.rec_status == 'declined' %}Declined
+              {% else %}{{ a.rec_status | title }}{% endif %}
+            </span>
+          </div>
+          {% endif %}
+
+          {# Footer #}
+          <div class="ch-footer">
+            {% if a.confidence %}
+              <span class="conf-badge cb-{% if a.confidence=='high'%}high{% elif a.confidence=='medium'%}med{% else %}low{% endif %}">{{ a.confidence|title }} confidence</span>
+            {% endif %}
+            <span class="ch-age">{{ a.executed_ago }}</span>
+            <span class="ch-spacer"></span>
+            <span style="font-size:11px;color:var(--muted);font-style:italic;">{{ a.executed_at | string | truncate(10,True,'') if a.executed_at else '—' }}</span>
+          </div>
+
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d0d7e0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <p>No user actions yet. Accept or decline recommendations to see them here.</p>
+    </div>
+  {% endif %}
+</div>
+
+
+{# ════════════════════════════════════════════════════════════════════════════
+   SYSTEM CHANGES TAB
+════════════════════════════════════════════════════════════════════════════ #}
+<div id="tab-system" style="display:none;">
+  <div class="tab-header">
+    <div>
+      <h5>System Changes</h5>
+      <p>Changes executed automatically by Autopilot rules.</p>
+    </div>
+  </div>
+
+  {% if system_changes %}
+    <div style="background:white;border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+      <table class="sys-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Campaign</th>
+            <th>Type</th>
+            <th>Change</th>
+            <th>Rule</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ch in system_changes %}
+          <tr>
+            <td style="white-space:nowrap;color:var(--muted);">{{ ch.change_date | string | truncate(10,True,'') if ch.change_date else '—' }}</td>
+            <td style="font-weight:500;color:#1a1d23;">{{ ch.campaign_id or '—' }}</td>
+            <td>
+              <span class="lever-pill lp-{{ (ch.lever or 'budget').lower() }}">{{ (ch.lever or '—') | upper }}</span>
+            </td>
+            <td style="white-space:nowrap;">
+              {% if ch.old_value is not none and ch.new_value is not none %}
+                £{{ "%.2f"|format(ch.old_value) }}
+                <span class="change-arrow">→</span>
+                £{{ "%.2f"|format(ch.new_value) }}
+                {% if ch.change_pct is not none %}
+                  <span class="{{ 'change-pct-pos' if ch.change_pct >= 0 else 'change-pct-neg' }}">
+                    {{ "{:+.1f}%".format(ch.change_pct * 100) if ch.change_pct < 10 else "{:+.0f}%".format(ch.change_pct) }}
+                  </span>
+                {% endif %}
+              {% else %}—{% endif %}
+            </td>
+            <td style="font-size:12px;color:var(--muted);">{{ ch.rule_id or '—' }}</td>
+            <td>
+              <span class="sys-status-pill ssp-{{ ch.status_label | lower if ch.status_label else 'monitoring' }}">
+                {{ ch.status_label or 'Monitoring' }}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d0d7e0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+      <p>No system changes recorded yet.</p>
+    </div>
+  {% endif %}
+</div>
+
+</div>{# end py-4 #}
+{% endblock %}
+
+{% block extra_js %}
 <script>
-// Toggle advanced filters
-function toggleAdvancedFilters() {
-    const filters = document.getElementById('advanced-filters');
-    const toggleText = document.getElementById('toggle-text');
-    
-    if (filters.classList.contains('hidden')) {
-        filters.classList.remove('hidden');
-        toggleText.textContent = 'Hide';
-    } else {
-        filters.classList.add('hidden');
-        toggleText.textContent = 'Show';
-    }
+const TABS = ['myactions','system'];
+function switchTab(name) {
+  TABS.forEach(t => {
+    document.getElementById('tab-' + t).style.display = (t === name) ? '' : 'none';
+    document.getElementById('btn-tab-' + t).classList.toggle('active', t === name);
+  });
 }
-
-// Filter table by execution status
-function filterByStatus(status) {
-    const rows = document.querySelectorAll('.change-row');
-    const buttons = document.querySelectorAll('.filter-btn');
-    let visibleCount = 0;
-    
-    // Update button styles
-    buttons.forEach(btn => {
-        btn.classList.remove('bg-blue-600', 'text-white');
-        btn.classList.add('bg-gray-200', 'text-gray-700');
-    });
-    
-    const activeBtn = document.getElementById(`filter-${status}`);
-    activeBtn.classList.remove('bg-gray-200', 'text-gray-700');
-    activeBtn.classList.add('bg-blue-600', 'text-white');
-    
-    // Filter rows
-    rows.forEach(row => {
-        const rowStatus = row.dataset.status;
-        
-        if (status === 'all') {
-            row.style.display = '';
-            visibleCount++;
-        } else if (status === rowStatus) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
-    });
-    
-    // Update count
-    const totalCount = rows.length;
-    document.getElementById('visible-count').textContent = 
-        `Showing ${visibleCount} of ${totalCount} changes`;
-}
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    filterByStatus('all');
-});
+switchTab('myactions');
 </script>
 {% endblock %}

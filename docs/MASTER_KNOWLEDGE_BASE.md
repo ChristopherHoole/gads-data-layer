@@ -1,17 +1,17 @@
 # MASTER KNOWLEDGE BASE - ADS CONTROL TOWER (A.C.T)
 
-**Version:** 7.0  
-**Created:** 2026-02-19  
-**Updated:** 2026-02-22  
+**Version:** 8.0
+**Created:** 2026-02-19
+**Updated:** 2026-02-23
 **Purpose:** Complete project context for Master Chat coordination
 
 ---
 
 ## EXECUTIVE SUMMARY
 
-### Current State (Feb 22, 2026)
-- **Overall Completion:** ~96%
-- **Phase:** Dashboard 3.0 — M7 complete ✅, M8 Changes + Monitoring NEXT
+### Current State (Feb 23, 2026)
+- **Overall Completion:** ~97%
+- **Phase:** Dashboard 3.0 — M8 complete ✅, M9 Search Terms / Keywords NEXT
 - **Active Development:** Dashboard 3.0 modular improvements
 - **Templating:** Jinja2 Macros (metrics_section M2 + performance_chart M3)
 
@@ -73,10 +73,10 @@ Jinja2 macro system on all 6 pages:
 Card layouts:
 | Page | Financial (8) | Actions (8) |
 |------|---------------|-------------|
-| Dashboard/Campaigns/Ad Groups/Keywords | Cost|Revenue|ROAS|Wasted Spend|Conv|CPA|CVR|blank | Impr|Clicks|CPC|CTR|Search IS|Top IS|Abs Top IS|Click Share |
-| Ads | Cost|Revenue|ROAS|blank|Conv|CPA|CVR|blank | Impr|Clicks|CPC|CTR|Ad Strength|blank x3 |
-| Shopping (Campaigns) | Cost|Conv Value|ROAS|blank|Conv|Cost/Conv|CVR|blank | Impr|Clicks|CPC|CTR|blank x4 |
-| Shopping (Products) | Cost|ROAS|blank|Out of Stock|Conv|blank x3 | Products|Feed Issues|blank x6 |
+| Dashboard/Campaigns/Ad Groups/Keywords | Cost\|Revenue\|ROAS\|Wasted Spend\|Conv\|CPA\|CVR\|blank | Impr\|Clicks\|CPC\|CTR\|Search IS\|Top IS\|Abs Top IS\|Click Share |
+| Ads | Cost\|Revenue\|ROAS\|blank\|Conv\|CPA\|CVR\|blank | Impr\|Clicks\|CPC\|CTR\|Ad Strength\|blank x3 |
+| Shopping (Campaigns) | Cost\|Conv Value\|ROAS\|blank\|Conv\|Cost/Conv\|CVR\|blank | Impr\|Clicks\|CPC\|CTR\|blank x4 |
+| Shopping (Products) | Cost\|ROAS\|blank\|Out of Stock\|Conv\|blank x3 | Products\|Feed Issues\|blank x6 |
 
 Invert colours (red when rising): Cost, Cost/Conv, Wasted Spend
 Ad Strength: Actions row ONLY. Format: "240/983" label, "129 Poor" sub_label.
@@ -90,38 +90,29 @@ Data types:
 
 Files modified (17): warehouse_duckdb.py, generate_synthetic_data_v2.py, base_bootstrap.html, macros/metrics_cards.html, shared.py, all 6 route files, all 6 template files
 
-Known issues (non-blocking):
-- Ads Revenue $0.00 — ads-level revenue not aggregated
-- 404.html missing — pre-existing
+### Chat 25 — M4: Table Overhaul ✅
+**Date:** 2026-02-21 | **Commit:** pending
 
-Pending git commit message:
-  feat(dashboard): M2 metrics cards rollout - all 6 pages complete
-  Chat-23 | Module-M2 | Status: COMPLETE
+Full Google Ads UI column sets across all 5 pages, server-side sort, sticky first column:
 
----
+Column specs (locked — do not change without Master Chat approval):
+| Page | Cols | Sticky |
+|---|---|---|
+| Campaigns | 24 | Campaign name |
+| Ad Groups | 26 | Ad Group name |
+| Keywords | 17 | Keyword |
+| Ads | 24 | Ad (final_url) |
+| Shopping | 24 | Campaign name |
 
 ### Chat 26 — M5: Card-Based Rules Tab ✅
-**Date:** 2026-02-22 | **Commit:** pending
+**Date:** 2026-02-22 | **Commit:** 025986a
 
-Replaced dense table-based Rules tab with fully interactive card-based UI on Campaigns page (pilot):
+Replaced dense table-based Rules tab with fully interactive card-based UI on Campaigns page (pilot).
 
 **Architecture — dual-layer (critical — do not break):**
 - `act_autopilot/rules_config.json` — UI config layer (CRUD via rules_api.py)
 - `act_autopilot/rules/*.py` — execution layer (untouched, Python functions only)
 - These layers are intentionally separate. JSON edits never touch Python execution files.
-
-**UI:**
-- Card grid (auto-fill, min 340px) per rule type section (Budget / Bid / Status)
-- 4px colour-coded top bar: blue=budget, green=bid, red=status
-- Rule naming: "Budget 1" / "Bid 1" / "Status 1" (not BUDGET-001)
-- Condition block (IF/AND highlighted values) + Action block (gradient, icon, description)
-- Campaign-specific cards: blue border + OVERRIDES BLANKET tag
-- Toggle switches persist to JSON
-- Slide-in drawer (480px): 5-step form (Type→Scope→Condition→Action→Settings) + live preview
-- Campaign picker: fetches live from `/api/campaigns-list` → `ro.analytics.campaign_daily`
-- Filter bar: All / Budget / Bid / Status / Blanket only / Campaign-specific only / Active only
-- Recommendations placeholder tab (Chat 27 scope)
-- Inline SVG only — NO Bootstrap Icons CDN
 
 **rules_config.json data model (18 fields per rule):**
 ```
@@ -130,6 +121,7 @@ scope (blanket/specific), campaign_id
 condition_metric, condition_operator, condition_value, condition_unit
 condition_2_metric, condition_2_operator, condition_2_value, condition_2_unit
 action_direction, action_magnitude, risk_level, cooldown_days, enabled
+monitoring_days, monitoring_minutes
 created_at, updated_at
 ```
 
@@ -143,287 +135,15 @@ created_at, updated_at
 | `/api/rules/<id>` | DELETE | Delete rule |
 | `/api/campaigns-list` | GET | Campaign names from warehouse |
 
-**Files created/modified:**
-- `act_autopilot/rules_config.json` — CREATED (13 rules seeded from docstrings)
-- `act_dashboard/routes/rules_api.py` — CREATED
-- `act_dashboard/routes/__init__.py` — MODIFIED
-- `act_dashboard/routes/campaigns.py` — MODIFIED (imports load_rules(), passes rules_config)
-- `act_dashboard/templates/campaigns.html` — MODIFIED (3-tab: Campaigns/Rules/Recommendations)
-- `act_dashboard/templates/components/rules_tab.html` — REPLACED
-
-**Bugs fixed:**
-- "budget budget" double word — explicit type→label map: `{budget:'daily budget', bid:'bid target', status:'campaign status'}`
-- Drawer visible on page load — `display:none` + `display:flex` conflict; removed flex from inline style
-- rules_config.json path — `.parent.parent.parent` needed (routes/ is 3 levels from project root)
-- Campaign picker empty — wired to `/api/campaigns-list` fetch on scope card click
-
-**Known states (not bugs):**
-- Scope pill shows campaign_id not name — name resolution is Chat 27 scope
-- Rule numbering gaps after deletes — cosmetic, rule_id is the true identifier
-
----
-
-### Chat 25 — M4: Table Overhaul ✅
-**Date:** 2026-02-21 | **Commit:** pending
-
-Full Google Ads UI column sets across all 5 pages, server-side sort, sticky first column:
-- Campaigns: 24 cols (unchanged, reference standard)
-- Ad Groups: 26 cols — `ro.analytics.ad_group_daily`
-- Keywords: 17 cols — `ro.analytics.keyword_features_daily` (windowed), match type pill inside keyword col
-- Ads: 24 cols — `ro.analytics.ad_features_daily` (30d windowed), ad strength progress bar
-- Shopping: 24 cols — migrated from `raw_shopping_campaign_daily` to `ro.analytics.shopping_campaign_daily`
-
-Sort pattern: URL params (sort_by/sort_dir) → ALLOWED_*_SORT whitelist → SQL ORDER BY + LIMIT/OFFSET
-Sticky: CSS `position:sticky` on first th/td, no JS library
-
-Database state post-Chat 25:
-| Table | Rows | Cols |
-|---|---|---|
-| analytics.campaign_daily | 7,300 | 21 |
-| analytics.ad_group_daily | 23,725 | 30 |
-| analytics.keyword_daily | 77,368 | 33 |
-| analytics.ad_features_daily | 983 | 51 |
-| analytics.shopping_campaign_daily | 7,300 | 26 |
-
-New file: `tools/testing/generate_synthetic_shopping_v2.py`
-
-Key lessons:
-- Generators live in `tools/testing/` not `scripts/`
-- Always validate Jinja syntax before deploying: `python3 -c "from jinja2 import Environment, FileSystemLoader; env = Environment(loader=FileSystemLoader('.')); env.get_template('template.html'); print('OK')"`
-- Column specs vary per page — never assume Campaigns spec applies everywhere
-
-Known expected states (not bugs):
-- All Conv. columns show `—` — all_conversions pipeline not yet built
-- Shopping IS/Opt. Score/Click Share show `—` — NULL in SQL, pending real data
-
----
-
-### Chat 24 — M3: Chart Overhaul ✅
-**Date:** 2026-02-20 | **Commit:** Pending
-
-Reusable `performance_chart.html` Jinja2 macro on all 6 pages:
-- Dual Y-axis: Y1 left ($) = Cost + Avg CPC; Y2 right (count) = Impressions + Clicks
-- Each axis auto-hides when all its metrics are inactive
-- 4 toggleable slots: click to show/hide line (Google Ads style)
-- Default active: Cost + Clicks
-- Session key: `chart_metrics_<page_id>` | POST /set-chart-metrics (no reload)
-- Empty state shown when 0 metrics active
-- Dashboard: replaced legacy Performance Trend chart
-- Shopping: Campaigns tab only
-- Keywords + Ads: account-level campaign_daily (no per-entity daily table)
-
-Data sources:
-| Page | Table |
-|------|-------|
-| Dashboard | analytics.campaign_daily (no ro. prefix) |
-| Campaigns | ro.analytics.campaign_daily |
-| Ad Groups | ro.analytics.ad_group_daily |
-| Keywords | ro.analytics.campaign_daily (account proxy) |
-| Ads | ro.analytics.campaign_daily (account proxy) |
-| Shopping | ro.analytics.campaign_daily (account proxy) |
-
-Files modified (10): shared.py + 6 routes + dashboard_new.html + ad_groups.html + keywords_new.html + ads_new.html + shopping_new.html
-New file: macros/performance_chart.html
-
-**Critical lesson:** Helper functions MUST be placed BEFORE @bp.route decorator. Inserting between decorator and def registers the helper as the route handler (silent Flask bug).
-
----
-
-## SYSTEM ARCHITECTURE
-
-### Directory Structure
-```
-gads-data-layer/
-├── act_autopilot/
-│   ├── rules/                     ← execution layer (Python, never touched by UI)
-│   │   └── *.py
-│   └── rules_config.json          ← UI config layer (M5, Chat 26)
-├── act_dashboard/
-│   ├── app.py
-│   ├── warehouse_duckdb.py
-│   ├── routes/
-│   │   ├── shared.py
-│   │   ├── dashboard.py
-│   │   ├── campaigns.py
-│   │   ├── ad_groups.py
-│   │   ├── keywords.py
-│   │   ├── ads.py
-│   │   ├── shopping.py
-│   │   └── rules_api.py           ← CRUD + /api/campaigns-list (M5, Chat 26)
-│   └── templates/
-│       ├── base_bootstrap.html     ← ALWAYS USE THIS (never base.html)
-│       ├── macros/
-│       │   ├── metrics_cards.html  ← M2 macro
-│       │   └── performance_chart.html ← M3 macro
-│       └── components/
-│           ├── rules_sidebar.html
-│           ├── rules_tab.html      ← REPLACED Chat 26 (M5 card UI)
-│           └── rules_card.html
-├── warehouse.duckdb
-└── tools/testing/
-    └── generate_synthetic_*.py
-```
-
-### Customer IDs
-- Real: 7372844356
-- Synthetic test: 9999999999
-
----
-
-## DATABASE SCHEMA
-
-CRITICAL: Always use ro.analytics.* prefix in dashboard queries.
-
-### analytics.campaign_daily (7,300 rows, 21 cols)
-snapshot_date, customer_id, campaign_id, campaign_name, campaign_type, status,
-budget_micros, target_cpa_micros, target_roas, clicks, impressions, cost_micros,
-conversions, conversions_value, rolling windows (w7/w14/w30/w90)
-+ IS columns (added Chat 23): search_impression_share, search_top_impression_share,
-  search_absolute_top_impression_share, click_share
-+ M4 columns (added Chat 25): optimization_score, bid_strategy_type
-
-### analytics.ad_group_daily (23,725 rows, 30 cols)
-ad_group_name, campaign_name, cpc_bid_micros, target_cpa_micros
-+ IS columns (added Chat 23): search_impression_share, search_top_impression_share,
-  search_absolute_top_impression_share, click_share
-+ M4 columns (added Chat 25): ad_group_type, all_conversions, all_conversions_value,
-  optimization_score, bid_strategy_type
-NOTE: ad_group_daily is a VIEW over snap_ad_group_daily
-
-### analytics.keyword_daily (77,368 rows, 33 cols)
-keyword_text, match_type, max_cpc_micros, quality_score (1-10),
-quality_score_landing_page, quality_score_creative (= Exp. CTR),
-quality_score_relevance (= Ad relevance)
-+ M4 columns (added Chat 25): all_conversions_value, bid_strategy_type, final_url
-NOTE: Routes use keyword_features_daily (windowed) not keyword_daily (raw)
-
-### analytics.ad_features_daily (983 rows, 51 cols)
-ad_type, ad_strength (POOR/AVERAGE/GOOD/EXCELLENT), headlines_count, final_url
-campaign_name, ad_group_name (already in table — no JOINs needed)
-Windowed 30d: impressions_30d, clicks_30d, cost_micros_30d, conversions_30d,
-  conversions_value_30d, ctr_30d, cvr_30d, cpa_30d, roas_30d
-+ M4 columns (added Chat 25): all_conversions_30d, all_conversions_value_30d
-NOTE: Table is ad_features_daily — ad_daily does NOT exist
-
-### analytics.shopping_campaign_daily (7,300 rows, 26 cols)
-Full shopping campaign data — M4 generator built from scratch
-+ M4 columns (added Chat 25): campaign_status, channel_type, all_conversions,
-  all_conversions_value, search_impression_share, search_top_impression_share,
-  search_absolute_top_impression_share, click_share, optimization_score, bid_strategy_type
-
-### analytics.change_log — audit trail
-
----
-
-## HOW THINGS WORK
-
-### Start Dashboard
-```powershell
-cd C:\Users\User\Desktop\gads-data-layer
-.\.venv\Scripts\Activate.ps1
-python -m act_dashboard.app configs/client_synthetic.yaml
-```
-
-### M1 Date Flow
-User picks date → Flatpickr → POST /set-date-range → session → get_date_range() → SQL
-
-### M2 Metrics Cards Flow
-Route queries DB → builds card dicts → get_metrics_collapsed(page_id) → render_template
-Template: {{ metrics_section(financial_cards, actions_cards, 'page_id', metrics_collapsed) }}
-Toggle → POST /set-metrics-collapse → session updated
-
-### Card Dict Format
-```python
-{
-    'label': 'Cost',
-    'value_display': '$199.9k',
-    'change_pct': -1.5,        # None = '—'
-    'sparkline_data': [1,2,3], # None = no chart
-    'format_type': 'currency', # currency|number|percent|roas|ad_strength
-    'invert_colours': True,    # red when rising
-    'card_type': 'financial',
-    'sub_label': None,
-}
-```
-
-### Constitution Gates
-- Min 10 conversions (30d) for bid changes
-- Max 30% budget increase, 20% bid change
-- 7-day cooldown between changes on same entity
-- Protected entities: brand campaigns immutable by default
-
----
-
-## RULES ENGINE
-
-Rule categories: Budget (4), Bid/Target (6), Campaign Status (2), Keyword (8), Ad (3), Shopping (14)
-Total: 30+ rules
-
-Rule detection regex: r'_\d{3}(?:_|$)'
-Supports: budget_001_increase AND kw_pause_001
-
-Rule Visibility System (Chat 21c — reusable on all pages):
-- rule_helpers.py: extract + categorize rules
-- rules_sidebar.html, rules_tab.html, rules_card.html
-- Auto-detects: BUDGET/BID/STATUS/KEYWORD/AD/SHOPPING categories
-
----
-
-## DASHBOARD 3.0 MODULE STATUS
-
-| Module | Chat | Status |
-|--------|------|--------|
-| M1: Date Range Picker | 22 | ✅ COMPLETE |
-| M2: Metrics Cards | 23 | ✅ COMPLETE |
-| M3: Chart Overhauls | 24 | ✅ COMPLETE |
-| M4: Table Overhaul | 25 | ✅ COMPLETE |
-| M5: Rules Tab (Campaigns pilot) | 26 | ✅ COMPLETE |
-| M6: Recommendations Engine + UI | 27 | ✅ COMPLETE |
-| M7: Accept/Decline/Modify + 4-Tab UI | 28 | ✅ COMPLETE |
-| M8: Changes + Monitoring | 29 | 🎯 NEXT |
-| M9: Search Terms | 30 | 📋 PLANNED |
-
----
-
-### Chat 28 — M7: Accept/Decline/Modify + 4-Tab UI ✅
-**Date:** 2026-02-22 | **Summary:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_28_DETAILED_SUMMARY.md` | **Handoff:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_28_HANDOFF.md`
-
-**Part 1 — Action Buttons:**
-- 3 POST routes: accept / decline / modify (live, tested)
-- `changes` table created in warehouse.duckdb — audit trail for all user actions
-- `monitoring_days: 0` added to all 13 rules in rules_config.json
-- Accept: pending → monitoring (monitoring_days > 0) or successful (monitoring_days = 0)
-- Decline: pending → declined, sets accepted_at
-- Modify: updates proposed_value then accepts (same status logic)
-- Card animations: fade+slide out, badge decrements, toast confirmations
-
-**Part 2 — 4-Tab UI:**
-- Replaces 3-tab server-side layout (Pending / Monitoring / History)
-- New tabs: Pending (action buttons) / Monitoring (read-only, progress bar) / Successful (read-only, green outcome block) / Declined (read-only, grey, opacity 0.55)
-- History tab removed entirely
-- Pure JS tab switching — no page reload (recommendations.html: server-side Jinja, campaigns.html: JS fetch from /cards endpoint)
-- Summary strip updated: 4 counts on both pages
-- Both /recommendations and /campaigns updated
-
-**Architecture decisions:**
-- recommendations.html: server-side Jinja passes all 4 groups, JS shows/hides divs
-- campaigns.html: JS fetch from /recommendations/cards (pre-existing pattern maintained)
-- Declined date: accepted_at (set during decline route)
-- Successful "Completed" date: resolved_at (NULL fallback to accepted_at only)
-
-**Test results:** 0 Pending / 4 Monitoring / 54 Successful / 8 Declined — all tabs confirmed ✅
-
 ### Chat 27 — M6: Recommendations Engine + UI ✅
-**Date:** 2026-02-22 | **Commit:** Pending ()  
-**Summary:**   
-**Handoff:** 
+**Date:** 2026-02-22
 
-**What was built:**
--  table in  (19 cols) + 22 historical rows seeded
--  — reads , evaluates , inserts pending recs. Duplicate prevention on (campaign_id, rule_id).
--  — 4 routes: GET /recommendations, POST /recommendations/run, GET /recommendations/data, GET /recommendations/cards
--  — 3-tab global page: Pending (48 cards, 2-col) / Monitoring (4 cards, progress bars) / History (22 rows, 67% success banner)
--  — Recommendations tab: inline 2-col card grids, Run button, View history link. Matches M6_WIREFRAME_v5.
+- recommendations table in warehouse.duckdb (19 cols) + 22 historical rows seeded
+- recommendations_engine.py: reads rules_config.json, evaluates campaign_features_daily, inserts pending recs
+- Duplicate prevention on (campaign_id, rule_id)
+- /recommendations/cards JSON endpoint for JS-rendered inline cards
+- Global /recommendations page: Pending (48 cards) / Monitoring / History
+- Campaigns → Recommendations tab: 2-col card grids
 
 **Engine proxy column mappings:**
 | Needed | Proxy |
@@ -440,88 +160,106 @@ Rule Visibility System (Chat 21c — reusable on all pages):
 2. Header: rule tag + campaign name + status pill
 3. Change block FIRST (gradient bg by type)
 4. Trigger block SECOND (grey bg, "Why this triggered")
-5. Footer row 1: confidence badge + source pill + age + amber "Buttons active in Chat 28" note
-6. Footer row 2: Modify / Decline / Accept (disabled, opacity 0.5)
+5. Footer: confidence badge + source pill + age
+6. Action buttons: Modify / Decline / Accept
 
 **Status pills:** Pending=blue / Monitoring=purple / Successful=green / Reverted=red / Declined=grey
 
-**Test results:** Generated=48 ✅ | SkippedDuplicate=48 ✅ | All HTTP 200 ✅ | All pages regression-free ✅
+### Chat 28 — M7: Accept/Decline/Modify Wiring + 4-Tab UI ✅
+**Date:** 2026-02-22
 
-**Known issues (pre-existing, not Chat 27):** favicon 500, 404.html missing, config validation warnings
+- Accept / Decline / Modify POST routes — fully wired
+- `changes` audit table created in warehouse.duckdb
+- `monitoring_days: 0` added to all 13 rules in rules_config.json
+- Card fade+slide animations, badge decrements, toast confirmations
+- 4-tab UI: Pending / Monitoring / Successful / Declined
+- Both /recommendations and /campaigns updated
 
----
+**Architecture decisions:**
+- recommendations.html: server-side Jinja passes all groups, JS shows/hides divs
+- campaigns.html: JS fetch from /recommendations/cards (pre-existing pattern maintained)
 
-| Problem | Fix |
-|---------|-----|
-| Template CSS missing | Must extend base_bootstrap.html, not base.html |
-| DB query fails | Use ro.analytics.* not analytics.* |
-| Route replacement fails | Match exact quote style of @bp.route decorator |
-| Shopping metrics missing | Add total_clicks to compute_campaign_metrics() |
-| Ad Strength in wrong row | Actions row ONLY (M2 cards) |
-| Collapse state lost | POST to /set-metrics-collapse |
-| Rules showing 0 | Use r'_\d{3}(?:_|$)' regex |
-| Ad group table empty | Use cpc_bid_micros not bid_micros |
-| Generator scripts not found | They are in tools/testing/ — not scripts/ |
-| Sort not working on full dataset | Must be SQL-side ORDER BY, not Python-side |
-| New sort column not working | Must add to ALLOWED_*_SORT whitelist in route |
-| Jinja template 500 error | Validate: `python3 -c "from jinja2 import Environment, FileSystemLoader; env = Environment(loader=FileSystemLoader('.')); env.get_template('template.html'); print('OK')"` |
-| ad_daily table not found | Does not exist — use ad_features_daily |
-| Shopping data empty | Check compute_campaign_metrics() key names match schema |
-| rules_config.json not found | Path needs `.parent.parent.parent` — routes/ is 3 levels from project root |
-| Drawer visible on page load | `display:none` + `display:flex` in same inline style — remove flex, let JS add it |
-| Campaign picker empty | Fetch from `/api/campaigns-list` on scope card click — not static HTML |
-| "budget budget" double word | Use explicit type→label map: `{budget:'daily budget', bid:'bid target', status:'campaign status'}` |
+### Chat 29 — M8: Changes + Radar Monitoring ✅
+**Date:** 2026-02-23
+
+**Files created:**
+- `act_autopilot/radar.py` — background daemon thread (60s cycle), evaluates monitoring recs, auto-resolves to successful or reverted
+- `act_dashboard/routes/changes.py` — new blueprint, /changes route
+
+**Files modified:**
+- `act_autopilot/rules_config.json` — added `monitoring_minutes` to all 13 rules
+- `act_dashboard/routes/recommendations.py` — removed /changes, added reverted_recs, monitoring_minutes support, last_run fix
+- `act_dashboard/routes/__init__.py` — registered changes blueprint
+- `act_dashboard/templates/recommendations.html` — 5 tabs (added Reverted)
+- `act_dashboard/templates/campaigns.html` — 5 inner tabs + 5 summary cards
+- `act_dashboard/templates/changes.html` — full Bootstrap 5 rewrite
+
+**Key technical decisions:**
+- DuckDB connection pattern for Radar: `duckdb.connect('warehouse.duckdb')` + `ATTACH 'warehouse_readonly.duckdb' AS ro (READ_ONLY)`. **This is now the established pattern for any component needing both read and write access.**
+- JOIN strategy for changes → recommendations: no recommendation_id FK exists — use `campaign_id + rule_id` with `QUALIFY ROW_NUMBER() OVER (PARTITION BY campaign_id, rule_id ORDER BY generated_at DESC) = 1`
+- System Changes tab is currently a table (ro.analytics.change_log data) — will be converted to cards in a future chat
+- Radar revert is DB-only in this chat — no Google Ads API rollback call yet
+
+**executed_by values in changes table:**
+| Value | Meaning |
+|---|---|
+| `user_accept` | User clicked Accept |
+| `user_modify` | User modified value then accepted |
+| `user_decline` | User clicked Decline |
+| `radar_resolved` | Radar: monitoring complete, KPI held |
+| `radar_revert` | Radar: KPI degraded, auto-reverted |
+
+**monitoring_minutes:**
+All 13 rules now have `monitoring_minutes`. When > 0, takes priority over `monitoring_days`. Default 0 = disabled, uses monitoring_days. Fast-test values: Budget 1→1min, Budget 2→2min, Bid 1→2min, all others→0.
+
+**Test results:** 0 Pending / 1 Monitoring / 57 Successful / 4 Reverted / 8 Declined ✅ All pages confirmed ✅
 
 ---
 
 ## CURRENT STATUS
 
-### Overall: ~96% Complete
+### Overall: ~97% Complete
 
 What's working:
 - All 6 dashboard pages with real/synthetic data
 - Metrics cards: Financial + Actions on every page
 - Performance chart: dual-axis, 4 toggleable metrics, session-persisted, all 6 pages
 - Sparklines + change indicators on date-range pages
-- IS metrics in Actions row
-- Ad Strength on Ads page
-- Shopping: two independent metric sections
 - Session-based date picker
-- Rules visibility system (legacy sidebar/tab/card components)
-- **M5 card-based Rules tab on Campaigns page** (Chat 26)
-- **rules_config.json + rules_api.py CRUD** (Chat 26)
-- **M6 Recommendations Engine + global page + Campaigns tab** (Chat 27)
-- **recommendations table in warehouse.duckdb** (Chat 27)
-- **M7 Accept/Decline/Modify action buttons — live POST routes** (Chat 28)
-- **M7 4-tab Recommendations UI on /recommendations + /campaigns** (Chat 28)
-- **changes audit table in warehouse.duckdb** (Chat 28)
+- M5 card-based Rules tab on Campaigns page
+- rules_config.json + rules_api.py CRUD
+- M6 Recommendations Engine + global page + Campaigns tab
+- M7 Accept/Decline/Modify action buttons — live POST routes
+- M7 5-tab Recommendations UI on /recommendations + /campaigns (Pending/Monitoring/Successful/Reverted/Declined)
+- M8 Radar background job — auto-resolves monitoring recommendations
+- M8 Changes page — My Actions card grid + System Changes table
+- M8 Reverted tab on both recommendation pages
+- changes audit table in warehouse.duckdb
 - Authentication + client switching
 - Constitution execution engine
 - M4 tables: full Google Ads column sets on all 5 pages
 - Server-side sort on all sortable columns
-- CSS sticky first column on all pages
-- Status filter + per-page controls standardised
 
 Pending:
-- M8 Changes + Monitoring page (Chat 29)
-- M5 Rules tab rollout to Ad Groups, Keywords, Ads, Shopping (future chat)
-- Enable monitoring_days > 0 on specific rules to test full monitoring flow
-- Connect accept/modify routes to Google Ads API execution engine (live changes)
-- Campaign scope pill name resolution (future chat)
-- All Conv. pipeline (populating all_conversions across all tables)
+- M9 Search Terms / Keywords recommendations (Chat 30)
+- System Changes tab → card grid (deferred from Chat 29)
+- M5 Rules tab rollout to Ad Groups, Keywords, Ads, Shopping
+- Live Google Ads API execution on accept/modify/revert routes
+- Campaign scope pill name resolution
+- All Conv. pipeline
 - Shopping IS/Opt. Score (columns exist but NULL)
-- Ads Revenue fix (future chat)
+- Config YAML validation errors (pre-existing, non-blocking)
 
 ---
 
 ## FUTURE ROADMAP
 
 Immediate (Dashboard 3.0):
-- Chat 29: M8 Change History + Monitoring (merged screen)
 - Chat 30: M9 Keywords Search Terms tab
+- Future: System Changes tab → card grid
 
 Short-term:
-- Phase 5: Unit tests, job queue, DB indexes, CSRF
+- Phase 3: Unit tests, job queue, DB indexes, CSRF
 - Email Reports (SMTP)
 - Smart Alerts (anomaly detection)
 
@@ -535,7 +273,7 @@ Medium-term:
 ## LESSONS LEARNED
 
 1. Always extend base_bootstrap.html (never base.html)
-2. Always use ro.analytics.* prefix
+2. Always use ro.analytics.* prefix for read queries
 3. Request current file before editing — never cached
 4. Route decorator quote style matters for string replacement
 5. Shopping: compute_campaign_metrics() must include total_clicks
@@ -544,18 +282,46 @@ Medium-term:
 8. Mandatory codebase upload saves hours in worker chats
 9. Files in routes/ are 3 levels deep from project root — use `.parent.parent.parent`
 10. `display:none` + `display:flex` in same inline style — browser uses last one; keep none, let JS add flex
-11. Dual-layer architecture: JSON config (UI) and Python functions (execution) must remain separate — never sync them
+11. Dual-layer architecture: JSON config (UI) and Python functions (execution) must remain separate
 12. Campaign picker must be wired to real data before declaring campaign-specific scope complete
 13. New /recommendations/cards JSON endpoint pattern — JS rendering of inline cards without page reload
 14. recommendations table must live in writable warehouse.duckdb — never in readonly analytics DB
 15. Engine proxy columns must be logged when used — do not silently substitute
-16. Duplicate prevention: always check (campaign_id, rule_id) before insert — engine run 2 must return SkippedDuplicate, not new rows
-17. Verify actual DB column names before writing routes — brief column names may differ from schema (e.g. acted_at vs accepted_at, monitoring_start_date vs monitoring_ends_at)
-18. Tab switching approach depends on page: recommendations.html uses server-side Jinja + JS show/hide; campaigns.html uses JS fetch from /cards endpoint — match the pre-existing pattern per page
-19. Datetime fields from DuckDB can be Python datetime objects or ISO strings — use `| string | truncate(10, True, '')` in Jinja to safely extract date portion
-20. NULL dates on old synthetic rows are expected — do not treat as bugs; document clearly in handoff
+16. Duplicate prevention: always check (campaign_id, rule_id) before insert
+17. Verify actual DB column names before writing routes — brief column names may differ from schema
+18. Tab switching approach depends on page: recommendations.html uses server-side Jinja + JS show/hide; campaigns.html uses JS fetch from /cards endpoint
+19. Datetime fields from DuckDB can be Python datetime objects or ISO strings — use `| string | truncate(10, True, '')` in Jinja
+20. NULL dates on old synthetic rows are expected — document clearly
+21. DuckDB Radar connection pattern: open warehouse.duckdb as read-write + ATTACH warehouse_readonly.duckdb as ro. Never open with read_only=True if writes are needed. Never open same file twice with different configs.
+22. changes table has no recommendation_id FK — JOIN to recommendations using campaign_id + rule_id + QUALIFY ROW_NUMBER()
+23. System Changes tab from ro.analytics.change_log — will be empty in synthetic environment until Autopilot runs live
 
 ---
 
-**Version:** 7.0 | **Last Updated:** 2026-02-22  
-**Next Step:** Chat 29 — M8 Changes + Monitoring page
+## KNOWN PITFALLS
+
+| Problem | Fix |
+|---------|-----|
+| Template CSS missing | Must extend base_bootstrap.html, not base.html |
+| DB query fails | Use ro.analytics.* not analytics.* |
+| Route replacement fails | Match exact quote style of @bp.route decorator |
+| Shopping metrics missing | Add total_clicks to compute_campaign_metrics() |
+| Collapse state lost | POST to /set-metrics-collapse |
+| Rules showing 0 | Use r'_\d{3}(?:_|$)' regex |
+| Ad group table empty | Use cpc_bid_micros not bid_micros |
+| Sort not working on full dataset | Must be SQL-side ORDER BY, not Python-side |
+| New sort column not working | Must add to ALLOWED_*_SORT whitelist in route |
+| Jinja template 500 error | Validate with jinja2 Environment before deploying |
+| rules_config.json not found | Path needs `.parent.parent.parent` — routes/ is 3 levels from project root |
+| Drawer visible on page load | Remove flex from inline style, let JS add it |
+| Campaign picker empty | Fetch from `/api/campaigns-list` on scope card click |
+| "budget budget" double word | Use explicit type→label map |
+| Blueprint not registered | New blueprints MUST be added to __init__.py |
+| Radar "ro catalog does not exist" | Must ATTACH warehouse_readonly.duckdb in radar connection |
+| Radar read-write conflict | Never open warehouse.duckdb with read_only=True if writes needed |
+| changes JOIN to recommendations | No recommendation_id — use campaign_id + rule_id + QUALIFY |
+
+---
+
+**Version:** 8.0 | **Last Updated:** 2026-02-23
+**Next Step:** Chat 30 — M9 Search Terms / Keywords recommendations

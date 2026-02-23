@@ -1,12 +1,15 @@
 """
-Recommendations routes — Chat 28 (M7)
+Recommendations routes — Chat 29 (M8)
 
-Adds 3 POST action routes wired to recommendation cards:
-    POST /recommendations/<rec_id>/accept
-    POST /recommendations/<rec_id>/decline
-    POST /recommendations/<rec_id>/modify
-
-All other routes preserved from Chat 27.
+Changes from Chat 28:
+  - /changes route REMOVED — now in act_dashboard/routes/changes.py
+  - _load_monitoring_days() now returns dict with monitoring_days + monitoring_minutes
+  - Accept/modify routes updated to use monitoring_minutes for fast-test deadline
+  - reverted_recs query added
+  - last_run bug fixed in _get_summary()
+  - /recommendations/cards extended with reverted array
+  - /recommendations/data fixed to include last_run
+  - reverted_recs passed to template
 """
 
 import json
@@ -64,8 +67,9 @@ def _ensure_changes_table(conn):
 
 def _load_monitoring_days(rule_id):
     """
-    Read rules_config.json and return monitoring_days for the given rule_id.
-    Returns 0 if rule not found or field missing.
+    Read rules_config.json and return monitoring config for the given rule_id.
+    Returns dict: {"monitoring_days": int, "monitoring_minutes": int}
+    Returns {"monitoring_days": 0, "monitoring_minutes": 0} if rule not found.
     """
     try:
         path = os.path.normpath(_RULES_CONFIG_PATH)
@@ -73,10 +77,13 @@ def _load_monitoring_days(rule_id):
             rules = json.load(f)
         for rule in rules:
             if rule.get("rule_id") == rule_id:
-                return int(rule.get("monitoring_days", 0))
+                return {
+                    "monitoring_days":    int(rule.get("monitoring_days", 0)),
+                    "monitoring_minutes": int(rule.get("monitoring_minutes", 0)),
+                }
     except Exception as e:
         print("[RECOMMENDATIONS] Could not load rules_config.json: {}".format(e))
-    return 0
+    return {"monitoring_days": 0, "monitoring_minutes": 0}
 
 
 def _load_rec_by_id(conn, rec_id, customer_id):
@@ -112,7 +119,6 @@ def _write_changes_row(conn, rec, executed_by, justification=None, new_value_ove
     """Write a single audit row to the changes table."""
     _ensure_changes_table(conn)
 
-    # Determine action_type from rule_type
     rule_type = rec.get("rule_type", "")
     if rule_type == "budget":
         action_type = "budget_change"
@@ -123,7 +129,6 @@ def _write_changes_row(conn, rec, executed_by, justification=None, new_value_ove
 
     old_value = rec.get("current_value")
     new_value = new_value_override if new_value_override is not None else rec.get("proposed_value")
-
     jst = justification or rec.get("action_direction", "")
 
     conn.execute("""
@@ -195,8 +200,8 @@ def _get_recommendations_data(config, status_filter=None, limit=200):
 
 def _get_summary(config):
     """
-    Build the 4-card summary strip data.
-    Returns dict with pending, monitoring, success_rate, last_run.
+    Build the summary strip data.
+    Returns dict with pending, monitoring, successful, declined, reverted, last_run.
     """
     conn = get_db_connection(config, read_only=False)
     try:
@@ -222,15 +227,29 @@ def _get_summary(config):
             [cid]
         ).fetchone()[0]
 
+        reverted = conn.execute(
+            "SELECT COUNT(*) FROM recommendations WHERE customer_id = ? AND status = 'reverted'",
+            [cid]
+        ).fetchone()[0]
+
+        # Fix: last_run from most recent generated_at
+        last_run_row = conn.execute(
+            "SELECT MAX(generated_at) FROM recommendations WHERE customer_id = ?",
+            [cid]
+        ).fetchone()
+        last_run = last_run_row[0] if last_run_row else None
+
         return {
             "pending":    pending,
             "monitoring": monitoring,
             "successful": successful,
             "declined":   declined,
+            "reverted":   reverted,
+            "last_run":   last_run,
         }
     except Exception as e:
         print("[RECOMMENDATIONS] Error building summary: {}".format(e))
-        return {"pending": 0, "monitoring": 0, "successful": 0, "declined": 0}
+        return {"pending": 0, "monitoring": 0, "successful": 0, "declined": 0, "reverted": 0, "last_run": None}
     finally:
         conn.close()
 
@@ -239,7 +258,7 @@ def _enrich_rec(rec):
     """Add computed fields used by the template."""
     now = datetime.now()
 
-    # Monitoring progress: days elapsed / total days
+    # Monitoring progress
     if rec["status"] == "monitoring" and rec["accepted_at"] and rec["monitoring_ends_at"]:
         accepted_at     = rec["accepted_at"]
         monitoring_ends = rec["monitoring_ends_at"]
@@ -304,13 +323,15 @@ def _enrich_rec(rec):
     # Top bar colour class
     status = rec.get("status", "pending")
     if status == "monitoring":
-        rec["bar_class"] = "bar-monitoring"
+        rec["bar_class"] = "rt-monitoring"
+    elif status == "reverted":
+        rec["bar_class"] = "rt-reverted"
     elif rule_type == "budget":
-        rec["bar_class"] = "bar-budget"
+        rec["bar_class"] = "rt-budget"
     elif rule_type == "bid":
-        rec["bar_class"] = "bar-bid"
+        rec["bar_class"] = "rt-bid"
     else:
-        rec["bar_class"] = "bar-status"
+        rec["bar_class"] = "rt-status"
 
     # Relative timestamp
     generated = rec.get("generated_at")
@@ -331,7 +352,7 @@ def _enrich_rec(rec):
 
 
 # ---------------------------------------------------------------------------
-# Action routes — Chat 28
+# Action routes
 # ---------------------------------------------------------------------------
 
 @bp.route("/recommendations/<rec_id>/accept", methods=["POST"])
@@ -348,10 +369,20 @@ def recommendation_accept(rec_id):
             return jsonify({"success": False, "message": "Recommendation is not pending."}), 400
 
         now = datetime.now()
-        monitoring_days = _load_monitoring_days(rec["rule_id"])
+        monitoring_config   = _load_monitoring_days(rec["rule_id"])
+        monitoring_days     = monitoring_config["monitoring_days"]
+        monitoring_minutes  = monitoring_config["monitoring_minutes"]
 
-        if monitoring_days > 0:
-            new_status = "monitoring"
+        if monitoring_minutes > 0:
+            new_status      = "monitoring"
+            monitoring_ends = now + timedelta(minutes=monitoring_minutes)
+            conn.execute("""
+                UPDATE recommendations
+                SET status = ?, accepted_at = ?, monitoring_ends_at = ?, updated_at = ?
+                WHERE rec_id = ? AND customer_id = ?
+            """, [new_status, now, monitoring_ends, now, rec_id, config.customer_id])
+        elif monitoring_days > 0:
+            new_status      = "monitoring"
             monitoring_ends = now + timedelta(days=monitoring_days)
             conn.execute("""
                 UPDATE recommendations
@@ -400,6 +431,8 @@ def recommendation_decline(rec_id):
             WHERE rec_id = ? AND customer_id = ?
         """, [now, now, rec_id, config.customer_id])
 
+        _write_changes_row(conn, rec, executed_by="user_decline")
+
         return jsonify({
             "success": True,
             "message": "Recommendation declined.",
@@ -435,7 +468,9 @@ def recommendation_modify(rec_id):
             return jsonify({"success": False, "message": "Recommendation is not pending."}), 400
 
         now = datetime.now()
-        monitoring_days = _load_monitoring_days(rec["rule_id"])
+        monitoring_config   = _load_monitoring_days(rec["rule_id"])
+        monitoring_days     = monitoring_config["monitoring_days"]
+        monitoring_minutes  = monitoring_config["monitoring_minutes"]
 
         # Update proposed_value first
         conn.execute("""
@@ -444,9 +479,16 @@ def recommendation_modify(rec_id):
             WHERE rec_id = ? AND customer_id = ?
         """, [new_value, now, rec_id, config.customer_id])
 
-        # Then transition status (same as accept)
-        if monitoring_days > 0:
-            new_status = "monitoring"
+        if monitoring_minutes > 0:
+            new_status      = "monitoring"
+            monitoring_ends = now + timedelta(minutes=monitoring_minutes)
+            conn.execute("""
+                UPDATE recommendations
+                SET status = ?, accepted_at = ?, monitoring_ends_at = ?, updated_at = ?
+                WHERE rec_id = ? AND customer_id = ?
+            """, [new_status, now, monitoring_ends, now, rec_id, config.customer_id])
+        elif monitoring_days > 0:
+            new_status      = "monitoring"
             monitoring_ends = now + timedelta(days=monitoring_days)
             conn.execute("""
                 UPDATE recommendations
@@ -481,25 +523,25 @@ def recommendation_modify(rec_id):
 
 
 # ---------------------------------------------------------------------------
-# Routes — preserved from Chat 27
+# Page routes
 # ---------------------------------------------------------------------------
 
 @bp.route("/recommendations")
 @login_required
 def recommendations():
     """
-    Global Recommendations page — 4 tabs: Pending / Monitoring / Successful / Declined.
-    Tab switching is pure JS — no query param routing needed.
+    Global Recommendations page — 5 tabs: Pending / Monitoring / Successful / Reverted / Declined.
     """
     config              = get_current_config()
     clients             = get_available_clients()
     current_client_path = session.get("current_client_config")
 
-    summary          = _get_summary(config)
-    pending_recs     = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="pending")]
-    monitoring_recs  = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="monitoring")]
-    successful_recs  = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="successful", limit=200)]
-    declined_recs    = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="declined",   limit=200)]
+    summary         = _get_summary(config)
+    pending_recs    = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="pending")]
+    monitoring_recs = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="monitoring")]
+    successful_recs = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="successful", limit=200)]
+    reverted_recs   = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="reverted",   limit=200)]
+    declined_recs   = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="declined",   limit=200)]
 
     return render_template(
         "recommendations.html",
@@ -510,6 +552,7 @@ def recommendations():
         pending_recs=pending_recs,
         monitoring_recs=monitoring_recs,
         successful_recs=successful_recs,
+        reverted_recs=reverted_recs,
         declined_recs=declined_recs,
     )
 
@@ -552,21 +595,21 @@ def recommendations_run():
 @login_required
 def recommendations_data():
     """
-    JSON endpoint: pending count, monitoring count, success_rate, last_run.
+    JSON endpoint: pending count, monitoring count, last_run.
     Used by sidebar badge and post-run page refresh.
     """
     config  = get_current_config()
     summary = _get_summary(config)
 
-    last_run = summary["last_run"]
+    last_run = summary.get("last_run")
     if last_run and hasattr(last_run, "isoformat"):
         last_run = last_run.isoformat()
 
     return jsonify({
-        "pending":      summary["pending"],
-        "monitoring":   summary["monitoring"],
-        "success_rate": summary["success_rate"],
-        "last_run":     last_run,
+        "pending":    summary["pending"],
+        "monitoring": summary["monitoring"],
+        "reverted":   summary["reverted"],
+        "last_run":   last_run,
     })
 
 
@@ -582,10 +625,10 @@ def recommendations_cards():
     pending_recs    = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="pending")]
     monitoring_recs = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="monitoring")]
     successful_recs = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="successful", limit=200)]
+    reverted_recs   = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="reverted",   limit=200)]
     declined_recs   = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="declined",   limit=200)]
 
     def _serialise(rec):
-        """Convert datetime fields to ISO strings for JSON serialisation."""
         out = {}
         for k, v in rec.items():
             if isinstance(v, datetime):
@@ -598,75 +641,6 @@ def recommendations_cards():
         "pending":    [_serialise(r) for r in pending_recs],
         "monitoring": [_serialise(r) for r in monitoring_recs],
         "successful": [_serialise(r) for r in successful_recs],
+        "reverted":   [_serialise(r) for r in reverted_recs],
         "declined":   [_serialise(r) for r in declined_recs],
     })
-
-
-# ---------------------------------------------------------------------------
-# /changes — preserved exactly from pre-Chat 27
-# ---------------------------------------------------------------------------
-
-@bp.route("/changes")
-@login_required
-def changes():
-    """
-    Change history page showing all executed changes.
-    """
-    config              = get_current_config()
-    clients             = get_available_clients()
-    current_client_path = session.get("current_client_config")
-
-    search        = request.args.get("search", "")
-    status_filter = request.args.get("status", "all")
-    lever_filter  = request.args.get("lever", "all")
-
-    conn = duckdb.connect(config.db_path, read_only=True)
-
-    query = """
-    SELECT
-        change_id,
-        change_date,
-        campaign_id,
-        lever,
-        old_value / 1000000 as old_value,
-        new_value / 1000000 as new_value,
-        change_pct,
-        rule_id,
-        risk_tier,
-        rollback_status,
-        executed_at
-    FROM analytics.change_log
-    WHERE customer_id = ?
-    """
-    params = [config.customer_id]
-
-    if status_filter != "all":
-        if status_filter == "active":
-            query += " AND (rollback_status IS NULL OR rollback_status = 'monitoring')"
-        else:
-            query += " AND rollback_status = ?"
-            params.append(status_filter)
-
-    if lever_filter != "all":
-        query += " AND lever = ?"
-        params.append(lever_filter)
-
-    if search:
-        query += " AND campaign_id LIKE ?"
-        params.append("%{}%".format(search))
-
-    query += " ORDER BY change_date DESC, executed_at DESC LIMIT 100"
-
-    changes_data = conn.execute(query, params).fetchall()
-    conn.close()
-
-    return render_template(
-        "changes.html",
-        client_name=config.client_name,
-        available_clients=clients,
-        current_client_config=current_client_path,
-        changes=changes_data,
-        search=search,
-        status_filter=status_filter,
-        lever_filter=lever_filter,
-    )

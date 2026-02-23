@@ -20,6 +20,7 @@
     "risk_level": "low",
     "cooldown_days": 7,
     "monitoring_days": 0,
+    "monitoring_minutes": 1,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
     "updated_at": "2026-02-22T15:44:11"
@@ -45,6 +46,7 @@
     "risk_level": "low",
     "cooldown_days": 7,
     "monitoring_days": 0,
+    "monitoring_minutes": 2,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
     "updated_at": "2026-02-22T09:05:03"
@@ -69,7 +71,8 @@
     "action_magnitude": 10,
     "risk_level": "medium",
     "cooldown_days": 7,
-    "monitoring_days": 0,
+    "monitoring_days": 7,
+    "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
     "updated_at": "2026-02-22T00:00:00"
@@ -94,7 +97,8 @@
     "action_magnitude": 5,
     "risk_level": "low",
     "cooldown_days": 7,
-    "monitoring_days": 0,
+    "monitoring_days": 7,
+    "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
     "updated_at": "2026-02-22T00:00:00"
@@ -119,7 +123,8 @@
     "action_magnitude": 10,
     "risk_level": "high",
     "cooldown_days": 7,
-    "monitoring_days": 0,
+    "monitoring_days": 7,
+    "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
     "updated_at": "2026-02-22T00:00:00"
@@ -144,7 +149,8 @@
     "action_magnitude": 0,
     "risk_level": "low",
     "cooldown_days": 14,
-    "monitoring_days": 0,
+    "monitoring_days": 7,
+    "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
     "updated_at": "2026-02-22T00:00:00"
@@ -170,6 +176,7 @@
     "risk_level": "medium",
     "cooldown_days": 14,
     "monitoring_days": 0,
+    "monitoring_minutes": 2,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
     "updated_at": "2026-02-22T00:00:00"
@@ -194,7 +201,8 @@
     "action_magnitude": 5,
     "risk_level": "medium",
     "cooldown_days": 14,
-    "monitoring_days": 0,
+    "monitoring_days": 14,
+    "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
     "updated_at": "2026-02-22T00:00:00"
@@ -219,7 +227,8 @@
     "action_magnitude": 0,
     "risk_level": "medium",
     "cooldown_days": 14,
-    "monitoring_days": 0,
+    "monitoring_days": 14,
+    "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
     "updated_at": "2026-02-22T00:00:00"
@@ -244,7 +253,8 @@
     "action_magnitude": 0,
     "risk_level": "low",
     "cooldown_days": 14,
-    "monitoring_days": 0,
+    "monitoring_days": 7,
+    "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
     "updated_at": "2026-02-22T00:00:00"
@@ -269,7 +279,8 @@
     "action_magnitude": 0,
     "risk_level": "high",
     "cooldown_days": 30,
-    "monitoring_days": 0,
+    "monitoring_days": 3,
+    "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
     "updated_at": "2026-02-22T00:00:00"
@@ -294,7 +305,8 @@
     "action_magnitude": 0,
     "risk_level": "medium",
     "cooldown_days": 14,
-    "monitoring_days": 0,
+    "monitoring_days": 14,
+    "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
     "updated_at": "2026-02-22T00:00:00"
@@ -319,7 +331,8 @@
     "action_magnitude": 0,
     "risk_level": "low",
     "cooldown_days": 7,
-    "monitoring_days": 0,
+    "monitoring_days": 7,
+    "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
     "updated_at": "2026-02-22T00:00:00"

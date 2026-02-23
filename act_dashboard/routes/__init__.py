@@ -9,6 +9,7 @@ Phase 1d: Final routes ✅ (NEW - COMPLETE!)
 ALL 16 ROUTES MIGRATED TO BLUEPRINTS
 Chat 21a: Bootstrap test route ✅
 Chat 22: Shared utility routes ✅
+Chat 29 (M8): Changes blueprint ✅
 """
 
 from flask import Flask
@@ -62,6 +63,10 @@ def register_blueprints(app: Flask):
     from act_dashboard.routes import rules_api
     app.register_blueprint(rules_api.bp)
 
+    # Chat 29 (M8): Changes page — My Actions + System Changes
+    from act_dashboard.routes import changes
+    app.register_blueprint(changes.bp)
+
     print("✅ [Phase 1a] Registered auth blueprint (login, logout, switch-client)")
     print("✅ [Phase 1b] Registered api blueprint (execute, batch, status, approve, reject)")
     print("✅ [Phase 1c] Registered page blueprints (keywords, ads, shopping)")
@@ -71,4 +76,5 @@ def register_blueprints(app: Flask):
     print("✅ [Chat 21e] Registered ad_groups blueprint")
     print("✅ [Chat 22] Registered shared blueprint (set-date-range)")
     print("✅ [Chat 26 M5] Registered rules_api blueprint (GET/POST/PUT/DELETE /api/rules)")
-    print("🎉 ALL ROUTES REGISTERED - Phase 1 + Bootstrap + Campaigns + Ad Groups + Date Range + Rules API COMPLETE!")
+    print("✅ [Chat 29 M8] Registered changes blueprint (/changes)")
+    print("🎉 ALL ROUTES REGISTERED - Phase 1 + Bootstrap + Campaigns + Ad Groups + Date Range + Rules API + Changes COMPLETE!")
