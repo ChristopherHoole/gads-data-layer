@@ -10,17 +10,29 @@
 ## EXECUTIVE SUMMARY
 
 ### Current State (Feb 23, 2026)
-- **Overall Completion:** ~97%
-- **Phase:** Dashboard 3.0 — M8 complete ✅, M9 Search Terms / Keywords NEXT
-- **Active Development:** Dashboard 3.0 modular improvements
+- **Overall Completion:** ~98%
+- **Phase:** Marketing Website ✅ COMPLETE | Dashboard 3.0 M8 ✅ COMPLETE | M9 next
+- **Active Development:** Ready for next phase
+- **Marketing Website:** Live at https://www.christopherhoole.online
 - **Templating:** Jinja2 Macros (metrics_section M2 + performance_chart M3)
 
 ### Tech Stack
+
+**A.C.T Dashboard:**
 - **Backend:** Python 3.11, Flask
 - **Database:** DuckDB (warehouse.duckdb)
 - **API:** Google Ads API (v15)
 - **Frontend:** Bootstrap 5.3, Chart.js 4.4, Vanilla JS, Flatpickr
 - **Templating:** Jinja2 Macros (metrics_section macro from M2)
+
+**Marketing Website:**
+- **Framework:** Next.js 14
+- **Styling:** Tailwind CSS
+- **Animation:** Framer Motion
+- **Components:** shadcn/ui
+- **Hero:** Three.js WebGL (r128)
+- **Hosting:** Vercel
+- **Domain:** christopherhoole.online (GoDaddy DNS)
 
 ---
 
@@ -214,13 +226,116 @@ All 13 rules now have `monitoring_minutes`. When > 0, takes priority over `monit
 
 **Test results:** 0 Pending / 1 Monitoring / 57 Successful / 4 Reverted / 8 Declined ✅ All pages confirmed ✅
 
+### Marketing Website — ChristopherHoole.online ✅
+**Date:** 2026-02-23
+**Chat 31:** Wireframe creation (13 sections designed, 306KB with base64 images)
+**Master Chat 4.0:** Full rebuild + deployment
+
+**Tech Stack:**
+- Next.js 14 (React framework)
+- Tailwind CSS (utility-first styling)
+- Framer Motion (animations)
+- shadcn/ui (component library)
+- Three.js WebGL r128 (interactive hero shader)
+- Vercel (hosting + deployment)
+- GoDaddy DNS → Vercel custom domain
+
+**Completed Sections (11/13):**
+1. ✅ **S1: Hero** — Three.js interactive liquid shader, 20px h1, centered layout, scroll indicator
+   - User hovers over image to reveal A.C.T version
+   - Custom shader with angle-based noise for organic liquid effect
+   - Two-layer image system (Christopher base + A.C.T reveal)
+2. ✅ **S2: About Me** — Dark bg, 4 paragraphs, blue highlights on key phrases, bullet points
+3. ✅ **S3: The Problem** — White bg, 3-column card grid, 20px titles, 19px content
+4. ✅ **S4: The Difference** — Dark bg, 3 paragraphs with blue highlights
+5. ✅ **S5: Work History** — White bg, vertical timeline, 7 positions, 16px titles
+6. ✅ **S6: Skills & Platforms** — Dark bg, 4-column grid (responsive), 8 cards
+   - Card titles: 20px bold blue sentence case
+   - Card content: 16px pure white
+   - Categories: Paid Advertising, Analytics, CRM, E-commerce, AI, Budget Mgmt, Industries, Languages
+7. ✅ **S7: What A.C.T Does** — White bg, 2×2 module grid + capabilities box
+   - 4 modules: Lighthouse, Radar, Flight Plan, Autopilot
+   - Module titles: 20px bold black, subtitles: 18px blue
+   - Bullet lists: 16px pure black with visible bullets
+8. ❌ **S8: How I Work** — REMOVED (not needed for initial launch)
+9. ❌ **S9: What You Get Each Week** — REMOVED (not needed for initial launch)
+10. ✅ **S10: Why I'm Different** — Light gray bg, 3-column grid (responsive), 16 USP cards
+    - Card titles: 20px bold pure black
+    - Card content: 16px pure black
+    - Emoji icons: 28px
+11. ✅ **S11: FAQ** — White bg, 10 collapsible questions, max-width 800px
+    - Questions: 20px bold black clickable
+    - Answers: 16px gray
+    - Accordion style (one open at a time, all closed by default)
+    - Plus (+) when closed, Minus (−) when open
+12. ✅ **S12: Contact Form** — Dark bg, 2-column layout (form + what happens next)
+    - 6 fields (Name, Company, Role, Looking for, Email, Phone)
+    - Frontend validation complete
+    - Backend: POST to /api/leads (pending — will integrate with A.C.T dashboard)
+13. ✅ **S13: Footer** — Very dark bg, 18px pure white monospace
+    - Left: "Christopher Hoole · © 2026"
+    - Right: "LinkedIn · chrishoole101@gmail.com · Built by Christopher Hoole 2026"
+14. ✅ **Navigation** — Fixed top, dark bg with backdrop blur
+    - Left: A.C.T logo (32×32) + "Christopher Hoole" (20px bold white)
+    - Right: About - Experience - A.C.T links (18px pure white, sentence case) + CTA button (14px)
+
+**Typography System:**
+```css
+.text-body-dark { font-mono, 18px, white, line-height: 1.75 }
+.text-body-light { font-mono, 18px, #0f172a, line-height: 1.75 }
+```
+- Section eyebrows: 20px bold blue uppercase with 24px blue line prefix
+- Section headings: 36px bold serif (Georgia)
+- Card titles: 20px bold (increased from initial 14-18px)
+- Card content: 16px (standard across all card-based sections)
+- Navigation links: 18px pure white
+
+**Color Palette:**
+- Primary blue: #2563eb (links, accents, buttons)
+- Dark background: #0f172a
+- White background: #ffffff
+- Light gray background: #f1f5f9 (Why I'm Different section)
+- Pure white text on dark: #ffffff
+- Pure black text on light: #0f172a
+
+**Layout Patterns:**
+- Content max-width: 1020px for text sections
+- Card grids: 3-4 columns on desktop, responsive on mobile/tablet
+- Consistent padding: py-20 px-6 md:px-20
+
+**Deployment:**
+- Built successfully (Next.js build, no errors)
+- Deployed to Vercel: https://act-website-fawn.vercel.app
+- Primary URL: https://www.christopherhoole.online ✅ (DNS propagated)
+- Root URL: https://christopherhoole.online ⏳ (DNS propagating)
+- GitHub: https://github.com/ChristopherHoole/act-website
+- Git commit: 35 files changed, 3,299 insertions
+
+**Key Technical Decisions:**
+1. Single-file artifacts — HTML, CSS, JS all in one .tsx/.jsx file (Next.js components)
+2. Three.js colorSpace compatibility — removed `t.colorSpace = THREE.SRGBColorSpace` for r128 compatibility
+3. No Bootstrap — pure Tailwind CSS with utility classes
+4. Contact form — frontend complete, backend deferred (will connect to A.C.T /api/leads)
+5. Removed S8/S9 — cleaner initial launch, may add later
+6. Navigation sentence case — more readable than ALL CAPS
+7. FAQ accordion — one open at a time, all closed by default for compact initial state
+8. Logo integration — A.C.T concentric circles (blue, red, yellow, green center)
+
+**Files Delivered:**
+- 12 component files (Hero.tsx, AboutMe.tsx, TheProblem.tsx, TheDifference.tsx, WorkHistory.tsx, Skills.tsx, WhatACTDoes.tsx, WhyDifferent.tsx, FAQ.tsx, ContactForm.tsx, Footer.tsx, Navigation.tsx)
+- page.tsx (main page, HowIWork and WeeklyDeliverables removed)
+- globals.css (with text-body-dark and text-body-light classes)
+- act_logo.svg + favicon.ico (in public folder)
+- All files ready for production, mobile responsive
+
 ---
 
 ## CURRENT STATUS
 
-### Overall: ~97% Complete
+### Overall: ~98% Complete
 
 What's working:
+- **Marketing Website:** Live at https://www.christopherhoole.online, 11 sections, fully responsive
 - All 6 dashboard pages with real/synthetic data
 - Metrics cards: Financial + Actions on every page
 - Performance chart: dual-axis, 4 toggleable metrics, session-persisted, all 6 pages
@@ -241,6 +356,9 @@ What's working:
 - Server-side sort on all sortable columns
 
 Pending:
+- **Website:** Connect contact form to /api/leads endpoint (integrate with A.C.T dashboard)
+- **Website:** Optional SEO improvements (meta tags, OpenGraph images, sitemap)
+- **Website:** Root domain DNS propagation (https://christopherhoole.online without www)
 - M9 Search Terms / Keywords recommendations (Chat 30)
 - System Changes tab → card grid (deferred from Chat 29)
 - M5 Rules tab rollout to Ad Groups, Keywords, Ads, Shopping
@@ -295,6 +413,14 @@ Medium-term:
 21. DuckDB Radar connection pattern: open warehouse.duckdb as read-write + ATTACH warehouse_readonly.duckdb as ro. Never open with read_only=True if writes are needed. Never open same file twice with different configs.
 22. changes table has no recommendation_id FK — JOIN to recommendations using campaign_id + rule_id + QUALIFY ROW_NUMBER()
 23. System Changes tab from ro.analytics.change_log — will be empty in synthetic environment until Autopilot runs live
+24. **Marketing Website:** Single-file artifacts work best for Next.js components — all HTML/CSS/JS in one .tsx file
+25. **Marketing Website:** Three.js version matters — r128 doesn't support `colorSpace` property, must be removed for compatibility
+26. **Marketing Website:** Vercel deployment requires clean Next.js build — test `npm run build` before deploying
+27. **Marketing Website:** DNS propagation: CNAME (www) propagates faster than A record (root domain) — expect 5-60 min delay
+28. **Marketing Website:** GoDaddy DNS: Remove old A records before adding new ones to avoid conflicts
+29. **Marketing Website:** Contact form backend should integrate with A.C.T dashboard /api/leads endpoint for unified lead management
+30. **Marketing Website:** Typography consistency matters — standardize all card titles/content at project start (20px titles, 16px content)
+31. **Marketing Website:** FAQ accordion: all closed by default = cleaner initial page load, better UX
 
 ---
 
@@ -320,8 +446,12 @@ Medium-term:
 | Radar "ro catalog does not exist" | Must ATTACH warehouse_readonly.duckdb in radar connection |
 | Radar read-write conflict | Never open warehouse.duckdb with read_only=True if writes needed |
 | changes JOIN to recommendations | No recommendation_id — use campaign_id + rule_id + QUALIFY |
+| **Website:** Three.js colorSpace error | Remove t.colorSpace line for r128 compatibility |
+| **Website:** Next.js build fails | Check all imports, remove unused components, validate syntax |
+| **Website:** Vercel deployment 404 | Ensure domain DNS configured correctly (A + CNAME records) |
+| **Website:** www works but root doesn't | Root domain A record takes longer to propagate (5-60 min) |
 
 ---
 
-**Version:** 8.0 | **Last Updated:** 2026-02-23
-**Next Step:** Chat 30 — M9 Search Terms / Keywords recommendations
+**Version:** 9.0 | **Last Updated:** 2026-02-23
+**Next Step:** Chat 30 — M9 Search Terms / Keywords recommendations | Website: Connect contact form to A.C.T dashboard
