@@ -220,45 +220,48 @@ def execute_recommendation():
             if len(execution_summary["results"]) == 0:
                 return jsonify({
                     "success": False,
-                    "message": "This recommendation type cannot be executed via the dashboard",
-                    "error": "Non-executable action type (e.g., review recommendations)"
-                }), 400
+                    "message": "No executable recommendations",
+                    "error": "Recommendation passed validation but Executor returned no results"
+                }), 500
             
+            # Check result for this recommendation
             result = execution_summary["results"][0]
+            
+            if result["success"]:
+                # Success response
+                response_data = {
+                    "success": True,
+                    "message": "Dry-run successful" if dry_run else "Executed successfully",
+                    "change_id": result.get("change_id"),
+                    "result": result.get("message")
+                }
+                
+                # Add prediction if available
+                if result.get("predicted_impact"):
+                    response_data["predicted_impact"] = result["predicted_impact"]
+                
+                return jsonify(response_data), 200
+            else:
+                # Execution failed
+                return jsonify({
+                    "success": False,
+                    "message": "Execution failed",
+                    "error": result.get("error", "Unknown error during execution")
+                }), 500
+                
         except Exception as e:
-            current_app.logger.error(f'Execution failed for rec_id {rec_id}: {str(e)}')
+            logging.error(f"Execution error: {str(e)}")
             return jsonify({
                 "success": False,
                 "message": "Execution failed",
                 "error": str(e)
             }), 500
-        
-        # Log execution
-        if result["success"]:
-            current_app.logger.info(
-                f'Execution successful: user={request.remote_addr}, '
-                f'rec_id={rec_id}, page={page or "file"}, '
-                f'dry_run={dry_run}, change_id={result.get("change_id")}'
-            )
-        else:
-            current_app.logger.warning(
-                f'Execution failed: user={request.remote_addr}, '
-                f'rec_id={rec_id}, error={result.get("error")}'
-            )
-        
-        # Return result (result is a dict, not an object)
-        return jsonify({
-            "success": result["success"],
-            "message": result["message"],
-            "change_id": result.get("change_id"),
-            "error": result.get("error")
-        })
-        
+            
     except Exception as e:
-        current_app.logger.error(f'Unexpected error in execute_recommendation: {str(e)}')
+        logging.error(f"Request error: {str(e)}")
         return jsonify({
             "success": False,
-            "message": f"Execution failed: {str(e)}",
+            "message": "Request failed",
             "error": str(e)
         }), 500
 
@@ -271,22 +274,32 @@ def execute_batch():
     
     Request JSON:
         {
-            "recommendation_ids": [int, int, ...],
-            "date_str": str,
-            "dry_run": bool
+            "recommendation_ids": [int],  # List of indexes in recommendations list
+            "date_str": str,              # Date of recommendations file
+            "dry_run": bool               # True for dry-run, False for live
         }
         
     Returns JSON:
         {
             "success": bool,
-            "results": [...],
-            "summary": {"total": int, "succeeded": int, "failed": int}
+            "message": str,
+            "results": [{
+                "recommendation_id": int,
+                "success": bool,
+                "message": str,
+                "change_id": int or null
+            }],
+            "summary": {
+                "total": int,
+                "successful": int,
+                "failed": int
+            }
         }
     """
     try:
-        # Rate limit: 10 requests per minute per IP (stricter for batch)
+        # Rate limit: 5 batch requests per minute per IP
         ip_address = request.remote_addr or 'unknown'
-        rate_key = f"execute-batch:{ip_address}"
+        rate_key = f"batch:{ip_address}"
         allowed, remaining, reset_seconds = check_rate_limit(rate_key, limit=5, window=60)
         
         if not allowed:
@@ -300,29 +313,36 @@ def execute_batch():
         data = request.get_json()
         rec_ids = data.get("recommendation_ids", [])
         date_str = data.get("date_str")
-        page = data.get("page")  # 'keywords', 'ads', 'shopping'
+        page = data.get("page")  # Optional - 'keywords', 'ads', 'shopping' for session-based
         dry_run = data.get("dry_run", True)
         
-        if not rec_ids:
+        if not rec_ids or not isinstance(rec_ids, list):
             return jsonify({
                 "success": False,
-                "message": "No recommendations selected",
-                "error": "recommendation_ids is required and must not be empty"
+                "message": "Missing recommendation_ids",
+                "error": "recommendation_ids must be a non-empty list"
             }), 400
         
+        # Get current config
         config = get_current_config()
         
-        # Load recommendations (from cache or file)
+        # ==================== LOAD RECOMMENDATIONS ====================
+        
+        recommendations = []
+        
+        # Option 1: Load from CACHE (live recommendations from keywords/ads/shopping)
         if page:
             cache = current_app.config.get('RECOMMENDATIONS_CACHE', {})
-            all_recommendations = cache.get(page, [])
+            recommendations = cache.get(page, [])
             
-            if not all_recommendations:
+            if not recommendations:
                 return jsonify({
                     "success": False,
                     "message": f"No {page} recommendations in cache",
-                    "error": f"Please refresh the {page} page"
+                    "error": f"Please refresh the {page} page to generate recommendations"
                 }), 404
+        
+        # Option 2: Load from FILE (main recommendations page)
         else:
             if not date_str:
                 date_str = date.today().isoformat()
@@ -332,51 +352,74 @@ def execute_batch():
                 return jsonify({
                     "success": False,
                     "message": "Recommendations file not found",
-                    "error": f"No file for {date_str}"
+                    "error": f"No recommendations file for {date_str}. Try refreshing the Recommendations page."
                 }), 404
             
             with open(suggestions_path, "r") as f:
                 suggestions = json.load(f)
-            all_recommendations = suggestions.get("recommendations", [])
+            
+            recommendations = suggestions.get("recommendations", [])
+        
+        # ==================== VALIDATE BATCH REQUEST ====================
         
         # Validate batch request
-        is_valid, error_msg = validate_batch_execution_request(data, all_recommendations)
+        is_valid, error_msg = validate_batch_execution_request(data, recommendations)
         if not is_valid:
             return jsonify({
                 "success": False,
-                "message": "Invalid batch request",
+                "message": "Invalid batch execution request",
                 "error": error_msg
             }), 400
         
-        # Validate IDs and collect recommendations
-        recs_to_execute = []
+        # Extract selected recommendations
+        selected_recs = []
         for rec_id in rec_ids:
-            rec_dict = all_recommendations[rec_id]
-            
-            # Validate and convert
-            is_valid, error = validate_recommendation_dict(rec_dict)
-            if not is_valid:
-                return jsonify({
-                    "success": False,
-                    "message": f"Invalid recommendation at ID {rec_id}",
-                    "error": error
-                }), 400
-            
-            try:
-                rec_obj = dict_to_recommendation(rec_dict)
-                recs_to_execute.append(rec_obj)
-            except (ValueError, TypeError) as e:
-                return jsonify({
-                    "success": False,
-                    "message": f"Failed to convert recommendation {rec_id}",
-                    "error": str(e)
-                }), 500
+            if 0 <= rec_id < len(recommendations):
+                rec_dict = recommendations[rec_id]
+                
+                # Validate each recommendation
+                is_valid, validation_error = validate_recommendation_dict(rec_dict)
+                if not is_valid:
+                    return jsonify({
+                        "success": False,
+                        "message": f"Invalid recommendation {rec_id}",
+                        "error": validation_error
+                    }), 400
+                
+                # Check if blocked
+                if rec_dict.get("blocked", False):
+                    continue  # Skip blocked recommendations
+                
+                # Convert to Recommendation object
+                try:
+                    rec_obj = dict_to_recommendation(rec_dict)
+                    selected_recs.append((rec_id, rec_obj))
+                except (ValueError, TypeError) as e:
+                    return jsonify({
+                        "success": False,
+                        "message": f"Failed to convert recommendation {rec_id}",
+                        "error": str(e)
+                    }), 500
+        
+        if not selected_recs:
+            return jsonify({
+                "success": False,
+                "message": "No valid recommendations to execute",
+                "error": "All selected recommendations are blocked or invalid"
+            }), 400
         
         # Initialize executor
+        # Only initialize Google Ads client for live execution, not dry-run
         google_ads_client = None
         if not dry_run:
             try:
                 google_ads_client = get_google_ads_client(config)
+            except FileNotFoundError as e:
+                return jsonify({
+                    "success": False,
+                    "message": "Google Ads credentials not found",
+                    "error": "Please configure Google Ads API credentials in secrets/google-ads.yaml"
+                }), 500
             except Exception as e:
                 return jsonify({
                     "success": False,
@@ -386,29 +429,37 @@ def execute_batch():
         
         executor = Executor(config.customer_id, config.db_path, google_ads_client)
         
-        # Execute batch
+        # Execute batch (pass list of Recommendation objects, not dicts)
+        rec_objs = [rec for _, rec in selected_recs]
         try:
-            execution_summary = executor.execute(recs_to_execute, dry_run=dry_run)
+            execution_summary = executor.execute(rec_objs, dry_run=dry_run)
+            # Executor returns: {"total": N, "successful": X, "failed": Y, "results": [...]}
             
-            # Log batch execution
-            current_app.logger.info(
-                f'Batch execution: user={request.remote_addr}, '
-                f'count={len(rec_ids)}, page={page or "file"}, '
-                f'dry_run={dry_run}, succeeded={execution_summary["successful"]}, '
-                f'failed={execution_summary["failed"]}'
-            )
+            # Match results back to recommendation IDs
+            results = []
+            for i, (rec_id, _) in enumerate(selected_recs):
+                if i < len(execution_summary["results"]):
+                    result = execution_summary["results"][i]
+                    results.append({
+                        "recommendation_id": rec_id,
+                        "success": result["success"],
+                        "message": result.get("message", ""),
+                        "change_id": result.get("change_id")
+                    })
             
             return jsonify({
                 "success": True,
-                "results": execution_summary["results"],
+                "message": f"Batch execution {'dry-run' if dry_run else 'live'} complete",
+                "results": results,
                 "summary": {
                     "total": execution_summary["total"],
-                    "succeeded": execution_summary["successful"],
+                    "successful": execution_summary["successful"],
                     "failed": execution_summary["failed"]
                 }
-            })
+            }), 200
+            
         except Exception as e:
-            current_app.logger.error(f'Batch execution failed: {str(e)}')
+            logging.error(f"Batch execution error: {str(e)}")
             return jsonify({
                 "success": False,
                 "message": "Batch execution failed",
@@ -416,51 +467,53 @@ def execute_batch():
             }), 500
             
     except Exception as e:
-        current_app.logger.error(f'Unexpected error in execute_batch: {str(e)}')
+        logging.error(f"Request error: {str(e)}")
         return jsonify({
             "success": False,
-            "message": f"Batch execution failed: {str(e)}",
+            "message": "Request failed",
             "error": str(e)
         }), 500
 
 
-@bp.route("/execution-status/<int:change_id>", methods=["GET"])
+@bp.route("/status/<change_id>", methods=["GET"])
 @login_required
-def execution_status(change_id):
+def get_status(change_id):
     """
     Get status of an executed change.
     
     Returns JSON:
         {
             "success": bool,
-            "change_id": int,
-            "status": str,
-            "details": {...}
+            "change": {
+                "change_id": int,
+                "campaign_id": int,
+                "change_type": str,
+                "status": str,
+                "created_at": str,
+                "executed_at": str,
+                "predicted_impact": {...}
+            }
         }
     """
     try:
         config = get_current_config()
-        conn = duckdb.connect(config.db_path, read_only=True)
         
-        # Query change log
-        query = """
-        SELECT
-            change_id,
-            customer_id,
-            change_date,
-            campaign_id,
-            lever,
-            old_value,
-            new_value,
-            change_pct,
-            rule_id,
-            rollback_status,
-            executed_at
-        FROM analytics.change_log
-        WHERE change_id = ?
-        """
+        # Query change_log table in warehouse
+        conn = duckdb.connect(config.db_path)
         
-        result = conn.execute(query, [change_id]).fetchone()
+        result = conn.execute("""
+            SELECT 
+                change_id,
+                campaign_id,
+                change_type,
+                status,
+                created_at,
+                executed_at,
+                predicted_impact
+            FROM change_log
+            WHERE change_id = ?
+        """, [int(change_id)]).fetchone()
+        
         conn.close()
         
         if not result:
@@ -470,204 +523,163 @@ def execution_status(change_id):
                 "error": f"No change found with ID {change_id}"
             }), 404
         
+        # Parse result
+        change = {
+            "change_id": result[0],
+            "campaign_id": result[1],
+            "change_type": result[2],
+            "status": result[3],
+            "created_at": result[4].isoformat() if result[4] else None,
+            "executed_at": result[5].isoformat() if result[5] else None,
+            "predicted_impact": json.loads(result[6]) if result[6] else None
+        }
+        
         return jsonify({
             "success": True,
-            "change_id": result[0],
-            "status": result[9] or "active",  # rollback_status
-            "details": {
-                "customer_id": result[1],
-                "change_date": str(result[2]),
-                "campaign_id": result[3],
-                "lever": result[4],
-                "old_value": result[5],
-                "new_value": result[6],
-                "change_pct": result[7],
-                "rule_id": result[8],
-                "executed_at": str(result[10])
-            }
-        })
+            "change": change
+        }), 200
         
     except Exception as e:
+        logging.error(f"Status query error: {str(e)}")
         return jsonify({
             "success": False,
-            "message": f"Status check failed: {str(e)}",
+            "message": "Query failed",
             "error": str(e)
         }), 500
 
 
-@bp.route("/approve", methods=["POST"])
+@bp.route("/approve/<int:change_id>", methods=["POST"])
 @login_required
-def approve_recommendation():
-    """API endpoint to approve a recommendation."""
-    config = get_current_config()
-    data = request.json
-    date_str = data.get("date")
-    rule_id = data.get("rule_id")
-    entity_id = data.get("entity_id")
-    campaign_name = data.get("campaign_name", "N/A")
-    action_type = data.get("action_type")
-
-    approvals_path = config.get_approvals_path(date_str)
-
-    # Load or create approvals file
-    if approvals_path.exists():
-        with open(approvals_path, "r") as f:
-            approvals = json.load(f)
-    else:
-        approvals = {
-            "snapshot_date": date_str,
-            "client_name": config.client_name,
-            "reviewed_at": None,
-            "total_reviewed": 0,
-            "approved": 0,
-            "rejected": 0,
-            "skipped": 0,
-            "decisions": [],
-        }
-        approvals_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Remove any existing decision for this recommendation
-    approvals["decisions"] = [
-        d
-        for d in approvals["decisions"]
-        if not (d["rule_id"] == rule_id and d["entity_id"] == entity_id)
-    ]
-
-    # Add new approval
-    approvals["decisions"].append(
+def approve_change(change_id):
+    """
+    Approve a pending change (mark as approved).
+    
+    Returns JSON:
         {
-            "rule_id": rule_id,
-            "entity_id": entity_id,
-            "campaign_name": campaign_name,
-            "action_type": action_type,
-            "decision": "approved",
-            "reviewed_at": datetime.utcnow().isoformat() + "Z",
+            "success": bool,
+            "message": str
         }
-    )
+    """
+    try:
+        config = get_current_config()
+        
+        # Update change_log table
+        conn = duckdb.connect(config.db_path)
+        
+        conn.execute("""
+            UPDATE change_log
+            SET status = 'approved'
+            WHERE change_id = ?
+            AND status = 'pending'
+        """, [change_id])
+        
+        conn.close()
+        
+        return jsonify({
+            "success": True,
+            "message": f"Change {change_id} approved"
+        }), 200
+        
+    except Exception as e:
+        logging.error(f"Approve error: {str(e)}")
+        return jsonify({
+            "success": False,
+            "message": "Approval failed",
+            "error": str(e)
+        }), 500
 
-    # Update counts
-    approvals["total_reviewed"] = len(approvals["decisions"])
-    approvals["approved"] = len(
-        [d for d in approvals["decisions"] if d["decision"] == "approved"]
-    )
-    approvals["rejected"] = len(
-        [d for d in approvals["decisions"] if d["decision"] == "rejected"]
-    )
-    approvals["reviewed_at"] = datetime.utcnow().isoformat() + "Z"
 
-    # Save
-    with open(approvals_path, "w") as f:
-        json.dump(approvals, f, indent=2)
-
-    return jsonify({"success": True})
-
-
-@bp.route("/reject", methods=["POST"])
+@bp.route("/reject/<int:change_id>", methods=["POST"])
 @login_required
-def reject_recommendation():
-    """API endpoint to reject a recommendation."""
-    config = get_current_config()
-    data = request.json
-    date_str = data.get("date")
-    rule_id = data.get("rule_id")
-    entity_id = data.get("entity_id")
-    campaign_name = data.get("campaign_name", "N/A")
-    action_type = data.get("action_type")
-
-    approvals_path = config.get_approvals_path(date_str)
-
-    # Load or create approvals file
-    if approvals_path.exists():
-        with open(approvals_path, "r") as f:
-            approvals = json.load(f)
-    else:
-        approvals = {
-            "snapshot_date": date_str,
-            "client_name": config.client_name,
-            "reviewed_at": None,
-            "total_reviewed": 0,
-            "approved": 0,
-            "rejected": 0,
-            "skipped": 0,
-            "decisions": [],
-        }
-        approvals_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Remove any existing decision for this recommendation
-    approvals["decisions"] = [
-        d
-        for d in approvals["decisions"]
-        if not (d["rule_id"] == rule_id and d["entity_id"] == entity_id)
-    ]
-
-    # Add rejection
-    approvals["decisions"].append(
+def reject_change(change_id):
+    """
+    Reject a pending change (mark as rejected).
+    
+    Request JSON (optional):
         {
-            "rule_id": rule_id,
-            "entity_id": entity_id,
-            "campaign_name": campaign_name,
-            "action_type": action_type,
-            "decision": "rejected",
-            "reviewed_at": datetime.utcnow().isoformat() + "Z",
+            "reason": str  # Reason for rejection
         }
-    )
+    
+    Returns JSON:
+        {
+            "success": bool,
+            "message": str
+        }
+    """
+    try:
+        data = request.get_json() or {}
+        reason = data.get("reason", "Rejected by user")
+        
+        config = get_current_config()
+        
+        # Update change_log table
+        conn = duckdb.connect(config.db_path)
+        
+        conn.execute("""
+            UPDATE change_log
+            SET status = 'rejected',
+                notes = ?
+            WHERE change_id = ?
+            AND status = 'pending'
+        """, [reason, change_id])
+        
+        conn.close()
+        
+        return jsonify({
+            "success": True,
+            "message": f"Change {change_id} rejected"
+        }), 200
+        
+    except Exception as e:
+        logging.error(f"Reject error: {str(e)}")
+        return jsonify({
+            "success": False,
+            "message": "Rejection failed",
+            "error": str(e)
+        }), 500
 
-    # Update counts
-    approvals["total_reviewed"] = len(approvals["decisions"])
-    approvals["approved"] = len(
-        [d for d in approvals["decisions"] if d["decision"] == "approved"]
-    )
-    approvals["rejected"] = len(
-        [d for d in approvals["decisions"] if d["decision"] == "rejected"]
-    )
-    approvals["reviewed_at"] = datetime.utcnow().isoformat() + "Z"
 
-    # Save
-    with open(approvals_path, "w") as f:
-        json.dump(approvals, f, indent=2)
-
-    return jsonify({"success": True})
-    return jsonify({"success": True})
-
-
-# ============================================================================
-# CHAT 32: CONTACT FORM BACKEND - LEADS ENDPOINT
-# ============================================================================
+# ==================== CHAT 32: LEADS ENDPOINT ====================
 
 logger = logging.getLogger(__name__)
 
 
 def _ensure_leads_table(conn):
     """
-    Create the leads table in warehouse.duckdb if it doesn't exist.
-    Similar pattern to _ensure_changes_table in recommendations.py.
+    Create leads table if it doesn't exist.
+    
+    Args:
+        conn: DuckDB connection
     """
     conn.execute("""
-        CREATE SEQUENCE IF NOT EXISTS leads_seq START 1
-    """)
-    conn.execute("""
         CREATE TABLE IF NOT EXISTS leads (
-            lead_id INTEGER DEFAULT nextval('leads_seq'),
+            lead_id INTEGER PRIMARY KEY,
             name VARCHAR NOT NULL,
+            email VARCHAR NOT NULL,
             company VARCHAR,
             role VARCHAR,
             looking_for VARCHAR,
-            email VARCHAR NOT NULL,
             phone VARCHAR,
             source VARCHAR DEFAULT 'website',
-            submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             ip_address VARCHAR,
             user_agent VARCHAR,
             status VARCHAR DEFAULT 'new',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             notes TEXT
         )
+    """)
+    
+    # Add sequence if it doesn't exist
+    conn.execute("""
+        CREATE SEQUENCE IF NOT EXISTS leads_seq START 1
     """)
 
 
 def validate_email(email):
     """
-    Validate email format using regex.
-    Returns True if valid, False otherwise.
+    Validate email format (basic regex).
+    Returns bool.
     """
     if not email or not isinstance(email, str):
         return False
@@ -757,6 +769,9 @@ def submit_lead():
     and optionally sends email notification.
     
     Also handles OPTIONS preflight requests for CORS.
+    
+    CSRF EXEMPT: This endpoint is called from external website (christopherhoole.online)
+    which cannot obtain CSRF tokens. Protected by rate limiting instead.
     
     Request JSON:
         {

@@ -692,6 +692,11 @@ function switchTab(name) {
 }
 switchTab('pending');
 
+// ── CSRF Token (Chat 36) ──────────────────────────────────────────────────────
+function getCSRFToken() {
+  return document.querySelector('meta[name="csrf-token"]').content;
+}
+
 // ── Toast ─────────────────────────────────────────────────────────────────────
 function showToast(msg, type) {
   const wrap = document.getElementById('act-toast-wrap');
@@ -726,7 +731,13 @@ function updateBadges() {
 // ── Accept ────────────────────────────────────────────────────────────────────
 function acceptRec(recId, btn) {
   btn.disabled = true; btn.style.opacity = '0.65';
-  fetch('/recommendations/' + recId + '/accept', {method:'POST', headers:{'Content-Type':'application/json'}})
+  fetch('/recommendations/' + recId + '/accept', {
+    method:'POST', 
+    headers:{
+      'Content-Type':'application/json',
+      'X-CSRFToken': getCSRFToken()
+    }
+  })
     .then(r => r.json())
     .then(d => {
       if (d.success) { showToast(d.message || 'Recommendation accepted.', 'success'); removeCard(recId); }
@@ -738,7 +749,13 @@ function acceptRec(recId, btn) {
 // ── Decline ───────────────────────────────────────────────────────────────────
 function declineRec(recId, btn) {
   btn.disabled = true; btn.style.opacity = '0.65';
-  fetch('/recommendations/' + recId + '/decline', {method:'POST', headers:{'Content-Type':'application/json'}})
+  fetch('/recommendations/' + recId + '/decline', {
+    method:'POST', 
+    headers:{
+      'Content-Type':'application/json',
+      'X-CSRFToken': getCSRFToken()
+    }
+  })
     .then(r => r.json())
     .then(d => {
       if (d.success) { showToast('Recommendation declined.', 'muted'); removeCard(recId); }
@@ -763,7 +780,12 @@ function submitModify() {
   const btn = document.getElementById('modal-accept-btn');
   btn.disabled = true; btn.textContent = 'Saving...';
   fetch('/recommendations/' + _modifyRecId + '/modify', {
-    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({new_value:newVal})
+    method:'POST', 
+    headers:{
+      'Content-Type':'application/json',
+      'X-CSRFToken': getCSRFToken()
+    }, 
+    body:JSON.stringify({new_value:newVal})
   })
     .then(r => r.json())
     .then(d => {

@@ -12,6 +12,9 @@
     
     <!-- Settings form -->
     <form method="POST" action="/settings" class="space-y-6">
+        <!-- Chat 36: CSRF Protection -->
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        
         <!-- Basic Information -->
         <div class="bg-white shadow rounded-lg p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>

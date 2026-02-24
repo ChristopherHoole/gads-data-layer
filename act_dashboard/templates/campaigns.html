@@ -551,6 +551,11 @@
 
 {% block extra_js %}
 <script>
+// ── CSRF Token (Chat 36) ──────────────────────────────────────────────────────
+function getCSRFToken() {
+  return document.querySelector('meta[name="csrf-token"]').content;
+}
+
 // ── Inner tab switcher ──────────────────────────────────────────────────────
 const CAM_TABS = ['pending','monitoring','successful','reverted','declined'];
 function camSwitchTab(name) {
@@ -653,7 +658,13 @@ function camRemoveCard(recId) {
 let _camModifyRecId = null;
 function camAcceptRec(recId, btn) {
   btn.disabled = true; btn.style.opacity = '0.65';
-  fetch('/recommendations/' + recId + '/accept', {method:'POST', headers:{'Content-Type':'application/json'}})
+  fetch('/recommendations/' + recId + '/accept', {
+    method:'POST', 
+    headers:{
+      'Content-Type':'application/json',
+      'X-CSRFToken': getCSRFToken()
+    }
+  })
     .then(r => r.json())
     .then(d => {
       if (d.success) { camShowToast(d.message || 'Recommendation accepted.', 'success'); camRemoveCard(recId); }
@@ -663,7 +674,13 @@ function camAcceptRec(recId, btn) {
 }
 function camDeclineRec(recId, btn) {
   btn.disabled = true; btn.style.opacity = '0.65';
-  fetch('/recommendations/' + recId + '/decline', {method:'POST', headers:{'Content-Type':'application/json'}})
+  fetch('/recommendations/' + recId + '/decline', {
+    method:'POST', 
+    headers:{
+      'Content-Type':'application/json',
+      'X-CSRFToken': getCSRFToken()
+    }
+  })
     .then(r => r.json())
     .then(d => {
       if (d.success) { camShowToast('Recommendation declined.', 'muted'); camRemoveCard(recId); }
@@ -685,7 +702,12 @@ function camSubmitModify() {
   const btn = document.getElementById('cam-modal-accept-btn');
   btn.disabled = true; btn.textContent = 'Saving...';
   fetch('/recommendations/' + _camModifyRecId + '/modify', {
-    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({new_value:newVal})
+    method:'POST', 
+    headers:{
+      'Content-Type':'application/json',
+      'X-CSRFToken': getCSRFToken()
+    }, 
+    body:JSON.stringify({new_value:newVal})
   })
     .then(r => r.json())
     .then(d => {

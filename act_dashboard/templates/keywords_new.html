@@ -623,6 +623,11 @@
 // Global arrays for selected search terms
 let selectedSearchTerms = [];
 
+// ── CSRF Token (Chat 36) ──────────────────────────────────────
+function getCSRFToken() {
+  return document.querySelector('meta[name="csrf-token"]').content;
+}
+
 // ===========================================================================
 // SELECT ALL CHECKBOX HANDLER
 // ===========================================================================
@@ -841,7 +846,10 @@ document.getElementById('execute-add-negatives')?.addEventListener('click', asyn
   try {
     const response = await fetch('/keywords/add-negative', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCSRFToken()
+      },
       body: JSON.stringify(payload)
     });
     
@@ -961,7 +969,10 @@ document.getElementById('execute-add-keywords')?.addEventListener('click', async
   try {
     const response = await fetch('/keywords/add-keyword', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCSRFToken()
+      },
       body: JSON.stringify(payload)
     });
     

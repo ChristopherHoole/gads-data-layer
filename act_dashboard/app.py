@@ -6,6 +6,7 @@ Flask web interface supporting multiple Google Ads clients.
 from flask import Flask
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_wtf.csrf import CSRFProtect, CSRFError
 from datetime import timedelta
 import os
 import sys
@@ -65,6 +66,9 @@ def create_app():
         "DASHBOARD_SECRET_KEY", "dev-secret-key-change-in-production"
     )
     app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=24)
+
+    # Initialize CSRF protection (Chat 36)
+    csrf = CSRFProtect(app)
 
     # Validate all client configs on startup (Phase 2d)
     config_dir = Path("configs")
@@ -134,6 +138,43 @@ def create_app():
     # Register all route blueprints (Phase 1 complete - all 16 routes migrated)
     register_blueprints(app)
 
+    # Import for error handlers and CSRF handler (Chat 36)
+    from flask import jsonify, render_template, request
+
+    # Chat 36: CSRF exemption for /api/leads (external website form submission)
+    # christopherhoole.online cannot obtain CSRF tokens, so this endpoint is exempt
+    # Protected by rate limiting instead (3 submissions/hour per IP)
+    csrf.exempt(app.view_functions['api.submit_lead'])
+
+    # Chat 36: CSRF exemption for /login (no session exists before authentication)
+    # Standard practice: login forms cannot validate CSRF tokens before user is authenticated
+    csrf.exempt(app.view_functions['auth.login'])
+
+    # Chat 36: CSRF exemption for session state routes (UI preferences only, not destructive)
+    # These routes only update session storage, no data modification
+    # Using try-except to handle routes that may not exist in all deployments
+    session_routes = [
+        'shared.set_date_range',
+        'shared.set_metrics_collapse', 
+        'shared.set_chart_metrics'
+    ]
+    for route_name in session_routes:
+        if route_name in app.view_functions:
+            csrf.exempt(app.view_functions[route_name])
+            print(f"✅ [Chat 36] CSRF exempted: {route_name}")
+        else:
+            print(f"⚠️  [Chat 36] Route not found (skipping): {route_name}")
+
+    # Chat 36: CSRF error handler - return JSON for all errors
+    @app.errorhandler(CSRFError)
+    def csrf_error(reason):
+        """Handle CSRF validation failures with JSON response."""
+        return jsonify({
+            'success': False,
+            'error': 'CSRF validation failed',
+            'message': 'Security token missing or invalid. Please refresh the page.'
+        }), 400
+
     # Chat 29 (M8): Start Radar background monitoring thread
     # daemon=True ensures thread dies when Flask process exits
     # Started AFTER register_blueprints so all routes are available first
@@ -144,7 +185,6 @@ def create_app():
     print("✅ [Chat 29 M8] Radar background thread started (60s cycle)")
 
     # Centralized error handlers (Phase 1i)
-    from flask import jsonify, render_template, request
     
     @app.errorhandler(404)
     def not_found_error(error):
