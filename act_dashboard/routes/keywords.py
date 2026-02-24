@@ -119,52 +119,168 @@ def extract_campaign_list(keywords_list: List[Dict[str, Any]]) -> List[Tuple[str
     return sorted(campaigns_dict.items(), key=lambda x: x[1])
 
 
-def load_search_terms(conn: duckdb.DuckDBPyConnection, customer_id: str, snapshot_date: date) -> List[Dict[str, Any]]:
+def load_search_terms(
+    conn: duckdb.DuckDBPyConnection, 
+    customer_id: str, 
+    date_from: date,
+    date_to: date,
+    campaign_id: str = None,
+    status: str = None,
+    match_type: str = None,
+    page: int = 1,
+    per_page: int = 25
+) -> Dict[str, Any]:
     """
-    Load search term aggregates for last 30 days.
+    Load search term aggregates with filters and pagination.
     
     Args:
         conn: Database connection
         customer_id: Customer ID
-        snapshot_date: Snapshot date
+        date_from: Start date from session
+        date_to: End date from session
+        campaign_id: Optional campaign filter
+        status: Optional status filter
+        match_type: Optional match type filter
+        page: Page number (1-indexed)
+        per_page: Results per page
         
     Returns:
-        List of search term dictionaries
+        Dict with keys: data (list), total_count, page, per_page
     """
-    st_start = snapshot_date - timedelta(days=29)
-
-    st_rows = conn.execute("""
+    # Build WHERE clause
+    where_clauses = ["customer_id = ?"]
+    params = [customer_id]
+    
+    where_clauses.append("snapshot_date BETWEEN ? AND ?")
+    params.extend([date_from, date_to])
+    
+    if campaign_id and campaign_id != 'all':
+        where_clauses.append("campaign_id = ?")
+        params.append(campaign_id)
+    
+    if status and status != 'all':
+        where_clauses.append("UPPER(search_term_status) = ?")
+        params.append(status.upper())
+    
+    if match_type and match_type != 'all':
+        where_clauses.append("UPPER(match_type) = ?")
+        params.append(match_type.upper())
+    
+    where_clause = " AND ".join(where_clauses)
+    
+    # Count total matching rows (before pagination)
+    count_query = f"""
+        SELECT COUNT(DISTINCT search_term || '|' || campaign_id || '|' || keyword_id)
+        FROM ro.analytics.search_term_daily
+        WHERE {where_clause}
+    """
+    total_count = conn.execute(count_query, params).fetchone()[0]
+    
+    # Calculate offset
+    offset = (page - 1) * per_page
+    
+    # Main query with all required columns
+    st_rows = conn.execute(f"""
         SELECT
-            search_term, search_term_status,
-            campaign_id, campaign_name,
-            ad_group_id, keyword_id, keyword_text,
+            search_term,
+            keyword_text,
             match_type,
+            search_term_status,
+            campaign_id,
+            campaign_name,
+            ad_group_id,
+            keyword_id,
             SUM(COALESCE(impressions, 0)) as impressions,
             SUM(COALESCE(clicks, 0)) as clicks,
-            SUM(COALESCE(cost_micros, 0)) as cost_micros,
+            AVG(COALESCE(ctr, 0)) as ctr,
+            SUM(COALESCE(cost, 0)) as cost,
+            CASE WHEN SUM(clicks) > 0
+                 THEN SUM(cost) / SUM(clicks)
+                 ELSE 0 END as cpc,
             SUM(COALESCE(conversions, 0)) as conversions,
-            SUM(COALESCE(conversions_value, 0)) as conversion_value,
             CASE WHEN SUM(clicks) > 0
                  THEN SUM(conversions)::DOUBLE / SUM(clicks)
-                 ELSE NULL END AS cvr,
+                 ELSE 0 END as cvr,
             CASE WHEN SUM(conversions) > 0
-                 THEN SUM(cost_micros)::DOUBLE / SUM(conversions)
-                 ELSE NULL END AS cpa_micros
+                 THEN SUM(cost) / SUM(conversions)
+                 ELSE 0 END as cpa,
+            CASE WHEN SUM(cost) > 0
+                 THEN SUM(COALESCE(conversions_value, 0)) / SUM(cost)
+                 ELSE 0 END as roas
         FROM ro.analytics.search_term_daily
-        WHERE customer_id = ?
-          AND snapshot_date BETWEEN ? AND ?
-        GROUP BY search_term, search_term_status, campaign_id, campaign_name,
-                 ad_group_id, keyword_id, keyword_text, match_type
-        ORDER BY cost_micros DESC
-    """, [customer_id, st_start, snapshot_date]).fetchall()
-
+        WHERE {where_clause}
+        GROUP BY search_term, keyword_text, match_type, search_term_status,
+                 campaign_id, campaign_name, ad_group_id, keyword_id
+        ORDER BY SUM(cost) DESC
+        LIMIT ? OFFSET ?
+    """, params + [per_page, offset]).fetchall()
+    
     st_cols = [d[0] for d in conn.description]
     search_terms = []
     for row in st_rows:
         d = dict(zip(st_cols, row))
-        d["cost_dollars"] = float(d.get("cost_micros") or 0) / 1_000_000
-        d["cpa_dollars"] = (float(d["cpa_micros"]) / 1_000_000) if d.get("cpa_micros") and float(d["cpa_micros"]) > 0 else 0
+        # Ensure numeric types for template
+        d['impressions'] = int(d.get('impressions') or 0)
+        d['clicks'] = int(d.get('clicks') or 0)
+        d['conversions'] = float(d.get('conversions') or 0)
+        d['cost'] = float(d.get('cost') or 0)
+        d['ctr'] = float(d.get('ctr') or 0)
+        d['cpc'] = float(d.get('cpc') or 0)
+        d['cvr'] = float(d.get('cvr') or 0)
+        d['cpa'] = float(d.get('cpa') or 0)
+        d['roas'] = float(d.get('roas') or 0)
         search_terms.append(d)
+    
+    return {
+        'data': search_terms,
+        'total_count': total_count,
+        'page': page,
+        'per_page': per_page
+    }
+
+
+def flag_negative_keywords(search_terms: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Flag search terms as negative keyword opportunities based on 3 criteria.
+    
+    Criteria:
+    1. 0% CVR + ≥10 clicks
+    2. ≥£50 cost + 0 conversions  
+    3. CTR <1% + ≥20 impressions
+    
+    Args:
+        search_terms: List of search term dictionaries
+        
+    Returns:
+        Same list with negative_flag and flag_reason added to each term
+    """
+    for st in search_terms:
+        flagged = False
+        reasons = []
+        
+        clicks = st.get('clicks', 0)
+        conversions = st.get('conversions', 0)
+        cost = st.get('cost', 0)
+        ctr = st.get('ctr', 0)
+        impressions = st.get('impressions', 0)
+        
+        # Criterion 1: 0% CVR + ≥10 clicks
+        if clicks >= 10 and conversions == 0:
+            flagged = True
+            reasons.append("0% CVR with 10+ clicks")
+        
+        # Criterion 2: ≥£50 cost + 0 conversions
+        if cost >= 50 and conversions == 0:
+            flagged = True
+            reasons.append("£50+ spend, no conversions")
+        
+        # Criterion 3: CTR <1% + ≥20 impressions
+        if ctr < 0.01 and impressions >= 20:
+            flagged = True
+            reasons.append("CTR <1% with 20+ impressions")
+        
+        st['negative_flag'] = flagged
+        st['flag_reason'] = " | ".join(reasons) if reasons else ""
     
     return search_terms
 
@@ -595,6 +711,23 @@ def keywords():
     if sort_dir not in ['asc', 'desc']:
         sort_dir = 'desc'
     
+    # Search Terms tab filter params
+    st_page = request.args.get('st_page', default=1, type=int)
+    st_per_page = request.args.get('st_per_page', default=25, type=int)
+    st_campaign = request.args.get('st_campaign', default='all', type=str)
+    st_status = request.args.get('st_status', default='all', type=str)
+    st_match_type = request.args.get('st_match_type', default='all', type=str).lower()
+    
+    # Validate search term params
+    if st_page < 1:
+        st_page = 1
+    if st_per_page not in [10, 25, 50, 100]:
+        st_per_page = 25
+    if st_status not in ['all', 'added', 'excluded', 'none']:
+        st_status = 'all'
+    if st_match_type not in ['all', 'exact', 'phrase', 'broad']:
+        st_match_type = 'all'
+    
     # Get common page context
     config, clients, current_client_path = get_page_context()
     
@@ -798,12 +931,48 @@ def keywords():
         print(f"[Keywords] Low data count query error: {e}")
         low_data_count = 0
     
-    # QUERY 6: Search Terms (collapsible section)
+    # Get campaigns list for search terms filter dropdown
     try:
-        search_terms = load_search_terms(conn, config.customer_id, snapshot_date)
+        campaigns_rows = conn.execute("""
+            SELECT DISTINCT campaign_id, campaign_name
+            FROM ro.analytics.search_term_daily
+            WHERE customer_id = ?
+            ORDER BY campaign_name
+        """, [config.customer_id]).fetchall()
+        st_campaigns = [(row[0], row[1]) for row in campaigns_rows]
+    except Exception as e:
+        print(f"[Keywords] Campaigns list query error: {e}")
+        st_campaigns = []
+    
+    # QUERY 6: Search Terms with filters, pagination, and negative keyword flagging
+    try:
+        st_result = load_search_terms(
+            conn, 
+            config.customer_id,
+            date_from if date_from else snapshot_date - timedelta(days=29),
+            date_to if date_to else snapshot_date,
+            campaign_id=st_campaign,
+            status=st_status,
+            match_type=st_match_type,
+            page=st_page,
+            per_page=st_per_page
+        )
+        search_terms_data = st_result['data']
+        search_terms_total = st_result['total_count']
+        st_page = st_result['page']
+        st_per_page = st_result['per_page']
+        
+        # Flag negative keyword opportunities
+        search_terms_data = flag_negative_keywords(search_terms_data)
     except Exception as e:
         print(f"[Keywords] Search terms query error: {e}")
-        search_terms = []
+        import traceback
+        traceback.print_exc()
+        search_terms_data = []
+        search_terms_total = 0
+    
+    # Calculate search terms pagination
+    st_total_pages = max(1, (search_terms_total + st_per_page - 1) // st_per_page)
     
     # M2: Metrics cards
     financial_cards, actions_cards = load_keyword_metrics_cards(
@@ -851,7 +1020,16 @@ def keywords():
         qs_distribution=qs_distribution,
         low_data_count=low_data_count,
         wasted_spend=wasted_spend,
-        search_terms=search_terms,
+        # Search Terms data
+        search_terms=search_terms_data,
+        search_terms_total=search_terms_total,
+        st_page=st_page,
+        st_per_page=st_per_page,
+        st_total_pages=st_total_pages,
+        st_campaign=st_campaign,
+        st_status=st_status,
+        st_match_type=st_match_type,
+        st_campaigns=st_campaigns,
         rules_config=[],
         # M2: Metrics cards
         financial_cards=financial_cards,

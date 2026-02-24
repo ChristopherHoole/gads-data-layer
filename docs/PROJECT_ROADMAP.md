@@ -1,8 +1,8 @@
 # PROJECT ROADMAP - Google Ads Data Layer (ACT Dashboard)
 
-**Last Updated:** 2026-02-23
-**Current Phase:** Marketing Website ✅ COMPLETE | Dashboard 3.0 M8 ✅ COMPLETE | M9 next
-**Overall Completion:** ~98% (Foundation + Polish + Website + Dashboard 3.0 M1–M8 complete)
+**Last Updated:** 2026-02-24
+**Current Phase:** Marketing Website ✅ COMPLETE | Dashboard 3.0 M9 Phase 1 ✅ COMPLETE | M9 Phase 2 next
+**Overall Completion:** ~98% (Foundation + Polish + Website + Dashboard 3.0 M1–M9 Phase 1 complete)
 **Mode:** Ready for next development phase
 
 ---
@@ -77,6 +77,7 @@
 - Chat 27 M6: Recommendations engine + UI (global page + campaigns tab)
 - Chat 28 M7: Accept/Decline/Modify wiring + 4-tab recommendations UI
 - Chat 29 M8: Changes page + Radar monitoring ✅ COMPLETE
+- Chat 30a M9 Phase 1: Search Terms tab + Negative Keyword Suggestions ✅ COMPLETE
 
 ---
 
@@ -107,9 +108,10 @@
 - ✅ Chat 29: M8 Changes + Radar Monitoring
 - ✅ Chat 31: Marketing Website Wireframe
 - ✅ Master Chat 4.0: Marketing Website Rebuild + Deployment
+- ✅ Chat 30a: M9 Phase 1 Search Terms Table
 
 ### **Short-term:**
-- 🎯 Chat 30: M9 Search Terms / Keywords recommendations — NEXT
+- 🎯 Chat 30b: M9 Phase 2 Live Execution + Keyword Expansion — NEXT
 - 📋 Website: Connect contact form to /api/leads endpoint
 - 📋 Website: Optional SEO improvements (meta tags, sitemap)
 - 📋 System Changes tab → cards (currently table, deferred from Chat 29)
@@ -124,6 +126,31 @@
 ---
 
 ## 🔄 CHANGELOG
+
+### **2026-02-24 (Chat 30a — M9 Phase 1 Search Terms Table)**
+
+**Completed:**
+- ✅ Search Terms tab on Keywords page (16-column data table)
+- ✅ Campaign, status, match type filters + client-side search
+- ✅ Server-side pagination (10/25/50/100 per page)
+- ✅ Negative keyword flagging logic (3 criteria: CVR/cost/CTR)
+- ✅ Row-level + bulk "Add as Negative" actions (UI only)
+- ✅ Bootstrap 5 modal for action preview
+- ✅ All 16 success criteria passing
+- 431 lines modified in keywords.py
+- 216 lines added in keywords_new.html
+- **Docs:** `CHAT_30A_SUMMARY.md` + `CHAT_30A_HANDOFF.md`
+
+**Key features:**
+- Uses `ro.analytics.search_term_daily` (23 columns)
+- Respects M1 session date range
+- Automated flagging: 0% CVR + ≥10 clicks, ≥£50 cost + 0 conversions, CTR <1% + ≥20 impressions
+- Performance: <2s load, <1s filter, zero JS errors
+
+**Deferred to Phase 2 (Chat 30b):**
+- Live Google Ads API execution for "Add as Negative"
+- Keyword expansion opportunities
+- "Add as Keyword" functionality
 
 ### **2026-02-23 (Master Chat 4.0 — Marketing Website Deployment)**
 
@@ -196,5 +223,5 @@
 
 ---
 
-**Last Updated:** 2026-02-23
-**Next Step:** Chat 30 — M9 Search Terms / Keywords recommendations
+**Last Updated:** 2026-02-24
+**Next Step:** Chat 30b — M9 Phase 2 Live Execution + Keyword Expansion

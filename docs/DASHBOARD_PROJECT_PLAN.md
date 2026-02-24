@@ -5,9 +5,9 @@
 **Framework:** Bootstrap 5
 **Icons:** Bootstrap Icons
 **Chat 21 Status:** ✅ COMPLETE - 8/8 (100%) 🏆
-**Dashboard 3.0 Status:** 🚧 IN PROGRESS — M1 ✅ M2 ✅ M3 ✅ M4 ✅ M5 ✅ M6 ✅ M7 ✅ M8 ✅ COMPLETE, M9 next
+**Dashboard 3.0 Status:** 🚧 IN PROGRESS — M1 ✅ M2 ✅ M3 ✅ M4 ✅ M5 ✅ M6 ✅ M7 ✅ M8 ✅ M9 Phase 1 ✅ COMPLETE, M9 Phase 2 next
 **Started:** February 18, 2026
-**Updated:** 2026-02-23
+**Updated:** 2026-02-24
 **Mode:** Dashboard 3.0 Phase 2 underway
 **Location:** `C:\Users\User\Desktop\gads-data-layer\docs\DASHBOARD_PROJECT_PLAN.md`
 
@@ -149,9 +149,26 @@ Create a professional, Google Ads-inspired dashboard that feels familiar to mill
 
 ### PHASE 3 — Search Terms + Keywords (next)
 
-#### Chat 30: M9 — Search Terms / Keywords recommendations 🎯 NEXT
-**Status:** Not started — brief not yet written
-**Scope:** TBD — discuss with Master Chat before briefing
+#### Chat 30a: M9 Phase 1 — Search Terms Table + Negative Keyword Suggestions ✅ COMPLETE
+**Date:** 2026-02-24
+**Summary:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_30A_SUMMARY.md`
+**Handoff:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_30A_HANDOFF.md`
+
+- Search Terms tab on Keywords page (16-column data table)
+- Advanced filtering (campaign, status, match type) + client-side search
+- Server-side pagination (10/25/50/100)
+- Negative keyword flagging logic (3 criteria)
+- Row-level + bulk "Add as Negative" actions (UI only, execution in Phase 2)
+- All 16 success criteria passing
+- 431 lines modified in keywords.py, 216 lines added in keywords_new.html
+
+#### Chat 30b: M9 Phase 2 — Live Execution + Keyword Expansion 🎯 NEXT
+**Status:** Not started — brief pending
+**Scope:**
+- Live Google Ads API execution for "Add as Negative"
+- Keyword expansion opportunities flagging
+- "Add as Keyword" button and execution
+**Estimated:** 7-9 hours
 
 ---
 
@@ -169,4 +186,4 @@ Create a professional, Google Ads-inspired dashboard that feels familiar to mill
 
 **Last Updated:** 2026-02-23
 **Status:** Dashboard 3.0 — M1 ✅ M2 ✅ M3 ✅ M4 ✅ M5 ✅ M6 ✅ M7 ✅ M8 ✅ | M9 next
-**Next Step:** Chat 30 — M9 Search Terms / Keywords recommendations
+**Next Step:** Chat 30b — M9 Phase 2 Live Execution + Keyword Expansion

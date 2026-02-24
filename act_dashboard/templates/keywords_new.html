@@ -15,6 +15,9 @@
       <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#keywords-tab" type="button">Keywords ({{ total_keywords }})</button>
     </li>
     <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#search-terms-tab" type="button">Search Terms ({{ search_terms|length }})</button>
+    </li>
+    <li class="nav-item">
       <button class="nav-link" data-bs-toggle="tab" data-bs-target="#rules-tab" type="button">
         <i class="bi bi-lightning-charge-fill text-warning"></i> Rules ({{ rules|length }})
       </button>
@@ -266,65 +269,225 @@
         </div>
       </div>
 
-      <!-- Search Terms -->
+      {% include 'components/rules_card.html' %}
+    </div>
+
+    <!-- ═══ SEARCH TERMS TAB ═══ -->
+    <div class="tab-pane fade" id="search-terms-tab" role="tabpanel">
+      
+      <!-- Filter Bar -->
       <div class="card mb-3">
-        <div class="card-header" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#search-terms-section">
-          <div class="d-flex align-items-center">
-            <i class="bi bi-chevron-right me-2" id="search-terms-icon"></i>
-            <strong>Search Terms ({{ search_terms|length }})</strong>
-            <small class="text-muted ms-2">— Actual queries that triggered your keywords</small>
+        <div class="card-body">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label small text-muted mb-1">Campaign</label>
+              <select id="st-campaign-filter" class="form-select form-select-sm">
+                <option value="all" {% if st_campaign == 'all' %}selected{% endif %}>All Campaigns</option>
+                {% for cid, cname in st_campaigns %}
+                <option value="{{ cid }}" {% if st_campaign == cid %}selected{% endif %}>{{ cname }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small text-muted mb-1">Status</label>
+              <select id="st-status-filter" class="form-select form-select-sm">
+                <option value="all" {% if st_status == 'all' %}selected{% endif %}>All</option>
+                <option value="added" {% if st_status == 'added' %}selected{% endif %}>Added</option>
+                <option value="excluded" {% if st_status == 'excluded' %}selected{% endif %}>Excluded</option>
+                <option value="none" {% if st_status == 'none' %}selected{% endif %}>None</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small text-muted mb-1">Match Type</label>
+              <select id="st-match-type-filter" class="form-select form-select-sm">
+                <option value="all" {% if st_match_type == 'all' %}selected{% endif %}>All</option>
+                <option value="exact" {% if st_match_type == 'exact' %}selected{% endif %}>Exact</option>
+                <option value="phrase" {% if st_match_type == 'phrase' %}selected{% endif %}>Phrase</option>
+                <option value="broad" {% if st_match_type == 'broad' %}selected{% endif %}>Broad</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small text-muted mb-1">Search</label>
+              <input type="text" id="st-search-input" class="form-control form-control-sm" placeholder="Filter by search term text...">
+            </div>
+            <div class="col-md-2">
+              <button id="st-clear-filters" class="btn btn-sm btn-outline-secondary w-100">
+                <i class="bi bi-x-circle me-1"></i>Clear Filters
+              </button>
+            </div>
           </div>
-        </div>
-        <div id="search-terms-section" class="collapse">
-          <div class="card-body p-0">
-            {% if search_terms and search_terms|length > 0 %}
-              <div style="overflow-x:auto;">
-                <table class="table table-hover table-sm mb-0" style="font-size:12px; white-space:nowrap;">
-                  <thead style="position:sticky; top:0; background:#f8f9fa;">
-                    <tr>
-                      <th style="padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; color:#6c757d;">Search Term</th>
-                      <th style="padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; color:#6c757d; width:100px;">Status</th>
-                      <th style="padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; color:#6c757d;">Triggered Keyword</th>
-                      <th style="padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; color:#6c757d; width:100px;">Match Type</th>
-                      <th style="padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; color:#6c757d; text-align:right; width:80px;">Clicks</th>
-                      <th style="padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; color:#6c757d; text-align:right; width:90px;">Cost</th>
-                      <th style="padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; color:#6c757d; text-align:right; width:70px;">Conv.</th>
-                      <th style="padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; color:#6c757d; text-align:right; width:70px;">CVR</th>
-                      <th style="padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; color:#6c757d; width:220px;">Quick Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for st in search_terms[:100] %}
-                      <tr>
-                        <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle;"><strong>{{ st.search_term }}</strong></td>
-                        <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle;">{% if st.search_term_status == 'ADDED' %}<span class="badge bg-success">Added</span>{% else %}<span class="badge bg-secondary">None</span>{% endif %}</td>
-                        <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle;" class="text-muted small">{{ st.keyword_text }}</td>
-                        <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle;">
-                          {% if st.match_type == 'EXACT' %}<span class="badge rounded-pill bg-success">Exact</span>
-                          {% elif st.match_type == 'PHRASE' %}<span class="badge rounded-pill bg-primary">Phrase</span>
-                          {% elif st.match_type == 'BROAD' %}<span class="badge rounded-pill bg-warning text-dark">Broad</span>{% endif %}
-                        </td>
-                        <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{{ "{:,}".format(st.clicks|int) if st.clicks else "0" }}</td>
-                        <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">${{ "{:.2f}".format(st.cost_dollars) if st.cost_dollars else "0.00" }}</td>
-                        <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{{ st.conversions|int if st.conversions else "0" }}</td>
-                        <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if st.cvr and st.cvr > 0 %}{{ "{:.2f}".format(st.cvr * 100) }}%{% else %}<span class="text-muted">0.00%</span>{% endif %}</td>
-                        <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle;">
-                          <button class="btn btn-sm btn-success me-1"><i class="bi bi-plus-circle"></i> Add as KW</button>
-                          <button class="btn btn-sm btn-danger"><i class="bi bi-x-circle"></i> Add Negative</button>
-                        </td>
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            {% else %}
-              <div class="text-center text-muted py-4"><i class="bi bi-inbox" style="font-size:2rem;"></i><p class="mt-2 mb-0">No search terms data available</p></div>
-            {% endif %}
+          <div class="mt-2">
+            <small class="text-muted">
+              Showing <span id="st-visible-count">{{ search_terms|length }}</span> of {{ search_terms_total }} search terms
+            </small>
           </div>
         </div>
       </div>
 
-      {% include 'components/rules_card.html' %}
+      <!-- Bulk Action Bar -->
+      <div class="card mb-3 border-primary" id="st-bulk-bar" style="display: none;">
+        <div class="card-body py-2">
+          <div class="d-flex align-items-center justify-content-between">
+            <span class="fw-bold text-primary">
+              <span id="st-selected-count">0</span> selected
+            </span>
+            <button class="btn btn-sm btn-danger" id="st-bulk-add-negative">
+              <i class="bi bi-x-circle me-1"></i>Add Selected as Negatives
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search Terms Table -->
+      <div class="card">
+        <div class="table-responsive">
+          <table class="table table-hover table-sm mb-0" id="st-table">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 40px;" class="text-center">
+                  <input type="checkbox" id="st-select-all" class="form-check-input">
+                </th>
+                <th style="min-width: 250px; max-width: 300px;">Search Term</th>
+                <th style="min-width: 150px;">Keyword</th>
+                <th style="width: 100px;">Match Type</th>
+                <th style="width: 90px;">Status</th>
+                <th style="width: 90px;" class="text-end">Impressions</th>
+                <th style="width: 80px;" class="text-end">Clicks</th>
+                <th style="width: 70px;" class="text-end">CTR</th>
+                <th style="width: 90px;" class="text-end">Cost</th>
+                <th style="width: 80px;" class="text-end">CPC</th>
+                <th style="width: 80px;" class="text-end">Conv.</th>
+                <th style="width: 70px;" class="text-end">CVR</th>
+                <th style="width: 80px;" class="text-end">CPA</th>
+                <th style="width: 70px;" class="text-end">ROAS</th>
+                <th style="width: 140px;" class="text-center">Flag</th>
+                <th style="width: 140px;" class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if search_terms and search_terms|length > 0 %}
+                {% for st in search_terms %}
+                <tr class="st-row" data-search-term="{{ st.search_term|lower }}">
+                  <td class="text-center">
+                    <input type="checkbox" class="form-check-input st-checkbox" 
+                           data-search-term="{{ st.search_term }}"
+                           data-campaign-id="{{ st.campaign_id }}"
+                           data-keyword-id="{{ st.keyword_id }}">
+                  </td>
+                  <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" 
+                      title="{{ st.search_term }}">
+                    <strong>{{ st.search_term }}</strong>
+                  </td>
+                  <td class="text-muted small">{{ st.keyword_text or '—' }}</td>
+                  <td>
+                    {% if st.match_type == 'EXACT' %}
+                    <span class="badge bg-primary">Exact</span>
+                    {% elif st.match_type == 'PHRASE' %}
+                    <span class="badge bg-success">Phrase</span>
+                    {% elif st.match_type == 'BROAD' %}
+                    <span class="badge bg-secondary">Broad</span>
+                    {% else %}
+                    <span class="badge bg-light text-dark">{{ st.match_type }}</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if st.search_term_status == 'ADDED' %}
+                    <span class="badge bg-success">Added</span>
+                    {% elif st.search_term_status == 'EXCLUDED' %}
+                    <span class="badge bg-danger">Excluded</span>
+                    {% else %}
+                    <span class="badge bg-secondary">None</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">{{ "{:,}".format(st.impressions|int) }}</td>
+                  <td class="text-end">{{ "{:,}".format(st.clicks|int) }}</td>
+                  <td class="text-end">
+                    {% if st.ctr > 0 %}{{ (st.ctr * 100)|round(2) }}%{% else %}0.00%{% endif %}
+                  </td>
+                  <td class="text-end">£{{ st.cost|round(2) }}</td>
+                  <td class="text-end">
+                    {% if st.cpc > 0 %}£{{ st.cpc|round(2) }}{% else %}—{% endif %}
+                  </td>
+                  <td class="text-end">{{ st.conversions|round(1) }}</td>
+                  <td class="text-end">
+                    {% if st.cvr > 0 %}{{ (st.cvr * 100)|round(2) }}%{% else %}0.00%{% endif %}
+                  </td>
+                  <td class="text-end">
+                    {% if st.cpa > 0 %}£{{ st.cpa|round(2) }}{% else %}—{% endif %}
+                  </td>
+                  <td class="text-end">
+                    {% if st.roas > 0 %}{{ st.roas|round(2) }}{% else %}—{% endif %}
+                  </td>
+                  <td class="text-center">
+                    {% if st.negative_flag %}
+                    <span class="badge bg-danger" title="{{ st.flag_reason }}">
+                      Negative Opportunity
+                    </span>
+                    {% else %}
+                    —
+                    {% endif %}
+                  </td>
+                  <td class="text-center">
+                    <button class="btn btn-sm btn-outline-danger st-add-negative"
+                            data-search-term="{{ st.search_term }}"
+                            data-campaign-name="{{ st.campaign_name }}"
+                            data-flag-reason="{{ st.flag_reason or 'Manual selection' }}">
+                      <i class="bi bi-x-circle"></i> Add as Negative
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="16" class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                    <p class="mt-3 mb-0">No search terms found with current filters</p>
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      {% if st_total_pages > 1 %}
+      <div class="card mt-3">
+        <div class="card-body py-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <label class="form-label small text-muted mb-0 me-2">Per page:</label>
+              <select id="st-per-page" class="form-select form-select-sm d-inline-block" style="width: auto;">
+                <option value="10" {% if st_per_page == 10 %}selected{% endif %}>10</option>
+                <option value="25" {% if st_per_page == 25 %}selected{% endif %}>25</option>
+                <option value="50" {% if st_per_page == 50 %}selected{% endif %}>50</option>
+                <option value="100" {% if st_per_page == 100 %}selected{% endif %}>100</option>
+              </select>
+            </div>
+            <nav>
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item {% if st_page == 1 %}disabled{% endif %}">
+                  <a class="page-link" href="#" data-st-page="{{ st_page - 1 }}">Previous</a>
+                </li>
+                {% for p in range(1, st_total_pages + 1) %}
+                  {% if p == 1 or p == st_total_pages or (p >= st_page - 2 and p <= st_page + 2) %}
+                  <li class="page-item {% if p == st_page %}active{% endif %}">
+                    <a class="page-link" href="#" data-st-page="{{ p }}">{{ p }}</a>
+                  </li>
+                  {% elif p == st_page - 3 or p == st_page + 3 %}
+                  <li class="page-item disabled"><span class="page-link">...</span></li>
+                  {% endif %}
+                {% endfor %}
+                <li class="page-item {% if st_page == st_total_pages %}disabled{% endif %}">
+                  <a class="page-link" href="#" data-st-page="{{ st_page + 1 }}">Next</a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
     </div>
 
     {% include 'components/rules_tab.html' %}
@@ -332,6 +495,31 @@
 </div>
 
 {% include 'components/rules_sidebar.html' %}
+
+<!-- Add as Negative Keyword Modal -->
+<div class="modal fade" id="stNegativeModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add as Negative Keyword</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning mb-3">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Note:</strong> This action will be available in a future update. 
+          Currently, this is a preview of the negative keyword suggestion.
+        </div>
+        <div id="st-modal-content">
+          <!-- Content populated by JavaScript -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% endblock %}
 
@@ -367,13 +555,182 @@ document.getElementById('qs-expand-all')?.addEventListener('click', function(e) 
   document.querySelectorAll('.qs-expand i').forEach(i => { i.classList.toggle('bi-chevron-down',expanded); i.classList.toggle('bi-chevron-up',!expanded); });
   icon.classList.toggle('bi-chevron-down',expanded); icon.classList.toggle('bi-chevron-up',!expanded);
 });
-const stHeader = document.querySelector('[data-bs-target="#search-terms-section"]');
-if (stHeader) stHeader.addEventListener('click', function() {
-  setTimeout(() => {
-    const icon = document.getElementById('search-terms-icon');
-    const showing = document.getElementById('search-terms-section').classList.contains('show');
-    icon.className = showing ? 'bi bi-chevron-down me-2' : 'bi bi-chevron-right me-2';
-  }, 100);
+
+// ═══ SEARCH TERMS TAB JAVASCRIPT ═══
+
+// Track selected search terms across pages
+let selectedSearchTerms = [];
+
+// Filter dropdown change handlers
+document.getElementById('st-campaign-filter')?.addEventListener('change', function() {
+  applySTFilters();
 });
+
+document.getElementById('st-status-filter')?.addEventListener('change', function() {
+  applySTFilters();
+});
+
+document.getElementById('st-match-type-filter')?.addEventListener('change', function() {
+  applySTFilters();
+});
+
+// Per page dropdown
+document.getElementById('st-per-page')?.addEventListener('change', function() {
+  applySTFilters();
+});
+
+// Clear filters button
+document.getElementById('st-clear-filters')?.addEventListener('click', function() {
+  window.location.href = '/keywords?st_page=1';
+});
+
+// Pagination links
+document.querySelectorAll('[data-st-page]').forEach(link => {
+  link.addEventListener('click', function(e) {
+    e.preventDefault();
+    const page = this.getAttribute('data-st-page');
+    const params = new URLSearchParams(window.location.search);
+    params.set('st_page', page);
+    window.location.href = '/keywords?' + params.toString();
+  });
+});
+
+function applySTFilters() {
+  const campaign = document.getElementById('st-campaign-filter').value;
+  const status = document.getElementById('st-status-filter').value;
+  const matchType = document.getElementById('st-match-type-filter').value;
+  const perPage = document.getElementById('st-per-page')?.value || 25;
+  
+  const params = new URLSearchParams();
+  params.set('st_page', '1');
+  params.set('st_per_page', perPage);
+  if (campaign !== 'all') params.set('st_campaign', campaign);
+  if (status !== 'all') params.set('st_status', status);
+  if (matchType !== 'all') params.set('st_match_type', matchType);
+  
+  window.location.href = '/keywords?' + params.toString();
+}
+
+// Client-side search input (filters visible rows only)
+document.getElementById('st-search-input')?.addEventListener('keyup', function() {
+  const searchText = this.value.toLowerCase();
+  const rows = document.querySelectorAll('.st-row');
+  let visibleCount = 0;
+  
+  rows.forEach(row => {
+    const term = row.getAttribute('data-search-term');
+    if (term.includes(searchText)) {
+      row.style.display = '';
+      visibleCount++;
+    } else {
+      row.style.display = 'none';
+    }
+  });
+  
+  document.getElementById('st-visible-count').textContent = visibleCount;
+});
+
+// Select all checkbox
+document.getElementById('st-select-all')?.addEventListener('change', function() {
+  const visibleCheckboxes = Array.from(document.querySelectorAll('.st-checkbox'))
+    .filter(cb => cb.closest('.st-row').style.display !== 'none');
+  
+  visibleCheckboxes.forEach(cb => {
+    cb.checked = this.checked;
+    updateSelectedTerms(cb);
+  });
+  
+  updateBulkBar();
+});
+
+// Individual checkbox handlers
+document.querySelectorAll('.st-checkbox').forEach(cb => {
+  cb.addEventListener('change', function() {
+    updateSelectedTerms(this);
+    updateBulkBar();
+  });
+});
+
+function updateSelectedTerms(checkbox) {
+  const term = checkbox.getAttribute('data-search-term');
+  const campaignId = checkbox.getAttribute('data-campaign-id');
+  const keywordId = checkbox.getAttribute('data-keyword-id');
+  const key = `${term}|${campaignId}|${keywordId}`;
+  
+  if (checkbox.checked) {
+    if (!selectedSearchTerms.includes(key)) {
+      selectedSearchTerms.push(key);
+    }
+  } else {
+    selectedSearchTerms = selectedSearchTerms.filter(k => k !== key);
+  }
+}
+
+function updateBulkBar() {
+  const count = selectedSearchTerms.length;
+  const bulkBar = document.getElementById('st-bulk-bar');
+  const countSpan = document.getElementById('st-selected-count');
+  
+  if (bulkBar) {
+    bulkBar.style.display = count > 0 ? 'block' : 'none';
+  }
+  if (countSpan) {
+    countSpan.textContent = count;
+  }
+}
+
+// Bulk add as negative button
+document.getElementById('st-bulk-add-negative')?.addEventListener('click', function() {
+  const count = selectedSearchTerms.length;
+  const terms = selectedSearchTerms.map(k => k.split('|')[0]).join(', ');
+  
+  const content = `
+    <p><strong>Selected Search Terms (${count}):</strong></p>
+    <div class="alert alert-light" style="max-height: 200px; overflow-y: auto;">
+      ${terms}
+    </div>
+    <p class="mb-0"><strong>Reason:</strong> Bulk selection</p>
+  `;
+  
+  document.getElementById('st-modal-content').innerHTML = content;
+  const modal = new bootstrap.Modal(document.getElementById('stNegativeModal'));
+  modal.show();
+});
+
+// Row-level "Add as Negative" buttons
+document.querySelectorAll('.st-add-negative').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const searchTerm = this.getAttribute('data-search-term');
+    const campaignName = this.getAttribute('data-campaign-name');
+    const flagReason = this.getAttribute('data-flag-reason');
+    
+    const content = `
+      <p><strong>Search Term:</strong> ${searchTerm}</p>
+      <p><strong>Campaign:</strong> ${campaignName}</p>
+      <p class="mb-0"><strong>Reason:</strong> ${flagReason}</p>
+    `;
+    
+    document.getElementById('st-modal-content').innerHTML = content;
+    const modal = new bootstrap.Modal(document.getElementById('stNegativeModal'));
+    modal.show();
+  });
+});
+
+// Restore checked state on page load (for selected terms that persist across pages)
+window.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.st-checkbox').forEach(cb => {
+    const term = cb.getAttribute('data-search-term');
+    const campaignId = cb.getAttribute('data-campaign-id');
+    const keywordId = cb.getAttribute('data-keyword-id');
+    const key = `${term}|${campaignId}|${keywordId}`;
+    
+    if (selectedSearchTerms.includes(key)) {
+      cb.checked = true;
+    }
+  });
+  
+  updateBulkBar();
+});
+
 </script>
 {% endblock %}

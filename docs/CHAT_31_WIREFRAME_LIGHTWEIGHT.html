@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Christopher Hoole - Senior Google Ads Specialist</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Courier New', monospace; background: #0f172a; color: #f1f5f9; overflow-x: hidden; }
+  
+  /* NAV */
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 56px; background: rgba(10,10,26,0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; padding: 0 48px; }
+  .nav-logo { font-size: 15px; font-weight: bold; color: #f1f5f9; }
+  .nav-links { display: flex; gap: 32px; align-items: center; }
+  .nav-link { font-family: monospace; font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; text-decoration: none; cursor: pointer; }
+  .nav-cta { font-family: monospace; font-size: 11px; color: #fff; background: #2563eb; padding: 8px 20px; border-radius: 3px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; }
+  
+  /* HERO */
+  .hero { min-height: 100vh; background: #0f172a; display: flex; align-items: center; justify-content: space-between; padding: 0 80px; position: relative; overflow: hidden; }
+  .hero-text { flex: 1; max-width: 520px; z-index: 10; position: relative; }
+  .hero-eyebrow { font-family: monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 2.5px; color: #2563eb; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+  .hero-eyebrow::before { content: ""; display: inline-block; width: 24px; height: 1px; background: #2563eb; }
+  .hero-h1 { font-size: 52px; font-weight: bold; color: #f8fafc; line-height: 1.1; margin-bottom: 20px; letter-spacing: -1px; }
+  .hero-h1 span { color: #2563eb; }
+  .hero-sub { font-family: monospace; font-size: 13px; color: #64748b; line-height: 1.8; margin-bottom: 36px; }
+  .hero-ctas { display: flex; gap: 16px; align-items: center; margin-bottom: 24px; }
+  .cta-primary { background: #2563eb; color: white; padding: 14px 28px; font-family: monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; border: none; border-radius: 3px; cursor: pointer; }
+  .cta-secondary { color: #475569; font-family: monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; border: 1px solid #334155; padding: 14px 28px; border-radius: 3px; background: transparent; cursor: pointer; }
+  .hero-small { font-family: monospace; font-size: 10px; color: #334155; letter-spacing: 1px; }
+  .hero-small span { color: #2563eb; }
+  .hero-image-wrap { position: relative; width: 380px; height: 460px; flex-shrink: 0; z-index: 10; border-radius: 4px; overflow: hidden; cursor: crosshair; }
+  #threejs-container { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #threejs-container canvas { width: 100% !important; height: 100% !important; }
+  .reveal-label { position: absolute; top: 16px; left: 16px; font-family: monospace; font-size: 9px; color: #2563eb; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0; transition: opacity 0.3s; z-index: 20; pointer-events: none; background: rgba(10,10,26,0.85); padding: 4px 8px; border-radius: 2px; border: 1px solid rgba(37,99,235,0.3); }
+  .hover-hint { position: absolute; bottom: -32px; left: 50%; transform: translateX(-50%); font-family: monospace; font-size: 10px; color: #334155; letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; }
+  #loading-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: monospace; font-size: 11px; color: #334155; text-transform: uppercase; letter-spacing: 1px; z-index: 5; background: #0f172a; }
+  
+  /* SECTIONS */
+  .section { padding: 80px 80px; max-width: 1200px; margin: 0 auto; }
+  .section.dark { background: #0f172a; color: #f1f5f9; }
+  .section.light { background: #ffffff; color: #0f172a; }
+  .section.light-alt { background: #f1f5f9; color: #0f172a; }
+  
+  .section-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 2.5px; color: #2563eb; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .section-eyebrow::before { content: ""; display: inline-block; width: 24px; height: 1px; background: #2563eb; }
+  
+  .section-h2-dark { font-size: 36px; font-weight: bold; color: #f8fafc; line-height: 1.2; margin-bottom: 20px; font-family: Georgia, serif; }
+  .section-h2-light { font-size: 36px; font-weight: bold; color: #0f172a; line-height: 1.2; margin-bottom: 20px; font-family: Georgia, serif; }
+  .section-body-dark { font-size: 14px; color: #94a3b8; line-height: 1.8; margin-bottom: 24px; max-width: 720px; }
+  .section-body-light { font-size: 14px; color: #64748b; line-height: 1.8; margin-bottom: 24px; max-width: 720px; }
+  
+  /* CARDS */
+  .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 32px; }
+  .card-grid.two-col { grid-template-columns: repeat(2, 1fr); }
+  .card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 24px; }
+  .card.light { background: #ffffff; border: 1px solid #e2e8f0; }
+  .card-icon { font-size: 32px; margin-bottom: 12px; }
+  .card-title-dark { font-size: 16px; font-weight: bold; color: #f1f5f9; margin-bottom: 8px; }
+  .card-title-light { font-size: 16px; font-weight: bold; color: #0f172a; margin-bottom: 8px; }
+  .card-body-dark { font-size: 13px; color: #94a3b8; line-height: 1.6; }
+  .card-body-light { font-size: 13px; color: #64748b; line-height: 1.6; }
+  
+  /* TIMELINE */
+  .timeline { margin-top: 32px; }
+  .timeline-item { display: flex; gap: 24px; padding: 20px 0; border-bottom: 1px solid #334155; align-items: flex-start; }
+  .timeline-item:last-child { border-bottom: none; }
+  .tl-year { font-size: 14px; font-weight: bold; color: #2563eb; width: 120px; flex-shrink: 0; }
+  .tl-content { flex: 1; }
+  .tl-title { font-size: 16px; font-weight: bold; color: #f1f5f9; margin-bottom: 4px; }
+  .tl-company { font-size: 13px; color: #64748b; margin-bottom: 8px; }
+  .tl-desc { font-size: 13px; color: #94a3b8; line-height: 1.6; }
+  
+  /* SKILLS GRID */
+  .skills-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 32px; }
+  .skill-card { background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 16px; }
+  .skill-title { font-size: 12px; font-weight: bold; color: #2563eb; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+  .skill-list { font-size: 11px; color: #94a3b8; line-height: 1.7; }
+  
+  /* MODULE CARDS */
+  .module-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 32px; }
+  .module-card { background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; border-radius: 8px; padding: 24px; }
+  .module-name { font-size: 18px; font-weight: bold; color: #0f172a; margin-bottom: 4px; }
+  .module-sub { font-size: 11px; color: #2563eb; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .module-desc { font-size: 13px; color: #64748b; line-height: 1.6; margin-bottom: 12px; }
+  .module-features { font-size: 12px; color: #475569; line-height: 1.8; }
+  .module-features li { margin-bottom: 6px; }
+  
+  /* DELIVERABLES */
+  .deliverables { margin-top: 32px; }
+  .day-block { background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 16px; margin-bottom: 12px; display: flex; gap: 20px; align-items: flex-start; }
+  .day-label { font-size: 12px; font-weight: bold; color: #2563eb; width: 100px; flex-shrink: 0; text-transform: uppercase; }
+  .day-content { font-size: 13px; color: #94a3b8; line-height: 1.6; flex: 1; }
+  
+  /* USP GRID */
+  .usp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 32px; }
+  .usp-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px; }
+  .usp-icon { font-size: 28px; margin-bottom: 12px; }
+  .usp-title { font-size: 14px; font-weight: bold; color: #0f172a; margin-bottom: 8px; }
+  .usp-body { font-size: 12px; color: #64748b; line-height: 1.6; }
+  
+  /* FAQ */
+  .faq-list { margin-top: 32px; max-width: 800px; }
+  .faq-item { padding: 20px 0; border-bottom: 1px solid #e2e8f0; }
+  .faq-item:last-child { border-bottom: none; }
+  .faq-q { font-size: 15px; font-weight: bold; color: #0f172a; margin-bottom: 8px; }
+  .faq-a { font-size: 13px; color: #64748b; line-height: 1.7; }
+  
+  /* FORM */
+  .form-container { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 32px; max-width: 500px; }
+  .form-field { margin-bottom: 20px; }
+  .form-label { font-size: 12px; color: #94a3b8; margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 1px; }
+  .form-input { width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 4px; padding: 12px; font-size: 13px; color: #f1f5f9; font-family: monospace; }
+  .form-select { width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 4px; padding: 12px; font-size: 13px; color: #f1f5f9; font-family: monospace; }
+  .form-submit { background: #2563eb; color: white; padding: 14px 32px; font-size: 12px; border: none; border-radius: 4px; text-transform: uppercase; letter-spacing: 1.5px; cursor: pointer; width: 100%; }
+  .form-note { font-size: 11px; color: #475569; margin-top: 12px; text-align: center; }
+  
+  /* NEXT STEPS */
+  .next-steps { display: flex; gap: 16px; margin-top: 24px; }
+  .next-step { text-align: center; flex: 1; }
+  .next-num { width: 40px; height: 40px; border-radius: 50%; background: #2563eb; color: white; font-size: 18px; font-weight: bold; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; }
+  .next-label { font-size: 11px; color: #94a3b8; line-height: 1.4; }
+  
+  /* FOOTER */
+  .footer { background: #0a0a1a; padding: 24px 80px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #1e293b; }
+  .footer-left { font-size: 12px; color: #64748b; }
+  .footer-right { font-size: 11px; color: #475569; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Christopher Hoole</div>
+  <div class="nav-links">
+    <a class="nav-link" href="#about">About</a>
+    <a class="nav-link" href="#act">A.C.T</a>
+    <a class="nav-link" href="#work">Experience</a>
+    <a class="nav-link" href="#faq">FAQ</a>
+    <div class="nav-cta">Let's Discuss Your Paid Ads</div>
+  </div>
+</nav>
+
+<!-- S1: HERO -->
+<section class="hero">
+  <div class="hero-text">
+    <div class="hero-eyebrow">Senior Google Ads Specialist</div>
+    <h1 class="hero-h1">I'm <span>Christopher Hoole</span></h1>
+    <h2 class="hero-h1" style="font-size:38px;margin-bottom:24px;">Google Ads, Managed with AI Precision.</h2>
+    <p class="hero-sub">16 years of paid ads experience. One proprietary AI engine.<br>Most managers work the same way, so I built my own AI engine.</p>
+    <div class="hero-ctas">
+      <button class="cta-primary">Let's Discuss Your Paid Ads</button>
+      <button class="cta-secondary">See How It Works ↓</button>
+    </div>
+    <div class="hero-small"><span>Maximum 4 clients.</span> Currently accepting agency partnerships.</div>
+  </div>
+
+  <div class="hero-image-wrap" id="imageWrap">
+    <div id="loading-msg">Loading...</div>
+    <div id="threejs-container"></div>
+    <div class="reveal-label" id="revealLabel">A.C.T</div>
+    <div class="hover-hint">↑ hover to reveal A.C.T</div>
+  </div>
+</section>
+
+<!-- S2: ABOUT ME -->
+<section class="section dark" id="about">
+  <div class="section-eyebrow">About Me</div>
+  <h2 class="section-h2-dark">I've managed Google Ads accounts since 2009.</h2>
+  <p class="section-body-dark">
+    Over 16 years I've worked across automotive (Lexus, Toyota), luxury travel, B2B (Virgin Media O2), ecommerce, property, and professional services. I've managed budgets from £5k to £400k per month and optimized 200+ accounts.
+  </p>
+  <p class="section-body-dark">
+    Over the past few years I noticed something: almost every Google Ads manager works the same way. Random tweaks. No real AI leverage. No audit trails. No systematic approach.
+  </p>
+  <p class="section-body-dark">
+    So I spent 18 months building my own Google Ads AI engine: <strong style="color:#2563eb;">Ads Control Tower (A.C.T)</strong>.
+  </p>
+  <p class="section-body-dark">
+    My approach: data-driven, explainable, guardrailed automation. A.C.T recommends, I review, you approve. Every change is logged with reasoning, evidence, and expected impact. No black boxes. No reckless automation.
+  </p>
+</section>
+
+<!-- S3: THE PROBLEM -->
+<section class="section light">
+  <div class="section-eyebrow">The Problem</div>
+  <h2 class="section-h2-light">Most Google Ads management looks the same.</h2>
+  <p class="section-body-light">
+    If you're spending £5k–£50k/month on Google Ads and wondering why results feel opaque, you're not alone.
+  </p>
+  <div class="card-grid">
+    <div class="card light">
+      <div class="card-icon">🎲</div>
+      <div class="card-title-light">Random tweaks without a system</div>
+      <div class="card-body-light">Changes made on gut feel. No hypothesis. No accountability.</div>
+    </div>
+    <div class="card light">
+      <div class="card-icon">📋</div>
+      <div class="card-title-light">No change log, no audit trail</div>
+      <div class="card-body-light">Nobody can tell you what changed last month, why, or what the outcome was.</div>
+    </div>
+    <div class="card light">
+      <div class="card-icon">🤖</div>
+      <div class="card-title-light">AI as a buzzword, not a tool</div>
+      <div class="card-body-light">"AI-powered" on the pitch. Generic automation in practice.</div>
+    </div>
+  </div>
+</section>
+
+<!-- S4: THE DIFFERENCE -->
+<section class="section dark">
+  <div class="section-eyebrow">The Difference</div>
+  <h2 class="section-h2-dark">16 years operator judgment + proprietary AI = your edge.</h2>
+  <p class="section-body-dark">
+    Most managers either work manually (slow, inconsistent) or use generic automation (reckless, unexplainable).
+  </p>
+  <p class="section-body-dark">
+    I combine <strong style="color:#2563eb;">senior-level operator experience</strong> with <strong style="color:#2563eb;">A.C.T's AI-powered insights</strong>. You get systematic decision-making, explainable recommendations, and full accountability.
+  </p>
+  <p class="section-body-dark">
+    A.C.T doesn't replace judgment — it enhances it. I see what A.C.T recommends, add context, prioritize, and you approve what executes.
+  </p>
+</section>
+
+<!-- S5: WORK HISTORY -->
+<section class="section light" id="work">
+  <div class="section-eyebrow">Work History</div>
+  <h2 class="section-h2-light">16 years across agencies, in-house, and my own consultancy.</h2>
+  <div class="timeline">
+    <div class="timeline-item" style="border-color:#e2e8f0;">
+      <div class="tl-year" style="color:#2563eb;">2023–2025</div>
+      <div class="tl-content">
+        <div class="tl-title" style="color:#0f172a;">Paid Ads Account Manager</div>
+        <div class="tl-company">Pod Digital Marketing Agency</div>
+        <div class="tl-desc" style="color:#64748b;">Managed 8 parallel clients. Dramatically improved ROAS and inbound lead count for all accounts. Introduced new marketing techniques and upgraded analytics/reporting systems.</div>
+      </div>
+    </div>
+    <div class="timeline-item" style="border-color:#e2e8f0;">
+      <div class="tl-year" style="color:#2563eb;">2022–2023</div>
+      <div class="tl-content">
+        <div class="tl-title" style="color:#0f172a;">Digital Marketing Manager</div>
+        <div class="tl-company">Virgin Media O2 Business</div>
+        <div class="tl-desc" style="color:#64748b;">Brought all paid ad accounts in-house. Designed full omni-channel funnel. Scaled from 0 to 2,000 B2B leads per month.</div>
+      </div>
+    </div>
+    <div class="timeline-item" style="border-color:#e2e8f0;">
+      <div class="tl-year" style="color:#2563eb;">2021–2022</div>
+      <div class="tl-content">
+        <div class="tl-title" style="color:#0f172a;">Digital Marketing Consultant</div>
+        <div class="tl-company">TMW Unlimited Agency (Lexus & Toyota)</div>
+        <div class="tl-desc" style="color:#64748b;">Increased traffic to local dealership sites by 500%+ with same budget. 100%+ increase in leads and test-drive requests. Overhauled Toyota's entire tracking and attribution.</div>
+      </div>
+    </div>
+    <div class="timeline-item" style="border-color:#e2e8f0;">
+      <div class="tl-year" style="color:#2563eb;">2017–2020</div>
+      <div class="tl-content">
+        <div class="tl-title" style="color:#0f172a;">Digital Marketing Consultant</div>
+        <div class="tl-company">Destinology.co.uk</div>
+        <div class="tl-desc" style="color:#64748b;">Reduced Google Ads CPL from £120 to £45 (63% reduction). Implemented geo-targeting in HNWI areas. Hired and trained paid ads team. Oversaw ECRM migration reducing costs 60%+.</div>
+      </div>
+    </div>
+    <div class="timeline-item" style="border-color:#e2e8f0;">
+      <div class="tl-year" style="color:#2563eb;">2015–2017</div>
+      <div class="tl-content">
+        <div class="tl-title" style="color:#0f172a;">Lead Acquisition Manager</div>
+        <div class="tl-company">Select Property Group</div>
+        <div class="tl-desc" style="color:#64748b;">Brought all digital marketing in-house. Part of team that delivered £35m revenue in March 2016 (120%+ increase on previous record). Delivered high-net-worth leads from UK and global markets.</div>
+      </div>
+    </div>
+    <div class="timeline-item" style="border-color:#e2e8f0;">
+      <div class="tl-year" style="color:#2563eb;">2014–2015</div>
+      <div class="tl-content">
+        <div class="tl-title" style="color:#0f172a;">Digital Marketing Manager</div>
+        <div class="tl-company">SixStarHolidays</div>
+        <div class="tl-desc" style="color:#64748b;">Increased lead volume 120% with 12% budget increase. Reduced new customer acquisition cost from £100+ to £36. Built fastest-growing social media presence in travel industry (50k organic likes in 6 months).</div>
+      </div>
+    </div>
+    <div class="timeline-item" style="border-color:#e2e8f0;border-bottom:none;">
+      <div class="tl-year" style="color:#2563eb;">2009–2014</div>
+      <div class="tl-content">
+        <div class="tl-title" style="color:#0f172a;">CEO & Founder</div>
+        <div class="tl-company">Apple Copywriting</div>
+        <div class="tl-desc" style="color:#64748b;">Built company from 1 person to 48 staff (8 in-house, 40 freelance). Scaled from £0 to £800k annual revenue in 2 years. Designed and built custom project management system.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S6: SKILLS & PLATFORMS -->
+<section class="section dark">
+  <div class="section-eyebrow">Skills & Platforms</div>
+  <h2 class="section-h2-dark">Technical expertise across the full paid ads stack.</h2>
+  <div class="skills-grid">
+    <div class="skill-card">
+      <div class="skill-title">Paid Advertising</div>
+      <div class="skill-list">
+        • Google Ads (Search, PMAX, Shopping, Display) — since 2009<br>
+        • Meta Ads — since 2014<br>
+        • LinkedIn Ads — since 2015<br>
+        • TikTok, Twitter/X<br>
+        • Taboola, Outbrain
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-title">Analytics & Tracking</div>
+      <div class="skill-list">
+        • GA4, Google Analytics, Looker Studio — since 2009<br>
+        • Triple Whale, Hyros<br>
+        • Google Tag Manager<br>
+        • Search Console<br>
+        • Merchant Centre
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-title">CRM & Email</div>
+      <div class="skill-list">
+        • HubSpot, Salesforce<br>
+        • Pardot<br>
+        • MailChimp, Klaviyo<br>
+        • InfusionSoft
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-title">E-commerce Platforms</div>
+      <div class="skill-list">
+        • Shopify<br>
+        • BigCommerce<br>
+        • WordPress<br>
+        • ClickFunnels<br>
+        • Leadpages
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-title">AI & Automation</div>
+      <div class="skill-list">
+        • Custom A.C.T engine<br>
+        • ChatGPT, Claude, Gemini<br>
+        • Python scripting<br>
+        • Google Ads Scripts
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-title">Budget Management</div>
+      <div class="skill-list">
+        • £5k–£400k/month<br>
+        • Multi-channel allocation<br>
+        • 16 years experience<br>
+        • 200+ accounts optimized
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-title">Industries</div>
+      <div class="skill-list">
+        • Automotive<br>
+        • Luxury Travel<br>
+        • B2B<br>
+        • E-commerce<br>
+        • Property<br>
+        • Professional Services
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-title">Languages</div>
+      <div class="skill-list">
+        • English (native)<br>
+        • Portuguese (fluent)<br>
+        • Spanish (basic)
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S7: WHAT A.C.T DOES -->
+<section class="section light" id="act">
+  <div class="section-eyebrow">What A.C.T Does</div>
+  <h2 class="section-h2-light">Four AI-powered modules. All features live and operational.</h2>
+  <p class="section-body-light">
+    A.C.T is my proprietary Google Ads AI engine. It's not a product for sale — it's my internal competitive advantage.
+  </p>
+  <div class="module-grid">
+    <div class="module-card">
+      <div class="module-name">Lighthouse</div>
+      <div class="module-sub">Diagnostics & Insights</div>
+      <div class="module-desc">Deep campaign analysis with 200+ calculated performance features.</div>
+      <ul class="module-features">
+        <li>Anomaly detection (spend spikes, CTR drops, conversion anomalies)</li>
+        <li>Quality Score diagnostics and improvement recommendations</li>
+        <li>Impression share analysis and recovery strategies</li>
+        <li>Search term mining and negative keyword suggestions</li>
+        <li>Campaign structure and account hygiene audits</li>
+      </ul>
+    </div>
+    <div class="module-card">
+      <div class="module-name">Radar</div>
+      <div class="module-sub">Monitoring & Protection</div>
+      <div class="module-desc">Real-time performance monitoring with automatic safeguards.</div>
+      <ul class="module-features">
+        <li>Automatic rollback on KPI degradation (≥15% ROAS/CVR drop)</li>
+        <li>Budget pacing alerts and spend spike detection</li>
+        <li>Feed issue detection for Shopping campaigns</li>
+        <li>Tracking break detection and alerts</li>
+        <li>Post-change monitoring with outcome validation</li>
+      </ul>
+    </div>
+    <div class="module-card">
+      <div class="module-name">Flight Plan</div>
+      <div class="module-sub">Experiments & Structured Testing</div>
+      <div class="module-desc">Hypothesis-driven testing framework. No random tweaks.</div>
+      <ul class="module-features">
+        <li>Structured experiment design and rollout</li>
+        <li>A/B test setup with clear success criteria</li>
+        <li>Statistical significance validation</li>
+        <li>Scale/iterate/rollback decisions based on results</li>
+        <li>Prevents "random busywork" — every change is a documented test</li>
+      </ul>
+    </div>
+    <div class="module-card">
+      <div class="module-name">Autopilot</div>
+      <div class="module-sub">AI-Powered Optimization</div>
+      <div class="module-desc">40+ optimization rules with safety guardrails and human oversight.</div>
+      <ul class="module-features">
+        <li>Budget, bid, campaign status, keyword, ad, and Shopping optimizations</li>
+        <li>Constitution safety framework (magnitude limits, cooldown periods, data sufficiency)</li>
+        <li>Risk-tiered changes (low/medium/high with appropriate review)</li>
+        <li>Human-in-the-loop approval — A.C.T recommends, you decide</li>
+        <li>Full change preview before execution</li>
+      </ul>
+    </div>
+  </div>
+  <div style="margin-top:40px;padding:24px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+    <div style="font-size:14px;font-weight:bold;color:#0f172a;margin-bottom:12px;">Additional Capabilities</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:13px;color:#64748b;line-height:1.7;">
+      <div>
+        <strong style="color:#0f172a;">Multi-Campaign Support:</strong> Search, Shopping, Performance Max, Display (Video/Demand Gen coming soon)
+      </div>
+      <div>
+        <strong style="color:#0f172a;">Automated Reports:</strong> Monthly slide-based reports with AI-generated insights and plain-English summaries
+      </div>
+      <div>
+        <strong style="color:#0f172a;">Smart Alerts:</strong> Urgent issue notifications for budget overruns, conversion drops, tracking failures
+      </div>
+      <div>
+        <strong style="color:#0f172a;">Full Audit Trail:</strong> Every change logged with reasoning, evidence, risk level, and rollback notes
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S8: HOW I WORK -->
+<section class="section dark">
+  <div class="section-eyebrow">How I Work</div>
+  <h2 class="section-h2-dark">10-hour blocks. Maximum 4 clients. Senior attention only.</h2>
+  <p class="section-body-dark">
+    This isn't an agency or SaaS product. It's a boutique managed service with strict capacity limits.
+  </p>
+  <div class="card-grid two-col">
+    <div class="card">
+      <div class="card-icon">⏱️</div>
+      <div class="card-title-dark">10 hours per week blocks</div>
+      <div class="card-body-dark">Engagement sold in weekly blocks. Flexible to account complexity. Pricing discussed on fit call.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">👤</div>
+      <div class="card-title-dark">Maximum 4 clients at any time</div>
+      <div class="card-body-dark">Capacity cap is a feature, not a limit. You get senior attention, not junior execution. Nothing delegated.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🤝</div>
+      <div class="card-title-dark">Agency partnerships welcome</div>
+      <div class="card-body-dark">Freelancer, partner, or white-label models available. I work with agencies looking for senior oversight or a reliable partner.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">📊</div>
+      <div class="card-title-dark">Weekly + monthly cadence</div>
+      <div class="card-body-dark">Weekly deliverables and communication. Monthly strategy sessions to review learnings and set priorities.</div>
+    </div>
+  </div>
+</section>
+
+<!-- S9: WHAT YOU GET EACH WEEK -->
+<section class="section light">
+  <div class="section-eyebrow">What You Get Each Week</div>
+  <h2 class="section-h2-light">Clear deliverables. No jargon. Full transparency.</h2>
+  <div class="deliverables">
+    <div class="day-block" style="background:#ffffff;border-color:#e2e8f0;">
+      <div class="day-label" style="color:#2563eb;">Monday</div>
+      <div class="day-content" style="color:#64748b;">A.C.T runs full diagnostic suite. Anomaly alerts, performance trends, and priority flags generated.</div>
+    </div>
+    <div class="day-block" style="background:#ffffff;border-color:#e2e8f0;">
+      <div class="day-label" style="color:#2563eb;">Tuesday</div>
+      <div class="day-content" style="color:#64748b;">I review recommendations, add context, prioritize by impact. Queue prepared with evidence and expected outcomes.</div>
+    </div>
+    <div class="day-block" style="background:#ffffff;border-color:#e2e8f0;">
+      <div class="day-label" style="color:#2563eb;">Wednesday</div>
+      <div class="day-content" style="color:#64748b;">Recommendations shared with you for review and approval. Q&A on reasoning and expected impact.</div>
+    </div>
+    <div class="day-block" style="background:#ffffff;border-color:#e2e8f0;">
+      <div class="day-label" style="color:#2563eb;">Thursday</div>
+      <div class="day-content" style="color:#64748b;">Approved changes executed with full logging. Every action recorded with reasoning, evidence, risk level, and expected outcome.</div>
+    </div>
+    <div class="day-block" style="background:#ffffff;border-color:#e2e8f0;">
+      <div class="day-label" style="color:#2563eb;">Friday</div>
+      <div class="day-content" style="color:#64748b;">Plain-English summary email: what changed, what we learned, what's next week's focus. No jargon.</div>
+    </div>
+    <div class="day-block" style="background:#ffffff;border-color:#e2e8f0;">
+      <div class="day-label" style="color:#2563eb;">Monthly</div>
+      <div class="day-content" style="color:#64748b;">60-minute strategy session + full A.C.T diagnostic report. Review performance vs targets, learnings, and set next month's priorities.</div>
+    </div>
+  </div>
+</section>
+
+<!-- S10: WHY I'M DIFFERENT -->
+<section class="section light-alt">
+  <div class="section-eyebrow">Why I'm Different</div>
+  <h2 class="section-h2-light">Explainability by default. Not by request.</h2>
+  <div class="usp-grid">
+    <div class="usp-card">
+      <div class="usp-icon">🔎</div>
+      <div class="usp-title">No black box</div>
+      <div class="usp-body">Every recommendation includes why, evidence, and expected impact. You can always see the reasoning.</div>
+    </div>
+    <div class="usp-card">
+      <div class="usp-icon">🛡️</div>
+      <div class="usp-title">Guardrails prevent runaway changes</div>
+      <div class="usp-body">Magnitude limits, cooldown periods, data sufficiency checks. A.C.T can't make reckless moves.</div>
+    </div>
+    <div class="usp-card">
+      <div class="usp-icon">🟡</div>
+      <div class="usp-title">Risk-tiered changes</div>
+      <div class="usp-body">Every action classified: low/medium/high risk. Staging and review rules apply accordingly.</div>
+    </div>
+    <div class="usp-card">
+      <div class="usp-icon">📓</div>
+      <div class="usp-title">Full decision journal</div>
+      <div class="usp-body">What changed, when, why, rollback notes. Complete audit trail from day one.</div>
+    </div>
+    <div class="usp-card">
+      <div class="usp-icon">👤</div>
+      <div class="usp-title">Senior attention, not junior execution</div>
+      <div class="usp-body">4 clients max. I manage every account myself. Nothing is delegated.</div>
+    </div>
+    <div class="usp-card">
+      <div class="usp-icon">📊</div>
+      <div class="usp-title">Evidence-led, not gut-feel</div>
+      <div class="usp-body">Data sufficiency checks before acting. A.C.T won't recommend changes on insufficient signal.</div>
+    </div>
+    <div class="usp-card">
+      <div class="usp-icon">📝</div>
+      <div class="usp-title">Weekly plain-English summaries</div>
+      <div class="usp-body">What changed, what we learned, what's next. No jargon, no BS.</div>
+    </div>
+    <div class="usp-card">
+      <div class="usp-icon">🤖</div>
+      <div class="usp-title">Human-in-the-loop</div>
+      <div class="usp-body">A.C.T recommends, I review, you approve. No blind automation.</div>
+    </div>
+    <div class="usp-card">
+      <div class="usp-icon">🔧</div>
+      <div class="usp-title">Account hygiene first</div>
+      <div class="usp-body">Fix tracking, structure, and measurement before pushing spend. No garbage in, garbage out.</div>
+    </div>
+    <div class="usp-card">
+      <div class="usp-icon">🎯</div>
+      <div class="usp-title">Priority engine</div>
+      <div class="usp-body">Focus on highest-leverage actions first. Stops random busywork and wasted effort.</div>
+    </div>
+    <div class="usp-card">
+      <div class="usp-icon">🧪</div>
+      <div class="usp-title">Experiment discipline</div>
+      <div class="usp-body">Hypothesis → test design → measurement → decision. Every change is a documented experiment.</div>
+    </div>
+    <div class="usp-card">
+      <div class="usp-icon">⚙️</div>
+      <div class="usp-title">Config-driven approach</div>
+      <div class="usp-body">Actions aligned to your business model and constraints. Not one-size-fits-all automation.</div>
+    </div>
+    <div class="usp-card">
+      <div class="usp-icon">🚫</div>
+      <div class="usp-title">No runaway automation</div>
+      <div class="usp-body">Magnitude and frequency limits. A.C.T can't make reckless moves even if it wanted to.</div>
+    </div>
+    <div class="usp-card">
+      <div class="usp-icon">🔍</div>
+      <div class="usp-title">Onboarding audit depth</div>
+      <div class="usp-body">2-week deep dive fixes tracking, structure, and measurement before we touch anything.</div>
+    </div>
+    <div class="usp-card">
+      <div class="usp-icon">✅</div>
+      <div class="usp-title">Measurement sanity checks</div>
+      <div class="usp-body">Data sufficiency requirements before recommendations. No changes on insufficient signal.</div>
+    </div>
+    <div class="usp-card">
+      <div class="usp-icon">📅</div>
+      <div class="usp-title">Monthly strategy sessions</div>
+      <div class="usp-body">Review learnings, align on priorities, set next month's focus. Not just execution — strategy.</div>
+    </div>
+  </div>
+</section>
+
+<!-- S11: FAQ -->
+<section class="section light" id="faq">
+  <div class="section-eyebrow">FAQ</div>
+  <h2 class="section-h2-light">Common questions.</h2>
+  <div class="faq-list">
+    <div class="faq-item">
+      <div class="faq-q">What size accounts do you work with?</div>
+      <div class="faq-a">£5k–£100k/month ad spend. You need enough budget for the data to be meaningful and for A.C.T's insights to have impact.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Is A.C.T a SaaS product I can buy?</div>
+      <div class="faq-a">No. A.C.T is my internal tool. It's my competitive advantage, not a product for sale. You get access through working with me.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">How long is onboarding?</div>
+      <div class="faq-a">2 weeks. Account audit, tracking review, structure fixes, strategy alignment, then we're live. We fix the foundation before pushing spend.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Can I see A.C.T in action?</div>
+      <div class="faq-a">Yes. I demo it on the fit call. You'll see the dashboard, recommendations, change log, and reporting live.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">What do you NOT do?</div>
+      <div class="faq-a">Social ads, SEO, creative production, landing page design. Google Ads only. I'm a specialist, not a generalist.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">How does pricing work?</div>
+      <div class="faq-a">10 hours/week block rate. We discuss on the fit call based on account complexity, number of campaigns, and current state.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">What if A.C.T recommends something I disagree with?</div>
+      <div class="faq-a">You have final say. A.C.T recommends, you decide. If you reject a recommendation, I'll explain the reasoning and we'll discuss alternatives. No blind automation.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">How quickly will I see results?</div>
+      <div class="faq-a">Account cleanup and structure fixes: 2-4 weeks. Performance improvements: 4-8 weeks minimum (we need statistical significance). This isn't magic — it's rigorous testing and optimization.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">What happens if you reach 4 clients?</div>
+      <div class="faq-a">I maintain a short waitlist. Average client retention is 12+ months, so slots open periodically. If there's urgency, we can discuss interim audit/consulting work.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Can you work with my existing agency or team?</div>
+      <div class="faq-a">Yes. I work as freelancer (direct), partner (collaborative), or white-label (behind the scenes). Flexible models depending on your setup.</div>
+    </div>
+  </div>
+</section>
+
+<!-- S12: CTA + CONTACT FORM -->
+<section class="section dark">
+  <div class="section-eyebrow">Let's Talk</div>
+  <h2 class="section-h2-dark">Let's Discuss Your Paid Ads</h2>
+  <p class="section-body-dark">
+    Whether you're an agency looking for a partner or an in-house team needing senior oversight, let's talk.
+  </p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:40px;align-items:start;">
+    <div>
+      <div class="form-container">
+        <div class="form-field">
+          <label class="form-label">Name *</label>
+          <input type="text" class="form-input" placeholder="Your name">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Company Name *</label>
+          <input type="text" class="form-input" placeholder="Company name">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Role *</label>
+          <select class="form-select">
+            <option>Select your role</option>
+            <option>Agency owner</option>
+            <option>PPC lead</option>
+            <option>Marketing director</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Looking for *</label>
+          <select class="form-select">
+            <option>Select engagement type</option>
+            <option>Freelancer (direct)</option>
+            <option>Partner (collaborative)</option>
+            <option>White-label</option>
+            <option>Consultation</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Email *</label>
+          <input type="email" class="form-input" placeholder="your@email.com">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Phone number (optional)</label>
+          <input type="tel" class="form-input" placeholder="+44 7999 500 184">
+        </div>
+        <button class="form-submit">Submit Application</button>
+        <div class="form-note">POSTs to /api/leads — lead appears in A.C.T dashboard</div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:14px;color:#94a3b8;margin-bottom:24px;text-transform:uppercase;letter-spacing:1px;">What happens next:</div>
+      <div class="next-steps" style="flex-direction:column;gap:24px;">
+        <div class="next-step" style="display:flex;gap:20px;text-align:left;">
+          <div class="next-num">1</div>
+          <div>
+            <div class="next-label" style="color:#f1f5f9;font-size:14px;font-weight:bold;margin-bottom:6px;">I review within 48 hours</div>
+            <div class="next-label">Quick review of your application to see if there's a potential fit based on account size and goals.</div>
+          </div>
+        </div>
+        <div class="next-step" style="display:flex;gap:20px;text-align:left;">
+          <div class="next-num">2</div>
+          <div>
+            <div class="next-label" style="color:#f1f5f9;font-size:14px;font-weight:bold;margin-bottom:6px;">Short fit call (30 min)</div>
+            <div class="next-label">Discuss your account, current challenges, goals. I'll demo A.C.T and show you the dashboard live.</div>
+          </div>
+        </div>
+        <div class="next-step" style="display:flex;gap:20px;text-align:left;">
+          <div class="next-num">3</div>
+          <div>
+            <div class="next-label" style="color:#f1f5f9;font-size:14px;font-weight:bold;margin-bottom:6px;">Onboarding audit (2 weeks)</div>
+            <div class="next-label">Deep dive into tracking, structure, measurement. We fix the foundation before optimizing.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S13: FOOTER -->
+<div class="footer">
+  <div class="footer-left">Christopher Hoole · © 2026</div>
+  <div class="footer-right">LinkedIn · chrishoole101@gmail.com · Built with A.C.T</div>
+</div>
+
+<script>
+
+
+(function() {
+  const wrap        = document.getElementById('imageWrap');
+  const container   = document.getElementById('threejs-container');
+  const revealLabel = document.getElementById('revealLabel');
+  const loadingMsg  = document.getElementById('loading-msg');
+  const imgChris = new Image(); imgChris.src = 'https://via.placeholder.com/600x800/2563eb/ffffff?text=HEADSHOT'';
+  const imgRobot = new Image(); imgRobot.src = 'https://via.placeholder.com/600x800/0f172a/2563eb?text=ROBOT'';
+
+  const POINTER_RADIUS   = 0.28;
+  const POINTER_DURATION = 2.5;
+
+  let W = wrap.clientWidth;
+  let H = wrap.clientHeight;
+
+  const scene  = new THREE.Scene();
+  scene.background = new THREE.Color(0x0f172a);
+  const camera = new THREE.OrthographicCamera(W/-2, W/2, H/2, H/-2, 0.1, 1000);
+  camera.position.z = 1;
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  container.appendChild(renderer.domElement);
+
+  const gu = { time: {value:0}, dTime: {value:0}, aspect: {value: W/H} };
+
+  // ---- PING-PONG RENDER TARGETS (replaces FramebufferTexture) ----
+  // Two targets: we read from rtRead, write to rtWrite, then swap each frame
+  let rtRead  = new THREE.WebGLRenderTarget(W, H, {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter,
+    format: THREE.RGBAFormat,
+    type: THREE.FloatType
+  });
+  let rtWrite = new THREE.WebGLRenderTarget(W, H, {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter,
+    format: THREE.RGBAFormat,
+    type: THREE.FloatType
+  });
+
+  const blobUniforms = {
+    pointer:         { value: new THREE.Vector2().setScalar(10) },
+    pointerDown:     { value: 1 },
+    pointerRadius:   { value: POINTER_RADIUS },
+    pointerDuration: { value: POINTER_DURATION },
+  };
+
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    blobUniforms.pointer.value.x =  ((e.clientX - rect.left) / W) * 2 - 1;
+    blobUniforms.pointer.value.y = -((e.clientY - rect.top)  / H) * 2 + 1;
+    revealLabel.style.opacity = '1';
+  });
+  wrap.addEventListener('mouseleave', () => {
+    blobUniforms.pointer.value.setScalar(10);
+    revealLabel.style.opacity = '0';
+  });
+
+  // Blob shader: reads previous frame (rtRead), adds brush, writes to rtWrite
+  const blobMat = new THREE.ShaderMaterial({
+    uniforms: {
+      dTime:           gu.dTime,
+      aspect:          gu.aspect,
+      pointer:         blobUniforms.pointer,
+      pointerDown:     blobUniforms.pointerDown,
+      pointerRadius:   blobUniforms.pointerRadius,
+      pointerDuration: blobUniforms.pointerDuration,
+      fbTexture:       { value: null },
+      time:            gu.time,
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = vec4(position.xy, 0.0, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float dTime, aspect, pointerDown, pointerRadius, pointerDuration, time;
+      uniform vec2 pointer;
+      uniform sampler2D fbTexture;
+      varying vec2 vUv;
+
+      float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123); }
+      float noise(vec2 p){
+        vec2 i=floor(p); vec2 f=fract(p); f=f*f*(3.0-2.0*f);
+        float a=hash(i); float b=hash(i+vec2(1.,0.)); float c=hash(i+vec2(0.,1.)); float d=hash(i+vec2(1.,1.));
+        return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);
+      }
+
+      void main() {
+        float rVal = texture2D(fbTexture, vUv).r;
+        rVal -= clamp(dTime / pointerDuration, 0., 0.05);
+        rVal  = clamp(rVal, 0., 1.);
+
+        float f = 0.0;
+        if (pointerDown > 0.5) {
+          vec2 uv     = (vUv - 0.5) * 2.0 * vec2(aspect, 1.0);
+          vec2 mouse  = pointer * vec2(aspect, 1.0);
+          vec2 toMouse = uv - mouse;
+          float angle  = atan(toMouse.y, toMouse.x);
+          float dist   = length(toMouse);
+          float nv     = noise(vec2(angle*3.0 + time*0.5, dist*5.0));
+          float nv2    = noise(vec2(angle*5.0 - time*0.3, dist*3.0 + time));
+          float rv     = 0.7 + nv*0.5 + nv2*0.3;
+          float or2    = pointerRadius * rv;
+          f = 1.0 - smoothstep(or2*0.05, or2*1.2, dist);
+          f *= 0.8 + nv*0.2;
+        }
+        rVal += f * 0.25;
+        rVal  = clamp(rVal, 0., 1.);
+        gl_FragColor = vec4(rVal, rVal, rVal, 1.0);
+      }
+    `,
+  });
+  const blobMesh   = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), blobMat);
+  const blobCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+  function renderBlob() {
+    // feed previous frame in
+    blobMat.uniforms.fbTexture.value = rtRead.texture;
+    renderer.setRenderTarget(rtWrite);
+    renderer.render(blobMesh, blobCamera);
+    renderer.setRenderTarget(null);
+    // swap
+    const tmp = rtRead; rtRead = rtWrite; rtWrite = tmp;
+  }
+
+  // ---- TEXTURES ----
+  function loadTex(img) {
+    const t = new THREE.Texture(img);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.needsUpdate = true;
+    return t;
+  }
+  function fitGeo(iw, ih) {
+    const ia = iw/ih, ca = W/H;
+    let pw, ph;
+    if (ia > ca) { pw=W; ph=W/ia; } else { ph=H; pw=H*ia; }
+    return new THREE.PlaneGeometry(pw, ph);
+  }
+
+  const baseTex   = loadTex(imgChris);
+  const revealTex = loadTex(imgRobot);
+
+  // Layer 1: Christopher - always visible
+  const baseMesh = new THREE.Mesh(
+    fitGeo(imgChris.naturalWidth||W, imgChris.naturalHeight||H),
+    new THREE.MeshBasicMaterial({ map: baseTex, transparent: true })
+  );
+  baseMesh.position.z = 0.0;
+  scene.add(baseMesh);
+
+  // Layer 2: Animated liquid bg - visible only in blob zone
+  const bgMat = new THREE.ShaderMaterial({
+    uniforms: {
+      texBlob: { value: null },
+      time:    gu.time,
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      varying vec4 vPosProj;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        vPosProj = gl_Position;
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D texBlob;
+      uniform float time;
+      varying vec2 vUv;
+      varying vec4 vPosProj;
+
+      float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}
+      float noise(vec2 p){vec2 i=floor(p);vec2 f=fract(p);f=f*f*(3.-2.*f);float a=hash(i);float b=hash(i+vec2(1.,0.));float c=hash(i+vec2(0.,1.));float d=hash(i+vec2(1.,1.));return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);}
+      float fbm(vec2 p){float v=0.;float a=0.5;for(int i=0;i<4;i++){v+=a*noise(p);p*=2.1;a*=0.3;}return v;}
+
+      void main() {
+        vec2 blobUV = ((vPosProj.xy / vPosProj.w) + 1.0) * 0.5;
+        float bd = texture2D(texBlob, blobUV).r;
+        if (bd < 0.02) discard;
+
+        vec2 uv     = vUv * 3.5;
+        float d     = fbm(vUv * 2.0 + time * 0.2);
+        vec2 wuv    = uv + (d - 0.5) * 0.7;
+        float n     = fbm(wuv);
+        float sm    = smoothstep(0.1, 0.9, sin(n * 3.0));
+        vec3 c1     = mix(vec3(0.05,0.08,0.18), vec3(0.09,0.13,0.28), sm);
+        float lm    = 1.0 - smoothstep(0.49, 0.51, fract(n * 15.0));
+        vec3 col    = mix(c1, vec3(0.13,0.18,0.38), lm);
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `,
+    transparent: true,
+  });
+  const bgMesh = new THREE.Mesh(new THREE.PlaneGeometry(W, H), bgMat);
+  bgMesh.position.z = 0.05;
+  scene.add(bgMesh);
+
+  // Layer 3: A.C.T robot - visible only in blob zone
+  const revealMat = new THREE.ShaderMaterial({
+    uniforms: {
+      map:     { value: revealTex },
+      texBlob: { value: null },
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      varying vec4 vPosProj;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        vPosProj = gl_Position;
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D map;
+      uniform sampler2D texBlob;
+      varying vec2 vUv;
+      varying vec4 vPosProj;
+      void main() {
+        vec2 blobUV = ((vPosProj.xy / vPosProj.w) + 1.0) * 0.5;
+        float bd = texture2D(texBlob, blobUV).r;
+        if (bd < 0.02) discard;
+        gl_FragColor = texture2D(map, vUv);
+      }
+    `,
+    transparent: true,
+  });
+  const revealMesh = new THREE.Mesh(
+    fitGeo(imgRobot.naturalWidth||W, imgRobot.naturalHeight||H),
+    revealMat
+  );
+  revealMesh.position.z = 0.1;
+  scene.add(revealMesh);
+
+  loadingMsg.style.display = 'none';
+
+  function onResize() {
+    W = wrap.clientWidth; H = wrap.clientHeight;
+    camera.left=W/-2; camera.right=W/2; camera.top=H/2; camera.bottom=H/-2;
+    camera.updateProjectionMatrix();
+    renderer.setSize(W, H);
+    gu.aspect.value = W/H;
+    baseMesh.geometry.dispose();
+    baseMesh.geometry = fitGeo(imgChris.naturalWidth||W, imgChris.naturalHeight||H);
+    revealMesh.geometry.dispose();
+    revealMesh.geometry = fitGeo(imgRobot.naturalWidth||W, imgRobot.naturalHeight||H);
+    bgMesh.geometry.dispose();
+    bgMesh.geometry = new THREE.PlaneGeometry(W,H);
+  }
+  window.addEventListener('resize', onResize);
+
+  const clock = new THREE.Clock();
+  let t = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    const dt = clock.getDelta();
+    t += dt;
+    gu.time.value  = t;
+    gu.dTime.value = dt;
+    renderBlob();
+    // Feed blob texture to layers that need it
+    bgMat.uniforms.texBlob.value     = rtRead.texture;
+    revealMat.uniforms.texBlob.value = rtRead.texture;
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+
+
+</script>
+
+
+</body>
+</html>

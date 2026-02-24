@@ -226,6 +226,37 @@ All 13 rules now have `monitoring_minutes`. When > 0, takes priority over `monit
 
 **Test results:** 0 Pending / 1 Monitoring / 57 Successful / 4 Reverted / 8 Declined ✅ All pages confirmed ✅
 
+
+### Chat 30a: M9 Phase 1 — Search Terms Table + Negative Keyword Suggestions ✅
+**Date:** 2026-02-24
+**Summary:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_30A_SUMMARY.md`
+**Handoff:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_30A_HANDOFF.md`
+
+- Search Terms tab added to Keywords page (Bootstrap 5)
+- 16-column data table from `ro.analytics.search_term_daily`
+- Advanced filtering: campaign, status, match type dropdowns + client-side search
+- Server-side pagination (10/25/50/100 rows per page)
+- Negative keyword flagging logic (3 automated criteria):
+  1. 0% CVR + ≥10 clicks
+  2. ≥£50 cost + 0 conversions
+  3. CTR <1% + ≥20 impressions
+- Row-level + bulk "Add as Negative" buttons (UI only, no live execution)
+- Bootstrap 5 modal for action preview
+- All 16 success criteria passing
+- Performance: <2s load, <1s filter, 0 JS errors
+- Deferred to Phase 2: Live Google Ads API execution, keyword expansion
+
+**Files modified:**
+- `routes/keywords.py` (431 lines) - `load_search_terms()` rewrite, flagging logic
+- `templates/keywords_new.html` (216 lines) - new tab, table, filters, modal, JS
+
+**Key technical decisions:**
+- Used session date range from M1 (not hardcoded 30 days)
+- Used `cost` column (DOUBLE) vs `cost_micros` (already in client currency)
+- Separate `flag_negative_keywords()` function for clean separation
+- Client-side search (instant) vs server-side (cross-page would require reload)
+- Bulk selection tracked in JavaScript array for cross-page persistence
+
 ### Marketing Website — ChristopherHoole.online ✅
 **Date:** 2026-02-23
 **Chat 31:** Wireframe creation (13 sections designed, 306KB with base64 images)
@@ -347,6 +378,7 @@ What's working:
 - M7 Accept/Decline/Modify action buttons — live POST routes
 - M7 5-tab Recommendations UI on /recommendations + /campaigns (Pending/Monitoring/Successful/Reverted/Declined)
 - M8 Radar background job — auto-resolves monitoring recommendations
+- M9 Phase 1 Search Terms tab with negative keyword flagging and manual actions
 - M8 Changes page — My Actions card grid + System Changes table
 - M8 Reverted tab on both recommendation pages
 - changes audit table in warehouse.duckdb
@@ -359,7 +391,7 @@ Pending:
 - **Website:** Connect contact form to /api/leads endpoint (integrate with A.C.T dashboard)
 - **Website:** Optional SEO improvements (meta tags, OpenGraph images, sitemap)
 - **Website:** Root domain DNS propagation (https://christopherhoole.online without www)
-- M9 Search Terms / Keywords recommendations (Chat 30)
+- M9 Phase 2: Live "Add as Negative" execution + keyword expansion (Chat 30b)
 - System Changes tab → card grid (deferred from Chat 29)
 - M5 Rules tab rollout to Ad Groups, Keywords, Ads, Shopping
 - Live Google Ads API execution on accept/modify/revert routes
@@ -421,6 +453,10 @@ Medium-term:
 29. **Marketing Website:** Contact form backend should integrate with A.C.T dashboard /api/leads endpoint for unified lead management
 30. **Marketing Website:** Typography consistency matters — standardize all card titles/content at project start (20px titles, 16px content)
 31. **Marketing Website:** FAQ accordion: all closed by default = cleaner initial page load, better UX
+32. **Search Terms Tab:** Client-side search (filters visible rows only) acceptable for Phase 1 — instant feedback more valuable than cross-page search which requires server round-trip
+33. **Negative Keyword Thresholds:** Industry-standard thresholds (10 clicks, £50 cost, 1% CTR, 20 impressions) work well for Phase 1 — can move to rules_config.json for per-client customization in future
+34. **Bulk Selection Persistence:** JavaScript array tracking selected IDs across pages provides good UX without session storage complexity
+
 
 ---
 

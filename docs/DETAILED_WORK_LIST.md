@@ -11,15 +11,27 @@
 
 ### **Priority 1: CRITICAL - Must Complete**
 
-#### **1. Chat 30: M9 Search Terms / Keywords Recommendations**
-**Estimated:** 8-12 hours
-**Status:** Brief not yet written
-**Description:** Add Search Terms functionality to Keywords page
+#### **1. Chat 30a: M9 Phase 1 Search Terms Table** ✅ COMPLETE
+**Actual:** 6.5 hours (vs 8-10 estimated)
+**Status:** Complete 2026-02-24
+**Description:** Search Terms tab with negative keyword flagging
+**Delivered:**
+- 16-column data table from `ro.analytics.search_term_daily`
+- Campaign/status/match type filters + client-side search
+- Pagination (10/25/50/100)
+- Automated flagging (3 criteria: CVR/cost/CTR)
+- Row-level + bulk actions (UI only)
+**Deferred:** Live execution, keyword expansion (Chat 30b)
+
+#### **1b. Chat 30b: M9 Phase 2 Live Execution + Keyword Expansion**
+**Estimated:** 7-9 hours
+**Status:** Next priority
+**Description:** Complete M9 with live Google Ads API execution
 **Deliverables:**
-- Search Terms tab on /keywords page
-- Query analysis and negative keyword suggestions
-- Integration with existing keyword optimization rules
-- Card-based recommendation UI (following M6/M7 pattern)
+- Live "Add as Negative" execution via Google Ads API
+- Keyword expansion opportunity flagging
+- "Add as Keyword" button and execution
+- Integration with changes table for audit
 
 #### **2. Website: Connect Contact Form to A.C.T Dashboard**
 **Estimated:** 2-4 hours
@@ -600,12 +612,12 @@
 
 | Priority | Count | Estimated Hours | Description |
 |----------|-------|-----------------|-------------|
-| 1 (Critical) | 2 | 10-16 | M9 Keywords, Website form backend |
+| 1 (Critical) | 1 | 7-9 | M9 Phase 2 Live Execution |
 | 2 (High) | 12 | 159-244 | Campaign types, Reports, Cold outreach, System Changes, Rules rollout, bug fixes |
 | 3 (Medium) | 11 | 72-114 | Phase 3, maintenance, features |
 | 4 (Low) | 7 | 37-57 | Website SEO, documentation |
 | 5 (Nice-to-have) | 3 | 29-42 | Enterprise features (multi-user deferred) |
-| **TOTAL** | **35** | **307-473** | **Full roadmap** |
+| **TOTAL** | **35** | **300-466** | **Full roadmap** |
 
 ---
 
