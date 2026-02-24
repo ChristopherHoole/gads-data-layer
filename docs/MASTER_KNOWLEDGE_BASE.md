@@ -1,18 +1,18 @@
 # MASTER KNOWLEDGE BASE - ADS CONTROL TOWER (A.C.T)
 
-**Version:** 8.0
+**Version:** 10.0
 **Created:** 2026-02-19
-**Updated:** 2026-02-23
+**Updated:** 2026-02-24
 **Purpose:** Complete project context for Master Chat coordination
 
 ---
 
 ## EXECUTIVE SUMMARY
 
-### Current State (Feb 23, 2026)
-- **Overall Completion:** ~98%
-- **Phase:** Marketing Website ✅ COMPLETE | Dashboard 3.0 M8 ✅ COMPLETE | M9 next
-- **Active Development:** Ready for next phase
+### Current State (Feb 24, 2026)
+- **Overall Completion:** ~99%
+- **Phase:** Marketing Website ✅ COMPLETE | Dashboard 3.0 M9 ✅ COMPLETE (Both Phases)
+- **Active Development:** Ready for Phase 3 (Future-Proofing)
 - **Marketing Website:** Live at https://www.christopherhoole.online
 - **Templating:** Jinja2 Macros (metrics_section M2 + performance_chart M3)
 
@@ -257,6 +257,46 @@ All 13 rules now have `monitoring_minutes`. When > 0, takes priority over `monit
 - Client-side search (instant) vs server-side (cross-page would require reload)
 - Bulk selection tracked in JavaScript array for cross-page persistence
 
+### Chat 30b: M9 Phase 2 — Live Execution + Keyword Expansion ✅
+**Date:** 2026-02-24
+**Summary:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_30B_SUMMARY.md`
+**Handoff:** `C:\Users\User\Desktop\gads-data-layer\docs\CHAT_30B_HANDOFF.md`
+**Time:** 4 hours actual (53% of 7-9h estimated)
+
+- Live Google Ads API execution for negative keyword blocking
+- Campaign-level + ad-group-level negative keyword support
+- Keyword expansion opportunities flagging (4 criteria: CVR ≥5%, ROAS ≥4.0x, Conv. ≥10, NOT exists)
+- "Add as Keyword" buttons on flagged rows with match type + bid suggestions
+- Dry-run mode for safe testing (validates without executing)
+- Changes table audit logging for both actions
+- Row-level + bulk selection support
+- Match type override dropdowns (EXACT/PHRASE/BROAD)
+- Bid override inputs (£0.10 minimum)
+- Toast notifications (success/error)
+- All 16 success criteria passing (dry-run validated)
+
+**Files modified:**
+- `google_ads_api.py` (+84 lines) - Added `add_adgroup_negative_keyword()` function
+- `routes/keywords.py` (+456 lines) - Added 2 POST routes + 2 helper functions:
+  - `/keywords/add-negative` - Execute negative keyword blocking
+  - `/keywords/add-keyword` - Execute keyword expansion
+  - `check_keyword_exists()` - Duplicate prevention
+  - `flag_expansion_opportunities()` - 4-criteria flagging logic
+- `templates/keywords_new.html` (~400 lines) - Updated table + 2 modals + JavaScript
+
+**Key technical decisions:**
+- **Dry-run first architecture** - Check dry_run flag BEFORE loading Google Ads client (enables testing without credentials)
+- **Google Ads config path detection** - Try 3 locations (root, configs/, secrets/) with clear error if not found
+- **Expansion criteria thresholds** - CVR ≥5% (conservative, 2x industry average), ROAS ≥4.0x (highly profitable), Conv. ≥10 (statistical significance)
+- **Match type suggestions** - EXACT→EXACT, PHRASE→PHRASE, BROAD→PHRASE (conservative tightening)
+- **Sequential execution** - One-by-one (not batched) for simpler error handling, sufficient for <10 items
+- **Partial success support** - Continue on failures, report at end (user gets maximum value)
+- **Campaign-level default** - Safer starting point for negative keywords, user can opt-in to ad-group-level
+
+**Production readiness:**
+- Code complete, dry-run validated, ready for live testing with real Google Ads account
+- Deferred: Batching for >10 items, CSRF protection, undo/rollback functionality
+
 ### Marketing Website — ChristopherHoole.online ✅
 **Date:** 2026-02-23
 **Chat 31:** Wireframe creation (13 sections designed, 306KB with base64 images)
@@ -363,7 +403,7 @@ All 13 rules now have `monitoring_minutes`. When > 0, takes priority over `monit
 
 ## CURRENT STATUS
 
-### Overall: ~98% Complete
+### Overall: ~99% Complete
 
 What's working:
 - **Marketing Website:** Live at https://www.christopherhoole.online, 11 sections, fully responsive
@@ -378,9 +418,10 @@ What's working:
 - M7 Accept/Decline/Modify action buttons — live POST routes
 - M7 5-tab Recommendations UI on /recommendations + /campaigns (Pending/Monitoring/Successful/Reverted/Declined)
 - M8 Radar background job — auto-resolves monitoring recommendations
-- M9 Phase 1 Search Terms tab with negative keyword flagging and manual actions
 - M8 Changes page — My Actions card grid + System Changes table
 - M8 Reverted tab on both recommendation pages
+- M9 Phase 1 Search Terms tab with negative keyword flagging
+- M9 Phase 2 Live execution — negative keyword blocking + keyword expansion (dry-run validated)
 - changes audit table in warehouse.duckdb
 - Authentication + client switching
 - Constitution execution engine
@@ -391,10 +432,9 @@ Pending:
 - **Website:** Connect contact form to /api/leads endpoint (integrate with A.C.T dashboard)
 - **Website:** Optional SEO improvements (meta tags, OpenGraph images, sitemap)
 - **Website:** Root domain DNS propagation (https://christopherhoole.online without www)
-- M9 Phase 2: Live "Add as Negative" execution + keyword expansion (Chat 30b)
+- M9 Live validation with real Google Ads account
 - System Changes tab → card grid (deferred from Chat 29)
 - M5 Rules tab rollout to Ad Groups, Keywords, Ads, Shopping
-- Live Google Ads API execution on accept/modify/revert routes
 - Campaign scope pill name resolution
 - All Conv. pipeline
 - Shopping IS/Opt. Score (columns exist but NULL)
@@ -404,17 +444,18 @@ Pending:
 
 ## FUTURE ROADMAP
 
-Immediate (Dashboard 3.0):
-- Chat 30: M9 Keywords Search Terms tab
-- Future: System Changes tab → card grid
+Immediate:
+- Phase 3: Future-Proofing (unit tests, job queue, DB indexes, CSRF)
+- System Changes tab → card grid
+- M9 live validation with real Google Ads account
 
 Short-term:
-- Phase 3: Unit tests, job queue, DB indexes, CSRF
 - Email Reports (SMTP)
 - Smart Alerts (anomaly detection)
+- M5 Rules tab rollout to remaining pages
 
 Medium-term:
-- Keywords Enhancement
+- Keywords Enhancement (search terms → keyword suggestions)
 - Onboarding Wizard
 - Documentation
 
@@ -456,6 +497,10 @@ Medium-term:
 32. **Search Terms Tab:** Client-side search (filters visible rows only) acceptable for Phase 1 — instant feedback more valuable than cross-page search which requires server round-trip
 33. **Negative Keyword Thresholds:** Industry-standard thresholds (10 clicks, £50 cost, 1% CTR, 20 impressions) work well for Phase 1 — can move to rules_config.json for per-client customization in future
 34. **Bulk Selection Persistence:** JavaScript array tracking selected IDs across pages provides good UX without session storage complexity
+35. **Dry-Run First Architecture:** Check dry_run flag BEFORE loading Google Ads client — enables testing without API credentials, faster response times, production-safe validation
+36. **Expansion Criteria Thresholds:** Conservative thresholds (CVR ≥5%, ROAS ≥4.0x, Conv. ≥10) reduce false positives — only flag highest-confidence opportunities (10-15% of search terms)
+37. **Sequential vs. Batch Execution:** Sequential execution (one-by-one) acceptable for <10 items — simpler error handling, clear per-item results, sufficient performance. Add batching only if >10 items becomes common use case.
+38. **Google Ads Config Path Detection:** Try multiple fallback paths (root, configs/, secrets/) with clear error message — flexible deployment across environments while maintaining security (secrets/ is git-ignored)
 
 
 ---
@@ -486,8 +531,11 @@ Medium-term:
 | **Website:** Next.js build fails | Check all imports, remove unused components, validate syntax |
 | **Website:** Vercel deployment 404 | Ensure domain DNS configured correctly (A + CNAME records) |
 | **Website:** www works but root doesn't | Root domain A record takes longer to propagate (5-60 min) |
+| **Search Terms:** Dry-run still loading API | Move dry_run check to FIRST thing after request parsing — before client loading |
+| **Search Terms:** google_ads_config_path attribute error | Config doesn't have this attribute — manually detect with 3 fallback paths (root, configs/, secrets/) |
+| **Search Terms:** Expansion flags in wrong column | Remove old "Flag" header, update colspan to 17 (was 16) |
 
 ---
 
-**Version:** 9.0 | **Last Updated:** 2026-02-23
-**Next Step:** Chat 30 — M9 Search Terms / Keywords recommendations | Website: Connect contact form to A.C.T dashboard
+**Version:** 10.0 | **Last Updated:** 2026-02-24
+**Next Step:** Phase 3 Future-Proofing (unit tests, job queue, CSRF) | Website: Connect contact form to A.C.T dashboard

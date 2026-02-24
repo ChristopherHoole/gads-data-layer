@@ -621,6 +621,91 @@ def add_negative_keyword(
         logger.error(f"Failed to add negative keyword: {ex}")
         raise
 
+"""
+Add this function to google_ads_api.py after the add_negative_keyword() function (after line 623).
+"""
+
+
+def add_adgroup_negative_keyword(
+    client: GoogleAdsClient,
+    customer_id: str,
+    ad_group_id: str,
+    keyword_text: str,
+    match_type: str,
+    dry_run: bool = True,
+) -> dict:
+    """
+    Add ad-group-level negative keyword.
+
+    Args:
+        client: GoogleAdsClient instance
+        customer_id: Customer ID
+        ad_group_id: Ad group ID
+        keyword_text: Negative keyword text
+        match_type: EXACT, PHRASE, or BROAD
+        dry_run: If True, validate only
+
+    Returns:
+        dict with negative_keyword_id, status
+
+    Raises:
+        GoogleAdsException: If API call fails
+    """
+    if dry_run:
+        logger.info(
+            f"DRY RUN: Would add negative keyword '{keyword_text}' ({match_type}) "
+            f"to ad group {ad_group_id}"
+        )
+        return {
+            "negative_keyword_id": f"simulated_neg_{ad_group_id}_{keyword_text}",
+            "keyword_text": keyword_text,
+            "match_type": match_type,
+            "status": "dry_run",
+        }
+
+    ad_group_criterion_service = client.get_service("AdGroupCriterionService")
+
+    # Map match type to API enum
+    match_type_enum = client.enums.KeywordMatchTypeEnum
+    match_type_map = {
+        "EXACT": match_type_enum.EXACT,
+        "PHRASE": match_type_enum.PHRASE,
+        "BROAD": match_type_enum.BROAD,
+    }
+
+    if match_type not in match_type_map:
+        raise ValueError(f"Invalid match_type: {match_type}")
+
+    try:
+        operation = client.get_type("AdGroupCriterionOperation")
+        criterion = operation.create
+        criterion.ad_group = ad_group_criterion_service.ad_group_path(
+            customer_id, ad_group_id
+        )
+        criterion.negative = True
+        criterion.keyword.text = keyword_text
+        criterion.keyword.match_type = match_type_map[match_type]
+
+        response = ad_group_criterion_service.mutate_ad_group_criteria(
+            customer_id=customer_id, operations=[operation]
+        )
+
+        negative_keyword_id = response.results[0].resource_name.split("/")[-1]
+        logger.info(
+            f"Added negative keyword '{keyword_text}' ({match_type}) "
+            f"to ad group {ad_group_id} with ID {negative_keyword_id}"
+        )
+
+        return {
+            "negative_keyword_id": negative_keyword_id,
+            "keyword_text": keyword_text,
+            "match_type": match_type,
+            "status": "success",
+        }
+
+    except GoogleAdsException as ex:
+        logger.error(f"Failed to add ad-group negative keyword: {ex}")
+        raise
 
 # ============================================================================
 # AD OPERATIONS (NEW - CHAT 13)

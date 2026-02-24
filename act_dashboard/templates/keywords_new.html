@@ -360,9 +360,9 @@
                 <th style="width: 70px;" class="text-end">CVR</th>
                 <th style="width: 80px;" class="text-end">CPA</th>
                 <th style="width: 70px;" class="text-end">ROAS</th>
-                <th style="width: 140px;" class="text-center">Flag</th>
-                <th style="width: 140px;" class="text-center">Actions</th>
-              </tr>
+                <th style="width: 140px;" class="text-center">Negative Flag</th>
+                <th style="width: 160px;" class="text-center">Expansion Flag</th>
+                <th style="width: 180px;" class="text-center">Actions</th>
             </thead>
             <tbody>
               {% if search_terms and search_terms|length > 0 %}
@@ -428,18 +428,45 @@
                     {% endif %}
                   </td>
                   <td class="text-center">
+                    {% if st.expansion_flag %}
+                    <span class="badge bg-success" title="{{ st.expansion_reason }}">
+                      ✓ Expansion Opportunity
+                    </span>
+                    {% else %}
+                    —
+                    {% endif %}
+                  </td>
+                  <td class="text-center">
                     <button class="btn btn-sm btn-outline-danger st-add-negative"
                             data-search-term="{{ st.search_term }}"
+                            data-campaign-id="{{ st.campaign_id }}"
                             data-campaign-name="{{ st.campaign_name }}"
+                            data-ad-group-id="{{ st.ad_group_id }}"
+                            data-ad-group-name="{{ st.ad_group_name or 'Unknown' }}"
+                            data-match-type="{{ st.match_type }}"
                             data-flag-reason="{{ st.flag_reason or 'Manual selection' }}">
                       <i class="bi bi-x-circle"></i> Add as Negative
                     </button>
+                    {% if st.expansion_flag %}
+                    <button class="btn btn-sm btn-outline-success st-add-keyword ms-1"
+                            data-search-term="{{ st.search_term }}"
+                            data-campaign-id="{{ st.campaign_id }}"
+                            data-campaign-name="{{ st.campaign_name }}"
+                            data-ad-group-id="{{ st.ad_group_id }}"
+                            data-ad-group-name="{{ st.ad_group_name or 'Unknown' }}"
+                            data-match-type="{{ st.suggested_match_type }}"
+                            data-suggested-bid="{{ st.suggested_bid }}"
+                            data-cpc="{{ st.cpc }}"
+                            data-expansion-reason="{{ st.expansion_reason }}">
+                      <i class="bi bi-plus-circle"></i> Add as Keyword
+                    </button>
+                    {% endif %}
                   </td>
                 </tr>
                 {% endfor %}
               {% else %}
                 <tr>
-                  <td colspan="16" class="text-center py-5 text-muted">
+                  <td colspan="17" class="text-center py-5 text-muted">
                     <i class="bi bi-inbox" style="font-size: 3rem;"></i>
                     <p class="mt-3 mb-0">No search terms found with current filters</p>
                   </td>
@@ -497,25 +524,93 @@
 {% include 'components/rules_sidebar.html' %}
 
 <!-- Add as Negative Keyword Modal -->
+
+<!-- Negative Keyword Modal -->
 <div class="modal fade" id="stNegativeModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Add as Negative Keyword</h5>
+        <h5 class="modal-title">Add Negative Keywords</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <div class="alert alert-warning mb-3">
-          <i class="bi bi-info-circle me-2"></i>
-          <strong>Note:</strong> This action will be available in a future update. 
-          Currently, this is a preview of the negative keyword suggestion.
-        </div>
         <div id="st-modal-content">
           <!-- Content populated by JavaScript -->
         </div>
+        
+        <!-- Level Selection -->
+        <div class="mt-3">
+          <label class="form-label"><strong>Add to:</strong></label>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="negativeLevel" id="level-campaign" value="campaign" checked>
+            <label class="form-check-label" for="level-campaign">
+              Campaign-level (blocks across all ad groups in campaign)
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="negativeLevel" id="level-adgroup" value="adgroup">
+            <label class="form-check-label" for="level-adgroup">
+              Ad-group-level (blocks only in <span id="modal-adgroup-name" class="text-primary"></span>)
+            </label>
+          </div>
+        </div>
+        
+        <!-- Dry-run Checkbox -->
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" id="negative-dry-run">
+          <label class="form-check-label" for="negative-dry-run">
+            Test mode (don't execute)
+          </label>
+        </div>
+        
+        <div id="negative-loading" class="text-center my-3" style="display: none;">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="execute-add-negatives">
+          <i class="bi bi-x-circle me-1"></i> Add Negatives
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Keyword Expansion Modal -->
+<div class="modal fade" id="stExpansionModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add as Keywords</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="st-expansion-content">
+          <!-- Content populated by JavaScript -->
+        </div>
+        
+        <!-- Dry-run Checkbox -->
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" id="expansion-dry-run">
+          <label class="form-check-label" for="expansion-dry-run">
+            Test mode (don't execute)
+          </label>
+        </div>
+        
+        <div id="expansion-loading" class="text-center my-3" style="display: none;">
+          <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success" id="execute-add-keywords">
+          <i class="bi bi-plus-circle me-1"></i> Add Keywords
+        </button>
       </div>
     </div>
   </div>
@@ -525,198 +620,426 @@
 
 {% block extra_js %}
 <script>
-document.getElementById('select-all')?.addEventListener('change', function() {
-  document.querySelectorAll('.keyword-checkbox').forEach(cb => cb.checked = this.checked);
-  toggleBulkEdit();
-});
-document.querySelectorAll('.keyword-checkbox').forEach(cb => cb.addEventListener('change', toggleBulkEdit));
-function toggleBulkEdit() {
-  const n = document.querySelectorAll('.keyword-checkbox:checked').length;
-  const btn = document.getElementById('bulk-edit-btn');
-  const span = document.getElementById('bulk-count');
-  if (btn) btn.style.display = n > 0 ? 'inline-block' : 'none';
-  if (span) span.textContent = n;
-}
-document.querySelectorAll('.qs-expand').forEach(btn => {
-  btn.addEventListener('click', function(e) {
-    e.preventDefault();
-    const id = this.getAttribute('data-keyword-id');
-    const d = document.getElementById('qs-' + id);
-    const i = this.querySelector('i');
-    if (d.style.display === 'none') { d.style.display = 'block'; i.classList.replace('bi-chevron-down','bi-chevron-up'); }
-    else { d.style.display = 'none'; i.classList.replace('bi-chevron-up','bi-chevron-down'); }
-  });
-});
-document.getElementById('qs-expand-all')?.addEventListener('click', function(e) {
-  e.preventDefault();
-  const icon = this.querySelector('i');
-  const expanded = icon.classList.contains('bi-chevron-up');
-  document.querySelectorAll('.qs-details').forEach(d => d.style.display = expanded ? 'none' : 'block');
-  document.querySelectorAll('.qs-expand i').forEach(i => { i.classList.toggle('bi-chevron-down',expanded); i.classList.toggle('bi-chevron-up',!expanded); });
-  icon.classList.toggle('bi-chevron-down',expanded); icon.classList.toggle('bi-chevron-up',!expanded);
-});
-
-// ═══ SEARCH TERMS TAB JAVASCRIPT ═══
-
-// Track selected search terms across pages
+// Global arrays for selected search terms
 let selectedSearchTerms = [];
 
-// Filter dropdown change handlers
-document.getElementById('st-campaign-filter')?.addEventListener('change', function() {
-  applySTFilters();
+// ===========================================================================
+// SELECT ALL CHECKBOX HANDLER
+// ===========================================================================
+document.getElementById('select-all')?.addEventListener('change', function() {
+  document.querySelectorAll('.keyword-checkbox').forEach(cb => cb.checked = this.checked);
 });
 
-document.getElementById('st-status-filter')?.addEventListener('change', function() {
-  applySTFilters();
-});
-
-document.getElementById('st-match-type-filter')?.addEventListener('change', function() {
-  applySTFilters();
-});
-
-// Per page dropdown
-document.getElementById('st-per-page')?.addEventListener('change', function() {
-  applySTFilters();
-});
-
-// Clear filters button
-document.getElementById('st-clear-filters')?.addEventListener('click', function() {
-  window.location.href = '/keywords?st_page=1';
-});
-
-// Pagination links
-document.querySelectorAll('[data-st-page]').forEach(link => {
-  link.addEventListener('click', function(e) {
-    e.preventDefault();
-    const page = this.getAttribute('data-st-page');
-    const params = new URLSearchParams(window.location.search);
-    params.set('st_page', page);
-    window.location.href = '/keywords?' + params.toString();
-  });
-});
-
-function applySTFilters() {
-  const campaign = document.getElementById('st-campaign-filter').value;
-  const status = document.getElementById('st-status-filter').value;
-  const matchType = document.getElementById('st-match-type-filter').value;
-  const perPage = document.getElementById('st-per-page')?.value || 25;
-  
-  const params = new URLSearchParams();
-  params.set('st_page', '1');
-  params.set('st_per_page', perPage);
-  if (campaign !== 'all') params.set('st_campaign', campaign);
-  if (status !== 'all') params.set('st_status', status);
-  if (matchType !== 'all') params.set('st_match_type', matchType);
-  
-  window.location.href = '/keywords?' + params.toString();
-}
-
-// Client-side search input (filters visible rows only)
-document.getElementById('st-search-input')?.addEventListener('keyup', function() {
-  const searchText = this.value.toLowerCase();
-  const rows = document.querySelectorAll('.st-row');
-  let visibleCount = 0;
-  
-  rows.forEach(row => {
-    const term = row.getAttribute('data-search-term');
-    if (term.includes(searchText)) {
-      row.style.display = '';
-      visibleCount++;
-    } else {
-      row.style.display = 'none';
-    }
-  });
-  
-  document.getElementById('st-visible-count').textContent = visibleCount;
-});
-
-// Select all checkbox
-document.getElementById('st-select-all')?.addEventListener('change', function() {
-  const visibleCheckboxes = Array.from(document.querySelectorAll('.st-checkbox'))
-    .filter(cb => cb.closest('.st-row').style.display !== 'none');
-  
-  visibleCheckboxes.forEach(cb => {
-    cb.checked = this.checked;
-    updateSelectedTerms(cb);
-  });
-  
-  updateBulkBar();
-});
-
-// Individual checkbox handlers
+// ===========================================================================
+// SEARCH TERMS SELECTION HANDLING
+// ===========================================================================
 document.querySelectorAll('.st-checkbox').forEach(cb => {
   cb.addEventListener('change', function() {
-    updateSelectedTerms(this);
+    const term = this.getAttribute('data-search-term');
+    const campaignId = this.getAttribute('data-campaign-id');
+    const keywordId = this.getAttribute('data-keyword-id');
+    const key = `${term}|${campaignId}|${keywordId}`;
+    
+    if (this.checked) {
+      if (!selectedSearchTerms.includes(key)) {
+        selectedSearchTerms.push(key);
+      }
+    } else {
+      const index = selectedSearchTerms.indexOf(key);
+      if (index > -1) {
+        selectedSearchTerms.splice(index, 1);
+      }
+    }
+    
     updateBulkBar();
   });
 });
 
-function updateSelectedTerms(checkbox) {
-  const term = checkbox.getAttribute('data-search-term');
-  const campaignId = checkbox.getAttribute('data-campaign-id');
-  const keywordId = checkbox.getAttribute('data-keyword-id');
-  const key = `${term}|${campaignId}|${keywordId}`;
-  
-  if (checkbox.checked) {
-    if (!selectedSearchTerms.includes(key)) {
-      selectedSearchTerms.push(key);
-    }
-  } else {
-    selectedSearchTerms = selectedSearchTerms.filter(k => k !== key);
-  }
-}
-
 function updateBulkBar() {
   const count = selectedSearchTerms.length;
-  const bulkBar = document.getElementById('st-bulk-bar');
-  const countSpan = document.getElementById('st-selected-count');
+  const bar = document.getElementById('bulk-action-bar');
+  const countSpan = document.getElementById('selected-count');
   
-  if (bulkBar) {
-    bulkBar.style.display = count > 0 ? 'block' : 'none';
-  }
-  if (countSpan) {
-    countSpan.textContent = count;
+  if (bar && countSpan) {
+    if (count > 0) {
+      countSpan.textContent = count;
+      bar.style.display = 'block';
+    } else {
+      bar.style.display = 'none';
+    }
+    
+    // Update bulk button text
+    const bulkNegBtn = document.getElementById('st-bulk-add-negative');
+    const bulkExpBtn = document.getElementById('st-bulk-add-keyword');
+    if (bulkNegBtn) bulkNegBtn.innerHTML = `<i class="bi bi-x-circle me-1"></i> Add Selected as Negatives (${count})`;
+    if (bulkExpBtn) bulkExpBtn.innerHTML = `<i class="bi bi-plus-circle me-1"></i> Add Selected as Keywords (${count})`;
   }
 }
 
-// Bulk add as negative button
+// ===========================================================================
+// BULK ADD AS NEGATIVE BUTTON
+// ===========================================================================
 document.getElementById('st-bulk-add-negative')?.addEventListener('click', function() {
-  const count = selectedSearchTerms.length;
-  const terms = selectedSearchTerms.map(k => k.split('|')[0]).join(', ');
+  const selectedRows = [];
   
-  const content = `
-    <p><strong>Selected Search Terms (${count}):</strong></p>
-    <div class="alert alert-light" style="max-height: 200px; overflow-y: auto;">
-      ${terms}
-    </div>
-    <p class="mb-0"><strong>Reason:</strong> Bulk selection</p>
-  `;
+  // Gather data from selected checkboxes
+  document.querySelectorAll('.st-checkbox:checked').forEach(cb => {
+    const row = cb.closest('tr');
+    const negBtn = row.querySelector('.st-add-negative');
+    if (negBtn) {
+      selectedRows.push({
+        search_term: negBtn.getAttribute('data-search-term'),
+        campaign_id: negBtn.getAttribute('data-campaign-id'),
+        campaign_name: negBtn.getAttribute('data-campaign-name'),
+        ad_group_id: negBtn.getAttribute('data-ad-group-id'),
+        ad_group_name: negBtn.getAttribute('data-ad-group-name'),
+        match_type: negBtn.getAttribute('data-match-type'),
+        flag_reason: negBtn.getAttribute('data-flag-reason')
+      });
+    }
+  });
   
-  document.getElementById('st-modal-content').innerHTML = content;
-  const modal = new bootstrap.Modal(document.getElementById('stNegativeModal'));
-  modal.show();
+  if (selectedRows.length === 0) {
+    showToast('No search terms selected', 'warning');
+    return;
+  }
+  
+  openNegativeModal(selectedRows, true);
 });
 
-// Row-level "Add as Negative" buttons
+// ===========================================================================
+// BULK ADD AS KEYWORD BUTTON
+// ===========================================================================
+document.getElementById('st-bulk-add-keyword')?.addEventListener('click', function() {
+  const selectedRows = [];
+  
+  // Gather data from selected checkboxes (only expansion opportunities)
+  document.querySelectorAll('.st-checkbox:checked').forEach(cb => {
+    const row = cb.closest('tr');
+    const expBtn = row.querySelector('.st-add-keyword');
+    if (expBtn) {  // Only include if expansion button exists
+      selectedRows.push({
+        search_term: expBtn.getAttribute('data-search-term'),
+        campaign_id: expBtn.getAttribute('data-campaign-id'),
+        campaign_name: expBtn.getAttribute('data-campaign-name'),
+        ad_group_id: expBtn.getAttribute('data-ad-group-id'),
+        ad_group_name: expBtn.getAttribute('data-ad-group-name'),
+        match_type: expBtn.getAttribute('data-match-type'),
+        suggested_bid: parseFloat(expBtn.getAttribute('data-suggested-bid')),
+        cpc: parseFloat(expBtn.getAttribute('data-cpc')),
+        expansion_reason: expBtn.getAttribute('data-expansion-reason')
+      });
+    }
+  });
+  
+  if (selectedRows.length === 0) {
+    showToast('No expansion opportunities selected', 'warning');
+    return;
+  }
+  
+  openExpansionModal(selectedRows, true);
+});
+
+// ===========================================================================
+// ROW-LEVEL "ADD AS NEGATIVE" BUTTONS
+// ===========================================================================
 document.querySelectorAll('.st-add-negative').forEach(btn => {
   btn.addEventListener('click', function() {
-    const searchTerm = this.getAttribute('data-search-term');
-    const campaignName = this.getAttribute('data-campaign-name');
-    const flagReason = this.getAttribute('data-flag-reason');
+    const data = {
+      search_term: this.getAttribute('data-search-term'),
+      campaign_id: this.getAttribute('data-campaign-id'),
+      campaign_name: this.getAttribute('data-campaign-name'),
+      ad_group_id: this.getAttribute('data-ad-group-id'),
+      ad_group_name: this.getAttribute('data-ad-group-name'),
+      match_type: this.getAttribute('data-match-type'),
+      flag_reason: this.getAttribute('data-flag-reason')
+    };
     
-    const content = `
-      <p><strong>Search Term:</strong> ${searchTerm}</p>
-      <p><strong>Campaign:</strong> ${campaignName}</p>
-      <p class="mb-0"><strong>Reason:</strong> ${flagReason}</p>
-    `;
-    
-    document.getElementById('st-modal-content').innerHTML = content;
-    const modal = new bootstrap.Modal(document.getElementById('stNegativeModal'));
-    modal.show();
+    openNegativeModal([data], false);
   });
 });
 
-// Restore checked state on page load (for selected terms that persist across pages)
+// ===========================================================================
+// ROW-LEVEL "ADD AS KEYWORD" BUTTONS
+// ===========================================================================
+document.querySelectorAll('.st-add-keyword').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const data = {
+      search_term: this.getAttribute('data-search-term'),
+      campaign_id: this.getAttribute('data-campaign-id'),
+      campaign_name: this.getAttribute('data-campaign-name'),
+      ad_group_id: this.getAttribute('data-ad-group-id'),
+      ad_group_name: this.getAttribute('data-ad-group-name'),
+      match_type: this.getAttribute('data-match-type'),
+      suggested_bid: parseFloat(this.getAttribute('data-suggested-bid')),
+      cpc: parseFloat(this.getAttribute('data-cpc')),
+      expansion_reason: this.getAttribute('data-expansion-reason')
+    };
+    
+    openExpansionModal([data], false);
+  });
+});
+
+// ===========================================================================
+// OPEN NEGATIVE KEYWORD MODAL
+// ===========================================================================
+function openNegativeModal(items, isBulk) {
+  const content = `
+    <p><strong>Selected Search Terms (${items.length}):</strong></p>
+    <div class="alert alert-light" style="max-height: 200px; overflow-y: auto;">
+      ${items.map(item => `<div>${item.search_term} <span class="text-muted">(${item.campaign_name})</span></div>`).join('')}
+    </div>
+    ${!isBulk ? `<p class="mb-0"><strong>Reason:</strong> ${items[0].flag_reason}</p>` : ''}
+  `;
+  
+  document.getElementById('st-modal-content').innerHTML = content;
+  
+  // Update ad-group name in radio label
+  if (items.length === 1) {
+    document.getElementById('modal-adgroup-name').textContent = items[0].ad_group_name;
+  } else {
+    document.getElementById('modal-adgroup-name').textContent = `${items.length} ad groups`;
+  }
+  
+  // Store data for execution
+  window.currentNegativeItems = items;
+  
+  const modal = new bootstrap.Modal(document.getElementById('stNegativeModal'));
+  modal.show();
+}
+
+// ===========================================================================
+// EXECUTE ADD NEGATIVES BUTTON
+// ===========================================================================
+document.getElementById('execute-add-negatives')?.addEventListener('click', async function() {
+  const items = window.currentNegativeItems;
+  if (!items) {
+    showToast('No items to add', 'warning');
+    return;
+  }
+  
+  const level = document.querySelector('input[name="negativeLevel"]:checked').value;
+  const dryRun = document.getElementById('negative-dry-run').checked;
+  
+  // Build request payload
+  const payload = {
+    search_terms: items.map(item => ({
+      search_term: item.search_term,
+      campaign_id: item.campaign_id,
+      ad_group_id: item.ad_group_id,
+      match_type: item.match_type,
+      flag_reason: item.flag_reason || 'Manual selection'
+    })),
+    level: level,
+    dry_run: dryRun
+  };
+  
+  // Show loading
+  document.getElementById('negative-loading').style.display = 'block';
+  this.disabled = true;
+  
+  try {
+    const response = await fetch('/keywords/add-negative', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    const result = await response.json();
+    
+    // Hide loading
+    document.getElementById('negative-loading').style.display = 'none';
+    this.disabled = false;
+    
+    if (result.success) {
+      showToast(result.message, 'success');
+      
+      // Close modal
+      bootstrap.Modal.getInstance(document.getElementById('stNegativeModal')).hide();
+      
+      // Refresh page after 1.5s (to show new data)
+      if (!dryRun) {
+        setTimeout(() => window.location.reload(), 1500);
+      }
+    } else {
+      showToast(result.message, 'error');
+      
+      // Show failures if any
+      if (result.failures && result.failures.length > 0) {
+        console.log('Failures:', result.failures);
+      }
+    }
+    
+  } catch (error) {
+    document.getElementById('negative-loading').style.display = 'none';
+    this.disabled = false;
+    showToast(`Error: ${error.message}`, 'error');
+  }
+});
+
+// ===========================================================================
+// OPEN KEYWORD EXPANSION MODAL
+// ===========================================================================
+function openExpansionModal(items, isBulk) {
+  const content = `
+    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th>Search Term</th>
+            <th>Match Type</th>
+            <th>Bid (£)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map((item, idx) => `
+            <tr>
+              <td>${item.search_term}</td>
+              <td>
+                <select class="form-select form-select-sm expansion-match-type" data-index="${idx}">
+                  <option value="EXACT" ${item.match_type === 'EXACT' ? 'selected' : ''}>Exact</option>
+                  <option value="PHRASE" ${item.match_type === 'PHRASE' ? 'selected' : ''}>Phrase</option>
+                  <option value="BROAD" ${item.match_type === 'BROAD' ? 'selected' : ''}>Broad</option>
+                </select>
+              </td>
+              <td>
+                <input type="number" class="form-control form-control-sm expansion-bid" 
+                       data-index="${idx}" 
+                       value="${item.suggested_bid.toFixed(2)}" 
+                       min="0.10" 
+                       step="0.01">
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+    ${!isBulk && items[0].expansion_reason ? `<p class="mt-2 mb-0"><strong>Reason:</strong> ${items[0].expansion_reason}</p>` : ''}
+  `;
+  
+  document.getElementById('st-expansion-content').innerHTML = content;
+  
+  // Store data for execution
+  window.currentExpansionItems = items;
+  
+  const modal = new bootstrap.Modal(document.getElementById('stExpansionModal'));
+  modal.show();
+}
+
+// ===========================================================================
+// EXECUTE ADD KEYWORDS BUTTON
+// ===========================================================================
+document.getElementById('execute-add-keywords')?.addEventListener('click', async function() {
+  const items = window.currentExpansionItems;
+  if (!items) {
+    showToast('No items to add', 'warning');
+    return;
+  }
+  
+  const dryRun = document.getElementById('expansion-dry-run').checked;
+  
+  // Gather updated match types and bids from inputs
+  const matchInputs = document.querySelectorAll('.expansion-match-type');
+  const bidInputs = document.querySelectorAll('.expansion-bid');
+  
+  const payload = {
+    keywords: items.map((item, idx) => ({
+      search_term: item.search_term,
+      campaign_id: item.campaign_id,
+      ad_group_id: item.ad_group_id,
+      match_type: matchInputs[idx].value,
+      bid_micros: Math.round(parseFloat(bidInputs[idx].value) * 1000000),
+      expansion_reason: item.expansion_reason || 'Manual selection'
+    })),
+    dry_run: dryRun
+  };
+  
+  // Show loading
+  document.getElementById('expansion-loading').style.display = 'block';
+  this.disabled = true;
+  
+  try {
+    const response = await fetch('/keywords/add-keyword', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    const result = await response.json();
+    
+    // Hide loading
+    document.getElementById('expansion-loading').style.display = 'none';
+    this.disabled = false;
+    
+    if (result.success) {
+      showToast(result.message, 'success');
+      
+      // Close modal
+      bootstrap.Modal.getInstance(document.getElementById('stExpansionModal')).hide();
+      
+      // Refresh page after 1.5s (to show new data)
+      if (!dryRun) {
+        setTimeout(() => window.location.reload(), 1500);
+      }
+    } else {
+      showToast(result.message, 'error');
+      
+      // Show failures if any
+      if (result.failures && result.failures.length > 0) {
+        console.log('Failures:', result.failures);
+      }
+    }
+    
+  } catch (error) {
+    document.getElementById('expansion-loading').style.display = 'none';
+    this.disabled = false;
+    showToast(`Error: ${error.message}`, 'error');
+  }
+});
+
+// ===========================================================================
+// TOAST NOTIFICATION FUNCTION
+// ===========================================================================
+function showToast(message, type) {
+  // Create toast container if it doesn't exist
+  let container = document.querySelector('.toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'toast-container position-fixed top-0 end-0 p-3';
+    container.style.zIndex = '9999';
+    document.body.appendChild(container);
+  }
+  
+  // Determine toast color
+  let bgClass = 'bg-primary';
+  if (type === 'success') bgClass = 'bg-success';
+  if (type === 'error') bgClass = 'bg-danger';
+  if (type === 'warning') bgClass = 'bg-warning';
+  
+  // Create toast element
+  const toastEl = document.createElement('div');
+  toastEl.className = `toast align-items-center text-white ${bgClass} border-0`;
+  toastEl.setAttribute('role', 'alert');
+  toastEl.innerHTML = `
+    <div class="d-flex">
+      <div class="toast-body">${message}</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  `;
+  
+  container.appendChild(toastEl);
+  
+  // Show toast
+  const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 5000 });
+  toast.show();
+  
+  // Remove from DOM after hidden
+  toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+}
+
+// ===========================================================================
+// RESTORE CHECKED STATE ON PAGE LOAD
+// ===========================================================================
 window.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.st-checkbox').forEach(cb => {
     const term = cb.getAttribute('data-search-term');

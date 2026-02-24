@@ -20,6 +20,15 @@ from act_dashboard.routes.rule_helpers import get_rules_for_page
 from datetime import date, timedelta
 from typing import List, Dict, Any, Tuple
 import duckdb
+from flask import jsonify
+from act_autopilot.google_ads_api import (
+    load_google_ads_client,
+    add_negative_keyword,
+    add_adgroup_negative_keyword,
+    add_keyword as add_keyword_to_adgroup
+)
+import json
+from datetime import datetime
 
 bp = Blueprint('keywords', __name__)
 
@@ -281,6 +290,114 @@ def flag_negative_keywords(search_terms: List[Dict[str, Any]]) -> List[Dict[str,
         
         st['negative_flag'] = flagged
         st['flag_reason'] = " | ".join(reasons) if reasons else ""
+    
+    return search_terms
+
+
+
+def check_keyword_exists(
+    conn: duckdb.DuckDBPyConnection,
+    customer_id: str,
+    ad_group_id: str,
+    search_term: str
+) -> bool:
+    """
+    Check if a search term already exists as a keyword in the ad group.
+    
+    Uses case-insensitive exact text match. If ANY match type exists
+    (Exact, Phrase, or Broad), consider it "already added" to prevent
+    near-duplicates.
+    
+    Args:
+        conn: Database connection
+        customer_id: Customer ID
+        ad_group_id: Ad group ID
+        search_term: Search term text to check
+        
+    Returns:
+        True if keyword exists, False otherwise
+    """
+    try:
+        result = conn.execute("""
+            SELECT COUNT(DISTINCT keyword_text)
+            FROM ro.analytics.keyword_daily
+            WHERE customer_id = ?
+              AND ad_group_id = ?
+              AND LOWER(keyword_text) = LOWER(?)
+        """, [customer_id, ad_group_id, search_term]).fetchone()
+        
+        count = result[0] if result else 0
+        return count > 0
+    except Exception as e:
+        print(f"[Keywords] Error checking keyword existence: {e}")
+        return False  # Assume doesn't exist on error (allow flagging)
+
+
+def flag_expansion_opportunities(
+    conn: duckdb.DuckDBPyConnection,
+    customer_id: str,
+    search_terms: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    """
+    Flag search terms as keyword expansion opportunities based on 4 criteria.
+    
+    Criteria (ALL must be met):
+    1. CVR ≥5% (high conversion rate)
+    2. ROAS ≥4.0x (profitable performance)
+    3. ≥10 conversions (sufficient data)
+    4. Search term NOT already added as keyword
+    
+    Args:
+        conn: Database connection
+        customer_id: Customer ID
+        search_terms: List of search term dictionaries
+        
+    Returns:
+        Same list with expansion_flag and expansion_reason added to each term
+    """
+    for st in search_terms:
+        flagged = False
+        reasons = []
+        
+        conversions = st.get('conversions', 0)
+        cvr = st.get('cvr', 0)
+        roas = st.get('roas', 0)
+        ad_group_id = st.get('ad_group_id', '')
+        search_term = st.get('search_term', '')
+        
+        # Check all 4 criteria
+        meets_cvr = cvr >= 0.05  # 5% = 0.05 decimal
+        meets_roas = roas >= 4.0
+        meets_conversions = conversions >= 10
+        
+        # Check if keyword already exists (criterion 4)
+        already_exists = check_keyword_exists(
+            conn, customer_id, str(ad_group_id), search_term
+        )
+        
+        # Must meet ALL criteria AND not already exist
+        if meets_cvr and meets_roas and meets_conversions and not already_exists:
+            flagged = True
+            reasons.append(f"High CVR ({cvr*100:.1f}%)")
+            reasons.append(f"ROAS {roas:.1f}x")
+            reasons.append(f"{int(conversions)} conversions")
+        
+        st['expansion_flag'] = flagged
+        st['expansion_reason'] = " | ".join(reasons) if reasons else ""
+        
+        # Suggest match type based on original search term match
+        # EXACT → EXACT, PHRASE → PHRASE, BROAD → PHRASE (tighten)
+        match_type = st.get('match_type', '').upper()
+        if match_type == 'EXACT':
+            st['suggested_match_type'] = 'EXACT'
+        elif match_type == 'PHRASE':
+            st['suggested_match_type'] = 'PHRASE'
+        else:  # BROAD or other
+            st['suggested_match_type'] = 'PHRASE'
+        
+        # Suggest bid based on historical CPC
+        cpc = st.get('cpc', 0)
+        st['suggested_bid'] = cpc if cpc > 0.10 else 0.10  # Minimum £0.10
     
     return search_terms
 
@@ -658,6 +775,384 @@ def _build_kw_chart_data(conn, customer_id: str, active_days: int, date_from=Non
     }
 
 
+
+
+# ============================================================================
+# CHAT 30B: POST ROUTES FOR LIVE EXECUTION
+# ============================================================================
+
+@bp.route('/keywords/add-negative', methods=['POST'])
+@login_required
+def add_negative_keywords_route():
+    """
+    Execute negative keyword additions (campaign or ad-group level).
+    
+    Request JSON:
+    {
+        "search_terms": [
+            {
+                "search_term": "text",
+                "campaign_id": "123",
+                "ad_group_id": "456",
+                "ad_group_name": "Ad Group Name",
+                "match_type": "EXACT",
+                "flag_reason": "..."
+            },
+            ...
+        ],
+        "level": "campaign" | "adgroup",
+        "dry_run": true | false
+    }
+    
+    Returns:
+        JSON with success counts and any failures
+    """
+    try:
+        data = request.get_json()
+        search_terms = data.get('search_terms', [])
+        level = data.get('level', 'campaign')
+        dry_run = data.get('dry_run', False)
+        
+        if not search_terms:
+            return jsonify({'success': False, 'message': 'No search terms provided'}), 400
+        
+        # Get context
+        config, clients, current_client_path = get_page_context()
+        customer_id = config.customer_id
+        config, clients, current_client_path = get_page_context()
+        customer_id = config.customer_id
+        
+        # DRY-RUN CHECK FIRST - if dry-run, skip Google Ads client loading
+        if dry_run:
+            # Validate inputs only
+            successes = [term.get('search_term', '') for term in search_terms]
+            return jsonify({
+                'success': True,
+                'message': f'Dry-run successful: Would add {len(successes)} negative keyword(s) at {level} level',
+                'added': len(successes),
+                'failed': 0,
+                'failures': []
+            }), 200
+        
+        # Load Google Ads client (only for live execution)
+        from pathlib import Path
+        project_root = Path(__file__).parent.parent.parent
+        google_ads_config_path = project_root / 'google-ads.yaml'
+        
+        if not google_ads_config_path.exists():
+            google_ads_config_path = project_root / 'configs' / 'google-ads.yaml'
+        
+        if not google_ads_config_path.exists():
+            google_ads_config_path = project_root / 'secrets' / 'google-ads.yaml'
+        
+        if not google_ads_config_path.exists():
+            return jsonify({
+                'success': False,
+                'message': 'Google Ads configuration file not found. Checked: project root, configs/, secrets/'
+            }), 500
+        
+        client = load_google_ads_client(str(google_ads_config_path))
+        
+        
+        # Track results
+        successes = []
+        failures = []
+        
+        # Sequential execution
+        for item in search_terms:
+            search_term = item.get('search_term', '')
+            campaign_id = str(item.get('campaign_id', ''))
+            ad_group_id = str(item.get('ad_group_id', ''))
+            match_type = item.get('match_type', 'EXACT').upper()
+            
+            try:
+                if level == 'adgroup':
+                    # Ad-group-level negative
+                    result = add_adgroup_negative_keyword(
+                        client=client,
+                        customer_id=customer_id,
+                        ad_group_id=ad_group_id,
+                        keyword_text=search_term,
+                        match_type=match_type,
+                        dry_run=dry_run
+                    )
+                else:
+                    # Campaign-level negative (default)
+                    result = add_negative_keyword(
+                        client=client,
+                        customer_id=customer_id,
+                        campaign_id=campaign_id,
+                        keyword_text=search_term,
+                        match_type=match_type,
+                        dry_run=dry_run
+                    )
+                
+                if result.get('status') in ['success', 'dry_run']:
+                    successes.append(search_term)
+                    
+                    # Log to changes table (only if not dry-run)
+                    if not dry_run:
+                        conn = get_db_connection(config)
+                        conn.execute("""
+                            INSERT INTO changes (
+                                campaign_id, rule_id, executed_by, change_type,
+                                entity_type, entity_id, old_value, new_value, reason,
+                                executed_at
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """, [
+                            int(campaign_id) if campaign_id else None,
+                            'SEARCH_TERMS_NEGATIVE',
+                            'user_search_terms_negative',
+                            'negative_keyword_add',
+                            'keyword',
+                            ad_group_id if level == 'adgroup' else campaign_id,
+                            None,
+                            json.dumps({
+                                'search_term': search_term,
+                                'match_type': match_type,
+                                'level': level,
+                                'campaign_id': campaign_id,
+                                'ad_group_id': ad_group_id
+                            }),
+                            item.get('flag_reason', 'Manual selection'),
+                            datetime.now().isoformat()
+                        ])
+                        conn.close()
+                else:
+                    failures.append((search_term, result.get('message', 'Unknown error')))
+                    
+            except Exception as e:
+                error_msg = str(e)
+                if 'already exists' in error_msg.lower() or 'duplicate' in error_msg.lower():
+                    error_msg = 'Already added as negative'
+                failures.append((search_term, error_msg))
+        
+        # Build response
+        if dry_run:
+            return jsonify({
+                'success': True,
+                'message': f'Dry-run successful: {len(successes)} negative keywords validated (not executed)',
+                'added': len(successes),
+                'failed': len(failures),
+                'failures': failures
+            })
+        elif successes and not failures:
+            return jsonify({
+                'success': True,
+                'message': f'{len(successes)} negative keywords added successfully',
+                'added': len(successes),
+                'failed': 0,
+                'failures': []
+            })
+        elif successes and failures:
+            return jsonify({
+                'success': True,
+                'message': f'{len(successes)} added, {len(failures)} failed',
+                'added': len(successes),
+                'failed': len(failures),
+                'failures': failures
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': f'All {len(failures)} negative keywords failed',
+                'added': 0,
+                'failed': len(failures),
+                'failures': failures
+            }), 400
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@bp.route('/keywords/add-keyword', methods=['POST'])
+@login_required
+def add_keywords_route():
+    """
+    Execute keyword expansions (add search terms as keywords).
+    
+    Request JSON:
+    {
+        "keywords": [
+            {
+                "search_term": "text",
+                "ad_group_id": "456",
+                "campaign_id": "123",
+                "match_type": "PHRASE",
+                "bid_micros": 1500000,
+                "expansion_reason": "..."
+            },
+            ...
+        ],
+        "dry_run": true | false
+    }
+    
+    Returns:
+        JSON with success counts and any failures
+    """
+    try:
+        data = request.get_json()
+        keywords = data.get('keywords', [])
+        dry_run = data.get('dry_run', False)
+        
+        if not keywords:
+            return jsonify({'success': False, 'message': 'No keywords provided'}), 400
+        
+        # Get context
+        # Get context
+        config, clients, current_client_path = get_page_context()
+        customer_id = config.customer_id
+        
+        # DRY-RUN CHECK FIRST - if dry-run, validate and return
+        if dry_run:
+            # Validate inputs only
+            successes = [kw.get('search_term', '') for kw in keywords]
+            return jsonify({
+                'success': True,
+                'message': f'Dry-run successful: Would add {len(successes)} keyword(s)',
+                'added': len(successes),
+                'skipped': 0,
+                'failed': 0,
+                'failures': []
+            }), 200
+        
+        # Load Google Ads client (only for live execution)
+        from pathlib import Path
+        project_root = Path(__file__).parent.parent.parent
+        google_ads_config_path = project_root / 'google-ads.yaml'
+        
+        if not google_ads_config_path.exists():
+            google_ads_config_path = project_root / 'configs' / 'google-ads.yaml'
+        
+        if not google_ads_config_path.exists():
+            google_ads_config_path = project_root / 'secrets' / 'google-ads.yaml'
+        
+        if not google_ads_config_path.exists():
+            return jsonify({
+                'success': False,
+                'message': 'Google Ads configuration file not found. Checked: project root, configs/, secrets/'
+            }), 500
+        
+        client = load_google_ads_client(str(google_ads_config_path))
+        
+        
+        # Track results
+        successes = []
+        skipped = []
+        failures = []
+        
+        # Sequential execution with existence check
+        conn = get_db_connection(config)
+        
+        for item in keywords:
+            search_term = item.get('search_term', '')
+            ad_group_id = str(item.get('ad_group_id', ''))
+            campaign_id = str(item.get('campaign_id', ''))
+            match_type = item.get('match_type', 'PHRASE').upper()
+            bid_micros = int(item.get('bid_micros', 100000))  # Default £0.10
+            
+            # Check if keyword already exists (skip if so)
+            if check_keyword_exists(conn, customer_id, ad_group_id, search_term):
+                skipped.append(search_term)
+                continue
+            
+            try:
+                result = add_keyword_to_adgroup(
+                    client=client,
+                    customer_id=customer_id,
+                    ad_group_id=ad_group_id,
+                    keyword_text=search_term,
+                    match_type=match_type,
+                    bid_micros=bid_micros,
+                    dry_run=dry_run
+                )
+                
+                if result.get('status') in ['success', 'dry_run']:
+                    successes.append(search_term)
+                    
+                    # Log to changes table (only if not dry-run)
+                    if not dry_run:
+                        conn.execute("""
+                            INSERT INTO changes (
+                                campaign_id, rule_id, executed_by, change_type,
+                                entity_type, entity_id, old_value, new_value, reason,
+                                executed_at
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """, [
+                            int(campaign_id) if campaign_id else None,
+                            'SEARCH_TERMS_EXPANSION',
+                            'user_search_terms_expansion',
+                            'keyword_add',
+                            'keyword',
+                            ad_group_id,
+                            None,
+                            json.dumps({
+                                'search_term': search_term,
+                                'match_type': match_type,
+                                'bid_micros': bid_micros,
+                                'ad_group_id': ad_group_id,
+                                'campaign_id': campaign_id
+                            }),
+                            item.get('expansion_reason', 'Manual selection'),
+                            datetime.now().isoformat()
+                        ])
+                else:
+                    failures.append((search_term, result.get('message', 'Unknown error')))
+                    
+            except Exception as e:
+                error_msg = str(e)
+                if 'already exists' in error_msg.lower() or 'duplicate' in error_msg.lower():
+                    skipped.append(search_term)
+                else:
+                    failures.append((search_term, error_msg))
+        
+        conn.close()
+        
+        # Build response
+        if dry_run:
+            return jsonify({
+                'success': True,
+                'message': f'Dry-run successful: {len(successes)} keywords validated (not executed)',
+                'added': len(successes),
+                'skipped': len(skipped),
+                'failed': len(failures),
+                'failures': failures
+            })
+        elif successes and not failures:
+            msg = f'{len(successes)} keywords added successfully'
+            if skipped:
+                msg += f' ({len(skipped)} already existed, skipped)'
+            return jsonify({
+                'success': True,
+                'message': msg,
+                'added': len(successes),
+                'skipped': len(skipped),
+                'failed': 0,
+                'failures': []
+            })
+        elif successes and failures:
+            return jsonify({
+                'success': True,
+                'message': f'{len(successes)} added, {len(skipped)} skipped, {len(failures)} failed',
+                'added': len(successes),
+                'skipped': len(skipped),
+                'failed': len(failures),
+                'failures': failures
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': f'All keywords failed or skipped ({len(skipped)} existed)',
+                'added': 0,
+                'skipped': len(skipped),
+                'failed': len(failures),
+                'failures': failures
+            }), 400
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 @bp.route("/keywords")
 @login_required
 def keywords():
@@ -964,6 +1459,9 @@ def keywords():
         
         # Flag negative keyword opportunities
         search_terms_data = flag_negative_keywords(search_terms_data)
+        # Flag negative keyword opportunities AND expansion opportunities
+        search_terms_data = flag_negative_keywords(search_terms_data)
+        search_terms_data = flag_expansion_opportunities(conn, config.customer_id, search_terms_data)
     except Exception as e:
         print(f"[Keywords] Search terms query error: {e}")
         import traceback

@@ -23,15 +23,19 @@
 - Row-level + bulk actions (UI only)
 **Deferred:** Live execution, keyword expansion (Chat 30b)
 
-#### **1b. Chat 30b: M9 Phase 2 Live Execution + Keyword Expansion**
-**Estimated:** 7-9 hours
-**Status:** Next priority
+#### **1b. Chat 30b: M9 Phase 2 Live Execution + Keyword Expansion** ✅ COMPLETE
+**Actual:** 4 hours (vs 7-9 estimated, 53% efficiency)
+**Status:** Complete 2026-02-24
 **Description:** Complete M9 with live Google Ads API execution
-**Deliverables:**
+**Delivered:**
 - Live "Add as Negative" execution via Google Ads API
-- Keyword expansion opportunity flagging
-- "Add as Keyword" button and execution
-- Integration with changes table for audit
+- Campaign-level + ad-group-level support
+- Keyword expansion opportunity flagging (CVR ≥5%, ROAS ≥4.0x, Conv. ≥10)
+- "Add as Keyword" functionality with match type + bid suggestions
+- Dry-run mode for safe testing
+- Changes table audit logging
+- All 16 success criteria passing (dry-run validated)
+**Production:** Code complete, dry-run validated, ready for live testing
 
 #### **2. Website: Connect Contact Form to A.C.T Dashboard**
 **Estimated:** 2-4 hours
@@ -612,26 +616,26 @@
 
 | Priority | Count | Estimated Hours | Description |
 |----------|-------|-----------------|-------------|
-| 1 (Critical) | 1 | 7-9 | M9 Phase 2 Live Execution |
+| 1 (Critical) | 0 | 0 | M9 complete (30a: 6.5h, 30b: 4h = 10.5h total) |
 | 2 (High) | 12 | 159-244 | Campaign types, Reports, Cold outreach, System Changes, Rules rollout, bug fixes |
 | 3 (Medium) | 11 | 72-114 | Phase 3, maintenance, features |
 | 4 (Low) | 7 | 37-57 | Website SEO, documentation |
 | 5 (Nice-to-have) | 3 | 29-42 | Enterprise features (multi-user deferred) |
-| **TOTAL** | **35** | **300-466** | **Full roadmap** |
+| **TOTAL** | **33** | **297-457** | **Full roadmap** (10.5h complete, 297-457h remaining) |
 
 ---
 
 ## 🎯 RECOMMENDED SEQUENCING
 
 **Week 1-2:**
-1. Chat 30: M9 Keywords Search Terms (Priority 1)
-2. Website: Contact form backend (Priority 1)
+1. ✅ Chat 30a+30b: M9 Search Terms complete (10.5h actual)
+2. Website: Contact form backend (Priority 1) — NEXT
 3. System Changes tab → cards (Priority 2)
 
 **Week 3-4:**
-4. Shopping campaign completion (Priority 2)
-5. Campaign scope pill fix (Priority 2)
-6. All Conv. pipeline (Priority 2)
+4. Phase 3: Unit tests + job queue + CSRF (Priority 3)
+5. Shopping campaign completion (Priority 2)
+6. Campaign scope pill fix (Priority 2)
 
 **Month 2:**
 7. Automated Report Generator (Priority 2) - HIGH IMPACT
@@ -640,8 +644,8 @@
 
 **Month 3:**
 10. Cold Outreach System Phase 1 (Priority 2) - LEAD GENERATION
-11. Unit test suite (Priority 3)
-12. Smart alerts (Priority 3)
+11. Smart alerts (Priority 3)
+12. All Conv. pipeline (Priority 2)
 
 **Month 4+:**
 - Background job queue
@@ -652,6 +656,6 @@
 ---
 
 **Created:** 2026-02-23
-**Updated:** 2026-02-23 (added Campaign Types, Automated Reports, Cold Outreach System)
-**Total Estimated Work:** 307-473 hours (35 items)
-**Next Action:** Chat 30 (M9 Keywords Search Terms)
+**Updated:** 2026-02-24 (added Chat 30a+30b completion, 10.5 hours actual)
+**Total Estimated Work:** 297-457 hours (33 items remaining, 10.5h complete)
+**Next Action:** Website contact form backend (Priority 1, 2-4 hours)

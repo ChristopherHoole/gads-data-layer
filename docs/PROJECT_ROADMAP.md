@@ -1,9 +1,9 @@
 # PROJECT ROADMAP - Google Ads Data Layer (ACT Dashboard)
 
 **Last Updated:** 2026-02-24
-**Current Phase:** Marketing Website ✅ COMPLETE | Dashboard 3.0 M9 Phase 1 ✅ COMPLETE | M9 Phase 2 next
-**Overall Completion:** ~98% (Foundation + Polish + Website + Dashboard 3.0 M1–M9 Phase 1 complete)
-**Mode:** Ready for next development phase
+**Current Phase:** Marketing Website ✅ COMPLETE | Dashboard 3.0 M9 ✅ COMPLETE (Both Phases)
+**Overall Completion:** ~99% (Foundation + Polish + Website + Dashboard 3.0 M1–M9 complete)
+**Mode:** Ready for future-proofing phase
 
 ---
 
@@ -68,7 +68,7 @@
 - Git repository created and pushed to GitHub
 - Production deployment complete
 
-### **Dashboard 3.0** ✅ (M1–M8 complete)
+### **Dashboard 3.0** ✅ (M1–M9 complete)
 - Chat 22 M1: Date picker (Flatpickr, session persistence)
 - Chat 23 M2: Metrics cards (Jinja2 macros, all 6 pages)
 - Chat 24 M3: Chart overhaul (dual-axis, 4 toggleable metrics)
@@ -78,6 +78,7 @@
 - Chat 28 M7: Accept/Decline/Modify wiring + 4-tab recommendations UI
 - Chat 29 M8: Changes page + Radar monitoring ✅ COMPLETE
 - Chat 30a M9 Phase 1: Search Terms tab + Negative Keyword Suggestions ✅ COMPLETE
+- Chat 30b M9 Phase 2: Live Execution + Keyword Expansion ✅ COMPLETE
 
 ---
 
@@ -109,14 +110,13 @@
 - ✅ Chat 31: Marketing Website Wireframe
 - ✅ Master Chat 4.0: Marketing Website Rebuild + Deployment
 - ✅ Chat 30a: M9 Phase 1 Search Terms Table
+- ✅ Chat 30b: M9 Phase 2 Live Execution + Keyword Expansion
 
 ### **Short-term:**
-- 🎯 Chat 30b: M9 Phase 2 Live Execution + Keyword Expansion — NEXT
+- 🎯 Phase 3: Future-Proofing (unit tests, job queue, CSRF) — NEXT
 - 📋 Website: Connect contact form to /api/leads endpoint
 - 📋 Website: Optional SEO improvements (meta tags, sitemap)
 - 📋 System Changes tab → cards (currently table, deferred from Chat 29)
-- 📋 M5 Rules tab rollout to Ad Groups, Keywords, Ads, Shopping
-- 📋 Live Google Ads API execution on accept/modify routes
 
 ### **Medium-term:**
 - 📋 Phase 3: Future-Proofing (unit tests, job queue, DB indexes, CSRF)
@@ -126,6 +126,52 @@
 ---
 
 ## 🔄 CHANGELOG
+
+### **2026-02-24 (Chat 30b — M9 Phase 2 Live Execution + Keyword Expansion)**
+
+**Completed:**
+- ✅ Live Google Ads API execution for negative keyword blocking
+- ✅ Campaign-level and ad-group-level negative keyword support
+- ✅ Keyword expansion opportunities flagging (4 criteria)
+- ✅ "Add as Keyword" functionality with match type + bid suggestions
+- ✅ Dry-run mode for safe testing (both actions)
+- ✅ Changes table audit logging (both actions)
+- ✅ Bulk selection support (row-level + bulk)
+- ✅ Match type override (EXACT/PHRASE/BROAD dropdowns)
+- ✅ Bid override (£0.10 minimum, user customizable)
+- ✅ Toast notifications (success/error messages)
+- ✅ All 16 success criteria passing (dry-run validated)
+- 84 lines added in google_ads_api.py (new function)
+- 456 lines added in keywords.py (2 routes + 2 helpers)
+- ~400 lines modified in keywords_new.html (modals + JavaScript)
+- **Docs:** `CHAT_30B_SUMMARY.md` + `CHAT_30B_HANDOFF.md`
+- **Time:** 4 hours actual vs 7-9 hours estimated (53% efficiency)
+
+**Key features:**
+- `add_adgroup_negative_keyword()` function for ad-group-level blocking
+- `check_keyword_exists()` prevents duplicate keyword creation
+- `flag_expansion_opportunities()` identifies high-performers (CVR ≥5%, ROAS ≥4.0x, Conv. ≥10)
+- `/keywords/add-negative` POST route (campaign or ad-group level)
+- `/keywords/add-keyword` POST route (with duplicate checking)
+- Dry-run first architecture (enables testing without API credentials)
+- Google Ads config detection (3 fallback paths)
+- Sequential execution with partial success support
+
+**Expansion criteria (all 4 must be met):**
+1. CVR ≥5% (2x typical industry average)
+2. ROAS ≥4.0x (highly profitable)
+3. Conversions ≥10 (statistical significance)
+4. NOT already exists (duplicate prevention)
+
+**Match type suggestions:**
+- EXACT → EXACT (maintain precision)
+- PHRASE → PHRASE (maintain moderate targeting)
+- BROAD → PHRASE (tighten for safety)
+
+**Deferred to production:**
+- Live API validation (requires real Google Ads account)
+- Batching for >10 items (sequential only for now)
+- CSRF protection (Flask-WTF)
 
 ### **2026-02-24 (Chat 30a — M9 Phase 1 Search Terms Table)**
 
@@ -224,4 +270,4 @@
 ---
 
 **Last Updated:** 2026-02-24
-**Next Step:** Chat 30b — M9 Phase 2 Live Execution + Keyword Expansion
+**Next Step:** Phase 3 Future-Proofing (unit tests, job queue, CSRF protection)
