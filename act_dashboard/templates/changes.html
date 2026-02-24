@@ -98,27 +98,15 @@
   .ch-age         { font-size: 12px; color: var(--muted); }
   .ch-spacer      { margin-left: auto; }
 
-  /* System table */
-  .sys-table       { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .sys-table th    { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-bottom: 1px solid var(--border); background: #f8f9fa; }
-  .sys-table td    { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; color: #344054; }
-  .sys-table tr:last-child td { border-bottom: none; }
-  .sys-table tr:hover td { background: #f8f9fa; }
-  .lever-pill      { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
-  .lp-budget       { background: #dbeafe; color: #1d4ed8; }
-  .lp-bid          { background: #dcfce7; color: #15803d; }
-  .lp-status       { background: #ffedd5; color: #991b1b; }
-  .sys-status-pill { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
-  .ssp-monitoring  { background: #ede9fe; color: #6d28d9; }
-  .ssp-reverted    { background: #fee2e2; color: #991b1b; }
-  .ssp-successful  { background: #dcfce7; color: #15803d; }
-  .change-arrow    { color: var(--muted); margin: 0 4px; }
-  .change-pct-pos  { color: #15803d; font-weight: 600; }
-  .change-pct-neg  { color: #dc3545; font-weight: 600; }
-
   /* Empty state */
   .empty-state   { text-align: center; padding: 48px 24px; color: var(--muted); }
   .empty-state p { font-size: 14px; margin: 8px 0 0; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .ch-grid { grid-template-columns: 1fr; }
+    .summary-strip { grid-template-columns: 1fr; }
+  }
 </style>
 {% endblock %}
 
@@ -284,7 +272,7 @@
 
 
 {# ════════════════════════════════════════════════════════════════════════════
-   SYSTEM CHANGES TAB
+   SYSTEM CHANGES TAB (Chat 35: Converted from table to card grid)
 ════════════════════════════════════════════════════════════════════════════ #}
 <div id="tab-system" style="display:none;">
   <div class="tab-header">
@@ -295,48 +283,74 @@
   </div>
 
   {% if system_changes %}
-    <div style="background:white;border:1px solid var(--border);border-radius:12px;overflow:hidden;">
-      <table class="sys-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Campaign</th>
-            <th>Type</th>
-            <th>Change</th>
-            <th>Rule</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for ch in system_changes %}
-          <tr>
-            <td style="white-space:nowrap;color:var(--muted);">{{ ch.change_date | string | truncate(10,True,'') if ch.change_date else '—' }}</td>
-            <td style="font-weight:500;color:#1a1d23;">{{ ch.campaign_id or '—' }}</td>
-            <td>
-              <span class="lever-pill lp-{{ (ch.lever or 'budget').lower() }}">{{ (ch.lever or '—') | upper }}</span>
-            </td>
-            <td style="white-space:nowrap;">
-              {% if ch.old_value is not none and ch.new_value is not none %}
-                £{{ "%.2f"|format(ch.old_value) }}
-                <span class="change-arrow">→</span>
-                £{{ "%.2f"|format(ch.new_value) }}
-                {% if ch.change_pct is not none %}
-                  <span class="{{ 'change-pct-pos' if ch.change_pct >= 0 else 'change-pct-neg' }}">
-                    {{ "{:+.1f}%".format(ch.change_pct * 100) if ch.change_pct < 10 else "{:+.0f}%".format(ch.change_pct) }}
-                  </span>
+    <div class="ch-grid">
+      {% for ch in system_changes %}
+      <div class="ch-card">
+        <div class="ch-top {{ ch.bar_class }}"></div>
+        <div class="ch-body">
+
+          {# Card header #}
+          <div class="ch-card-header">
+            <div>
+              <div class="ch-rule-tag {{ 'rrt-budget' if ch.lever=='budget' else ('rrt-bid' if ch.lever=='bid' else 'rrt-status') }}">
+                {% if ch.lever == 'budget' %}
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/></svg>
+                {% elif ch.lever == 'bid' %}
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                {% else %}
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="3"/></svg>
                 {% endif %}
-              {% else %}—{% endif %}
-            </td>
-            <td style="font-size:12px;color:var(--muted);">{{ ch.rule_id or '—' }}</td>
-            <td>
-              <span class="sys-status-pill ssp-{{ ch.status_label | lower if ch.status_label else 'monitoring' }}">
-                {{ ch.status_label or 'Monitoring' }}
-              </span>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+                {{ (ch.lever | upper) if ch.lever else 'STATUS' }}
+              </div>
+              <div class="ch-campaign-name">{{ ch.campaign_id or '—' }}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+              <span class="source-pill {{ ch.source_class }}">{{ ch.source_label }}</span>
+            </div>
+          </div>
+
+          {# Change block #}
+          <div class="change-block {{ ch.cb_class }}">
+            <div class="change-icon-wrap {{ 'ciw-budget' if ch.lever=='budget' else ('ciw-bid' if ch.lever=='bid' else 'ciw-grey') }}">
+              {% if ch.change_pct is not none and ch.change_pct > 0 %}
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{% if ch.lever=='budget'%}#1d4ed8{% else %}#15803d{% endif %}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+              {% elif ch.change_pct is not none and ch.change_pct < 0 %}
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{% if ch.lever=='budget'%}#1d4ed8{% else %}#15803d{% endif %}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+              {% else %}
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              {% endif %}
+            </div>
+            <div>
+              {% if ch.value_label %}
+                <div class="change-main">{{ ch.value_label }}</div>
+                <div class="change-sub">{{ ch.value_suffix }}</div>
+              {% else %}
+                <div class="change-main">Change applied</div>
+              {% endif %}
+            </div>
+          </div>
+
+          {# Outcome row #}
+          <div class="outcome-row">
+            <div class="od-dot {{ ch.status_dot }}"></div>
+            <span class="outcome-label ol-{{ ch.status_label | lower if ch.status_label else 'monitoring' }}">
+              {{ ch.status_label or 'Monitoring' }}
+            </span>
+          </div>
+
+          {# Footer #}
+          <div class="ch-footer">
+            {% if ch.risk_tier %}
+              <span class="conf-badge cb-{% if ch.risk_tier=='low'%}high{% elif ch.risk_tier=='medium'%}med{% else %}low{% endif %}">{{ ch.risk_tier | title }} risk</span>
+            {% endif %}
+            <span class="ch-age">{{ ch.change_ago }}</span>
+            <span class="ch-spacer"></span>
+            <span style="font-size:11px;color:var(--muted);font-style:italic;">{{ ch.rule_id or '—' }}</span>
+          </div>
+
+        </div>
+      </div>
+      {% endfor %}
     </div>
   {% else %}
     <div class="empty-state">

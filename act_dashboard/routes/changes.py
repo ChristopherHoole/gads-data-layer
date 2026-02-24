@@ -1,11 +1,15 @@
 """
-Changes routes — Chat 29 (M8)
+Changes routes — Chat 29 (M8) + Chat 35 (System Changes card enhancements)
 
 New blueprint. Moved /changes route out of recommendations.py.
 Adds:
   - My Actions tab: queries changes table, JOINs to recommendations for full card data
   - System Changes tab: queries ro.analytics.change_log (existing)
   - Summary strip counts: total, accepted, declined, modified
+
+Chat 35 additions to _enrich_system_change():
+  - value_label and value_suffix (for card display)
+  - change_ago (relative timestamp)
 """
 
 import duckdb
@@ -284,7 +288,12 @@ def _enrich_action(action):
 
 
 def _enrich_system_change(ch):
-    """Add computed display fields to a system_changes row."""
+    """
+    Add computed display fields to a system_changes row.
+    Chat 35: Added value_label, value_suffix, and change_ago fields for card display.
+    """
+    from datetime import datetime
+    
     lever = (ch.get("lever") or "").lower()
     rollback = ch.get("rollback_status") or ""
 
@@ -313,6 +322,40 @@ def _enrich_system_change(ch):
     else:
         ch["bar_class"] = "rt-status"
         ch["cb_class"]  = "cb-grey"
+
+    # Value display (Chat 35 addition)
+    old_v = ch.get("old_value") or 0
+    new_v = ch.get("new_value") or 0
+    if lever == "budget":
+        ch["value_label"] = "£{:.2f} → £{:.2f}".format(old_v, new_v)
+        ch["value_suffix"] = "daily"
+    elif lever == "bid":
+        ch["value_label"] = "{:.2f}x → {:.2f}x tROAS".format(old_v, new_v)
+        ch["value_suffix"] = "target"
+    else:
+        ch["value_label"] = ""
+        ch["value_suffix"] = ""
+
+    # Relative timestamp for change_date (Chat 35 addition)
+    now = datetime.now()
+    change_date = ch.get("change_date")
+    if change_date:
+        if isinstance(change_date, str):
+            from datetime import datetime as dt
+            change_date = dt.fromisoformat(change_date).date()
+        if hasattr(change_date, 'date'):
+            change_date = change_date.date()
+        delta = (now.date() - change_date).days
+        if delta == 0:
+            ch["change_ago"] = "Today"
+        elif delta == 1:
+            ch["change_ago"] = "Yesterday"
+        elif delta < 7:
+            ch["change_ago"] = "{}d ago".format(delta)
+        else:
+            ch["change_ago"] = change_date.strftime("%b %d")
+    else:
+        ch["change_ago"] = "—"
 
     return ch
 
