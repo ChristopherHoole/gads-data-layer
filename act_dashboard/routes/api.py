@@ -1,5 +1,5 @@
 """
-API routes - execution, batch, status, approve, reject.
+API routes - execution, batch, status, approve, reject, leads (Chat 32).
 """
 
 from flask import Blueprint, request, jsonify, current_app
@@ -10,6 +10,8 @@ from act_dashboard.validation import validate_execution_request, validate_batch_
 from act_autopilot.executor import Executor
 import duckdb
 import json
+import re
+import logging
 from datetime import datetime, date
 from time import time
 
@@ -625,3 +627,270 @@ def reject_recommendation():
         json.dump(approvals, f, indent=2)
 
     return jsonify({"success": True})
+    return jsonify({"success": True})
+
+
+# ============================================================================
+# CHAT 32: CONTACT FORM BACKEND - LEADS ENDPOINT
+# ============================================================================
+
+logger = logging.getLogger(__name__)
+
+
+def _ensure_leads_table(conn):
+    """
+    Create the leads table in warehouse.duckdb if it doesn't exist.
+    Similar pattern to _ensure_changes_table in recommendations.py.
+    """
+    conn.execute("""
+        CREATE SEQUENCE IF NOT EXISTS leads_seq START 1
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS leads (
+            lead_id INTEGER DEFAULT nextval('leads_seq'),
+            name VARCHAR NOT NULL,
+            company VARCHAR,
+            role VARCHAR,
+            looking_for VARCHAR,
+            email VARCHAR NOT NULL,
+            phone VARCHAR,
+            source VARCHAR DEFAULT 'website',
+            submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            ip_address VARCHAR,
+            user_agent VARCHAR,
+            status VARCHAR DEFAULT 'new',
+            notes TEXT
+        )
+    """)
+
+
+def validate_email(email):
+    """
+    Validate email format using regex.
+    Returns True if valid, False otherwise.
+    """
+    if not email or not isinstance(email, str):
+        return False
+    
+    # Permissive regex: allows most valid email formats including + and dots
+    pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+    return bool(re.match(pattern, email.strip()))
+
+
+def sanitize_input(text):
+    """
+    Sanitize text input by stripping whitespace and removing HTML tags.
+    Returns sanitized string.
+    """
+    if not text or not isinstance(text, str):
+        return ""
+    
+    # Strip whitespace
+    text = text.strip()
+    
+    # Remove HTML tags (basic XSS prevention)
+    text = re.sub(r'<[^>]*>', '', text)
+    
+    # Remove potential script content
+    text = re.sub(r'<script.*?</script>', '', text, flags=re.IGNORECASE | re.DOTALL)
+    
+    return text
+
+
+def validate_lead_data(data):
+    """
+    Validate lead submission data.
+    
+    Returns:
+        (is_valid, errors_dict) tuple
+        - is_valid: bool
+        - errors_dict: dict of field -> error message
+    """
+    errors = {}
+    
+    # Required: name
+    name = data.get('name', '').strip()
+    if not name:
+        errors['name'] = 'Name is required'
+    elif len(name) < 2:
+        errors['name'] = 'Name must be at least 2 characters'
+    elif len(name) > 100:
+        errors['name'] = 'Name must be less than 100 characters'
+    
+    # Required: email
+    email = data.get('email', '').strip()
+    if not email:
+        errors['email'] = 'Email is required'
+    elif not validate_email(email):
+        errors['email'] = 'Invalid email format'
+    
+    # Optional: company
+    company = data.get('company', '').strip()
+    if company and len(company) > 100:
+        errors['company'] = 'Company name must be less than 100 characters'
+    
+    # Optional: role
+    role = data.get('role', '').strip()
+    if role and len(role) > 100:
+        errors['role'] = 'Role must be less than 100 characters'
+    
+    # Optional: looking_for
+    looking_for = data.get('looking_for', '').strip()
+    if looking_for and len(looking_for) > 500:
+        errors['looking_for'] = 'Message must be less than 500 characters'
+    
+    # Optional: phone
+    phone = data.get('phone', '').strip()
+    if phone and len(phone) > 50:
+        errors['phone'] = 'Phone number must be less than 50 characters'
+    
+    is_valid = len(errors) == 0
+    return is_valid, errors
+
+
+@bp.route("/leads", methods=["POST", "OPTIONS"])
+def submit_lead():
+    """
+    Contact form submission endpoint for christopherhoole.online website.
+    
+    Accepts POST requests with lead data, validates, stores in warehouse.duckdb,
+    and optionally sends email notification.
+    
+    Also handles OPTIONS preflight requests for CORS.
+    
+    Request JSON:
+        {
+            "name": str (required),
+            "email": str (required),
+            "company": str (optional),
+            "role": str (optional),
+            "looking_for": str (optional),
+            "phone": str (optional)
+        }
+    
+    Returns JSON:
+        Success: {"success": true, "message": str, "lead_id": int}
+        Error: {"success": false, "message": str, "errors": {...}}
+    """
+    # CORS headers for all responses
+    allowed_origins = [
+        'https://www.christopherhoole.online',
+        'https://christopherhoole.online',
+        'http://localhost:3000'
+    ]
+    
+    origin = request.headers.get('Origin')
+    cors_headers = {}
+    
+    if origin in allowed_origins:
+        cors_headers = {
+            'Access-Control-Allow-Origin': origin,
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+        }
+    
+    # Handle OPTIONS preflight request
+    if request.method == 'OPTIONS':
+        return ('', 200, cors_headers)
+    
+    # Rate limiting: 3 submissions per hour per IP
+    ip_address = request.remote_addr or 'unknown'
+    rate_key = f"leads:{ip_address}"
+    allowed, remaining, reset_seconds = check_rate_limit(rate_key, limit=3, window=3600)
+    
+    if not allowed:
+        logger.warning(f"Rate limit exceeded for IP {ip_address}")
+        response = jsonify({
+            "success": False,
+            "message": "Too many submissions. Please try again later.",
+            "error": f"Maximum 3 submissions per hour. Try again in {reset_seconds // 60} minutes."
+        })
+        return (response, 429, cors_headers)
+    
+    try:
+        # Parse JSON request
+        data = request.get_json()
+        
+        if not data:
+            response = jsonify({
+                "success": False,
+                "message": "Invalid request",
+                "error": "Request body must be JSON"
+            })
+            return (response, 400, cors_headers)
+        
+        # Validate lead data
+        is_valid, errors = validate_lead_data(data)
+        
+        if not is_valid:
+            logger.info(f"Lead submission validation failed from {ip_address}: {errors}")
+            response = jsonify({
+                "success": False,
+                "message": "Validation failed",
+                "errors": errors
+            })
+            return (response, 400, cors_headers)
+        
+        # Sanitize all inputs
+        name = sanitize_input(data.get('name', ''))
+        email = sanitize_input(data.get('email', ''))
+        company = sanitize_input(data.get('company', ''))
+        role = sanitize_input(data.get('role', ''))
+        looking_for = sanitize_input(data.get('looking_for', ''))
+        phone = sanitize_input(data.get('phone', ''))
+        
+        # Get user agent for analytics
+        user_agent = request.headers.get('User-Agent', '')[:500]  # Limit length
+        
+        # Database connection (warehouse.duckdb - writable)
+        # Following lesson #21: open read-write, no ATTACH needed for warehouse.duckdb writes
+        conn = duckdb.connect('warehouse.duckdb')
+        
+        # Ensure leads table exists
+        _ensure_leads_table(conn)
+        
+        # Insert lead
+        result = conn.execute("""
+            INSERT INTO leads (
+                name, email, company, role, looking_for, phone,
+                source, ip_address, user_agent, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            RETURNING lead_id
+        """, [
+            name, email, company, role, looking_for, phone,
+            'website', ip_address, user_agent, 'new'
+        ]).fetchone()
+        
+        lead_id = result[0]
+        conn.close()
+        
+        logger.info(f"Lead {lead_id} created: {name} <{email}> from {ip_address}")
+        
+        # Optional: Send email notification
+        # Fully optional - don't block lead submission if email fails
+        try:
+            # Check if SMTP configured (would be in app config or environment)
+            # For MVP, just log that email would be sent
+            # Future: Implement actual email sending here
+            logger.info(f"Email notification: New lead {lead_id} from {name} ({email})")
+            # send_lead_notification_email(lead_id, name, email, company, role, looking_for, phone)
+        except Exception as e:
+            logger.warning(f"Email notification failed for lead {lead_id}: {e}")
+            # Continue - don't block lead submission
+        
+        # Success response
+        response = jsonify({
+            "success": True,
+            "message": "Thank you! We'll be in touch soon.",
+            "lead_id": lead_id
+        })
+        return (response, 200, cors_headers)
+        
+    except Exception as e:
+        logger.error(f"Lead submission error from {ip_address}: {str(e)}")
+        response = jsonify({
+            "success": False,
+            "message": "Submission failed",
+            "error": "An unexpected error occurred. Please try again."
+        })
+        return (response, 500, cors_headers)
