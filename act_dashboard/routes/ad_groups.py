@@ -3,12 +3,14 @@ Ad Groups page route - ad group performance and optimization.
 
 Chat 21e: New ad groups page with Bootstrap 5 and rule visibility.
 M4: SQL-side sort, filter, pagination. Full 26-column spec per wireframe.
+Chat 41: M5 Rules tab rollout - using campaigns.py pattern (get_rules_for_page + count_rules_by_category)
 """
 
 from flask import Blueprint, render_template, request
 from act_dashboard.auth import login_required
 from act_dashboard.routes.shared import get_page_context, get_db_connection, get_date_range_from_session, get_metrics_collapsed, get_chart_metrics
 from act_dashboard.routes.rule_helpers import get_rules_for_page, count_rules_by_category
+from act_dashboard.routes.rules_api import load_rules
 from datetime import date, timedelta
 from typing import List, Dict, Any, Tuple, Optional
 import duckdb
@@ -169,178 +171,131 @@ def compute_metrics_bar(ad_groups: List[Dict[str, Any]]) -> Dict[str, Any]:
     total_impressions = sum(ag.get('impressions') or 0 for ag in ad_groups)
     total_cost        = sum(ag.get('cost') or 0 for ag in ad_groups)
     total_conversions = sum(ag.get('conversions') or 0 for ag in ad_groups)
-    overall_cpa = (total_cost / total_conversions) if total_conversions > 0 else 0
-    overall_ctr = (total_clicks / total_impressions * 100) if total_impressions > 0 else 0
-    active_count = sum(1 for ag in ad_groups if ag['ad_group_status'] == 'ENABLED')
-    paused_count = sum(1 for ag in ad_groups if ag['ad_group_status'] == 'PAUSED')
+    overall_cpa = total_cost / total_conversions if total_conversions else 0
+    overall_ctr = total_clicks / total_impressions if total_impressions else 0
+    active_count = sum(1 for ag in ad_groups if ag.get('ad_group_status') == 'ENABLED')
+    paused_count = sum(1 for ag in ad_groups if ag.get('ad_group_status') == 'PAUSED')
     return {
-        'total_ad_groups': len(ad_groups), 'active_count': active_count,
-        'paused_count': paused_count, 'total_clicks': total_clicks,
-        'total_cost': total_cost, 'total_conversions': total_conversions,
-        'overall_cpa': overall_cpa, 'overall_ctr': overall_ctr,
+        'total_ad_groups': len(ad_groups),
+        'active_count': active_count,
+        'paused_count': paused_count,
+        'total_clicks': total_clicks,
+        'total_cost': total_cost,
+        'total_conversions': total_conversions,
+        'overall_cpa': overall_cpa,
+        'overall_ctr': overall_ctr * 100,
     }
 
 
+# ==================== Chat 23 M2: Metrics Cards Data Loader ====================
 
-
-
-
-# ==================== Chat 23 M2: Metrics Cards ====================
-
-def _fmt_ag(value, fmt):
-    if value is None:
-        return '—'
-    v = float(value)
-    if fmt == 'currency':
-        if v >= 1_000_000: return f'${v/1_000_000:.1f}M'
-        if v >= 1_000: return f'${v/1_000:.1f}k'
-        return f'${v:,.2f}'
-    if fmt in ('percentage', 'rate'): return f'{v:.1f}%'
-    if fmt == 'ratio': return f'{v:.2f}x'
-    if fmt == 'number':
-        if v >= 1_000_000: return f'{v/1_000_000:.2f}M'
-        if v >= 1_000: return f'{v/1_000:.1f}k'
-        return f'{v:,.0f}'
-    return str(v)
-
-
-def _chg_ag(current, previous):
-    if previous is None or previous == 0:
-        return None
-    if current is None:
-        return -100.0
-    return ((float(current) - float(previous)) / float(previous)) * 100.0
-
-
-def _card_ag(label, value, prev, sparkline, fmt, invert=False, card_type='financial'):
-    return {
-        'label': label,
-        'value_display': _fmt_ag(value, fmt),
-        'change_pct': _chg_ag(value, prev),
-        'sparkline_data': sparkline,
-        'format_type': fmt,
-        'invert_colours': invert,
-        'card_type': card_type,
-        'sub_label': None,
-    }
-
-
-def _blank_ag(card_type='financial'):
-    return {
-        'label': '', 'value_display': '', 'change_pct': None,
-        'sparkline_data': None, 'format_type': 'blank',
-        'invert_colours': False, 'card_type': card_type, 'sub_label': None,
-    }
-
-
-def load_ad_group_metrics_cards(conn, customer_id, date_filter, prev_filter):
+def load_ad_group_metrics_cards(conn, customer_id: str, date_filter: str, prev_filter: str):
     """
-    Build financial_cards and actions_cards for Ad Groups page.
-
-    Financial (8): Cost | Revenue | ROAS | BLANK | Conversions | CPA | Conv Rate | BLANK
-    Actions  (8): Impressions | Clicks | Avg CPC | Avg CTR |
-                  Search IS | Search Top IS | Search Abs Top IS | Click Share
+    Build financial_cards and actions_cards for M2 metrics_section macro on Ad Groups page.
+    Uses ro.analytics.ad_group_daily (account-level totals).
+    Includes sparklines and change indicators.
     """
+    _empty_fin = [
+        {'label':'Cost',         'value':'£0',     'change_pct':None,'sparkline':[],'card_type':'financial'},
+        {'label':'Revenue',      'value':'£0',     'change_pct':None,'sparkline':[],'card_type':'financial'},
+        {'label':'ROAS',         'value':'0.00',   'change_pct':None,'sparkline':[],'card_type':'financial'},
+        {'label':'Wasted Spend', 'value':'£0',     'change_pct':None,'sparkline':[],'card_type':'financial'},
+        {'label':'Conv.',        'value':'0',      'change_pct':None,'sparkline':[],'card_type':'financial'},
+        {'label':'CPA',          'value':'£0',     'change_pct':None,'sparkline':[],'card_type':'financial'},
+        {'label':'CVR',          'value':'0.00%',  'change_pct':None,'sparkline':[],'card_type':'financial'},
+        {'label':'',             'value':'',       'change_pct':None,'sparkline':[],'card_type':'financial'},
+    ]
+    _empty_act = [
+        {'label':'Impr.',              'value':'0',     'change_pct':None,'sparkline':[],'card_type':'actions'},
+        {'label':'Clicks',             'value':'0',     'change_pct':None,'sparkline':[],'card_type':'actions'},
+        {'label':'CPC',                'value':'£0',    'change_pct':None,'sparkline':[],'card_type':'actions'},
+        {'label':'CTR',                'value':'0.00%', 'change_pct':None,'sparkline':[],'card_type':'actions'},
+        {'label':'Search IS',          'value':'—',     'change_pct':None,'sparkline':[],'card_type':'actions'},
+        {'label':'Top IS',             'value':'—',     'change_pct':None,'sparkline':[],'card_type':'actions'},
+        {'label':'Abs Top IS',         'value':'—',     'change_pct':None,'sparkline':[],'card_type':'actions'},
+        {'label':'Click Share',        'value':'—',     'change_pct':None,'sparkline':[],'card_type':'actions'},
+    ]
     q_cur = f"""
         SELECT
-            SUM(cost_micros) / 1000000.0                                     AS cost,
-            SUM(conversions_value)                                            AS revenue,
-            SUM(conversions_value) / NULLIF(SUM(cost_micros)/1000000.0, 0)   AS roas,
-            SUM(conversions)                                                  AS conversions,
-            (SUM(cost_micros)/1000000.0) / NULLIF(SUM(conversions), 0)       AS cpa,
-            SUM(clicks) * 1.0 / NULLIF(SUM(impressions), 0)                  AS cvr,
-            SUM(impressions)                                                  AS impressions,
-            SUM(clicks)                                                       AS clicks,
-            (SUM(cost_micros)/1000000.0) / NULLIF(SUM(clicks), 0)            AS cpc,
-            SUM(clicks) * 1.0 / NULLIF(SUM(impressions), 0)                  AS ctr,
-            AVG(search_impression_share)                                      AS search_is,
-            AVG(search_top_impression_share)                                  AS search_top_is,
-            AVG(search_absolute_top_impression_share)                         AS search_abs_top_is,
-            AVG(click_share)                                                  AS click_share
+            SUM(cost_micros)/1000000.0,
+            SUM(conversions_value),
+            SUM(conversions),
+            SUM(impressions),
+            SUM(clicks),
+            AVG(search_impression_share),
+            AVG(search_top_impression_share),
+            AVG(search_absolute_top_impression_share),
+            AVG(click_share)
         FROM ro.analytics.ad_group_daily
-        WHERE customer_id = ?
-          {date_filter}
-          AND snapshot_date < CURRENT_DATE
+        WHERE customer_id = ? {date_filter}
     """
-    q_prv = f"""
-        SELECT
-            SUM(cost_micros) / 1000000.0                                     AS cost,
-            SUM(conversions_value)                                            AS revenue,
-            SUM(conversions_value) / NULLIF(SUM(cost_micros)/1000000.0, 0)   AS roas,
-            SUM(conversions)                                                  AS conversions,
-            (SUM(cost_micros)/1000000.0) / NULLIF(SUM(conversions), 0)       AS cpa,
-            SUM(clicks) * 1.0 / NULLIF(SUM(impressions), 0)                  AS cvr,
-            SUM(impressions)                                                  AS impressions,
-            SUM(clicks)                                                       AS clicks,
-            (SUM(cost_micros)/1000000.0) / NULLIF(SUM(clicks), 0)            AS cpc,
-            SUM(clicks) * 1.0 / NULLIF(SUM(impressions), 0)                  AS ctr,
-            AVG(search_impression_share)                                      AS search_is,
-            AVG(search_top_impression_share)                                  AS search_top_is,
-            AVG(search_absolute_top_impression_share)                         AS search_abs_top_is,
-            AVG(click_share)                                                  AS click_share
+    q_prv = q_cur.replace(date_filter, prev_filter)
+    q_sparkline = f"""
+        SELECT snapshot_date,
+               SUM(cost_micros)/1000000.0               AS cost,
+               SUM(conversions_value)                   AS conv_value,
+               SUM(conversions)                         AS conv,
+               SUM(impressions)                         AS impr,
+               SUM(clicks)                              AS clicks,
+               AVG(search_impression_share)             AS search_is,
+               AVG(search_top_impression_share)         AS top_is,
+               AVG(search_absolute_top_impression_share) AS abs_top_is,
+               AVG(click_share)                         AS click_sh,
+               (SUM(cost_micros)/1000000.0)/NULLIF(SUM(clicks),0)        AS avg_cpc,
+               SUM(clicks)::DOUBLE/NULLIF(SUM(impressions),0)           AS ctr,
+               SUM(conversions)::DOUBLE/NULLIF(SUM(clicks),0)*100       AS cvr
         FROM ro.analytics.ad_group_daily
-        WHERE customer_id = ?
-          {prev_filter}
+        WHERE customer_id = ? {date_filter}
+        GROUP BY snapshot_date ORDER BY snapshot_date ASC
     """
-    q_spark = f"""
-        SELECT
-            snapshot_date,
-            SUM(cost_micros) / 1000000.0                                     AS cost,
-            SUM(conversions_value)                                            AS revenue,
-            SUM(conversions_value) / NULLIF(SUM(cost_micros)/1000000.0, 0)   AS roas,
-            SUM(conversions)                                                  AS conversions,
-            (SUM(cost_micros)/1000000.0) / NULLIF(SUM(conversions), 0)       AS cpa,
-            SUM(clicks) * 1.0 / NULLIF(SUM(impressions), 0)                  AS cvr,
-            SUM(impressions)                                                  AS impressions,
-            SUM(clicks)                                                       AS clicks,
-            (SUM(cost_micros)/1000000.0) / NULLIF(SUM(clicks), 0)            AS cpc,
-            SUM(clicks) * 1.0 / NULLIF(SUM(impressions), 0)                  AS ctr,
-            AVG(search_impression_share)                                      AS search_is,
-            AVG(search_top_impression_share)                                  AS search_top_is,
-            AVG(search_absolute_top_impression_share)                         AS search_abs_top_is,
-            AVG(click_share)                                                  AS click_share
-        FROM ro.analytics.ad_group_daily
-        WHERE customer_id = ?
-          {date_filter}
-          AND snapshot_date < CURRENT_DATE
-        GROUP BY snapshot_date
-        ORDER BY snapshot_date ASC
-    """
-
     try:
-        cur = conn.execute(q_cur, [customer_id]).fetchone()
-        prv = conn.execute(q_prv, [customer_id]).fetchone()
-        spark_rows = conn.execute(q_spark, [customer_id]).fetchall()
+        c=conn.execute(q_cur,[customer_id]).fetchone()
+        p=conn.execute(q_prv,[customer_id]).fetchone()
+        sp_rows=conn.execute(q_sparkline,[customer_id]).fetchall()
     except Exception as e:
-        print(f"[Ad Groups M2] Error loading metrics cards: {e}")
-        return [_blank_ag('financial')] * 8, [_blank_ag('actions')] * 8
-
-    def _v(row, i): return float(row[i]) if row and row[i] is not None else None
-    c = [_v(cur, i) for i in range(14)]
-    p = [_v(prv, i) for i in range(14)]
-    def pct(val): return val * 100 if val is not None else None
-    def _spark(col_idx, scale=1.0):
-        return [float(r[col_idx]) * scale if r[col_idx] is not None else 0.0 for r in spark_rows]
-
-    financial_cards = [
-        _card_ag('Cost',        c[0],       p[0],       _spark(1),        'currency',   invert=True),
-        _card_ag('Revenue',     c[1],       p[1],       _spark(2),        'currency'),
-        _card_ag('ROAS',        c[2],       p[2],       _spark(3),        'ratio'),
-        _blank_ag('financial'),
-        _card_ag('Conversions', c[3],       p[3],       _spark(4),        'number'),
-        _card_ag('Cost / Conv', c[4],       p[4],       _spark(5),        'currency',   invert=True),
-        _card_ag('Conv Rate',   pct(c[5]),  pct(p[5]),  _spark(6, 100.0), 'percentage'),
-        _blank_ag('financial'),
+        print(f"[AdGroups M2] error: {e}")
+        return _empty_fin, _empty_act
+    def _f(r,i): return float(r[i]) if r and r[i] is not None else None
+    def _chg(cur,prv): return ((cur-prv)/prv*100) if cur is not None and prv else None
+    def pct(v): return f"{v*100:.1f}%" if v is not None else "—"
+    def _spark(col_idx,scale=1.0):
+        return [float((r[col_idx] or 0)*scale) for r in sp_rows]
+    c_cost=_f(c,0); c_revenue=_f(c,1); c_conv=_f(c,2); c_impr=_f(c,3); c_clicks=_f(c,4)
+    c_is=_f(c,5); c_top_is=_f(c,6); c_abs_top_is=_f(c,7); c_click_sh=_f(c,8)
+    p_cost=_f(p,0); p_revenue=_f(p,1); p_conv=_f(p,2); p_impr=_f(p,3); p_clicks=_f(p,4)
+    p_is=_f(p,5); p_top_is=_f(p,6); p_abs_top_is=_f(p,7); p_click_sh=_f(p,8)
+    c_roas=(c_revenue/c_cost) if c_cost else None
+    p_roas=(p_revenue/p_cost) if p_cost else None
+    c_cpa=(c_cost/c_conv) if c_conv else None
+    p_cpa=(p_cost/p_conv) if p_conv else None
+    c_cvr=(c_conv/c_clicks) if c_clicks else None
+    p_cvr=(p_conv/p_clicks) if p_clicks else None
+    c_cpc=(c_cost/c_clicks) if c_clicks else None
+    p_cpc=(p_cost/p_clicks) if p_clicks else None
+    c_ctr=(c_clicks/c_impr) if c_impr else None
+    p_ctr=(p_clicks/p_impr) if p_impr else None
+    wasted=0.0
+    def _card_ag(label,value,change,spark,val_type='currency',card_type='financial'):
+        return {'label':label,'value':value,'change_pct':change,'sparkline':spark,'value_type':val_type,'card_type':card_type}
+    financial_cards=[
+        _card_ag('Cost',         f"£{c_cost:,.0f}" if c_cost else '£0',     _chg(c_cost,p_cost),     _spark(1), 'currency'),
+        _card_ag('Revenue',      f"£{c_revenue:,.0f}" if c_revenue else '£0', _chg(c_revenue,p_revenue), _spark(2), 'currency'),
+        _card_ag('ROAS',         f"{c_roas:.2f}" if c_roas else '0.00',     _chg(c_roas,p_roas),     _spark(1), 'ratio'),
+        _card_ag('Wasted Spend', f"£{wasted:,.0f}",                          None,                    [],        'currency'),
+        _card_ag('Conv.',        f"{c_conv:,.0f}" if c_conv else '0',       _chg(c_conv,p_conv),     _spark(3), 'number'),
+        _card_ag('CPA',          f"£{c_cpa:,.2f}" if c_cpa else '£0',       _chg(c_cpa,p_cpa),       _spark(10),'currency'),
+        _card_ag('CVR',          f"{c_cvr*100:.2f}%" if c_cvr else '0.00%', _chg(c_cvr,p_cvr),       _spark(12),'percentage'),
+        _card_ag('',             '',                                         None,                    [],        'currency'),
     ]
-    actions_cards = [
-        _card_ag('Impressions',       c[6],       p[6],       _spark(7),         'number',     card_type='actions'),
-        _card_ag('Clicks',            c[7],       p[7],       _spark(8),         'number',     card_type='actions'),
-        _card_ag('Avg CPC',           c[8],       p[8],       _spark(9),         'currency',   card_type='actions'),
-        _card_ag('Avg CTR',           pct(c[9]),  pct(p[9]),  _spark(10, 100.0), 'percentage', card_type='actions'),
-        _card_ag('Search Impr Share', pct(c[10]), pct(p[10]), _spark(11, 100.0), 'percentage', card_type='actions'),
-        _card_ag('Search Top IS',     pct(c[11]), pct(p[11]), _spark(12, 100.0), 'percentage', card_type='actions'),
-        _card_ag('Search Abs Top IS', pct(c[12]), pct(p[12]), _spark(13, 100.0), 'percentage', card_type='actions'),
-        _card_ag('Click Share',       pct(c[13]), pct(p[13]), _spark(14, 100.0), 'percentage', card_type='actions'),  # col 14 = click_share sparkline
+    actions_cards=[
+        _card_ag('Impr.',        f"{c_impr:,.0f}" if c_impr else '0',       _chg(c_impr,p_impr),     _spark(4), 'number', card_type='actions'),
+        _card_ag('Clicks',       f"{c_clicks:,.0f}" if c_clicks else '0',   _chg(c_clicks,p_clicks), _spark(5), 'number', card_type='actions'),
+        _card_ag('CPC',          f"£{c_cpc:.2f}" if c_cpc else '£0',        _chg(c_cpc,p_cpc),       _spark(10),'currency',card_type='actions'),
+        _card_ag('CTR',          f"{c_ctr*100:.2f}%" if c_ctr else '0.00%', _chg(c_ctr,p_ctr),       _spark(11,100.0),'percentage',card_type='actions'),
+        _card_ag('Search Impr Share', pct(c_is),     _chg(c_is,p_is),       _spark(6,100.0), 'percentage', card_type='actions'),
+        _card_ag('Search Top IS',     pct(c_top_is), _chg(c_top_is,p_top_is), _spark(7,100.0), 'percentage', card_type='actions'),
+        _card_ag('Search Abs Top IS', pct(c_abs_top_is), _chg(c_abs_top_is,p_abs_top_is), _spark(8,100.0), 'percentage', card_type='actions'),
+        _card_ag('Click Share',       pct(c_click_sh),   _chg(c_click_sh,p_click_sh),     _spark(9,100.0), 'percentage', card_type='actions'),
     ]
     return financial_cards, actions_cards
 
@@ -478,9 +433,10 @@ def ad_groups():
 
     conn.close()
 
-    # Get ad group rules
+    # M5: Rules tab - use campaigns.py pattern
     rules = get_rules_for_page('ad_group', config.customer_id)
     rule_counts = count_rules_by_category(rules)
+    rules_config = load_rules()
 
     return render_template(
         "ad_groups.html",
@@ -500,8 +456,9 @@ def ad_groups():
         status=status,
         sort_by=sort_by,
         sort_dir=sort_dir,
-        rules_config=[],
+        rules=rules,
         rule_counts=rule_counts,
+        rules_config=rules_config,
         financial_cards=financial_cards,
         actions_cards=actions_cards,
         metrics_collapsed=get_metrics_collapsed('ad_groups'),

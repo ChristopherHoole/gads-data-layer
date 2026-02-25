@@ -2,6 +2,10 @@
 {% from "macros/metrics_cards.html" import metrics_section %}
 {% from "macros/performance_chart.html" import performance_chart %}
 
+<script>
+  const rulesConfig = {{ rules_config | tojson }};
+</script>
+
 {% block title %}Ad Groups - {{ client_name }}{% endblock %}
 
 {% block content %}
@@ -24,7 +28,7 @@
     <li class="nav-item" role="presentation">
       <button class="nav-link" id="rules-tab-btn" data-bs-toggle="tab"
               data-bs-target="#rules-tab" type="button" role="tab">
-        <i class="bi bi-lightning-charge-fill text-warning"></i> Rules ({{ rules|length }})
+        <i class="bi bi-sliders"></i> Rules ({{ rules_config | selectattr('rule_type', 'equalto', 'ad_group') | list | length }})
       </button>
     </li>
   </ul>
@@ -87,11 +91,9 @@
                  style="min-width:2600px; border-collapse:separate; border-spacing:0; font-size:12px; white-space:nowrap;">
             <thead style="position:sticky; top:0; z-index:4;">
               <tr style="background:#f8f9fa;">
-                <!-- Sticky: checkbox -->
                 <th style="width:36px; min-width:36px; max-width:36px; position:sticky; left:0; z-index:5; background:#f8f9fa; padding:7px 8px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">
                   <input type="checkbox" id="select-all" class="form-check-input">
                 </th>
-                <!-- Sticky: Ad Group name -->
                 <th style="min-width:220px; position:sticky; left:36px; z-index:5; background:#f8f9fa; box-shadow:2px 0 4px rgba(0,0,0,0.08); padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">
                   {{ sort_link('ad_group_name', 'Ad Group') }}
                 </th>
@@ -114,176 +116,67 @@
                 <th style="min-width:80px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('avg_cpc', 'Avg CPC') }}</th>
                 <th style="min-width:65px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('ctr', 'CTR') }}</th>
                 <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('search_impression_share', 'Search IS') }}</th>
-                <th style="min-width:80px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('search_top_impression_share', 'Top IS') }}</th>
-                <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('search_absolute_top_impression_share', 'Abs Top IS') }}</th>
-                <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('click_share', 'Click Share') }}</th>
-                <th style="min-width:100px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:center;">{{ sort_link('optimization_score', 'Opt. Score') }}</th>
-                <th style="min-width:160px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">Bid Strategy</th>
-                <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:center;">Actions</th>
+                <th style="min-width:100px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('search_top_impression_share', 'Top IS') }}</th>
+                <th style="min-width:110px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('search_absolute_top_impression_share', 'Abs Top IS') }}</th>
+                <th style="min-width:95px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('click_share', 'Click Share') }}</th>
+                <th style="min-width:85px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:center;">Opt. Score</th>
+                <th style="min-width:120px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">Bid Strategy</th>
+                <th style="min-width:100px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:center;">Actions</th>
               </tr>
             </thead>
             <tbody>
               {% for ag in ad_groups %}
-              <tr>
-                <!-- Checkbox (sticky) -->
-                <td style="width:36px; min-width:36px; max-width:36px; position:sticky; left:0; z-index:2; background:#ffffff; padding:7px 8px; border-bottom:1px solid #f0f0f0; vertical-align:middle;">
-                  <input type="checkbox" class="form-check-input ag-checkbox" data-ag-id="{{ ag.ad_group_id }}">
+              <tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="position:sticky; left:0; z-index:3; background:#fff; padding:7px 8px; border-bottom:1px solid #f0f0f0; vertical-align:middle;">
+                  <input type="checkbox" class="form-check-input ag-checkbox" value="{{ ag.ad_group_id }}">
                 </td>
-
-                <!-- Ad Group Name (sticky) -->
-                <td style="position:sticky; left:36px; z-index:2; background:#ffffff; box-shadow:2px 0 4px rgba(0,0,0,0.08); padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle;">
-                  <strong>{{ ag.ad_group_name }}</strong><br>
-                  <small class="text-muted font-monospace">{{ ag.ad_group_id }}</small>
+                <td style="position:sticky; left:36px; z-index:3; background:#fff; box-shadow:2px 0 4px rgba(0,0,0,0.08); padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle;">
+                  <div style="min-width:200px;">
+                    <a href="#" class="text-decoration-none fw-semibold" style="color:#1a73e8; font-size:13px;">{{ ag.ad_group_name }}</a>
+                    <div style="font-size:10px; color:#666;">ID: {{ ag.ad_group_id }}</div>
+                  </div>
                 </td>
-
-                <!-- Campaign -->
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle;"><small class="text-muted">{{ ag.campaign_name }}</small></td>
                 <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle;">
-                  <small class="text-muted">{{ ag.campaign_name }}</small>
+                  {% if ag.status == 'ENABLED' %}<span class="badge bg-success" style="font-size:10px;">Enabled</span>
+                  {% elif ag.status == 'PAUSED' %}<span class="badge bg-secondary" style="font-size:10px;">Paused</span>
+                  {% else %}<span class="badge bg-danger" style="font-size:10px;">{{ ag.status }}</span>{% endif %}
                 </td>
-
-                <!-- Status -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle;">
-                  {% if ag.ad_group_status == 'ENABLED' %}
-                    <span class="badge bg-success">Active</span>
-                  {% elif ag.ad_group_status == 'PAUSED' %}
-                    <span class="badge bg-secondary">Paused</span>
-                  {% else %}
-                    <span class="badge bg-danger">Removed</span>
-                  {% endif %}
-                </td>
-
-                <!-- Target CPA -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  {% if ag.target_cpa is not none and ag.target_cpa > 0 %}${{ "{:.2f}".format(ag.target_cpa) }}{% else %}<span class="text-muted">—</span>{% endif %}
-                </td>
-
-                <!-- Cost -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  ${{ "{:,.2f}".format(ag.cost or 0) }}
-                </td>
-
-                <!-- Conv. Value -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  ${{ "{:,.2f}".format(ag.conversions_value or 0) }}
-                </td>
-
-                <!-- Conversions -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  {{ "{:.1f}".format(ag.conversions or 0) }}
-                </td>
-
-                <!-- ROAS -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  {% if ag.conv_value_per_cost is not none %}
-                    {% if ag.conv_value_per_cost >= 3 %}
-                      <span class="text-success fw-bold">{{ "{:.2f}".format(ag.conv_value_per_cost) }}x</span>
-                    {% elif ag.conv_value_per_cost >= 2 %}
-                      <span class="text-warning fw-bold">{{ "{:.2f}".format(ag.conv_value_per_cost) }}x</span>
-                    {% else %}
-                      <span class="text-danger fw-bold">{{ "{:.2f}".format(ag.conv_value_per_cost) }}x</span>
-                    {% endif %}
-                  {% else %}<span class="text-muted">—</span>{% endif %}
-                </td>
-
-                <!-- CPA -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  {% if ag.cost_per_conv is not none %}${{ "{:.2f}".format(ag.cost_per_conv) }}{% else %}<span class="text-muted">—</span>{% endif %}
-                </td>
-
-                <!-- Conv Rate -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  {% if ag.conv_rate is not none %}{{ "{:.2f}".format(ag.conv_rate * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
-                </td>
-
-                <!-- All Conv. -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  {{ "{:.1f}".format(ag.all_conversions or 0) }}
-                </td>
-
-                <!-- Cost / All Conv. -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  {% if ag.cost_per_all_conv is not none %}${{ "{:.2f}".format(ag.cost_per_all_conv) }}{% else %}<span class="text-muted">—</span>{% endif %}
-                </td>
-
-                <!-- All Conv Rate -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  {% if ag.all_conv_rate is not none %}{{ "{:.2f}".format(ag.all_conv_rate * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
-                </td>
-
-                <!-- All Conv. Value -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  ${{ "{:,.2f}".format(ag.all_conversions_value or 0) }}
-                </td>
-
-                <!-- All Conv. Val / Cost -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  {% if ag.all_conv_value_per_cost is not none %}{{ "{:.2f}".format(ag.all_conv_value_per_cost) }}x{% else %}<span class="text-muted">—</span>{% endif %}
-                </td>
-
-                <!-- Impressions -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  {{ "{:,}".format((ag.impressions or 0)|int) }}
-                </td>
-
-                <!-- Clicks -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  {{ "{:,}".format((ag.clicks or 0)|int) }}
-                </td>
-
-                <!-- Avg CPC -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  {% if ag.avg_cpc is not none %}${{ "{:.2f}".format(ag.avg_cpc) }}{% else %}<span class="text-muted">—</span>{% endif %}
-                </td>
-
-                <!-- CTR -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  {% if ag.ctr is not none %}{{ "{:.2f}".format(ag.ctr * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
-                </td>
-
-                <!-- Search IS -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  {% if ag.search_impression_share is not none %}{{ "{:.1f}".format(ag.search_impression_share * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
-                </td>
-
-                <!-- Top IS -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  {% if ag.search_top_impression_share is not none %}{{ "{:.1f}".format(ag.search_top_impression_share * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
-                </td>
-
-                <!-- Abs Top IS -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  {% if ag.search_absolute_top_impression_share is not none %}{{ "{:.1f}".format(ag.search_absolute_top_impression_share * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
-                </td>
-
-                <!-- Click Share -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
-                  {% if ag.click_share is not none %}{{ "{:.1f}".format(ag.click_share * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
-                </td>
-
-                <!-- Opt. Score -->
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.target_cpa is not none and ag.target_cpa > 0 %}£{{ "{:,.2f}".format(ag.target_cpa) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.cost is not none %}£{{ "{:,.2f}".format(ag.cost) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.conversions_value is not none %}£{{ "{:,.2f}".format(ag.conversions_value) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.conversions is not none %}{{ "{:,.1f}".format(ag.conversions) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.conv_value_per_cost is not none %}{{ "{:,.2f}".format(ag.conv_value_per_cost) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.cost_per_conv is not none %}£{{ "{:,.2f}".format(ag.cost_per_conv) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.conv_rate is not none %}{{ "{:.2f}".format(ag.conv_rate * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.all_conversions is not none %}{{ "{:,.1f}".format(ag.all_conversions) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.cost_per_all_conv is not none %}£{{ "{:,.2f}".format(ag.cost_per_all_conv) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.all_conv_rate is not none %}{{ "{:.2f}".format(ag.all_conv_rate * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.all_conversions_value is not none %}£{{ "{:,.2f}".format(ag.all_conversions_value) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.all_conv_value_per_cost is not none %}{{ "{:,.2f}".format(ag.all_conv_value_per_cost) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.impressions is not none %}{{ "{:,}".format(ag.impressions) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.clicks is not none %}{{ "{:,}".format(ag.clicks) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.avg_cpc is not none %}£{{ "{:,.2f}".format(ag.avg_cpc) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.ctr is not none %}{{ "{:.2f}".format(ag.ctr * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.search_impression_share is not none %}{{ "{:.1f}".format(ag.search_impression_share * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.search_top_impression_share is not none %}{{ "{:.1f}".format(ag.search_top_impression_share * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.search_absolute_top_impression_share is not none %}{{ "{:.1f}".format(ag.search_absolute_top_impression_share * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ag.click_share is not none %}{{ "{:.1f}".format(ag.click_share * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}</td>
                 <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:center;">
                   {% if ag.optimization_score is not none %}
                     {% set pct = (ag.optimization_score * 100)|round|int %}
                     <div class="d-flex align-items-center justify-content-center gap-1">
                       <div class="progress" style="width:50px; height:6px;">
-                        <div class="progress-bar {% if pct >= 80 %}bg-success{% elif pct >= 60 %}bg-warning{% else %}bg-danger{% endif %}"
-                             style="width:{{ pct }}%"></div>
+                        <div class="progress-bar {% if pct >= 80 %}bg-success{% elif pct >= 60 %}bg-warning{% else %}bg-danger{% endif %}" style="width:{{ pct }}%"></div>
                       </div>
                       <small>{{ pct }}%</small>
                     </div>
                   {% else %}<span class="text-muted">—</span>{% endif %}
                 </td>
-
-                <!-- Bid Strategy -->
-                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle;">
-                  <small class="text-muted">{{ ag.bid_strategy_type or '—' }}</small>
-                </td>
-
-                <!-- Actions -->
+                <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle;"><small class="text-muted">{{ ag.bid_strategy_type or '—' }}</small></td>
                 <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:center;">
                   <div class="dropdown">
-                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
-                            data-bs-toggle="dropdown">Actions</button>
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
                     <ul class="dropdown-menu dropdown-menu-end">
                       <li><a class="dropdown-item" href="#"><i class="bi bi-pencil"></i> Edit Bid</a></li>
                       <li><a class="dropdown-item" href="#"><i class="bi bi-pause"></i> Pause</a></li>
@@ -298,62 +191,40 @@
             </tbody>
           </table>
         </div>
-
-        <!-- Pagination Footer -->
         <div class="card-footer">
           <div class="row align-items-center">
-            <div class="col-md-4">
-              <small class="text-muted">
-                Showing {{ (page-1)*per_page + 1 }}–{{ [page*per_page, total_ad_groups]|min }} of {{ total_ad_groups }}
-              </small>
-            </div>
+            <div class="col-md-4"><small class="text-muted">Showing {{ (page-1)*per_page + 1 }}–{{ [page*per_page, total_ad_groups]|min }} of {{ total_ad_groups }}</small></div>
             <div class="col-md-4 text-center">
               <div class="btn-group btn-group-sm">
                 {% for n in [10, 25, 50, 100] %}
-                  <a href="/ad-groups?page=1&per_page={{ n }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}"
-                     class="btn {% if per_page == n %}btn-primary{% else %}btn-outline-secondary{% endif %}">{{ n }}</a>
+                  <a href="/ad-groups?page=1&per_page={{ n }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}" class="btn {% if per_page == n %}btn-primary{% else %}btn-outline-secondary{% endif %}">{{ n }}</a>
                 {% endfor %}
               </div>
             </div>
             <div class="col-md-4">
               <nav>
                 <ul class="pagination pagination-sm justify-content-end mb-0">
-                  <li class="page-item {% if page == 1 %}disabled{% endif %}">
-                    <a class="page-link" href="/ad-groups?page={{ page-1 }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}">Previous</a>
-                  </li>
+                  <li class="page-item {% if page == 1 %}disabled{% endif %}"><a class="page-link" href="/ad-groups?page={{ page-1 }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}">Previous</a></li>
                   {% for p in range(1, total_pages+1) %}
                     {% if p == page or (p >= page-2 and p <= page+2) or p == 1 or p == total_pages %}
-                      <li class="page-item {% if p == page %}active{% endif %}">
-                        <a class="page-link" href="/ad-groups?page={{ p }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}">{{ p }}</a>
-                      </li>
+                      <li class="page-item {% if p == page %}active{% endif %}"><a class="page-link" href="/ad-groups?page={{ p }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}">{{ p }}</a></li>
                     {% endif %}
                   {% endfor %}
-                  <li class="page-item {% if page == total_pages %}disabled{% endif %}">
-                    <a class="page-link" href="/ad-groups?page={{ page+1 }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}">Next</a>
-                  </li>
+                  <li class="page-item {% if page == total_pages %}disabled{% endif %}"><a class="page-link" href="/ad-groups?page={{ page+1 }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}">Next</a></li>
                 </ul>
               </nav>
             </div>
           </div>
         </div>
       </div>
-
-    </div><!-- /ad-groups-tab -->
+    </div>
 
     <!-- RULES TAB -->
-    {% set page_name = "Ad Group" %}
-    {% include 'components/rules_tab.html' %}
+    <div class="tab-pane fade" id="rules-tab" role="tabpanel">
+      {% set page_name = "Ad Group" %}
+      {% include 'components/rules_tab.html' %}
+    </div>
 
-  </div>
-</div>
-
-<!-- Rules Sidebar -->
-{% include 'components/rules_sidebar.html' %}
-
-<!-- Rules Card -->
-<div class="row mt-4">
-  <div class="col-md-12">
-    {% include 'components/rules_card.html' %}
   </div>
 </div>
 

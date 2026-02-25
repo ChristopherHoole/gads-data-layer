@@ -22,6 +22,7 @@ from flask import Blueprint, render_template, request
 from act_dashboard.auth import login_required
 from act_dashboard.routes.shared import get_page_context, get_db_connection, get_date_range_from_session, get_metrics_collapsed, get_chart_metrics
 from act_dashboard.routes.rule_helpers import get_rules_for_page, count_rules_by_category
+from act_dashboard.routes.rules_api import load_rules
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Tuple, Optional
 import duckdb
@@ -839,7 +840,8 @@ def shopping():
         quality_stats=quality_stats,
         feed_issues=feed_issues,
         # Tab 4
-        rules_config=[],
+        rules=rules,
+        rules_config=load_rules(),
         rule_counts=rule_counts,
         # Filters / state
         days=days,

@@ -13,17 +13,17 @@
     "condition_unit": "x_target",
     "condition_2_metric": "clicks_7d",
     "condition_2_operator": "gte",
-    "condition_2_value": 30,
+    "condition_2_value": 30.0,
     "condition_2_unit": "absolute",
     "action_direction": "increase",
-    "action_magnitude": 10,
+    "action_magnitude": 10.0,
     "risk_level": "low",
     "cooldown_days": 7,
     "monitoring_days": 0,
     "monitoring_minutes": 1,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
-    "updated_at": "2026-02-24T00:37:32"
+    "updated_at": "2026-02-25T19:03:05"
   },
   {
     "rule_id": "budget_2",

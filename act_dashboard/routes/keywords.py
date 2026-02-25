@@ -16,7 +16,8 @@ from act_dashboard.routes.shared import (
     get_metrics_collapsed,
     get_chart_metrics
 )
-from act_dashboard.routes.rule_helpers import get_rules_for_page
+from act_dashboard.routes.rule_helpers import get_rules_for_page, count_rules_by_category
+from act_dashboard.routes.rules_api import load_rules
 from datetime import date, timedelta
 from typing import List, Dict, Any, Tuple
 import duckdb
@@ -1528,7 +1529,10 @@ def keywords():
         st_status=st_status,
         st_match_type=st_match_type,
         st_campaigns=st_campaigns,
-        rules_config=[],
+        # M5 Rules
+        rules=get_rules_for_page('keyword', config.customer_id),
+        rule_counts=count_rules_by_category(get_rules_for_page('keyword', config.customer_id)),
+        rules_config=load_rules(),
         # M2: Metrics cards
         financial_cards=financial_cards,
         actions_cards=actions_cards,

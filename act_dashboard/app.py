@@ -165,6 +165,24 @@ def create_app():
         else:
             print(f"⚠️  [Chat 36] Route not found (skipping): {route_name}")
 
+    # EMERGENCY FIX: CSRF exemption for rules API routes (JSON API, no CSRF tokens sent)
+    # All /api/rules/* endpoints are JSON APIs called from JavaScript
+    # Protected by @login_required decorator instead
+    rules_api_routes = [
+        'rules_api.get_rules',           # GET /api/rules
+        'rules_api.add_rule',            # POST /api/rules/add
+        'rules_api.update_rule',         # PUT /api/rules/<rule_id>/update
+        'rules_api.toggle_rule',         # PUT /api/rules/<rule_id>/toggle
+        'rules_api.delete_rule',         # DELETE /api/rules/<rule_id>
+        'rules_api.get_campaigns_list'   # GET /api/campaigns-list
+    ]
+    for route_name in rules_api_routes:
+        if route_name in app.view_functions:
+            csrf.exempt(app.view_functions[route_name])
+            print(f"✅ [EMERGENCY FIX] CSRF exempted: {route_name}")
+        else:
+            print(f"⚠️  [EMERGENCY FIX] Route not found (skipping): {route_name}")
+
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
     def csrf_error(reason):

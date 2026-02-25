@@ -20,6 +20,7 @@ from act_dashboard.routes.shared import (
     get_chart_metrics,
 )
 from act_dashboard.routes.rule_helpers import get_rules_for_page, count_rules_by_category
+from act_dashboard.routes.rules_api import load_rules
 from typing import List, Dict, Any, Tuple
 import duckdb
 
@@ -444,7 +445,8 @@ def ads():
         status=status,
         sort_by=sort_by,
         sort_dir=sort_dir,
-        rules_config=[],
+        rules=rules,
+        rules_config=load_rules(),
         rule_counts=rule_counts,
         error=None,
         financial_cards=financial_cards,
