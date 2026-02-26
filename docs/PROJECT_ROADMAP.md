@@ -1,9 +1,9 @@
 # PROJECT ROADMAP - Google Ads Data Layer (ACT Dashboard)
 
 **Last Updated:** 2026-02-26
-**Current Phase:** Rules Creation ✅ COMPLETE (41 rules across 5 types) | Marketing Website ✅ COMPLETE | Dashboard 3.0 M9 ✅ COMPLETE
-**Overall Completion:** ~99% (Foundation + Polish + Website + Dashboard 3.0 + Rules Creation complete)
-**Mode:** Ready for Rules Tab UI Components + Recommendations Engine Extension
+**Current Phase:** Rules Tab UI ✅ COMPLETE | Rules Creation ✅ COMPLETE (41 rules) | Marketing Website ✅ COMPLETE | Dashboard 3.0 M9 ✅ COMPLETE
+**Overall Completion:** ~99% (Foundation + Polish + Website + Dashboard 3.0 + Rules Creation + Rules Tab UI complete)
+**Mode:** Ready for Recommendations Engine Extension
 
 ---
 
@@ -125,10 +125,10 @@
 - ✅ Chat 43: 4 Ad Group rules
 - ✅ Chat 44: 4 Ad rules
 - ✅ Chat 45: 14 Shopping rules
+- ✅ Chat 46: Rules Tab UI Components (3 components)
 
 ### **Short-term:**
-- 🎯 Rules Tab UI Components (ad_group, ad, shopping) — NEXT (~3 hours)
-- 🎯 Recommendations Engine Extension (all rule types, 15-25 hours)
+- 🎯 Recommendations Engine Extension (all rule types, 15-25 hours) — NEXT
 - 📋 M9 live validation with real Google Ads account
 - 📋 Website: Connect contact form to /api/leads endpoint
 - 📋 Website: Optional SEO improvements (meta tags, sitemap)
@@ -329,6 +329,97 @@
 - Out-of-stock: 5 products (multiple product issue, not single SKU)
 - Optimization score: 60% (Google's "good" threshold)
 
+### **2026-02-26 (Chat 46 — Rules Tab UI Components)**
+
+**Completed:**
+- ✅ 3 Rules Tab UI components created (ad_group, ad, shopping)
+- ✅ All components display full detailed rule cards
+- ✅ Fixed 3 parent templates with correct component includes
+- ✅ Applied data schema fix (condition_1_* fields for new schema)
+- ✅ All 20 success criteria passing
+- Time: 2.5 hours actual vs 3 hours estimated (83% efficiency)
+- **Commits:** 0299845 (main work) + 286f2ce (documentation)
+- **Docs:** CHAT_46_BRIEF.md + CHAT_46_SUMMARY.md + CHAT_46_HANDOFF.md
+
+**3 Components Created:**
+1. **ad_group_rules_tab.html** - Display 4 ad group rules with full details
+2. **ad_rules_tab.html** - Display 4 ad rules with full details
+3. **shopping_rules_tab.html** - Display 14 shopping rules with full details
+
+**Parent Templates Fixed (3):**
+- ad_groups.html line 225: Changed from generic `rules_tab.html` → `ad_group_rules_tab.html`
+- ads_new.html line 267: Changed from generic `rules_tab.html` → `ad_rules_tab.html`
+- shopping_new.html line 729: Changed from generic `rules_tab.html` → `shopping_rules_tab.html`
+
+**Key Technical Changes:**
+
+**Schema Fix Applied:**
+- Old schema (keywords): `condition_metric`, `condition_operator`, `condition_value`, `condition_unit`
+- New schema (ad_group/ad/shopping): `condition_1_metric`, `condition_1_operator`, `condition_1_value`, `condition_1_unit`
+- Updated all 3 components to use new schema fields
+
+**API Integration:**
+- ad_group: `/api/rules?rule_type=ad_group` → 4 rules
+- ad: `/api/rules?rule_type=ad` → 4 rules
+- shopping: `/api/rules?rule_type=shopping` → 14 rules
+
+**Component Features:**
+- Full detailed card layout matching keywords_rules_tab.html
+- Toggle enable/disable functionality
+- Edit/delete buttons
+- Filter options (All, Blanket only, Campaign-specific only, Active only)
+- Add Rule drawer (slide-in panel)
+- Empty state handling
+- Error handling
+
+**Testing Results:**
+- ✅ Ad Groups page: Rules tab displays 4 rules, toggle working
+- ✅ Ads page: Rules tab displays 4 rules, toggle working
+- ✅ Shopping page: Rules tab displays 14 rules, toggle working
+- ✅ Flask startup: No errors
+- ✅ Browser console: 0 JavaScript errors
+- ✅ Performance: <2s page load, <1s rules render
+
+**Files Changed:**
+- 3 NEW component files (1,006 lines each)
+- 3 UPDATED parent templates (include statements fixed)
+- 3 NEW documentation files (brief + summary + handoff)
+
+**Critical Learnings:**
+
+**1. Data Schema Evolution:**
+- Keywords rules use old schema (condition_metric)
+- Ad Groups/Ads/Shopping rules use new schema (condition_1_metric)
+- Future work: Migrate keywords to new schema for consistency
+
+**2. Template Include Specificity:**
+- Generic includes (`rules_tab.html`) don't work
+- Each page needs specific component include
+- Pattern: `{entity}.html` → `{entity}_rules_tab.html`
+
+**3. Fresh PowerShell Testing:**
+- ALWAYS use fresh PowerShell after file changes
+- Flask caching can mask template changes
+- Hard refresh (Ctrl+F5) required in browser
+
+**4. Step-by-Step Testing:**
+- Test after EACH component creation (not all at once)
+- Immediate feedback catches issues early
+- Iterative approach prevents cascading failures
+
+**Pattern Established:**
+- Ad Groups: ad_groups.html → ad_group_rules_tab.html
+- Ads: ads_new.html → ad_rules_tab.html
+- Shopping: shopping_new.html → shopping_rules_tab.html
+- Keywords: keywords_new.html → keywords_rules_tab.html (existing)
+- Campaigns: campaigns_new.html → rules tab embedded (existing)
+
+**Rules Tab UI Phase: ✅ 100% COMPLETE**
+- All 5 entity types now have Rules tab UI
+- 41 rules total across 5 types
+- All components functional and tested
+- Consistent UI pattern established
+
 ### **2026-02-24 (Chat 30a — M9 Phase 1 Search Terms Table)**
 
 **Completed:**
@@ -426,4 +517,4 @@
 ---
 
 **Last Updated:** 2026-02-26
-**Next Step:** Rules Tab UI Components (~3 hours) | Recommendations Engine Extension (15-25 hours)
+**Next Step:** Recommendations Engine Extension (15-25 hours) - Extend to all 5 rule types
