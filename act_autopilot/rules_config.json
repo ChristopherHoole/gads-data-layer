@@ -4,7 +4,7 @@
     "rule_type": "budget",
     "rule_number": 1,
     "display_name": "Budget 1",
-    "name": "Increase Budget \u2014 High ROAS",
+    "name": "Increase Budget — High ROAS",
     "scope": "blanket",
     "campaign_id": null,
     "condition_metric": "roas_7d",
@@ -21,16 +21,16 @@
     "cooldown_days": 7,
     "monitoring_days": 0,
     "monitoring_minutes": 1,
-    "enabled": false,
+    "enabled": true,
     "created_at": "2026-02-22T00:00:00",
-    "updated_at": "2026-02-25T22:21:50"
+    "updated_at": "2026-02-26T17:15:10"
   },
   {
     "rule_id": "budget_2",
     "rule_type": "budget",
     "rule_number": 2,
     "display_name": "Budget 2",
-    "name": "Decrease Budget \u2014 Low ROAS",
+    "name": "Decrease Budget — Low ROAS",
     "scope": "blanket",
     "campaign_id": null,
     "condition_metric": "roas_7d",
@@ -48,14 +48,14 @@
     "monitoring_minutes": 2,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
-    "updated_at": "2026-02-22T09:05:03"
+    "updated_at": "2026-02-26T17:01:18"
   },
   {
     "rule_id": "budget_3",
     "rule_type": "budget",
     "rule_number": 3,
     "display_name": "Budget 3",
-    "name": "Emergency Budget Cut \u2014 Cost Spike",
+    "name": "Emergency Budget Cut — Cost Spike",
     "scope": "blanket",
     "campaign_id": null,
     "condition_metric": "cost_spike_confidence",
@@ -81,7 +81,7 @@
     "rule_type": "budget",
     "rule_number": 4,
     "display_name": "Budget 4",
-    "name": "Recovery Budget Increase \u2014 Cost Drop",
+    "name": "Recovery Budget Increase — Cost Drop",
     "scope": "blanket",
     "campaign_id": null,
     "condition_metric": "roas_7d",
@@ -107,7 +107,7 @@
     "rule_type": "budget",
     "rule_number": 5,
     "display_name": "Budget 5",
-    "name": "Pacing Reduction \u2014 Monthly Cap at Risk",
+    "name": "Pacing Reduction — Monthly Cap at Risk",
     "scope": "blanket",
     "campaign_id": null,
     "condition_metric": "pace_over_cap_detected",
@@ -133,7 +133,7 @@
     "rule_type": "budget",
     "rule_number": 6,
     "display_name": "Budget 6",
-    "name": "Stabilise Budget \u2014 Volatile Campaign",
+    "name": "Stabilise Budget — Volatile Campaign",
     "scope": "blanket",
     "campaign_id": null,
     "condition_metric": "cost_cv_14d",
@@ -159,7 +159,7 @@
     "rule_type": "bid",
     "rule_number": 1,
     "display_name": "Bid 1",
-    "name": "Tighten tROAS \u2014 Beating Goal Significantly",
+    "name": "Tighten tROAS — Beating Goal Significantly",
     "scope": "blanket",
     "campaign_id": null,
     "condition_metric": "roas_30d",
@@ -185,7 +185,7 @@
     "rule_type": "bid",
     "rule_number": 2,
     "display_name": "Bid 2",
-    "name": "Loosen tROAS \u2014 Missing Goal, Has Volume",
+    "name": "Loosen tROAS — Missing Goal, Has Volume",
     "scope": "blanket",
     "campaign_id": null,
     "condition_metric": "roas_30d",
@@ -211,7 +211,7 @@
     "rule_type": "bid",
     "rule_number": 3,
     "display_name": "Bid 3",
-    "name": "Hold Bid Target \u2014 CVR Drop Detected",
+    "name": "Hold Bid Target — CVR Drop Detected",
     "scope": "blanket",
     "campaign_id": null,
     "condition_metric": "cvr_drop_detected",
@@ -237,7 +237,7 @@
     "rule_type": "bid",
     "rule_number": 4,
     "display_name": "Bid 4",
-    "name": "Hold Bid Target \u2014 Low Data",
+    "name": "Hold Bid Target — Low Data",
     "scope": "blanket",
     "campaign_id": null,
     "condition_metric": "conversions_30d",
@@ -315,7 +315,7 @@
     "rule_type": "status",
     "rule_number": 3,
     "display_name": "Status 3",
-    "name": "Hold Changes \u2014 CTR Drop Detected",
+    "name": "Hold Changes — CTR Drop Detected",
     "scope": "blanket",
     "campaign_id": null,
     "condition_metric": "ctr_drop_detected",
@@ -341,7 +341,7 @@
     "rule_type": "keyword",
     "rule_number": 1,
     "display_name": "Pause High-Cost Zero-Conv",
-    "name": "KEYWORD-001: Pause keywords with \u00a350+ spend and 0 conversions",
+    "name": "KEYWORD-001: Pause keywords with £50+ spend and 0 conversions",
     "scope": "blanket",
     "campaign_id": null,
     "condition_metric": "cost",
@@ -358,9 +358,9 @@
     "cooldown_days": 14,
     "monitoring_days": 14,
     "monitoring_minutes": 0,
-    "enabled": false,
+    "enabled": true,
     "created_at": "2026-02-25T19:00:00",
-    "updated_at": "2026-02-25T22:22:16"
+    "updated_at": "2026-02-26T17:15:38"
   },
   {
     "rule_id": "keyword_2",
@@ -386,7 +386,7 @@
     "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-25T19:00:00",
-    "updated_at": "2026-02-25T19:00:00"
+    "updated_at": "2026-02-26T16:41:28"
   },
   {
     "rule_id": "keyword_3",
@@ -412,14 +412,14 @@
     "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-25T19:00:00",
-    "updated_at": "2026-02-25T19:00:00"
+    "updated_at": "2026-02-26T16:19:45"
   },
   {
     "rule_id": "keyword_4",
     "rule_type": "keyword",
     "rule_number": 4,
     "display_name": "Reduce Bid High CPC",
-    "name": "KEYWORD-004: Reduce bid 20% on keywords with CPC >\u00a35",
+    "name": "KEYWORD-004: Reduce bid 20% on keywords with CPC >£5",
     "scope": "blanket",
     "campaign_id": null,
     "condition_metric": "cpc",
@@ -471,7 +471,7 @@
     "rule_type": "keyword",
     "rule_number": 6,
     "display_name": "Increase Bid High Performers",
-    "name": "KEYWORD-006: Increase bid 15% on high performers (ROAS \u22656x, CVR \u22655%)",
+    "name": "KEYWORD-006: Increase bid 15% on high performers (ROAS ≥6x, CVR ≥5%)",
     "scope": "blanket",
     "campaign_id": null,
     "condition_metric": "roas",
@@ -516,7 +516,7 @@
     "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-02-26T17:15:31"
   },
   {
     "rule_id": "ad_group_2",
@@ -618,9 +618,9 @@
     "cooldown_days": 14,
     "monitoring_days": 14,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-02-26T17:15:48"
   },
   {
     "rule_id": "ad_2",
@@ -722,9 +722,9 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-02-26T17:16:13"
   },
   {
     "rule_id": "shopping_2",

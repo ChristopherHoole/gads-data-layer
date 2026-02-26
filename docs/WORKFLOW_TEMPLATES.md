@@ -30,6 +30,35 @@
 
 ---
 
+## 🚨 CRITICAL WORKFLOW RULES
+
+**Christopher will ONLY upload this brief (CHAT_[N]_BRIEF.md). Everything else is in `/mnt/project/`.**
+
+**YOUR FIRST STEP:**
+```
+✅ WORKFLOW UNDERSTOOD
+
+I confirm:
+1. Christopher will ONLY upload the brief (CHAT_[N]_BRIEF.md)
+2. I will read ALL project files from /mnt/project/ using view tool
+3. I will NOT request codebase ZIP (too large)
+4. I will NOT request any documentation files (already available in /mnt/project/)
+5. I will send 5 QUESTIONS to Master Chat and WAIT for answers
+6. I will create DETAILED BUILD PLAN and WAIT for Master approval
+7. I will implement step-by-step, testing at each stage
+8. I will work ONE FILE AT A TIME
+9. Christopher does NOT edit code - I request file, he uploads, I edit, I return complete file with full save path
+
+Ready to begin.
+```
+
+**THEN:**
+1. Use `view` tool to read all files from `/mnt/project/`
+2. Read this brief thoroughly
+3. Proceed to 5 QUESTIONS stage (MANDATORY)
+
+---
+
 ## CONTEXT
 
 [2-3 paragraphs explaining:
@@ -48,11 +77,11 @@
 ## REQUIREMENTS
 
 ### Deliverables
-1. File 1: path/to/file1.ext (create/modify)
+1. File 1: C:\Users\User\Desktop\gads-data-layer\[path]\file1.ext (create/modify)
    - Purpose: [What it does]
    - Key features: [List 3-5 main features]
 
-2. File 2: path/to/file2.ext (create/modify)
+2. File 2: C:\Users\User\Desktop\gads-data-layer\[path]\file2.ext (create/modify)
    - Purpose: [What it does]
    - Key features: [List 3-5 main features]
 
@@ -71,15 +100,16 @@
 ## REFERENCE FILES
 
 **Similar Completed Work:**
+- Read from /mnt/project/ or project codebase
 - path/to/similar1.ext - Shows [pattern X]
 - path/to/similar2.ext - Shows [pattern Y]
 
 **Documentation to Consult:**
-- docs/DOCUMENT1.md - Section on [topic]
-- docs/DOCUMENT2.md - Examples of [pattern]
+- /mnt/project/DOCUMENT1.md - Section on [topic]
+- /mnt/project/DOCUMENT2.md - Examples of [pattern]
 
 **Database Tables:**
-- analytics.table_name - Contains [data]
+- ro.analytics.table_name - Contains [data]
 
 ---
 
@@ -95,6 +125,64 @@
 - [ ] 8. [Specific, testable criterion]
 
 **ALL must pass for approval.**
+
+---
+
+## 5 QUESTIONS STAGE (MANDATORY)
+
+**After reading all project files, you MUST write EXACTLY 5 questions and send them to Master Chat.**
+
+Format:
+```
+5 QUESTIONS FOR MASTER CHAT
+
+Q1. [CATEGORY] Question text here?
+Q2. [CATEGORY] Question text here?
+Q3. [CATEGORY] Question text here?
+Q4. [CATEGORY] Question text here?
+Q5. [CATEGORY] Question text here?
+
+Waiting for Master Chat answers before proceeding to build plan.
+```
+
+Categories: [DATABASE], [ROUTE], [DESIGN], [RULES], [SCOPE], [ARCHITECTURE]
+
+---
+
+## BUILD PLAN STAGE (MANDATORY)
+
+**After receiving answers to 5 questions, you MUST create a detailed build plan and send it to Master Chat for approval.**
+
+Format:
+```
+DETAILED BUILD PLAN FOR MASTER CHAT REVIEW
+
+Overview:
+- Total files to create/modify: [N]
+- Total estimated time: [X hours]
+- Implementation approach: [1-2 sentences]
+
+Files to create/modify:
+1. [Full Windows path] — [what changes, why needed]
+2. [Full Windows path] — [what changes, why needed]
+
+Step-by-step implementation (with testing):
+STEP 1: [Task description] (~X min)
+  - [Specific action 1]
+  - [Specific action 2]
+  - TEST: [How to verify this step works]
+  
+STEP 2: [Task description] (~X min)
+  - [Specific action 1]
+  - TEST: [How to verify this step works]
+
+Total estimated time: X hours
+Risks / unknowns: [Any remaining concerns]
+
+Waiting for Master Chat approval before starting implementation.
+```
+
+**ONLY AFTER Master Chat explicitly approves your build plan can you begin implementation.**
 
 ---
 
@@ -115,6 +203,8 @@
 - Initial page load: <2 seconds
 - Table render: <500ms
 - No JavaScript errors in console
+
+**IMPORTANT:** Test AT EVERY STEP if the step produces testable output.
 
 ---
 
@@ -151,15 +241,22 @@
 
 ## ESTIMATED TIME BREAKDOWN
 
-- Setup: [X min]
+- 5 Questions + Build Plan: [X min]
 - Implementation: [Y min]
-- Testing: [Z min]
+- Testing (at each step): [Z min]
 - Documentation: [W min]
 **Total: [X+Y+Z+W min]**
 
 ---
 
-Ready to start? Upload codebase first (CHAT_WORKING_RULES.md Rule 1).
+**WORKFLOW REMINDER:**
+1. Confirm you understand workflow (see top of brief)
+2. Read all files from /mnt/project/ using view tool
+3. Send 5 QUESTIONS → WAIT for answers
+4. Send DETAILED BUILD PLAN → WAIT for approval
+5. Implement step-by-step, ONE FILE AT A TIME, testing at each stage
+6. Create handoff documentation
+7. Await Master review
 ```
 
 ---

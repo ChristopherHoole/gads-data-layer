@@ -1,9 +1,9 @@
 # PROJECT ROADMAP - Google Ads Data Layer (ACT Dashboard)
 
-**Last Updated:** 2026-02-24
-**Current Phase:** Marketing Website ✅ COMPLETE | Dashboard 3.0 M9 ✅ COMPLETE (Both Phases)
-**Overall Completion:** ~99% (Foundation + Polish + Website + Dashboard 3.0 M1–M9 complete)
-**Mode:** Ready for future-proofing phase
+**Last Updated:** 2026-02-26
+**Current Phase:** Rules Creation ✅ COMPLETE (41 rules across 5 types) | Marketing Website ✅ COMPLETE | Dashboard 3.0 M9 ✅ COMPLETE
+**Overall Completion:** ~99% (Foundation + Polish + Website + Dashboard 3.0 + Rules Creation complete)
+**Mode:** Ready for Rules Tab UI Components + Recommendations Engine Extension
 
 ---
 
@@ -80,6 +80,15 @@
 - Chat 30a M9 Phase 1: Search Terms tab + Negative Keyword Suggestions ✅ COMPLETE
 - Chat 30b M9 Phase 2: Live Execution + Keyword Expansion ✅ COMPLETE
 
+### **Rules Creation Phase** ✅ (41 rules complete - 100%)
+- Chat 41: M5 Rules tab rollout (Keywords, Ad Groups, Ads, Shopping pages) - ead441b
+- Chat 42: 6 Keyword rules (keyword_1 through keyword_6) - d9d0b33 + 65b6986
+- Chat 43: 4 Ad Group rules (ad_group_1 through ad_group_4) - 4a9cdbe
+- Chat 44: 4 Ad rules (ad_1 through ad_4) - 52b042e
+- Chat 45: 14 Shopping rules (shopping_1 through shopping_14, Chat 12 migration) - 86fc939
+- **Total: 41 rules** (13 campaign + 6 keyword + 4 ad_group + 4 ad + 14 shopping)
+- All rules Constitution-compliant (cooldowns ≥7 days, monitoring ≥7 days, risk levels appropriate)
+
 ---
 
 ## 📊 PROGRESS METRICS
@@ -111,9 +120,16 @@
 - ✅ Master Chat 4.0: Marketing Website Rebuild + Deployment
 - ✅ Chat 30a: M9 Phase 1 Search Terms Table
 - ✅ Chat 30b: M9 Phase 2 Live Execution + Keyword Expansion
+- ✅ Chat 41: M5 Rules tab rollout to 4 pages
+- ✅ Chat 42: 6 Keyword rules
+- ✅ Chat 43: 4 Ad Group rules
+- ✅ Chat 44: 4 Ad rules
+- ✅ Chat 45: 14 Shopping rules
 
 ### **Short-term:**
-- 🎯 Phase 3: Future-Proofing (unit tests, job queue, CSRF) — NEXT
+- 🎯 Rules Tab UI Components (ad_group, ad, shopping) — NEXT (~3 hours)
+- 🎯 Recommendations Engine Extension (all rule types, 15-25 hours)
+- 📋 M9 live validation with real Google Ads account
 - 📋 Website: Connect contact form to /api/leads endpoint
 - 📋 Website: Optional SEO improvements (meta tags, sitemap)
 - 📋 System Changes tab → cards (currently table, deferred from Chat 29)
@@ -172,6 +188,146 @@
 - Live API validation (requires real Google Ads account)
 - Batching for >10 items (sequential only for now)
 - CSRF protection (Flask-WTF)
+
+### **2026-02-26 (Chat 41 — M5 Rules Tab Rollout to 4 Pages)**
+
+**Completed:**
+- ✅ Rules tab structure on Keywords, Ad Groups, Ads, Shopping pages
+- ✅ Tab labels show rule counts (6, 4, 4, 14 respectively)
+- ✅ rules_api.py extended with rule_type filtering
+- ✅ Component files created (placeholder structures)
+- ✅ All 4 pages updated with Rules tab integration
+- Time: 3.5 hours actual vs 4-6 hours estimated (58-88% efficiency)
+- **Commit:** ead441b
+- **Docs:** CHAT_41_SUMMARY.md + CHAT_41_HANDOFF.md
+
+**Key features:**
+- Systematic tab addition across all 4 pages
+- Rule count display (ready for future rule creation)
+- Consistent UI pattern across all pages
+- Foundation for Chat 42-45 rule creation
+
+### **2026-02-26 (Chat 42 — 6 Keyword Rules Creation)**
+
+**Completed:**
+- ✅ 6 Keyword rules migrated to rules_config.json
+- ✅ Rules: keyword_1 through keyword_6
+- ✅ Constitution compliance verified (all rules 7+ day cooldowns/monitoring)
+- ✅ Keywords Rules tab component created
+- ✅ Bug fix: Nested tab-pane wrapper removed from keywords_rules_tab.html
+- Time: ~4 hours actual vs 4-6 hours estimated
+- **Commits:** d9d0b33 (initial) + 65b6986 (bug fix)
+- **Docs:** CHAT_42_SUMMARY.md + CHAT_42_HANDOFF.md
+
+**6 Keyword Rules:**
+1. keyword_1: Pause High Cost Low Conv (cost ≥£100, 0 conversions, 7-day cooldown)
+2. keyword_2: Increase Bid High ROAS (ROAS ≥5.0, +20% bid, 14-day cooldown)
+3. keyword_3: Decrease Bid Low ROAS (ROAS <2.0, -20% bid, 14-day cooldown)
+4. keyword_4: Pause Low QS High Cost (QS ≤3, cost ≥£50, 7-day cooldown)
+5. keyword_5: Flag Low CTR (CTR <1%, 20+ impressions, 7-day cooldown)
+6. keyword_6: Flag High Impr Low Click (1,000+ impressions, CTR <0.5%, 7-day cooldown)
+
+**Key technical details:**
+- keyword_4: 2 conditions (QS ≤3 AND cost ≥£50, both required)
+- keyword_5 & keyword_6: Flag-only rules (medium risk, diagnostic)
+- All pause rules: High risk tier
+
+### **2026-02-26 (Chat 43 — 4 Ad Group Rules Creation)**
+
+**Completed:**
+- ✅ 4 Ad Group rules migrated to rules_config.json
+- ✅ Rules: ad_group_1 through ad_group_4
+- ✅ Constitution compliance verified
+- ✅ Ad Groups Rules tab component created
+- Time: ~3 hours actual vs 4-6 hours estimated (50-75% efficiency)
+- **Commit:** 4a9cdbe
+- **Docs:** CHAT_43_SUMMARY.md + CHAT_43_HANDOFF.md
+- **Total rules:** 23 (13 campaign + 6 keyword + 4 ad_group)
+
+**4 Ad Group Rules:**
+1. ad_group_1: Pause High Cost No Conv (cost ≥£150, 0 conversions, 7-day cooldown)
+2. ad_group_2: Increase Bid High ROAS (ROAS ≥5.0, +20% bid, 14-day cooldown)
+3. ad_group_3: Decrease Bid Low ROAS (ROAS <2.0, -20% bid, 14-day cooldown)
+4. ad_group_4: Flag Low CTR (CTR <1.5%, 50+ impressions, 7-day cooldown)
+
+### **2026-02-26 (Chat 44 — 4 Ad Rules Creation)**
+
+**Completed:**
+- ✅ 4 Ad rules migrated to rules_config.json
+- ✅ Rules: ad_1 through ad_4
+- ✅ Constitution compliance verified
+- ✅ Ads Rules tab component created
+- ✅ String comparison pattern: "eq" operator with "POOR"/"AVERAGE"
+- Time: 3h 25min actual vs 4-6 hours estimated (57-85% efficiency)
+- **Commit:** 52b042e
+- **Docs:** CHAT_44_SUMMARY.md + CHAT_44_HANDOFF.md
+- **Total rules:** 27 (13 campaign + 6 keyword + 4 ad_group + 4 ad)
+
+**4 Ad Rules:**
+1. ad_1: Pause High Cost No Conv (cost ≥£100, 0 conversions, 7-day cooldown)
+2. ad_2: Flag Low CTR (CTR <2%, 100+ impressions, 7-day cooldown)
+3. ad_3: Flag Poor Ad Strength (ad_strength "eq" "POOR", 7-day cooldown)
+4. ad_4: Flag Average Ad Strength (ad_strength "eq" "AVERAGE", 14-day cooldown)
+
+**Key technical decision:**
+- String comparison: condition_operator "eq" + condition_value "POOR" (not enum)
+- ad_3: Higher priority (7-day) vs ad_4 (14-day) due to severity
+
+### **2026-02-26 (Chat 45 — 14 Shopping Rules Migration)**
+
+**Completed:**
+- ✅ 14 Shopping rules migrated from Chat 12 Python code to rules_config.json
+- ✅ Rules: shopping_1 through shopping_14
+- ✅ All Constitution compliance verified (cooldowns, monitoring, risk levels)
+- ✅ Comprehensive validation script created (validate_ad_rules.py)
+- ✅ All 14 rules tested incrementally (5 batches)
+- Time: 5.5 hours actual vs 6-10 hours estimated (55-91% efficiency)
+- **Commit:** 86fc939
+- **Docs:** CHAT_45_SUMMARY.md + CHAT_45_HANDOFF.md + CHAT_45_BRIEF.md
+- **Total rules:** 41 (13 campaign + 6 keyword + 4 ad_group + 4 ad + 14 shopping)
+- **🎉 RULES CREATION PHASE: 100% COMPLETE**
+
+**14 Shopping Rules:**
+
+**Budget Rules (3):**
+1. shopping_1: Increase Budget High ROAS (ROAS ≥4.5, +15%, 7-day cooldown)
+2. shopping_2: Decrease Budget Low ROAS (ROAS <2.0, -20%, 7-day cooldown)
+3. shopping_3: Pause Budget Wasting (cost ≥£200, 0 conversions, 14-day cooldown, high risk)
+
+**ROAS Performance (3):**
+4. shopping_4: Flag Low ROAS (ROAS <2.0, 7-day cooldown, medium risk)
+5. shopping_5: Flag Very Low ROAS (ROAS <1.5, 5+ conversions, 7-day cooldown, low risk)
+6. shopping_6: Pause Extremely Low ROAS (ROAS <1.0, 14-day cooldown, high risk)
+
+**Feed Errors (3):**
+7. shopping_7: Flag High Cost No Conv (cost ≥£100, 0 conversions, 7-day cooldown, low risk)
+8. shopping_8: Flag High Feed Errors (feed_error_count ≥20, 7-day cooldown, medium risk)
+9. shopping_9: Pause Critical Feed Errors (feed_error_count ≥50, 14-day cooldown, high risk)
+
+**Out-of-Stock + IS (3):**
+10. shopping_10: Flag Out-of-Stock Products (out_of_stock_product_count ≥5, 7-day cooldown, low risk)
+11. shopping_11: Flag Low Impression Share (search_impression_share <30%, 7-day cooldown, medium risk)
+12. shopping_12: Flag IS Lost to Budget (search_impression_share <30%, cost ≥£150, 7-day cooldown, medium risk)
+
+**IS Budget + Opt Score (2):**
+13. shopping_13: Increase Budget IS-Constrained (search_impression_share <40%, ROAS ≥3.0, +15%, 7-day cooldown)
+14. shopping_14: Flag Low Opt Score (optimization_score <60%, 14-day cooldown, low risk)
+
+**Key Specifications:**
+- Campaign-level scope (product performance aggregated)
+- Standard Constitution (no Shopping-specific exceptions)
+- Thresholds: ROAS (4.5/2.0/1.5/1.0), Feed errors (20/50), IS (30%), Opt score (60%)
+- Column NULL handling: Rules created even for unpopulated columns (feed_error_count, out_of_stock_product_count, optimization_score)
+
+**Master-Approved Thresholds:**
+- ROAS increase trigger: 4.5x (high-performing campaigns only)
+- ROAS decrease trigger: 2.0x (underperforming campaigns)
+- ROAS pause triggers: 1.5x (early warning, 5 conv. threshold), 1.0x (critical)
+- Feed error flag: 20 errors (monitoring threshold)
+- Feed error pause: 50 errors (critical threshold)
+- IS thresholds: 30% (flag), 40% (budget increase with ROAS ≥3.0)
+- Out-of-stock: 5 products (multiple product issue, not single SKU)
+- Optimization score: 60% (Google's "good" threshold)
 
 ### **2026-02-24 (Chat 30a — M9 Phase 1 Search Terms Table)**
 
@@ -269,5 +425,5 @@
 
 ---
 
-**Last Updated:** 2026-02-24
-**Next Step:** Phase 3 Future-Proofing (unit tests, job queue, CSRF protection)
+**Last Updated:** 2026-02-26
+**Next Step:** Rules Tab UI Components (~3 hours) | Recommendations Engine Extension (15-25 hours)

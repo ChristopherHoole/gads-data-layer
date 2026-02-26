@@ -1,19 +1,20 @@
 # MASTER KNOWLEDGE BASE - ADS CONTROL TOWER (A.C.T)
 
-**Version:** 10.0
+**Version:** 11.0
 **Created:** 2026-02-19
-**Updated:** 2026-02-24
+**Updated:** 2026-02-26
 **Purpose:** Complete project context for Master Chat coordination
 
 ---
 
 ## EXECUTIVE SUMMARY
 
-### Current State (Feb 24, 2026)
+### Current State (Feb 26, 2026)
 - **Overall Completion:** ~99%
-- **Phase:** Marketing Website ✅ COMPLETE | Dashboard 3.0 M9 ✅ COMPLETE (Both Phases)
-- **Active Development:** Ready for Phase 3 (Future-Proofing)
+- **Phase:** Rules Creation ✅ COMPLETE (41 rules) | Marketing Website ✅ COMPLETE | Dashboard 3.0 M9 ✅ COMPLETE
+- **Active Development:** Ready for Rules Tab UI Components + Recommendations Engine Extension
 - **Marketing Website:** Live at https://www.christopherhoole.online
+- **Rules:** 41 total (13 campaign + 6 keyword + 4 ad_group + 4 ad + 14 shopping)
 - **Templating:** Jinja2 Macros (metrics_section M2 + performance_chart M3)
 
 ### Tech Stack
@@ -297,7 +298,89 @@ All 13 rules now have `monitoring_minutes`. When > 0, takes priority over `monit
 - Code complete, dry-run validated, ready for live testing with real Google Ads account
 - Deferred: Batching for >10 items, CSRF protection, undo/rollback functionality
 
-### Marketing Website — ChristopherHoole.online ✅
+### Rules Creation Phase ✅ (Chats 41-45 — 41 rules complete)
+
+#### Chat 41: M5 Rules Tab Rollout (ead441b)
+**Date:** 2026-02-26 | **Time:** 3.5 hours (58-88% efficiency)
+
+- Rules tab structure added to 4 pages (Keywords, Ad Groups, Ads, Shopping)
+- Tab labels show rule counts dynamically (6, 4, 4, 14)
+- rules_api.py extended with `rule_type` filtering
+- Component files created (placeholder structures for Chat 42-45)
+- Foundation for systematic rule creation across all entity types
+
+**Files modified:**
+- keywords_new.html, ad_groups_new.html, ads_new.html, shopping_new.html (tab integration)
+- rules_api.py (rule_type parameter added to GET /api/rules)
+- 4 component files created (keywords_rules_tab.html, ad_group_rules_tab.html, ad_rules_tab.html, shopping_rules_tab.html)
+
+#### Chat 42: 6 Keyword Rules (d9d0b33 + 65b6986)
+**Date:** 2026-02-26 | **Time:** ~4 hours
+
+- 6 Keyword rules migrated to rules_config.json
+- Rules: keyword_1 (Pause High Cost Low Conv), keyword_2 (Increase Bid High ROAS), keyword_3 (Decrease Bid Low ROAS), keyword_4 (Pause Low QS High Cost, 2 conditions), keyword_5 (Flag Low CTR), keyword_6 (Flag High Impr Low Click)
+- Constitution compliance: All 7+ day cooldowns/monitoring
+- Keywords Rules tab component completed
+- Bug fix (65b6986): Removed nested tab-pane wrapper causing CSS conflicts
+
+**Key technical:** keyword_4 uses 2 conditions (quality_score ≤3 AND cost ≥£50, both required)
+
+#### Chat 43: 4 Ad Group Rules (4a9cdbe)
+**Date:** 2026-02-26 | **Time:** ~3 hours
+
+- 4 Ad Group rules migrated to rules_config.json  
+- Rules: ad_group_1 (Pause High Cost No Conv), ad_group_2 (Increase Bid High ROAS), ad_group_3 (Decrease Bid Low ROAS), ad_group_4 (Flag Low CTR)
+- Constitution compliance verified
+- Ad Groups Rules tab component completed
+- Total rules: 23 (13 campaign + 6 keyword + 4 ad_group)
+
+**Pattern consistency:** Mirrors campaign/keyword bid adjustment rules (±20%), cooldowns match (7-14 days)
+
+#### Chat 44: 4 Ad Rules (52b042e)
+**Date:** 2026-02-26 | **Time:** 3h 25min (57-85% efficiency)
+
+- 4 Ad rules migrated to rules_config.json
+- Rules: ad_1 (Pause High Cost No Conv), ad_2 (Flag Low CTR), ad_3 (Flag Poor Ad Strength), ad_4 (Flag Average Ad Strength)
+- String comparison pattern established: `condition_operator: "eq"` + `condition_value: "POOR"`
+- Ads Rules tab component completed
+- Total rules: 27 (13 campaign + 6 keyword + 4 ad_group + 4 ad)
+
+**Key decision:** ad_3 (Poor): 7-day cooldown vs ad_4 (Average): 14-day cooldown (priority by severity)
+
+#### Chat 45: 14 Shopping Rules (86fc939)
+**Date:** 2026-02-26 | **Time:** 5.5 hours (55-91% efficiency)
+
+- 14 Shopping rules migrated from Chat 12 Python code to rules_config.json
+- Rules: shopping_1 through shopping_14 (Budget, ROAS, Feed Errors, Out-of-Stock, IS, Opt Score)
+- Constitution compliance comprehensive verification
+- Validation script created: validate_ad_rules.py
+- Incremental testing (5 batches: 3+3+3+3+2 rules)
+- Total rules: 41 (13 campaign + 6 keyword + 4 ad_group + 4 ad + 14 shopping)
+- **🎉 RULES CREATION PHASE: 100% COMPLETE**
+
+**14 Shopping Rules breakdown:**
+- Budget (3): Increase High ROAS (+15%), Decrease Low ROAS (-20%), Pause Wasting
+- ROAS Performance (3): Flag Low (<2.0), Flag Very Low (<1.5), Pause Extremely Low (<1.0)
+- Feed Errors (3): Flag High Cost No Conv, Flag High Errors (≥20), Pause Critical (≥50)
+- Out-of-Stock + IS (3): Flag Out-of-Stock (≥5), Flag Low IS (<30%), Flag IS Lost to Budget
+- IS Budget + Opt Score (2): Increase Budget IS-Constrained, Flag Low Opt Score (<60%)
+
+**Master-Approved Thresholds:**
+- ROAS: 4.5x (increase), 2.0x (decrease), 1.5x/1.0x (pause)
+- Feed errors: 20 (flag), 50 (pause)
+- IS: 30% (flag), 40% (budget increase)
+- Out-of-stock: 5 products (multiple SKU issue)
+- Optimization score: 60% (Google "good" threshold)
+
+**Key technical decisions:**
+- Campaign-level scope (product performance aggregated)
+- Standard Constitution (no Shopping-specific exceptions)
+- Column NULL handling: Rules created for unpopulated columns (feed_error_count, out_of_stock_product_count, optimization_score)
+- Testing strategy: 5 incremental batches (3+3+3+3+2) to isolate any JSON syntax errors
+
+---
+
+## CURRENT STATUS
 **Date:** 2026-02-23
 **Chat 31:** Wireframe creation (13 sections designed, 306KB with base64 images)
 **Master Chat 4.0:** Full rebuild + deployment
@@ -407,14 +490,15 @@ All 13 rules now have `monitoring_minutes`. When > 0, takes priority over `monit
 
 What's working:
 - **Marketing Website:** Live at https://www.christopherhoole.online, 11 sections, fully responsive
+- **Rules Creation:** ✅ COMPLETE - 41 rules across 5 types (13 campaign + 6 keyword + 4 ad_group + 4 ad + 14 shopping)
 - All 6 dashboard pages with real/synthetic data
 - Metrics cards: Financial + Actions on every page
 - Performance chart: dual-axis, 4 toggleable metrics, session-persisted, all 6 pages
 - Sparklines + change indicators on date-range pages
 - Session-based date picker
-- M5 card-based Rules tab on Campaigns page
-- rules_config.json + rules_api.py CRUD
-- M6 Recommendations Engine + global page + Campaigns tab
+- M5 card-based Rules tab structure on 5 pages (Campaigns pilot complete, 4 pages have tab structures ready for components)
+- rules_config.json (41 rules) + rules_api.py CRUD
+- M6 Recommendations Engine + global page + Campaigns tab (campaign rules only currently)
 - M7 Accept/Decline/Modify action buttons — live POST routes
 - M7 5-tab Recommendations UI on /recommendations + /campaigns (Pending/Monitoring/Successful/Reverted/Declined)
 - M8 Radar background job — auto-resolves monitoring recommendations
@@ -429,12 +513,13 @@ What's working:
 - Server-side sort on all sortable columns
 
 Pending:
+- **Rules Tab UI:** Create page-specific components for ad_group, ad, shopping (~3 hours total)
+- **Recommendations Engine:** Extend to handle all rule types (currently campaign rules only, 15-25 hours)
 - **Website:** Connect contact form to /api/leads endpoint (integrate with A.C.T dashboard)
 - **Website:** Optional SEO improvements (meta tags, OpenGraph images, sitemap)
 - **Website:** Root domain DNS propagation (https://christopherhoole.online without www)
 - M9 Live validation with real Google Ads account
 - System Changes tab → card grid (deferred from Chat 29)
-- M5 Rules tab rollout to Ad Groups, Keywords, Ads, Shopping
 - Campaign scope pill name resolution
 - All Conv. pipeline
 - Shopping IS/Opt. Score (columns exist but NULL)
@@ -537,5 +622,5 @@ Medium-term:
 
 ---
 
-**Version:** 10.0 | **Last Updated:** 2026-02-24
-**Next Step:** Phase 3 Future-Proofing (unit tests, job queue, CSRF) | Website: Connect contact form to A.C.T dashboard
+**Version:** 11.0 | **Last Updated:** 2026-02-26
+**Next Step:** Rules Tab UI Components (~3 hours) | Recommendations Engine Extension (15-25 hours)
