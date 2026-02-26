@@ -1,9 +1,9 @@
 """
-Recommendations Engine — Chat 27 (M6)
+Recommendations Engine — Chat 27 (M6) + Chat 47 Multi-Entity Extension
 
 Reads enabled rules from rules_config.json, evaluates each rule against
-campaign data in the database, and writes new pending recommendations to
-the `recommendations` table in warehouse.duckdb.
+entity data (campaigns, keywords, ad_groups, shopping) in the database,
+and writes new pending recommendations to the `recommendations` table.
 
 Usage:
     from act_autopilot.recommendations_engine import run_recommendations_engine
@@ -15,17 +15,22 @@ Returns dict:
         "skipped_duplicate": N,
         "skipped_no_data": N,
         "skipped_no_target": N,
+        "skipped_no_table": N,
         "errors": [...],
         "customer_id": "...",
+        "by_entity_type": {"campaign": N, "keyword": N, ...}
     }
 
-Architecture:
+Architecture (Chat 47):
     - Writable connection to warehouse.duckdb
-    - ro.analytics.campaign_features_daily attached from warehouse_readonly.duckdb
-    - rules_config.json read from act_autopilot/ directory
-    - analytics.campaign_daily NOT used (budget_micros/target_roas not present for Synthetic)
-    - budget proxy : cost_micros_w7_mean
-    - target_roas  : fixed fallback 4.0 (no column available)
+    - ATTACH warehouse_readonly.duckdb as ro
+    - Queries 4 entity data sources based on rule_type:
+        * campaigns → ro.analytics.campaign_features_daily
+        * keywords  → ro.analytics.keyword_daily
+        * ad_groups → ro.analytics.ad_group_daily
+        * shopping  → ro.analytics.shopping_campaign_daily
+    - Ads skipped (table doesn't exist in database)
+    - Graceful degradation: missing tables/columns handled
 """
 
 import json
@@ -43,13 +48,34 @@ _HERE = Path(__file__).parent
 RULES_CONFIG_PATH = _HERE / "rules_config.json"
 
 # ---------------------------------------------------------------------------
-# Metric → DB column mapping
+# Entity Type Configuration (Chat 47)
+# Maps entity types to their database tables
+# ---------------------------------------------------------------------------
+
+ENTITY_TABLES = {
+    "campaign": "ro.analytics.campaign_features_daily",
+    "keyword":  "ro.analytics.keyword_daily",
+    "ad_group": "ro.analytics.ad_group_daily",
+    "shopping": "ro.analytics.shopping_campaign_daily",
+    # "ad" table doesn't exist in database - will be skipped
+}
+
+# Entity ID and Name column mappings
+ENTITY_ID_COLUMNS = {
+    "campaign": ("campaign_id", "campaign_name"),
+    "keyword":  ("keyword_id", "keyword_text"),
+    "ad_group": ("ad_group_id", "ad_group_name"),
+    "shopping": ("campaign_id", "campaign_name"),  # Shopping uses campaign-level data
+}
+
+# ---------------------------------------------------------------------------
+# Metric → DB column mapping (CAMPAIGNS)
 # Proxy columns used when original flag columns don't exist in features table.
 # ---------------------------------------------------------------------------
 
 # Maps rule condition_metric → (db_column, override_operator, override_threshold)
 # override_operator / override_threshold = None means use rule's own values
-METRIC_MAP = {
+CAMPAIGN_METRIC_MAP = {
     # Standard rolling metrics
     "roas_7d":              ("roas_w7_mean",        None,  None),
     "roas_30d":             ("roas_w30_mean",        None,  None),
@@ -65,6 +91,69 @@ METRIC_MAP = {
     "cvr_drop_detected":     ("cvr_w7_vs_prev_pct",   "lt",  -20.0), # pct < -20
 }
 
+# ---------------------------------------------------------------------------
+# Metric → DB column mapping (KEYWORDS) - Chat 47
+# Based on schema investigation: quality_score, bid_micros, cost, conversions, ctr, roas, etc.
+# ---------------------------------------------------------------------------
+
+KEYWORD_METRIC_MAP = {
+    "quality_score":    ("quality_score", None, None),  # INTEGER field
+    "cost":             ("cost", None, None),           # DOUBLE field (already in currency)
+    "conversions":      ("conversions", None, None),    # DOUBLE field
+    "ctr":              ("ctr", None, None),            # DOUBLE field
+    "roas":             ("roas", None, None),           # DOUBLE field  
+    "impressions":      ("impressions", None, None),    # BIGINT field
+    "clicks":           ("clicks", None, None),         # BIGINT field
+}
+
+# ---------------------------------------------------------------------------
+# Metric → DB column mapping (AD GROUPS) - Chat 47
+# Based on schema investigation: ctr, cost, conversions, roas, etc.
+# ---------------------------------------------------------------------------
+
+AD_GROUP_METRIC_MAP = {
+    "cost":             ("cost", None, None),           # DOUBLE field
+    "conversions":      ("conversions", None, None),    # DOUBLE field
+    "ctr":              ("ctr", None, None),            # DOUBLE field
+    "roas":             ("roas", None, None),           # DOUBLE field
+    "impressions":      ("impressions", None, None),    # BIGINT field
+    "clicks":           ("clicks", None, None),         # BIGINT field
+}
+
+# ---------------------------------------------------------------------------
+# Metric → DB column mapping (SHOPPING) - Chat 47
+# Based on schema investigation: cost, conversions, ctr, roas, optimization_score
+# NOTE: feed_error_count and out_of_stock_product_count do NOT exist
+# ---------------------------------------------------------------------------
+
+SHOPPING_METRIC_MAP = {
+    "cost":                ("cost_micros", None, None),         # BIGINT (needs /1M conversion)
+    "conversions":         ("conversions", None, None),         # DOUBLE field
+    "ctr":                 ("ctr", None, None),                 # DOUBLE field
+    "roas":                ("roas", None, None),                # DOUBLE field
+    "impressions":         ("impressions", None, None),         # BIGINT field
+    "clicks":              ("clicks", None, None),              # BIGINT field
+    "optimization_score":  ("optimization_score", None, None),  # DOUBLE field
+    "search_impression_share": ("search_impression_share", None, None),  # DOUBLE field
+    # Missing columns (gracefully handled):
+    # "feed_error_count": NOT IN DATABASE
+    # "out_of_stock_product_count": NOT IN DATABASE
+}
+
+# Consolidated metric map selector
+def _get_metric_map_for_entity(entity_type: str) -> dict:
+    """Return appropriate metric map for entity type."""
+    if entity_type == "campaign":
+        return CAMPAIGN_METRIC_MAP
+    elif entity_type == "keyword":
+        return KEYWORD_METRIC_MAP
+    elif entity_type == "ad_group":
+        return AD_GROUP_METRIC_MAP
+    elif entity_type == "shopping":
+        return SHOPPING_METRIC_MAP
+    else:
+        return {}
+
 PROXY_METRICS = {
     "cost_spike_confidence", "cost_drop_detected",
     "pace_over_cap_detected", "ctr_drop_detected", "cvr_drop_detected",
@@ -76,6 +165,36 @@ RISK_TO_CONFIDENCE = {
     "medium": "medium",
     "high":   "low",
 }
+
+# ---------------------------------------------------------------------------
+# Entity Type Detection (Chat 47)
+# ---------------------------------------------------------------------------
+
+def _detect_entity_type(rule_id: str) -> str:
+    """
+    Detect entity type from rule_id.
+    Examples: "campaign_1" → "campaign", "keyword_3" → "keyword"
+    """
+    if "_" not in rule_id:
+        return "campaign"  # fallback
+    
+    entity_type = rule_id.split("_")[0]
+    
+    # Validate known types
+    if entity_type in ("campaign", "keyword", "ad_group", "ad", "shopping"):
+        return entity_type
+    
+    return "campaign"  # fallback for unknown types
+
+
+def _table_exists(conn, table_name: str) -> bool:
+    """Check if table exists in database."""
+    try:
+        conn.execute(f"SELECT 1 FROM {table_name} LIMIT 1")
+        return True
+    except:
+        return False
+
 
 # ---------------------------------------------------------------------------
 # Operator evaluation
@@ -91,6 +210,9 @@ def _evaluate(value, operator, threshold) -> bool:
         if operator == "lt":  return float(value) <  float(threshold)
         if operator == "lte": return float(value) <= float(threshold)
         if operator == "eq":
+            # Handle string comparisons (e.g., ad_strength = "POOR")
+            if isinstance(threshold, str):
+                return str(value) == threshold
             if isinstance(threshold, bool):
                 return bool(value) == threshold
             return float(value) == float(threshold)
@@ -103,20 +225,20 @@ def _evaluate(value, operator, threshold) -> bool:
 # Metric fetching helpers
 # ---------------------------------------------------------------------------
 
-def _get_metric_value(features: dict, metric_name: str) -> tuple[Any, str]:
+def _get_metric_value(features: dict, metric_name: str, metric_map: dict) -> tuple[Any, str]:
     """
-    Resolve metric_name to a value using METRIC_MAP.
+    Resolve metric_name to a value using provided metric_map.
     Returns (value, db_column_used).
     """
-    if metric_name not in METRIC_MAP:
+    if metric_name not in metric_map:
         return None, metric_name
 
-    db_col, override_op, override_threshold = METRIC_MAP[metric_name]
+    db_col, override_op, override_threshold = metric_map[metric_name]
     value = features.get(db_col)
     return value, db_col
 
 
-def _evaluate_condition(features: dict, metric: str, operator: str, threshold) -> tuple[bool, str]:
+def _evaluate_condition(features: dict, metric: str, operator: str, threshold, metric_map: dict) -> tuple[bool, str]:
     """
     Evaluate a single condition. Handles proxy overrides.
     Returns (passed, description_for_summary).
@@ -124,10 +246,10 @@ def _evaluate_condition(features: dict, metric: str, operator: str, threshold) -
     if not metric:
         return True, ""
 
-    if metric not in METRIC_MAP:
+    if metric not in metric_map:
         return False, "unknown metric"
 
-    db_col, override_op, override_threshold = METRIC_MAP[metric]
+    db_col, override_op, override_threshold = metric_map[metric]
     value = features.get(db_col)
 
     # Use proxy operator/threshold if this is a flag metric
@@ -140,6 +262,8 @@ def _evaluate_condition(features: dict, metric: str, operator: str, threshold) -
     if value is None:
         desc = "{} = NULL".format(db_col)
     elif isinstance(value, bool):
+        desc = "{} = {}".format(db_col, value)
+    elif isinstance(value, str):
         desc = "{} = {}".format(db_col, value)
     elif isinstance(effective_threshold, float) and effective_threshold < 0:
         desc = "{} {:.1f}%".format(db_col, float(value))
@@ -174,10 +298,58 @@ def _calculate_proposed_value(rule: dict, current_value: float) -> float:
 
 
 # ---------------------------------------------------------------------------
+# Current value extraction (entity-specific)
+# ---------------------------------------------------------------------------
+
+def _get_current_value(entity_type: str, rule_type: str, features: dict) -> float:
+    """
+    Extract current_value based on entity type and rule type.
+    
+    For campaigns: budget (cost proxy) or target_roas
+    For keywords: bid_micros
+    For ad_groups: cpc_bid_micros  
+    For shopping: cost_micros (budget proxy)
+    """
+    if entity_type == "campaign":
+        if rule_type == "budget":
+            # Use cost_micros_w7_mean as budget proxy
+            cost_micros_mean = features.get("cost_micros_w7_mean")
+            if cost_micros_mean and float(cost_micros_mean) > 0:
+                return float(cost_micros_mean) / 1_000_000
+            return 50.0  # fallback
+        else:
+            # bid/status rules use target_roas
+            return 4.0  # target_roas fallback
+    
+    elif entity_type == "keyword":
+        # Keywords: use bid_micros
+        bid_micros = features.get("bid_micros")
+        if bid_micros and float(bid_micros) > 0:
+            return float(bid_micros) / 1_000_000
+        return 0.50  # fallback £0.50
+    
+    elif entity_type == "ad_group":
+        # Ad groups: use cpc_bid_micros
+        cpc_bid = features.get("cpc_bid_micros")
+        if cpc_bid and float(cpc_bid) > 0:
+            return float(cpc_bid) / 1_000_000
+        return 1.0  # fallback £1.00
+    
+    elif entity_type == "shopping":
+        # Shopping: use cost_micros as budget proxy
+        cost_micros = features.get("cost_micros")
+        if cost_micros and float(cost_micros) > 0:
+            return float(cost_micros) / 1_000_000
+        return 100.0  # fallback £100
+    
+    return 0.0  # unknown entity type
+
+
+# ---------------------------------------------------------------------------
 # Trigger summary builder
 # ---------------------------------------------------------------------------
 
-def _build_trigger_summary(rule: dict, features: dict, target_roas: float) -> str:
+def _build_trigger_summary(rule: dict, features: dict, target_roas: float, metric_map: dict) -> str:
     """Build the human-readable trigger summary string."""
     parts = []
 
@@ -186,14 +358,14 @@ def _build_trigger_summary(rule: dict, features: dict, target_roas: float) -> st
     val    = rule["condition_value"]
     unit   = rule.get("condition_unit", "absolute")
 
-    _passed, desc = _evaluate_condition(features, metric, op, val)
+    _passed, desc = _evaluate_condition(features, metric, op, val, metric_map)
 
     if unit == "x_target":
         threshold_display = "{:.2f}x (target {:.1f}x x {:.2f})".format(
             target_roas * val, target_roas, val
         )
         # Get actual value for display
-        db_col = METRIC_MAP.get(metric, (metric,))[0]
+        db_col = metric_map.get(metric, (metric,))[0]
         actual = features.get(db_col)
         if actual is not None:
             try:
@@ -202,385 +374,264 @@ def _build_trigger_summary(rule: dict, features: dict, target_roas: float) -> st
                 parts.append(desc)
         else:
             parts.append(desc)
-    elif metric in PROXY_METRICS:
-        proxy_label = {
-            "cost_spike_confidence": "Cost spike (anomaly z-score)",
-            "cost_drop_detected":    "Cost drop (anomaly z-score)",
-            "pace_over_cap_detected":"Pacing over cap flag",
-            "ctr_drop_detected":     "CTR drop",
-            "cvr_drop_detected":     "CVR drop",
-        }.get(metric, metric)
-        db_col = METRIC_MAP[metric][0]
-        actual = features.get(db_col)
-        if actual is not None:
-            try:
-                if isinstance(actual, bool):
-                    parts.append("{} = {}".format(proxy_label, actual))
-                else:
-                    parts.append("{} {:.2f}".format(proxy_label, float(actual)))
-            except (TypeError, ValueError):
-                parts.append(desc)
-        else:
-            parts.append(desc)
     else:
-        db_col = METRIC_MAP.get(metric, (metric,))[0]
-        actual = features.get(db_col)
-        if actual is not None:
-            try:
-                parts.append("{} {:.2f} {} {:.2f}".format(db_col, float(actual), op, float(val)))
-            except (TypeError, ValueError):
-                parts.append(desc)
-        else:
-            parts.append(desc)
+        parts.append(desc)
 
-    # Condition 2
+    # Add condition 2 if present
     metric2 = rule.get("condition_2_metric")
     if metric2:
-        op2   = rule["condition_2_operator"]
-        val2  = rule["condition_2_value"]
-        _p2, desc2 = _evaluate_condition(features, metric2, op2, val2)
-        if metric2 in PROXY_METRICS:
-            db_col2 = METRIC_MAP[metric2][0]
-            actual2 = features.get(db_col2)
-            if actual2 is not None:
-                try:
-                    parts.append("{} {:.2f}".format(db_col2, float(actual2)))
-                except (TypeError, ValueError):
-                    parts.append(desc2)
-            else:
-                parts.append(desc2)
-        elif rule.get("condition_2_unit") == "absolute":
-            db_col2 = METRIC_MAP.get(metric2, (metric2,))[0]
-            actual2 = features.get(db_col2)
-            if actual2 is not None:
-                try:
-                    parts.append("{} {:.0f} {} {:.0f}".format(
-                        db_col2, float(actual2), op2, float(val2)
-                    ))
-                except (TypeError, ValueError):
-                    parts.append(desc2)
-            else:
-                parts.append(desc2)
-        else:
+        _passed2, desc2 = _evaluate_condition(
+            features, metric2, rule["condition_2_operator"],
+            rule["condition_2_value"], metric_map
+        )
+        if desc2:
             parts.append(desc2)
 
-    return " | ".join(parts) if parts else rule.get("name", rule["rule_id"])
+    return " AND ".join(parts) if parts else "Triggered"
 
 
 # ---------------------------------------------------------------------------
-# Main engine
+# Main Engine Function
 # ---------------------------------------------------------------------------
 
 def run_recommendations_engine(
-    customer_id: str,
+    customer_id: str = "9999999999",
     db_path: str = "warehouse.duckdb",
-    ro_db_path: str = None,
-    rules_config_path: str = None,
+    readonly_path: str = "warehouse_readonly.duckdb",
 ) -> dict:
     """
-    Run the recommendations engine for the given customer_id.
-
-    Args:
-        customer_id:       Google Ads customer ID (string)
-        db_path:           Path to writable warehouse.duckdb
-        ro_db_path:        Path to warehouse_readonly.duckdb (auto-derived if None)
-        rules_config_path: Path to rules_config.json (defaults to act_autopilot/)
-
-    Returns:
-        Summary dict with generated/skipped/error counts.
+    Run the recommendations engine for all enabled rules across all entity types.
+    
+    Returns dict with generation stats.
     """
-    db_path = str(Path(db_path).resolve())
-
-    if ro_db_path is None:
-        ro_db_path = db_path.replace("warehouse.duckdb", "warehouse_readonly.duckdb")
-
-    cfg_path = Path(rules_config_path) if rules_config_path else RULES_CONFIG_PATH
-
-    print("[ENGINE] Starting recommendations engine for customer {}".format(customer_id))
-    print("[ENGINE] DB         : {}".format(db_path))
-    print("[ENGINE] RO DB      : {}".format(ro_db_path))
-    print("[ENGINE] Rules file : {}".format(cfg_path))
+    print("\n" + "="*80)
+    print("RECOMMENDATIONS ENGINE — MULTI-ENTITY (Chat 47)")
+    print("="*80)
+    print("Customer ID: {}".format(customer_id))
+    print("Database: {}".format(db_path))
 
     # --- Load rules ---------------------------------------------------------
-    if not cfg_path.exists():
-        return {"error": "rules_config.json not found at {}".format(cfg_path)}
+    with open(RULES_CONFIG_PATH, "r", encoding="utf-8") as f:
+        rules_data = json.load(f)
 
-    with open(cfg_path, "r") as f:
-        all_rules = json.load(f)
+    enabled_rules = [r for r in rules_data if r.get("enabled", False)]
+    print("[ENGINE] Loaded {} enabled rules from rules_config.json".format(len(enabled_rules)))
 
-    enabled_rules = [r for r in all_rules if r.get("enabled", False)]
-    print("[ENGINE] Loaded {} rules ({} enabled)".format(len(all_rules), len(enabled_rules)))
+    # --- Group rules by entity type -----------------------------------------
+    rules_by_entity = {}
+    for rule in enabled_rules:
+        entity_type = _detect_entity_type(rule["rule_id"])
+        if entity_type not in rules_by_entity:
+            rules_by_entity[entity_type] = []
+        rules_by_entity[entity_type].append(rule)
 
-    # --- Open DB connection -------------------------------------------------
-    conn = duckdb.connect(db_path, read_only=False)
+    print("[ENGINE] Rules by entity type:")
+    for entity_type, rules in rules_by_entity.items():
+        print("  - {}: {} rules".format(entity_type, len(rules)))
+
+    # --- Connect to database ------------------------------------------------
+    conn = duckdb.connect(db_path)
+    conn.execute(f"ATTACH '{readonly_path}' AS ro (READ_ONLY)")
+    print("[ENGINE] Connected to warehouse + attached readonly")
+
+    # --- Check table availability -------------------------------------------
+    available_entities = {}
+    for entity_type, table_name in ENTITY_TABLES.items():
+        if _table_exists(conn, table_name):
+            available_entities[entity_type] = table_name
+            print(f"[ENGINE] ✅ {entity_type}: {table_name} available")
+        else:
+            print(f"[ENGINE] ❌ {entity_type}: {table_name} NOT FOUND - will skip")
+
+    # --- Get existing pending recommendations for duplicate check -----------
     try:
-        conn.execute("ATTACH '{}' AS ro (READ_ONLY);".format(ro_db_path))
-        print("[ENGINE] Attached readonly DB as 'ro'")
-    except Exception as e:
-        print("[ENGINE] WARNING: Could not attach ro DB: {}".format(e))
-
-    # --- Ensure recommendations table exists --------------------------------
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS recommendations (
-            rec_id               VARCHAR PRIMARY KEY,
-            rule_id              VARCHAR NOT NULL,
-            rule_type            VARCHAR NOT NULL,
-            campaign_id          BIGINT  NOT NULL,
-            campaign_name        VARCHAR,
-            customer_id          VARCHAR NOT NULL,
-            status               VARCHAR NOT NULL DEFAULT 'pending',
-            action_direction     VARCHAR,
-            action_magnitude     INTEGER,
-            current_value        FLOAT,
-            proposed_value       FLOAT,
-            trigger_summary      VARCHAR,
-            confidence           VARCHAR,
-            generated_at         TIMESTAMP,
-            accepted_at          TIMESTAMP,
-            monitoring_ends_at   TIMESTAMP,
-            resolved_at          TIMESTAMP,
-            outcome_metric       FLOAT,
-            created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
-
-    # --- Fetch latest campaign features -------------------------------------
-    try:
-        latest_date = conn.execute("""
-            SELECT MAX(snapshot_date)
-            FROM ro.analytics.campaign_features_daily
-            WHERE customer_id = ?
-        """, [customer_id]).fetchone()[0]
-
-        if latest_date is None:
-            print("[ENGINE] WARNING: No features data found for customer {}".format(customer_id))
-            conn.close()
-            return {
-                "generated": 0,
-                "skipped_duplicate": 0,
-                "skipped_no_data": 0,
-                "skipped_no_target": 0,
-                "errors": ["No features data available"],
-                "customer_id": customer_id,
-            }
-
-        print("[ENGINE] Latest features snapshot: {}".format(latest_date))
-
-        feature_rows = conn.execute("""
-            SELECT *
-            FROM ro.analytics.campaign_features_daily
-            WHERE customer_id = ?
-              AND snapshot_date = ?
-        """, [customer_id, latest_date]).fetchdf()
-
-    except Exception as e:
-        print("[ENGINE] ERROR fetching features: {}".format(e))
-        conn.close()
-        return {
-            "generated": 0,
-            "skipped_duplicate": 0,
-            "skipped_no_data": 0,
-            "skipped_no_target": 0,
-            "errors": [str(e)],
-            "customer_id": customer_id,
-        }
-
-    if feature_rows.empty:
-        print("[ENGINE] No feature rows found for customer {} on {}".format(customer_id, latest_date))
-        conn.close()
-        return {
-            "generated": 0,
-            "skipped_duplicate": 0,
-            "skipped_no_data": 0,
-            "skipped_no_target": 0,
-            "errors": [],
-            "customer_id": customer_id,
-        }
-
-    print("[ENGINE] Found {} campaigns in features".format(len(feature_rows)))
-
-    # --- Fetch existing pending recs to check duplicates --------------------
-    existing_pending = set()
-    try:
-        pending_rows = conn.execute("""
-            SELECT campaign_id, rule_id
-            FROM recommendations
-            WHERE customer_id = ?
-              AND status = 'pending'
+        existing_rows = conn.execute("""
+            SELECT entity_id, rule_id 
+            FROM recommendations 
+            WHERE status = 'pending'
+            AND customer_id = ?
         """, [customer_id]).fetchall()
-        for row in pending_rows:
-            existing_pending.add((int(row[0]), row[1]))
+        
+        existing_pending = set()
+        for row in existing_rows:
+            entity_id_str = str(row[0]) if row[0] else None
+            if entity_id_str:
+                existing_pending.add((entity_id_str, row[1]))
     except Exception as e:
         print("[ENGINE] WARNING: Could not fetch existing pending recs: {}".format(e))
+        existing_pending = set()
 
     print("[ENGINE] {} existing pending recs (duplicate check)".format(len(existing_pending)))
 
-    # --- Process each campaign × rule ---------------------------------------
+    # --- Process each entity type -------------------------------------------
     generated        = 0
     skipped_duplicate = 0
     skipped_no_data  = 0
-    skipped_no_target = 0
+    skipped_no_table = 0
     errors           = []
     new_recs         = []
+    by_entity_type   = {}
     now              = datetime.now()
 
-    for _, feat_row in feature_rows.iterrows():
-        features = feat_row.to_dict()
-        campaign_id   = int(features.get("campaign_id", 0))
-        campaign_name = features.get("campaign_name") or "Campaign_{}".format(campaign_id)
+    for entity_type, entity_rules in rules_by_entity.items():
+        
+        # Skip if table doesn't exist
+        if entity_type not in available_entities:
+            print(f"[ENGINE] Skipping {entity_type} - table not available")
+            skipped_no_table += len(entity_rules)
+            continue
 
-        # --- Resolve current_value proxies ----------------------------------
+        table_name = available_entities[entity_type]
+        metric_map = _get_metric_map_for_entity(entity_type)
+        id_col, name_col = ENTITY_ID_COLUMNS.get(entity_type, ("id", "name"))
 
-        # target_roas: no column — use fixed fallback
-        target_roas = 4.0
-        print("[ENGINE] No target_roas column — using fallback 4.0 for campaign {}".format(campaign_id))
+        print(f"\n[ENGINE] Processing {entity_type} ({len(entity_rules)} rules)...")
 
-        # budget proxy: cost_micros_w7_mean (convert micros to currency)
-        cost_micros_mean = features.get("cost_micros_w7_mean")
-        if cost_micros_mean is not None and float(cost_micros_mean) > 0:
-            budget_value = float(cost_micros_mean) / 1_000_000
-            print("[ENGINE] No budget_micros column — using cost_micros_w7_mean proxy for campaign {}".format(campaign_id))
-        else:
-            budget_value = 50.0  # absolute fallback: £50/day
-            print("[ENGINE] cost_micros_w7_mean also unavailable for campaign {} — using £50 fallback".format(campaign_id))
+        # Query entity data
+        try:
+            query = f"""
+                SELECT * FROM {table_name}
+                WHERE customer_id = ?
+                ORDER BY snapshot_date DESC
+            """
+            entity_data = conn.execute(query, [customer_id]).df()
+            print(f"[ENGINE] Loaded {len(entity_data)} {entity_type} rows")
+        except Exception as e:
+            print(f"[ENGINE] ERROR querying {table_name}: {e}")
+            errors.append(str(e))
+            continue
 
-        for rule in enabled_rules:
-            rule_id   = rule["rule_id"]
-            rule_type = rule["rule_type"]
+        if entity_data.empty:
+            print(f"[ENGINE] No data for {entity_type}")
+            continue
 
-            # Skip if pending rec already exists for this campaign + rule
-            if (campaign_id, rule_id) in existing_pending:
-                skipped_duplicate += 1
-                continue
+        # Process each entity row
+        for _, entity_row in entity_data.iterrows():
+            features = entity_row.to_dict()
+            entity_id = str(int(features.get(id_col, 0)))
+            entity_name = features.get(name_col) or f"{entity_type}_{entity_id}"
 
-            # --- Evaluate primary condition ---------------------------------
-            metric   = rule["condition_metric"]
-            operator = rule["condition_operator"]
-            value    = rule["condition_value"]
-            unit     = rule.get("condition_unit", "absolute")
+            # Get campaign_id for backward compatibility
+            campaign_id = str(int(features.get("campaign_id", 0)))
 
-            # Resolve x_target threshold
-            if unit == "x_target":
-                effective_threshold = value * target_roas
-            else:
-                effective_threshold = value
+            for rule in entity_rules:
+                rule_id = rule["rule_id"]
+                rule_type = rule["rule_type"]
 
-            # Get actual metric value from features
-            if metric not in METRIC_MAP:
-                skipped_no_data += 1
-                continue
+                # Skip if pending rec already exists
+                if (entity_id, rule_id) in existing_pending:
+                    skipped_duplicate += 1
+                    continue
 
-            db_col, override_op, override_threshold = METRIC_MAP[metric]
-            actual_value = features.get(db_col)
+                # --- Evaluate primary condition -----------------------------
+                metric = rule["condition_metric"]
+                operator = rule["condition_operator"]
+                value = rule["condition_value"]
+                unit = rule.get("condition_unit", "absolute")
 
-            # Log proxy usage
-            if metric in PROXY_METRICS:
-                print("[ENGINE] Using proxy '{}' for metric '{}' on campaign {}".format(
-                    db_col, metric, campaign_id))
-
-            # Determine effective operator and threshold (proxy overrides)
-            eff_op        = override_op if override_op else operator
-            eff_threshold = override_threshold if override_threshold is not None else effective_threshold
-
-            if actual_value is None:
-                skipped_no_data += 1
-                continue
-
-            cond1_passed = _evaluate(actual_value, eff_op, eff_threshold)
-
-            if not cond1_passed:
-                continue
-
-            # --- Evaluate secondary condition (if present) ------------------
-            metric2 = rule.get("condition_2_metric")
-            if metric2:
-                op2    = rule["condition_2_operator"]
-                val2   = rule["condition_2_value"]
-                unit2  = rule.get("condition_2_unit", "absolute")
-
-                if metric2 not in METRIC_MAP:
+                # Check metric exists in map
+                if metric not in metric_map:
                     skipped_no_data += 1
                     continue
 
-                db_col2, override_op2, override_threshold2 = METRIC_MAP[metric2]
-                actual2 = features.get(db_col2)
+                db_col, override_op, override_threshold = metric_map[metric]
+                actual_value = features.get(db_col)
 
-                if metric2 in PROXY_METRICS:
-                    print("[ENGINE] Using proxy '{}' for condition_2 metric '{}' on campaign {}".format(
-                        db_col2, metric2, campaign_id))
+                if actual_value is None:
+                    skipped_no_data += 1
+                    continue
 
-                eff_op2 = override_op2 if override_op2 else op2
+                # Determine effective operator and threshold
+                eff_op = override_op if override_op else operator
+                eff_threshold = override_threshold if override_threshold is not None else value
 
-                if unit2 == "x_target":
-                    eff_threshold2 = val2 * target_roas
-                else:
+                # Handle x_target unit
+                if unit == "x_target":
+                    target_roas = 4.0  # fallback
+                    eff_threshold = value * target_roas
+
+                cond1_passed = _evaluate(actual_value, eff_op, eff_threshold)
+
+                if not cond1_passed:
+                    continue
+
+                # --- Evaluate secondary condition (if present) --------------
+                metric2 = rule.get("condition_2_metric")
+                if metric2:
+                    op2 = rule["condition_2_operator"]
+                    val2 = rule["condition_2_value"]
+
+                    if metric2 not in metric_map:
+                        skipped_no_data += 1
+                        continue
+
+                    db_col2, override_op2, override_threshold2 = metric_map[metric2]
+                    actual2 = features.get(db_col2)
+
+                    if actual2 is None:
+                        skipped_no_data += 1
+                        continue
+
+                    eff_op2 = override_op2 if override_op2 else op2
                     eff_threshold2 = override_threshold2 if override_threshold2 is not None else val2
 
-                if actual2 is None:
-                    skipped_no_data += 1
-                    continue
+                    cond2_passed = _evaluate(actual2, eff_op2, eff_threshold2)
+                    if not cond2_passed:
+                        continue
 
-                cond2_passed = _evaluate(actual2, eff_op2, eff_threshold2)
-                if not cond2_passed:
-                    continue
+                # --- Both conditions passed - build recommendation ----------
+                current_value = _get_current_value(entity_type, rule_type, features)
+                proposed_value = _calculate_proposed_value(rule, current_value)
+                trigger_summary = _build_trigger_summary(rule, features, 4.0, metric_map)
+                confidence = RISK_TO_CONFIDENCE.get(rule.get("risk_level", "medium"), "medium")
 
-            # --- Both conditions passed — build recommendation --------------
+                rec = {
+                    "rec_id": str(uuid.uuid4()),
+                    "rule_id": rule_id,
+                    "rule_type": rule_type,
+                    "campaign_id": campaign_id,  # For backward compatibility
+                    "campaign_name": features.get("campaign_name", ""),  # For backward compatibility
+                    "entity_type": entity_type,  # NEW (Chat 47)
+                    "entity_id": entity_id,       # NEW (Chat 47)
+                    "entity_name": entity_name,   # NEW (Chat 47)
+                    "customer_id": customer_id,
+                    "status": "pending",
+                    "action_direction": rule["action_direction"],
+                    "action_magnitude": rule.get("action_magnitude", 0),
+                    "current_value": round(current_value, 4),
+                    "proposed_value": round(proposed_value, 4),
+                    "trigger_summary": trigger_summary,
+                    "confidence": confidence,
+                    "generated_at": now,
+                    "accepted_at": None,
+                    "monitoring_ends_at": None,
+                    "resolved_at": None,
+                    "outcome_metric": None,
+                    "created_at": now,
+                    "updated_at": now,
+                }
 
-            # current_value depends on rule_type
-            if rule_type == "budget":
-                current_value = budget_value
-            elif rule_type in ("bid", "status"):
-                current_value = target_roas
-            else:
-                current_value = target_roas
+                new_recs.append(rec)
+                existing_pending.add((entity_id, rule_id))
+                generated += 1
+                by_entity_type[entity_type] = by_entity_type.get(entity_type, 0) + 1
 
-            proposed_value  = _calculate_proposed_value(rule, current_value)
-            trigger_summary = _build_trigger_summary(rule, features, target_roas)
-            confidence      = RISK_TO_CONFIDENCE.get(rule.get("risk_level", "medium"), "medium")
-
-            rec = {
-                "rec_id":            str(uuid.uuid4()),
-                "rule_id":           rule_id,
-                "rule_type":         rule_type,
-                "campaign_id":       campaign_id,
-                "campaign_name":     campaign_name,
-                "customer_id":       customer_id,
-                "status":            "pending",
-                "action_direction":  rule["action_direction"],
-                "action_magnitude":  rule.get("action_magnitude", 0),
-                "current_value":     round(current_value, 4),
-                "proposed_value":    round(proposed_value, 4),
-                "trigger_summary":   trigger_summary,
-                "confidence":        confidence,
-                "generated_at":      now,
-                "accepted_at":       None,
-                "monitoring_ends_at":None,
-                "resolved_at":       None,
-                "outcome_metric":    None,
-                "created_at":        now,
-                "updated_at":        now,
-            }
-
-            new_recs.append(rec)
-            existing_pending.add((campaign_id, rule_id))  # prevent duplicates within same run
-            generated += 1
-
-            print("[ENGINE] Generated: {} | campaign {} | {}".format(
-                rule_id, campaign_id, rule["action_direction"]))
+                print(f"[ENGINE] Generated: {rule_id} | {entity_type} {entity_id} | {rule['action_direction']}")
 
     # --- Bulk insert --------------------------------------------------------
     if new_recs:
         conn.executemany("""
             INSERT INTO recommendations (
-                rec_id, rule_id, rule_type, campaign_id, campaign_name, customer_id,
-                status, action_direction, action_magnitude,
+                rec_id, rule_id, rule_type, campaign_id, campaign_name,
+                entity_type, entity_id, entity_name,
+                customer_id, status, action_direction, action_magnitude,
                 current_value, proposed_value, trigger_summary, confidence,
                 generated_at, accepted_at, monitoring_ends_at, resolved_at,
                 outcome_metric, created_at, updated_at
             ) VALUES (
-                ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?,
                 ?, ?, ?,
+                ?, ?, ?, ?,
                 ?, ?, ?, ?,
                 ?, ?, ?, ?,
                 ?, ?, ?
@@ -588,8 +639,9 @@ def run_recommendations_engine(
         """, [
             (
                 r["rec_id"], r["rule_id"], r["rule_type"],
-                r["campaign_id"], r["campaign_name"], r["customer_id"],
-                r["status"], r["action_direction"], r["action_magnitude"],
+                r["campaign_id"], r["campaign_name"],
+                r["entity_type"], r["entity_id"], r["entity_name"],
+                r["customer_id"], r["status"], r["action_direction"], r["action_magnitude"],
                 r["current_value"], r["proposed_value"], r["trigger_summary"],
                 r["confidence"], r["generated_at"], r["accepted_at"],
                 r["monitoring_ends_at"], r["resolved_at"], r["outcome_metric"],
@@ -597,19 +649,23 @@ def run_recommendations_engine(
             )
             for r in new_recs
         ])
+        print(f"[ENGINE] Inserted {len(new_recs)} recommendations")
 
     conn.close()
 
     result = {
-        "generated":         generated,
+        "generated": generated,
         "skipped_duplicate": skipped_duplicate,
-        "skipped_no_data":   skipped_no_data,
-        "skipped_no_target": skipped_no_target,
-        "errors":            errors,
-        "customer_id":       customer_id,
+        "skipped_no_data": skipped_no_data,
+        "skipped_no_table": skipped_no_table,
+        "errors": errors,
+        "customer_id": customer_id,
+        "by_entity_type": by_entity_type,
     }
 
-    print("[ENGINE] Done. Generated={} | SkippedDuplicate={} | SkippedNoData={} | Errors={}".format(
-        generated, skipped_duplicate, skipped_no_data, len(errors)))
+    print("\n[ENGINE] Done. Generated={} | SkippedDuplicate={} | SkippedNoData={} | SkippedNoTable={}".format(
+        generated, skipped_duplicate, skipped_no_data, skipped_no_table))
+    print("[ENGINE] By entity type: {}".format(by_entity_type))
+    print("="*80 + "\n")
 
     return result

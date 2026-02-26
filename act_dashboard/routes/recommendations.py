@@ -1,7 +1,7 @@
 """
-Recommendations routes — Chat 29 (M8)
+Recommendations routes — Chat 29 (M8) + Chat 47 Multi-Entity Extension
 
-Changes from Chat 28:
+Changes from Chat 29:
   - /changes route REMOVED — now in act_dashboard/routes/changes.py
   - _load_monitoring_days() now returns dict with monitoring_days + monitoring_minutes
   - Accept/modify routes updated to use monitoring_minutes for fast-test deadline
@@ -10,6 +10,13 @@ Changes from Chat 28:
   - /recommendations/cards extended with reverted array
   - /recommendations/data fixed to include last_run
   - reverted_recs passed to template
+
+Changes from Chat 47:
+  - _ensure_changes_table() extended with entity_type, entity_id columns
+  - _load_rec_by_id() extended to SELECT entity_type, entity_id, entity_name
+  - _write_changes_row() extended to INSERT entity_type, entity_id
+  - _get_recommendations_data() extended to SELECT entity_type, entity_id, entity_name
+  - Backward compatibility maintained for campaign_id-only rows
 """
 
 import json
@@ -42,7 +49,11 @@ _RULES_CONFIG_PATH = os.path.join(
 # ---------------------------------------------------------------------------
 
 def _ensure_changes_table(conn):
-    """Create the writable changes table in warehouse.duckdb if it doesn't exist."""
+    """
+    Create the writable changes table in warehouse.duckdb if it doesn't exist.
+    
+    Chat 47: Extended with entity_type, entity_id columns for multi-entity support.
+    """
     conn.execute("""
         CREATE SEQUENCE IF NOT EXISTS changes_seq START 1
     """)
@@ -52,6 +63,8 @@ def _ensure_changes_table(conn):
             customer_id     VARCHAR NOT NULL,
             campaign_id     VARCHAR,
             campaign_name   VARCHAR,
+            entity_type     VARCHAR,
+            entity_id       VARCHAR,
             rule_id         VARCHAR,
             action_type     VARCHAR,
             old_value       DOUBLE,
@@ -90,16 +103,20 @@ def _load_rec_by_id(conn, rec_id, customer_id):
     """
     Load a single recommendation row by rec_id + customer_id.
     Returns dict or None.
+    
+    Chat 47: Extended to SELECT entity_type, entity_id, entity_name.
     """
     rows = conn.execute("""
         SELECT
             rec_id, rule_id, rule_type, campaign_id, campaign_name,
+            entity_type, entity_id, entity_name,
             customer_id, status, action_direction, action_magnitude,
             current_value, proposed_value, trigger_summary, confidence,
             generated_at, accepted_at, monitoring_ends_at, resolved_at,
             outcome_metric, created_at, updated_at
         FROM recommendations
         WHERE rec_id = ? AND customer_id = ?
+        LIMIT 1
     """, [rec_id, customer_id]).fetchall()
 
     if not rows:
@@ -107,6 +124,7 @@ def _load_rec_by_id(conn, rec_id, customer_id):
 
     columns = [
         "rec_id", "rule_id", "rule_type", "campaign_id", "campaign_name",
+        "entity_type", "entity_id", "entity_name",
         "customer_id", "status", "action_direction", "action_magnitude",
         "current_value", "proposed_value", "trigger_summary", "confidence",
         "generated_at", "accepted_at", "monitoring_ends_at", "resolved_at",
@@ -115,8 +133,19 @@ def _load_rec_by_id(conn, rec_id, customer_id):
     return dict(zip(columns, rows[0]))
 
 
-def _write_changes_row(conn, rec, executed_by, justification=None, new_value_override=None):
-    """Write a single audit row to the changes table."""
+def _write_changes_row(
+    conn,
+    rec: dict,
+    executed_by: str = "system",
+    justification: Optional[str] = None,
+    new_value_override: Optional[float] = None,
+):
+    """
+    Insert a row into the changes table.
+    
+    Chat 47: Extended to INSERT entity_type, entity_id for multi-entity support.
+    Backward compatibility: For campaigns, populates BOTH campaign_id AND entity_id.
+    """
     _ensure_changes_table(conn)
 
     rule_type = rec.get("rule_type", "")
@@ -131,16 +160,28 @@ def _write_changes_row(conn, rec, executed_by, justification=None, new_value_ove
     new_value = new_value_override if new_value_override is not None else rec.get("proposed_value")
     jst = justification or rec.get("action_direction", "")
 
+    # Chat 47: Extract entity_type and entity_id
+    entity_type = rec.get("entity_type")
+    entity_id = rec.get("entity_id")
+    
+    # Backward compatibility: if entity_type is NULL, assume campaign
+    if not entity_type and rec.get("campaign_id"):
+        entity_type = "campaign"
+        entity_id = str(rec.get("campaign_id", ""))
+
     conn.execute("""
         INSERT INTO changes (
-            customer_id, campaign_id, campaign_name, rule_id,
-            action_type, old_value, new_value, justification,
+            customer_id, campaign_id, campaign_name,
+            entity_type, entity_id,
+            rule_id, action_type, old_value, new_value, justification,
             executed_by, executed_at, dry_run, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, 'completed')
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, 'completed')
     """, [
         str(rec.get("customer_id", "")),
-        str(rec.get("campaign_id", "")),
-        rec.get("campaign_name", ""),
+        str(rec.get("campaign_id", "")),  # Backward compatibility
+        rec.get("campaign_name", ""),      # Backward compatibility
+        entity_type,                       # NEW (Chat 47)
+        entity_id,                         # NEW (Chat 47)
         rec.get("rule_id", ""),
         action_type,
         old_value,
@@ -155,6 +196,8 @@ def _get_recommendations_data(config, status_filter=None, limit=200):
     """
     Query the recommendations table for the current customer.
     Returns list of dicts.
+    
+    Chat 47: Extended to SELECT entity_type, entity_id, entity_name.
     """
     conn = get_db_connection(config, read_only=False)
     try:
@@ -173,6 +216,7 @@ def _get_recommendations_data(config, status_filter=None, limit=200):
         rows = conn.execute("""
             SELECT
                 rec_id, rule_id, rule_type, campaign_id, campaign_name,
+                entity_type, entity_id, entity_name,
                 customer_id, status, action_direction, action_magnitude,
                 current_value, proposed_value, trigger_summary, confidence,
                 generated_at, accepted_at, monitoring_ends_at, resolved_at,
@@ -185,6 +229,7 @@ def _get_recommendations_data(config, status_filter=None, limit=200):
 
         columns = [
             "rec_id", "rule_id", "rule_type", "campaign_id", "campaign_name",
+            "entity_type", "entity_id", "entity_name",
             "customer_id", "status", "action_direction", "action_magnitude",
             "current_value", "proposed_value", "trigger_summary", "confidence",
             "generated_at", "accepted_at", "monitoring_ends_at", "resolved_at",
@@ -619,6 +664,9 @@ def recommendations_cards():
     """
     JSON endpoint returning enriched recommendation cards by status.
     Used by the Campaigns page Recommendations tab for inline card rendering.
+    
+    Chat 47: No changes needed - entity_type/entity_id/entity_name automatically included
+    via _get_recommendations_data() extension.
     """
     config = get_current_config()
 
