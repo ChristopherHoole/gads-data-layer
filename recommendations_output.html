@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="IjMyNmEwMWJiYzY0MTg0NWJkNDM4ZjYxN2EwYTU4MjQwZDZjMzkxYzYi.aaGswg.PoFsO1Y5Pwx3O1RbX8_zwTyor9s">
+    <title>Recommendations — Ads Control Tower</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons 1.11 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/custom.css">
+    
+    
+<style>
+  :root {
+    --border: #e5e9f0;
+    --muted:  #8a93a2;
+    --budget-c: #1d4ed8;
+    --bid-c:    #15803d;
+    --status-c: #991b1b;
+  }
+
+  /* SUMMARY STRIP */
+  .summary-strip { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 24px; }
+  .summary-card  { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; }
+  .s-icon  { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .s-num   { font-size: 24px; font-weight: 700; line-height: 1; }
+  .s-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* PAGE TABS */
+  .page-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .page-tab  { padding: 10px 20px; font-size: 13.5px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; display: flex; align-items: center; gap: 6px; white-space: nowrap; background: transparent; border-top: none; border-left: none; border-right: none; }
+  .page-tab:hover { color: #344054; }
+  .page-tab.active { color: #0d6efd; border-bottom-color: #0d6efd; }
+  .tab-badge        { background: #e9ecef; color: #495057; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+  .tab-badge-orange { background: #fff3cd; color: #7c3700; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+  .tab-badge-green  { background: #dcfce7; color: #15803d; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+  .tab-badge-grey   { background: #f3f4f6; color: #6b7280; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+  .tab-badge-red    { background: #fee2e2; color: #991b1b; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+
+  /* REC HEADER */
+  .rec-header         { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 16px; }
+  .rec-header-left h5 { font-size: 16px; font-weight: 600; margin: 0 0 4px; color: #1a1d23; }
+  .rec-header-left p  { margin: 0; color: var(--muted); font-size: 13px; }
+
+  /* FILTER BAR */
+  .filter-bar  { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+  .filter-btn  { background: white; border: 1px solid var(--border); border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: #495057; display: flex; align-items: center; gap: 5px; }
+  .filter-btn.active { background: #0d6efd; border-color: #0d6efd; color: white; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+  /* CARD GRID */
+  .rec-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-bottom: 28px; }
+
+  /* REC CARD */
+  .rec-card { background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; transition: box-shadow .15s, border-color .15s, opacity .3s, transform .3s; }
+  .rec-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.07); border-color: #d0d7e0; }
+  .rec-card.card-monitoring { border-color: #bfdbfe; }
+  .rec-card.card-success    { border-color: #bbf7d0; }
+  .rec-card.card-declined   { opacity: 0.55; }
+  .rec-card.card-reverted   { border-color: #fecaca; }
+  .rec-card.removing        { opacity: 0; transform: scale(0.96); pointer-events: none; }
+
+  /* Top bars */
+  .rec-top       { height: 4px; flex-shrink: 0; }
+  .rt-budget     { background: #1d4ed8; }
+  .rt-bid        { background: #15803d; }
+  .rt-status     { background: #dc3545; }
+  .rt-monitoring { background: linear-gradient(90deg,#0d6efd,#7c3aed); }
+  .rt-successful { background: #15803d; }
+  .rt-declined   { background: #9ca3af; }
+  .rt-reverted   { background: #dc3545; }
+
+  .rec-body { padding: 16px 18px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+  /* Card header */
+  .rec-card-header   { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .rec-rule-tag      { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
+  .rrt-budget        { color: var(--budget-c); }
+  .rrt-bid           { color: var(--bid-c); }
+  .rrt-status        { color: var(--status-c); }
+  .rrt-monitoring    { color: #6d28d9; }
+  .rrt-declined      { color: #6b7280; }
+  .rrt-reverted      { color: #991b1b; }
+  .rec-campaign-name { font-size: 14px; font-weight: 600; color: #1a1d23; }
+
+  /* Status pills */
+  .status-pill   { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+  .sp-pending    { background: #dbeafe; color: #1d4ed8; }
+  .sp-monitoring { background: #ede9fe; color: #6d28d9; }
+  .sp-successful { background: #dcfce7; color: #15803d; }
+  .sp-declined   { background: #f3f4f6; color: #6b7280; }
+  .sp-reverted   { background: #fee2e2; color: #991b1b; }
+
+  /* Change block */
+  .change-block     { border-radius: 8px; padding: 11px 14px; display: flex; align-items: center; gap: 12px; border: 1px solid; }
+  .cb-budget        { background: linear-gradient(135deg,#eff6ff,#dbeafe); border-color: #bfdbfe; }
+  .cb-bid           { background: linear-gradient(135deg,#f0fdf4,#dcfce7); border-color: #bbf7d0; }
+  .cb-status        { background: linear-gradient(135deg,#fff7ed,#ffedd5); border-color: #fed7aa; }
+  .cb-grey          { background: #f9fafb; border-color: #e5e7eb; }
+  .change-icon-wrap { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ciw-budget       { background: #dbeafe; }
+  .ciw-bid          { background: #dcfce7; }
+  .ciw-status       { background: #ffedd5; }
+  .ciw-grey         { background: #f3f4f6; }
+  .change-main      { font-size: 13px; font-weight: 600; color: #1a1d23; }
+  .change-sub       { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .change-sub strong { color: #1a1d23; }
+
+  /* Trigger block */
+  .trigger-block { background: #f8f9fa; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 12.5px; color: #344054; line-height: 1.7; }
+  .trigger-label { font-size: 11px; font-weight: 600; color: #6b7280; margin-bottom: 4px; letter-spacing: .02em; }
+
+  /* Monitoring block */
+  .monitoring-block { background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 8px; padding: 12px 14px; }
+  .mon-top          { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .mon-label        { font-size: 12px; font-weight: 600; color: #5b21b6; display: flex; align-items: center; gap: 6px; }
+  .mon-days         { font-size: 12px; color: #6d28d9; font-weight: 700; }
+  .mon-bar-wrap     { height: 6px; background: #ede9fe; border-radius: 3px; margin-bottom: 10px; overflow: hidden; }
+  .mon-bar          { height: 6px; background: linear-gradient(90deg,#6d28d9,#0d6efd); border-radius: 3px; }
+  .mon-outcomes     { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mon-outcome-pill { border-radius: 6px; padding: 7px 10px; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; }
+  .mop-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+  .mop-revert  { background: #fff1f2; border: 1px solid #fecaca; color: #991b1b; }
+
+  /* Outcome block */
+  .outcome-block  { border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; border: 1px solid; }
+  .ob-success     { background: #f0fdf4; border-color: #bbf7d0; }
+  .ob-declined    { background: #f9fafb; border-color: #e5e7eb; }
+  .ob-reverted    { background: #fff1f2; border-color: #fecaca; }
+  .outcome-title  { font-size: 13px; font-weight: 600; }
+  .ot-success     { color: #15803d; }
+  .ot-declined    { color: #6b7280; }
+  .ot-reverted    { color: #991b1b; }
+  .outcome-sub    { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .revert-reason  { font-size: 12px; color: #991b1b; margin-top: 4px; font-style: italic; }
+
+  /* Footer */
+  .rec-footer         { border-top: 1px solid var(--border); padding-top: 10px; margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+  .rec-footer-meta    { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .rec-footer-actions { display: flex; gap: 6px; align-items: center; }
+  .conf-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .cb-high { background: #d1fae5; color: #065f46; }
+  .cb-med  { background: #fef3c7; color: #92400e; }
+  .cb-low  { background: #fee2e2; color: #991b1b; }
+  .rec-age      { font-size: 12px; color: var(--muted); }
+  .readonly-label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; font-style: italic; margin-left: auto; }
+
+  /* Action buttons */
+  .btn-accept  { background: #15803d; border: none; color: white; border-radius: 6px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; flex: 1; justify-content: center; }
+  .btn-accept:hover  { background: #166534; }
+  .btn-decline { background: white; border: 1px solid #fca5a5; color: #dc3545; border-radius: 6px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; flex: 1; justify-content: center; }
+  .btn-decline:hover { background: #fff1f2; }
+  .btn-modify  { background: white; border: 1px solid var(--border); color: #374151; border-radius: 6px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; flex: 1; justify-content: center; }
+  .btn-modify:hover  { background: #f8f9fa; }
+
+  /* Empty state */
+  .empty-state   { text-align: center; padding: 48px 24px; color: var(--muted); }
+  .empty-state p { font-size: 14px; margin: 8px 0 0; }
+
+  /* Toast */
+  #act-toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+  .act-toast { padding: 12px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,.12); display: flex; align-items: center; gap: 8px; }
+  .act-toast.t-success { background: #15803d; color: white; }
+  .act-toast.t-error   { background: #dc3545; color: white; }
+  .act-toast.t-muted   { background: #374151; color: white; }
+</style>
+
+</head>
+<body>
+    <!-- Sidebar Component -->
+    <!-- Desktop Sidebar (visible on ≥768px) -->
+<div class="sidebar d-none d-md-flex flex-column bg-dark text-white position-fixed" id="sidebar">
+    <!-- Logo / Title -->
+    <div class="sidebar-header p-3 border-bottom border-secondary">
+        <div class="d-flex align-items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="28" height="28" style="flex-shrink:0">
+              <circle cx="50" cy="50" r="41" fill="none" stroke="#4285F4" stroke-width="10"/>
+              <circle cx="50" cy="50" r="29" fill="none" stroke="#EA4335" stroke-width="10"/>
+              <circle cx="50" cy="50" r="17" fill="none" stroke="#FBBC05" stroke-width="10"/>
+              <circle cx="50" cy="50" r="10" fill="#34A853"/>
+            </svg>
+            <span class="fw-bold" style="font-size:15px">Ads Control Tower</span>
+        </div>
+    </div>
+    
+    <!-- Navigation Links -->
+    <nav class="sidebar-nav flex-grow-1 p-2">
+        <ul class="nav flex-column">
+            <!-- Main Pages -->
+            <li class="nav-item">
+                <a href="/" class="nav-link ">
+                    <i class="bi bi-house"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/campaigns" class="nav-link ">
+                    <i class="bi bi-bar-chart"></i>
+                    <span>Campaigns</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/ad-groups" class="nav-link ">
+                    <i class="bi bi-folder"></i>
+                    <span>Ad Groups</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/keywords" class="nav-link ">
+                    <i class="bi bi-key"></i>
+                    <span>Keywords</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/ads" class="nav-link ">
+                    <i class="bi bi-file-text"></i>
+                    <span>Ads</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/shopping" class="nav-link ">
+                    <i class="bi bi-cart"></i>
+                    <span>Shopping</span>
+                </a>
+            </li>
+            
+            <!-- Divider -->
+            <li class="sidebar-divider my-2"></li>
+            
+            <!-- Secondary Pages -->
+            <li class="nav-item">
+                <a href="/recommendations" class="nav-link active">
+                    <i class="bi bi-lightbulb"></i>
+                    <span>Recommendations</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/changes" class="nav-link ">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Changes</span>
+                </a>
+            </li>
+            
+            <!-- Divider -->
+            <li class="sidebar-divider my-2"></li>
+            
+            <!-- Settings -->
+            <li class="nav-item">
+                <a href="/settings" class="nav-link ">
+                    <i class="bi bi-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<!-- Mobile Sidebar (offcanvas on <768px) -->
+<div class="offcanvas offcanvas-start bg-dark text-white d-md-none" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel">
+    <div class="offcanvas-header border-bottom border-secondary">
+        <div class="d-flex align-items-center gap-2" id="sidebarOffcanvasLabel">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="28" height="28" style="flex-shrink:0">
+              <circle cx="50" cy="50" r="41" fill="none" stroke="#4285F4" stroke-width="10"/>
+              <circle cx="50" cy="50" r="29" fill="none" stroke="#EA4335" stroke-width="10"/>
+              <circle cx="50" cy="50" r="17" fill="none" stroke="#FBBC05" stroke-width="10"/>
+              <circle cx="50" cy="50" r="10" fill="#34A853"/>
+            </svg>
+            <span class="fw-bold" style="font-size:15px">Ads Control Tower</span>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-2">
+        <nav class="sidebar-nav">
+            <ul class="nav flex-column">
+                <!-- Main Pages -->
+                <li class="nav-item">
+                    <a href="/" class="nav-link ">
+                        <i class="bi bi-house"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/campaigns" class="nav-link ">
+                        <i class="bi bi-bar-chart"></i>
+                        <span>Campaigns</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/ad-groups" class="nav-link ">
+                        <i class="bi bi-folder"></i>
+                        <span>Ad Groups</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/keywords" class="nav-link ">
+                        <i class="bi bi-key"></i>
+                        <span>Keywords</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/ads" class="nav-link ">
+                        <i class="bi bi-file-text"></i>
+                        <span>Ads</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/shopping" class="nav-link ">
+                        <i class="bi bi-cart"></i>
+                        <span>Shopping</span>
+                    </a>
+                </li>
+                
+                <!-- Divider -->
+                <li class="sidebar-divider my-2"></li>
+                
+                <!-- Secondary Pages -->
+                <li class="nav-item">
+                    <a href="/recommendations" class="nav-link active">
+                        <i class="bi bi-lightbulb"></i>
+                        <span>Recommendations</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/changes" class="nav-link ">
+                        <i class="bi bi-clock-history"></i>
+                        <span>Changes</span>
+                    </a>
+                </li>
+                
+                <!-- Divider -->
+                <li class="sidebar-divider my-2"></li>
+                
+                <!-- Settings -->
+                <li class="nav-item">
+                    <a href="/settings" class="nav-link ">
+                        <i class="bi bi-gear"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+    
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+        <!-- Top Navbar Component -->
+        <!-- Top Navbar -->
+<nav class="navbar navbar-expand navbar-light bg-white border-bottom">
+    <div class="container-fluid">
+        <!-- Hamburger Menu (Mobile Only - triggers sidebar offcanvas) -->
+        <button class="btn btn-link d-md-none p-0 me-3 text-dark" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas">
+            <i class="bi bi-list fs-3"></i>
+        </button>
+        
+        <!-- Navbar Content -->
+        <div class="d-flex align-items-center ms-auto">
+            <!-- Client Selector Dropdown (if multiple clients) -->
+            
+            <div class="dropdown me-3">
+                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="clientDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-building"></i>
+                    <span class="d-none d-sm-inline ms-1">Unknown Client</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="clientDropdown">
+                    
+                    <li>
+                        <a class="dropdown-item active" href="/switch-client/0">
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            client_001
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a class="dropdown-item " href="/switch-client/1">
+                            
+                            client_001_mcc
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a class="dropdown-item " href="/switch-client/2">
+                            
+                            Client_002_Test
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a class="dropdown-item " href="/switch-client/3">
+                            
+                            Synthetic_Test_Client
+                        </a>
+                    </li>
+                    
+                </ul>
+            </div>
+            
+            
+            <!-- User Menu Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="userMenuDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-person-circle"></i>
+                    <span class="d-none d-lg-inline ms-1">User</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuDropdown">
+                    <li><a class="dropdown-item" href="/logout"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+        
+        <!-- Flash Messages -->
+        
+            
+        
+        
+        <!-- Toast Notification Container -->
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+            <div id="toast-notification" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <!-- Toast message will be inserted here -->
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container-fluid">
+                
+
+
+
+<div class="py-4">
+
+
+<div class="summary-strip">
+  <div class="summary-card">
+    <div class="s-icon" style="background:#dbeafe;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <div>
+      <div class="s-num" style="color:#0d6efd;" id="summary-pending">0</div>
+      <div class="s-label">Pending</div>
+    </div>
+  </div>
+  <div class="summary-card">
+    <div class="s-icon" style="background:#ede9fe;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </div>
+    <div>
+      <div class="s-num" style="color:#6d28d9;">0</div>
+      <div class="s-label">Monitoring</div>
+    </div>
+  </div>
+  <div class="summary-card">
+    <div class="s-icon" style="background:#dcfce7;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div>
+      <div class="s-num" style="color:#15803d;">0</div>
+      <div class="s-label">Successful</div>
+    </div>
+  </div>
+  <div class="summary-card">
+    <div class="s-icon" style="background:#fee2e2;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
+    </div>
+    <div>
+      <div class="s-num" style="color:#dc3545;">0</div>
+      <div class="s-label">Reverted</div>
+    </div>
+  </div>
+  <div class="summary-card">
+    <div class="s-icon" style="background:#f3f4f6;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </div>
+    <div>
+      <div class="s-num" style="color:#6b7280;">0</div>
+      <div class="s-label">Declined</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="mb-3">
+  <div class="btn-group">
+    <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" id="entity-filter-btn" aria-expanded="false">
+      <span id="entity-filter-label">All Entity Types</span>
+    </button>
+    <ul class="dropdown-menu" id="entity-type-filter">
+      <li><a class="dropdown-item active" href="#" data-entity="all">All Entity Types</a></li>
+      <li><a class="dropdown-item" href="#" data-entity="campaign">Campaigns (110)</a></li>
+      <li><a class="dropdown-item" href="#" data-entity="keyword">Keywords (1,256)</a></li>
+      <li><a class="dropdown-item" href="#" data-entity="shopping">Shopping (126)</a></li>
+      <li><a class="dropdown-item" href="#" data-entity="ad_group">Ad Groups (0)</a></li>
+    </ul>
+  </div>
+</div>
+
+
+<div class="page-tabs">
+  <button class="page-tab active" id="btn-tab-pending" onclick="switchTab('pending')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    Pending <span class="tab-badge" id="tab-badge-pending">0</span>
+  </button>
+  <button class="page-tab" id="btn-tab-monitoring" onclick="switchTab('monitoring')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Monitoring <span class="tab-badge-orange" id="tab-badge-monitoring">0</span>
+  </button>
+  <button class="page-tab" id="btn-tab-successful" onclick="switchTab('successful')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    Successful <span class="tab-badge-green" id="tab-badge-successful">0</span>
+  </button>
+  <button class="page-tab" id="btn-tab-reverted" onclick="switchTab('reverted')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
+    Reverted <span class="tab-badge-red" id="tab-badge-reverted">0</span>
+  </button>
+  <button class="page-tab" id="btn-tab-declined" onclick="switchTab('declined')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    Declined <span class="tab-badge-grey" id="tab-badge-declined">0</span>
+  </button>
+</div>
+
+
+
+<div id="tab-pending">
+  <div class="rec-header">
+    <div class="rec-header-left">
+      <h5>Pending Recommendations</h5>
+      <p id="pending-subhead">0 recommendations awaiting your decision.</p>
+    </div>
+    <div>
+      <button id="run-btn" onclick="runEngine()" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2" style="font-size:13px;border-color:#d0d5dd;color:#374151;padding:6px 14px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
+        <span id="run-btn-text">Run Recommendations Now</span>
+      </button>
+    </div>
+  </div>
+
+  
+    <div class="empty-state">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0d6efd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <p>No pending recommendations. Click "Run Recommendations Now" to generate new ones.</p>
+    </div>
+  
+</div>
+
+
+
+<div id="tab-monitoring" style="display:none;">
+  <div class="rec-header">
+    <div class="rec-header-left">
+      <h5>Monitoring</h5>
+      <p>0 recommendations currently in the monitoring window.</p>
+    </div>
+  </div>
+
+  
+    <div class="empty-state">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <p>No recommendations currently being monitored.</p>
+    </div>
+  
+</div>
+
+
+
+<div id="tab-successful" style="display:none;">
+  <div class="rec-header">
+    <div class="rec-header-left">
+      <h5>Successful</h5>
+      <p>0 recommendations completed successfully.</p>
+    </div>
+  </div>
+
+  
+    <div class="empty-state">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <p>No successful recommendations yet.</p>
+    </div>
+  
+</div>
+
+
+
+<div id="tab-reverted" style="display:none;">
+  <div class="rec-header">
+    <div class="rec-header-left">
+      <h5>Reverted</h5>
+      <p>0 recommendations auto-reverted by Radar.</p>
+    </div>
+  </div>
+
+  
+    <div class="empty-state">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
+      <p>No reverted recommendations.</p>
+    </div>
+  
+</div>
+
+
+
+<div id="tab-declined" style="display:none;">
+  <div class="rec-header">
+    <div class="rec-header-left">
+      <h5>Declined</h5>
+      <p>0 recommendations declined.</p>
+    </div>
+  </div>
+
+  
+    <div class="empty-state">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <p>No declined recommendations.</p>
+    </div>
+  
+</div>
+
+</div>
+
+
+<div class="modal fade" id="modifyModal" tabindex="-1" aria-labelledby="modifyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modifyModalLabel">Modify Recommendation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label text-muted" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;">Rule</label>
+          <div id="modal-rule-name" style="font-size:14px;font-weight:600;color:#1a1d23;"></div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label text-muted" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;">Campaign</label>
+          <div id="modal-campaign-name" style="font-size:14px;color:#344054;"></div>
+        </div>
+        <div class="mb-3">
+          <label for="modal-new-value" class="form-label" style="font-size:13px;font-weight:600;">New Proposed Value</label>
+          <input type="number" step="any" class="form-control" id="modal-new-value" placeholder="Enter new value">
+          <div class="form-text">Enter your adjusted value before accepting.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success" id="modal-accept-btn" onclick="submitModify()">Accept with Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div id="act-toast-wrap"></div>
+
+
+            </div>
+        </main>
+    </div>
+    
+    <!-- Bootstrap 5.3 JS Bundle (includes Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Toast Notification Helper -->
+    <script>
+        function showToast(message, type) {
+            const toastElement = document.getElementById('toast-notification');
+            const toastBody = toastElement.querySelector('.toast-body');
+            
+            // Set message
+            toastBody.textContent = message;
+            
+            // Set color based on type
+            toastElement.classList.remove('text-bg-success', 'text-bg-danger', 'text-bg-warning', 'text-bg-info');
+            if (type === 'success') {
+                toastElement.classList.add('text-bg-success');
+            } else if (type === 'error' || type === 'danger') {
+                toastElement.classList.add('text-bg-danger');
+            } else if (type === 'warning') {
+                toastElement.classList.add('text-bg-warning');
+            } else {
+                toastElement.classList.add('text-bg-info');
+            }
+            
+            // Show toast
+            const toast = new bootstrap.Toast(toastElement, {
+                autohide: true,
+                delay: type === 'success' ? 3000 : 5000
+            });
+            toast.show();
+        }
+    </script>
+    
+    <!-- Chart.js 4.4 — added Chat 23 M2 for metrics sparklines -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    
+<script>
+// ── Tab switching ─────────────────────────────────────────────────────────────
+const TABS = ['pending','monitoring','successful','reverted','declined'];
+function switchTab(name) {
+  TABS.forEach(t => {
+    document.getElementById('tab-' + t).style.display = (t === name) ? '' : 'none';
+    document.getElementById('btn-tab-' + t).classList.toggle('active', t === name);
+  });
+}
+switchTab('pending');
+
+// ── CSRF Token (Chat 36) ──────────────────────────────────────────────────────
+function getCSRFToken() {
+  return document.querySelector('meta[name="csrf-token"]').content;
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(msg, type) {
+  const wrap = document.getElementById('act-toast-wrap');
+  const t = document.createElement('div');
+  t.className = 'act-toast t-' + (type || 'success');
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 3500);
+}
+
+// ── Remove card + update badges ───────────────────────────────────────────────
+function removeCard(recId) {
+  const card = document.getElementById('card-' + recId);
+  if (!card) return;
+  card.classList.add('removing');
+  setTimeout(() => { card.remove(); updateBadges(); }, 320);
+}
+
+function updateBadges() {
+  const grid = document.getElementById('pending-grid');
+  if (!grid) return;
+  const remaining = grid.querySelectorAll('.rec-card:not(.removing)').length;
+  const el = id => document.getElementById(id);
+  if (el('summary-pending'))   el('summary-pending').textContent   = remaining;
+  if (el('tab-badge-pending')) el('tab-badge-pending').textContent = remaining;
+  if (el('pending-subhead'))   el('pending-subhead').textContent   = remaining + ' recommendation' + (remaining !== 1 ? 's' : '') + ' awaiting your decision.';
+  const emptyEl = el('pending-empty');
+  if (emptyEl) emptyEl.style.display = remaining === 0 ? '' : 'none';
+  if (remaining === 0 && grid) grid.style.display = 'none';
+}
+
+// ── Accept ────────────────────────────────────────────────────────────────────
+function acceptRec(recId, btn) {
+  btn.disabled = true; btn.style.opacity = '0.65';
+  fetch('/recommendations/' + recId + '/accept', {
+    method:'POST', 
+    headers:{
+      'Content-Type':'application/json',
+      'X-CSRFToken': getCSRFToken()
+    }
+  })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) { showToast(d.message || 'Recommendation accepted.', 'success'); removeCard(recId); }
+      else { showToast('Error: ' + d.message, 'error'); btn.disabled=false; btn.style.opacity=''; }
+    })
+    .catch(err => { showToast('Request failed: '+err,'error'); btn.disabled=false; btn.style.opacity=''; });
+}
+
+// ── Decline ───────────────────────────────────────────────────────────────────
+function declineRec(recId, btn) {
+  btn.disabled = true; btn.style.opacity = '0.65';
+  fetch('/recommendations/' + recId + '/decline', {
+    method:'POST', 
+    headers:{
+      'Content-Type':'application/json',
+      'X-CSRFToken': getCSRFToken()
+    }
+  })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) { showToast('Recommendation declined.', 'muted'); removeCard(recId); }
+      else { showToast('Error: ' + d.message, 'error'); btn.disabled=false; btn.style.opacity=''; }
+    })
+    .catch(err => { showToast('Request failed: '+err,'error'); btn.disabled=false; btn.style.opacity=''; });
+}
+
+// ── Modify modal ──────────────────────────────────────────────────────────────
+let _modifyRecId = null;
+function openModifyModal(btn) {
+  _modifyRecId = btn.dataset.recId;
+  document.getElementById('modal-rule-name').textContent     = btn.dataset.recRule;
+  document.getElementById('modal-campaign-name').textContent = btn.dataset.recCampaign;
+  document.getElementById('modal-new-value').value           = btn.dataset.recValue;
+  new bootstrap.Modal(document.getElementById('modifyModal')).show();
+}
+function submitModify() {
+  if (!_modifyRecId) return;
+  const newVal = parseFloat(document.getElementById('modal-new-value').value);
+  if (isNaN(newVal)) { showToast('Please enter a valid number.', 'error'); return; }
+  const btn = document.getElementById('modal-accept-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  fetch('/recommendations/' + _modifyRecId + '/modify', {
+    method:'POST', 
+    headers:{
+      'Content-Type':'application/json',
+      'X-CSRFToken': getCSRFToken()
+    }, 
+    body:JSON.stringify({new_value:newVal})
+  })
+    .then(r => r.json())
+    .then(d => {
+      btn.disabled=false; btn.textContent='Accept with Changes';
+      if (d.success) {
+        bootstrap.Modal.getInstance(document.getElementById('modifyModal')).hide();
+        showToast(d.message || 'Modified and accepted.', 'success');
+        removeCard(_modifyRecId);
+        _modifyRecId = null;
+      } else { showToast('Error: '+d.message,'error'); }
+    })
+    .catch(err => { btn.disabled=false; btn.textContent='Accept with Changes'; showToast('Request failed: '+err,'error'); });
+}
+
+// ── Filter pending cards ──────────────────────────────────────────────────────
+function filterCards(type, el) {
+  document.querySelectorAll('.filter-bar .filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#pending-grid .rec-card').forEach(card => {
+    card.style.display = (type === 'all' || card.dataset.type === type) ? '' : 'none';
+  });
+}
+
+// ── Entity Type Filter ────────────────────────────────────────────────────────
+let allCards = [];
+let currentEntityFilter = 'all';
+let visibleCount = 50;
+
+function filterByEntityType(entityType) {
+  currentEntityFilter = entityType;
+  sessionStorage.setItem('entityFilter', entityType);
+  
+  // Get current active tab
+  const activeTab = TABS.find(t => document.getElementById('btn-tab-' + t).classList.contains('active'));
+  const tabContent = document.getElementById('tab-' + activeTab);
+  if (!tabContent) return;
+  
+  // Get all cards in current tab
+  const tabCards = Array.from(tabContent.querySelectorAll('[data-entity-type]'));
+  
+  // Filter cards by entity type
+  let filteredCards = tabCards.filter(card => {
+    const cardType = card.dataset.entityType;
+    return entityType === 'all' || cardType === entityType;
+  });
+  
+  // Hide all cards first
+  tabCards.forEach(card => card.style.display = 'none');
+  
+  // Show first 50 filtered cards
+  visibleCount = 50;
+  filteredCards.slice(0, visibleCount).forEach(card => {
+    card.style.display = '';
+  });
+  
+  // Update "Load More" button
+  updateLoadMoreButton(filteredCards.length);
+  
+  // Update dropdown label
+  updateDropdownLabel(entityType, filteredCards.length);
+  
+  // Handle empty state for ad groups
+  const emptyAdGroups = document.getElementById('empty-ad-groups');
+  if (emptyAdGroups) {
+    emptyAdGroups.style.display = (entityType === 'ad_group' && filteredCards.length === 0) ? 'block' : 'none';
+  }
+  
+  // Update active dropdown item
+  document.querySelectorAll('#entity-type-filter .dropdown-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.entity === entityType);
+  });
+}
+
+function loadMoreCards() {
+  const activeTab = TABS.find(t => document.getElementById('btn-tab-' + t).classList.contains('active'));
+  const tabContent = document.getElementById('tab-' + activeTab);
+  if (!tabContent) return;
+  
+  const tabCards = Array.from(tabContent.querySelectorAll('[data-entity-type]'));
+  const filteredCards = tabCards.filter(card => {
+    const cardType = card.dataset.entityType;
+    return currentEntityFilter === 'all' || cardType === currentEntityFilter;
+  });
+  
+  // Show next 50 cards
+  const currentlyVisible = visibleCount;
+  visibleCount += 50;
+  
+  filteredCards.slice(currentlyVisible, visibleCount).forEach(card => {
+    card.style.display = '';
+  });
+  
+  // Update "Load More" button
+  updateLoadMoreButton(filteredCards.length);
+}
+
+function updateLoadMoreButton(totalFiltered) {
+  const loadMoreContainer = document.getElementById('load-more-container');
+  const loadMoreBtn = document.getElementById('load-more-btn');
+  const loadMoreCount = document.getElementById('load-more-count');
+  
+  if (!loadMoreContainer || !loadMoreBtn) return;
+  
+  const remaining = totalFiltered - visibleCount;
+  
+  if (remaining > 0) {
+    loadMoreContainer.style.display = 'block';
+    const toShow = Math.min(remaining, 50);
+    loadMoreCount.textContent = `(${toShow} of ${remaining} remaining)`;
+  } else {
+    loadMoreContainer.style.display = 'none';
+  }
+}
+
+function updateDropdownLabel(entityType, count) {
+  const labelEl = document.getElementById('entity-filter-label');
+  if (!labelEl) return;
+  
+  const labels = {
+    'all': 'All Entity Types',
+    'campaign': `Campaigns (${count})`,
+    'keyword': `Keywords (${count})`,
+    'shopping': `Shopping (${count})`,
+    'ad_group': `Ad Groups (${count})`
+  };
+  
+  labelEl.textContent = labels[entityType] || 'All Entity Types';
+}
+
+// Initialize entity filter on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Restore filter from sessionStorage
+  const savedFilter = sessionStorage.getItem('entityFilter') || 'all';
+  
+  // Attach click handlers to dropdown items
+  document.querySelectorAll('#entity-type-filter .dropdown-item').forEach(item => {
+    item.addEventListener('click', function(e) {
+      e.preventDefault();
+      const entityType = this.dataset.entity;
+      filterByEntityType(entityType);
+    });
+  });
+  
+  // Apply saved filter
+  filterByEntityType(savedFilter);
+});
+
+// Re-apply filter when switching tabs
+const originalSwitchTab = switchTab;
+switchTab = function(name) {
+  originalSwitchTab(name);
+  // Re-apply entity filter after tab switch
+  setTimeout(() => filterByEntityType(currentEntityFilter), 50);
+};
+
+
+// ── Run engine ────────────────────────────────────────────────────────────────
+function runEngine() {
+  const btn = document.getElementById('run-btn');
+  const txtEl = document.getElementById('run-btn-text');
+  btn.disabled = true;
+  if (txtEl) txtEl.textContent = 'Running...';
+  fetch('/recommendations/run', {method:'POST', headers:{'Content-Type':'application/json'}})
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) { showToast(d.message, 'success'); setTimeout(() => location.reload(), 1200); }
+      else { showToast('Error: '+d.message,'error'); btn.disabled=false; if(txtEl) txtEl.textContent='Run Recommendations Now'; }
+    })
+    .catch(err => { showToast('Request failed: '+err,'error'); btn.disabled=false; if(txtEl) txtEl.textContent='Run Recommendations Now'; });
+}
+</script>
+
+</body>
+</html>
