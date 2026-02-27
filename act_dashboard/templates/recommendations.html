@@ -160,6 +160,14 @@
 {% endblock %}
 
 {% block content %}
+{# Entity type to Bootstrap color mapping #}
+{% set entity_colors = {
+  'campaign': 'primary',
+  'keyword': 'success',
+  'shopping': 'info',
+  'ad_group': 'warning'
+} %}
+
 <div class="py-4">
 
 {# ── SUMMARY STRIP ──────────────────────────────────────────────────────────── #}
@@ -208,6 +216,22 @@
       <div class="s-num" style="color:#6b7280;">{{ summary.declined }}</div>
       <div class="s-label">Declined</div>
     </div>
+  </div>
+</div>
+
+{# ── ENTITY TYPE FILTER ─────────────────────────────────────────────────────── #}
+<div class="mb-3">
+  <div class="btn-group">
+    <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" id="entity-filter-btn" aria-expanded="false">
+      <span id="entity-filter-label">All Entity Types</span>
+    </button>
+    <ul class="dropdown-menu" id="entity-type-filter">
+      <li><a class="dropdown-item active" href="#" data-entity="all">All Entity Types</a></li>
+      <li><a class="dropdown-item" href="#" data-entity="campaign">Campaigns (110)</a></li>
+      <li><a class="dropdown-item" href="#" data-entity="keyword">Keywords (1,256)</a></li>
+      <li><a class="dropdown-item" href="#" data-entity="shopping">Shopping (126)</a></li>
+      <li><a class="dropdown-item" href="#" data-entity="ad_group">Ad Groups (0)</a></li>
+    </ul>
   </div>
 </div>
 
@@ -269,9 +293,17 @@
 
     <div class="rec-grid-2" id="pending-grid">
       {% for rec in pending_recs %}
-      <div class="rec-card" data-type="{{ rec.rule_type }}" id="card-{{ rec.rec_id }}">
+      <div class="rec-card" data-type="{{ rec.rule_type }}" data-entity-type="{{ rec.entity_type }}" id="card-{{ rec.rec_id }}">
         <div class="rec-top rt-{{ rec.rule_type }}"></div>
         <div class="rec-body">
+          {# Entity badge + Status pill row #}
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="badge bg-{{ entity_colors.get(rec.entity_type, 'secondary') }} px-3 py-2 text-uppercase">
+              {{ rec.entity_type }}
+            </span>
+            <span class="status-pill sp-pending">&#9679; Pending</span>
+          </div>
+
           <div class="rec-card-header">
             <div>
               <div class="rec-rule-tag rrt-{{ rec.rule_type }}">
@@ -280,9 +312,21 @@
                 {% else %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/></svg>{% endif %}
                 {{ rec.rule_id | replace('_',' ') | upper }}
               </div>
-              <div class="rec-campaign-name">{{ rec.campaign_name }}</div>
+              {# Entity-specific name display #}
+              {% if rec.entity_type == 'campaign' %}
+                <div class="rec-campaign-name">{{ rec.campaign_name }}</div>
+              {% elif rec.entity_type == 'keyword' %}
+                <div class="rec-campaign-name">{{ rec.entity_name }}</div>
+                <div style="font-size:12px;color:#6b7280;margin-top:2px;">Campaign: {{ rec.campaign_name }}</div>
+              {% elif rec.entity_type == 'shopping' %}
+                <div class="rec-campaign-name">{{ rec.entity_name }}</div>
+              {% elif rec.entity_type == 'ad_group' %}
+                <div class="rec-campaign-name">{{ rec.entity_name }}</div>
+                <div style="font-size:12px;color:#6b7280;margin-top:2px;">Campaign: {{ rec.campaign_name }}</div>
+              {% else %}
+                <div class="rec-campaign-name">{{ rec.entity_name or rec.campaign_name }}</div>
+              {% endif %}
             </div>
-            <span class="status-pill sp-pending">&#9679; Pending</span>
           </div>
 
           <div class="change-block cb-{{ rec.rule_type }}">
@@ -292,7 +336,7 @@
               {% else %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>{% endif %}
             </div>
             <div>
-              <div class="change-main">{{ rec.action_label }}</div>
+              <div class="change-main">{{ rec|action_label }}</div>
               {% if rec.value_label %}<div class="change-sub"><strong>{{ rec.value_label }}</strong> {{ rec.value_suffix }} &nbsp;&#183;&nbsp; 7-day cooldown after</div>{% endif %}
             </div>
           </div>
@@ -332,6 +376,19 @@
       {% endfor %}
     </div>
 
+    {# Load More button #}
+    <div class="text-center mt-3 mb-3" id="load-more-container" style="display:none;">
+      <button class="btn btn-outline-primary btn-sm" id="load-more-btn" onclick="loadMoreCards()">
+        Load More <span id="load-more-count"></span>
+      </button>
+    </div>
+
+    {# Empty state for Ad Groups #}
+    <div class="alert alert-info" id="empty-ad-groups" style="display:none;margin-top:24px;">
+      <strong>No ad group recommendations at this time.</strong>
+      <p style="margin:8px 0 0;">Ad group rules are enabled, but conditions haven't been met yet in the current data.</p>
+    </div>
+
     <div id="pending-empty" class="empty-state" style="display:none;">
       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0d6efd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       <p>No pending recommendations.</p>
@@ -360,18 +417,38 @@
   {% if monitoring_recs %}
     <div class="rec-grid-2">
       {% for rec in monitoring_recs %}
-      <div class="rec-card card-monitoring">
+      <div class="rec-card card-monitoring" data-type="{{ rec.rule_type }}" data-entity-type="{{ rec.entity_type }}">
         <div class="rec-top rt-monitoring"></div>
         <div class="rec-body">
+          {# Entity badge + Status pill row #}
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="badge bg-{{ entity_colors.get(rec.entity_type, 'secondary') }} px-3 py-2 text-uppercase">
+              {{ rec.entity_type }}
+            </span>
+            <span class="status-pill sp-monitoring">&#9679; Monitoring</span>
+          </div>
+
           <div class="rec-card-header">
             <div>
               <div class="rec-rule-tag rrt-monitoring">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 {{ rec.rule_id | replace('_',' ') | upper }}
               </div>
-              <div class="rec-campaign-name">{{ rec.campaign_name }}</div>
+              {# Entity-specific name display #}
+              {% if rec.entity_type == 'campaign' %}
+                <div class="rec-campaign-name">{{ rec.campaign_name }}</div>
+              {% elif rec.entity_type == 'keyword' %}
+                <div class="rec-campaign-name">{{ rec.entity_name }}</div>
+                <div style="font-size:12px;color:#6b7280;margin-top:2px;">Campaign: {{ rec.campaign_name }}</div>
+              {% elif rec.entity_type == 'shopping' %}
+                <div class="rec-campaign-name">{{ rec.entity_name }}</div>
+              {% elif rec.entity_type == 'ad_group' %}
+                <div class="rec-campaign-name">{{ rec.entity_name }}</div>
+                <div style="font-size:12px;color:#6b7280;margin-top:2px;">Campaign: {{ rec.campaign_name }}</div>
+              {% else %}
+                <div class="rec-campaign-name">{{ rec.entity_name or rec.campaign_name }}</div>
+              {% endif %}
             </div>
-            <span class="status-pill sp-monitoring">&#9679; Monitoring</span>
           </div>
 
           <div class="change-block cb-{{ rec.rule_type }}">
@@ -380,7 +457,7 @@
               {% else %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{% if rec.rule_type=='budget'%}#1d4ed8{% else %}#15803d{% endif %}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>{% endif %}
             </div>
             <div>
-              <div class="change-main">{{ rec.action_label }}</div>
+              <div class="change-main">{{ rec|action_label }}</div>
               <div class="change-sub">{{ rec.value_label }}{% if rec.accepted_at %} &nbsp;&#183;&nbsp; Accepted {{ rec.accepted_at | string | truncate(10, True, '') }}{% endif %}</div>
             </div>
           </div>
@@ -440,9 +517,20 @@
   {% if successful_recs %}
     <div class="rec-grid-2">
       {% for rec in successful_recs %}
-      <div class="rec-card card-success">
+      <div class="rec-card card-success" data-type="{{ rec.rule_type }}" data-entity-type="{{ rec.entity_type }}">
         <div class="rec-top rt-successful"></div>
         <div class="rec-body">
+          {# Entity badge + Status pill row #}
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="badge bg-{{ entity_colors.get(rec.entity_type, 'secondary') }} px-3 py-2 text-uppercase">
+              {{ rec.entity_type }}
+            </span>
+            <span class="status-pill sp-successful">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><polyline points="20 6 9 17 4 12"/></svg>
+              Successful
+            </span>
+          </div>
+
           <div class="rec-card-header">
             <div>
               <div class="rec-rule-tag rrt-{{ rec.rule_type }}">
@@ -451,12 +539,21 @@
                 {% else %}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/></svg>{% endif %}
                 {{ rec.rule_id | replace('_',' ') | upper }}
               </div>
-              <div class="rec-campaign-name">{{ rec.campaign_name }}</div>
+              {# Entity-specific name display #}
+              {% if rec.entity_type == 'campaign' %}
+                <div class="rec-campaign-name">{{ rec.campaign_name }}</div>
+              {% elif rec.entity_type == 'keyword' %}
+                <div class="rec-campaign-name">{{ rec.entity_name }}</div>
+                <div style="font-size:12px;color:#6b7280;margin-top:2px;">Campaign: {{ rec.campaign_name }}</div>
+              {% elif rec.entity_type == 'shopping' %}
+                <div class="rec-campaign-name">{{ rec.entity_name }}</div>
+              {% elif rec.entity_type == 'ad_group' %}
+                <div class="rec-campaign-name">{{ rec.entity_name }}</div>
+                <div style="font-size:12px;color:#6b7280;margin-top:2px;">Campaign: {{ rec.campaign_name }}</div>
+              {% else %}
+                <div class="rec-campaign-name">{{ rec.entity_name or rec.campaign_name }}</div>
+              {% endif %}
             </div>
-            <span class="status-pill sp-successful">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><polyline points="20 6 9 17 4 12"/></svg>
-              Successful
-            </span>
           </div>
 
           <div class="change-block cb-{{ rec.rule_type }}">
@@ -466,7 +563,7 @@
               {% else %}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>{% endif %}
             </div>
             <div>
-              <div class="change-main">{{ rec.action_label }}</div>
+              <div class="change-main">{{ rec|action_label }}</div>
               {% if rec.value_label %}<div class="change-sub"><strong>{{ rec.value_label }}</strong></div>{% endif %}
             </div>
           </div>
@@ -516,18 +613,38 @@
   {% if reverted_recs %}
     <div class="rec-grid-2">
       {% for rec in reverted_recs %}
-      <div class="rec-card card-reverted">
+      <div class="rec-card card-reverted" data-type="{{ rec.rule_type }}" data-entity-type="{{ rec.entity_type }}">
         <div class="rec-top rt-reverted"></div>
         <div class="rec-body">
+          {# Entity badge + Status pill row #}
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="badge bg-{{ entity_colors.get(rec.entity_type, 'secondary') }} px-3 py-2 text-uppercase">
+              {{ rec.entity_type }}
+            </span>
+            <span class="status-pill sp-reverted">&#8635; Reverted</span>
+          </div>
+
           <div class="rec-card-header">
             <div>
               <div class="rec-rule-tag rrt-reverted">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#991b1b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
                 {{ rec.rule_id | replace('_',' ') | upper }}
               </div>
-              <div class="rec-campaign-name">{{ rec.campaign_name }}</div>
+              {# Entity-specific name display #}
+              {% if rec.entity_type == 'campaign' %}
+                <div class="rec-campaign-name">{{ rec.campaign_name }}</div>
+              {% elif rec.entity_type == 'keyword' %}
+                <div class="rec-campaign-name">{{ rec.entity_name }}</div>
+                <div style="font-size:12px;color:#6b7280;margin-top:2px;">Campaign: {{ rec.campaign_name }}</div>
+              {% elif rec.entity_type == 'shopping' %}
+                <div class="rec-campaign-name">{{ rec.entity_name }}</div>
+              {% elif rec.entity_type == 'ad_group' %}
+                <div class="rec-campaign-name">{{ rec.entity_name }}</div>
+                <div style="font-size:12px;color:#6b7280;margin-top:2px;">Campaign: {{ rec.campaign_name }}</div>
+              {% else %}
+                <div class="rec-campaign-name">{{ rec.entity_name or rec.campaign_name }}</div>
+              {% endif %}
             </div>
-            <span class="status-pill sp-reverted">&#8635; Reverted</span>
           </div>
 
           <div class="change-block cb-grey">
@@ -535,7 +652,7 @@
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
             </div>
             <div>
-              <div class="change-main">{{ rec.action_label }} <span style="font-size:11px;color:#991b1b;font-weight:600;">(then reverted)</span></div>
+              <div class="change-main">{{ rec|action_label }} <span style="font-size:11px;color:#991b1b;font-weight:600;">(then reverted)</span></div>
               {% if rec.value_label %}<div class="change-sub"><strong>{{ rec.value_label }}</strong></div>{% endif %}
             </div>
           </div>
@@ -588,18 +705,38 @@
   {% if declined_recs %}
     <div class="rec-grid-2">
       {% for rec in declined_recs %}
-      <div class="rec-card card-declined">
+      <div class="rec-card card-declined" data-type="{{ rec.rule_type }}" data-entity-type="{{ rec.entity_type }}">
         <div class="rec-top rt-declined"></div>
         <div class="rec-body">
+          {# Entity badge + Status pill row #}
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="badge bg-{{ entity_colors.get(rec.entity_type, 'secondary') }} px-3 py-2 text-uppercase">
+              {{ rec.entity_type }}
+            </span>
+            <span class="status-pill sp-declined">Declined</span>
+          </div>
+
           <div class="rec-card-header">
             <div>
               <div class="rec-rule-tag rrt-declined">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 {{ rec.rule_id | replace('_',' ') | upper }}
               </div>
-              <div class="rec-campaign-name">{{ rec.campaign_name }}</div>
+              {# Entity-specific name display #}
+              {% if rec.entity_type == 'campaign' %}
+                <div class="rec-campaign-name">{{ rec.campaign_name }}</div>
+              {% elif rec.entity_type == 'keyword' %}
+                <div class="rec-campaign-name">{{ rec.entity_name }}</div>
+                <div style="font-size:12px;color:#6b7280;margin-top:2px;">Campaign: {{ rec.campaign_name }}</div>
+              {% elif rec.entity_type == 'shopping' %}
+                <div class="rec-campaign-name">{{ rec.entity_name }}</div>
+              {% elif rec.entity_type == 'ad_group' %}
+                <div class="rec-campaign-name">{{ rec.entity_name }}</div>
+                <div style="font-size:12px;color:#6b7280;margin-top:2px;">Campaign: {{ rec.campaign_name }}</div>
+              {% else %}
+                <div class="rec-campaign-name">{{ rec.entity_name or rec.campaign_name }}</div>
+              {% endif %}
             </div>
-            <span class="status-pill sp-declined">Declined</span>
           </div>
 
           <div class="change-block cb-grey">
@@ -607,7 +744,7 @@
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </div>
             <div>
-              <div class="change-main">{{ rec.action_label }}</div>
+              <div class="change-main">{{ rec|action_label }}</div>
               {% if rec.value_label %}<div class="change-sub"><strong>{{ rec.value_label }}</strong></div>{% endif %}
             </div>
           </div>
@@ -808,6 +945,139 @@ function filterCards(type, el) {
     card.style.display = (type === 'all' || card.dataset.type === type) ? '' : 'none';
   });
 }
+
+// ── Entity Type Filter ────────────────────────────────────────────────────────
+let allCards = [];
+let currentEntityFilter = 'all';
+let visibleCount = 50;
+
+function filterByEntityType(entityType) {
+  currentEntityFilter = entityType;
+  sessionStorage.setItem('entityFilter', entityType);
+  
+  // Get current active tab
+  const activeTab = TABS.find(t => document.getElementById('btn-tab-' + t).classList.contains('active'));
+  const tabContent = document.getElementById('tab-' + activeTab);
+  if (!tabContent) return;
+  
+  // Get all cards in current tab
+  const tabCards = Array.from(tabContent.querySelectorAll('[data-entity-type]'));
+  
+  // Filter cards by entity type
+  let filteredCards = tabCards.filter(card => {
+    const cardType = card.dataset.entityType;
+    return entityType === 'all' || cardType === entityType;
+  });
+  
+  // Hide all cards first
+  tabCards.forEach(card => card.style.display = 'none');
+  
+  // Show first 50 filtered cards
+  visibleCount = 50;
+  filteredCards.slice(0, visibleCount).forEach(card => {
+    card.style.display = '';
+  });
+  
+  // Update "Load More" button
+  updateLoadMoreButton(filteredCards.length);
+  
+  // Update dropdown label
+  updateDropdownLabel(entityType, filteredCards.length);
+  
+  // Handle empty state for ad groups
+  const emptyAdGroups = document.getElementById('empty-ad-groups');
+  if (emptyAdGroups) {
+    emptyAdGroups.style.display = (entityType === 'ad_group' && filteredCards.length === 0) ? 'block' : 'none';
+  }
+  
+  // Update active dropdown item
+  document.querySelectorAll('#entity-type-filter .dropdown-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.entity === entityType);
+  });
+}
+
+function loadMoreCards() {
+  const activeTab = TABS.find(t => document.getElementById('btn-tab-' + t).classList.contains('active'));
+  const tabContent = document.getElementById('tab-' + activeTab);
+  if (!tabContent) return;
+  
+  const tabCards = Array.from(tabContent.querySelectorAll('[data-entity-type]'));
+  const filteredCards = tabCards.filter(card => {
+    const cardType = card.dataset.entityType;
+    return currentEntityFilter === 'all' || cardType === currentEntityFilter;
+  });
+  
+  // Show next 50 cards
+  const currentlyVisible = visibleCount;
+  visibleCount += 50;
+  
+  filteredCards.slice(currentlyVisible, visibleCount).forEach(card => {
+    card.style.display = '';
+  });
+  
+  // Update "Load More" button
+  updateLoadMoreButton(filteredCards.length);
+}
+
+function updateLoadMoreButton(totalFiltered) {
+  const loadMoreContainer = document.getElementById('load-more-container');
+  const loadMoreBtn = document.getElementById('load-more-btn');
+  const loadMoreCount = document.getElementById('load-more-count');
+  
+  if (!loadMoreContainer || !loadMoreBtn) return;
+  
+  const remaining = totalFiltered - visibleCount;
+  
+  if (remaining > 0) {
+    loadMoreContainer.style.display = 'block';
+    const toShow = Math.min(remaining, 50);
+    loadMoreCount.textContent = `(${toShow} of ${remaining} remaining)`;
+  } else {
+    loadMoreContainer.style.display = 'none';
+  }
+}
+
+function updateDropdownLabel(entityType, count) {
+  const labelEl = document.getElementById('entity-filter-label');
+  if (!labelEl) return;
+  
+  const labels = {
+    'all': 'All Entity Types',
+    'campaign': `Campaigns (${count})`,
+    'keyword': `Keywords (${count})`,
+    'shopping': `Shopping (${count})`,
+    'ad_group': `Ad Groups (${count})`
+  };
+  
+  labelEl.textContent = labels[entityType] || 'All Entity Types';
+}
+
+// Initialize entity filter on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Restore filter from sessionStorage
+  const savedFilter = sessionStorage.getItem('entityFilter') || 'all';
+  
+  // Attach click handlers to dropdown items
+  document.querySelectorAll('#entity-type-filter .dropdown-item').forEach(item => {
+    item.addEventListener('click', function(e) {
+      e.preventDefault();
+      const entityType = this.dataset.entity;
+      filterByEntityType(entityType);
+    });
+  });
+  
+  // Apply saved filter
+  filterByEntityType(savedFilter);
+});
+
+// Re-apply filter when switching tabs
+const originalSwitchTab = switchTab;
+switchTab = function(name) {
+  originalSwitchTab(name);
+  // Re-apply entity filter after tab switch
+  setTimeout(() => filterByEntityType(currentEntityFilter), 50);
+};
+
 
 // ── Run engine ────────────────────────────────────────────────────────────────
 function runEngine() {

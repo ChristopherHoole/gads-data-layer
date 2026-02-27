@@ -48,6 +48,103 @@ _RULES_CONFIG_PATH = os.path.join(
 # Helpers
 # ---------------------------------------------------------------------------
 
+def get_action_label(rec: dict) -> str:
+    """
+    Generate entity-aware action label for recommendation.
+    
+    Database stores:
+        - action_direction: 'increase', 'decrease', 'pause', 'flag', 'hold'
+        - rule_type: 'budget', 'bid', 'status'
+        - entity_type: 'campaign', 'keyword', 'shopping', 'ad_group'
+    
+    Returns human-readable label combining all three fields.
+    """
+    entity_type = rec.get('entity_type', 'campaign')
+    action_direction = rec.get('action_direction', '')
+    action_magnitude = rec.get('action_magnitude', 0)
+    rule_type = rec.get('rule_type', '')
+    
+    # Campaign actions
+    if entity_type == 'campaign':
+        if action_direction == 'increase':
+            if rule_type == 'budget':
+                return f"Increase daily budget by {action_magnitude}%"
+            elif rule_type == 'bid':
+                return f"Increase tROAS target by {action_magnitude}%"
+        elif action_direction == 'decrease':
+            if rule_type == 'budget':
+                return f"Decrease daily budget by {action_magnitude}%"
+            elif rule_type == 'bid':
+                return f"Decrease tROAS target by {action_magnitude}%"
+        elif action_direction == 'pause':
+            return "Pause campaign"
+        elif action_direction == 'enable':
+            return "Enable campaign"
+        elif action_direction == 'flag':
+            return "Flag campaign for review"
+        elif action_direction == 'hold':
+            return f"Hold {'budget' if rule_type == 'budget' else 'bid target'} — no change"
+    
+    # Keyword actions
+    elif entity_type == 'keyword':
+        if action_direction == 'pause':
+            return "Pause"
+        elif action_direction == 'enable':
+            return "Enable keyword"
+        elif action_direction == 'increase':
+            return f"Increase keyword bid by {action_magnitude}%"
+        elif action_direction == 'decrease':
+            return f"Decrease keyword bid by {action_magnitude}%"
+        elif action_direction == 'flag':
+            return "Flag keyword for review"
+    
+    # Shopping actions
+    elif entity_type == 'shopping':
+        if action_direction == 'increase':
+            if rule_type == 'budget':
+                return f"Increase shopping budget by {action_magnitude}%"
+            elif rule_type == 'bid':
+                return f"Increase shopping tROAS by {action_magnitude}%"
+        elif action_direction == 'decrease':
+            if rule_type == 'budget':
+                return f"Decrease shopping budget by {action_magnitude}%"
+            elif rule_type == 'bid':
+                return f"Decrease shopping tROAS by {action_magnitude}%"
+        elif action_direction == 'pause':
+            return "Pause shopping campaign"
+        elif action_direction == 'enable':
+            return "Enable shopping campaign"
+        elif action_direction == 'flag':
+            return "Flag shopping campaign for review"
+    
+    # Ad Group actions
+    elif entity_type == 'ad_group':
+        if action_direction == 'pause':
+            return "Pause ad group"
+        elif action_direction == 'enable':
+            return "Enable ad group"
+        elif action_direction == 'increase':
+            return f"Increase ad group bid by {action_magnitude}%"
+        elif action_direction == 'decrease':
+            return f"Decrease ad group bid by {action_magnitude}%"
+        elif action_direction == 'flag':
+            return "Flag ad group for review"
+    
+    # Final fallback
+    if action_magnitude and action_magnitude > 0:
+        return f"{action_direction.replace('_', ' ').title()} by {action_magnitude}%"
+    else:
+        return action_direction.replace('_', ' ').title()
+
+
+
+# Register as Jinja template filter
+@bp.app_template_filter('action_label')
+def action_label_filter(rec):
+    """Jinja2 template filter wrapper for get_action_label."""
+    return get_action_label(rec)
+
+
 def _ensure_changes_table(conn):
     """
     Create the writable changes table in warehouse.duckdb if it doesn't exist.
@@ -328,29 +425,8 @@ def _enrich_rec(rec):
         rec["monitoring_remaining"]    = 0
         rec["monitoring_progress_pct"] = 0
 
-    # Human-readable action label
-    direction = rec.get("action_direction", "")
-    magnitude = rec.get("action_magnitude", 0) or 0
-    rule_type = rec.get("rule_type", "")
-
-    if direction == "increase":
-        rec["action_label"] = "Increase {} by {}%".format(
-            "daily budget" if rule_type == "budget" else "tROAS target", magnitude
-        )
-    elif direction == "decrease":
-        rec["action_label"] = "Decrease {} by {}%".format(
-            "daily budget" if rule_type == "budget" else "tROAS target", magnitude
-        )
-    elif direction == "hold":
-        rec["action_label"] = "Hold {} — no change".format(
-            "budget" if rule_type == "budget" else "bid target"
-        )
-    elif direction == "flag":
-        rec["action_label"] = "Flag campaign for review"
-    else:
-        rec["action_label"] = direction.title()
-
     # Value display
+    rule_type = rec.get("rule_type", "")
     if rule_type == "budget":
         rec["value_label"]  = "£{:.2f} → £{:.2f}".format(
             rec["current_value"] or 0, rec["proposed_value"] or 0
