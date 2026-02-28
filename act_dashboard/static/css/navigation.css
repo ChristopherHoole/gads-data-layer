@@ -1,0 +1,148 @@
+/* ============================================
+   NAVIGATION MODULE - SLIM VERTICAL NAV
+   Google Ads-inspired design
+   Width: 110px | Icons: Material Symbols Outlined
+   ============================================ */
+
+/* Material Symbols Configuration */
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,      /* Outlined (not filled) */
+    'wght' 400,    /* Regular weight */
+    'GRAD' 0,      /* Standard gradient */
+    'opsz' 40;     /* Optical size for 32px display */
+}
+
+/* ============================================
+   NAVIGATION SIDEBAR
+   ============================================ */
+.nav-sidebar {
+  width: 110px;
+  background: #ffffff;
+  border-right: 1px solid #dadce0;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  z-index: 1000;
+}
+
+/* ============================================
+   BRANDING / LOGO SECTION
+   ============================================ */
+.nav-brand {
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-bottom: 1px solid #dadce0;
+}
+
+.nav-brand-logo {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 8px;
+}
+
+.nav-brand-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #202124;
+  text-align: center;
+  line-height: 1.3;
+}
+
+/* ============================================
+   NAVIGATION ITEMS CONTAINER
+   ============================================ */
+.nav-items {
+  flex: 1;
+  padding: 8px 0;
+  overflow-y: auto;
+}
+
+/* ============================================
+   NAVIGATION ITEM
+   ============================================ */
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 8px;
+  margin: 4px 8px;
+  text-decoration: none;
+  color: #5f6368;
+  border-radius: 8px;
+  transition: all 150ms ease;
+  cursor: pointer;
+  min-height: 80px;
+}
+
+/* Hover State */
+.nav-item:hover {
+  background: #f1f3f4;
+  color: #202124;
+}
+
+/* Active State (Current Page) */
+.nav-item.active {
+  background: #e8f0fe;
+  color: #1a73e8;
+}
+
+/* Focus State (Keyboard Navigation) */
+.nav-item:focus {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+}
+
+/* ============================================
+   NAVIGATION ITEM COMPONENTS
+   ============================================ */
+.nav-item-icon {
+  font-size: 32px;
+  margin-bottom: 4px;
+}
+
+.nav-item-text {
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Recommendations text smaller to prevent wrapping */
+.nav-item-text.small {
+  font-size: 11px;
+}
+
+/* ============================================
+   SCROLLBAR STYLING (Webkit browsers)
+   ============================================ */
+.nav-items::-webkit-scrollbar {
+  width: 6px;
+}
+
+.nav-items::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nav-items::-webkit-scrollbar-thumb {
+  background: #dadce0;
+  border-radius: 3px;
+}
+
+.nav-items::-webkit-scrollbar-thumb:hover {
+  background: #bdc1c6;
+}
+
+/* ============================================
+   MAIN CONTENT ADJUSTMENT
+   Account for fixed 110px navigation
+   ============================================ */
+.main-content-wrapper {
+  margin-left: 110px;
+}
