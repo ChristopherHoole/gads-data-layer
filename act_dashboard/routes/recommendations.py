@@ -289,7 +289,7 @@ def _write_changes_row(
     ])
 
 
-def _get_recommendations_data(config, status_filter=None, limit=200):
+def _get_recommendations_data(config, status_filter=None, limit=5000):
     """
     Query the recommendations table for the current customer.
     Returns list of dicts.

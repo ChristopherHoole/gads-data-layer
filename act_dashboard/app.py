@@ -183,6 +183,14 @@ def create_app():
         else:
             print(f"⚠️  [EMERGENCY FIX] Route not found (skipping): {route_name}")
 
+    # Chat 49: CSRF exemption for recommendations accept/decline routes (JSON API, no CSRF tokens sent)
+    # Accept/Decline buttons are JSON API calls from JavaScript (Keywords page Recommendations tab)
+    # Protected by @login_required decorator instead
+    csrf.exempt(app.view_functions['recommendations.recommendation_accept'])
+    csrf.exempt(app.view_functions['recommendations.recommendation_decline'])
+    print("✅ [Chat 49] CSRF exempted: recommendations.recommendation_accept")
+    print("✅ [Chat 49] CSRF exempted: recommendations.recommendation_decline")
+
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
     def csrf_error(reason):

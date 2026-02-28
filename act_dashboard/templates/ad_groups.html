@@ -8,6 +8,157 @@
 
 {% block title %}Ad Groups - {{ client_name }}{% endblock %}
 
+{% block extra_css %}
+<style>
+  :root {
+    --border: #e5e9f0;
+    --muted:  #8a93a2;
+    --budget-c: #1d4ed8;
+    --bid-c:    #15803d;
+    --status-c: #991b1b;
+  }
+
+  /* SUMMARY STRIP */
+  .summary-strip { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 24px; }
+  .summary-card  { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; }
+  .s-icon  { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .s-num   { font-size: 24px; font-weight: 700; line-height: 1; }
+  .s-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* PAGE TABS */
+  .page-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .page-tab  { padding: 10px 20px; font-size: 13.5px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; display: flex; align-items: center; gap: 6px; white-space: nowrap; background: transparent; border-top: none; border-left: none; border-right: none; }
+  .page-tab:hover { color: #344054; }
+  .page-tab.active { color: #0d6efd; border-bottom-color: #0d6efd; }
+  .tab-badge        { background: #e9ecef; color: #495057; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+  .tab-badge-orange { background: #fff3cd; color: #7c3700; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+  .tab-badge-green  { background: #dcfce7; color: #15803d; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+  .tab-badge-grey   { background: #f3f4f6; color: #6b7280; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+  .tab-badge-red    { background: #fee2e2; color: #991b1b; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+
+  /* REC HEADER */
+  .rec-header         { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 16px; }
+  .rec-header-left h5 { font-size: 16px; font-weight: 600; margin: 0 0 4px; color: #1a1d23; }
+  .rec-header-left p  { margin: 0; color: var(--muted); font-size: 13px; }
+
+  /* CARD GRID */
+  .rec-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-bottom: 28px; }
+
+  /* REC CARD */
+  .rec-card { background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; transition: box-shadow .15s, border-color .15s, opacity .3s, transform .3s; }
+  .rec-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.07); border-color: #d0d7e0; }
+  .rec-card.card-monitoring { border-color: #bfdbfe; }
+  .rec-card.card-success    { border-color: #bbf7d0; }
+  .rec-card.card-declined   { opacity: 0.55; }
+  .rec-card.card-reverted   { border-color: #fecaca; }
+  .rec-card.removing        { opacity: 0; transform: scale(0.96); pointer-events: none; }
+
+  /* Top bars */
+  .rec-top       { height: 4px; flex-shrink: 0; }
+  .rt-budget     { background: #1d4ed8; }
+  .rt-bid        { background: #15803d; }
+  .rt-status     { background: #dc3545; }
+  .rt-monitoring { background: linear-gradient(90deg,#0d6efd,#7c3aed); }
+  .rt-successful { background: #15803d; }
+  .rt-declined   { background: #9ca3af; }
+  .rt-reverted   { background: #dc3545; }
+
+  .rec-body { padding: 16px 18px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+  /* Card header */
+  .rec-card-header   { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .rec-rule-tag      { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
+  .rrt-budget        { color: var(--budget-c); }
+  .rrt-bid           { color: var(--bid-c); }
+  .rrt-status        { color: var(--status-c); }
+  .rrt-monitoring    { color: #6d28d9; }
+  .rrt-declined      { color: #6b7280; }
+  .rrt-reverted      { color: #991b1b; }
+  .rec-campaign-name { font-size: 14px; font-weight: 600; color: #1a1d23; }
+
+  /* Status pills */
+  .status-pill   { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; whitespace: nowrap; flex-shrink: 0; }
+  .sp-pending    { background: #dbeafe; color: #1d4ed8; }
+  .sp-monitoring { background: #ede9fe; color: #6d28d9; }
+  .sp-successful { background: #dcfce7; color: #15803d; }
+  .sp-declined   { background: #f3f4f6; color: #6b7280; }
+  .sp-reverted   { background: #fee2e2; color: #991b1b; }
+
+  /* Change block */
+  .change-block     { border-radius: 8px; padding: 11px 14px; display: flex; align-items: center; gap: 12px; border: 1px solid; }
+  .cb-budget        { background: linear-gradient(135deg,#eff6ff,#dbeafe); border-color: #bfdbfe; }
+  .cb-bid           { background: linear-gradient(135deg,#f0fdf4,#dcfce7); border-color: #bbf7d0; }
+  .cb-status        { background: linear-gradient(135deg,#fff7ed,#ffedd5); border-color: #fed7aa; }
+  .cb-grey          { background: #f9fafb; border-color: #e5e7eb; }
+  .change-icon-wrap { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ciw-budget       { background: #dbeafe; }
+  .ciw-bid          { background: #dcfce7; }
+  .ciw-status       { background: #ffedd5; }
+  .ciw-grey         { background: #f3f4f6; }
+  .change-main      { font-size: 13px; font-weight: 600; color: #1a1d23; }
+  .change-sub       { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .change-sub strong { color: #1a1d23; }
+
+  /* Trigger block */
+  .trigger-block { background: #f8f9fa; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 12.5px; color: #344054; line-height: 1.7; }
+  .trigger-label { font-size: 11px; font-weight: 600; color: #6b7280; margin-bottom: 4px; letter-spacing: .02em; }
+
+  /* Monitoring block */
+  .monitoring-block { background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 8px; padding: 12px 14px; }
+  .mon-top          { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .mon-label        { font-size: 12px; font-weight: 600; color: #5b21b6; display: flex; align-items: center; gap: 6px; }
+  .mon-days         { font-size: 12px; color: #6d28d9; font-weight: 700; }
+  .mon-bar-wrap     { height: 6px; background: #ede9fe; border-radius: 3px; margin-bottom: 10px; overflow: hidden; }
+  .mon-bar          { height: 6px; background: linear-gradient(90deg,#6d28d9,#0d6efd); border-radius: 3px; }
+  .mon-outcomes     { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mon-outcome-pill { border-radius: 6px; padding: 7px 10px; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; }
+  .mop-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+  .mop-revert  { background: #fff1f2; border: 1px solid #fecaca; color: #991b1b; }
+
+  /* Outcome block */
+  .outcome-block  { border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; border: 1px solid; }
+  .ob-success     { background: #f0fdf4; border-color: #bbf7d0; }
+  .ob-declined    { background: #f9fafb; border-color: #e5e7eb; }
+  .ob-reverted    { background: #fff1f2; border-color: #fecaca; }
+  .outcome-title  { font-size: 13px; font-weight: 600; }
+  .ot-success     { color: #15803d; }
+  .ot-declined    { color: #6b7280; }
+  .ot-reverted    { color: #991b1b; }
+  .outcome-sub    { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .revert-reason  { font-size: 12px; color: #991b1b; margin-top: 4px; font-style: italic; }
+
+  /* Footer */
+  .rec-footer         { border-top: 1px solid var(--border); padding-top: 10px; margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+  .rec-footer-meta    { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .rec-footer-actions { display: flex; gap: 6px; align-items: center; }
+  .conf-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .cb-high { background: #d1fae5; color: #065f46; }
+  .cb-med  { background: #fef3c7; color: #92400e; }
+  .cb-low  { background: #fee2e2; color: #991b1b; }
+  .rec-age      { font-size: 12px; color: var(--muted); }
+  .readonly-label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; font-style: italic; margin-left: auto; }
+
+  /* Action buttons */
+  .btn-accept  { background: #15803d; border: none; color: white; border-radius: 6px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; flex: 1; justify-content: center; }
+  .btn-accept:hover  { background: #166534; }
+  .btn-decline { background: white; border: 1px solid #fca5a5; color: #dc3545; border-radius: 6px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; flex: 1; justify-content: center; }
+  .btn-decline:hover { background: #fff1f2; }
+  .btn-modify  { background: white; border: 1px solid var(--border); color: #374151; border-radius: 6px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; flex: 1; justify-content: center; }
+  .btn-modify:hover  { background: #f8f9fa; }
+
+  /* Empty state */
+  .empty-state   { text-align: center; padding: 48px 24px; color: var(--muted); }
+  .empty-state p { font-size: 14px; margin: 8px 0 0; }
+
+  /* Toast */
+  #act-toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+  .act-toast { padding: 12px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,.12); display: flex; align-items: center; gap: 8px; }
+  .act-toast.t-success { background: #15803d; color: white; }
+  .act-toast.t-error   { background: #dc3545; color: white; }
+  .act-toast.t-muted   { background: #374151; color: white; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
 
@@ -29,6 +180,12 @@
       <button class="nav-link" id="rules-tab-btn" data-bs-toggle="tab"
               data-bs-target="#rules-tab" type="button" role="tab">
         <i class="bi bi-sliders"></i> Rules ({{ rules_config | selectattr('rule_type', 'equalto', 'ad_group') | list | length }})
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="recommendations-tab-btn" data-bs-toggle="tab"
+              data-bs-target="#recommendations-tab" type="button" role="tab">
+        <i class="bi bi-star"></i> Recommendations (<span id="ag-total-count">0</span>)
       </button>
     </li>
   </ul>
@@ -224,8 +381,674 @@
       {% include 'components/ad_group_rules_tab.html' %}
     </div>
 
+    <!-- RECOMMENDATIONS TAB -->
+    <div class="tab-pane fade" id="recommendations-tab" role="tabpanel">
+      
+      {# ── EMPTY STATE (shown when 0 recommendations) ───────────────────────────── #}
+      <div id="ag-empty-state" class="alert alert-info text-center p-5" style="display: none;">
+        <i class="bi bi-info-circle" style="font-size: 48px; color: #0dcaf0;"></i>
+        <h4 class="mt-3">No Ad Group Recommendations</h4>
+        <p class="mb-2">Ad group rules are enabled but conditions have not yet been met in the current data. This is normal and not an error.</p>
+        <p class="text-muted mb-4">The recommendations engine checks ad group performance against rule conditions. When conditions are met, recommendations will appear here.</p>
+        <button class="btn btn-primary" id="ag-run-engine-btn">
+          <i class="bi bi-play-circle"></i> Run Recommendations Now
+        </button>
+      </div>
+
+      {# ── SUMMARY STRIP (hidden when empty) ────────────────────────────────────── #}
+      <div class="summary-strip" id="ag-summary-strip" style="display: none;">
+        <div class="summary-card">
+          <div class="s-icon" style="background:#dbeafe;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div>
+            <div class="s-num" style="color:#0d6efd;" id="ag-summary-pending">0</div>
+            <div class="s-label">Pending</div>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="s-icon" style="background:#ede9fe;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div>
+            <div class="s-num" style="color:#6d28d9;" id="ag-summary-monitoring">0</div>
+            <div class="s-label">Monitoring</div>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="s-icon" style="background:#dcfce7;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div>
+            <div class="s-num" style="color:#15803d;" id="ag-summary-successful">0</div>
+            <div class="s-label">Successful</div>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="s-icon" style="background:#fee2e2;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
+          </div>
+          <div>
+            <div class="s-num" style="color:#dc3545;" id="ag-summary-reverted">0</div>
+            <div class="s-label">Reverted</div>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="s-icon" style="background:#f3f4f6;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </div>
+          <div>
+            <div class="s-num" style="color:#6b7280;" id="ag-summary-declined">0</div>
+            <div class="s-label">Declined</div>
+          </div>
+        </div>
+      </div>
+
+      {# ── STATUS TAB BAR (hidden when empty) ───────────────────────────────────── #}
+      <div class="page-tabs" id="ag-status-tabs" style="display: none;">
+        <button class="page-tab active" id="ag-btn-tab-pending" onclick="agSwitchTab('pending')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Pending <span class="tab-badge" id="ag-tab-badge-pending">0</span>
+        </button>
+        <button class="page-tab" id="ag-btn-tab-monitoring" onclick="agSwitchTab('monitoring')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Monitoring <span class="tab-badge-orange" id="ag-tab-badge-monitoring">0</span>
+        </button>
+        <button class="page-tab" id="ag-btn-tab-successful" onclick="agSwitchTab('successful')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Successful <span class="tab-badge-green" id="ag-tab-badge-successful">0</span>
+        </button>
+        <button class="page-tab" id="ag-btn-tab-reverted" onclick="agSwitchTab('reverted')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
+          Reverted <span class="tab-badge-red" id="ag-tab-badge-reverted">0</span>
+        </button>
+        <button class="page-tab" id="ag-btn-tab-declined" onclick="agSwitchTab('declined')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Declined <span class="tab-badge-grey" id="ag-tab-badge-declined">0</span>
+        </button>
+      </div>
+
+      {# ── TAB CONTENT AREAS (hidden when empty) ────────────────────────────────── #}
+      <div id="ag-tab-pending" style="display: none;">
+        <div id="ag-cards-pending" class="rec-grid-2"></div>
+        <div id="ag-empty-pending" class="empty-state" style="display:none;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <p>No pending recommendations</p>
+        </div>
+      </div>
+
+      <div id="ag-tab-monitoring" style="display:none;">
+        <div id="ag-cards-monitoring" class="rec-grid-2"></div>
+        <div id="ag-empty-monitoring" class="empty-state" style="display:none;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <p>No monitoring recommendations</p>
+        </div>
+      </div>
+
+      <div id="ag-tab-successful" style="display:none;">
+        <div id="ag-cards-successful" class="rec-grid-2"></div>
+        <div id="ag-empty-successful" class="empty-state" style="display:none;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          <p>No successful recommendations</p>
+        </div>
+      </div>
+
+      <div id="ag-tab-reverted" style="display:none;">
+        <div id="ag-cards-reverted" class="rec-grid-2"></div>
+        <div id="ag-empty-reverted" class="empty-state" style="display:none;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <polyline points="1 4 1 10 7 10"/>
+            <path d="M3.51 15a9 9 0 1 0 .49-3.57"/>
+          </svg>
+          <p>No reverted recommendations</p>
+        </div>
+      </div>
+
+      <div id="ag-tab-declined" style="display:none;">
+        <div id="ag-cards-declined" class="rec-grid-2"></div>
+        <div id="ag-empty-declined" class="empty-state" style="display:none;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          <p>No declined recommendations</p>
+        </div>
+      </div>
+
+    </div>
+
   </div>
 </div>
+<script>
+// ===========================================================================
+// RECOMMENDATIONS TAB - STATUS TAB SWITCHING
+// ===========================================================================
+const AG_TABS = ['pending', 'monitoring', 'successful', 'reverted', 'declined'];
+
+function agSwitchTab(name) {
+  AG_TABS.forEach(t => {
+    const tabEl = document.getElementById('ag-tab-' + t);
+    const btnEl = document.getElementById('ag-btn-tab-' + t);
+    if (tabEl) tabEl.style.display = (t === name) ? '' : 'none';
+    if (btnEl) btnEl.classList.toggle('active', t === name);
+  });
+}
+
+// Initialize to pending tab on load
+if (document.getElementById('ag-tab-pending')) {
+  agSwitchTab('pending');
+}
+
+// ===========================================================================
+// RECOMMENDATIONS TAB - DATA FETCHING
+// ===========================================================================
+let agRecommendations = {
+  pending: [],
+  monitoring: [],
+  successful: [],
+  reverted: [],
+  declined: []
+};
+
+// Fetch recommendations from server
+async function agFetchRecommendations() {
+  try {
+    const response = await fetch('/recommendations/cards');
+    const data = await response.json();
+    
+    if (!data) {
+      console.log('No data returned from server');
+      return;
+    }
+    
+    // API returns data already grouped by status
+    // Filter each status array for ad_group entity type only
+    agRecommendations.pending = (data.pending || []).filter(r => r.entity_type === 'ad_group');
+    agRecommendations.monitoring = (data.monitoring || []).filter(r => r.entity_type === 'ad_group');
+    agRecommendations.successful = (data.successful || []).filter(r => r.entity_type === 'ad_group');
+    agRecommendations.reverted = (data.reverted || []).filter(r => r.entity_type === 'ad_group');
+    agRecommendations.declined = (data.declined || []).filter(r => r.entity_type === 'ad_group');
+    
+    // Calculate totals for logging
+    const totalAdGroup = agRecommendations.pending.length + 
+                         agRecommendations.monitoring.length + 
+                         agRecommendations.successful.length + 
+                         agRecommendations.reverted.length + 
+                         agRecommendations.declined.length;
+    
+    console.log(`Total ad_group recommendations: ${totalAdGroup}`);
+    console.log(`  Pending: ${agRecommendations.pending.length}`);
+    console.log(`  Monitoring: ${agRecommendations.monitoring.length}`);
+    console.log(`  Successful: ${agRecommendations.successful.length}`);
+    console.log(`  Reverted: ${agRecommendations.reverted.length}`);
+    console.log(`  Declined: ${agRecommendations.declined.length}`);
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // EMPTY STATE DETECTION LOGIC
+    // ═══════════════════════════════════════════════════════════════════════
+    if (totalAdGroup === 0) {
+      // Show empty state, hide summary/tabs
+      const emptyState = document.getElementById('ag-empty-state');
+      const summaryStrip = document.getElementById('ag-summary-strip');
+      const statusTabs = document.getElementById('ag-status-tabs');
+      
+      if (emptyState) emptyState.style.display = 'block';
+      if (summaryStrip) summaryStrip.style.display = 'none';
+      if (statusTabs) statusTabs.style.display = 'none';
+      
+      console.log('Empty state: No ad_group recommendations found');
+    } else {
+      // Hide empty state, show summary/tabs
+      const emptyState = document.getElementById('ag-empty-state');
+      const summaryStrip = document.getElementById('ag-summary-strip');
+      const statusTabs = document.getElementById('ag-status-tabs');
+      
+      if (emptyState) emptyState.style.display = 'none';
+      if (summaryStrip) summaryStrip.style.display = '';
+      if (statusTabs) statusTabs.style.display = '';
+      
+      // Update summary counts
+      agUpdateSummaryCounts();
+      
+      // Update tab badge counts
+      agUpdateTabBadges();
+      
+      // Render all cards
+      agRenderAllCards();
+      
+      console.log('Recommendations fetched and counts updated');
+    }
+    
+  } catch (error) {
+    console.error('Error fetching recommendations:', error);
+  }
+}
+// Update summary strip counts
+function agUpdateSummaryCounts() {
+  const counts = {
+    pending: agRecommendations.pending.length,
+    monitoring: agRecommendations.monitoring.length,
+    successful: agRecommendations.successful.length,
+    reverted: agRecommendations.reverted.length,
+    declined: agRecommendations.declined.length
+  };
+  
+  // Update each summary card
+  for (const [status, count] of Object.entries(counts)) {
+    const el = document.getElementById(`ag-summary-${status}`);
+    if (el) el.textContent = count;
+  }
+  
+  // Update main tab badge (total count)
+  const totalCount = Object.values(counts).reduce((sum, count) => sum + count, 0);
+  const mainBadge = document.getElementById('ag-total-count');
+  if (mainBadge) mainBadge.textContent = totalCount;
+}
+
+// Update tab badges
+function agUpdateTabBadges() {
+  const counts = {
+    pending: agRecommendations.pending.length,
+    monitoring: agRecommendations.monitoring.length,
+    successful: agRecommendations.successful.length,
+    reverted: agRecommendations.reverted.length,
+    declined: agRecommendations.declined.length
+  };
+  
+  for (const [status, count] of Object.entries(counts)) {
+    const badge = document.getElementById(`ag-tab-badge-${status}`);
+    if (badge) badge.textContent = count;
+  }
+}
+
+// ===========================================================================
+// RECOMMENDATIONS TAB - CARD RENDERING
+// ===========================================================================
+
+// Render all status tabs
+function agRenderAllCards() {
+  AG_TABS.forEach(status => agRenderCards(status));
+}
+
+// Render cards for a specific status - SHOW ALL CARDS (no Load More for Shopping)
+function agRenderCards(status) {
+  const recs = agRecommendations[status];
+  const container = document.getElementById(`ag-cards-${status}`);
+  const emptyState = document.getElementById(`ag-empty-${status}`);
+  
+  if (!container) return;
+  
+  // Clear container
+  container.innerHTML = '';
+  
+  // Show all cards (no pagination for 126 shopping recommendations)
+  if (recs.length === 0) {
+    if (emptyState) emptyState.style.display = '';
+  } else {
+    if (emptyState) emptyState.style.display = 'none';
+    recs.forEach(rec => {
+      const cardHtml = agBuildCard(rec, status);
+      container.insertAdjacentHTML('beforeend', cardHtml);
+    });
+  }
+}
+
+
+function agBuildCard(rec, status) {
+  const isMonitoring = status === 'monitoring';
+  const isSuccessful = status === 'successful';
+  const isDeclined = status === 'declined';
+  const isReverted = status === 'reverted';
+  const isPending = status === 'pending';
+  
+  // Top bar color
+  let topBarClass = 'rt-budget';
+  if (rec.rule_type === 'bid_target') topBarClass = 'rt-bid';
+  else if (rec.rule_type === 'status') topBarClass = 'rt-status';
+  if (isMonitoring) topBarClass = 'rt-monitoring';
+  if (isSuccessful) topBarClass = 'rt-successful';
+  if (isDeclined) topBarClass = 'rt-declined';
+  if (isReverted) topBarClass = 'rt-reverted';
+  
+  // Card class
+  let cardClass = 'rec-card';
+  if (isMonitoring) cardClass += ' card-monitoring';
+  if (isSuccessful) cardClass += ' card-success';
+  if (isDeclined) cardClass += ' card-declined';
+  if (isReverted) cardClass += ' card-reverted';
+  
+  // Rule type tag
+  let ruleClass = 'rrt-budget';
+  if (rec.rule_type === 'bid_target') ruleClass = 'rrt-bid';
+  else if (rec.rule_type === 'status') ruleClass = 'rrt-status';
+  if (isMonitoring) ruleClass = 'rrt-monitoring';
+  if (isDeclined) ruleClass = 'rrt-declined';
+  if (isReverted) ruleClass = 'rrt-reverted';
+  
+  // Status pill
+  let statusPill = '';
+  if (isPending) statusPill = '<span class="status-pill sp-pending">Pending</span>';
+  if (isMonitoring) statusPill = '<span class="status-pill sp-monitoring">Monitoring</span>';
+  if (isSuccessful) statusPill = '<span class="status-pill sp-successful">Successful</span>';
+  if (isDeclined) statusPill = '<span class="status-pill sp-declined">Declined</span>';
+  if (isReverted) statusPill = '<span class="status-pill sp-reverted">Reverted</span>';
+  
+  // Build card HTML
+  let html = `<div class="${cardClass}" data-rec-id="${rec.rec_id}">`;
+  html += `<div class="rec-top ${topBarClass}"></div>`;
+  html += '<div class="rec-body">';
+  
+  // Header
+  html += '<div class="rec-card-header">';
+  html += '<div>';
+  html += `<div class="rec-rule-tag ${ruleClass}">${rec.rule_type_display || rec.rule_type}</div>`;
+  html += `<div class="rec-campaign-name">${rec.entity_name || 'Keyword'}</div>`;
+  if (rec.campaign_name) {
+    html += `<div style="font-size:12px;color:#6b7280;margin-top:2px;">Campaign: ${rec.campaign_name}</div>`;
+  }
+  html += '</div>';
+  html += statusPill;
+  html += '</div>';
+  
+  // Change block
+  html += agBuildChangeBlock(rec);
+  
+  // Trigger
+  if (rec.trigger_summary && isPending) {
+    html += `<div class="trigger-block"><div class="trigger-label">TRIGGER</div>${rec.trigger_summary}</div>`;
+  }
+  
+  // Monitoring block
+  if (isMonitoring) {
+    html += agBuildMonitoringBlock(rec);
+  }
+
+  
+  // Outcome block
+  if (isSuccessful || isDeclined || isReverted) {
+    html += agBuildOutcomeBlock(rec, status);
+  }
+  
+  // Footer
+  html += agBuildCardFooter(rec, status);
+  
+  html += '</div></div>';
+  return html;
+}
+
+function agBuildChangeBlock(rec) {
+  let changeClass = 'cb-budget';
+  let iconClass = 'ciw-budget';
+  if (rec.rule_type === 'bid_target') { changeClass = 'cb-bid'; iconClass = 'ciw-bid'; }
+  else if (rec.rule_type === 'status') { changeClass = 'cb-status'; iconClass = 'ciw-status'; }
+  
+  let icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>';
+  
+  let html = `<div class="change-block ${changeClass}">`;
+  html += `<div class="change-icon-wrap ${iconClass}">${icon}</div>`;
+  html += '<div style="flex:1;">';
+  html += `<div class="change-main">${rec.action_label || rec.action_direction || 'Change'}</div>`;
+  html += `<div class="change-sub">`;
+  if (rec.current_value !== undefined && rec.proposed_value !== undefined) {
+    html += `<strong>${rec.current_value}</strong> → <strong>${rec.proposed_value}</strong>`;
+  } else {
+    html += rec.action_magnitude || '';
+  }
+  html += '</div></div></div>';
+  return html;
+}
+
+// Build monitoring block
+function agBuildMonitoringBlock(rec) {
+  const daysElapsed = rec.monitoring_elapsed_days || 0;
+  const totalDays = rec.monitoring_total_days || 7;
+  const pct = Math.min(100, (daysElapsed / totalDays) * 100);
+  
+  let html = '<div class="monitoring-block">';
+  html += '<div class="mon-top">';
+  html += '<div class="mon-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> MONITORING</div>';
+  html += `<div class="mon-days">Day ${daysElapsed} of ${totalDays}</div>`;
+  html += '</div>';
+  html += `<div class="mon-bar-wrap"><div class="mon-bar" style="width:${pct}%"></div></div>`;
+  html += '<div class="mon-outcomes">';
+  html += '<div class="mon-outcome-pill mop-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Keep if improves</div>';
+  html += '<div class="mon-outcome-pill mop-revert"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg> Revert if declines</div>';
+  html += '</div></div>';
+  return html;
+}
+
+// Build outcome block
+function agBuildOutcomeBlock(rec, status) {
+  let blockClass = 'ob-success';
+  let titleClass = 'ot-success';
+  let icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+  let title = 'Change Successful';
+  
+  if (status === 'declined') {
+    blockClass = 'ob-declined';
+    titleClass = 'ot-declined';
+    icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    title = 'Recommendation Declined';
+  } else if (status === 'reverted') {
+    blockClass = 'ob-reverted';
+    titleClass = 'ot-reverted';
+    icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>';
+    title = 'Change Reverted';
+  }
+  
+  let html = `<div class="outcome-block ${blockClass}">`;
+  html += icon;
+  html += '<div style="flex:1;">';
+  html += `<div class="outcome-title ${titleClass}">${title}</div>`;
+  if (rec.outcome_metric && rec.proposed_value) {
+    html += `<div class="outcome-sub">${rec.outcome_metric}: ${rec.proposed_value}</div>`;
+  }
+  if (status === 'reverted' && rec.revert_reason) {
+    html += `<div class="revert-reason">${rec.revert_reason}</div>`;
+  }
+  html += '</div></div>';
+  return html;
+}
+
+// Build card footer
+function agBuildCardFooter(rec, status) {
+  const isPending = status === 'pending';
+  const isMonitoring = status === 'monitoring';
+  
+  let html = '<div class="rec-footer">';
+  html += '<div class="rec-footer-meta">';
+  
+  // Confidence badge (pending only)
+  if (isPending && rec.confidence) {
+    let confClass = 'cb-high';
+    if (rec.confidence === 'medium') confClass = 'cb-med';
+    else if (rec.confidence === 'low') confClass = 'cb-low';
+    html += `<span class="conf-badge ${confClass}">${rec.confidence} confidence</span>`;
+  }
+  
+  // Age
+  if (rec.generated_at) {
+    html += `<span class="rec-age">${rec.generated_at}</span>`;
+  }
+  
+  html += '</div>';
+  
+  // Actions
+  if (isPending) {
+    html += '<div class="rec-footer-actions">';
+    html += `<button class="btn-accept" onclick="agAcceptRec('${rec.rec_id}', this)">`;
+    html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Accept';
+    html += '</button>';
+    html += `<button class="btn-decline" onclick="agDeclineRec('${rec.rec_id}', this)">`;
+    html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Decline';
+    html += '</button></div>';
+  } else if (isMonitoring) {
+    html += '<div class="readonly-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Monitoring in progress</div>';
+  } else {
+    html += '<div class="readonly-label">Read-only</div>';
+  }
+  
+  html += '</div>';
+  return html;
+}
+
+// ===========================================================================
+// RECOMMENDATIONS TAB - ACCEPT/DECLINE HANDLERS
+// ===========================================================================
+async function agAcceptRec(recId, btn) {
+  if (!confirm('Accept this recommendation?')) return;
+  
+  btn.disabled = true;
+  btn.textContent = 'Processing...';
+  
+  try {
+    const response = await fetch(`/recommendations/${recId}/accept`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // Remove card with animation
+      const card = btn.closest('.rec-card');
+      if (card) {
+        card.classList.add('removing');
+        setTimeout(() => {
+          // Remove from data and re-render
+          agRecommendations.pending = agRecommendations.pending.filter(r => r.rec_id !== recId);
+          agUpdateSummaryCounts();
+          agUpdateTabBadges();
+          agRenderCards('pending');
+          agShowToast('Recommendation accepted', 'success');
+        }, 300);
+      }
+    } else {
+      agShowToast(data.message || 'Failed to accept recommendation', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Accept';
+    }
+  } catch (error) {
+    console.error('Error accepting recommendation:', error);
+    agShowToast('Error accepting recommendation', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Accept';
+  }
+}
+
+async function agDeclineRec(recId, btn) {
+  if (!confirm('Decline this recommendation?')) return;
+  
+  btn.disabled = true;
+  btn.textContent = 'Processing...';
+  
+  try {
+    const response = await fetch(`/recommendations/${recId}/decline`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // Remove card with animation
+      const card = btn.closest('.rec-card');
+      if (card) {
+        card.classList.add('removing');
+        setTimeout(() => {
+          // Remove from data and re-render
+          agRecommendations.pending = agRecommendations.pending.filter(r => r.rec_id !== recId);
+          agUpdateSummaryCounts();
+          agUpdateTabBadges();
+          agRenderCards('pending');
+          agShowToast('Recommendation declined', 'muted');
+        }, 300);
+      }
+    } else {
+      agShowToast(data.message || 'Failed to decline recommendation', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Decline';
+    }
+  } catch (error) {
+    console.error('Error declining recommendation:', error);
+    agShowToast('Error declining recommendation', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Decline';
+  }
+}
+
+// Show toast notification
+function agShowToast(message, type) {
+  // Check if toast container exists, create if not
+  let toastWrap = document.getElementById('act-toast-wrap');
+  if (!toastWrap) {
+    toastWrap = document.createElement('div');
+    toastWrap.id = 'act-toast-wrap';
+    document.body.appendChild(toastWrap);
+  }
+  
+  const toast = document.createElement('div');
+  toast.className = `act-toast t-${type}`;
+  toast.textContent = message;
+  
+  toastWrap.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// Fetch recommendations when page loads
+if (document.getElementById("ag-tab-pending")) {
+  agFetchRecommendations();
+}
+
+// ===========================================================================
+// RUN ENGINE BUTTON HANDLER
+// ===========================================================================
+document.addEventListener('DOMContentLoaded', function() {
+  const runBtn = document.getElementById('ag-run-engine-btn');
+  if (runBtn) {
+    runBtn.addEventListener('click', function() {
+      this.disabled = true;
+      this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Running...';
+      
+      fetch('/recommendations/run', {method: 'POST'})
+        .then(response => {
+          if (response.ok) {
+            agShowToast('Recommendations engine started', 'success');
+            setTimeout(() => location.reload(), 2000);
+          } else {
+            agShowToast('Failed to run engine', 'error');
+            this.disabled = false;
+            this.innerHTML = '<i class="bi bi-play-circle"></i> Run Recommendations Now';
+          }
+        })
+        .catch(error => {
+          console.error('Error running engine:', error);
+          agShowToast('Error running engine', 'error');
+          this.disabled = false;
+          this.innerHTML = '<i class="bi bi-play-circle"></i> Run Recommendations Now';
+        });
+    });
+  }
+});
+
+// Fetch recommendations when page loads
+if (document.getElementById('ag-tab-pending')) {
+  agFetchRecommendations();
+}
+</script>
 
 <script>
 document.getElementById('select-all')?.addEventListener('change', function(e) {
