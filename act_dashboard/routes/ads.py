@@ -27,6 +27,44 @@ import duckdb
 bp = Blueprint('ads', __name__)
 
 
+# ==================== Helper Functions (Chat 54) ====================
+
+def _build_date_filters(active_days, date_from, date_to):
+    """
+    Build current and previous period date filters for SQL WHERE clauses.
+    Returns tuple of (current_filter, prev_filter) starting with AND.
+    """
+    if date_from and date_to:
+        from datetime import datetime, timedelta
+        _df = datetime.strptime(date_from, '%Y-%m-%d').date()
+        _dt = datetime.strptime(date_to, '%Y-%m-%d').date()
+        _span = (_dt - _df).days + 1
+        _prev_to = (_df - timedelta(days=1)).isoformat()
+        _prev_from = (_df - timedelta(days=_span)).isoformat()
+        current_filter = f"AND snapshot_date >= '{date_from}' AND snapshot_date <= '{date_to}'"
+        prev_filter = f"AND snapshot_date >= '{_prev_from}' AND snapshot_date <= '{_prev_to}'"
+    else:
+        days = active_days if active_days in [7, 30, 90] else 30
+        current_filter = f"AND snapshot_date >= CURRENT_DATE - INTERVAL '{days} days'"
+        prev_filter = (
+            f"AND snapshot_date >= CURRENT_DATE - INTERVAL '{days * 2} days' "
+            f"AND snapshot_date < CURRENT_DATE - INTERVAL '{days} days'"
+        )
+    return current_filter, prev_filter
+
+
+def _calculate_change_pct(current, previous):
+    """
+    Calculate % change. Returns None (show dash) when no previous data.
+    Never returns 0% to mask missing data.
+    """
+    if previous is None or previous == 0:
+        return None
+    if current is None:
+        return -100.0
+    return ((current - previous) / previous) * 100.0
+
+
 ALLOWED_ADS_SORT = {
     'final_url', 'campaign_name', 'ad_group_name', 'ad_type', 'ad_strength',
     'cost', 'conversions_value', 'conversions', 'conv_value_per_cost',
@@ -235,12 +273,12 @@ def _fmt_ads(value, fmt):
     return str(v)
 
 
-def _card_ads(label, value, sparkline, fmt, invert=False, card_type='financial', sub_label=None):
-    """Ads cards have no prev period — change_pct always None (dash)."""
+def _card_ads(label, value, prev, sparkline, fmt, invert=False, card_type='financial', sub_label=None):
+    """Ads cards with period-over-period comparison."""
     return {
         'label': label,
         'value_display': _fmt_ads(value, fmt),
-        'change_pct': None,
+        'change_pct': _calculate_change_pct(value, prev),
         'sparkline_data': sparkline,
         'format_type': fmt,
         'invert_colours': invert,
@@ -257,59 +295,140 @@ def _blank_ads(card_type='financial'):
     }
 
 
-def load_ads_metrics_cards(conn, customer_id, days, all_ads):
+def load_ads_metrics_cards(conn, customer_id: str, active_days: int, date_from=None, date_to=None):
     """
     Build financial_cards and actions_cards for Ads page.
-
-    Uses pre-computed all_ads list for summary values (already loaded).
-    Sparklines from ad_features_daily won't be available — pass None/empty.
-
-    Financial (8): Cost | Revenue | ROAS | Ad Strength | Conversions | CPA | Conv Rate | BLANK
-    Actions  (8): Impressions | Clicks | Avg CPC | Avg CTR | 4 blanks (no IS at ad level)
+    
+    Uses ro.analytics.ad_daily for all queries (current, previous, sparklines).
+    Compares current period vs previous period for change percentages.
+    
+    Financial (8): Cost | Revenue | ROAS | Wasted Spend | Conv | CPA | CVR | BLANK
+    Actions  (8): Impressions | Clicks | CPC | CTR | Search IS | Top IS | Abs Top IS | Click Share
     """
-    if not all_ads:
-        return [_blank_ads('financial')] * 8, [_blank_ads('actions')] * 8
-
-    suffix = '7d' if days == 7 else ('90d' if days == 90 else '30d')
-
-    total_cost        = sum(a['cost']        for a in all_ads)
-    total_revenue     = sum(a.get('conversions_value', 0) or 0 for a in all_ads)
-    total_conversions = sum(a['conversions'] for a in all_ads)
-    total_impressions = sum(a['impressions'] for a in all_ads)
-    total_clicks      = sum(a['clicks']      for a in all_ads)
-
-    roas     = (total_revenue / total_cost)                  if total_cost > 0        else None
-    cpa      = (total_cost / total_conversions)              if total_conversions > 0  else None
-    cvr      = (total_conversions / total_clicks * 100)      if total_clicks > 0       else None
-    cpc      = (total_cost / total_clicks)                   if total_clicks > 0       else None
-    ctr      = (total_clicks / total_impressions * 100)      if total_impressions > 0  else None
-
-    good_strength  = sum(1 for a in all_ads if a.get('ad_strength') in ('GOOD', 'EXCELLENT'))
-    poor_strength  = sum(1 for a in all_ads if a.get('ad_strength') == 'POOR')
-    total_ads      = len(all_ads)
-    strength_label = f"{good_strength}/{total_ads}"
-    strength_sub   = f"{poor_strength} Poor" if poor_strength > 0 else "Good/Excellent"
-
+    # Build date filters for current and previous periods
+    current_filter, prev_filter = _build_date_filters(active_days, date_from, date_to)
+    
+    # ── Query 1: Current period summary from ad_daily ──
+    try:
+        summary = conn.execute(f"""
+            SELECT
+                SUM(cost_micros) / 1000000.0                                      AS cost,
+                SUM(conversions_value)                                             AS revenue,
+                SUM(conversions_value) / NULLIF(SUM(cost_micros) / 1000000.0, 0)  AS roas,
+                SUM(conversions)                                                   AS conversions,
+                (SUM(cost_micros) / 1000000.0) / NULLIF(SUM(conversions), 0)      AS cpa,
+                SUM(clicks) * 1.0 / NULLIF(SUM(conversions), 0)                   AS cvr,
+                SUM(impressions)                                                   AS impressions,
+                SUM(clicks)                                                        AS clicks,
+                (SUM(cost_micros) / 1000000.0) / NULLIF(SUM(clicks), 0)           AS cpc,
+                SUM(clicks) * 1.0 / NULLIF(SUM(impressions), 0)                   AS ctr,
+                AVG(search_impression_share)                                       AS search_is,
+                AVG(search_top_impression_share)                                   AS search_top_is,
+                AVG(search_absolute_top_impression_share)                          AS search_abs_top_is,
+                AVG(click_share)                                                   AS click_share,
+                -- Wasted spend: sum cost for ads with 0 conversions
+                SUM(CASE WHEN conversions = 0 AND cost_micros > 0
+                    THEN cost_micros / 1000000.0 ELSE 0 END)                       AS wasted_spend
+            FROM ro.analytics.ad_daily
+            WHERE customer_id = ?
+              {current_filter}
+        """, [customer_id]).fetchone()
+    except Exception as e:
+        print(f"[Ads M2] Current period query error: {e}")
+        summary = None
+    
+    # ── Query 2: Previous period summary from ad_daily ──
+    try:
+        prev_summary = conn.execute(f"""
+            SELECT
+                SUM(cost_micros) / 1000000.0                                      AS cost,
+                SUM(conversions_value)                                             AS revenue,
+                SUM(conversions_value) / NULLIF(SUM(cost_micros) / 1000000.0, 0)  AS roas,
+                SUM(conversions)                                                   AS conversions,
+                (SUM(cost_micros) / 1000000.0) / NULLIF(SUM(conversions), 0)      AS cpa,
+                SUM(clicks) * 1.0 / NULLIF(SUM(conversions), 0)                   AS cvr,
+                SUM(impressions)                                                   AS impressions,
+                SUM(clicks)                                                        AS clicks,
+                (SUM(cost_micros) / 1000000.0) / NULLIF(SUM(clicks), 0)           AS cpc,
+                SUM(clicks) * 1.0 / NULLIF(SUM(impressions), 0)                   AS ctr,
+                AVG(search_impression_share)                                       AS search_is,
+                AVG(search_top_impression_share)                                   AS search_top_is,
+                AVG(search_absolute_top_impression_share)                          AS search_abs_top_is,
+                AVG(click_share)                                                   AS click_share,
+                SUM(CASE WHEN conversions = 0 AND cost_micros > 0
+                    THEN cost_micros / 1000000.0 ELSE 0 END)                       AS wasted_spend
+            FROM ro.analytics.ad_daily
+            WHERE customer_id = ?
+              {prev_filter}
+        """, [customer_id]).fetchone()
+    except Exception as e:
+        print(f"[Ads M2] Previous period query error: {e}")
+        prev_summary = None
+    
+    # ── Query 3: Daily sparkline data from ad_daily ──
+    try:
+        spark_rows = conn.execute(f"""
+            SELECT
+                snapshot_date,
+                SUM(cost_micros) / 1000000.0                                      AS cost,
+                SUM(conversions_value)                                             AS revenue,
+                SUM(conversions_value) / NULLIF(SUM(cost_micros) / 1000000.0, 0)  AS roas,
+                SUM(conversions)                                                   AS conversions,
+                (SUM(cost_micros) / 1000000.0) / NULLIF(SUM(conversions), 0)      AS cpa,
+                SUM(clicks) * 1.0 / NULLIF(SUM(conversions), 0)                   AS cvr,
+                SUM(impressions)                                                   AS impressions,
+                SUM(clicks)                                                        AS clicks,
+                (SUM(cost_micros) / 1000000.0) / NULLIF(SUM(clicks), 0)           AS cpc,
+                SUM(clicks) * 1.0 / NULLIF(SUM(impressions), 0)                   AS ctr,
+                AVG(search_impression_share)                                       AS search_is,
+                AVG(search_top_impression_share)                                   AS search_top_is,
+                AVG(search_absolute_top_impression_share)                          AS search_abs_top_is,
+                AVG(click_share)                                                   AS click_share
+            FROM ro.analytics.ad_daily
+            WHERE customer_id = ?
+              {current_filter}
+            GROUP BY snapshot_date
+            ORDER BY snapshot_date ASC
+        """, [customer_id]).fetchall()
+    except Exception as e:
+        print(f"[Ads M2] Sparkline query error: {e}")
+        spark_rows = []
+    
+    def _v(row, i): return float(row[i]) if row and row[i] is not None else None
+    def pct(val): return val * 100 if val is not None else None
+    
+    # Current period values
+    c = [_v(summary, i) for i in range(15)] if summary else [None] * 15
+    
+    # Previous period values
+    p = [_v(prev_summary, i) for i in range(15)] if prev_summary else [None] * 15
+    
+    # Build sparkline arrays
+    def _spark(col_idx, scale=1.0):
+        return [float(r[col_idx]) * scale if r[col_idx] is not None else 0.0 for r in spark_rows]
+    
     financial_cards = [
-        _card_ads('Cost',          total_cost,        None, 'currency',     invert=True),
-        _card_ads('Revenue',       total_revenue,     None, 'currency'),
-        _card_ads('ROAS',          roas,              None, 'ratio'),
-        _blank_ads('financial'),
-        _card_ads('Conversions',   total_conversions, None, 'number'),
-        _card_ads('Cost / Conv',   cpa,               None, 'currency',     invert=True),
-        _card_ads('Conv Rate',     cvr,               None, 'percentage'),
+        _card_ads('Cost',          c[0],        p[0],        _spark(1),        'currency',   invert=True),
+        _card_ads('Revenue',       c[1],        p[1],        _spark(2),        'currency'),
+        _card_ads('ROAS',          c[2],        p[2],        _spark(3),        'ratio'),
+        _card_ads('Wasted Spend',  c[14],       p[14],       _spark(1),        'currency',   invert=True),
+        _card_ads('Conversions',   c[3],        p[3],        _spark(4),        'number'),
+        _card_ads('Cost / Conv',   c[4],        p[4],        _spark(5),        'currency',   invert=True),
+        _card_ads('Conv Rate',     pct(c[5]),   pct(p[5]),   _spark(6, 100.0), 'percentage'),
         _blank_ads('financial'),
     ]
+    
     actions_cards = [
-        _card_ads('Impressions',   total_impressions, None, 'number',       card_type='actions'),
-        _card_ads('Clicks',        total_clicks,      None, 'number',       card_type='actions'),
-        _card_ads('Avg CPC',       cpc,               None, 'currency',     card_type='actions'),
-        _card_ads('Avg CTR',       ctr,               None, 'percentage',   card_type='actions'),
-        _card_ads('Ad Strength',   strength_label,    None, 'ad_strength',  card_type='actions', sub_label=strength_sub),
-        _blank_ads('actions'),
-        _blank_ads('actions'),
-        _blank_ads('actions'),
+        _card_ads('Impressions',       c[6],        p[6],        _spark(7),         'number',     card_type='actions'),
+        _card_ads('Clicks',            c[7],        p[7],        _spark(8),         'number',     card_type='actions'),
+        _card_ads('Avg CPC',           c[8],        p[8],        _spark(9),         'currency',   card_type='actions'),
+        _card_ads('Avg CTR',           pct(c[9]),   pct(p[9]),   _spark(10, 100.0), 'percentage', card_type='actions'),
+        _card_ads('Search Impr Share', pct(c[10]),  pct(p[10]),  _spark(11, 100.0), 'percentage', card_type='actions'),
+        _card_ads('Search Top IS',     pct(c[11]),  pct(p[11]),  _spark(12, 100.0), 'percentage', card_type='actions'),
+        _card_ads('Search Abs Top IS', pct(c[12]),  pct(p[12]),  _spark(13, 100.0), 'percentage', card_type='actions'),
+        _card_ads('Click Share',       pct(c[13]),  pct(p[13]),  _spark(14, 100.0), 'percentage', card_type='actions'),
     ]
+    
     return financial_cards, actions_cards
 
 
@@ -406,7 +525,7 @@ def ads():
     all_ads = load_ad_data(conn, config.customer_id, days, sort_by, sort_dir)
 
     financial_cards, actions_cards = load_ads_metrics_cards(
-        conn, config.customer_id, days, all_ads
+        conn, config.customer_id, active_days, date_from, date_to
     )
 
     chart_data = _build_ads_chart_data(conn, config.customer_id, active_days, date_from, date_to)
