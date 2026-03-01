@@ -513,6 +513,42 @@ def apply_pagination(
 
 # ==================== Chat 23 M2: Metrics Cards ====================
 
+def _build_date_filters(active_days, date_from, date_to):
+    """
+    Build current and previous period date filters for SQL WHERE clauses.
+    Returns tuple of (current_filter, prev_filter) starting with AND.
+    """
+    if date_from and date_to:
+        from datetime import datetime, timedelta
+        _df = datetime.strptime(date_from, '%Y-%m-%d').date()
+        _dt = datetime.strptime(date_to, '%Y-%m-%d').date()
+        _span = (_dt - _df).days + 1
+        _prev_to = (_df - timedelta(days=1)).isoformat()
+        _prev_from = (_df - timedelta(days=_span)).isoformat()
+        current_filter = f"AND snapshot_date >= '{date_from}' AND snapshot_date <= '{date_to}'"
+        prev_filter = f"AND snapshot_date >= '{_prev_from}' AND snapshot_date <= '{_prev_to}'"
+    else:
+        days = active_days if active_days in [7, 30, 90] else 30
+        current_filter = f"AND snapshot_date >= CURRENT_DATE - INTERVAL '{days} days'"
+        prev_filter = (
+            f"AND snapshot_date >= CURRENT_DATE - INTERVAL '{days * 2} days' "
+            f"AND snapshot_date < CURRENT_DATE - INTERVAL '{days} days'"
+        )
+    return current_filter, prev_filter
+
+
+def _calculate_change_pct(current, previous):
+    """
+    Calculate % change. Returns None (show dash) when no previous data.
+    Never returns 0% to mask missing data.
+    """
+    if previous is None or previous == 0:
+        return None
+    if current is None:
+        return -100.0
+    return ((current - previous) / previous) * 100.0
+
+
 def _fmt_sh(value, fmt):
     if value is None:
         return '—'
@@ -532,12 +568,13 @@ def _fmt_sh(value, fmt):
     return str(v)
 
 
-def _card_sh(label, value, fmt, invert=False, card_type='financial', sub_label=None):
+def _card_sh(label, value, prev, sparkline, fmt, invert=False, card_type='financial', sub_label=None):
+    """Shopping cards with period-over-period comparison."""
     return {
         'label': label,
         'value_display': _fmt_sh(value, fmt),
-        'change_pct': None,
-        'sparkline_data': None,
+        'change_pct': _calculate_change_pct(value, prev),
+        'sparkline_data': sparkline,
         'format_type': fmt,
         'invert_colours': invert,
         'card_type': card_type,
@@ -553,41 +590,134 @@ def _blank_sh(card_type='financial'):
     }
 
 
-def build_campaign_metrics_cards(cm):
-    total_cost       = cm.get('total_cost', 0) or 0
-    total_conv_value = cm.get('total_conv_value', 0) or 0
-    total_convs      = cm.get('total_conversions', 0) or 0
-    total_impr       = cm.get('total_impressions', 0) or 0
-    total_clicks     = cm.get('total_clicks', 0) or 0
-    roas             = cm.get('overall_roas', 0) or 0
-    cpa              = (total_cost / total_convs)         if total_convs > 0    else None
-    cvr              = (total_convs / total_clicks * 100) if total_clicks > 0   else None
-    cpc              = (total_cost / total_clicks)        if total_clicks > 0   else None
-    ctr              = (total_clicks / total_impr * 100)  if total_impr > 0     else None
+def build_campaign_metrics_cards(
+    conn: duckdb.DuckDBPyConnection,
+    customer_id: str,
+    active_days: int,
+    date_from: Optional[str],
+    date_to: Optional[str],
+) -> Tuple[List[Dict], List[Dict]]:
+    """
+    Build financial_cards and actions_cards for Shopping Campaigns.
+    
+    Queries ro.analytics.shopping_campaign_daily for current, previous, and sparkline data.
+    Returns tuple of (financial_cards, actions_cards).
+    """
+    # Build date filters for current and previous periods
+    current_filter, prev_filter = _build_date_filters(active_days, date_from, date_to)
+    
+    # ── Query 1: Current period summary from shopping_campaign_daily ──
+    try:
+        summary = conn.execute(f"""
+            SELECT
+                SUM(cost_micros) / 1000000.0                                      AS cost,
+                SUM(conversions_value)                                             AS conv_value,
+                SUM(conversions_value) / NULLIF(SUM(cost_micros) / 1000000.0, 0)  AS roas,
+                SUM(conversions)                                                   AS conversions,
+                (SUM(cost_micros) / 1000000.0) / NULLIF(SUM(conversions), 0)      AS cpa,
+                SUM(clicks) * 1.0 / NULLIF(SUM(conversions), 0)                   AS cvr,
+                SUM(impressions)                                                   AS impressions,
+                SUM(clicks)                                                        AS clicks,
+                (SUM(cost_micros) / 1000000.0) / NULLIF(SUM(clicks), 0)           AS cpc,
+                SUM(clicks) * 1.0 / NULLIF(SUM(impressions), 0)                   AS ctr
+            FROM ro.analytics.shopping_campaign_daily
+            WHERE customer_id = ?
+              {current_filter}
+        """, [customer_id]).fetchone()
+    except Exception as e:
+        print(f"[Shopping M2] Current period query error: {e}")
+        summary = None
+    
+    # ── Query 2: Previous period summary from shopping_campaign_daily ──
+    try:
+        prev_summary = conn.execute(f"""
+            SELECT
+                SUM(cost_micros) / 1000000.0                                      AS cost,
+                SUM(conversions_value)                                             AS conv_value,
+                SUM(conversions_value) / NULLIF(SUM(cost_micros) / 1000000.0, 0)  AS roas,
+                SUM(conversions)                                                   AS conversions,
+                (SUM(cost_micros) / 1000000.0) / NULLIF(SUM(conversions), 0)      AS cpa,
+                SUM(clicks) * 1.0 / NULLIF(SUM(conversions), 0)                   AS cvr,
+                SUM(impressions)                                                   AS impressions,
+                SUM(clicks)                                                        AS clicks,
+                (SUM(cost_micros) / 1000000.0) / NULLIF(SUM(clicks), 0)           AS cpc,
+                SUM(clicks) * 1.0 / NULLIF(SUM(impressions), 0)                   AS ctr
+            FROM ro.analytics.shopping_campaign_daily
+            WHERE customer_id = ?
+              {prev_filter}
+        """, [customer_id]).fetchone()
+    except Exception as e:
+        print(f"[Shopping M2] Previous period query error: {e}")
+        prev_summary = None
+    
+    # ── Query 3: Daily sparkline data from shopping_campaign_daily ──
+    try:
+        spark_rows = conn.execute(f"""
+            SELECT
+                snapshot_date,
+                SUM(cost_micros) / 1000000.0                                      AS cost,
+                SUM(conversions_value)                                             AS conv_value,
+                SUM(conversions_value) / NULLIF(SUM(cost_micros) / 1000000.0, 0)  AS roas,
+                SUM(conversions)                                                   AS conversions,
+                (SUM(cost_micros) / 1000000.0) / NULLIF(SUM(conversions), 0)      AS cpa,
+                SUM(clicks) * 1.0 / NULLIF(SUM(conversions), 0)                   AS cvr,
+                SUM(impressions)                                                   AS impressions,
+                SUM(clicks)                                                        AS clicks,
+                (SUM(cost_micros) / 1000000.0) / NULLIF(SUM(clicks), 0)           AS cpc,
+                SUM(clicks) * 1.0 / NULLIF(SUM(impressions), 0)                   AS ctr
+            FROM ro.analytics.shopping_campaign_daily
+            WHERE customer_id = ?
+              {current_filter}
+            GROUP BY snapshot_date
+            ORDER BY snapshot_date ASC
+        """, [customer_id]).fetchall()
+    except Exception as e:
+        print(f"[Shopping M2] Sparkline query error: {e}")
+        spark_rows = []
+    
+    def _v(row, i): return float(row[i]) if row and row[i] is not None else None
+    def pct(val): return val * 100 if val is not None else None
+    
+    # Current period values
+    c = [_v(summary, i) for i in range(10)] if summary else [None] * 10
+    
+    # Previous period values
+    p = [_v(prev_summary, i) for i in range(10)] if prev_summary else [None] * 10
+    
+    # Build sparkline arrays
+    def _spark(col_idx, scale=1.0):
+        return [float(r[col_idx]) * scale if r[col_idx] is not None else 0.0 for r in spark_rows]
+    
     financial_cards = [
-        _card_sh('Cost',         total_cost,       'currency',    invert=True),
-        _card_sh('Conv Value',   total_conv_value, 'currency'),
-        _card_sh('ROAS',         roas,             'ratio'),
+        _card_sh('Cost',         c[0],        p[0],        _spark(1),        'currency',   invert=True),
+        _card_sh('Revenue',      c[1],        p[1],        _spark(2),        'currency'),
+        _card_sh('ROAS',         c[2],        p[2],        _spark(3),        'ratio'),
         _blank_sh('financial'),
-        _card_sh('Conversions',  total_convs,      'number'),
-        _card_sh('Cost / Conv',  cpa,              'currency',    invert=True),
-        _card_sh('Conv Rate',    cvr,              'percentage'),
+        _card_sh('Conversions',  c[3],        p[3],        _spark(4),        'number'),
+        _card_sh('Cost / Conv',  c[4],        p[4],        _spark(5),        'currency',   invert=True),
+        _card_sh('Conv Rate',    pct(c[5]),   pct(p[5]),   _spark(6, 100.0), 'percentage'),
         _blank_sh('financial'),
     ]
+    
     actions_cards = [
-        _card_sh('Impressions',  total_impr,   'number',     card_type='actions'),
-        _card_sh('Clicks',       total_clicks, 'number',     card_type='actions'),
-        _card_sh('Avg CPC',      cpc,          'currency',   card_type='actions'),
-        _card_sh('Avg CTR',      ctr,          'percentage', card_type='actions'),
+        _card_sh('Impressions',  c[6],        p[6],        _spark(7),         'number',     card_type='actions'),
+        _card_sh('Clicks',       c[7],        p[7],        _spark(8),         'number',     card_type='actions'),
+        _card_sh('Avg CPC',      c[8],        p[8],        _spark(9),         'currency',   card_type='actions'),
+        _card_sh('Avg CTR',      pct(c[9]),   pct(p[9]),   _spark(10, 100.0), 'percentage', card_type='actions'),
         _blank_sh('actions'),
         _blank_sh('actions'),
         _blank_sh('actions'),
         _blank_sh('actions'),
     ]
+    
     return financial_cards, actions_cards
 
 
 def build_product_metrics_cards(pm):
+    """
+    Product metrics cards - incomplete (shopping_product_daily table doesn't exist yet).
+    Uses None for prev (no period comparison) and [] for sparklines (no daily data).
+    """
     total_cost    = pm.get('total_cost', 0) or 0
     total_convs   = pm.get('total_conversions', 0) or 0
     roas          = pm.get('overall_roas', 0) or 0
@@ -596,19 +726,21 @@ def build_product_metrics_cards(pm):
     total_prods   = pm.get('total_products', 0) or 0
     oos_sub       = 'Needs attention' if oos > 0 else 'All in stock'
     issues_sub    = 'Price mismatch/disapproved' if feed_issues > 0 else 'No issues'
+    
+    # No prev or sparkline data - product_daily table doesn't exist
     financial_cards = [
-        _card_sh('Cost',          total_cost,  'currency',  invert=True),
-        _card_sh('ROAS',          roas,        'ratio'),
+        _card_sh('Cost',          total_cost,  None, [], 'currency',  invert=True),
+        _card_sh('ROAS',          roas,        None, [], 'ratio'),
         _blank_sh('financial'),
-        _card_sh('Out of Stock',  oos,         'number',    invert=True, sub_label=oos_sub),
-        _card_sh('Conversions',   total_convs, 'number'),
+        _card_sh('Out of Stock',  oos,         None, [], 'number',    invert=True, sub_label=oos_sub),
+        _card_sh('Conversions',   total_convs, None, [], 'number'),
         _blank_sh('financial'),
         _blank_sh('financial'),
         _blank_sh('financial'),
     ]
     actions_cards = [
-        _card_sh('Products',    total_prods,  'number',  card_type='actions'),
-        _card_sh('Feed Issues', feed_issues,  'number',  card_type='actions', invert=True, sub_label=issues_sub),
+        _card_sh('Products',    total_prods,  None, [], 'number',  card_type='actions'),
+        _card_sh('Feed Issues', feed_issues,  None, [], 'number',  card_type='actions', invert=True, sub_label=issues_sub),
         _blank_sh('actions'),
         _blank_sh('actions'),
         _blank_sh('actions'),
@@ -798,6 +930,13 @@ def shopping():
     # M3: Chart data
     chart_data = _build_shopping_chart_data(conn, config.customer_id, active_days, date_from, date_to)
 
+    # M2: Build metrics cards (MUST be before conn.close())
+    camp_financial_cards, camp_actions_cards = build_campaign_metrics_cards(
+        conn, config.customer_id, active_days, date_from, date_to
+    )
+    prod_financial_cards, prod_actions_cards = build_product_metrics_cards(product_metrics)
+    metrics_collapsed = get_metrics_collapsed('shopping')
+
     conn.close()
 
     # ── Rules ──
@@ -813,11 +952,6 @@ def shopping():
         f"products={len(all_products)} (fallback={using_fallback}), "
         f"feed_issues={len(feed_issues)}, rules={len(rules)}"
     )
-
-    # M2: Build metrics cards
-    camp_financial_cards, camp_actions_cards = build_campaign_metrics_cards(campaign_metrics)
-    prod_financial_cards, prod_actions_cards = build_product_metrics_cards(product_metrics)
-    metrics_collapsed = get_metrics_collapsed('shopping')
 
     return render_template(
         'shopping_new.html',
