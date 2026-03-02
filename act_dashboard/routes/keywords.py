@@ -14,11 +14,12 @@ from act_dashboard.routes.shared import (
     recommendation_to_dict,
     cache_recommendations,
     get_metrics_collapsed,
-    get_chart_metrics
+    get_chart_metrics,
+    get_performance_data
 )
 from act_dashboard.routes.rule_helpers import get_rules_for_page, count_rules_by_category
 from act_dashboard.routes.rules_api import load_rules
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import List, Dict, Any, Tuple
 import duckdb
 from flask import jsonify
@@ -1526,8 +1527,25 @@ def keywords():
         conn, config.customer_id, window_suffix, snapshot_date, active_days, date_from, date_to
     )
 
-    # M3: Chart data
-    chart_data = _build_kw_chart_data(conn, config.customer_id, active_days, date_from, date_to)
+    # M3: Chart data (Module 3: uses centralized get_performance_data)
+    # Calculate actual start/end dates for get_performance_data
+    if date_from and date_to:
+        chart_start_date = date_from
+        chart_end_date = date_to
+    else:
+        # Preset mode (7d, 30d, 90d) - calculate dates
+        end_dt = datetime.now().date()
+        start_dt = end_dt - timedelta(days=active_days)
+        chart_start_date = start_dt.isoformat()
+        chart_end_date = end_dt.isoformat()
+    
+    chart_data = get_performance_data(
+        conn=conn,
+        customer_id=config.customer_id,
+        start_date=chart_start_date,
+        end_date=chart_end_date,
+        entity_type='keyword'
+    )
 
     # Close database connection
     conn.close()

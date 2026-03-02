@@ -4,7 +4,15 @@ Dashboard home page route - overview stats.
 
 from flask import Blueprint, render_template, session, request
 from act_dashboard.auth import login_required
-from act_dashboard.routes.shared import get_current_config, get_available_clients, get_date_range_from_session, get_metrics_collapsed, get_chart_metrics
+from act_dashboard.routes.shared import (
+    get_current_config, 
+    get_available_clients, 
+    get_date_range_from_session, 
+    get_metrics_collapsed, 
+    get_chart_metrics,
+    get_performance_data,
+    get_db_connection
+)
 import duckdb
 import json
 from datetime import date, datetime
@@ -389,8 +397,34 @@ def home() -> str:
         'cpa_change': calculate_change_pct(current[5], previous[5]),
     }
 
-    # Query 3: M3 chart data (replaces legacy trend_data)
-    chart_data = _build_dashboard_chart_data(conn, config.customer_id, date_filter, prev_filter)
+    # Query 3: M3 chart data (Module 3: uses centralized get_performance_data)
+    # Calculate actual start/end dates for get_performance_data
+    if date_from and date_to:
+        chart_start_date = date_from
+        chart_end_date = date_to
+    else:
+        # Preset mode (7d, 30d, 90d) - calculate dates
+        from datetime import datetime, timedelta
+        end_dt = datetime.now().date()
+        start_dt = end_dt - timedelta(days=active_days)
+        chart_start_date = start_dt.isoformat()
+        chart_end_date = end_dt.isoformat()
+    
+    # Attach readonly database to existing conn (if not already attached)
+    try:
+        ro_path = config.db_path.replace("warehouse.duckdb", "warehouse_readonly.duckdb")
+        conn.execute(f"ATTACH '{ro_path}' AS ro (READ_ONLY);")
+    except Exception:
+        pass  # Already attached or not available
+    
+    # Get chart data using existing conn (don't open second connection)
+    chart_data = get_performance_data(
+        conn=conn,
+        customer_id=config.customer_id,
+        start_date=chart_start_date,
+        end_date=chart_end_date,
+        entity_type='campaign'
+    )
 
     # Query 4: Top 5 campaigns by spend
     top_campaigns_query = f"""

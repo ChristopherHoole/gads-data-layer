@@ -1,0 +1,350 @@
+/* ============================================================================
+   ACT DASHBOARD - CHART STYLES
+   Module 3: Google Ads Chart Design
+   
+   Purpose: Styling for performance charts across all 6 pages
+   Pages: Dashboard, Campaigns, Keywords, Ad Groups, Ads, Shopping
+   
+   Colors: ACT Logo Palette
+   - Green: #34A853 (1st metric)
+   - Yellow: #FBBC05 (2nd metric)
+   - Red: #EA4335 (3rd metric)
+   - Blue: #4285F4 (4th metric)
+   ============================================================================ */
+
+/* HEADER ROW (Metric Cards + Metrics Button) */
+.chart-header-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* METRIC BOXES CONTAINER */
+.metric-boxes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    flex: 1;
+}
+
+/* INDIVIDUAL METRIC BOX */
+.metric-box {
+    border-radius: 6px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.metric-box .label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.metric-box .value {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 6px;
+}
+
+.metric-box .change {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* ACTIVE/INACTIVE STATES */
+.metric-box.active {
+    /* Color set via inline JavaScript */
+    color: white;
+}
+
+.metric-box.inactive {
+    background: white;
+    color: #212529;
+    border: 1px solid #e0e0e0;
+}
+
+.metric-box.active .change {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.metric-box.inactive .change {
+    color: #616161;
+}
+
+/* METRICS BUTTON */
+.metrics-btn {
+    background: white;
+    border: 1px solid #d0d0d0;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+    white-space: nowrap;
+    height: fit-content;
+}
+
+.metrics-btn:hover {
+    background: #f5f5f5;
+    border-color: #b0b0b0;
+}
+
+/* CHART CONTAINER */
+.chart-container {
+    background: white;
+    border-radius: 8px;
+    padding: 24px;
+    height: 340px;
+    position: relative;
+    margin-bottom: 32px;
+}
+
+.chart-canvas {
+    height: 300px !important;
+    max-height: 300px !important;
+}
+
+/* METRICS SELECTOR MODAL */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+    display: none;
+}
+
+.modal-overlay.show {
+    display: block;
+}
+
+.metrics-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    width: 700px;
+    max-height: 600px;
+    z-index: 9999;
+    display: none;
+}
+
+.metrics-modal.show {
+    display: block;
+}
+
+/* MODAL HEADER */
+.modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #616161;
+    line-height: 1;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+}
+
+.modal-close:hover {
+    color: #212121;
+}
+
+/* MODAL BODY */
+.modal-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 400px;
+}
+
+.metrics-available {
+    padding: 20px;
+    border-right: 1px solid #e0e0e0;
+    overflow-y: auto;
+}
+
+.metrics-selected {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.modal-section-title {
+    font-size: 13px;
+    margin-bottom: 12px;
+    color: #616161;
+    font-weight: 500;
+}
+
+/* METRIC CHECKBOXES */
+.metric-checkbox {
+    display: block;
+    padding: 8px 0;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.metric-checkbox input {
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.metric-checkbox:hover {
+    background: #f5f5f5;
+}
+
+/* SELECTED METRICS LIST */
+.selected-metric {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: #f5f5f5;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.selected-metric .drag-handle {
+    margin-right: 8px;
+    color: #9e9e9e;
+    cursor: move;
+}
+
+.selected-metric .name {
+    flex: 1;
+    font-size: 14px;
+}
+
+.selected-metric .remove {
+    background: none;
+    border: none;
+    color: #9e9e9e;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+}
+
+.selected-metric .remove:hover {
+    color: #EA4335;
+}
+
+/* MODAL FOOTER */
+.modal-footer {
+    padding: 16px 20px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.btn {
+    padding: 8px 20px;
+    border-radius: 4px;
+    border: 1px solid #d0d0d0;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.btn:hover {
+    background: #f5f5f5;
+}
+
+.btn-primary {
+    background: #1a73e8;
+    color: white;
+    border-color: #1a73e8;
+}
+
+.btn-primary:hover {
+    background: #1557b0;
+}
+
+/* LIMIT WARNING */
+.limit-warning {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    color: #856404;
+    padding: 12px;
+    border-radius: 4px;
+    margin-top: 12px;
+    font-size: 13px;
+    display: none;
+}
+
+.limit-warning.show {
+    display: block;
+}
+
+/* RESPONSIVE BREAKPOINTS */
+@media (max-width: 1200px) {
+    .chart-header-row {
+        max-width: 100%;
+        padding: 0 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .metric-boxes {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .metrics-modal {
+        width: 90%;
+        max-width: 500px;
+    }
+    
+    .modal-body {
+        grid-template-columns: 1fr;
+        height: auto;
+        max-height: 500px;
+    }
+    
+    .metrics-available {
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+    }
+}
+
+@media (max-width: 480px) {
+    .metric-boxes {
+        grid-template-columns: 1fr;
+    }
+    
+    .metric-box .value {
+        font-size: 20px;
+    }
+}
