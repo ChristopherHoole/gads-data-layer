@@ -18,7 +18,7 @@ Key decisions (from Master Chat answers):
   - Rules: empty state expected (no public shopping rule functions yet)
 """
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, session, jsonify
 from act_dashboard.auth import login_required
 from act_dashboard.routes.shared import get_page_context, get_db_connection, get_date_range_from_session, get_metrics_collapsed, get_chart_metrics, get_performance_data
 from act_dashboard.routes.rule_helpers import get_rules_for_page, count_rules_by_category
@@ -867,6 +867,7 @@ def shopping():
         page=page, per_page=per_page,
         status=status, availability=availability, active_tab=active_tab,
         sort_by=sort_by, sort_dir=sort_dir,
+        saved_columns=session.get('shopping_columns', None),
     )
 
     try:
@@ -1016,4 +1017,24 @@ def shopping():
         # M3: Chart
         chart_data=chart_data,
         active_metrics=get_chart_metrics('shopping'),
+        # M4: Column persistence
+        saved_columns=session.get('shopping_columns', None),
     )
+
+
+@bp.route("/shopping/save-columns", methods=['POST'])
+@login_required
+def save_columns():
+    """
+    POST /shopping/save-columns
+    Body JSON: { visible: ["cost", "conv-value", ...] }
+    Stores visible column list in session['shopping_columns'].
+    """
+    data = request.get_json(silent=True) or {}
+    visible = data.get('visible', [])
+
+    if not isinstance(visible, list):
+        return jsonify({'success': False, 'error': 'visible must be a list'}), 400
+
+    session['shopping_columns'] = visible
+    return jsonify({'success': True, 'columns': visible})
