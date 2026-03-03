@@ -337,10 +337,13 @@
     padding: 20px 24px;
     max-height: 50vh;
     overflow-y: auto;
+    display: block !important;
   }
-  
+
   .column-group {
     margin-bottom: 24px;
+    display: block;
+    width: 100%;
   }
   
   .column-group h4 {

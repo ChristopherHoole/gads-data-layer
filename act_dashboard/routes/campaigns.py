@@ -6,7 +6,7 @@ Chat 22: Session-based date range, custom date support, ro. prefix fix.
 Chat 23 M2: Added metrics cards data (financial_cards, actions_cards, sparklines).
 """
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, session, jsonify
 from act_dashboard.auth import login_required
 from act_dashboard.routes.shared import (
     get_page_context, get_db_connection, get_date_range_from_session,
@@ -32,7 +32,7 @@ ALLOWED_SORT_COLS = {
     'impressions', 'clicks', 'avg_cpc', 'ctr',
     'search_impression_share', 'search_top_impression_share',
     'search_absolute_top_impression_share', 'click_share',
-    'optimization_score',
+    'optimization_score', 'budget',
 }
 
 
@@ -83,6 +83,7 @@ def load_campaigns_m4(
                 channel_type,
                 ANY_VALUE(optimization_score)                                       AS optimization_score,
                 ANY_VALUE(bid_strategy_type)                                        AS bid_strategy_type,
+                NULL                                                               AS budget,
                 SUM(cost_micros) / 1000000.0                                        AS cost,
                 SUM(conversions_value)                                              AS conversions_value,
                 SUM(conversions)                                                    AS conversions,
@@ -151,7 +152,7 @@ def load_campaigns_m4(
                       'cost_per_all_conv', 'all_conv_rate', 'all_conv_value_per_cost',
                       'search_impression_share', 'search_top_impression_share',
                       'search_absolute_top_impression_share', 'click_share',
-                      'optimization_score']:
+                      'optimization_score', 'budget']:
                 val = d.get(f)
                 d[f] = float(val) if val is not None else None
             campaigns.append(d)
@@ -769,4 +770,24 @@ def campaigns():
         # M3: Chart
         chart_data=chart_data,
         active_metrics=get_chart_metrics('campaigns'),
+        # M4: Saved column visibility
+        saved_columns=session.get('campaigns_columns', None),
     )
+
+
+@bp.route("/campaigns/save-columns", methods=['POST'])
+@login_required
+def save_columns():
+    """
+    POST /campaigns/save-columns
+    Body JSON: { visible: ["cost", "conv-value", ...] }
+    Stores visible column list in session['campaigns_columns'].
+    """
+    data = request.get_json(silent=True) or {}
+    visible = data.get('visible', [])
+
+    if not isinstance(visible, list):
+        return jsonify({'success': False, 'error': 'visible must be a list'}), 400
+
+    session['campaigns_columns'] = visible
+    return jsonify({'success': True, 'columns': visible})
