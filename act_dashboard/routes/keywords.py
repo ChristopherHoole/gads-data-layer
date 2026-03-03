@@ -4,7 +4,7 @@ Refactored into smaller, focused functions.
 Chat 21d: Redesigned with Bootstrap 5, pagination, filters, rule visibility
 """
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, session, jsonify
 from act_dashboard.auth import login_required
 from act_dashboard.routes.shared import (
     get_page_context,
@@ -22,7 +22,6 @@ from act_dashboard.routes.rules_api import load_rules
 from datetime import date, datetime, timedelta
 from typing import List, Dict, Any, Tuple
 import duckdb
-from flask import jsonify
 from act_autopilot.google_ads_api import (
     load_google_ads_client,
     add_negative_keyword,
@@ -1249,7 +1248,8 @@ def keywords():
         'cost', 'conversions_value', 'conversions', 'conv_value_per_cost',
         'cpa', 'conv_rate',
         'impressions', 'clicks', 'avg_cpc', 'ctr',
-        'quality_score', 'expected_ctr_score', 'ad_relevance_score',
+        'quality_score', 'expected_ctr_score', 'landing_page_score',
+        'ad_relevance_score',
     }
     if sort_by not in ALLOWED_KW_SORT:
         sort_by = 'cost'
@@ -1399,7 +1399,19 @@ def keywords():
                  ELSE NULL END                                                   AS ctr,
             quality_score,
             quality_score_creative                                               AS expected_ctr_score,
-            quality_score_relevance                                              AS ad_relevance_score
+            quality_score_landing_page                                           AS landing_page_score,
+            quality_score_relevance                                              AS ad_relevance_score,
+            NULL                                                                 AS all_conversions,
+            NULL                                                                 AS cost_per_all_conv,
+            NULL                                                                 AS all_conv_rate,
+            NULL                                                                 AS all_conversions_value,
+            NULL                                                                 AS all_conv_value_per_cost,
+            NULL                                                                 AS search_impression_share,
+            NULL                                                                 AS search_top_is,
+            NULL                                                                 AS search_abs_top_is,
+            NULL                                                                 AS click_share,
+            NULL                                                                 AS bid_strategy_type,
+            NULL                                                                 AS final_url
         FROM analytics.keyword_features_daily
         WHERE customer_id = ?
           AND snapshot_date = ?
@@ -1431,7 +1443,12 @@ def keywords():
             for f in ['cost', 'conversions_value', 'conversions', 'conv_value_per_cost',
                       'cpa', 'conv_rate',
                       'impressions', 'clicks', 'avg_cpc', 'ctr',
-                      'quality_score', 'expected_ctr_score', 'ad_relevance_score']:
+                      'quality_score', 'expected_ctr_score', 'landing_page_score',
+                      'ad_relevance_score',
+                      'all_conversions', 'cost_per_all_conv', 'all_conv_rate',
+                      'all_conversions_value', 'all_conv_value_per_cost',
+                      'search_impression_share', 'search_top_is',
+                      'search_abs_top_is', 'click_share']:
                 val = d.get(f)
                 d[f] = float(val) if val is not None else None
             keywords.append(d)
@@ -1606,4 +1623,24 @@ def keywords():
         # M3: Chart
         chart_data=chart_data,
         active_metrics=get_chart_metrics('keywords'),
+        # M4: Saved column visibility
+        saved_columns=session.get('keywords_columns', None),
     )
+
+
+@bp.route("/keywords/save-columns", methods=['POST'])
+@login_required
+def save_columns():
+    """
+    POST /keywords/save-columns
+    Body JSON: { visible: ["cost", "conv-value", ...] }
+    Stores visible column list in session['keywords_columns'].
+    """
+    data = request.get_json(silent=True) or {}
+    visible = data.get('visible', [])
+
+    if not isinstance(visible, list):
+        return jsonify({'success': False, 'error': 'visible must be a list'}), 400
+
+    session['keywords_columns'] = visible
+    return jsonify({'success': True, 'columns': visible})
