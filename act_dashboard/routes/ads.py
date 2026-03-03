@@ -10,7 +10,7 @@ Chat 21f: Full redesign matching campaigns/ad_groups/keywords pattern.
 - Renders: ads_new.html
 """
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, session, jsonify
 from act_dashboard.auth import login_required
 from act_dashboard.routes.shared import (
     get_page_context,
@@ -593,4 +593,24 @@ def ads():
         metrics_collapsed=get_metrics_collapsed('ads'),
         chart_data=chart_data,
         active_metrics=get_chart_metrics('ads'),
+        # M4: Saved column visibility
+        saved_columns=session.get('ads_columns', None),
     )
+
+
+@bp.route("/ads/save-columns", methods=['POST'])
+@login_required
+def save_columns():
+    """
+    POST /ads/save-columns
+    Body JSON: { visible: ["cost", "conv-value", ...] }
+    Stores visible column list in session['ads_columns'].
+    """
+    data = request.get_json(silent=True) or {}
+    visible = data.get('visible', [])
+
+    if not isinstance(visible, list):
+        return jsonify({'success': False, 'error': 'visible must be a list'}), 400
+
+    session['ads_columns'] = visible
+    return jsonify({'success': True, 'columns': visible})

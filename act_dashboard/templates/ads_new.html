@@ -2,7 +2,14 @@
 {% from "macros/metrics_cards.html" import metrics_section %}
 {% from "macros/performance_chart.html" import performance_chart %}
 
+<script>
+  const rulesConfig = {{ rules_config | tojson }};
+</script>
+
+{% block title %}Ads - {{ client_name }}{% endblock %}
+
 {% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/table-styles.css') }}">
 <style>
   :root {
     --border: #e5e9f0;
@@ -11,13 +18,6 @@
     --bid-c:    #15803d;
     --status-c: #991b1b;
   }
-
-  /* SUMMARY STRIP */
-  .summary-strip { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 24px; }
-  .summary-card  { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; }
-  .s-icon  { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .s-num   { font-size: 24px; font-weight: 700; line-height: 1; }
-  .s-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
   /* PAGE TABS */
   .page-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
@@ -30,12 +30,14 @@
   .tab-badge-grey   { background: #f3f4f6; color: #6b7280; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
   .tab-badge-red    { background: #fee2e2; color: #991b1b; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
 
-  /* REC HEADER */
-  .rec-header         { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 16px; }
-  .rec-header-left h5 { font-size: 16px; font-weight: 600; margin: 0 0 4px; color: #1a1d23; }
-  .rec-header-left p  { margin: 0; color: var(--muted); font-size: 13px; }
+  /* SUMMARY STRIP */
+  .summary-strip { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 24px; }
+  .summary-card  { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; }
+  .s-icon  { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .s-num   { font-size: 24px; font-weight: 700; line-height: 1; }
+  .s-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
-  /* CARD GRID */
+  /* REC CARD GRID */
   .rec-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-bottom: 28px; }
 
   /* REC CARD */
@@ -150,271 +152,317 @@
   .act-toast.t-success { background: #15803d; color: white; }
   .act-toast.t-error   { background: #dc3545; color: white; }
   .act-toast.t-muted   { background: #374151; color: white; }
+
+  /* Ad strength progress bars */
+  .ad-strength-wrapper { display: flex; align-items: center; gap: 8px; }
+  .ad-strength-bar { flex: 1; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; min-width: 50px; }
+  .ad-strength-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+  .ad-strength-fill.excellent { background: #34A853; }
+  .ad-strength-fill.good { background: #1a73e8; }
+  .ad-strength-fill.average { background: #FBBC05; }
+  .ad-strength-fill.poor { background: #EA4335; }
+  .ad-strength-fill.pending { background: #9e9e9e; }
+  .ad-strength-text { font-size: 12px; min-width: 55px; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid">
 
+  <!-- Page Header -->
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">Ads</h1>
+    <h2 class="mb-0">Ads</h2>
     {% include 'components/date_filter.html' %}
   </div>
 
-  <ul class="nav nav-tabs mb-3" role="tablist">
-    <li class="nav-item">
-      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#ads-tab" type="button">Ads ({{ total_ads }})</button>
-    </li>
-    <li class="nav-item">
-      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#rules-tab" type="button">
-        <i class="bi bi-lightning-charge-fill text-warning"></i> Rules ({{ rules_config | selectattr('rule_type', 'equalto', 'ad') | list | length }})
+  <!-- Tab Navigation -->
+  <ul class="nav nav-tabs mb-3" id="adsTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="ads-tab-btn" data-bs-toggle="tab"
+              data-bs-target="#ads-tab" type="button" role="tab">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" class="me-1"><path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/></svg>
+        Ads ({{ total_ads }})
       </button>
     </li>
-    <li class="nav-item">
-      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#recommendations-tab" type="button">
-        <i class="bi bi-star"></i> Recommendations (<span id="ad-total-count">0</span>)
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="rules-tab-btn" data-bs-toggle="tab"
+              data-bs-target="#rules-tab" type="button" role="tab">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#ffc107" viewBox="0 0 16 16" class="me-1"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg>
+        Rules ({{ rules_config | selectattr('rule_type', 'equalto', 'ad') | list | length }})
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="recommendations-tab-btn" data-bs-toggle="tab"
+              data-bs-target="#recommendations-tab" type="button" role="tab">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" class="me-1"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-3.5a.5.5 0 0 1 .5.5v3.793l1.854 1.853a.5.5 0 0 1-.708.708l-2-2A.5.5 0 0 1 7.5 11V5a.5.5 0 0 1 .5-.5z"/></svg>
+        Recommendations (<span id="ad-total-count">0</span>)
       </button>
     </li>
   </ul>
 
-  <div class="tab-content">
+  <div class="tab-content" id="adsTabContent">
+
+    <!-- ADS TAB -->
     <div class="tab-pane fade show active" id="ads-tab" role="tabpanel">
 
+      <!-- M2 Metrics Cards -->
       {{ metrics_section(financial_cards, actions_cards, 'ads', metrics_collapsed) }}
+
+      <!-- M3 Performance Chart -->
       {{ performance_chart(chart_data, active_metrics, 'ads') }}
 
-      {%- macro sl(col, label) -%}
-        {%- if sort_by == col -%}
-          {%- set nd = 'asc' if sort_dir == 'desc' else 'desc' -%}
-          <a href="/ads?page=1&per_page={{ per_page }}&sort_by={{ col }}&sort_dir={{ nd }}&status={{ status }}" style="color:inherit;text-decoration:none;white-space:nowrap;">{{ label }}{% if sort_dir == 'desc' %} &#8595;{% else %} &#8593;{% endif %}</a>
-        {%- else -%}
-          <a href="/ads?page=1&per_page={{ per_page }}&sort_by={{ col }}&sort_dir=desc&status={{ status }}" style="color:inherit;text-decoration:none;white-space:nowrap;">{{ label }}</a>
-        {%- endif -%}
-      {%- endmacro -%}
-
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <div class="btn-group btn-group-sm">
-          <a href="/ads?page=1&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status=all"     class="btn {% if status == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}">All</a>
-          <a href="/ads?page=1&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status=enabled" class="btn {% if status == 'enabled' %}btn-success{% else %}btn-outline-success{% endif %}">Enabled</a>
-          <a href="/ads?page=1&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status=paused"  class="btn {% if status == 'paused' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">Paused</a>
+      <!-- M4: Top Controls Bar -->
+      <div class="top-controls">
+        <div class="left-controls">
+          <div class="filter-tabs">
+            <a href="/ads?page=1&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status=all"
+               class="filter-tab {{ 'active' if status == 'all' }}">All</a>
+            <a href="/ads?page=1&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status=enabled"
+               class="filter-tab {{ 'active' if status == 'enabled' }}">Enabled</a>
+            <a href="/ads?page=1&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status=paused"
+               class="filter-tab {{ 'active' if status == 'paused' }}">Paused</a>
+          </div>
+          <div class="rows-per-page">
+            <span>Rows per page:</span>
+            <select onchange="window.location='/ads?page=1&per_page='+this.value+'&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}'">
+              {% for n in [10, 25, 50, 100] %}
+                <option value="{{ n }}" {{ 'selected' if per_page == n }}>{{ n }}</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
-        <div>
-          <button class="btn btn-sm btn-primary"><i class="bi bi-plus-circle"></i> New Ad</button>
-          <button id="bulk-edit-btn" class="btn btn-sm btn-secondary ms-1" style="display:none;"><i class="bi bi-pencil"></i> Bulk Edit (<span id="bulk-count">0</span>)</button>
+        <div class="right-controls">
+          <button class="create-btn">
+            <span>+</span>
+            <span>Create Ad</span>
+          </button>
+          <button class="columns-btn" onclick="openColumnSelector()">
+            <span>&#9776;</span>
+            <span>Columns</span>
+          </button>
         </div>
       </div>
 
-      <!-- Ads Table — 24 columns -->
-      <div class="card shadow-sm mb-3">
-        <div style="overflow-x:auto; overflow-y:auto; max-height:70vh; position:relative;">
-          <table class="table table-hover table-sm mb-0" style="min-width:3000px; border-collapse:separate; border-spacing:0; font-size:12px; white-space:nowrap;">
-            <thead style="position:sticky; top:0; z-index:4;">
-              <tr style="background:#f8f9fa;">
-                <!-- 1: checkbox sticky -->
-                <th style="width:36px; min-width:36px; position:sticky; left:0; z-index:5; background:#f8f9fa; padding:7px 8px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">
-                  <input type="checkbox" id="select-all" class="form-check-input">
-                </th>
-                <!-- 2: Ad sticky -->
-                <th style="min-width:220px; position:sticky; left:36px; z-index:5; background:#f8f9fa; box-shadow:2px 0 4px rgba(0,0,0,0.08); padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">{{ sl('final_url', 'Ad') }}</th>
-                <!-- 3: campaign -->
-                <th style="min-width:160px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">{{ sl('campaign_name', 'Campaign') }}</th>
-                <!-- 4: ad group -->
-                <th style="min-width:140px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">{{ sl('ad_group_name', 'Ad Group') }}</th>
-                <!-- 5: status -->
-                <th style="min-width:80px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">Status</th>
-                <!-- 6: ad type -->
-                <th style="min-width:70px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">Type</th>
-                <!-- 7: cost -->
-                <th style="min-width:100px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sl('cost', 'Cost') }}</th>
-                <!-- 8: conv value -->
-                <th style="min-width:110px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sl('conversions_value', 'Conv. Value') }}</th>
-                <!-- 9: conversions -->
-                <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sl('conversions', 'Conv.') }}</th>
-                <!-- 10: conv value/cost -->
-                <th style="min-width:120px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sl('conv_value_per_cost', 'Conv. Value / Cost') }}</th>
-                <!-- 11: cost/conv -->
-                <th style="min-width:100px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sl('cpa', 'Cost / Conv.') }}</th>
-                <!-- 12: conv rate -->
-                <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sl('conv_rate', 'Conv. Rate') }}</th>
-                <!-- 13: all conv -->
-                <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sl('all_conversions', 'All Conv.') }}</th>
-                <!-- 14: cost/all conv -->
-                <th style="min-width:110px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">Cost / All Conv.</th>
-                <!-- 15: all conv rate -->
-                <th style="min-width:110px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">All Conv. Rate</th>
-                <!-- 16: all conv value -->
-                <th style="min-width:110px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sl('all_conversions_value', 'All Conv. Value') }}</th>
-                <!-- 17: all conv value/cost -->
-                <th style="min-width:130px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">All Conv. Value / Cost</th>
-                <!-- 18: impressions -->
-                <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sl('impressions', 'Impr.') }}</th>
-                <!-- 19: clicks -->
-                <th style="min-width:70px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sl('clicks', 'Clicks') }}</th>
-                <!-- 20: avg cpc -->
-                <th style="min-width:80px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sl('avg_cpc', 'Avg. CPC') }}</th>
-                <!-- 21: ctr -->
-                <th style="min-width:65px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sl('ctr', 'CTR') }}</th>
-                <!-- 22: ad strength -->
-                <th style="min-width:160px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">{{ sl('ad_strength', 'Ad Strength') }}</th>
-                <!-- 23: final url -->
-                <th style="min-width:200px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">Final URL</th>
-                <!-- 24: actions -->
-                <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:center;">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% if ads and ads|length > 0 %}
-                {% for ad in ads %}
+      <!-- M4 Ads Table -->
+      {% if ads and ads|length > 0 %}
+
+        {# ── Sort helper macro ── #}
+        {%- macro sort_link(col, label) -%}
+          {%- if sort_by == col -%}
+            {%- set next_dir = 'asc' if sort_dir == 'desc' else 'desc' -%}
+            {%- set icon = '↑' if sort_dir == 'asc' else '↓' -%}
+            <a href="/ads?page=1&per_page={{ per_page }}&sort_by={{ col }}&sort_dir={{ next_dir }}&status={{ status }}"
+               class="text-decoration-none text-primary fw-bold">{{ label }} {{ icon }}</a>
+          {%- else -%}
+            <a href="/ads?page=1&per_page={{ per_page }}&sort_by={{ col }}&sort_dir=desc&status={{ status }}"
+               class="text-decoration-none text-muted">{{ label }}</a>
+          {%- endif -%}
+        {%- endmacro -%}
+
+        <div class="table-wrapper">
+            <table id="adsTable">
+              <thead>
                 <tr>
-                  <!-- 1: checkbox -->
-                  <td style="width:36px; position:sticky; left:0; z-index:2; background:#ffffff; padding:7px 8px; border-bottom:1px solid #f0f0f0; vertical-align:middle;">
-                    <input type="checkbox" class="form-check-input ad-checkbox" value="{{ ad.ad_id }}">
+                  <th data-col="status" style="width:32px;">Status</th>
+                  <th data-col="ad">{{ sort_link('final_url', 'Ad') }}</th>
+                  <th data-col="campaign">{{ sort_link('campaign_name', 'Campaign') }}</th>
+                  <th data-col="ad-group">{{ sort_link('ad_group_name', 'Ad Group') }}</th>
+                  <th data-col="ad-type">{{ sort_link('ad_type', 'Ad type') }}</th>
+                  <th class="right-align" data-col="cost">{{ sort_link('cost', 'Cost') }}</th>
+                  <th class="right-align" data-col="conv-value">{{ sort_link('conversions_value', 'Conv. value') }}</th>
+                  <th class="right-align" data-col="conv-value-cost">{{ sort_link('conv_value_per_cost', 'ROAS') }}</th>
+                  <th class="right-align" data-col="conversions">{{ sort_link('conversions', 'Conv') }}</th>
+                  <th class="right-align" data-col="cost-conv">{{ sort_link('cpa', 'Cost/conv') }}</th>
+                  <th class="right-align" data-col="conv-rate">{{ sort_link('conv_rate', 'Conv. rate') }}</th>
+                  <th class="right-align" data-col="impr">{{ sort_link('impressions', 'Impr') }}</th>
+                  <th class="right-align" data-col="clicks">{{ sort_link('clicks', 'Clicks') }}</th>
+                  <th class="right-align" data-col="cpc">{{ sort_link('avg_cpc', 'Avg. CPC') }}</th>
+                  <th class="right-align" data-col="ctr">{{ sort_link('ctr', 'CTR') }}</th>
+                  <th data-col="ad-strength">{{ sort_link('ad_strength', 'Ad strength') }}</th>
+                  <th class="right-align col-hidden" data-col="all-conv">All conv.</th>
+                  <th class="right-align col-hidden" data-col="cost-all-conv">Cost/all conv</th>
+                  <th class="right-align col-hidden" data-col="all-conv-rate">All conv. rate</th>
+                  <th class="right-align col-hidden" data-col="all-conv-value">All conv. value</th>
+                  <th class="right-align col-hidden" data-col="all-conv-value-cost">All conv. value/cost</th>
+                  <th class="col-hidden" data-col="final-url">Final URL</th>
+                  <th data-col="actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for ad in ads %}
+                <tr data-status="{{ 'enabled' if ad.status == 'ENABLED' else 'paused' }}">
+                  <!-- Status (dot only) -->
+                  <td data-col="status" style="text-align:center;">
+                    <span class="status-dot {{ 'enabled' if ad.status == 'ENABLED' else 'paused' }}"></span>
                   </td>
-                  <!-- 2: Ad sticky — final_url truncated -->
-                  <td style="position:sticky; left:36px; z-index:2; background:#ffffff; box-shadow:2px 0 4px rgba(0,0,0,0.08); padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle;">
+                  <!-- Ad -->
+                  <td data-col="ad">
                     {% if ad.final_url %}
-                      <a href="{{ ad.final_url }}" target="_blank" class="text-truncate d-inline-block fw-bold" style="max-width:200px;">{{ ad.final_url }}</a>
+                      <span class="campaign-name">{{ ad.final_url[:50] }}{% if ad.final_url|length > 50 %}...{% endif %}</span>
                     {% else %}
-                      <span class="text-muted">—</span>
+                      <span class="campaign-name">Ad {{ ad.ad_id }}</span>
                     {% endif %}
-                    <br><small class="text-muted font-monospace">{{ ad.ad_id }}</small>
+                    <br><small style="color:#8a93a2; font-size:11px;">ID: {{ ad.ad_id }}</small>
                   </td>
-                  <!-- 3: campaign -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle;"><small class="text-muted">{{ ad.campaign_name }}</small></td>
-                  <!-- 4: ad group -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle;"><small class="text-muted">{{ ad.ad_group_name }}</small></td>
-                  <!-- 5: status -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle;">
-                    {% if ad.status == 'ENABLED' %}<span class="badge bg-success">Active</span>
-                    {% elif ad.status == 'PAUSED' %}<span class="badge bg-secondary">Paused</span>
-                    {% else %}<span class="badge bg-danger">{{ ad.status }}</span>{% endif %}
+                  <!-- Campaign -->
+                  <td data-col="campaign">{{ ad.campaign_name }}</td>
+                  <!-- Ad Group -->
+                  <td data-col="ad-group">{{ ad.ad_group_name }}</td>
+                  <!-- Ad type -->
+                  <td data-col="ad-type">
+                    {% if ad.ad_type == 'RESPONSIVE_SEARCH_AD' %}RSA
+                    {% elif ad.ad_type == 'EXPANDED_TEXT_AD' %}ETA
+                    {% elif ad.ad_type == 'RESPONSIVE_DISPLAY_AD' %}RDA
+                    {% else %}{{ ad.ad_type }}{% endif %}
                   </td>
-                  <!-- 6: ad type -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle;">
-                    {% if ad.ad_type == 'RESPONSIVE_SEARCH_AD' %}<span class="text-muted small">RSA</span>
-                    {% elif ad.ad_type == 'EXPANDED_TEXT_AD' %}<span class="text-muted small">ETA</span>
-                    {% elif ad.ad_type == 'RESPONSIVE_DISPLAY_AD' %}<span class="text-muted small">RDA</span>
-                    {% else %}<span class="text-muted small">{{ ad.ad_type }}</span>{% endif %}
-                  </td>
-                  <!-- 7: cost -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">${{ "{:,.2f}".format(ad.cost or 0) }}</td>
-                  <!-- 8: conv value -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">${{ "{:,.2f}".format(ad.conversions_value or 0) }}</td>
-                  <!-- 9: conversions -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{{ "{:.1f}".format(ad.conversions or 0) }}</td>
-                  <!-- 10: conv value/cost (ROAS) -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">
+                  <!-- Cost -->
+                  <td class="right-align" data-col="cost">${{ "{:,.2f}".format(ad.cost or 0) }}</td>
+                  <!-- Conv. value -->
+                  <td class="right-align" data-col="conv-value">${{ "{:,.2f}".format(ad.conversions_value or 0) }}</td>
+                  <!-- Conv. value/cost -->
+                  <td class="right-align" data-col="conv-value-cost">
                     {% if ad.conv_value_per_cost is not none %}
-                      <span class="{% if ad.conv_value_per_cost >= 3 %}text-success{% elif ad.conv_value_per_cost >= 2 %}text-warning{% else %}text-danger{% endif %} fw-bold">{{ "{:.2f}".format(ad.conv_value_per_cost) }}x</span>
-                    {% else %}<span class="text-muted">—</span>{% endif %}
+                      <span class="{{ 'roas-high' if ad.conv_value_per_cost >= 3 else ('roas-medium' if ad.conv_value_per_cost >= 2 else 'roas-low') }}">{{ "{:.2f}".format(ad.conv_value_per_cost) }}x</span>
+                    {% else %}—{% endif %}
                   </td>
-                  <!-- 11: cost/conv -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ad.cpa is not none %}${{ "{:.2f}".format(ad.cpa) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                  <!-- 12: conv rate -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ad.conv_rate is not none %}{{ "{:.2f}".format(ad.conv_rate * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                  <!-- 13: all conv -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ad.all_conversions is not none %}{{ "{:.1f}".format(ad.all_conversions) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                  <!-- 14: cost/all conv -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ad.cost_per_all_conv is not none %}${{ "{:.2f}".format(ad.cost_per_all_conv) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                  <!-- 15: all conv rate -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ad.all_conv_rate is not none %}{{ "{:.2f}".format(ad.all_conv_rate * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                  <!-- 16: all conv value -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ad.all_conversions_value is not none %}${{ "{:,.2f}".format(ad.all_conversions_value) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                  <!-- 17: all conv value/cost -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ad.all_conv_value_per_cost is not none %}{{ "{:.2f}".format(ad.all_conv_value_per_cost) }}x{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                  <!-- 18: impressions -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{{ "{:,}".format((ad.impressions or 0)|int) }}</td>
-                  <!-- 19: clicks -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{{ "{:,}".format((ad.clicks or 0)|int) }}</td>
-                  <!-- 20: avg cpc -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ad.avg_cpc is not none %}${{ "{:.2f}".format(ad.avg_cpc) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                  <!-- 21: ctr -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right;">{% if ad.ctr is not none %}{{ "{:.2f}".format(ad.ctr * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                  <!-- 22: ad strength — progress bar -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; min-width:160px;">
+                  <!-- Conversions -->
+                  <td class="right-align" data-col="conversions">{{ "{:.1f}".format(ad.conversions or 0) }}</td>
+                  <!-- Cost/conv -->
+                  <td class="right-align" data-col="cost-conv">
+                    {% if ad.cpa is not none %}${{ "{:.2f}".format(ad.cpa) }}{% else %}—{% endif %}
+                  </td>
+                  <!-- Conv. rate -->
+                  <td class="right-align" data-col="conv-rate">
+                    {% if ad.conv_rate is not none %}{{ "{:.2f}".format(ad.conv_rate * 100) }}%{% else %}—{% endif %}
+                  </td>
+                  <!-- Impr -->
+                  <td class="right-align" data-col="impr">{{ "{:,}".format((ad.impressions or 0)|int) }}</td>
+                  <!-- Clicks -->
+                  <td class="right-align" data-col="clicks">{{ "{:,}".format((ad.clicks or 0)|int) }}</td>
+                  <!-- Avg. CPC -->
+                  <td class="right-align" data-col="cpc">
+                    {% if ad.avg_cpc is not none %}${{ "{:.2f}".format(ad.avg_cpc) }}{% else %}—{% endif %}
+                  </td>
+                  <!-- CTR -->
+                  <td class="right-align" data-col="ctr">
+                    {% if ad.ctr is not none %}{{ "{:.2f}".format(ad.ctr * 100) }}%{% else %}—{% endif %}
+                  </td>
+                  <!-- Ad strength -->
+                  <td data-col="ad-strength">
                     {% if ad.ad_strength == 'EXCELLENT' %}
-                      <div class="d-flex align-items-center gap-2">
-                        <div class="progress flex-grow-1" style="height:8px;"><div class="progress-bar bg-success" style="width:100%"></div></div>
-                        <span class="text-success small fw-bold" style="width:70px;">Excellent</span>
+                      <div class="ad-strength-wrapper">
+                        <div class="ad-strength-bar"><div class="ad-strength-fill excellent" style="width:100%"></div></div>
+                        <span class="ad-strength-text" style="color:#34A853; font-weight:500;">Excellent</span>
                       </div>
                     {% elif ad.ad_strength == 'GOOD' %}
-                      <div class="d-flex align-items-center gap-2">
-                        <div class="progress flex-grow-1" style="height:8px;"><div class="progress-bar bg-primary" style="width:75%"></div></div>
-                        <span class="text-primary small fw-bold" style="width:70px;">Good</span>
+                      <div class="ad-strength-wrapper">
+                        <div class="ad-strength-bar"><div class="ad-strength-fill good" style="width:75%"></div></div>
+                        <span class="ad-strength-text" style="color:#1a73e8; font-weight:500;">Good</span>
                       </div>
                     {% elif ad.ad_strength == 'AVERAGE' %}
-                      <div class="d-flex align-items-center gap-2">
-                        <div class="progress flex-grow-1" style="height:8px;"><div class="progress-bar bg-warning" style="width:50%"></div></div>
-                        <span class="text-warning small fw-bold" style="width:70px;">Average</span>
+                      <div class="ad-strength-wrapper">
+                        <div class="ad-strength-bar"><div class="ad-strength-fill average" style="width:50%"></div></div>
+                        <span class="ad-strength-text" style="color:#FBBC05; font-weight:500;">Average</span>
                       </div>
                     {% elif ad.ad_strength == 'POOR' %}
-                      <div class="d-flex align-items-center gap-2">
-                        <div class="progress flex-grow-1" style="height:8px;"><div class="progress-bar bg-danger" style="width:25%"></div></div>
-                        <span class="text-danger small fw-bold" style="width:70px;">Poor</span>
+                      <div class="ad-strength-wrapper">
+                        <div class="ad-strength-bar"><div class="ad-strength-fill poor" style="width:25%"></div></div>
+                        <span class="ad-strength-text" style="color:#EA4335; font-weight:500;">Poor</span>
                       </div>
                     {% elif ad.ad_strength == 'PENDING' %}
-                      <div class="d-flex align-items-center gap-2">
-                        <div class="progress flex-grow-1" style="height:8px;"><div class="progress-bar bg-secondary" style="width:10%"></div></div>
-                        <span class="text-secondary small" style="width:70px;">Pending</span>
+                      <div class="ad-strength-wrapper">
+                        <div class="ad-strength-bar"><div class="ad-strength-fill pending" style="width:10%"></div></div>
+                        <span class="ad-strength-text" style="color:#9e9e9e;">Pending</span>
                       </div>
-                    {% else %}
-                      <span class="text-muted small">N/A</span>
-                    {% endif %}
+                    {% else %}—{% endif %}
                   </td>
-                  <!-- 23: final url -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle;">
-                    {% if ad.final_url %}<small><a href="{{ ad.final_url }}" target="_blank" class="text-muted text-truncate d-inline-block" style="max-width:180px;">{{ ad.final_url }}</a></small>
-                    {% else %}<span class="text-muted">—</span>{% endif %}
+                  <!-- Hidden: All conv. -->
+                  <td class="right-align col-hidden" data-col="all-conv">
+                    {% if ad.all_conversions is not none %}{{ "{:.1f}".format(ad.all_conversions) }}{% else %}—{% endif %}
                   </td>
-                  <!-- 24: actions -->
-                  <td style="padding:7px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:center;">
+                  <!-- Hidden: Cost/all conv -->
+                  <td class="right-align col-hidden" data-col="cost-all-conv">
+                    {% if ad.cost_per_all_conv is not none %}${{ "{:.2f}".format(ad.cost_per_all_conv) }}{% else %}—{% endif %}
+                  </td>
+                  <!-- Hidden: All conv. rate -->
+                  <td class="right-align col-hidden" data-col="all-conv-rate">
+                    {% if ad.all_conv_rate is not none %}{{ "{:.2f}".format(ad.all_conv_rate * 100) }}%{% else %}—{% endif %}
+                  </td>
+                  <!-- Hidden: All conv. value -->
+                  <td class="right-align col-hidden" data-col="all-conv-value">
+                    {% if ad.all_conversions_value is not none %}${{ "{:,.2f}".format(ad.all_conversions_value) }}{% else %}—{% endif %}
+                  </td>
+                  <!-- Hidden: All conv. value/cost -->
+                  <td class="right-align col-hidden" data-col="all-conv-value-cost">
+                    {% if ad.all_conv_value_per_cost is not none %}{{ "{:.2f}".format(ad.all_conv_value_per_cost) }}x{% else %}—{% endif %}
+                  </td>
+                  <!-- Hidden: Final URL -->
+                  <td class="col-hidden" data-col="final-url">
+                    {% if ad.final_url %}
+                      <a href="{{ ad.final_url }}" target="_blank" style="color:#1a73e8; text-decoration:none;">{{ ad.final_url[:60] }}{% if ad.final_url|length > 60 %}...{% endif %}</a>
+                    {% else %}—{% endif %}
+                  </td>
+                  <!-- Actions -->
+                  <td class="actions-cell" data-col="actions">
                     <div class="dropdown">
-                      <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                      <button class="actions-btn" type="button" data-bs-toggle="dropdown">Actions &#9660;</button>
                       <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2"></i>Edit Ad</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-pause-circle me-2"></i>Pause</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-graph-up me-2"></i>View Performance</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-eye me-2"></i>Preview</a></li>
+                        <li><a class="dropdown-item" href="#">View ad preview</a></li>
+                        <li><a class="dropdown-item" href="#">Edit ad</a></li>
+                        <li><a class="dropdown-item" href="#">{{ 'Pause' if ad.status == 'ENABLED' else 'Enable' }} ad</a></li>
+                        <li><a class="dropdown-item" href="#">Copy ad</a></li>
+                        <li><a class="dropdown-item" href="#">View performance</a></li>
                       </ul>
                     </div>
                   </td>
                 </tr>
                 {% endfor %}
-              {% else %}
-                <tr><td colspan="24" class="text-center text-muted py-4"><i class="bi bi-inbox" style="font-size:2rem;"></i><p class="mt-2 mb-0">No ads found</p></td></tr>
-              {% endif %}
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
 
-        <div class="card-footer">
-          <div class="row align-items-center">
-            <div class="col-md-4"><small class="text-muted">Showing {{ (page-1)*per_page + 1 }}–{{ [page*per_page, total_ads]|min }} of {{ total_ads }}</small></div>
-            <div class="col-md-4 text-center">
-              <div class="btn-group btn-group-sm">
-                {% for n in [10, 25, 50, 100] %}
-                  <a href="/ads?page=1&per_page={{ n }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}" class="btn {% if per_page == n %}btn-primary{% else %}btn-outline-secondary{% endif %}">{{ n }}</a>
-                {% endfor %}
-              </div>
+          <!-- Pagination -->
+          <div class="pagination">
+            <div class="pagination-info">
+              Showing {{ (page-1)*per_page + 1 }}-{{ [page*per_page, total_ads]|min }} of {{ total_ads }} ads
             </div>
-            <div class="col-md-4">
-              <nav>
-                <ul class="pagination pagination-sm justify-content-end mb-0">
-                  <li class="page-item {% if page == 1 %}disabled{% endif %}"><a class="page-link" href="/ads?page={{ page-1 }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}">Previous</a></li>
-                  {% for p in range(1, total_pages+1) %}
-                    {% if p == page or (p >= page-2 and p <= page+2) or p == 1 or p == total_pages %}
-                      <li class="page-item {% if p == page %}active{% endif %}"><a class="page-link" href="/ads?page={{ p }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}">{{ p }}</a></li>
-                    {% endif %}
-                  {% endfor %}
-                  <li class="page-item {% if page == total_pages %}disabled{% endif %}"><a class="page-link" href="/ads?page={{ page+1 }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}">Next</a></li>
-                </ul>
-              </nav>
+            <div class="pagination-controls">
+              {% if page > 1 %}
+                <a href="/ads?page={{ page-1 }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}"><button>Previous</button></a>
+              {% else %}
+                <button disabled>Previous</button>
+              {% endif %}
+              {% for p in range(1, total_pages + 1) %}
+                {% if p == page %}
+                  <button class="active">{{ p }}</button>
+                {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+                  <a href="/ads?page={{ p }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}"><button>{{ p }}</button></a>
+                {% elif p == page - 3 or p == page + 3 %}
+                  <button disabled>...</button>
+                {% endif %}
+              {% endfor %}
+              {% if page < total_pages %}
+                <a href="/ads?page={{ page+1 }}&per_page={{ per_page }}&sort_by={{ sort_by }}&sort_dir={{ sort_dir }}&status={{ status }}"><button>Next</button></a>
+              {% else %}
+                <button disabled>Next</button>
+              {% endif %}
             </div>
           </div>
-        </div>
-      </div>
 
-      {% include 'components/rules_card.html' %}
+      {% else %}
+        <!-- Empty State -->
+        <div class="card">
+          <div class="card-body text-center py-5">
+            <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+            <h5 class="mt-3 mb-2">No Ads Found</h5>
+            <p class="text-muted mb-4">
+              No ads found for the selected date range.<br>
+              Data will appear once ads are synced from Google Ads.
+            </p>
+          </div>
+        </div>
+      {% endif %}
+
     </div>
 
     <!-- RULES TAB -->
@@ -424,13 +472,16 @@
 
     <!-- RECOMMENDATIONS TAB -->
     <div class="tab-pane fade" id="recommendations-tab" role="tabpanel">
-      
-      {# ── WARNING EMPTY STATE (shown when 0 recommendations) ───────────────────── #}
-      <div id="ad-empty-state" class="alert alert-warning text-center p-5" style="display: none;">
-        <i class="bi bi-exclamation-triangle" style="font-size: 48px; color: #ffc107;"></i>
-        <h4 class="mt-3">Ads Recommendations Not Available</h4>
-        <p class="mb-2">The <code>analytics.ad_daily</code> table does not exist in the database.</p>
-        <p class="text-muted">Ad rules (ad_1, ad_2, ad_3, ad_4) are configured and ready, but cannot generate recommendations until this analytics table is added to the data layer. This is a known limitation from Chat 47 and will be resolved in future work.</p>
+
+      {# ── EMPTY STATE (shown when 0 recommendations) ───────────────────────────── #}
+      <div id="ad-empty-state" class="alert alert-info text-center p-5" style="display: none;">
+        <i class="bi bi-info-circle" style="font-size: 48px; color: #0dcaf0;"></i>
+        <h4 class="mt-3">No Ad Recommendations</h4>
+        <p class="mb-2">Ad rules are enabled but conditions have not yet been met in the current data. This is normal and not an error.</p>
+        <p class="text-muted mb-4">The recommendations engine checks ad performance against rule conditions. When conditions are met, recommendations will appear here.</p>
+        <button class="btn btn-primary" id="ad-run-engine-btn">
+          <i class="bi bi-play-circle"></i> Run Recommendations Now
+        </button>
       </div>
 
       {# ── SUMMARY STRIP (hidden when empty) ────────────────────────────────────── #}
@@ -567,12 +618,200 @@
   </div>
 </div>
 
+<!-- Column Selector Modal Overlay -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeColumnSelector()"></div>
+
+<!-- Column Selector Modal -->
+<div class="column-selector-modal" id="columnSelector">
+  <div class="modal-header">
+    <h3>Select columns</h3>
+    <button class="modal-close" onclick="closeColumnSelector()">&times;</button>
+  </div>
+  <div class="modal-body">
+
+    <div class="column-group">
+      <h4>Default columns (always visible)</h4>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-status" checked disabled>
+        <label for="col-status">Status</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-ad" checked disabled>
+        <label for="col-ad">Ad</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-actions" checked disabled>
+        <label for="col-actions">Actions</label>
+      </div>
+    </div>
+
+    <div class="column-group">
+      <h4>Performance metrics (currently visible)</h4>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-campaign" checked data-col="campaign">
+        <label for="col-campaign">Campaign</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-ad-group" checked data-col="ad-group">
+        <label for="col-ad-group">Ad Group</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-ad-type" checked data-col="ad-type">
+        <label for="col-ad-type">Ad type</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-cost" checked data-col="cost">
+        <label for="col-cost">Cost</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-conv-value" checked data-col="conv-value">
+        <label for="col-conv-value">Conv. value</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-conv-value-cost" checked data-col="conv-value-cost">
+        <label for="col-conv-value-cost">ROAS</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-conversions" checked data-col="conversions">
+        <label for="col-conversions">Conv</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-cost-conv" checked data-col="cost-conv">
+        <label for="col-cost-conv">Cost/conv</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-conv-rate" checked data-col="conv-rate">
+        <label for="col-conv-rate">Conv. rate</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-impr" checked data-col="impr">
+        <label for="col-impr">Impr</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-clicks" checked data-col="clicks">
+        <label for="col-clicks">Clicks</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-cpc" checked data-col="cpc">
+        <label for="col-cpc">Avg. CPC</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-ctr" checked data-col="ctr">
+        <label for="col-ctr">CTR</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-ad-strength" checked data-col="ad-strength">
+        <label for="col-ad-strength">Ad strength</label>
+      </div>
+    </div>
+
+    <div class="column-group">
+      <h4>Additional metrics (hidden)</h4>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-all-conv" data-col="all-conv">
+        <label for="col-all-conv">All conv.</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-cost-all-conv" data-col="cost-all-conv">
+        <label for="col-cost-all-conv">Cost/all conv</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-all-conv-rate" data-col="all-conv-rate">
+        <label for="col-all-conv-rate">All conv. rate</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-all-conv-value" data-col="all-conv-value">
+        <label for="col-all-conv-value">All conv. value</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-all-conv-value-cost" data-col="all-conv-value-cost">
+        <label for="col-all-conv-value-cost">All conv. value/cost</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-final-url" data-col="final-url">
+        <label for="col-final-url">Final URL</label>
+      </div>
+    </div>
+
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" onclick="closeColumnSelector()">Cancel</button>
+    <button class="btn btn-primary" onclick="applyColumns()">Apply</button>
+  </div>
+</div>
+
 {% include 'components/rules_sidebar.html' %}
 {% endblock %}
 
-
 {% block extra_js %}
 <script>
+// ── CSRF Token ───────────────────────────────────────────────────────────────
+function getCSRFToken() {
+  return document.querySelector('meta[name="csrf-token"]').content;
+}
+
+// ── M4: Column Selector ─────────────────────────────────────────────────────
+function openColumnSelector() {
+  document.getElementById('modalOverlay').classList.add('show');
+  document.getElementById('columnSelector').classList.add('show');
+}
+
+function closeColumnSelector() {
+  document.getElementById('modalOverlay').classList.remove('show');
+  document.getElementById('columnSelector').classList.remove('show');
+}
+
+function applyColumns() {
+  var checkboxes = document.querySelectorAll('#columnSelector input[data-col]');
+  var visible = [];
+  checkboxes.forEach(function(checkbox) {
+    var colName = checkbox.dataset.col;
+    var isChecked = checkbox.checked;
+    var elements = document.querySelectorAll('[data-col="' + colName + '"]');
+    elements.forEach(function(el) {
+      if (isChecked) {
+        el.classList.remove('col-hidden');
+      } else {
+        el.classList.add('col-hidden');
+      }
+    });
+    if (isChecked) {
+      visible.push(colName);
+    }
+  });
+  // Persist to Flask session
+  fetch('/ads/save-columns', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken()
+    },
+    body: JSON.stringify({ visible: visible })
+  });
+  closeColumnSelector();
+}
+
+// Apply saved column visibility on page load
+(function() {
+  var saved = {{ saved_columns | tojson }};
+  if (saved !== null && Array.isArray(saved)) {
+    var checkboxes = document.querySelectorAll('#columnSelector input[data-col]');
+    checkboxes.forEach(function(checkbox) {
+      var colName = checkbox.dataset.col;
+      var isVisible = saved.indexOf(colName) !== -1;
+      checkbox.checked = isVisible;
+      var elements = document.querySelectorAll('[data-col="' + colName + '"]');
+      elements.forEach(function(el) {
+        if (isVisible) {
+          el.classList.remove('col-hidden');
+        } else {
+          el.classList.add('col-hidden');
+        }
+      });
+    });
+  }
+})();
+
 // ===========================================================================
 // RECOMMENDATIONS TAB - STATUS TAB SWITCHING
 // ===========================================================================
@@ -608,74 +847,54 @@ async function adFetchRecommendations() {
   try {
     const response = await fetch('/recommendations/cards');
     const data = await response.json();
-    
+
     if (!data) {
       console.log('No data returned from server');
       return;
     }
-    
+
     // API returns data already grouped by status
-    // Filter each status array for ad_group entity type only
-    adRecommendations.pending = (data.pending || []).filter(r => r.entity_type === "ad");
-    adRecommendations.monitoring = (data.monitoring || []).filter(r => r.entity_type === "ad");
-    adRecommendations.successful = (data.successful || []).filter(r => r.entity_type === "ad");
-    adRecommendations.reverted = (data.reverted || []).filter(r => r.entity_type === "ad");
-    adRecommendations.declined = (data.declined || []).filter(r => r.entity_type === "ad");
-    
-    // Calculate totals for logging
-    const totalAdGroup = adRecommendations.pending.length + 
-                         adRecommendations.monitoring.length + 
-                         adRecommendations.successful.length + 
-                         adRecommendations.reverted.length + 
-                         adRecommendations.declined.length;
-    
-    console.log(`Total ad recommendations: ${totalAdGroup}`);
-    console.log(`  Pending: ${adRecommendations.pending.length}`);
-    console.log(`  Monitoring: ${adRecommendations.monitoring.length}`);
-    console.log(`  Successful: ${adRecommendations.successful.length}`);
-    console.log(`  Reverted: ${adRecommendations.reverted.length}`);
-    console.log(`  Declined: ${adRecommendations.declined.length}`);
-    
-    // ═══════════════════════════════════════════════════════════════════════
-    // EMPTY STATE DETECTION LOGIC
-    // ═══════════════════════════════════════════════════════════════════════
-    if (totalAdGroup === 0) {
-      // Show empty state, hide summary/tabs
+    // Filter each status array for ad entity type only
+    adRecommendations.pending = (data.pending || []).filter(r => r.entity_type === 'ad');
+    adRecommendations.monitoring = (data.monitoring || []).filter(r => r.entity_type === 'ad');
+    adRecommendations.successful = (data.successful || []).filter(r => r.entity_type === 'ad');
+    adRecommendations.reverted = (data.reverted || []).filter(r => r.entity_type === 'ad');
+    adRecommendations.declined = (data.declined || []).filter(r => r.entity_type === 'ad');
+
+    // Calculate totals
+    const totalAd = adRecommendations.pending.length +
+                    adRecommendations.monitoring.length +
+                    adRecommendations.successful.length +
+                    adRecommendations.reverted.length +
+                    adRecommendations.declined.length;
+
+    if (totalAd === 0) {
       const emptyState = document.getElementById('ad-empty-state');
       const summaryStrip = document.getElementById('ad-summary-strip');
       const statusTabs = document.getElementById('ad-status-tabs');
-      
+
       if (emptyState) emptyState.style.display = 'block';
       if (summaryStrip) summaryStrip.style.display = 'none';
       if (statusTabs) statusTabs.style.display = 'none';
-      
-      console.log('Empty state: No ad_group recommendations found');
     } else {
-      // Hide empty state, show summary/tabs
       const emptyState = document.getElementById('ad-empty-state');
       const summaryStrip = document.getElementById('ad-summary-strip');
       const statusTabs = document.getElementById('ad-status-tabs');
-      
+
       if (emptyState) emptyState.style.display = 'none';
       if (summaryStrip) summaryStrip.style.display = '';
       if (statusTabs) statusTabs.style.display = '';
-      
-      // Update summary counts
+
       adUpdateSummaryCounts();
-      
-      // Update tab badge counts
       adUpdateTabBadges();
-      
-      // Render all cards
       adRenderAllCards();
-      
-      console.log('Recommendations fetched and counts updated');
     }
-    
+
   } catch (error) {
     console.error('Error fetching recommendations:', error);
   }
 }
+
 // Update summary strip counts
 function adUpdateSummaryCounts() {
   const counts = {
@@ -685,14 +904,12 @@ function adUpdateSummaryCounts() {
     reverted: adRecommendations.reverted.length,
     declined: adRecommendations.declined.length
   };
-  
-  // Update each summary card
+
   for (const [status, count] of Object.entries(counts)) {
     const el = document.getElementById(`ad-summary-${status}`);
     if (el) el.textContent = count;
   }
-  
-  // Update main tab badge (total count)
+
   const totalCount = Object.values(counts).reduce((sum, count) => sum + count, 0);
   const mainBadge = document.getElementById('ad-total-count');
   if (mainBadge) mainBadge.textContent = totalCount;
@@ -707,7 +924,7 @@ function adUpdateTabBadges() {
     reverted: adRecommendations.reverted.length,
     declined: adRecommendations.declined.length
   };
-  
+
   for (const [status, count] of Object.entries(counts)) {
     const badge = document.getElementById(`ad-tab-badge-${status}`);
     if (badge) badge.textContent = count;
@@ -718,23 +935,19 @@ function adUpdateTabBadges() {
 // RECOMMENDATIONS TAB - CARD RENDERING
 // ===========================================================================
 
-// Render all status tabs
 function adRenderAllCards() {
   AD_TABS.forEach(status => adRenderCards(status));
 }
 
-// Render cards for a specific status - SHOW ALL CARDS (no Load More for Shopping)
 function adRenderCards(status) {
   const recs = adRecommendations[status];
   const container = document.getElementById(`ad-cards-${status}`);
   const emptyState = document.getElementById(`ad-empty-${status}`);
-  
+
   if (!container) return;
-  
-  // Clear container
+
   container.innerHTML = '';
-  
-  // Show all cards (no pagination for 126 shopping recommendations)
+
   if (recs.length === 0) {
     if (emptyState) emptyState.style.display = '';
   } else {
@@ -746,15 +959,13 @@ function adRenderCards(status) {
   }
 }
 
-
 function adBuildCard(rec, status) {
   const isMonitoring = status === 'monitoring';
   const isSuccessful = status === 'successful';
   const isDeclined = status === 'declined';
   const isReverted = status === 'reverted';
   const isPending = status === 'pending';
-  
-  // Top bar color
+
   let topBarClass = 'rt-budget';
   if (rec.rule_type === 'bid_target') topBarClass = 'rt-bid';
   else if (rec.rule_type === 'status') topBarClass = 'rt-status';
@@ -762,69 +973,58 @@ function adBuildCard(rec, status) {
   if (isSuccessful) topBarClass = 'rt-successful';
   if (isDeclined) topBarClass = 'rt-declined';
   if (isReverted) topBarClass = 'rt-reverted';
-  
-  // Card class
+
   let cardClass = 'rec-card';
   if (isMonitoring) cardClass += ' card-monitoring';
   if (isSuccessful) cardClass += ' card-success';
   if (isDeclined) cardClass += ' card-declined';
   if (isReverted) cardClass += ' card-reverted';
-  
-  // Rule type tag
+
   let ruleClass = 'rrt-budget';
   if (rec.rule_type === 'bid_target') ruleClass = 'rrt-bid';
   else if (rec.rule_type === 'status') ruleClass = 'rrt-status';
   if (isMonitoring) ruleClass = 'rrt-monitoring';
   if (isDeclined) ruleClass = 'rrt-declined';
   if (isReverted) ruleClass = 'rrt-reverted';
-  
-  // Status pill
+
   let statusPill = '';
   if (isPending) statusPill = '<span class="status-pill sp-pending">Pending</span>';
   if (isMonitoring) statusPill = '<span class="status-pill sp-monitoring">Monitoring</span>';
   if (isSuccessful) statusPill = '<span class="status-pill sp-successful">Successful</span>';
   if (isDeclined) statusPill = '<span class="status-pill sp-declined">Declined</span>';
   if (isReverted) statusPill = '<span class="status-pill sp-reverted">Reverted</span>';
-  
-  // Build card HTML
+
   let html = `<div class="${cardClass}" data-rec-id="${rec.rec_id}">`;
   html += `<div class="rec-top ${topBarClass}"></div>`;
   html += '<div class="rec-body">';
-  
-  // Header
+
   html += '<div class="rec-card-header">';
   html += '<div>';
   html += `<div class="rec-rule-tag ${ruleClass}">${rec.rule_type_display || rec.rule_type}</div>`;
-  html += `<div class="rec-campaign-name">${rec.entity_name || 'Keyword'}</div>`;
+  html += `<div class="rec-campaign-name">${rec.entity_name || 'Ad'}</div>`;
   if (rec.campaign_name) {
     html += `<div style="font-size:12px;color:#6b7280;margin-top:2px;">Campaign: ${rec.campaign_name}</div>`;
   }
   html += '</div>';
   html += statusPill;
   html += '</div>';
-  
-  // Change block
+
   html += adBuildChangeBlock(rec);
-  
-  // Trigger
+
   if (rec.trigger_summary && isPending) {
     html += `<div class="trigger-block"><div class="trigger-label">TRIGGER</div>${rec.trigger_summary}</div>`;
   }
-  
-  // Monitoring block
+
   if (isMonitoring) {
     html += adBuildMonitoringBlock(rec);
   }
 
-  
-  // Outcome block
   if (isSuccessful || isDeclined || isReverted) {
     html += adBuildOutcomeBlock(rec, status);
   }
-  
-  // Footer
+
   html += adBuildCardFooter(rec, status);
-  
+
   html += '</div></div>';
   return html;
 }
@@ -834,9 +1034,9 @@ function adBuildChangeBlock(rec) {
   let iconClass = 'ciw-budget';
   if (rec.rule_type === 'bid_target') { changeClass = 'cb-bid'; iconClass = 'ciw-bid'; }
   else if (rec.rule_type === 'status') { changeClass = 'cb-status'; iconClass = 'ciw-status'; }
-  
+
   let icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>';
-  
+
   let html = `<div class="change-block ${changeClass}">`;
   html += `<div class="change-icon-wrap ${iconClass}">${icon}</div>`;
   html += '<div style="flex:1;">';
@@ -851,12 +1051,11 @@ function adBuildChangeBlock(rec) {
   return html;
 }
 
-// Build monitoring block
 function adBuildMonitoringBlock(rec) {
   const daysElapsed = rec.monitoring_elapsed_days || 0;
   const totalDays = rec.monitoring_total_days || 7;
   const pct = Math.min(100, (daysElapsed / totalDays) * 100);
-  
+
   let html = '<div class="monitoring-block">';
   html += '<div class="mon-top">';
   html += '<div class="mon-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> MONITORING</div>';
@@ -870,13 +1069,12 @@ function adBuildMonitoringBlock(rec) {
   return html;
 }
 
-// Build outcome block
 function adBuildOutcomeBlock(rec, status) {
   let blockClass = 'ob-success';
   let titleClass = 'ot-success';
   let icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
   let title = 'Change Successful';
-  
+
   if (status === 'declined') {
     blockClass = 'ob-declined';
     titleClass = 'ot-declined';
@@ -888,7 +1086,7 @@ function adBuildOutcomeBlock(rec, status) {
     icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>';
     title = 'Change Reverted';
   }
-  
+
   let html = `<div class="outcome-block ${blockClass}">`;
   html += icon;
   html += '<div style="flex:1;">';
@@ -903,30 +1101,26 @@ function adBuildOutcomeBlock(rec, status) {
   return html;
 }
 
-// Build card footer
 function adBuildCardFooter(rec, status) {
   const isPending = status === 'pending';
   const isMonitoring = status === 'monitoring';
-  
+
   let html = '<div class="rec-footer">';
   html += '<div class="rec-footer-meta">';
-  
-  // Confidence badge (pending only)
+
   if (isPending && rec.confidence) {
     let confClass = 'cb-high';
     if (rec.confidence === 'medium') confClass = 'cb-med';
     else if (rec.confidence === 'low') confClass = 'cb-low';
     html += `<span class="conf-badge ${confClass}">${rec.confidence} confidence</span>`;
   }
-  
-  // Age
+
   if (rec.generated_at) {
     html += `<span class="rec-age">${rec.generated_at}</span>`;
   }
-  
+
   html += '</div>';
-  
-  // Actions
+
   if (isPending) {
     html += '<div class="rec-footer-actions">';
     html += `<button class="btn-accept" onclick="adAcceptRec('${rec.rec_id}', this)">`;
@@ -940,7 +1134,7 @@ function adBuildCardFooter(rec, status) {
   } else {
     html += '<div class="readonly-label">Read-only</div>';
   }
-  
+
   html += '</div>';
   return html;
 }
@@ -950,25 +1144,23 @@ function adBuildCardFooter(rec, status) {
 // ===========================================================================
 async function adAcceptRec(recId, btn) {
   if (!confirm('Accept this recommendation?')) return;
-  
+
   btn.disabled = true;
   btn.textContent = 'Processing...';
-  
+
   try {
     const response = await fetch(`/recommendations/${recId}/accept`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     });
-    
+
     const data = await response.json();
-    
+
     if (data.success) {
-      // Remove card with animation
       const card = btn.closest('.rec-card');
       if (card) {
         card.classList.add('removing');
         setTimeout(() => {
-          // Remove from data and re-render
           adRecommendations.pending = adRecommendations.pending.filter(r => r.rec_id !== recId);
           adUpdateSummaryCounts();
           adUpdateTabBadges();
@@ -991,25 +1183,23 @@ async function adAcceptRec(recId, btn) {
 
 async function adDeclineRec(recId, btn) {
   if (!confirm('Decline this recommendation?')) return;
-  
+
   btn.disabled = true;
   btn.textContent = 'Processing...';
-  
+
   try {
     const response = await fetch(`/recommendations/${recId}/decline`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     });
-    
+
     const data = await response.json();
-    
+
     if (data.success) {
-      // Remove card with animation
       const card = btn.closest('.rec-card');
       if (card) {
         card.classList.add('removing');
         setTimeout(() => {
-          // Remove from data and re-render
           adRecommendations.pending = adRecommendations.pending.filter(r => r.rec_id !== recId);
           adUpdateSummaryCounts();
           adUpdateTabBadges();
@@ -1032,20 +1222,19 @@ async function adDeclineRec(recId, btn) {
 
 // Show toast notification
 function adShowToast(message, type) {
-  // Check if toast container exists, create if not
   let toastWrap = document.getElementById('act-toast-wrap');
   if (!toastWrap) {
     toastWrap = document.createElement('div');
     toastWrap.id = 'act-toast-wrap';
     document.body.appendChild(toastWrap);
   }
-  
+
   const toast = document.createElement('div');
   toast.className = `act-toast t-${type}`;
   toast.textContent = message;
-  
+
   toastWrap.appendChild(toast);
-  
+
   setTimeout(() => {
     toast.style.opacity = '0';
     setTimeout(() => toast.remove(), 300);
@@ -1053,28 +1242,8 @@ function adShowToast(message, type) {
 }
 
 // Fetch recommendations when page loads
-if (document.getElementById("ad-tab-pending")) {
-  adFetchRecommendations();
-}
-
-// Fetch recommendations when page loads
 if (document.getElementById('ad-tab-pending')) {
   adFetchRecommendations();
-}
-</script>
-
-<script>
-document.getElementById('select-all')?.addEventListener('change', function() {
-  document.querySelectorAll('.ad-checkbox').forEach(cb => cb.checked = this.checked);
-  toggleBulkEdit();
-});
-document.querySelectorAll('.ad-checkbox').forEach(cb => cb.addEventListener('change', toggleBulkEdit));
-function toggleBulkEdit() {
-  const n = document.querySelectorAll('.ad-checkbox:checked').length;
-  const btn = document.getElementById('bulk-edit-btn');
-  const span = document.getElementById('bulk-count');
-  if (btn) btn.style.display = n > 0 ? 'inline-block' : 'none';
-  if (span) span.textContent = n;
 }
 </script>
 {% endblock %}

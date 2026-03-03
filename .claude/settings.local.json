@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(pkill:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(python:*)"
     ]
   }
 }
