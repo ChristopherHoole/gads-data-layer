@@ -6,7 +6,7 @@ M4: SQL-side sort, filter, pagination. Full 26-column spec per wireframe.
 Chat 41: M5 Rules tab rollout - using campaigns.py pattern (get_rules_for_page + count_rules_by_category)
 """
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, session, jsonify
 from act_dashboard.auth import login_required
 from act_dashboard.routes.shared import get_page_context, get_db_connection, get_date_range_from_session, get_metrics_collapsed, get_chart_metrics, get_performance_data
 from act_dashboard.routes.rule_helpers import get_rules_for_page, count_rules_by_category
@@ -584,4 +584,24 @@ def ad_groups():
         metrics_collapsed=get_metrics_collapsed('ad_groups'),
         chart_data=chart_data,
         active_metrics=get_chart_metrics('ad_groups'),
+        # M4: Saved column visibility
+        saved_columns=session.get('ad_groups_columns', None),
     )
+
+
+@bp.route("/ad-groups/save-columns", methods=['POST'])
+@login_required
+def save_columns():
+    """
+    POST /ad-groups/save-columns
+    Body JSON: { visible: ["cost", "conv-value", ...] }
+    Stores visible column list in session['ad_groups_columns'].
+    """
+    data = request.get_json(silent=True) or {}
+    visible = data.get('visible', [])
+
+    if not isinstance(visible, list):
+        return jsonify({'success': False, 'error': 'visible must be a list'}), 400
+
+    session['ad_groups_columns'] = visible
+    return jsonify({'success': True, 'columns': visible})
