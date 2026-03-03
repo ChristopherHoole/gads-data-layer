@@ -1,345 +1,695 @@
 {#
-  performance_chart macro — Dashboard 3.0 M3
-  Chat 24 | 2026-02-20
+  performance_chart macro — Module 3: Google Ads Chart Design
+  Chat 55 | 2026-03-02
 
   Usage:
     {% from "macros/performance_chart.html" import performance_chart %}
     {{ performance_chart(chart_data, active_metrics, page_id) }}
 
   Args:
-    chart_data     : dict with keys: dates, cost, impressions, clicks, avg_cpc
-                     Each metric key maps to:
-                       { values: [...], total: float, change_pct: float|None, axis: 'y1'|'y2' }
-    active_metrics : list of active metric keys e.g. ['cost', 'clicks']
+    chart_data     : dict with keys: 
+                     - 'dates': ['Feb 1', 'Feb 2', ...] (formatted date labels)
+                     - 'metrics': { 'cost': [...], 'impressions': [...], ... } (10 metrics)
+    active_metrics : list of active metric keys e.g. ['cost', 'impressions']
     page_id        : string e.g. 'campaigns' — used for session key + JS chart instance id
+
+  Features:
+    - ACT logo color palette (Green, Yellow, Red, Blue)
+    - Dynamic 1-4 metric cards (based on session)
+    - Metrics selector modal
+    - Normalization for 3+ metrics (0-95% range)
+    - Axes hidden when 3+ metrics
+    - Line tooltips with real values
+    - Session persistence via /set-chart-metrics
 #}
 
 {% macro performance_chart(chart_data, active_metrics, page_id) %}
 
-{# ── Config ───────────────────────────────────────────────────────────────── #}
-{% set slots = [
-  {
-    'key':        'cost',
-    'label':      'Cost',
-    'axis':       'y1',
-    'axis_label': 'Y1 · $',
-    'axis_side':  'left',
-    'color':      '#dc3545',
-    'bg':         '#fff5f5',
-    'border':     '#dc3545',
-    'active_cls': 'pmc-active-cost',
-    'fmt':        'currency'
-  },
-  {
-    'key':        'impressions',
-    'label':      'Impressions',
-    'axis':       'y2',
-    'axis_label': 'Y2 · count',
-    'axis_side':  'right',
-    'color':      '#0d6efd',
-    'bg':         '#f0f4ff',
-    'border':     '#0d6efd',
-    'active_cls': 'pmc-active-impr',
-    'fmt':        'number'
-  },
-  {
-    'key':        'clicks',
-    'label':      'Clicks',
-    'axis':       'y2',
-    'axis_label': 'Y2 · count',
-    'axis_side':  'right',
-    'color':      '#198754',
-    'bg':         '#f0fff4',
-    'border':     '#198754',
-    'active_cls': 'pmc-active-clicks',
-    'fmt':        'number'
-  },
-  {
-    'key':        'avg_cpc',
-    'label':      'Avg CPC',
-    'axis':       'y1',
-    'axis_label': 'Y1 · $',
-    'axis_side':  'left',
-    'color':      '#fd7e14',
-    'bg':         '#fff8f0',
-    'border':     '#fd7e14',
-    'active_cls': 'pmc-active-cpc',
-    'fmt':        'currency'
-  }
+{# ── ACT Color Palette ────────────────────────────────────────────────────── #}
+{# Colors from A.C.T. logo - assigned by index (0-3), not by metric type #}
+{% set act_colors = ['#34A853', '#FBBC05', '#EA4335', '#4285F4'] %}
+
+{# ── Metric Configuration ─────────────────────────────────────────────────── #}
+{# All 10 available metrics with display labels #}
+{% set all_metrics = [
+  {'key': 'cost',          'label': 'Cost'},
+  {'key': 'impressions',   'label': 'Impressions'},
+  {'key': 'clicks',        'label': 'Clicks'},
+  {'key': 'avg_cpc',       'label': 'Avg CPC'},
+  {'key': 'conversions',   'label': 'Conversions'},
+  {'key': 'conv_value',    'label': 'Conv. Value'},
+  {'key': 'cost_per_conv', 'label': 'Cost/Conv.'},
+  {'key': 'conv_rate',     'label': 'Conv. Rate'},
+  {'key': 'ctr',           'label': 'CTR'},
+  {'key': 'roas',          'label': 'ROAS'}
 ] %}
 
-{# ── Formatting helper (Jinja) ────────────────────────────────────────────── #}
-{# Used for slot total display #}
-{# ── Unique chart ID per page ─────────────────────────────────────────────── #}
-{% set chart_id = 'pmcChart_' ~ page_id %}
-{% set wrapper_id = 'pmcWrapper_' ~ page_id %}
+{# ── Extract visible metrics from active_metrics list ─────────────────────── #}
+{% set visible_metrics = [] %}
+{% for metric in all_metrics %}
+  {% if metric.key in active_metrics %}
+    {% set _ = visible_metrics.append(metric) %}
+  {% endif %}
+{% endfor %}
 
-<div class="mb-4" id="{{ wrapper_id }}">
+{# ── IDs for JavaScript ───────────────────────────────────────────────────── #}
+{% set chart_canvas_id = 'actChart_' ~ page_id %}
+{% set modal_id = 'metricsModal_' ~ page_id %}
+{% set overlay_id = 'modalOverlay_' ~ page_id %}
 
-  {# ── Slot cards row ────────────────────────────────────────────────────── #}
-  <div class="row g-2 mb-2">
-    {% for slot in slots %}
-      {% set is_active = slot.key in active_metrics %}
-      {% set metric = chart_data.get(slot.key, {}) %}
-      {% set total = metric.get('total') %}
-      {% set chg = metric.get('change_pct') %}
-      <div class="col-3">
-        <div class="pmc-slot {% if is_active %}{{ slot.active_cls }}{% else %}pmc-inactive{% endif %}"
-             data-page="{{ page_id }}"
-             data-metric="{{ slot.key }}"
-             data-color="{{ slot.color }}"
-             data-axis="{{ slot.axis }}"
-             onclick="pmcToggleSlot(this)"
-             style="background:white;border:2px solid #e9ecef;border-radius:8px;padding:12px 16px;cursor:pointer;transition:all 0.15s ease;position:relative;user-select:none;{% if is_active %}border-color:{{ slot.border }};background:{{ slot.bg }};{% else %}opacity:0.5;{% endif %}">
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{# HEADER ROW: Metric Cards + Metrics Button                                  #}
+{# ══════════════════════════════════════════════════════════════════════════ #}
 
-          {# Active dot top-right #}
-          <div class="pmc-dot" style="position:absolute;top:10px;right:10px;width:10px;height:10px;border-radius:50%;background:{{ slot.color }};display:{% if is_active %}block{% else %}none{% endif %};"></div>
-
-          {# Axis badge bottom-right #}
-          <span style="position:absolute;bottom:8px;right:10px;font-size:9px;font-weight:700;letter-spacing:0.5px;padding:1px 5px;border-radius:4px;{% if slot.axis == 'y1' %}background:#f8d7da;color:#842029;{% else %}background:#cfe2ff;color:#084298;{% endif %}">{{ slot.axis_label }}</span>
-
-          <div style="font-size:11px;color:#6c757d;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">{{ slot.label }}</div>
-          {# Inline format total value — no nested macro (Jinja2 doesn't support them) #}
-          {% if total is none %}
-            {% set _fv = '—' %}
-          {% elif slot.fmt == 'currency' %}
-            {% if total >= 1000000 %}{% set _fv = '$' ~ "%.1f"|format(total / 1000000) ~ 'M' %}
-            {% elif total >= 1000 %}{% set _fv = '$' ~ "%.1f"|format(total / 1000) ~ 'k' %}
-            {% else %}{% set _fv = '$' ~ "%.2f"|format(total) %}{% endif %}
-          {% elif slot.fmt == 'number' %}
-            {% if total >= 1000000 %}{% set _fv = "%.2f"|format(total / 1000000) ~ 'M' %}
-            {% elif total >= 1000 %}{% set _fv = "%.1f"|format(total / 1000) ~ 'k' %}
-            {% else %}{% set _fv = "%d"|format(total) %}{% endif %}
+<div class="chart-header-row">
+  
+  {# ── Metric Boxes Container ─────────────────────────────────────────────── #}
+  <div class="metric-boxes">
+    {% for metric in visible_metrics %}
+      {# Color assigned by position in all_metrics list (not visible position) #}
+      {# This ensures each metric keeps its color even when others are hidden #}
+      {% set metric_index = namespace(value=-1) %}
+      {% for all_metric in all_metrics %}
+        {% if all_metric.key == metric.key %}
+          {% set metric_index.value = loop.index0 %}
+        {% endif %}
+      {% endfor %}
+      {% set color = act_colors[metric_index.value % 4] %}
+      
+      {# BACKWARD COMPATIBILITY: Support both old and new data structures #}
+      {% if chart_data.totals is defined %}
+        {# New structure (Dashboard, Campaigns): totals and change_pct at top level #}
+        {% set total = chart_data.totals.get(metric.key, 0) %}
+        {% set change = chart_data.change_pct.get(metric.key) %}
+      {% else %}
+        {# Old structure (Keywords, Ad Groups, Ads, Shopping): data nested in metric objects #}
+        {% set metric_data = chart_data.get(metric.key, {}) %}
+        {% set total = metric_data.get('total', 0) %}
+        {% set change = metric_data.get('change_pct') %}
+      {% endif %}
+      
+      <div class="metric-box active" 
+           data-metric="{{ metric.key }}"
+           data-page="{{ page_id }}"
+           style="background-color: {{ color }}; color: white; border-color: {{ color }};"
+           onclick="toggleMetricVisibility('{{ metric.key }}', '{{ page_id }}')">
+        
+        <div class="label">{{ metric.label }}</div>
+        <div class="value" id="metricValue_{{ metric.key }}_{{ page_id }}">
+          {{ format_metric_value(total, metric.key) }}
+        </div>
+        <div class="change">
+          {% if change is not none %}
+            {{ "↓" if change < 0 else "↑" }} {{ "%.1f"|format(change|abs) }}%
           {% else %}
-            {% set _fv = total|string %}
+            —
           {% endif %}
-          <div style="font-size:22px;font-weight:700;color:#212529;line-height:1.2;margin:2px 0;padding-bottom:18px;">{{ _fv }}</div>
-
-          {# Change indicator #}
-          {% if chg is none %}
-            <div style="font-size:12px;color:#6c757d;">—</div>
-          {% elif chg > 0 %}
-            <div style="font-size:12px;color:{% if slot.key in ('cost','avg_cpc') %}#dc3545{% else %}#198754{% endif %};">
-              <i class="bi bi-arrow-up"></i> {{ "%.1f"|format(chg|abs) }}%
-            </div>
-          {% elif chg < 0 %}
-            <div style="font-size:12px;color:{% if slot.key in ('cost','avg_cpc') %}#198754{% else %}#dc3545{% endif %};">
-              <i class="bi bi-arrow-down"></i> {{ "%.1f"|format(chg|abs) }}%
-            </div>
-          {% else %}
-            <div style="font-size:12px;color:#6c757d;">— 0%</div>
-          {% endif %}
-
         </div>
       </div>
     {% endfor %}
   </div>
-
-  {# ── Chart card ────────────────────────────────────────────────────────── #}
-  <div style="background:white;border:1px solid #e9ecef;border-radius:8px;padding:20px;position:relative;">
-    <canvas id="{{ chart_id }}" style="display:{% if active_metrics|length > 0 %}block{% else %}none{% endif %};"></canvas>
-    <div id="pmcEmpty_{{ page_id }}" style="display:{% if active_metrics|length == 0 %}block{% else %}none{% endif %};text-align:center;padding:60px 20px;color:#adb5bd;font-size:13px;">
-      <i class="bi bi-bar-chart" style="font-size:32px;display:block;margin-bottom:8px;"></i>
-      Select a metric above to show chart
-    </div>
-  </div>
-
+  
+  {# ── Metrics Button ─────────────────────────────────────────────────────── #}
+  <button class="metrics-btn" onclick="openMetricsModal('{{ page_id }}')">
+    <span>⚙</span> Metrics
+  </button>
+  
 </div>
 
-{# ── Inline JS ─────────────────────────────────────────────────────────────── #}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{# CHART CONTAINER                                                             #}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+
+<div class="chart-container">
+  <canvas id="{{ chart_canvas_id }}" class="chart-canvas"></canvas>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{# METRICS SELECTOR MODAL                                                      #}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+
+{# Modal Overlay #}
+<div class="modal-overlay" id="{{ overlay_id }}" onclick="closeMetricsModal('{{ page_id }}')"></div>
+
+{# Modal Container #}
+<div class="metrics-modal" id="{{ modal_id }}">
+  
+  {# ── Modal Header ───────────────────────────────────────────────────────── #}
+  <div class="modal-header">
+    <h3>Select Metrics (Max 4)</h3>
+    <button class="modal-close" onclick="closeMetricsModal('{{ page_id }}')">&times;</button>
+  </div>
+  
+  {# ── Modal Body ─────────────────────────────────────────────────────────── #}
+  <div class="modal-body">
+    
+    {# Left Panel: Available Metrics #}
+    <div class="metrics-available">
+      <div class="modal-section-title">AVAILABLE METRICS</div>
+      <div id="availableMetricsList_{{ page_id }}">
+        {% for metric in all_metrics %}
+          <label class="metric-checkbox">
+            <input type="checkbox" 
+                   value="{{ metric.key }}"
+                   {% if metric.key in active_metrics %}checked{% endif %}
+                   onchange="toggleMetricSelection('{{ metric.key }}', '{{ page_id }}', this.checked)">
+            {{ metric.label }}
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+    
+    {# Right Panel: Selected Metrics #}
+    <div class="metrics-selected">
+      <div class="modal-section-title">SELECTED METRICS</div>
+      <div id="selectedMetricsList_{{ page_id }}">
+        {# Populated by JavaScript #}
+      </div>
+      
+      {# Limit Warning #}
+      <div class="limit-warning" id="limitWarning_{{ page_id }}">
+        Maximum 4 metrics allowed. Deselect a metric to add another.
+      </div>
+    </div>
+    
+  </div>
+  
+  {# ── Modal Footer ───────────────────────────────────────────────────────── #}
+  <div class="modal-footer">
+    <button class="btn" onclick="closeMetricsModal('{{ page_id }}')">Cancel</button>
+    <button class="btn btn-primary" onclick="applyMetricsSelection('{{ page_id }}')">Apply</button>
+  </div>
+  
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{# JAVASCRIPT: Chart Logic & Modal                                             #}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+
 <script>
 (function() {
-  // Chart.js loads after {# block content #} in base_bootstrap.html.
-  // Poll until Chart is available before initialising.
-  function waitForChart(cb) {
-    if (typeof Chart !== 'undefined') { cb(); }
-    else { setTimeout(function() { waitForChart(cb); }, 30); }
+  // ──────────────────────────────────────────────────────────────────────────
+  // CONFIGURATION
+  // ──────────────────────────────────────────────────────────────────────────
+  
+  const PAGE_ID = '{{ page_id }}';
+  const CHART_CANVAS_ID = '{{ chart_canvas_id }}';
+  const MAX_METRICS = 4;
+  
+  // Chart data from Jinja - BACKWARD COMPATIBLE
+  {% if chart_data.metrics is defined %}
+    {# NEW structure: metrics key exists at top level #}
+    const CHART_DATA = {
+      dates: {{ chart_data.dates|tojson }},
+      metrics: {{ chart_data.metrics|tojson }}
+    };
+  {% else %}
+    {# OLD structure: build metrics from individual metric objects #}
+    const CHART_DATA = {
+      dates: {{ chart_data.dates|tojson }},
+      metrics: {
+        cost: {{ chart_data.get('cost', {}).get('values', [])|tojson }},
+        impressions: {{ chart_data.get('impressions', {}).get('values', [])|tojson }},
+        clicks: {{ chart_data.get('clicks', {}).get('values', [])|tojson }},
+        avg_cpc: {{ chart_data.get('avg_cpc', {}).get('values', [])|tojson }},
+        conversions: {{ chart_data.get('conversions', {}).get('values', [])|tojson }},
+        conv_value: {{ chart_data.get('conv_value', {}).get('values', [])|tojson }},
+        cost_per_conv: {{ chart_data.get('cost_per_conv', {}).get('values', [])|tojson }},
+        conv_rate: {{ chart_data.get('conv_rate', {}).get('values', [])|tojson }},
+        ctr: {{ chart_data.get('ctr', {}).get('values', [])|tojson }},
+        roas: {{ chart_data.get('roas', {}).get('values', [])|tojson }}
+      }
+    };
+  {% endif %}
+  
+  // All available metrics
+  const ALL_METRICS = {{ all_metrics|tojson }};
+  
+  // ACT color palette
+  const ACT_COLORS = {{ act_colors|tojson }};
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // STATE
+  // ──────────────────────────────────────────────────────────────────────────
+  
+  let selectedMetrics = {{ active_metrics|tojson }};  // From session (cards)
+  let visibleMetrics = {{ active_metrics|tojson }};   // Currently visible in chart
+  let tempSelectedMetrics = [];  // Temporary state in modal
+  
+  let chartInstance = null;
+  let originalData = {};  // Store real values for tooltips when normalized
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // HELPER: NORMALIZE DATA (0-95% range)
+  // ──────────────────────────────────────────────────────────────────────────
+  
+  function normalizeData(rawData) {
+    if (!rawData || rawData.length === 0) {
+      return [];
+    }
+    
+    const min = Math.min(...rawData);
+    const max = Math.max(...rawData);
+    const range = max - min;
+    
+    if (range > 0) {
+      // Normalize to 0-95% (95% ceiling prevents flat lines)
+      return rawData.map(v => ((v - min) / range) * 95);
+    } else {
+      // All values same → center at 47.5%
+      return rawData.map(() => 47.5);
+    }
   }
-
-  const PAGE_ID  = {{ page_id | tojson }};
-  const CHART_ID = 'pmcChart_' + PAGE_ID;
-
-  waitForChart(function() {
-
-  // ── Dataset config ────────────────────────────────────────────────────────
-  const SLOT_CFG = {
-    cost:        { label: 'Cost ($)',     color: '#dc3545', axis: 'y1', idx: 0 },
-    impressions: { label: 'Impressions',  color: '#0d6efd', axis: 'y2', idx: 1 },
-    clicks:      { label: 'Clicks',       color: '#198754', axis: 'y2', idx: 2 },
-    avg_cpc:     { label: 'Avg CPC ($)',  color: '#fd7e14', axis: 'y1', idx: 3 }
-  };
-
-  const ACTIVE_CLASS = {
-    cost:        'pmc-active-cost',
-    impressions: 'pmc-active-impr',
-    clicks:      'pmc-active-clicks',
-    avg_cpc:     'pmc-active-cpc'
-  };
-
-  const ACTIVE_BORDER = {
-    cost:        '#dc3545',
-    impressions: '#0d6efd',
-    clicks:      '#198754',
-    avg_cpc:     '#fd7e14'
-  };
-
-  const ACTIVE_BG = {
-    cost:        '#fff5f5',
-    impressions: '#f0f4ff',
-    clicks:      '#f0fff4',
-    avg_cpc:     '#fff8f0'
-  };
-
-  // ── Chart data injected from Flask ────────────────────────────────────────
-  const dates       = {{ chart_data.get('dates', []) | tojson }};
-  const rawValues   = {
-    cost:        {{ chart_data.get('cost',        {}).get('values', []) | tojson }},
-    impressions: {{ chart_data.get('impressions', {}).get('values', []) | tojson }},
-    clicks:      {{ chart_data.get('clicks',      {}).get('values', []) | tojson }},
-    avg_cpc:     {{ chart_data.get('avg_cpc',     {}).get('values', []) | tojson }}
-  };
-
-  // ── Initial active state from session (server) ────────────────────────────
-  let activeMetrics = new Set({{ active_metrics | tojson }});
-
-  // ── Build Chart.js datasets ───────────────────────────────────────────────
-  function makeDatasets() {
-    return Object.entries(SLOT_CFG).map(([key, cfg]) => ({
-      label:           cfg.label,
-      data:            rawValues[key] || [],
-      borderColor:     cfg.color,
-      backgroundColor: cfg.color + '0F',  // ~6% opacity
-      borderWidth:     2,
-      pointRadius:     0,
-      tension:         0.3,
-      yAxisID:         cfg.axis,
-      hidden:          !activeMetrics.has(key)
-    }));
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // HELPER: FORMAT METRIC VALUE
+  // ──────────────────────────────────────────────────────────────────────────
+  
+  function formatMetricValue(value, metricKey) {
+    if (value === null || value === undefined) {
+      return 'N/A';
+    }
+    
+    // Currency metrics
+    if (['cost', 'avg_cpc', 'conv_value', 'cost_per_conv'].includes(metricKey)) {
+      return '£' + value.toLocaleString('en-GB', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+    
+    // Percentage metrics
+    if (['conv_rate', 'ctr'].includes(metricKey)) {
+      return value.toFixed(2) + '%';
+    }
+    
+    // ROAS
+    if (metricKey === 'roas') {
+      return value.toFixed(2) + 'x';
+    }
+    
+    // Count metrics
+    if (['impressions', 'clicks', 'conversions'].includes(metricKey)) {
+      return value.toLocaleString('en-GB', {
+        maximumFractionDigits: 0
+      });
+    }
+    
+    // Default
+    return value.toLocaleString('en-GB', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
   }
-
-  // ── Y-axis visibility helpers ─────────────────────────────────────────────
-  function y1Active() { return activeMetrics.has('cost') || activeMetrics.has('avg_cpc'); }
-  function y2Active() { return activeMetrics.has('impressions') || activeMetrics.has('clicks'); }
-
-  // ── Create chart ──────────────────────────────────────────────────────────
-  const canvas = document.getElementById(CHART_ID);
-  if (!canvas) return;
-
-  const pmcChart = new Chart(canvas, {
-    type: 'line',
-    data: { labels: dates, datasets: makeDatasets() },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top',
-          labels: { font: { size: 11 }, boxWidth: 12 }
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // CHART INITIALIZATION
+  // ──────────────────────────────────────────────────────────────────────────
+  
+  function initChart() {
+    const canvas = document.getElementById(CHART_CANVAS_ID);
+    if (!canvas) {
+      console.error('[ACT Chart] Canvas not found:', CHART_CANVAS_ID);
+      return;
+    }
+    
+    updateChart();
+  }
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // CHART UPDATE
+  // ──────────────────────────────────────────────────────────────────────────
+  
+  function updateChart() {
+    const visibleCount = visibleMetrics.length;
+    
+    // Determine normalization and axes visibility
+    const shouldNormalize = visibleCount >= 3;
+    const showAxes = visibleCount <= 2;
+    
+    // Clear original data storage
+    originalData = {};
+    
+    // Build datasets with ACT colors (by index)
+    const datasets = visibleMetrics.map((metricKey, visibleIndex) => {
+      const metric = ALL_METRICS.find(m => m.key === metricKey);
+      const rawData = CHART_DATA.metrics[metricKey] || [];
+      
+      // Store original data for tooltips
+      originalData[metricKey] = [...rawData];
+      
+      let displayData = [...rawData];
+      
+      // Normalize if 3+ metrics
+      if (shouldNormalize) {
+        displayData = normalizeData(rawData);
+      }
+      
+      // FIXED: Color based on selectedMetrics position (stays constant)
+      const colorIndex = selectedMetrics.indexOf(metricKey);
+      const color = ACT_COLORS[colorIndex % ACT_COLORS.length];
+      
+      // FIXED: Axis assignment for 1-2 metrics based on visible order
+      let axisID = 'y';  // Default: single axis (3+ metrics)
+      if (!shouldNormalize) {
+        // Dual-axis mode (1-2 metrics): 1st visible → y, 2nd visible → y1
+        axisID = (visibleIndex === 0) ? 'y' : 'y1';
+      }
+      
+      return {
+        label: metric.label,
+        data: displayData,
+        borderColor: color,
+        backgroundColor: color + '0F',  // 6% opacity
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointStyle: 'line',  // Line indicators in tooltip
+        tension: 0.3,
+        yAxisID: axisID
+      };
+    });
+    
+    // Chart configuration
+    const config = {
+      type: 'line',
+      data: {
+        labels: CHART_DATA.dates,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
         },
-        tooltip: {
-          callbacks: {
-            label: function(ctx) {
-              const key = Object.keys(SLOT_CFG).find(k => SLOT_CFG[k].idx === ctx.datasetIndex);
-              const v = ctx.parsed.y;
-              if (v === null || v === undefined) return ctx.dataset.label + ': —';
-              if (key === 'cost' || key === 'avg_cpc') return ctx.dataset.label + ': $' + v.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
-              if (v >= 1000000) return ctx.dataset.label + ': ' + (v/1000000).toFixed(1) + 'M';
-              if (v >= 1000)    return ctx.dataset.label + ': ' + (v/1000).toFixed(1) + 'k';
-              return ctx.dataset.label + ': ' + v.toLocaleString();
+        plugins: {
+          legend: {
+            display: false  // Using custom metric cards
+          },
+          tooltip: {
+            backgroundColor: '#ffffff',
+            titleColor: '#212529',
+            bodyColor: '#212529',
+            borderColor: '#e0e0e0',
+            borderWidth: 1,
+            padding: 12,
+            displayColors: true,
+            usePointStyle: true,  // Line indicators
+            callbacks: {
+              label: function(context) {
+                const metricKey = visibleMetrics[context.datasetIndex];
+                const realValue = shouldNormalize 
+                  ? originalData[metricKey][context.dataIndex]
+                  : context.parsed.y;
+                
+                const label = context.dataset.label;
+                const formatted = formatMetricValue(realValue, metricKey);
+                
+                return label + ': ' + formatted;
+              }
             }
           }
-        }
-      },
-      scales: {
-        x: {
-          ticks: { font: { size: 10 }, maxTicksLimit: 8 },
-          grid:  { display: false }
         },
-        y1: {
-          type:     'linear',
-          position: 'left',
-          display:  y1Active(),
-          ticks: {
-            font: { size: 10 },
-            callback: v => '$' + (v >= 1000 ? (v/1000).toFixed(1)+'k' : v.toFixed(2))
+        scales: {
+          x: {
+            ticks: {
+              font: { size: 11 },
+              color: '#616161',
+              maxTicksLimit: 7
+            },
+            grid: { display: false }
           },
-          grid:  { color: '#f0f0f0' },
-          title: { display: true, text: '$ · Cost / Avg CPC', font: { size: 10 }, color: '#dc3545' }
-        },
-        y2: {
-          type:     'linear',
-          position: 'right',
-          display:  y2Active(),
-          ticks: {
-            font: { size: 10 },
-            callback: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'k' : v
+          y: {
+            position: 'left',
+            display: showAxes,
+            ticks: {
+              font: { size: 11 },
+              color: '#616161',
+              display: showAxes
+            },
+            grid: {
+              display: !showAxes,  // Show grid when axes hidden (3+ metrics)
+              drawTicks: false,
+              color: '#e0e0e0',
+              borderDash: [2, 2]
+            },
+            title: { display: false }
           },
-          grid:  { drawOnChartArea: false },
-          title: { display: true, text: 'Count · Impr / Clicks', font: { size: 10 }, color: '#0d6efd' }
+          y1: {
+            position: 'right',
+            display: showAxes,  // Only show when 1-2 metrics
+            ticks: {
+              font: { size: 11 },
+              color: '#616161',
+              display: showAxes
+            },
+            grid: {
+              display: false  // Don't show grid for right axis (left axis already has grid)
+            },
+            title: { display: false }
+          }
         }
       }
+    };
+    
+    // Destroy existing chart
+    if (chartInstance) {
+      chartInstance.destroy();
     }
-  });
-
-  // ── Update axis visibility + empty state ──────────────────────────────────
-  function updateChart() {
-    const y1 = y1Active();
-    const y2 = y2Active();
-    const any = y1 || y2;
-
-    pmcChart.options.scales.y1.display = y1;
-    pmcChart.options.scales.y2.display = y2;
-    pmcChart.update();
-
-    canvas.style.display = any ? 'block' : 'none';
-    document.getElementById('pmcEmpty_' + PAGE_ID).style.display = any ? 'none' : 'block';
+    
+    // Create new chart
+    const canvas = document.getElementById(CHART_CANVAS_ID);
+    chartInstance = new Chart(canvas.getContext('2d'), config);
   }
-
-  // ── Session POST (fire-and-forget) ────────────────────────────────────────
-  function saveSession() {
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // METRIC CARD TOGGLE (visibility only, no session update)
+  // ──────────────────────────────────────────────────────────────────────────
+  
+  window.toggleMetricVisibility = function(metricKey, pageId) {
+    if (pageId !== PAGE_ID) return;
+    
+    const index = visibleMetrics.indexOf(metricKey);
+    
+    if (index > -1) {
+      // Hide metric
+      visibleMetrics.splice(index, 1);
+    } else {
+      // Show metric (if in selectedMetrics)
+      if (selectedMetrics.includes(metricKey)) {
+        visibleMetrics.push(metricKey);
+      }
+    }
+    
+    updateChart();
+    updateCardStates();
+  };
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // UPDATE CARD VISUAL STATES (active/inactive)
+  // ──────────────────────────────────────────────────────────────────────────
+  
+  function updateCardStates() {
+    const cards = document.querySelectorAll(`[data-page="${PAGE_ID}"].metric-box`);
+    
+    cards.forEach((card) => {
+      const metricKey = card.getAttribute('data-metric');
+      const isVisible = visibleMetrics.includes(metricKey);
+      
+      // FIXED: Color based on selectedMetrics position (stays constant)
+      const colorIndex = selectedMetrics.indexOf(metricKey);
+      const color = ACT_COLORS[colorIndex % ACT_COLORS.length];
+      
+      if (isVisible) {
+        card.classList.add('active');
+        card.classList.remove('inactive');
+        card.style.backgroundColor = color;
+        card.style.color = 'white';
+        card.style.borderColor = color;
+      } else {
+        card.classList.remove('active');
+        card.classList.add('inactive');
+        card.style.backgroundColor = 'white';
+        card.style.color = '#212529';
+        card.style.borderColor = '#e0e0e0';
+      }
+    });
+  }
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // MODAL: OPEN
+  // ──────────────────────────────────────────────────────────────────────────
+  
+  window.openMetricsModal = function(pageId) {
+    if (pageId !== PAGE_ID) return;
+    
+    // Clone current selection to temp state
+    tempSelectedMetrics = [...selectedMetrics];
+    
+    // Render modal lists
+    renderSelectedMetricsList();
+    
+    // Show modal
+    document.getElementById('{{ overlay_id }}').classList.add('show');
+    document.getElementById('{{ modal_id }}').classList.add('show');
+  };
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // MODAL: CLOSE
+  // ──────────────────────────────────────────────────────────────────────────
+  
+  window.closeMetricsModal = function(pageId) {
+    if (pageId !== PAGE_ID) return;
+    
+    document.getElementById('{{ overlay_id }}').classList.remove('show');
+    document.getElementById('{{ modal_id }}').classList.remove('show');
+    document.getElementById('limitWarning_' + PAGE_ID).classList.remove('show');
+  };
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // MODAL: TOGGLE METRIC SELECTION
+  // ──────────────────────────────────────────────────────────────────────────
+  
+  window.toggleMetricSelection = function(metricKey, pageId, checked) {
+    if (pageId !== PAGE_ID) return;
+    
+    if (checked) {
+      // Add metric (if not at limit)
+      if (tempSelectedMetrics.length >= MAX_METRICS) {
+        document.getElementById('limitWarning_' + PAGE_ID).classList.add('show');
+        // Uncheck the checkbox
+        event.target.checked = false;
+        return;
+      }
+      
+      if (!tempSelectedMetrics.includes(metricKey)) {
+        tempSelectedMetrics.push(metricKey);
+      }
+      document.getElementById('limitWarning_' + PAGE_ID).classList.remove('show');
+      
+    } else {
+      // Remove metric
+      const index = tempSelectedMetrics.indexOf(metricKey);
+      if (index > -1) {
+        tempSelectedMetrics.splice(index, 1);
+      }
+      document.getElementById('limitWarning_' + PAGE_ID).classList.remove('show');
+    }
+    
+    renderSelectedMetricsList();
+  };
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // MODAL: RENDER SELECTED METRICS LIST
+  // ──────────────────────────────────────────────────────────────────────────
+  
+  function renderSelectedMetricsList() {
+    const container = document.getElementById('selectedMetricsList_' + PAGE_ID);
+    
+    if (tempSelectedMetrics.length === 0) {
+      container.innerHTML = '<div style="color: #9e9e9e; font-size: 13px; padding: 20px; text-align: center;">No metrics selected</div>';
+      return;
+    }
+    
+    container.innerHTML = tempSelectedMetrics.map(metricKey => {
+      const metric = ALL_METRICS.find(m => m.key === metricKey);
+      return `
+        <div class="selected-metric">
+          <span class="drag-handle">≡</span>
+          <span class="name">${metric.label}</span>
+          <button class="remove" onclick="removeMetricFromSelection('${metricKey}', '${PAGE_ID}')">&times;</button>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // MODAL: REMOVE METRIC
+  // ──────────────────────────────────────────────────────────────────────────
+  
+  window.removeMetricFromSelection = function(metricKey, pageId) {
+    if (pageId !== PAGE_ID) return;
+    
+    const index = tempSelectedMetrics.indexOf(metricKey);
+    if (index > -1) {
+      tempSelectedMetrics.splice(index, 1);
+    }
+    
+    // Uncheck the checkbox
+    const checkbox = document.querySelector(`#availableMetricsList_${PAGE_ID} input[value="${metricKey}"]`);
+    if (checkbox) {
+      checkbox.checked = false;
+    }
+    
+    document.getElementById('limitWarning_' + PAGE_ID).classList.remove('show');
+    renderSelectedMetricsList();
+  };
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // MODAL: APPLY SELECTION (update session + chart)
+  // ──────────────────────────────────────────────────────────────────────────
+  
+  window.applyMetricsSelection = function(pageId) {
+    if (pageId !== PAGE_ID) return;
+    
+    // Update BOTH states
+    selectedMetrics = [...tempSelectedMetrics];
+    visibleMetrics = [...tempSelectedMetrics];
+    
+    // Save to session via POST
     fetch('/set-chart-metrics', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ page_id: PAGE_ID, metrics: Array.from(activeMetrics) })
-    }).catch(() => {});  // non-blocking — chart works even if POST fails
-  }
-
-  // ── Toggle handler (called from onclick) ──────────────────────────────────
-  window.pmcToggleSlot = function(el) {
-    const metric = el.dataset.metric;
-    if (!metric) return;
-
-    const isActive = activeMetrics.has(metric);
-
-    if (isActive) {
-      // Deactivate
-      activeMetrics.delete(metric);
-      el.style.borderColor = '#e9ecef';
-      el.style.background  = 'white';
-      el.style.opacity     = '0.5';
-      el.querySelector('.pmc-dot').style.display = 'none';
-      // Hide dataset
-      pmcChart.data.datasets[SLOT_CFG[metric].idx].hidden = true;
-    } else {
-      // Activate
-      activeMetrics.add(metric);
-      el.style.borderColor = ACTIVE_BORDER[metric];
-      el.style.background  = ACTIVE_BG[metric];
-      el.style.opacity     = '1';
-      el.querySelector('.pmc-dot').style.display = 'block';
-      // Show dataset
-      pmcChart.data.datasets[SLOT_CFG[metric].idx].hidden = false;
-    }
-
-    updateChart();
-    saveSession();
+      body: JSON.stringify({
+        page_id: PAGE_ID,
+        metrics: selectedMetrics
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'ok') {
+        console.log('[ACT Chart] Metrics saved to session:', data.metrics);
+        
+        // Reload page to get new metric cards
+        window.location.reload();
+      }
+    })
+    .catch(err => {
+      console.error('[ACT Chart] Failed to save metrics:', err);
+    });
+    
+    closeMetricsModal(PAGE_ID);
   };
-
-  }); // end waitForChart
-
+  
+  // ──────────────────────────────────────────────────────────────────────────
+  // INITIALIZATION
+  // ──────────────────────────────────────────────────────────────────────────
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    initChart();
+  });
+  
 })();
 </script>
 
+{% endmacro %}
+
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{# HELPER: FORMAT METRIC VALUE                                                 #}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+
+{% macro format_metric_value(value, metric_key) %}
+  {% if metric_key in ['cost', 'avg_cpc', 'conv_value', 'cost_per_conv'] %}
+    £{{ "{:,.2f}".format(value|float) }}
+  {% elif metric_key in ['conv_rate', 'ctr'] %}
+    {{ "%.2f"|format(value|float) }}%
+  {% elif metric_key == 'roas' %}
+    {{ "%.2f"|format(value|float) }}x
+  {% elif metric_key in ['impressions', 'clicks', 'conversions'] %}
+    {{ "{:,.0f}".format(value|float) }}
+  {% else %}
+    {{ "%.2f"|format(value|float) }}
+  {% endif %}
 {% endmacro %}

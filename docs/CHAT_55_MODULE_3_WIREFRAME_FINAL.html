@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 3: Final Google Ads Design - WORKING DEMO</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #212529;
+        }
+        
+        /* HEADER ROW */
+        .header-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .metric-boxes {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            flex: 1;
+        }
+        
+        /* METRIC BOXES */
+        .metric-box {
+            border-radius: 6px;
+            padding: 12px 16px;  /* Reduced from 16px 20px */
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .metric-box .label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .metric-box .value {
+            font-size: 22px;  /* Reduced from 24px */
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 6px;  /* Reduced from 8px */
+        }
+        .metric-box .change {
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        /* ACTIVE/INACTIVE STATES - colors applied via inline styles */
+        .metric-box.active {
+            /* Color set via JavaScript inline style */
+        }
+        
+        .metric-box.inactive { 
+            background: white; 
+            color: #212529;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .active .change { color: rgba(255, 255, 255, 0.9); }
+        .inactive .change { color: #616161; }
+        
+        /* METRICS BUTTON */
+        .metrics-btn {
+            background: white;
+            border: 1px solid #d0d0d0;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s;
+            white-space: nowrap;
+            height: fit-content;
+        }
+        .metrics-btn:hover {
+            background: #f5f5f5;
+            border-color: #b0b0b0;
+        }
+        
+        /* CHART CONTAINER */
+        .chart-container {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            height: 340px;  /* Reduced from 390px */
+            position: relative;
+        }
+        .chart-canvas {
+            height: 300px !important;  /* Reduced from 350px */
+        }
+        
+        /* MODAL */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9998;
+            display: none;
+        }
+        .modal-overlay.show { display: block; }
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            width: 700px;
+            max-height: 600px;
+            z-index: 9999;
+            display: none;
+        }
+        .modal.show { display: block; }
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 500;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #616161;
+            line-height: 1;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+        }
+        .modal-close:hover {
+            color: #212121;
+        }
+        .modal-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            height: 400px;
+        }
+        .metrics-available {
+            padding: 20px;
+            border-right: 1px solid #e0e0e0;
+            overflow-y: auto;
+        }
+        .metrics-selected {
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .modal-section-title {
+            font-size: 13px;
+            margin-bottom: 12px;
+            color: #616161;
+            font-weight: 500;
+        }
+        .metric-checkbox {
+            display: block;
+            padding: 8px 0;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .metric-checkbox input {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+        .metric-checkbox:hover {
+            background: #f5f5f5;
+        }
+        .selected-metric {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        .selected-metric .drag-handle {
+            margin-right: 8px;
+            color: #9e9e9e;
+            cursor: move;
+        }
+        .selected-metric .name {
+            flex: 1;
+            font-size: 14px;
+        }
+        .selected-metric .remove {
+            background: none;
+            border: none;
+            color: #9e9e9e;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+        }
+        .selected-metric .remove:hover {
+            color: #d32f2f;
+        }
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        .btn {
+            padding: 8px 20px;
+            border-radius: 4px;
+            border: 1px solid #d0d0d0;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .btn:hover {
+            background: #f5f5f5;
+        }
+        .btn-primary {
+            background: #1a73e8;
+            color: white;
+            border-color: #1a73e8;
+        }
+        .btn-primary:hover {
+            background: #1557b0;
+        }
+        
+        /* DATE RANGE SELECTOR */
+        .date-range-selector {
+            background: #e3f2fd;
+            border-left: 4px solid #1976d2;
+            padding: 16px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .date-range-selector label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0d47a1;
+        }
+        .date-range-selector select {
+            padding: 6px 12px;
+            border: 1px solid #1976d2;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+        
+        /* INFO BOX */
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #1976d2;
+            padding: 16px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .info-box h3 {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #0d47a1;
+        }
+        .info-box ul {
+            list-style: none;
+            font-size: 13px;
+            color: #1565c0;
+        }
+        .info-box li {
+            margin-bottom: 4px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .info-box li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+        
+        /* LIMIT WARNING */
+        .limit-warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 12px;
+            font-size: 13px;
+            display: none;
+        }
+        .limit-warning.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Module 3: Google Ads Chart Design - FINAL WORKING DEMO</h1>
+        
+        <div class="date-range-selector">
+            <label>📅 Date Range (test interval logic):</label>
+            <select id="dateRangeSelector" onchange="changeDateRange()">
+                <option value="7">Last 7 days (Daily)</option>
+                <option value="14">Last 14 days (Daily)</option>
+                <option value="30" selected>Last 30 days (Daily)</option>
+                <option value="60">Last 60 days (Weekly)</option>
+                <option value="90">Last 90 days (Weekly)</option>
+                <option value="180">Last 180 days (Weekly)</option>
+                <option value="365">Last 365 days (Monthly)</option>
+            </select>
+        </div>
+        
+        <div class="info-box">
+            <h3>How This Works:</h3>
+            <ul>
+                <li><strong>Select date range above</strong> to test interval logic (Daily/Weekly/Monthly)</li>
+                <li><strong>Click metric cards</strong> to toggle visibility in chart</li>
+                <li><strong>Click "Metrics" button</strong> to change which metrics are loaded</li>
+                <li><strong>ACT logo colors:</strong> Green, Yellow, Red, Blue (always in this order)</li>
+                <li><strong>1-2 metrics:</strong> Axes show with labels (NO grid lines)</li>
+                <li><strong>3-4 metrics:</strong> NORMALIZED to 0-95%, axes hidden, grid lines shown</li>
+                <li><strong>Hover chart:</strong> Tooltips show REAL values with line indicators</li>
+                <li><strong>Max 4 metrics</strong> can be selected at once</li>
+            </ul>
+        </div>
+        
+        <!-- Header Row: Metric Cards + Metrics Button -->
+        <div class="header-row">
+            <div class="metric-boxes" id="metricBoxes">
+                <!-- Metric boxes will be dynamically generated -->
+            </div>
+            <button class="metrics-btn" onclick="openModal()">
+                <span>⚙</span> Metrics
+            </button>
+        </div>
+        
+        <!-- Chart -->
+        <div class="chart-container">
+            <canvas id="demoChart" class="chart-canvas"></canvas>
+        </div>
+        
+        <!-- Metrics Selector Modal -->
+        <div class="modal-overlay" id="modalOverlay" onclick="closeModal()"></div>
+        <div class="modal" id="metricsModal">
+            <div class="modal-header">
+                <h3>Modify metrics</h3>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="metrics-available">
+                    <div class="modal-section-title">Select metrics to add to the graph</div>
+                    <div id="availableMetricsList"></div>
+                    <div class="limit-warning" id="limitWarning">
+                        Maximum 4 metrics can be selected
+                    </div>
+                </div>
+                <div class="metrics-selected">
+                    <div class="modal-section-title">Your columns</div>
+                    <div id="selectedMetricsList"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="applyMetrics()">Apply</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ============================================================================
+        // DATA & CONFIG
+        // ============================================================================
+        
+        const METRICS_CONFIG = [
+            { key: 'cost', label: 'Cost', axis: 'y', class: 'box-cost' },
+            { key: 'impressions', label: 'Impressions', axis: 'y1', class: 'box-impr' },
+            { key: 'clicks', label: 'Clicks', axis: 'y1', class: 'box-clicks' },
+            { key: 'avg_cpc', label: 'Avg. CPC', axis: 'y', class: 'box-cpc' },
+            { key: 'conversions', label: 'Conversions', axis: 'y1', class: 'box-conv' },
+            { key: 'conv_value', label: 'Conv. Value', axis: 'y', class: 'box-convval' },
+            { key: 'cost_per_conv', label: 'Cost / Conv', axis: 'y', class: 'box-costconv' },
+            { key: 'conv_rate', label: 'Conv. Rate', axis: 'y1', class: 'box-convrate' },
+            { key: 'ctr', label: 'CTR', axis: 'y1', class: 'box-ctr' },
+            { key: 'roas', label: 'ROAS', axis: 'y1', class: 'box-roas' }
+        ];
+        
+        // FIXED COLOR PALETTE - matches ACT logo colors
+        const FIXED_COLORS = ['#34A853', '#FBBC05', '#EA4335', '#4285F4'];
+        
+        const MAX_METRICS = 4;
+        let selectedMetrics = ['cost', 'impressions']; // Which metrics are in the cards row (from modal)
+        let visibleMetrics = ['cost', 'impressions'];  // Which of those are visible in chart (toggled by cards)
+        let tempSelectedMetrics = []; // For modal
+        let chart;
+        let originalData = {}; // Store original values for tooltips
+        let currentDateRange = 30; // Default to 30 days
+        let currentDates = [];
+        let currentSampleData = {};
+        
+        // ============================================================================
+        // DATE INTERVAL LOGIC (Google Ads Style)
+        // ============================================================================
+        
+        function getDateInterval(totalDays) {
+            if (totalDays <= 30) return 1;      // Daily (up to 30 points)
+            if (totalDays <= 180) return 7;     // Weekly (26 points max)
+            return 30;                          // Monthly (12 points)
+        }
+        
+        function generateDates(totalDays) {
+            const dates = [];
+            const interval = getDateInterval(totalDays);
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(endDate.getDate() - totalDays);
+            
+            let current = new Date(startDate);
+            
+            while (current <= endDate) {
+                const month = current.toLocaleString('en', { month: 'short' });
+                const day = current.getDate();
+                dates.push(`${month} ${day}`);
+                current.setDate(current.getDate() + interval);
+            }
+            
+            return dates;
+        }
+        
+        function generateSampleData(numPoints) {
+            const data = {};
+            
+            // Generate realistic trending data
+            const baseValues = {
+                cost: 45000,
+                impressions: 1800000,
+                clicks: 58000,
+                avg_cpc: 0.77,
+                conversions: 580,
+                conv_value: 17400,
+                cost_per_conv: 77.59,
+                conv_rate: 1.0,
+                ctr: 3.2,
+                roas: 0.39
+            };
+            
+            Object.keys(baseValues).forEach(key => {
+                data[key] = [];
+                let value = baseValues[key];
+                
+                for (let i = 0; i < numPoints; i++) {
+                    // Add some realistic variation
+                    const variance = (Math.random() - 0.5) * 0.1; // ±5%
+                    const trend = i * 0.005; // Slight upward trend
+                    value = baseValues[key] * (1 + variance + trend);
+                    data[key].push(value);
+                }
+            });
+            
+            return data;
+        }
+        
+        // ============================================================================
+        // INITIALIZATION
+        // ============================================================================
+        
+        function init() {
+            // Generate initial dates and data
+            currentDates = generateDates(currentDateRange);
+            currentSampleData = generateSampleData(currentDates.length);
+            
+            renderMetricBoxes();
+            renderAvailableMetrics();
+            initChart();
+            updateDisplay();
+        }
+        
+        function changeDateRange() {
+            const selector = document.getElementById('dateRangeSelector');
+            currentDateRange = parseInt(selector.value);
+            
+            // Regenerate dates and data
+            currentDates = generateDates(currentDateRange);
+            currentSampleData = generateSampleData(currentDates.length);
+            
+            // Update chart labels
+            chart.data.labels = currentDates;
+            
+            // Re-render everything
+            renderMetricBoxes();
+            updateDisplay();
+        }
+        
+        function renderMetricBoxes() {
+            const container = document.getElementById('metricBoxes');
+            container.innerHTML = '';
+            
+            // Show ALL selected metrics (from modal) as cards
+            selectedMetrics.forEach((key, index) => {
+                const metric = METRICS_CONFIG.find(m => m.key === key);
+                const box = document.createElement('div');
+                
+                // Check if this metric is VISIBLE in chart
+                const isVisible = visibleMetrics.includes(metric.key);
+                
+                // Get color from fixed palette based on position in visibleMetrics array
+                const visibleIndex = visibleMetrics.indexOf(metric.key);
+                const color = visibleIndex >= 0 ? FIXED_COLORS[visibleIndex] : FIXED_COLORS[index];
+                
+                box.className = `metric-box ${isVisible ? 'active' : 'inactive'}`;
+                box.onclick = () => toggleMetricVisibility(metric.key);
+                
+                // Apply styling based on visibility
+                if (isVisible) {
+                    box.style.backgroundColor = color;
+                    box.style.color = 'white';
+                    box.style.border = 'none';
+                } else {
+                    box.style.backgroundColor = 'white';
+                    box.style.color = '#212529';
+                    box.style.border = '1px solid #e0e0e0';
+                }
+                
+                // Use LAST value from current sample data
+                const lastValue = currentSampleData[metric.key][currentSampleData[metric.key].length - 1];
+                const value = formatValue(lastValue, metric.key);
+                
+                box.innerHTML = `
+                    <div class="label">${metric.label}</div>
+                    <div class="value">${value}</div>
+                    <div class="change">↑ 24.5%</div>
+                `;
+                
+                container.appendChild(box);
+            });
+        }
+        
+        function formatValue(val, key) {
+            if (key === 'cost' || key === 'avg_cpc' || key === 'cost_per_conv' || key === 'conv_value') {
+                if (val >= 1000) return '$' + (val / 1000).toFixed(1) + 'k';
+                return '$' + val.toFixed(2);
+            }
+            if (val >= 1000000) return (val / 1000000).toFixed(2) + 'M';
+            if (val >= 1000) return (val / 1000).toFixed(1) + 'k';
+            return Math.round(val).toString();
+        }
+        
+        // ============================================================================
+        // METRIC TOGGLE (Chart Visibility)
+        // ============================================================================
+        
+        function toggleMetricVisibility(key) {
+            const index = visibleMetrics.indexOf(key);
+            
+            if (index > -1) {
+                // Hide from chart
+                visibleMetrics.splice(index, 1);
+            } else {
+                // Show in chart
+                visibleMetrics.push(key);
+            }
+            
+            updateDisplay();
+        }
+        
+        function updateDisplay() {
+            renderMetricBoxes();
+            updateChart();
+        }
+        
+        // ============================================================================
+        // CHART
+        // ============================================================================
+        
+        function initChart() {
+            const ctx = document.getElementById('demoChart').getContext('2d');
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: currentDates,
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: false // NO LEGEND
+                        },
+                        tooltip: {
+                            backgroundColor: 'white',
+                            borderColor: '#e0e0e0',
+                            borderWidth: 1,
+                            titleColor: '#212121',
+                            bodyColor: '#616161',
+                            padding: 12,
+                            displayColors: true,
+                            usePointStyle: true,  // Use point style instead of box
+                            boxPadding: 6,
+                            titleFont: { size: 13, weight: '600' },
+                            bodyFont: { size: 12, weight: '400' },
+                            callbacks: {
+                                label: function(context) {
+                                    const datasetIndex = context.datasetIndex;
+                                    const dataIndex = context.dataIndex;
+                                    const metricKey = visibleMetrics[datasetIndex];
+                                    
+                                    // Get REAL value from originalData
+                                    const realValue = originalData[metricKey] ? 
+                                        originalData[metricKey][dataIndex] : 
+                                        context.parsed.y;
+                                    
+                                    const label = context.dataset.label || '';
+                                    const formatted = formatValue(realValue, metricKey);
+                                    
+                                    return label + ': ' + formatted;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { font: { size: 11 }, color: '#616161', maxTicksLimit: 7 },
+                            grid: { display: false }
+                        },
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            display: true,
+                            ticks: {
+                                font: { size: 11 },
+                                color: '#616161'
+                            },
+                            grid: {
+                                display: false  // No grid lines
+                            },
+                            title: { display: false }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            display: true,
+                            ticks: {
+                                font: { size: 11 },
+                                color: '#616161'
+                            },
+                            grid: { 
+                                display: false  // No grid lines
+                            },
+                            title: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateChart() {
+            const visibleCount = visibleMetrics.length;
+            
+            // CRITICAL: Hide axes completely when 3+ metrics
+            const showAxes = visibleCount <= 2;
+            const normalizeData = visibleCount >= 3;
+            
+            chart.options.scales.y.display = showAxes;
+            chart.options.scales.y1.display = showAxes;
+            
+            // Grid visibility logic
+            if (!showAxes) {
+                // Axes hidden (3+ metrics) - SHOW grid for reference
+                chart.options.scales.y.grid.display = true;
+                chart.options.scales.y.grid.drawTicks = false;
+                chart.options.scales.y.grid.color = '#e0e0e0';
+                chart.options.scales.y.grid.borderDash = [2, 2];
+                chart.options.scales.y.ticks.display = false;
+                
+                chart.options.scales.y1.grid.display = false;
+                chart.options.scales.y1.ticks.display = false;
+            } else {
+                // Axes shown (1-2 metrics) - NO grid (clean look)
+                chart.options.scales.y.grid.display = false;
+                chart.options.scales.y.ticks.display = true;
+                
+                chart.options.scales.y1.grid.display = false;
+                chart.options.scales.y1.ticks.display = true;
+            }
+            
+            // Clear original data storage
+            originalData = {};
+            
+            // Build datasets with FIXED COLORS
+            chart.data.datasets = visibleMetrics.map((key, index) => {
+                const config = METRICS_CONFIG.find(m => m.key === key);
+                const rawData = [...currentSampleData[key]]; // Clone from current sample data
+                
+                // Store original data for tooltips
+                originalData[key] = rawData;
+                
+                let displayData = rawData;
+                
+                // NORMALIZE if 3+ metrics selected
+                if (normalizeData) {
+                    const min = Math.min(...rawData);
+                    const max = Math.max(...rawData);
+                    const range = max - min;
+                    
+                    if (range > 0) {
+                        // Use 95% ceiling to prevent flat lines at top
+                        displayData = rawData.map(v => ((v - min) / range) * 95);
+                    } else {
+                        displayData = rawData.map(() => 47.5); // All same value = middle of 0-95%
+                    }
+                }
+                
+                // Use FIXED COLOR from palette based on index (0-3)
+                const color = FIXED_COLORS[index % FIXED_COLORS.length];
+                
+                return {
+                    label: config.label,
+                    data: displayData,
+                    borderColor: color,
+                    backgroundColor: color + '0F',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    pointStyle: 'line',  // Show lines in tooltip instead of boxes
+                    tension: 0.3,
+                    yAxisID: normalizeData ? 'y' : config.axis // All use same axis when normalized
+                };
+            });
+            
+            chart.update();
+        }
+        
+        // ============================================================================
+        // MODAL
+        // ============================================================================
+        
+        function renderAvailableMetrics() {
+            const container = document.getElementById('availableMetricsList');
+            container.innerHTML = '';
+            
+            METRICS_CONFIG.forEach(metric => {
+                const label = document.createElement('label');
+                label.className = 'metric-checkbox';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = tempSelectedMetrics.includes(metric.key);
+                checkbox.onchange = () => toggleModalMetric(metric.key, checkbox.checked);
+                
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(metric.label));
+                container.appendChild(label);
+            });
+        }
+        
+        function renderSelectedMetrics() {
+            const container = document.getElementById('selectedMetricsList');
+            container.innerHTML = '';
+            
+            if (tempSelectedMetrics.length === 0) {
+                container.innerHTML = '<div style="color: #9e9e9e; font-size: 13px; padding: 20px; text-align: center;">No metrics selected</div>';
+                return;
+            }
+            
+            tempSelectedMetrics.forEach(key => {
+                const config = METRICS_CONFIG.find(m => m.key === key);
+                const item = document.createElement('div');
+                item.className = 'selected-metric';
+                item.innerHTML = `
+                    <span class="drag-handle">≡</span>
+                    <span class="name">${config.label}</span>
+                    <button class="remove" onclick="removeModalMetric('${key}')">×</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+        
+        function toggleModalMetric(key, checked) {
+            if (checked) {
+                if (tempSelectedMetrics.length >= MAX_METRICS) {
+                    document.getElementById('limitWarning').classList.add('show');
+                    // Uncheck the checkbox
+                    event.target.checked = false;
+                    return;
+                }
+                tempSelectedMetrics.push(key);
+                document.getElementById('limitWarning').classList.remove('show');
+            } else {
+                const index = tempSelectedMetrics.indexOf(key);
+                if (index > -1) {
+                    tempSelectedMetrics.splice(index, 1);
+                }
+                document.getElementById('limitWarning').classList.remove('show');
+            }
+            
+            renderSelectedMetrics();
+        }
+        
+        function removeModalMetric(key) {
+            const index = tempSelectedMetrics.indexOf(key);
+            if (index > -1) {
+                tempSelectedMetrics.splice(index, 1);
+            }
+            document.getElementById('limitWarning').classList.remove('show');
+            renderAvailableMetrics();
+            renderSelectedMetrics();
+        }
+        
+        function openModal() {
+            tempSelectedMetrics = [...selectedMetrics]; // Clone current selection
+            renderAvailableMetrics();
+            renderSelectedMetrics();
+            document.getElementById('modalOverlay').classList.add('show');
+            document.getElementById('metricsModal').classList.add('show');
+        }
+        
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('show');
+            document.getElementById('metricsModal').classList.remove('show');
+            document.getElementById('limitWarning').classList.remove('show');
+        }
+        
+        function applyMetrics() {
+            // Update BOTH selectedMetrics (cards) and visibleMetrics (chart)
+            selectedMetrics = [...tempSelectedMetrics];
+            visibleMetrics = [...tempSelectedMetrics]; // All newly selected metrics are visible by default
+            updateDisplay();
+            closeModal();
+        }
+        
+        // ============================================================================
+        // START
+        // ============================================================================
+        
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

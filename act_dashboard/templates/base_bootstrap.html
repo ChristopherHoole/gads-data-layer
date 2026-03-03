@@ -27,6 +27,9 @@
     <!-- Metrics Cards CSS - Added Chat 52 -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/metrics_cards.css') }}">
     
+    <!-- Chart Styles CSS - Added Chat 55 Module 3 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chart-styles.css') }}">
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -174,6 +177,9 @@
     
     <!-- Chart.js 4.4 — added Chat 23 M2 for metrics sparklines -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Chart Configuration - Added Chat 55 Module 3 -->
+    <script src="{{ url_for('static', filename='js/chart-config.js') }}"></script>
 
     {% block extra_js %}{% endblock %}
 </body>

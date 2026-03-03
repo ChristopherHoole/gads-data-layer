@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 4: Campaigns Table v7 - COMPLETE with Working Pagination</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    font-size: 13px;
+    background: #f8f9fa;
+    padding: 20px;
+    color: #202124;
+  }
+  
+  .container {
+    max-width: 1920px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 8px;
+    padding: 24px;
+  }
+  
+  .top-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  
+  .left-controls {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+  
+  .filter-tabs {
+    display: flex;
+    gap: 4px;
+    background: #f1f3f4;
+    padding: 4px;
+    border-radius: 6px;
+  }
+  
+  .filter-tab {
+    padding: 6px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #5f6368;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  
+  .filter-tab:hover {
+    background: rgba(0,0,0,0.05);
+  }
+  
+  .filter-tab.active {
+    background: white;
+    color: #202124;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+  
+  .rows-per-page {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #5f6368;
+  }
+  
+  .rows-per-page select {
+    padding: 6px 32px 6px 12px;
+    background: white;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #202124;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235f6368' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+  }
+  
+  .right-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  
+  .create-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #1a73e8;
+    border: 1px solid #1a73e8;
+    border-radius: 4px;
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  
+  .create-btn:hover {
+    background: #1557b0;
+    border-color: #1557b0;
+  }
+  
+  .columns-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #202124;
+    transition: all 0.15s;
+  }
+  
+  .columns-btn:hover {
+    background: #f8f9fa;
+    border-color: #c1c4c8;
+  }
+  
+  .table-wrapper {
+    overflow-x: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+  }
+  
+  thead {
+    background: #f8f9fa;
+    border-bottom: 2px solid #e0e0e0;
+  }
+  
+  th {
+    padding: 12px 10px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 500;
+    color: #5f6368;
+    white-space: nowrap;
+    width: 1%;
+  }
+  
+  th.right-align {
+    text-align: right;
+  }
+  
+  tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+    transition: background 0.15s;
+    height: 40px;
+  }
+  
+  tbody tr:last-child {
+    border-bottom: none;
+  }
+  
+  tbody tr:hover {
+    background: #f8f9fa;
+  }
+  
+  tbody tr.hidden-row {
+    display: none;
+  }
+  
+  td {
+    padding: 8px 10px;
+    font-size: 13px;
+    color: #202124;
+    white-space: nowrap;
+    width: 1%;
+  }
+  
+  td.right-align {
+    text-align: right;
+  }
+  
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  
+  .status-dot.enabled {
+    background: #34A853;
+  }
+  
+  .status-dot.paused {
+    background: #9e9e9e;
+  }
+  
+  .campaign-name {
+    font-weight: 500;
+    color: #1a73e8;
+    cursor: pointer;
+  }
+  
+  .campaign-name:hover {
+    text-decoration: underline;
+  }
+  
+  .actions-cell {
+    position: relative;
+  }
+  
+  .actions-btn {
+    padding: 6px 12px;
+    background: white;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #202124;
+  }
+  
+  .actions-btn:hover {
+    background: #f8f9fa;
+  }
+  
+  .actions-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: white;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    min-width: 200px;
+    z-index: 1000;
+    display: none;
+  }
+  
+  .actions-dropdown.show {
+    display: block;
+  }
+  
+  .actions-dropdown button {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    background: none;
+    text-align: left;
+    font-size: 13px;
+    color: #202124;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  
+  .actions-dropdown button:hover {
+    background: #f8f9fa;
+  }
+  
+  .actions-dropdown button:first-child {
+    border-radius: 4px 4px 0 0;
+  }
+  
+  .actions-dropdown button:last-child {
+    border-radius: 0 0 4px 4px;
+  }
+  
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9998;
+    display: none;
+  }
+  
+  .modal-overlay.show {
+    display: block;
+  }
+  
+  .column-selector-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    width: 600px;
+    max-height: 80vh;
+    z-index: 9999;
+    display: none;
+  }
+  
+  .column-selector-modal.show {
+    display: block;
+  }
+  
+  .modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .modal-header h3 {
+    font-size: 16px;
+    font-weight: 500;
+    color: #202124;
+  }
+  
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #5f6368;
+    line-height: 1;
+  }
+  
+  .modal-body {
+    padding: 20px 24px;
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+  
+  .column-group {
+    margin-bottom: 24px;
+  }
+  
+  .column-group h4 {
+    font-size: 13px;
+    font-weight: 500;
+    color: #5f6368;
+    margin-bottom: 12px;
+  }
+  
+  .column-checkbox {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+  }
+  
+  .column-checkbox input {
+    margin-right: 12px;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  .column-checkbox input:not(:disabled) {
+    cursor: pointer;
+  }
+  
+  .column-checkbox label {
+    font-size: 13px;
+    color: #202124;
+    cursor: pointer;
+    flex: 1;
+    user-select: none;
+  }
+  
+  .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+  
+  .btn {
+    padding: 8px 24px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  
+  .btn-secondary {
+    background: white;
+    border: 1px solid #dadce0;
+    color: #202124;
+  }
+  
+  .btn-secondary:hover {
+    background: #f8f9fa;
+  }
+  
+  .btn-primary {
+    background: #1a73e8;
+    border: 1px solid #1a73e8;
+    color: white;
+  }
+  
+  .btn-primary:hover {
+    background: #1557b0;
+  }
+  
+  .pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    padding: 12px 0;
+  }
+  
+  .pagination-info {
+    font-size: 13px;
+    color: #5f6368;
+  }
+  
+  .pagination-controls {
+    display: flex;
+    gap: 4px;
+  }
+  
+  .pagination-controls button {
+    min-width: 32px;
+    padding: 6px 12px;
+    background: white;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  
+  .pagination-controls button:hover:not(:disabled):not(.active) {
+    background: #f8f9fa;
+    border-color: #c1c4c8;
+  }
+  
+  .pagination-controls button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  
+  .pagination-controls button.active {
+    background: #1a73e8;
+    color: white;
+    border-color: #1a73e8;
+  }
+  
+  .col-hidden {
+    display: none;
+  }
+  
+  .roas-high {
+    color: #34A853;
+    font-weight: 500;
+  }
+  
+  .roas-medium {
+    color: #FBBC05;
+    font-weight: 500;
+  }
+  
+  .roas-low {
+    color: #EA4335;
+    font-weight: 500;
+  }
+  
+  .opt-score-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .opt-score-bar {
+    flex: 1;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    min-width: 60px;
+  }
+  
+  .opt-score-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+  
+  .opt-score-fill.high {
+    background: #34A853;
+  }
+  
+  .opt-score-fill.medium {
+    background: #FBBC05;
+  }
+  
+  .opt-score-fill.low {
+    background: #EA4335;
+  }
+  
+  .opt-score-text {
+    font-size: 13px;
+    color: #202124;
+    min-width: 35px;
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  
+  <div class="top-controls">
+    <div class="left-controls">
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="filterStatus('all')">All</button>
+        <button class="filter-tab" onclick="filterStatus('enabled')">Enabled</button>
+        <button class="filter-tab" onclick="filterStatus('paused')">Paused</button>
+      </div>
+      
+      <div class="rows-per-page">
+        <span>Rows per page:</span>
+        <select id="rowsPerPageSelect" onchange="changeRowsPerPage(this.value)">
+          <option value="10">10</option>
+          <option value="25" selected>25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="right-controls">
+      <button class="create-btn">
+        <span>+</span>
+        <span>Create Campaign</span>
+      </button>
+      <button class="columns-btn" onclick="openColumnSelector()">
+        <span>☰</span>
+        <span>Columns</span>
+      </button>
+    </div>
+  </div>
+  
+  <div class="table-wrapper">
+    <table id="campaignsTable">
+      <thead>
+        <tr>
+          <th data-col="status">Status</th>
+          <th data-col="campaign">Campaign</th>
+          <th class="right-align" data-col="budget">Budget</th>
+          <th data-col="type">Type</th>
+          <th class="right-align" data-col="cost">Cost</th>
+          <th class="right-align" data-col="conv-value">Conv. value</th>
+          <th class="right-align" data-col="roas">ROAS</th>
+          <th class="right-align" data-col="conversions">Conv</th>
+          <th class="right-align" data-col="cost-conv">Cost/conv</th>
+          <th class="right-align" data-col="conv-rate">Conv. rate</th>
+          <th class="right-align" data-col="impr">Impr</th>
+          <th class="right-align" data-col="clicks">Clicks</th>
+          <th class="right-align" data-col="cpc">Avg. CPC</th>
+          <th class="right-align" data-col="ctr">CTR</th>
+          <th data-col="opt-score">Opt. score</th>
+          <th class="right-align col-hidden" data-col="all-conv">All conv</th>
+          <th class="right-align col-hidden" data-col="all-conv-rate">All conv. rate</th>
+          <th class="right-align col-hidden" data-col="all-conv-value">All conv. value</th>
+          <th class="right-align col-hidden" data-col="cost-all-conv">Cost/all conv</th>
+          <th class="right-align col-hidden" data-col="search-impr">Search impr. share</th>
+          <th class="right-align col-hidden" data-col="search-top">Search top IS</th>
+          <th class="right-align col-hidden" data-col="search-abs">Search abs. top IS</th>
+          <th class="right-align col-hidden" data-col="click-share">Click share</th>
+          <th class="col-hidden" data-col="bid-strategy">Bid strategy type</th>
+          <th data-col="actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <!-- All 30 rows will be inserted here by JavaScript on page load -->
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="pagination">
+    <div class="pagination-info" id="paginationInfo">Showing 1-25 of 30 campaigns</div>
+    <div class="pagination-controls" id="paginationControls"></div>
+  </div>
+  
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeColumnSelector()"></div>
+
+<div class="column-selector-modal" id="columnSelector">
+  <div class="modal-header">
+    <h3>Select columns</h3>
+    <button class="modal-close" onclick="closeColumnSelector()">×</button>
+  </div>
+  <div class="modal-body">
+    
+    <div class="column-group">
+      <h4>Default columns (always visible)</h4>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-status" checked disabled>
+        <label for="col-status">Status</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-campaign" checked disabled>
+        <label for="col-campaign">Campaign</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-budget" checked disabled>
+        <label for="col-budget">Budget</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-type" checked disabled>
+        <label for="col-type">Type</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-actions" checked disabled>
+        <label for="col-actions">Actions</label>
+      </div>
+    </div>
+    
+    <div class="column-group">
+      <h4>Performance metrics (currently visible)</h4>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-cost" checked data-col="cost">
+        <label for="col-cost">Cost</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-conv-value" checked data-col="conv-value">
+        <label for="col-conv-value">Conv. value</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-roas" checked data-col="roas">
+        <label for="col-roas">ROAS</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-conversions" checked data-col="conversions">
+        <label for="col-conversions">Conv</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-cost-conv" checked data-col="cost-conv">
+        <label for="col-cost-conv">Cost/conv</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-conv-rate" checked data-col="conv-rate">
+        <label for="col-conv-rate">Conv. rate</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-impr" checked data-col="impr">
+        <label for="col-impr">Impr</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-clicks" checked data-col="clicks">
+        <label for="col-clicks">Clicks</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-cpc" checked data-col="cpc">
+        <label for="col-cpc">Avg. CPC</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-ctr" checked data-col="ctr">
+        <label for="col-ctr">CTR</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-opt-score" checked data-col="opt-score">
+        <label for="col-opt-score">Opt. score</label>
+      </div>
+    </div>
+    
+    <div class="column-group">
+      <h4>Additional metrics (hidden)</h4>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-all-conv" data-col="all-conv">
+        <label for="col-all-conv">All conv</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-all-conv-rate" data-col="all-conv-rate">
+        <label for="col-all-conv-rate">All conv. rate</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-all-conv-value" data-col="all-conv-value">
+        <label for="col-all-conv-value">All conv. value</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-cost-all-conv" data-col="cost-all-conv">
+        <label for="col-cost-all-conv">Cost/all conv</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-search-impr" data-col="search-impr">
+        <label for="col-search-impr">Search impr. share</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-search-top" data-col="search-top">
+        <label for="col-search-top">Search top IS</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-search-abs" data-col="search-abs">
+        <label for="col-search-abs">Search abs. top IS</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-click-share" data-col="click-share">
+        <label for="col-click-share">Click share</label>
+      </div>
+      <div class="column-checkbox">
+        <input type="checkbox" id="col-bid-strategy" data-col="bid-strategy">
+        <label for="col-bid-strategy">Bid strategy type</label>
+      </div>
+    </div>
+    
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" onclick="closeColumnSelector()">Cancel</button>
+    <button class="btn btn-primary" onclick="applyColumns()">Apply</button>
+  </div>
+</div>
+
+<script>
+// Campaign data (all 30 campaigns)
+const ALL_CAMPAIGNS = [
+  {name: "SWDP_OnlineShop", budget: "100.00", cost: "10,150.98", convValue: "3,949", roas: "0.39", roasClass: "roas-low", convs: "52.80", costConv: "192.26", convRate: "2.56", impr: "341,234", clicks: "2,063", cpc: "4.92", ctr: "0.60", optScore: 74, optClass: "medium", allConv: "58.40", allConvRate: "2.83", allConvValue: "4,362", costAllConv: "173.82", searchImpr: "75.3", searchTop: "42.9", searchAbs: "18.0", clickShare: "65.2", bidStrategy: "MAXIMIZE_CONVERSIONS", status: "enabled"},
+  {name: "Growth Moderator", budget: "50.00", cost: "11,078.05", convValue: "41,246.03", roas: "3.72", roasClass: "roas-high", convs: "157.2", costConv: "70.47", convRate: "6.54", impr: "189,345", clicks: "2,403", cpc: "4.61", ctr: "1.27", optScore: 74, optClass: "medium", allConv: "162.8", allConvRate: "6.78", allConvValue: "42,718", costAllConv: "68.05", searchImpr: "82.1", searchTop: "48.5", searchAbs: "22.3", clickShare: "71.8", bidStrategy: "TARGET_CPA", status: "enabled"},
+  {name: "Growth Slow", budget: "75.00", cost: "11,399.07", convValue: "53,709.23", roas: "4.71", roasClass: "roas-high", convs: "122.5", costConv: "93.05", convRate: "6.61", impr: "245,678", clicks: "1,854", cpc: "6.15", ctr: "0.75", optScore: 54, optClass: "low", allConv: "128.3", allConvRate: "6.91", allConvValue: "56,240", costAllConv: "88.81", searchImpr: "68.9", searchTop: "38.2", searchAbs: "14.8", clickShare: "59.3", bidStrategy: "TARGET_ROAS", status: "enabled"},
+  {name: "Volatile Medium", budget: "90.00", cost: "9,968.84", convValue: "20,909.68", roas: "2.10", roasClass: "roas-medium", convs: "109.8", costConv: "90.78", convRate: "6.17", impr: "167,890", clicks: "1,779", cpc: "5.60", ctr: "1.06", optScore: 82, optClass: "high", allConv: "114.2", allConvRate: "6.41", allConvValue: "21,752", costAllConv: "87.29", searchImpr: "71.5", searchTop: "40.8", searchAbs: "16.9", clickShare: "62.1", bidStrategy: "MANUAL_CPC", status: "paused"},
+  {name: "Mature Competitor Low", budget: "85.00", cost: "13,849.33", convValue: "62,892.82", roas: "4.54", roasClass: "roas-high", convs: "169.4", costConv: "81.76", convRate: "6.18", impr: "312,456", clicks: "2,741", cpc: "5.05", ctr: "0.88", optScore: 95, optClass: "high", allConv: "175.6", allConvRate: "6.40", allConvValue: "65,178", costAllConv: "78.86", searchImpr: "79.2", searchTop: "45.3", searchAbs: "19.8", clickShare: "69.4", bidStrategy: "TARGET_CPA", status: "enabled"},
+  {name: "Volatile High", budget: "120.00", cost: "10,448.52", convValue: "32,246.52", roas: "3.09", roasClass: "roas-high", convs: "127.9", costConv: "81.67", convRate: "6.37", impr: "198,234", clicks: "2,007", cpc: "5.21", ctr: "1.01", optScore: 64, optClass: "medium", allConv: "133.0", allConvRate: "6.61", allConvValue: "33,496", costAllConv: "78.57", searchImpr: "73.8", searchTop: "41.6", searchAbs: "17.2", clickShare: "64.8", bidStrategy: "MAXIMIZE_CONVERSIONS", status: "enabled"},
+  {name: "Stable ROAS 5.0", budget: "95.00", cost: "8,239.93", convValue: "49,239.93", roas: "5.98", roasClass: "roas-high", convs: "134.6", costConv: "61.24", convRate: "8.04", impr: "241,602", clicks: "1,674", cpc: "4.92", ctr: "0.69", optScore: 90, optClass: "high", allConv: "140.1", allConvRate: "8.37", allConvValue: "51,195", costAllConv: "58.81", searchImpr: "84.7", searchTop: "51.2", searchAbs: "24.3", clickShare: "76.9", bidStrategy: "TARGET_ROAS", status: "enabled"},
+  {name: "Budget Constrained High", budget: "45.00", cost: "7,552.17", convValue: "29,552.17", roas: "3.91", roasClass: "roas-high", convs: "98.7", costConv: "76.51", convRate: "8.01", impr: "210,013", clicks: "1,232", cpc: "6.13", ctr: "0.59", optScore: 78, optClass: "medium", allConv: "102.6", allConvRate: "8.33", allConvValue: "30,718", costAllConv: "73.60", searchImpr: "77.4", searchTop: "43.8", searchAbs: "18.6", clickShare: "68.1", bidStrategy: "MANUAL_CPC", status: "paused"},
+  {name: "Budget Constrained Medium", budget: "60.00", cost: "9,527.60", convValue: "29,527.60", roas: "3.10", roasClass: "roas-high", convs: "114.3", costConv: "83.35", convRate: "8.00", impr: "209,855", clicks: "1,429", cpc: "6.67", ctr: "0.68", optScore: 85, optClass: "high", allConv: "118.9", allConvRate: "8.32", allConvValue: "30,698", costAllConv: "80.14", searchImpr: "76.5", searchTop: "42.1", searchAbs: "17.4", clickShare: "67.2", bidStrategy: "TARGET_CPA", status: "enabled"},
+  {name: "Stable ROAS 3.0", budget: "80.00", cost: "9,382.00", convValue: "29,382.00", roas: "3.13", roasClass: "roas-high", convs: "108.5", costConv: "86.48", convRate: "8.00", impr: "209,557", clicks: "1,356", cpc: "6.92", ctr: "0.65", optScore: 83, optClass: "high", allConv: "112.8", allConvRate: "8.32", allConvValue: "30,537", costAllConv: "83.19", searchImpr: "74.9", searchTop: "41.3", searchAbs: "17.0", clickShare: "66.3", bidStrategy: "TARGET_ROAS", status: "enabled"},
+  {name: "Stable ROAS 4.0", budget: "70.00", cost: "9,493.86", convValue: "39,493.86", roas: "4.16", roasClass: "roas-high", convs: "116.2", costConv: "81.71", convRate: "8.00", impr: "209,523", clicks: "1,453", cpc: "6.53", ctr: "0.69", optScore: 83, optClass: "high", allConv: "120.8", allConvRate: "8.28", allConvValue: "41,058", costAllConv: "78.58", searchImpr: "76.2", searchTop: "42.7", searchAbs: "17.6", clickShare: "67.8", bidStrategy: "TARGET_ROAS", status: "enabled"},
+  {name: "Stable ROAS 2.0", budget: "55.00", cost: "9,778.85", convValue: "19,778.85", roas: "2.02", roasClass: "roas-medium", convs: "122.2", costConv: "80.01", convRate: "7.99", impr: "209,000", clicks: "1,530", cpc: "6.39", ctr: "0.73", optScore: 57, optClass: "low", allConv: "127.1", allConvRate: "8.31", allConvValue: "20,576", costAllConv: "76.94", searchImpr: "74.1", searchTop: "40.9", searchAbs: "16.5", clickShare: "65.7", bidStrategy: "TARGET_ROAS", status: "paused"},
+  {name: "Seasonal Low Amplitude", budget: "65.00", cost: "7,234.07", convValue: "27,234.07", roas: "3.76", roasClass: "roas-high", convs: "90.4", costConv: "80.02", convRate: "8.02", impr: "177,278", clicks: "1,127", cpc: "6.42", ctr: "0.64", optScore: 69, optClass: "medium", allConv: "94.0", allConvRate: "8.34", allConvValue: "28,308", costAllConv: "76.98", searchImpr: "72.3", searchTop: "39.8", searchAbs: "15.9", clickShare: "63.8", bidStrategy: "MAXIMIZE_CONVERSIONS", status: "enabled"},
+  {name: "Decline Slow", budget: "75.00", cost: "8,056.31", convValue: "20,856.31", roas: "2.59", roasClass: "roas-medium", convs: "100.7", costConv: "80.00", convRate: "6.73", impr: "144,393", clicks: "1,496", cpc: "5.38", ctr: "1.04", optScore: 68, optClass: "medium", allConv: "104.7", allConvRate: "7.00", allConvValue: "21,679", costAllConv: "76.93", searchImpr: "70.3", searchTop: "38.4", searchAbs: "15.0", clickShare: "61.9", bidStrategy: "MANUAL_CPC", status: "enabled"},
+  {name: "Seasonal High Amplitude", budget: "85.00", cost: "9,828.26", convValue: "24,828.26", roas: "2.53", roasClass: "roas-medium", convs: "122.9", costConv: "80.00", convRate: "8.02", impr: "143,901", clicks: "1,532", cpc: "6.42", ctr: "1.06", optScore: 72, optClass: "medium", allConv: "127.8", allConvRate: "8.34", allConvValue: "25,800", costAllConv: "76.92", searchImpr: "69.3", searchTop: "37.7", searchAbs: "14.4", clickShare: "60.8", bidStrategy: "TARGET_CPA", status: "enabled"},
+  {name: "Decline Moderate", budget: "50.00", cost: "6,648.99", convValue: "13,648.99", roas: "2.05", roasClass: "roas-medium", convs: "83.1", costConv: "80.01", convRate: "5.44", impr: "178,506", clicks: "1,527", cpc: "4.35", ctr: "0.86", optScore: 72, optClass: "medium", allConv: "86.4", allConvRate: "5.66", allConvValue: "14,191", costAllConv: "76.96", searchImpr: "70.0", searchTop: "38.1", searchAbs: "14.8", clickShare: "61.5", bidStrategy: "MANUAL_CPC", status: "enabled"},
+  {name: "Decline Fast", budget: "40.00", cost: "2,800.20", convValue: "4,600.20", roas: "1.64", roasClass: "roas-low", convs: "35.0", costConv: "80.01", convRate: "3.23", impr: "65,155", clicks: "1,084", cpc: "2.58", ctr: "1.66", optScore: 56, optClass: "low", allConv: "36.4", allConvRate: "3.36", allConvValue: "4,784", costAllConv: "76.92", searchImpr: "69.7", searchTop: "40.2", searchAbs: "18.4", clickShare: "68.6", bidStrategy: "MANUAL_CPC", status: "paused"},
+  {name: "Recovery Turnaround", budget: "110.00", cost: "10,228.22", convValue: "40,228.22", roas: "3.93", roasClass: "roas-high", convs: "127.9", costConv: "80.00", convRate: "8.02", impr: "155,461", clicks: "1,594", cpc: "6.42", ctr: "1.03", optScore: 62, optClass: "medium", allConv: "133.0", allConvRate: "8.34", allConvValue: "41,837", costAllConv: "76.90", searchImpr: "68.8", searchTop: "39.5", searchAbs: "17.4", clickShare: "67.0", bidStrategy: "TARGET_ROAS", status: "enabled"},
+  {name: "Growth Fast", budget: "130.00", cost: "12,345.67", convValue: "51,234.56", roas: "4.15", roasClass: "roas-high", convs: "154.3", costConv: "80.01", convRate: "8.25", impr: "278,901", clicks: "1,870", cpc: "6.60", ctr: "0.67", optScore: 88, optClass: "high", allConv: "160.5", allConvRate: "8.58", allConvValue: "53,283", costAllConv: "76.91", searchImpr: "88.2", searchTop: "54.7", searchAbs: "26.8", clickShare: "81.3", bidStrategy: "TARGET_CPA", status: "enabled"},
+  {name: "Mature Stable", budget: "90.00", cost: "11,234.89", convValue: "44,937.96", roas: "4.00", roasClass: "roas-high", convs: "140.4", costConv: "80.00", convRate: "7.84", impr: "234,567", clicks: "1,790", cpc: "6.28", ctr: "0.76", optScore: 92, optClass: "high", allConv: "146.0", allConvRate: "8.15", allConvValue: "46,736", costAllConv: "76.94", searchImpr: "85.4", searchTop: "52.1", searchAbs: "24.9", clickShare: "78.9", bidStrategy: "TARGET_ROAS", status: "enabled"},
+  {name: "Brand Defense", budget: "200.00", cost: "15,678.34", convValue: "78,391.70", roas: "5.00", roasClass: "roas-high", convs: "195.9", costConv: "80.01", convRate: "9.12", impr: "345,678", clicks: "2,148", cpc: "7.30", ctr: "0.62", optScore: 96, optClass: "high", allConv: "203.8", allConvRate: "9.49", allConvValue: "81,527", costAllConv: "76.94", searchImpr: "91.2", searchTop: "58.4", searchAbs: "29.6", clickShare: "86.7", bidStrategy: "TARGET_ROAS", status: "enabled"},
+  {name: "Competitor Conquest", budget: "150.00", cost: "13,456.78", convValue: "26,913.56", roas: "2.00", roasClass: "roas-medium", convs: "168.2", costConv: "80.00", convRate: "6.89", impr: "298,765", clicks: "2,440", cpc: "5.51", ctr: "0.82", optScore: 71, optClass: "medium", allConv: "174.9", allConvRate: "7.17", allConvValue: "27,993", costAllConv: "76.94", searchImpr: "73.6", searchTop: "40.5", searchAbs: "16.3", clickShare: "64.8", bidStrategy: "MANUAL_CPC", status: "paused"},
+  {name: "Generic Keywords High", budget: "175.00", cost: "16,789.45", convValue: "58,762.08", roas: "3.50", roasClass: "roas-high", convs: "209.9", costConv: "79.99", convRate: "7.56", impr: "412,345", clicks: "2,777", cpc: "6.04", ctr: "0.67", optScore: 81, optClass: "high", allConv: "218.3", allConvRate: "7.86", allConvValue: "61,112", costAllConv: "76.92", searchImpr: "81.7", searchTop: "47.9", searchAbs: "20.8", clickShare: "73.4", bidStrategy: "TARGET_CPA", status: "enabled"},
+  {name: "Generic Keywords Medium", budget: "125.00", cost: "14,234.56", convValue: "49,820.96", roas: "3.50", roasClass: "roas-high", convs: "177.9", costConv: "80.01", convRate: "7.45", impr: "356,789", clicks: "2,388", cpc: "5.96", ctr: "0.67", optScore: 79, optClass: "medium", allConv: "185.0", allConvRate: "7.75", allConvValue: "51,794", costAllConv: "76.94", searchImpr: "79.8", searchTop: "46.2", searchAbs: "19.6", clickShare: "71.8", bidStrategy: "TARGET_CPA", status: "enabled"},
+  {name: "Long Tail Keywords", budget: "80.00", cost: "9,876.54", convValue: "49,382.70", roas: "5.00", roasClass: "roas-high", convs: "123.5", costConv: "79.97", convRate: "9.84", impr: "201,234", clicks: "1,255", cpc: "7.87", ctr: "0.62", optScore: 94, optClass: "high", allConv: "128.4", allConvRate: "10.23", allConvValue: "51,338", costAllConv: "76.92", searchImpr: "87.9", searchTop: "54.2", searchAbs: "26.1", clickShare: "80.3", bidStrategy: "TARGET_ROAS", status: "enabled"},
+  {name: "DSA Campaign", budget: "100.00", cost: "11,567.89", convValue: "34,703.67", roas: "3.00", roasClass: "roas-high", convs: "144.6", costConv: "80.00", convRate: "7.23", impr: "287,654", clicks: "2,000", cpc: "5.78", ctr: "0.70", optScore: 76, optClass: "medium", allConv: "150.4", allConvRate: "7.52", allConvValue: "36,091", costAllConv: "76.93", searchImpr: "75.8", searchTop: "42.8", searchAbs: "17.8", clickShare: "67.9", bidStrategy: "MAXIMIZE_CONVERSIONS", status: "enabled"},
+  {name: "Shopping Feed Optimized", budget: "110.00", cost: "12,234.78", convValue: "48,938.12", roas: "4.00", roasClass: "roas-high", convs: "152.9", costConv: "80.00", convRate: "7.89", impr: "298,432", clicks: "1,976", cpc: "6.19", ctr: "0.66", optScore: 87, optClass: "high", allConv: "159.0", allConvRate: "8.21", allConvValue: "50,896", costAllConv: "76.93", searchImpr: "83.4", searchTop: "49.6", searchAbs: "22.4", clickShare: "76.1", bidStrategy: "TARGET_ROAS", status: "enabled"},
+  {name: "Retargeting High Intent", budget: "140.00", cost: "14,567.23", convValue: "58,268.92", roas: "4.00", roasClass: "roas-high", convs: "181.9", costConv: "80.08", convRate: "8.45", impr: "312,567", clicks: "2,153", cpc: "6.77", ctr: "0.69", optScore: 89, optClass: "high", allConv: "189.2", allConvRate: "8.79", allConvValue: "60,591", costAllConv: "76.98", searchImpr: "86.7", searchTop: "51.8", searchAbs: "23.9", clickShare: "79.4", bidStrategy: "TARGET_CPA", status: "enabled"},
+  {name: "Seasonal Q4 Boost", budget: "250.00", cost: "18,945.67", convValue: "75,782.68", roas: "4.00", roasClass: "roas-high", convs: "236.8", costConv: "80.00", convRate: "8.98", impr: "423,678", clicks: "2,636", cpc: "7.19", ctr: "0.62", optScore: 91, optClass: "high", allConv: "246.3", allConvRate: "9.34", allConvValue: "78,814", costAllConv: "76.92", searchImpr: "89.3", searchTop: "55.6", searchAbs: "27.4", clickShare: "84.2", bidStrategy: "TARGET_ROAS", status: "enabled"},
+  {name: "New Market Test", budget: "60.00", cost: "7,123.45", convValue: "21,370.35", roas: "3.00", roasClass: "roas-high", convs: "89.0", costConv: "80.04", convRate: "7.12", impr: "189,234", clicks: "1,250", cpc: "5.70", ctr: "0.66", optScore: 73, optClass: "medium", allConv: "92.6", allConvRate: "7.40", allConvValue: "22,224", costAllConv: "76.93", searchImpr: "74.2", searchTop: "41.0", searchAbs: "16.8", clickShare: "65.4", bidStrategy: "MAXIMIZE_CONVERSIONS", status: "enabled"}
+];
+
+// Pagination state
+let currentPage = 1;
+let rowsPerPage = 25;
+let currentFilter = 'all';
+
+// Generate table HTML
+function generateRowHTML(campaign) {
+  const statusClass = campaign.status === 'enabled' ? 'enabled' : 'paused';
+  const actionText = campaign.status === 'enabled' ? 'Pause' : 'Enable';
+  
+  return `
+    <tr data-status="${campaign.status}">
+      <td data-col="status"><span class="status-dot ${statusClass}"></span></td>
+      <td data-col="campaign"><span class="campaign-name">${campaign.name}</span></td>
+      <td class="right-align" data-col="budget">$${campaign.budget}</td>
+      <td data-col="type">Search</td>
+      <td class="right-align" data-col="cost">$${campaign.cost}</td>
+      <td class="right-align" data-col="conv-value">$${campaign.convValue}</td>
+      <td class="right-align" data-col="roas"><span class="${campaign.roasClass}">${campaign.roas}</span></td>
+      <td class="right-align" data-col="conversions">${campaign.convs}</td>
+      <td class="right-align" data-col="cost-conv">$${campaign.costConv}</td>
+      <td class="right-align" data-col="conv-rate">${campaign.convRate}%</td>
+      <td class="right-align" data-col="impr">${campaign.impr}</td>
+      <td class="right-align" data-col="clicks">${campaign.clicks}</td>
+      <td class="right-align" data-col="cpc">$${campaign.cpc}</td>
+      <td class="right-align" data-col="ctr">${campaign.ctr}%</td>
+      <td data-col="opt-score">
+        <div class="opt-score-wrapper">
+          <div class="opt-score-bar">
+            <div class="opt-score-fill ${campaign.optClass}" style="width: ${campaign.optScore}%"></div>
+          </div>
+          <span class="opt-score-text">${campaign.optScore}%</span>
+        </div>
+      </td>
+      <td class="right-align col-hidden" data-col="all-conv">${campaign.allConv}</td>
+      <td class="right-align col-hidden" data-col="all-conv-rate">${campaign.allConvRate}%</td>
+      <td class="right-align col-hidden" data-col="all-conv-value">$${campaign.allConvValue}</td>
+      <td class="right-align col-hidden" data-col="cost-all-conv">$${campaign.costAllConv}</td>
+      <td class="right-align col-hidden" data-col="search-impr">${campaign.searchImpr}%</td>
+      <td class="right-align col-hidden" data-col="search-top">${campaign.searchTop}%</td>
+      <td class="right-align col-hidden" data-col="search-abs">${campaign.searchAbs}%</td>
+      <td class="right-align col-hidden" data-col="click-share">${campaign.clickShare}%</td>
+      <td class="col-hidden" data-col="bid-strategy">${campaign.bidStrategy}</td>
+      <td class="actions-cell" data-col="actions">
+        <button class="actions-btn" onclick="toggleActions(this)">Actions ▼</button>
+        <div class="actions-dropdown">
+          <button>View details</button>
+          <button>Edit settings</button>
+          <button>${actionText} campaign</button>
+          <button>View recommendations</button>
+          <button>View changes</button>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+// Get filtered campaigns
+function getFilteredCampaigns() {
+  if (currentFilter === 'all') return ALL_CAMPAIGNS;
+  return ALL_CAMPAIGNS.filter(c => c.status === currentFilter);
+}
+
+// Render table
+function renderTable() {
+  const filtered = getFilteredCampaigns();
+  const start = (currentPage - 1) * rowsPerPage;
+  const end = start + rowsPerPage;
+  const pageData = filtered.slice(start, end);
+  
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = pageData.map(c => generateRowHTML(c)).join('');
+  
+  updatePaginationInfo(filtered.length, start, end);
+  renderPaginationControls(filtered.length);
+}
+
+// Update pagination info
+function updatePaginationInfo(total, start, end) {
+  const showing = Math.min(end, total);
+  document.getElementById('paginationInfo').textContent = 
+    `Showing ${start + 1}-${showing} of ${total} campaigns`;
+}
+
+// Render pagination controls
+function renderPaginationControls(totalItems) {
+  const totalPages = Math.ceil(totalItems / rowsPerPage);
+  const controls = document.getElementById('paginationControls');
+  
+  let html = '';
+  
+  // Previous button
+  html += `<button ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">Previous</button>`;
+  
+  // Page numbers
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++) {
+      html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+    }
+  } else {
+    // Always show page 1
+    html += `<button class="${currentPage === 1 ? 'active' : ''}" onclick="goToPage(1)">1</button>`;
+    
+    if (currentPage > 3) {
+      html += `<button disabled>...</button>`;
+    }
+    
+    // Show current page and neighbors
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
+    
+    for (let i = start; i <= end; i++) {
+      html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+    }
+    
+    if (currentPage < totalPages - 2) {
+      html += `<button disabled>...</button>`;
+    }
+    
+    // Always show last page
+    html += `<button class="${currentPage === totalPages ? 'active' : ''}" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+  }
+  
+  // Next button
+  html += `<button ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">Next</button>`;
+  
+  controls.innerHTML = html;
+}
+
+// Go to page
+function goToPage(page) {
+  currentPage = page;
+  renderTable();
+}
+
+// Change rows per page
+function changeRowsPerPage(value) {
+  rowsPerPage = parseInt(value);
+  currentPage = 1;
+  renderTable();
+}
+
+// Filter status
+function filterStatus(status) {
+  document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+  event.target.classList.add('active');
+  currentFilter = status;
+  currentPage = 1;
+  renderTable();
+}
+
+// Actions dropdown
+function toggleActions(btn) {
+  document.querySelectorAll('.actions-dropdown').forEach(d => {
+    if (d !== btn.nextElementSibling) {
+      d.classList.remove('show');
+    }
+  });
+  
+  btn.nextElementSibling.classList.toggle('show');
+  
+  setTimeout(() => {
+    document.addEventListener('click', function closeDropdown(e) {
+      if (!e.target.closest('.actions-cell')) {
+        document.querySelectorAll('.actions-dropdown').forEach(d => d.classList.remove('show'));
+        document.removeEventListener('click', closeDropdown);
+      }
+    });
+  }, 0);
+}
+
+// Column selector
+function openColumnSelector() {
+  document.getElementById('modalOverlay').classList.add('show');
+  document.getElementById('columnSelector').classList.add('show');
+}
+
+function closeColumnSelector() {
+  document.getElementById('modalOverlay').classList.remove('show');
+  document.getElementById('columnSelector').classList.remove('show');
+}
+
+function applyColumns() {
+  const checkboxes = document.querySelectorAll('#columnSelector input[data-col]');
+  
+  checkboxes.forEach(checkbox => {
+    const colName = checkbox.dataset.col;
+    const isChecked = checkbox.checked;
+    
+    const elements = document.querySelectorAll(`[data-col="${colName}"]`);
+    
+    elements.forEach(el => {
+      if (isChecked) {
+        el.classList.remove('col-hidden');
+      } else {
+        el.classList.add('col-hidden');
+      }
+    });
+  });
+  
+  closeColumnSelector();
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  renderTable();
+});
+</script>
+
+</body>
+</html>

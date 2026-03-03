@@ -1,20 +1,21 @@
 # MASTER KNOWLEDGE BASE - ADS CONTROL TOWER (A.C.T)
 
-**Version:** 11.0
+**Version:** 12.0
 **Created:** 2026-02-19
-**Updated:** 2026-02-26
+**Updated:** 2026-02-28
 **Purpose:** Complete project context for Master Chat coordination
 
 ---
 
 ## EXECUTIVE SUMMARY
 
-### Current State (Feb 26, 2026)
-- **Overall Completion:** ~99%
-- **Phase:** Rules Creation ✅ COMPLETE (41 rules) | Marketing Website ✅ COMPLETE | Dashboard 3.0 M9 ✅ COMPLETE
-- **Active Development:** Ready for Rules Tab UI Components + Recommendations Engine Extension
+### Current State (Feb 28, 2026)
+- **Overall Completion:** ~99.7%
+- **Phase:** Multi-Entity Recommendations UI ✅ COMPLETE | Rules Creation ✅ COMPLETE (41 rules) | Marketing Website ✅ COMPLETE | Dashboard 3.0 M9 ✅ COMPLETE
+- **Active Development:** Ready for Dashboard Design Upgrade + Performance Max Campaigns
 - **Marketing Website:** Live at https://www.christopherhoole.online
 - **Rules:** 41 total (13 campaign + 6 keyword + 4 ad_group + 4 ad + 14 shopping)
+- **Recommendations:** 1,492 active (1,256 keywords + 126 shopping + 110 campaigns)
 - **Templating:** Jinja2 Macros (metrics_section M2 + performance_chart M3)
 
 ### Tech Stack
@@ -378,26 +379,185 @@ All 13 rules now have `monitoring_minutes`. When > 0, takes priority over `monit
 - Column NULL handling: Rules created for unpopulated columns (feed_error_count, out_of_stock_product_count, optimization_score)
 - Testing strategy: 5 incremental batches (3+3+3+3+2) to isolate any JSON syntax errors
 
+#### Chat 46: Rules Tab UI Components (0299845 + 286f2ce)
+**Date:** 2026-02-26 | **Time:** 2.5 hours (83% efficiency)
+**Docs:** CHAT_46_BRIEF.md + CHAT_46_SUMMARY.md + CHAT_46_HANDOFF.md
+
+- 3 Rules tab UI components created (ad_group_rules_tab.html, ad_rules_tab.html, shopping_rules_tab.html)
+- Fixed 3 parent templates with correct component includes
+- Applied data schema fix (condition_1_* fields for new schema vs old schema for keywords)
+- All components display full detailed rule cards
+- All 20 success criteria passing
+
+**Components Created:**
+1. ad_group_rules_tab.html — Display 4 ad group rules
+2. ad_rules_tab.html — Display 4 ad rules
+3. shopping_rules_tab.html — Display 14 shopping rules
+
+**Parent Templates Fixed:**
+- ad_groups.html line 225: rules_tab.html → ad_group_rules_tab.html
+- ads_new.html line 267: rules_tab.html → ad_rules_tab.html
+- shopping_new.html line 729: rules_tab.html → shopping_rules_tab.html
+
+**Schema Fix Applied:**
+- Old schema (keywords): condition_metric, condition_operator, condition_value
+- New schema (ad_group/ad/shopping): condition_1_metric, condition_1_operator, condition_1_value
+- All 3 components updated to use new schema fields
+
+**Testing Results:**
+✅ Ad Groups page: 4 rules, toggle working
+✅ Ads page: 4 rules, toggle working
+✅ Shopping page: 14 rules, toggle working
+✅ Zero errors, <2s load time
+
+**Critical Learning:** Each page needs specific component include, not generic rules_tab.html
+
+#### Chat 47: Multi-Entity Recommendations System (75becfb)
+**Date:** 2026-02-26 | **Time:** 2 hours (600% efficiency!)
+**Docs:** CHAT_47_BRIEF.md + CHAT_47_SUMMARY.md + CHAT_47_HANDOFF.md
+
+- Extended recommendations engine from campaign-only to 4 entity types (campaigns, keywords, ad_groups, shopping)
+- Database schema extensions: +3 columns to recommendations table, +2 to changes table
+- Migrated 70 existing recommendations and 49 existing changes to new schema with zero data loss
+- Engine generates 1,492 recommendations across 3 active entity types (36 of 41 rules generating)
+- Accept/Decline routes working for all entity types
+- 100% backward compatibility maintained (campaign_id/campaign_name columns kept)
+- 26/26 comprehensive tests passed (100% success rate)
+
+**System Status:**
+- Working (3 of 5): Campaigns 110 recs (13 rules), Keywords 1,256 recs (6 rules), Shopping 126 recs (13 rules)
+- Not working (2 of 5): Ads 4 rules blocked (analytics.ad_daily table missing), Ad Groups 4 rules enabled but 0 recs (conditions not met)
+- **Total: 1,492 active recommendations (36 of 41 rules generating = 88%)**
+
+**Database Schema Changes:**
+- Recommendations table (21 → 24 columns): Added entity_type, entity_id, entity_name; Kept campaign_id, campaign_name
+- Changes table (13 → 15 columns): Added entity_type, entity_id; Kept campaign_id
+
+**Files Created:**
+1. tools/migrations/migrate_recommendations_schema.py — Recommendations migration
+2. tools/migrations/migrate_changes_table.py — Changes migration
+3. test_comprehensive_chat47.py — 26-test comprehensive suite
+4. test_routes_entity_types.py — Route validation testing
+
+**Files Modified:**
+1. act_autopilot/recommendations_engine.py (710 lines) — Extended for 4 entity types
+2. act_dashboard/routes/recommendations.py (689 lines) — Entity-aware Accept/Decline routes
+
+**Key Achievement:** Multi-entity foundation with perfect backward compatibility, zero data loss, exceptional efficiency
+
+#### Chat 48: Recommendations UI - Global Page Entity Filtering (c7a4017)
+**Date:** 2026-02-27 | **Time:** 2 hours (550% efficiency!)
+**Docs:** CHAT_48_SUMMARY.md (398 lines) + CHAT_48_HANDOFF.md (1,005 lines)
+
+- Entity type filter dropdown (All, Campaigns, Keywords, Shopping, Ad Groups)
+- Real-time JavaScript filtering (<500ms response)
+- Color-coded entity badges: Campaign (blue), Keyword (green), Shopping (cyan), Ad Group (orange)
+- Entity-specific card content (keyword text + parent campaign, shopping campaign names)
+- Entity-aware action labels ("Decrease daily budget by 10%", "Pause keyword", etc.)
+- sessionStorage persistence for cross-tab filtering
+- Load More pattern (50 cards initially, paginated)
+- 15/15 manual testing success (100%)
+
+**Files Modified:**
+1. act_dashboard/templates/recommendations.html (+65 lines, 1,032 → 1,097)
+2. act_dashboard/routes/recommendations.py (-70 lines net, 840 → 770)
+
+**Key Functions:**
+- get_action_label(rec) — 88 lines, registered as Jinja2 filter: @bp.app_template_filter('action_label')
+
+**Issues Fixed:**
+1. Legacy action label conflict (removed 22 lines from _enrich_rec())
+2. Function logic mismatch (action_direction checking)
+3. Test script session management (documented limitation)
+
+**Performance:**
+- Page load: 2.44s (48% faster than <5s target)
+- Filter response: <500ms (instant)
+- Zero console errors
+
+**Key Achievement:** Complete multi-entity filtering with 100% manual testing success, exceptional efficiency
+
+#### Chat 49: Recommendations UI - Entity-Specific Pages (85dc3aa + d4503f5)
+**Date:** 2026-02-27 to 2026-02-28 | **Time:** 16.5 hours (vs 10-14h estimated)
+**Docs:** CHAT_49_SUMMARY.md (689 lines) + CHAT_49_HANDOFF.md (1,830 lines)
+
+- Recommendations tabs added to 4 entity-specific pages (Keywords, Shopping, Ad Groups, Ads)
+- Keywords page: 1,256 recommendations, Load More pattern (20 cards/load), purple badges
+- Shopping page: 126 recommendations, cyan badges
+- Ad Groups page: Empty state with info styling + Run Recommendations Now button, orange badges
+- Ads page: Warning empty state explaining table missing (NO Run button), red/danger badges
+- Backend fixes: limit 200→5000 (recommendations.py line 292), CSRF exemptions for Accept/Decline (app.py lines 186-191)
+- 30/30 success criteria passed (100% testing)
+
+**Files Modified:**
+1. act_dashboard/templates/keywords_new.html (+783 lines, 303 → 1,086)
+2. act_dashboard/templates/shopping_new.html (+487 lines, 301 → 788)
+3. act_dashboard/templates/ad_groups.html (+810 lines, 250 → 1,060)
+4. act_dashboard/templates/ads_new.html (+777 lines, 303 → 1,080)
+5. act_dashboard/routes/recommendations.py (line 292: limit=200 → limit=5000)
+6. act_dashboard/app.py (lines 186-191: CSRF exemptions)
+
+**Total Frontend Code Added:** 2,857 lines (HTML/CSS/JavaScript)
+
+**Entity-Specific Adaptations:**
+- Keywords: 'keyword' filter, Purple badges, 1,256 recs, Load More YES, Info empty state
+- Shopping: 'shopping_product' filter, Cyan badges, 126 recs, Load More NO, Info empty state
+- Ad Groups: 'ad_group' filter, Orange badges, 0 recs, Run button YES, Info empty state
+- Ads: 'ad' filter, Red badges, 0 recs, Run button NO, Warning empty state
+
+**Testing Results:**
+- Phase 1 (Keywords): 7/7 PASS
+- Phase 2 (Shopping): 5/5 PASS
+- Phase 3 (Ad Groups): 8/8 PASS
+- Phase 4 (Ads): 10/10 PASS
+- **Total: 30/30 PASS (100%)**
+
+**Backend Bugs Fixed:**
+1. Limit bug (CRITICAL): limit=200 prevented full 1,256 keywords from loading, fixed to 5000
+2. CSRF tokens (CRITICAL): Accept/Decline returned HTTP 400, added exemptions in app.py
+
+**Issues Encountered:**
+- Backend limit bug: 1.5h debugging
+- CSRF tokens: 1.0h debugging
+- Jinja2 syntax error: 0.5h
+- Script tags visible: 0.5h
+- Console message cosmetic: Noted, not fixed
+- **Total debugging: 3.5 hours (21% of project time)**
+
+**Key Achievement:** Production-ready recommendations tabs across all 4 entity pages with 100% testing success, established component reuse pattern for future entity types
+
 ---
 
 ## CURRENT STATUS
-**Date:** 2026-02-23
-**Chat 31:** Wireframe creation (13 sections designed, 306KB with base64 images)
-**Master Chat 4.0:** Full rebuild + deployment
+**Date:** 2026-02-28
+**Last Completed:** Chat 49 — Entity-Specific Recommendations UI (Keywords, Shopping, Ad Groups, Ads)
+**Overall Completion:** 99.7%
 
-**Tech Stack:**
-- Next.js 14 (React framework)
-- Tailwind CSS (utility-first styling)
-- Framer Motion (animations)
-- shadcn/ui (component library)
-- Three.js WebGL r128 (interactive hero shader)
-- Vercel (hosting + deployment)
-- GoDaddy DNS → Vercel custom domain
+**Recent Work Summary (Chats 46-49):**
+- Chat 46: Rules Tab UI Components (3 components for ad_group/ad/shopping pages) ✅
+- Chat 47: Multi-Entity Recommendations System (1,492 active recommendations across 4 entity types) ✅
+- Chat 48: Global Recommendations Page Entity Filtering (dropdown, badges, action labels) ✅
+- Chat 49: Entity-Specific Recommendations Pages (Keywords, Shopping, Ad Groups, Ads tabs) ✅
 
-**Completed Sections (11/13):**
-1. ✅ **S1: Hero** — Three.js interactive liquid shader, 20px h1, centered layout, scroll indicator
-   - User hovers over image to reveal A.C.T version
-   - Custom shader with angle-based noise for organic liquid effect
+**What's Working:**
+- 41 optimization rules across 5 entity types (all enabled)
+- 1,492 active recommendations (1,256 keywords + 126 shopping + 110 campaigns)
+- Multi-entity recommendations system (campaigns, keywords, shopping working; ad_groups/ads ready but blocked)
+- Entity-specific recommendations tabs on all 4 pages
+- Global recommendations page with entity filtering
+- Accept/Decline/Modify operations for all entity types
+- Radar monitoring and automatic rollback
+- Changes audit trail (My Actions + System Changes)
+- Search Terms tab with live negative keyword blocking + keyword expansion
+- Rules Tab UI on all pages (Campaigns, Keywords, Ad Groups, Ads, Shopping)
+- M1-M9 Dashboard 3.0 features complete
+- Marketing website live (christopherhoole.online)
+
+**What's Partially Working:**
+- Ad Groups: 4 rules enabled but 0 recommendations (conditions not met with current data)
+- Ads: 4 rules enabled but blocked (analytics.ad_daily table missing from database)
+
+**What's Complete:**
    - Two-layer image system (Christopher base + A.C.T reveal)
 2. ✅ **S2: About Me** — Dark bg, 4 paragraphs, blue highlights on key phrases, bullet points
 3. ✅ **S3: The Problem** — White bg, 3-column card grid, 20px titles, 19px content
@@ -491,19 +651,22 @@ All 13 rules now have `monitoring_minutes`. When > 0, takes priority over `monit
 What's working:
 - **Marketing Website:** Live at https://www.christopherhoole.online, 11 sections, fully responsive
 - **Rules Creation:** ✅ COMPLETE - 41 rules across 5 types (13 campaign + 6 keyword + 4 ad_group + 4 ad + 14 shopping)
+- **Rules Tab UI:** ✅ COMPLETE - All pages have entity-specific rule components (campaigns, keywords, ad_groups, ads, shopping)
+- **Multi-Entity Recommendations:** ✅ COMPLETE - 1,492 active recommendations (1,256 keywords + 126 shopping + 110 campaigns)
+- **Entity-Specific Recommendations Pages:** ✅ COMPLETE - Keywords, Shopping, Ad Groups, Ads tabs all functional
+- **Global Recommendations Page:** ✅ COMPLETE - Entity filtering, color-coded badges, entity-aware action labels
 - All 6 dashboard pages with real/synthetic data
 - Metrics cards: Financial + Actions on every page
 - Performance chart: dual-axis, 4 toggleable metrics, session-persisted, all 6 pages
 - Sparklines + change indicators on date-range pages
 - Session-based date picker
-- M5 card-based Rules tab structure on 5 pages (Campaigns pilot complete, 4 pages have tab structures ready for components)
 - rules_config.json (41 rules) + rules_api.py CRUD
-- M6 Recommendations Engine + global page + Campaigns tab (campaign rules only currently)
-- M7 Accept/Decline/Modify action buttons — live POST routes
-- M7 5-tab Recommendations UI on /recommendations + /campaigns (Pending/Monitoring/Successful/Reverted/Declined)
+- M6 Recommendations Engine (extended to 4 entity types: campaigns, keywords, ad_groups, shopping)
+- M7 Accept/Decline/Modify action buttons — live POST routes for all entity types
+- M7 5-tab Recommendations UI on /recommendations + all entity pages (Pending/Monitoring/Successful/Reverted/Declined)
 - M8 Radar background job — auto-resolves monitoring recommendations
 - M8 Changes page — My Actions card grid + System Changes table
-- M8 Reverted tab on both recommendation pages
+- M8 Reverted tab on all recommendation pages
 - M9 Phase 1 Search Terms tab with negative keyword flagging
 - M9 Phase 2 Live execution — negative keyword blocking + keyword expansion (dry-run validated)
 - changes audit table in warehouse.duckdb
@@ -513,36 +676,68 @@ What's working:
 - Server-side sort on all sortable columns
 
 Pending:
-- **Rules Tab UI:** Create page-specific components for ad_group, ad, shopping (~3 hours total)
-- **Recommendations Engine:** Extend to handle all rule types (currently campaign rules only, 15-25 hours)
-- **Website:** Connect contact form to /api/leads endpoint (integrate with A.C.T dashboard)
-- **Website:** Optional SEO improvements (meta tags, OpenGraph images, sitemap)
-- **Website:** Root domain DNS propagation (https://christopherhoole.online without www)
-- M9 Live validation with real Google Ads account
+**HIGH PRIORITY (Next 6-7 chats):**
+- Dashboard Design Upgrade (TBD scope — NEXT)
+- Website Design Upgrade (christopherhoole.online — TBD scope)
+- M9 Live Validation (real Google Ads account testing)
+- Cold Outreach System (agency lead generation — UK/US/CA/AU/NZ targeting)
+- Finalise Shopping Campaigns (shopping-specific dashboard improvements)
+- Performance Max Campaigns (asset groups, 10-15 rules, new page)
+- Chat 50: Testing & Polish (after dashboard redesign — 6-8 hours)
+
+**MEDIUM PRIORITY:**
+- Website: Connect contact form to /api/leads endpoint
+- Website: SEO improvements (meta tags, sitemap, Open Graph)
 - System Changes tab → card grid (deferred from Chat 29)
-- Campaign scope pill name resolution
-- All Conv. pipeline
-- Shopping IS/Opt. Score (columns exist but NULL)
-- Config YAML validation errors (pre-existing, non-blocking)
+- Phase 3: Future-Proofing (unit tests, job queue, DB indexes, CSRF protection)
+- Email Reports (automated weekly/monthly reports)
+- Smart Alerts (performance degradation, budget pacing, opportunities)
+
+**LONG-TERM:**
+- Display Campaigns (placements, audiences, creatives)
+- Video Campaigns (YouTube ads, view rate optimization)
+- Demand Gen Campaigns (multi-surface optimization)
+- Automated Report Generator (AI insights, monthly slide-based reports)
+- Multi-User Support (roles, permissions, team collaboration)
+- API Endpoints (REST API for external integrations)
+
+**KNOWN LIMITATIONS:**
+- Ad Groups: 4 rules enabled but 0 recommendations (conditions not met with current data — expected)
+- Ads: 4 rules enabled but blocked (analytics.ad_daily table missing from database — known from Chat 47)
+- Root domain DNS: https://christopherhoole.online (without www) may take 5-60 min to propagate
 
 ---
 
 ## FUTURE ROADMAP
 
-Immediate:
-- Phase 3: Future-Proofing (unit tests, job queue, DB indexes, CSRF)
-- System Changes tab → card grid
-- M9 live validation with real Google Ads account
+**Immediate (High Priority - Next 6-7 chats):**
+1. Dashboard Design Upgrade (visual redesign, component updates, all pages — TBD scope)
+2. Website Design Upgrade (christopherhoole.online — TBD scope)
+3. M9 Live Validation (real Google Ads account)
+4. Cold Outreach System (lead generation for agencies)
+5. Finalise Shopping Campaigns (dashboard improvements)
+6. Performance Max Campaigns (20-30 hours)
+7. Chat 50: Testing & Polish (after dashboard redesign)
 
-Short-term:
-- Email Reports (SMTP)
-- Smart Alerts (anomaly detection)
-- M5 Rules tab rollout to remaining pages
+**Short-term (Medium Priority):**
+- Website contact form backend
+- Website SEO improvements
+- System Changes tab → cards
+- Phase 3: Future-Proofing (tests, job queue, indexes, CSRF)
+- Email Reports
+- Smart Alerts
 
-Medium-term:
-- Keywords Enhancement (search terms → keyword suggestions)
-- Onboarding Wizard
-- Documentation
+**Long-term:**
+- Display Campaigns expansion
+- Video Campaigns expansion
+- Demand Gen Campaigns expansion
+- Automated Report Generator (AI insights)
+- Multi-User Support (roles/permissions)
+- API Endpoints (external integrations)
+
+**Total Estimated Work Remaining:** ~200-270 hours across 22 planned items
+
+See PLANNED_WORK.md for complete details and time estimates.
 
 ---
 
@@ -586,6 +781,18 @@ Medium-term:
 36. **Expansion Criteria Thresholds:** Conservative thresholds (CVR ≥5%, ROAS ≥4.0x, Conv. ≥10) reduce false positives — only flag highest-confidence opportunities (10-15% of search terms)
 37. **Sequential vs. Batch Execution:** Sequential execution (one-by-one) acceptable for <10 items — simpler error handling, clear per-item results, sufficient performance. Add batching only if >10 items becomes common use case.
 38. **Google Ads Config Path Detection:** Try multiple fallback paths (root, configs/, secrets/) with clear error message — flexible deployment across environments while maintaining security (secrets/ is git-ignored)
+39. **Rules Tab UI Components:** Each entity page needs specific component include (ad_group_rules_tab.html, not generic rules_tab.html) — template specificity prevents CSS/JS conflicts
+40. **Schema Evolution:** Keywords use old schema (condition_metric), newer entities use new schema (condition_1_metric) — document divergence, plan migration for consistency in future
+41. **Multi-Entity Recommendations:** Extended recommendations engine from campaign-only to 4 entity types with 100% backward compatibility — kept campaign_id/campaign_name columns while adding entity_type/entity_id/entity_name
+42. **Database Migration Pattern:** Always migrate existing data when extending schema (70 recommendations + 49 changes migrated with zero data loss) — use dedicated migration scripts for auditability
+43. **Entity-Aware Action Labels:** Backend Jinja2 filter (get_action_label) more maintainable than hardcoded labels — single source of truth, easy to extend for new entity types
+44. **Testing Efficiency:** 600% efficiency possible when refactoring/extending existing patterns (Chat 47: 2h vs 11-14h estimated) — well-established architecture enables rapid development
+45. **Backend Limit Bugs:** Always verify query limits match expected data volume — limit=200 caused Keywords page to show only 162 of 1,256 recommendations (Chat 49)
+46. **CSRF Exemptions:** JSON API routes need CSRF exemptions when called from JavaScript — Add csrf.exempt() to Accept/Decline routes in app.py
+47. **Empty State Differentiation:** Use different alert styles for different scenarios — Info (blue/cyan) for temporary states, Warning (yellow) for structural limitations
+48. **Component Reuse Pattern:** Establish pattern once (Keywords), refine (Shopping), perfect (Ad Groups/Ads) — subsequent implementations 43-64% faster than first
+49. **Load More Pattern:** For high-volume datasets (1,256 items), paginated loading (20 cards per click) prevents UI overload while maintaining responsive UX
+50. **Testing Before Design Changes:** Don't test/polish UI before major redesign — all tests would need redoing. Complete design changes first, THEN test comprehensively (Chat 50 moved to after dashboard upgrade)
 
 
 ---
@@ -619,8 +826,15 @@ Medium-term:
 | **Search Terms:** Dry-run still loading API | Move dry_run check to FIRST thing after request parsing — before client loading |
 | **Search Terms:** google_ads_config_path attribute error | Config doesn't have this attribute — manually detect with 3 fallback paths (root, configs/, secrets/) |
 | **Search Terms:** Expansion flags in wrong column | Remove old "Flag" header, update colspan to 17 (was 16) |
+| **Rules Tab UI:** Generic component include | Each page needs specific component: ad_group_rules_tab.html not rules_tab.html |
+| **Rules Tab UI:** Schema field mismatch | Keywords use condition_metric, newer entities use condition_1_metric |
+| **Recommendations:** Backend limit=200 truncates data | Increase to 5000+ for high-volume entities (Keywords: 1,256 recs) |
+| **Recommendations:** CSRF 400 on Accept/Decline | Add csrf.exempt() to routes in app.py for JSON API endpoints |
+| **Recommendations:** Entity contamination | Use exact entity_type match: 'keyword', 'shopping_product', 'ad_group', 'ad' |
+| **Empty States:** Wrong alert styling | Info (blue/cyan) for temporary, Warning (yellow) for structural issues |
+| **Load More:** Missing on high-volume pages | Add Load More pattern for datasets >100 items to prevent UI overload |
 
 ---
 
-**Version:** 11.0 | **Last Updated:** 2026-02-26
-**Next Step:** Rules Tab UI Components (~3 hours) | Recommendations Engine Extension (15-25 hours)
+**Version:** 12.0 | **Last Updated:** 2026-02-28
+**Next Step:** Dashboard Design Upgrade (TBD scope) + Website Design Upgrade (TBD scope)

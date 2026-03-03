@@ -23,7 +23,7 @@
     "monitoring_minutes": 1,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
-    "updated_at": "2026-02-27T13:19:07"
+    "updated_at": "2026-03-02T19:38:51"
   },
   {
     "rule_id": "budget_2",
@@ -48,7 +48,7 @@
     "monitoring_minutes": 2,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
-    "updated_at": "2026-02-26T17:01:18"
+    "updated_at": "2026-03-02T19:38:50"
   },
   {
     "rule_id": "budget_3",
@@ -358,9 +358,9 @@
     "cooldown_days": 14,
     "monitoring_days": 14,
     "monitoring_minutes": 0,
-    "enabled": false,
+    "enabled": true,
     "created_at": "2026-02-25T19:00:00",
-    "updated_at": "2026-02-27T13:19:18"
+    "updated_at": "2026-03-02T19:35:27"
   },
   {
     "rule_id": "keyword_2",
@@ -386,7 +386,7 @@
     "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-25T19:00:00",
-    "updated_at": "2026-02-27T12:41:07"
+    "updated_at": "2026-03-02T19:33:25"
   },
   {
     "rule_id": "keyword_3",
@@ -412,7 +412,7 @@
     "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-25T19:00:00",
-    "updated_at": "2026-02-26T16:19:45"
+    "updated_at": "2026-03-02T19:33:23"
   },
   {
     "rule_id": "keyword_4",
@@ -516,7 +516,7 @@
     "monitoring_minutes": 0,
     "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-27T13:19:13"
+    "updated_at": "2026-03-02T19:52:48"
   },
   {
     "rule_id": "ad_group_2",
@@ -542,7 +542,7 @@
     "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-03-02T19:39:48"
   },
   {
     "rule_id": "ad_group_3",
@@ -620,7 +620,7 @@
     "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-27T13:19:24"
+    "updated_at": "2026-03-02T00:56:42"
   },
   {
     "rule_id": "ad_2",
@@ -646,7 +646,7 @@
     "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-02-28T10:18:42"
   },
   {
     "rule_id": "ad_3",
@@ -724,7 +724,7 @@
     "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-27T13:19:33"
+    "updated_at": "2026-03-02T00:56:37"
   },
   {
     "rule_id": "shopping_2",
@@ -750,7 +750,7 @@
     "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-03-01T15:22:04"
   },
   {
     "rule_id": "shopping_3",
