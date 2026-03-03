@@ -4,6 +4,10 @@
 
 {% block title %}Campaigns - {{ client_name }}{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/table-styles.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
   
@@ -88,56 +92,46 @@
           {%- endif -%}
         {%- endmacro -%}
 
-        <div class="card shadow-sm">
-          <div style="overflow-x:auto; overflow-y:auto; max-height:70vh; position:relative;">
-            <table class="table table-hover table-sm mb-0"
-                   style="min-width:2600px; border-collapse:separate; border-spacing:0; font-size:12px; white-space:nowrap;">
-              <thead style="position:sticky; top:0; z-index:4;">
-                <tr style="background:#f8f9fa;">
-                  <th style="width:36px; min-width:36px; max-width:36px; position:sticky; left:0; z-index:5; background:#f8f9fa; padding:7px 8px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">
-                    <input type="checkbox" id="select-all" class="form-check-input">
-                  </th>
-                  <th style="min-width:220px; position:sticky; left:36px; z-index:5; background:#f8f9fa; box-shadow:2px 0 4px rgba(0,0,0,0.08); padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">
-                    {{ sort_link('campaign_name', 'Campaign') }}
-                  </th>
-                  <th style="min-width:80px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">Status</th>
-                  <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">Type</th>
-                  <th style="min-width:100px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('cost', 'Cost') }}</th>
-                  <th style="min-width:110px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('conversions_value', 'Conv. Value') }}</th>
-                  <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('conversions', 'Conv.') }}</th>
-                  <th style="min-width:80px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('conv_value_per_cost', 'ROAS') }}</th>
-                  <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('cost_per_conv', 'CPA') }}</th>
-                  <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('conv_rate', 'Conv Rate') }}</th>
-                  <th style="min-width:100px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('all_conversions', 'All Conv.') }}</th>
-                  <th style="min-width:110px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('cost_per_all_conv', 'Cost/All Conv.') }}</th>
-                  <th style="min-width:110px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('all_conv_rate', 'All Conv Rate') }}</th>
-                  <th style="min-width:120px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('all_conversions_value', 'All Conv. Val') }}</th>
-                  <th style="min-width:130px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('all_conv_value_per_cost', 'All Conv. Val/Cost') }}</th>
-                  <th style="min-width:100px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('impressions', 'Impr.') }}</th>
-                  <th style="min-width:80px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('clicks', 'Clicks') }}</th>
-                  <th style="min-width:80px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('avg_cpc', 'Avg CPC') }}</th>
-                  <th style="min-width:70px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('ctr', 'CTR') }}</th>
-                  <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('search_impression_share', 'Search IS') }}</th>
-                  <th style="min-width:80px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('search_top_impression_share', 'Top IS') }}</th>
-                  <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('search_absolute_top_impression_share', 'Abs Top IS') }}</th>
-                  <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:right;">{{ sort_link('click_share', 'Click Share') }}</th>
-                  <th style="min-width:100px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:center;">{{ sort_link('optimization_score', 'Opt. Score') }}</th>
-                  <th style="min-width:160px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d;">Bid Strategy</th>
-                  <th style="min-width:90px; padding:7px 10px; border-bottom:2px solid #dee2e6; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6c757d; text-align:center;">Actions</th>
+        <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>{{ sort_link('campaign_name', 'Campaign') }}</th>
+                  <th>Status</th>
+                  <th>Type</th>
+                  <th class="right-align">{{ sort_link('cost', 'Cost') }}</th>
+                  <th class="right-align">{{ sort_link('conversions_value', 'Conv. Value') }}</th>
+                  <th class="right-align">{{ sort_link('conversions', 'Conv.') }}</th>
+                  <th class="right-align">{{ sort_link('conv_value_per_cost', 'ROAS') }}</th>
+                  <th class="right-align">{{ sort_link('cost_per_conv', 'CPA') }}</th>
+                  <th class="right-align">{{ sort_link('conv_rate', 'Conv Rate') }}</th>
+                  <th class="right-align">{{ sort_link('all_conversions', 'All Conv.') }}</th>
+                  <th class="right-align">{{ sort_link('cost_per_all_conv', 'Cost/All Conv.') }}</th>
+                  <th class="right-align">{{ sort_link('all_conv_rate', 'All Conv Rate') }}</th>
+                  <th class="right-align">{{ sort_link('all_conversions_value', 'All Conv. Val') }}</th>
+                  <th class="right-align">{{ sort_link('all_conv_value_per_cost', 'All Conv. Val/Cost') }}</th>
+                  <th class="right-align">{{ sort_link('impressions', 'Impr.') }}</th>
+                  <th class="right-align">{{ sort_link('clicks', 'Clicks') }}</th>
+                  <th class="right-align">{{ sort_link('avg_cpc', 'Avg CPC') }}</th>
+                  <th class="right-align">{{ sort_link('ctr', 'CTR') }}</th>
+                  <th class="right-align">{{ sort_link('search_impression_share', 'Search IS') }}</th>
+                  <th class="right-align">{{ sort_link('search_top_impression_share', 'Top IS') }}</th>
+                  <th class="right-align">{{ sort_link('search_absolute_top_impression_share', 'Abs Top IS') }}</th>
+                  <th class="right-align">{{ sort_link('click_share', 'Click Share') }}</th>
+                  <th class="right-align">{{ sort_link('optimization_score', 'Opt. Score') }}</th>
+                  <th>Bid Strategy</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {% for c in campaigns %}
                 <tr>
-                  <!-- Checkbox (sticky) -->
-                  <td style="width:36px; min-width:36px; max-width:36px; position:sticky; left:0; z-index:2; background:#ffffff;">
-                    <input type="checkbox" class="form-check-input campaign-checkbox" data-campaign-id="{{ c.campaign_id }}">
-                  </td>
-
-                  <!-- Campaign Name (sticky) -->
-                  <td style="position:sticky; left:36px; z-index:2; background:#ffffff; box-shadow:2px 0 4px rgba(0,0,0,0.08);">
-                    <strong>{{ c.campaign_name }}</strong><br>
-                    <small class="text-muted font-monospace">{{ c.campaign_id }}</small>
+                  <!-- Campaign Name -->
+                  <td>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <span class="status-dot {{ 'enabled' if c.campaign_status == 'ENABLED' else 'paused' }}"></span>
+                      <span class="campaign-name">{{ c.campaign_name }}</span>
+                    </div>
                   </td>
 
                   <!-- Status -->
@@ -151,124 +145,116 @@
                     {% endif %}
                   </td>
 
-                  <!-- Type (plain text, no pill) -->
-                  <td><small>{{ c.channel_type | title }}</small></td>
+                  <!-- Type -->
+                  <td>{{ c.channel_type | title }}</td>
 
                   <!-- Cost -->
-                  <td class="text-end">${{ "{:,.2f}".format(c.cost or 0) }}</td>
+                  <td class="right-align">${{ "{:,.2f}".format(c.cost or 0) }}</td>
 
                   <!-- Conv. Value -->
-                  <td class="text-end">${{ "{:,.2f}".format(c.conversions_value or 0) }}</td>
+                  <td class="right-align">${{ "{:,.2f}".format(c.conversions_value or 0) }}</td>
 
                   <!-- Conversions -->
-                  <td class="text-end">{{ "{:.1f}".format(c.conversions or 0) }}</td>
+                  <td class="right-align">{{ "{:.1f}".format(c.conversions or 0) }}</td>
 
                   <!-- ROAS -->
-                  <td class="text-end">
+                  <td class="right-align">
                     {% if c.conv_value_per_cost is not none %}
-                      {% if c.conv_value_per_cost >= 3 %}
-                        <span class="text-success fw-bold">{{ "{:.2f}".format(c.conv_value_per_cost) }}x</span>
-                      {% elif c.conv_value_per_cost >= 2 %}
-                        <span class="text-warning fw-bold">{{ "{:.2f}".format(c.conv_value_per_cost) }}x</span>
-                      {% else %}
-                        <span class="text-danger fw-bold">{{ "{:.2f}".format(c.conv_value_per_cost) }}x</span>
-                      {% endif %}
+                      <span class="{{ 'roas-high' if c.conv_value_per_cost >= 3 else ('roas-medium' if c.conv_value_per_cost >= 2 else 'roas-low') }}">{{ "{:.2f}".format(c.conv_value_per_cost) }}x</span>
                     {% else %}
-                      <span class="text-muted">—</span>
+                      —
                     {% endif %}
                   </td>
 
                   <!-- CPA -->
-                  <td class="text-end">
-                    {% if c.cost_per_conv is not none %}${{ "{:.2f}".format(c.cost_per_conv) }}{% else %}<span class="text-muted">—</span>{% endif %}
+                  <td class="right-align">
+                    {% if c.cost_per_conv is not none %}${{ "{:.2f}".format(c.cost_per_conv) }}{% else %}—{% endif %}
                   </td>
 
                   <!-- Conv Rate -->
-                  <td class="text-end">
-                    {% if c.conv_rate is not none %}{{ "{:.2f}".format(c.conv_rate * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
+                  <td class="right-align">
+                    {% if c.conv_rate is not none %}{{ "{:.2f}".format(c.conv_rate * 100) }}%{% else %}—{% endif %}
                   </td>
 
                   <!-- All Conv. -->
-                  <td class="text-end">{{ "{:.1f}".format(c.all_conversions or 0) }}</td>
+                  <td class="right-align">{{ "{:.1f}".format(c.all_conversions or 0) }}</td>
 
                   <!-- Cost / All Conv. -->
-                  <td class="text-end">
-                    {% if c.cost_per_all_conv is not none %}${{ "{:.2f}".format(c.cost_per_all_conv) }}{% else %}<span class="text-muted">—</span>{% endif %}
+                  <td class="right-align">
+                    {% if c.cost_per_all_conv is not none %}${{ "{:.2f}".format(c.cost_per_all_conv) }}{% else %}—{% endif %}
                   </td>
 
                   <!-- All Conv Rate -->
-                  <td class="text-end">
-                    {% if c.all_conv_rate is not none %}{{ "{:.2f}".format(c.all_conv_rate * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
+                  <td class="right-align">
+                    {% if c.all_conv_rate is not none %}{{ "{:.2f}".format(c.all_conv_rate * 100) }}%{% else %}—{% endif %}
                   </td>
 
                   <!-- All Conv. Value -->
-                  <td class="text-end">${{ "{:,.2f}".format(c.all_conversions_value or 0) }}</td>
+                  <td class="right-align">${{ "{:,.2f}".format(c.all_conversions_value or 0) }}</td>
 
                   <!-- All Conv. Val / Cost -->
-                  <td class="text-end">
-                    {% if c.all_conv_value_per_cost is not none %}{{ "{:.2f}".format(c.all_conv_value_per_cost) }}x{% else %}<span class="text-muted">—</span>{% endif %}
+                  <td class="right-align">
+                    {% if c.all_conv_value_per_cost is not none %}{{ "{:.2f}".format(c.all_conv_value_per_cost) }}x{% else %}—{% endif %}
                   </td>
 
                   <!-- Impressions -->
-                  <td class="text-end">{{ "{:,}".format((c.impressions or 0)|int) }}</td>
+                  <td class="right-align">{{ "{:,}".format((c.impressions or 0)|int) }}</td>
 
                   <!-- Clicks -->
-                  <td class="text-end">{{ "{:,}".format((c.clicks or 0)|int) }}</td>
+                  <td class="right-align">{{ "{:,}".format((c.clicks or 0)|int) }}</td>
 
                   <!-- Avg CPC -->
-                  <td class="text-end">
-                    {% if c.avg_cpc is not none %}${{ "{:.2f}".format(c.avg_cpc) }}{% else %}<span class="text-muted">—</span>{% endif %}
+                  <td class="right-align">
+                    {% if c.avg_cpc is not none %}${{ "{:.2f}".format(c.avg_cpc) }}{% else %}—{% endif %}
                   </td>
 
                   <!-- CTR -->
-                  <td class="text-end">
-                    {% if c.ctr is not none %}{{ "{:.2f}".format(c.ctr * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
+                  <td class="right-align">
+                    {% if c.ctr is not none %}{{ "{:.2f}".format(c.ctr * 100) }}%{% else %}—{% endif %}
                   </td>
 
                   <!-- Search IS -->
-                  <td class="text-end">
-                    {% if c.search_impression_share is not none %}{{ "{:.1f}".format(c.search_impression_share * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
+                  <td class="right-align">
+                    {% if c.search_impression_share is not none %}{{ "{:.1f}".format(c.search_impression_share * 100) }}%{% else %}—{% endif %}
                   </td>
 
                   <!-- Top IS -->
-                  <td class="text-end">
-                    {% if c.search_top_impression_share is not none %}{{ "{:.1f}".format(c.search_top_impression_share * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
+                  <td class="right-align">
+                    {% if c.search_top_impression_share is not none %}{{ "{:.1f}".format(c.search_top_impression_share * 100) }}%{% else %}—{% endif %}
                   </td>
 
                   <!-- Abs Top IS -->
-                  <td class="text-end">
-                    {% if c.search_absolute_top_impression_share is not none %}{{ "{:.1f}".format(c.search_absolute_top_impression_share * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
+                  <td class="right-align">
+                    {% if c.search_absolute_top_impression_share is not none %}{{ "{:.1f}".format(c.search_absolute_top_impression_share * 100) }}%{% else %}—{% endif %}
                   </td>
 
                   <!-- Click Share -->
-                  <td class="text-end">
-                    {% if c.click_share is not none %}{{ "{:.1f}".format(c.click_share * 100) }}%{% else %}<span class="text-muted">—</span>{% endif %}
+                  <td class="right-align">
+                    {% if c.click_share is not none %}{{ "{:.1f}".format(c.click_share * 100) }}%{% else %}—{% endif %}
                   </td>
 
                   <!-- Opt. Score -->
-                  <td class="text-center">
+                  <td class="right-align">
                     {% if c.optimization_score is not none %}
                       {% set pct = (c.optimization_score * 100)|round|int %}
-                      <div class="d-flex align-items-center justify-content-center gap-1">
-                        <div class="progress" style="width:50px; height:6px;">
-                          <div class="progress-bar {% if pct >= 80 %}bg-success{% elif pct >= 60 %}bg-warning{% else %}bg-danger{% endif %}"
-                               style="width:{{ pct }}%"></div>
+                      <div class="opt-score-wrapper">
+                        <div class="opt-score-bar">
+                          <div class="opt-score-fill {{ 'high' if pct >= 80 else ('medium' if pct >= 60 else 'low') }}" style="width:{{ pct }}%"></div>
                         </div>
-                        <small>{{ pct }}%</small>
+                        <span class="opt-score-text">{{ pct }}%</span>
                       </div>
                     {% else %}
-                      <span class="text-muted">—</span>
+                      —
                     {% endif %}
                   </td>
 
                   <!-- Bid Strategy -->
-                  <td><small class="text-muted">{{ c.bid_strategy_type or '—' }}</small></td>
+                  <td>{{ c.bid_strategy_type or '—' }}</td>
 
                   <!-- Actions -->
-                  <td class="text-center">
+                  <td class="actions-cell">
                     <div class="dropdown">
-                      <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
-                              data-bs-toggle="dropdown">Actions</button>
+                      <button class="actions-btn" type="button" data-bs-toggle="dropdown">Actions ▾</button>
                       <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="#"><i class="bi bi-pencil"></i> Edit Budget</a></li>
                         <li><a class="dropdown-item" href="#"><i class="bi bi-pause"></i> Pause</a></li>
