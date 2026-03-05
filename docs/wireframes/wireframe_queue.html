@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wireframe — Outreach: Queue</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+<style>
+
+.material-symbols-outlined { font-variation-settings: 'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 40; }
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  font-size: 13px; background: #f8f9fa; color: #202124;
+}
+
+/* ── NAV ── */
+.nav-sidebar {
+  width: 110px; background: #ffffff; border-right: 1px solid #dadce0;
+  display: flex; flex-direction: column;
+  position: fixed; left: 0; top: 0; height: 100vh; z-index: 1000;
+}
+.nav-brand { padding: 16px 12px; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid #dadce0; }
+.nav-brand-logo { width: 48px; height: 48px; margin-bottom: 8px; }
+.nav-brand-text { font-size: 14px; font-weight: 600; color: #202124; text-align: center; line-height: 1.3; }
+.nav-items { flex: 1; padding: 8px 0; overflow-y: auto; }
+.nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 8px; margin: 2px 8px; text-decoration: none; color: #5f6368; border-radius: 8px; transition: all 150ms ease; cursor: pointer; min-height: 68px; }
+.nav-item:hover { background: #f1f3f4; color: #202124; }
+.nav-item.active { background: #e8f0fe; color: #1a73e8; }
+.nav-item-icon { font-size: 28px; margin-bottom: 4px; }
+.nav-item-text { font-size: 12px; font-weight: 500; text-align: center; line-height: 1.2; }
+.nav-item-text.small { font-size: 10px; }
+.nav-sub { background: #f8f9fa; border-left: 2px solid #1a73e8; margin: 0 8px 4px; border-radius: 0 6px 6px 0; }
+.nav-sub-item { display: block; padding: 7px 10px; font-size: 11px; font-weight: 500; color: #5f6368; text-decoration: none; transition: color 0.15s; text-align: center; }
+.nav-sub-item:hover { color: #202124; background: #f1f3f4; }
+.nav-sub-item.active { color: #1a73e8; font-weight: 700; }
+.nav-badge { background: #ea4335; color: white; font-size: 8px; border-radius: 10px; padding: 1px 4px; font-weight: 700; margin-left: 2px; vertical-align: middle; }
+
+/* ── LAYOUT ── */
+.main-wrapper { margin-left: 110px; }
+.top-navbar { background: #ffffff; border-bottom: 1px solid #dadce0; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 500; }
+.top-navbar-title { font-size: 18px; font-weight: 600; color: #202124; }
+.top-navbar-right { display: flex; align-items: center; gap: 12px; }
+.client-selector { padding: 6px 12px; background: white; border: 1px solid #dadce0; border-radius: 4px; font-size: 13px; color: #202124; cursor: pointer; }
+
+/* ── CONTENT ── */
+.content-area { padding: 20px 24px; max-width: 900px; }
+
+/* ── STATS ROW ── */
+.stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+.stat-card { background: white; border: 1px solid #dadce0; border-radius: 8px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+.stat-icon { font-size: 22px; color: #5f6368; }
+.stat-val { font-size: 22px; font-weight: 600; color: #202124; line-height: 1; }
+.stat-lbl { font-size: 11px; color: #5f6368; margin-top: 2px; }
+
+/* ── QUEUE CARD ── */
+.queue-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.queue-header-left h2 { font-size: 15px; font-weight: 600; color: #202124; }
+.queue-header-left p { font-size: 12px; color: #5f6368; margin-top: 2px; }
+
+.queue-card {
+  background: white; border: 1px solid #dadce0;
+  border-radius: 8px; margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.queue-card-header {
+  padding: 14px 18px; border-bottom: 1px solid #e0e0e0;
+  display: flex; align-items: center; justify-content: space-between;
+  background: #f8f9fa;
+}
+
+.queue-card-header-left { display: flex; align-items: center; gap: 10px; }
+
+.queue-number {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: #1a73e8; color: white;
+  font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.queue-prospect { font-size: 14px; font-weight: 600; color: #202124; }
+.queue-prospect-sub { font-size: 12px; color: #5f6368; margin-top: 1px; }
+
+.queue-card-meta {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+
+.track-badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.track-job       { background: #fef3c7; color: #92400e; }
+.track-recruiter { background: #ede9fe; color: #6d28d9; }
+.track-agency    { background: #dbeafe; color: #1d4ed8; }
+.track-direct    { background: #d1fae5; color: #065f46; }
+
+.email-type-pill {
+  font-size: 11px; font-weight: 600; padding: 3px 8px;
+  border-radius: 4px; white-space: nowrap;
+}
+.pill-initial  { background: #e8f0fe; color: #1a73e8; }
+.pill-followup { background: #fff3e0; color: #e65100; }
+
+.send-time-badge {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 11px; color: #5f6368; white-space: nowrap;
+}
+
+/* EMAIL PREVIEW AREA */
+.email-preview {
+  padding: 18px 18px 14px;
+}
+
+.email-fields { margin-bottom: 12px; }
+
+.email-field {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 6px 0; border-bottom: 1px solid #f1f3f4;
+  font-size: 13px;
+}
+.email-field:last-child { border-bottom: none; }
+
+.email-field-label {
+  width: 50px; flex-shrink: 0;
+  font-size: 11px; font-weight: 600; color: #9aa0a6;
+   letter-spacing: 0.3px;
+  padding-top: 1px;
+}
+
+.email-field-value { color: #202124; line-height: 1.5; }
+.email-field-value.to { color: #1a73e8; }
+
+.email-body-area {
+  background: #f8f9fa; border: 1px solid #e0e0e0;
+  border-radius: 6px; padding: 14px 16px;
+  font-size: 13px; color: #202124; line-height: 1.7;
+  max-height: 220px; overflow-y: auto;
+  white-space: pre-line;
+}
+
+.email-body-area::-webkit-scrollbar { width: 4px; }
+.email-body-area::-webkit-scrollbar-track { background: transparent; }
+.email-body-area::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 2px; }
+
+/* EDIT BAR */
+.edit-bar {
+  padding: 4px 18px 10px;
+  display: flex; gap: 6px; align-items: center;
+}
+
+.edit-bar-btn {
+  font-size: 12px; color: #1a73e8; font-weight: 500;
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+.edit-bar-btn:hover { text-decoration: underline; }
+.edit-bar-sep { color: #dadce0; font-size: 12px; }
+
+/* ACTION ROW */
+.queue-actions {
+  padding: 12px 18px; border-top: 1px solid #e0e0e0;
+  display: flex; align-items: center; gap: 10px;
+  background: white;
+}
+
+.btn-send {
+  padding: 9px 22px; background: #1a73e8;
+  border: none; border-radius: 4px;
+  color: white; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.btn-send:hover { background: #1557b0; }
+
+.btn-edit {
+  padding: 9px 16px; background: white;
+  border: 1px solid #dadce0; border-radius: 4px;
+  color: #202124; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s;
+}
+.btn-edit:hover { background: #f8f9fa; }
+
+.btn-skip {
+  padding: 9px 16px; background: white;
+  border: 1px solid #dadce0; border-radius: 4px;
+  color: #5f6368; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s;
+}
+.btn-skip:hover { background: #f8f9fa; color: #202124; }
+
+.btn-discard {
+  padding: 9px 16px; background: white;
+  border: 1px solid #fecaca; border-radius: 4px;
+  color: #ea4335; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s; margin-left: auto;
+}
+.btn-discard:hover { background: #fef2f2; }
+
+.send-schedule-note {
+  font-size: 11px; color: #5f6368;
+  display: flex; align-items: center; gap: 4px;
+}
+
+/* COLLAPSED CARD (queue items 2+) */
+.queue-card.collapsed .email-preview { display: none; }
+.queue-card.collapsed .edit-bar { display: none; }
+.queue-card.collapsed .queue-actions { display: none; }
+.queue-card.collapsed .queue-card-header { background: white; border-bottom: none; cursor: pointer; }
+.queue-card.collapsed .queue-card-header:hover { background: #f8f9fa; }
+
+.collapse-hint {
+  font-size: 11px; color: #9aa0a6; font-style: italic;
+}
+
+/* EMPTY QUEUE */
+.empty-queue {
+  background: white; border: 1px solid #dadce0;
+  border-radius: 8px; padding: 48px 24px;
+  text-align: center; color: #5f6368;
+}
+.empty-queue-icon { font-size: 48px; color: #dadce0; margin-bottom: 12px; }
+.empty-queue-title { font-size: 15px; font-weight: 500; color: #202124; margin-bottom: 6px; }
+.empty-queue-sub { font-size: 13px; color: #5f6368; }
+
+/* ATTACHMENT BADGE */
+.attachment-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; color: #1a73e8; background: #e8f0fe;
+  padding: 2px 8px; border-radius: 4px; margin-top: 8px;
+  cursor: pointer;
+}
+.attachment-badge:hover { background: #d2e3fc; }
+
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav class="nav-sidebar">
+  <div class="nav-brand">
+    <svg class="nav-brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="41" fill="none" stroke="#4285F4" stroke-width="10"/>
+      <circle cx="50" cy="50" r="29" fill="none" stroke="#EA4335" stroke-width="10"/>
+      <circle cx="50" cy="50" r="17" fill="none" stroke="#FBBC05" stroke-width="10"/>
+      <circle cx="50" cy="50" r="10" fill="#34A853"/>
+    </svg>
+    <div class="nav-brand-text">Ads<br>Control<br>Tower</div>
+  </div>
+  <div class="nav-items">
+    <a class="nav-item" href="#">
+      <span class="material-symbols-outlined nav-item-icon">home</span>
+      <span class="nav-item-text">Dashboard</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="material-symbols-outlined nav-item-icon">campaign</span>
+      <span class="nav-item-text">Campaigns</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="material-symbols-outlined nav-item-icon">folder</span>
+      <span class="nav-item-text">Ad Groups</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="material-symbols-outlined nav-item-icon">search</span>
+      <span class="nav-item-text">Keywords</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="material-symbols-outlined nav-item-icon">article</span>
+      <span class="nav-item-text">Ads</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="material-symbols-outlined nav-item-icon">shopping_cart</span>
+      <span class="nav-item-text">Shopping</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="material-symbols-outlined nav-item-icon">lightbulb</span>
+      <span class="nav-item-text small">Recommendations</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="material-symbols-outlined nav-item-icon">history</span>
+      <span class="nav-item-text">Changes</span>
+    </a>
+    <a class="nav-item active" href="#">
+      <span class="material-symbols-outlined nav-item-icon">send</span>
+      <span class="nav-item-text">Outreach</span>
+    </a>
+    <div class="nav-sub">
+      <a class="nav-sub-item" href="#">Leads</a>
+      <a class="nav-sub-item active" href="#">Queue <span class="nav-badge">3</span></a>
+      <a class="nav-sub-item" href="#">Sent</a>
+      <a class="nav-sub-item" href="#">Replies</a>
+      <a class="nav-sub-item" href="#">Templates</a>
+      <a class="nav-sub-item" href="#">Analytics</a>
+    </div>
+    <a class="nav-item" href="#">
+      <span class="material-symbols-outlined nav-item-icon">settings</span>
+      <span class="nav-item-text">Settings</span>
+    </a>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<div class="main-wrapper">
+  <div class="top-navbar">
+    <div class="top-navbar-title">Outreach — Queue</div>
+    <div class="top-navbar-right">
+      <select class="client-selector"><option>Synthetic_Test_Client</option></select>
+    </div>
+  </div>
+
+  <div class="content-area">
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <span class="material-symbols-outlined stat-icon">pending</span>
+        <div><div class="stat-val">3</div><div class="stat-lbl">Awaiting approval</div></div>
+      </div>
+      <div class="stat-card">
+        <span class="material-symbols-outlined stat-icon">schedule</span>
+        <div><div class="stat-val">7</div><div class="stat-lbl">Scheduled this week</div></div>
+      </div>
+      <div class="stat-card">
+        <span class="material-symbols-outlined stat-icon">send</span>
+        <div><div class="stat-val">24</div><div class="stat-lbl">Sent today</div></div>
+      </div>
+      <div class="stat-card">
+        <span class="material-symbols-outlined stat-icon">block</span>
+        <div><div class="stat-val" style="color:#5f6368;">26</div><div class="stat-lbl">Daily limit remaining</div></div>
+      </div>
+    </div>
+
+    <!-- QUEUE HEADER -->
+    <div class="queue-header">
+      <div class="queue-header-left">
+        <h2>3 emails awaiting your approval</h2>
+        <p>Review each email before it sends. Click Send to approve, Skip to delay by one cycle, or Discard to remove.</p>
+      </div>
+    </div>
+
+    <!-- ═══ CARD 1 — EXPANDED (active) ═══ -->
+    <div class="queue-card" id="card1">
+      <div class="queue-card-header" onclick="toggleCard('card1')" style="cursor:pointer;">
+        <div class="queue-card-header-left">
+          <div class="queue-number">1</div>
+          <div>
+            <div class="queue-prospect">Digital Talent Group <span style="color:#5f6368; font-weight:400;">· Sarah Mitchell</span></div>
+            <div class="queue-prospect-sub">s.mitchell [at] digitaltalentgroup.com · New York, NY · 🇺🇸 USA</div>
+          </div>
+        </div>
+        <div class="queue-card-meta">
+          <span class="track-badge track-recruiter">Recruiter</span>
+          <span class="email-type-pill pill-followup">Follow-up 2</span>
+          <div class="send-time-badge">
+            <span class="material-symbols-outlined" style="font-size:14px;">schedule</span>
+            Tue 11 Mar · 8:30am EST
+          </div>
+        </div>
+      </div>
+      <div style="padding: 8px 18px; border-bottom: 1px solid #e0e0e0; background: #fff; font-size: 13px; color: #202124;">
+        <span style="color:#9aa0a6; font-size:11px; font-weight:600; margin-right:8px;">Subject</span>
+        Re: Google Ads Specialist — 16 Years Experience
+      </div>
+
+      <div class="email-preview">
+        <div class="email-fields">
+          <div class="email-field">
+            <span class="email-field-label">To</span>
+            <span class="email-field-value to">s.mitchell [at] digitaltalentgroup.com</span>
+          </div>
+          <div class="email-field">
+            <span class="email-field-label">Subject</span>
+            <span class="email-field-value">Re: Google Ads Specialist — 16 Years Experience</span>
+          </div>
+        </div>
+
+        <div class="email-body-area">Hi Sarah,
+
+Just a quick follow-up to my email last week — wanted to make sure it didn't get buried in your inbox.
+
+I'm still actively looking for my next contract or permanent role in Google Ads. With 16 years of hands-on experience and £50M+ managed across 200+ accounts, I'm confident I can add real value to any team you're working with.
+
+I've also recently built Ads Control Tower — a proprietary AI-powered platform that automates Google Ads optimisation with full audit trails and rollback. Happy to demo it if useful.
+
+Would love to connect when you have a moment.
+
+Best regards,
+Christopher Hoole
++44 7999 500 184
+christopherhoole.online</div>
+
+        <div class="attachment-badge" id="attach1" onclick="toggleAttachment('attach1')" title="Click to toggle attachment">
+          <span class="material-symbols-outlined" style="font-size:13px;" id="attach1-icon">attach_file</span>
+          Christopher_Hoole_CV.pdf &nbsp;·&nbsp; <span id="attach1-label" style="font-weight:700;">attached ✕</span>
+        </div>
+      </div>
+
+      <div class="edit-bar">
+        <button class="edit-bar-btn">✏ Edit this email</button>
+        <span class="edit-bar-sep">|</span>
+        <button class="edit-bar-btn">🔄 Regenerate with AI</button>
+        <span class="edit-bar-sep">|</span>
+        <button class="edit-bar-btn">📋 Switch template</button>
+      </div>
+
+      <div class="queue-actions">
+        <button class="btn-send" onclick="sendCard('card1')">
+          <span class="material-symbols-outlined" style="font-size:16px;">send</span>
+          Send now
+        </button>
+        <button class="btn-skip" onclick="skipCard('card1')">⏭ Skip</button>
+        <div class="send-schedule-note">
+          <span class="material-symbols-outlined" style="font-size:14px;">info</span>
+          Will send Tue 11 Mar at 8:30am EST (recipient local time)
+        </div>
+        <button class="btn-discard" onclick="discardCard('card1')">🗑 Discard</button>
+      </div>
+    </div>
+
+    <!-- ═══ CARD 2 — COLLAPSED ═══ -->
+    <div class="queue-card collapsed" id="card2">
+      <div class="queue-card-header" onclick="toggleCard('card2')" style="cursor:pointer;">
+        <div class="queue-card-header-left">
+          <div class="queue-number" style="background:#5f6368;">2</div>
+          <div>
+            <div class="queue-prospect">TechScale Agency <span style="color:#5f6368; font-weight:400;">· Hiring Manager</span></div>
+            <div class="queue-prospect-sub">jobs [at] techscaleagency.com · Austin, TX · 🇺🇸 USA</div>
+          </div>
+        </div>
+        <div class="queue-card-meta">
+          <span class="track-badge track-job">Job</span>
+          <span class="email-type-pill pill-followup">Follow-up 1</span>
+          <div class="send-time-badge">
+            <span class="material-symbols-outlined" style="font-size:14px;">schedule</span>
+            Tue 11 Mar · 8:30am CST
+          </div>
+        </div>
+      </div>
+      <div style="padding: 8px 18px; border-bottom: 1px solid #e0e0e0; background: #fff; font-size: 13px; color: #202124;">
+        <span style="color:#9aa0a6; font-size:11px; font-weight:600; margin-right:8px;">Subject</span>
+        Re: Google Ads Specialist — 16 Years Experience
+      </div>
+
+      <div class="email-preview">
+        <div class="email-fields">
+          <div class="email-field">
+            <span class="email-field-label">To</span>
+            <span class="email-field-value to">jobs [at] techscaleagency.com</span>
+          </div>
+          <div class="email-field">
+            <span class="email-field-label">Subject</span>
+            <span class="email-field-value">Re: Google Ads Specialist — 16 Years Experience</span>
+          </div>
+        </div>
+        <div class="email-body-area">Hi there,
+
+Just following up on my email from last week regarding the Google Ads role at TechScale Agency.
+
+I have 16 years of hands-on experience managing £50M+ across 200+ accounts, specialising in Search, Shopping and Performance Max. I'd love to find out more about the role and how I could contribute to your team.
+
+Happy to jump on a call at any time that suits.
+
+Best regards,
+Christopher Hoole
++44 7999 500 184
+christopherhoole.online</div>
+        <div class="attachment-badge" id="attach2" onclick="toggleAttachment('attach2')" title="Click to toggle attachment">
+          <span class="material-symbols-outlined" style="font-size:13px;" id="attach2-icon">attach_file</span>
+          Christopher_Hoole_CV.pdf &nbsp;·&nbsp; <span id="attach2-label" style="font-weight:700;">attached ✕</span>
+        </div>
+      </div>
+
+      <div class="edit-bar">
+        <button class="edit-bar-btn">✏ Edit this email</button>
+        <span class="edit-bar-sep">|</span>
+        <button class="edit-bar-btn">🔄 Regenerate with AI</button>
+        <span class="edit-bar-sep">|</span>
+        <button class="edit-bar-btn">📋 Switch template</button>
+      </div>
+
+      <div class="queue-actions">
+        <button class="btn-send" onclick="sendCard('card2')">
+          <span class="material-symbols-outlined" style="font-size:16px;">send</span>
+          Send now
+        </button>
+        <button class="btn-skip" onclick="skipCard('card2')">⏭ Skip</button>
+        <div class="send-schedule-note">
+          <span class="material-symbols-outlined" style="font-size:14px;">info</span>
+          Will send Tue 11 Mar at 8:30am CST (recipient local time)
+        </div>
+        <button class="btn-discard" onclick="discardCard('card2')">🗑 Discard</button>
+      </div>
+    </div>
+
+    <!-- ═══ CARD 3 — COLLAPSED ═══ -->
+    <div class="queue-card collapsed" id="card3">
+      <div class="queue-card-header" onclick="toggleCard('card3')" style="cursor:pointer;">
+        <div class="queue-card-header-left">
+          <div class="queue-number" style="background:#5f6368;">3</div>
+          <div>
+            <div class="queue-prospect">North Star Marketing <span style="color:#5f6368; font-weight:400;">· Alex Dupont</span></div>
+            <div class="queue-prospect-sub">alex [at] northstarmarketing.ca · Toronto, ON · 🇨🇦 Canada</div>
+          </div>
+        </div>
+        <div class="queue-card-meta">
+          <span class="track-badge track-agency">Agency</span>
+          <span class="email-type-pill pill-initial">Initial email</span>
+          <div class="send-time-badge">
+            <span class="material-symbols-outlined" style="font-size:14px;">schedule</span>
+            Wed 12 Mar · 8:30am EST
+          </div>
+        </div>
+      </div>
+      <div style="padding: 8px 18px; border-bottom: 1px solid #e0e0e0; background: #fff; font-size: 13px; color: #202124;">
+        <span style="color:#9aa0a6; font-size:11px; font-weight:600; margin-right:8px;">Subject</span>
+        Google Ads Specialist — 16 Years Experience, Available Now
+      </div>
+
+      <div class="email-preview">
+        <div class="email-fields">
+          <div class="email-field">
+            <span class="email-field-label">To</span>
+            <span class="email-field-value to">alex [at] northstarmarketing.ca</span>
+          </div>
+          <div class="email-field">
+            <span class="email-field-label">Subject</span>
+            <span class="email-field-value">Google Ads Specialist — 16 Years Experience, Available Now</span>
+          </div>
+        </div>
+        <div class="email-body-area">Hi Alex,
+
+I'm a Google Ads specialist with 16 years of experience managing £50M+ in ad spend across 200+ accounts — and I'm currently exploring new opportunities.
+
+I specialise in Search, Shopping and Performance Max for both lead gen and ecommerce clients. I've also built Ads Control Tower, a proprietary platform that automates Google Ads optimisation with full audit trails and rollback capability.
+
+I'd love to explore whether there's a fit — either as a contractor or a permanent addition to your team.
+
+Would you be open to a quick call?
+
+Best regards,
+Christopher Hoole
++44 7999 500 184
+christopherhoole.online</div>
+        <div class="attachment-badge" id="attach3" onclick="toggleAttachment('attach3')" title="Click to toggle attachment">
+          <span class="material-symbols-outlined" style="font-size:13px;" id="attach3-icon">attach_file</span>
+          Christopher_Hoole_CV.pdf &nbsp;·&nbsp; <span id="attach3-label" style="font-weight:700;">attached ✕</span>
+        </div>
+      </div>
+
+      <div class="edit-bar">
+        <button class="edit-bar-btn">✏ Edit this email</button>
+        <span class="edit-bar-sep">|</span>
+        <button class="edit-bar-btn">🔄 Regenerate with AI</button>
+        <span class="edit-bar-sep">|</span>
+        <button class="edit-bar-btn">📋 Switch template</button>
+      </div>
+
+      <div class="queue-actions">
+        <button class="btn-send" onclick="sendCard('card3')">
+          <span class="material-symbols-outlined" style="font-size:16px;">send</span>
+          Send now
+        </button>
+        <button class="btn-skip" onclick="skipCard('card3')">⏭ Skip</button>
+        <div class="send-schedule-note">
+          <span class="material-symbols-outlined" style="font-size:14px;">info</span>
+          Will send Wed 12 Mar at 8:30am EST (recipient local time)
+        </div>
+        <button class="btn-discard" onclick="discardCard('card3')">🗑 Discard</button>
+      </div>
+    </div>
+
+  </div><!-- /content-area -->
+</div><!-- /main-wrapper -->
+
+<script>
+  function toggleAttachment(id) {
+    const label = document.getElementById(id + '-label');
+    const badge = document.getElementById(id);
+    const attached = label.textContent.includes('attached');
+    if (attached) {
+      label.textContent = 'not attached +';
+      badge.style.background = '#f1f3f4';
+      badge.style.color = '#5f6368';
+    } else {
+      label.textContent = 'attached ✕';
+      badge.style.background = '#e8f0fe';
+      badge.style.color = '#1a73e8';
+    }
+  }
+
+  function toggleCard(id) {
+    const card = document.getElementById(id);
+    const isCollapsed = card.classList.contains('collapsed');
+    document.querySelectorAll('.queue-card').forEach(c => {
+      c.classList.add('collapsed');
+      const num = c.querySelector('.queue-number');
+      if (num) num.style.background = '#5f6368';
+    });
+    if (isCollapsed) {
+      card.classList.remove('collapsed');
+      const num = card.querySelector('.queue-number');
+      if (num) num.style.background = '#1a73e8';
+    }
+  }
+
+  function removeCard(id, callback) {
+    const card = document.getElementById(id);
+    card.style.transition = 'opacity 0.2s ease, height 0.3s ease, margin 0.3s ease';
+    card.style.opacity = '0';
+    card.style.overflow = 'hidden';
+    const h = card.offsetHeight;
+    card.style.height = h + 'px';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        card.style.height = '0';
+        card.style.marginBottom = '0';
+      });
+    });
+    setTimeout(() => {
+      card.remove();
+      if (callback) callback();
+      updateQueue();
+    }, 350);
+  }
+
+  function sendCard(id) {
+    removeCard(id, () => {
+      const next = document.querySelector('.queue-card.collapsed');
+      if (next) toggleCard(next.id);
+    });
+  }
+
+  function skipCard(id) {
+    const card = document.getElementById(id);
+    card.classList.add('collapsed');
+    const num = card.querySelector('.queue-number');
+    if (num) num.style.background = '#5f6368';
+    card.parentNode.appendChild(card);
+    const next = document.querySelector('.queue-card.collapsed');
+    if (next) toggleCard(next.id);
+    updateQueue();
+  }
+
+  function discardCard(id) {
+    if (!confirm('Remove this email from the queue?')) return;
+    removeCard(id, () => {
+      const next = document.querySelector('.queue-card.collapsed');
+      if (next) toggleCard(next.id);
+    });
+  }
+
+  function updateQueue() {
+    const remaining = document.querySelectorAll('.queue-card').length;
+    document.querySelectorAll('.nav-badge').forEach(b => b.textContent = remaining);
+    const statVal = document.querySelector('.stat-val');
+    if (statVal) statVal.textContent = remaining;
+    const header = document.querySelector('.queue-header-left h2');
+    if (header) header.textContent = remaining + ' email' + (remaining !== 1 ? 's' : '') + ' awaiting your approval';
+    document.querySelectorAll('.queue-card').forEach((c, i) => {
+      const n = c.querySelector('.queue-number');
+      if (n) n.textContent = i + 1;
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    toggleCard('card1');
+  });
+
+</script>
+</body>
+</html>
