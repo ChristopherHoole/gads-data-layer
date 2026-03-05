@@ -1392,11 +1392,18 @@
   font-size: 14px;
 }
 
-/* ── Collapsed card state ── */
-.queue-card.collapsed .email-preview  { display: none; }
-.queue-card.collapsed .edit-bar       { display: none; }
-.queue-card.collapsed .queue-actions  { display: none; }
+/* ── Collapsed state: hidden by default, shown only when NOT collapsed ── */
+/* Default: all expandable sections hidden (collapsed is the base state)   */
+.queue-card .email-preview  { display: none; }
+.queue-card .edit-bar       { display: none; }
+.queue-card .queue-actions  { display: none; }
 
+/* Expanded: remove collapsed class → sections become visible */
+.queue-card:not(.collapsed) .email-preview  { display: block; }
+.queue-card:not(.collapsed) .edit-bar       { display: flex; }
+.queue-card:not(.collapsed) .queue-actions  { display: flex; }
+
+/* Collapsed header: white bg, no divider */
 .queue-card.collapsed .queue-card-header {
   background: white;
   border-bottom: none;

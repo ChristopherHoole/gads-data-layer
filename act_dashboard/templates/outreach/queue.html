@@ -68,7 +68,7 @@
     <div id="queueList">
     {% for email in queued_emails %}
     {% set loop_idx = loop.index %}
-    <div class="queue-card{% if not loop.first %} collapsed{% endif %}"
+    <div class="queue-card collapsed"
          id="card-{{ email.email_id }}">
 
         {# Card header #}
@@ -76,7 +76,7 @@
              onclick="toggleCard('card-{{ email.email_id }}')">
             <div class="queue-card-header-left">
                 <div class="queue-number"
-                     style="background:{% if loop.first %}#1a73e8{% else %}#5f6368{% endif %};">{{ loop_idx }}</div>
+                     style="background:#5f6368;">{{ loop_idx }}</div>
                 <div>
                     <div class="queue-prospect">
                         {{ email.company }}
@@ -419,8 +419,11 @@ function toggleAttachment(emailId) {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   INIT — first card is rendered without 'collapsed' by Jinja,
-   so it is already expanded on load. Nothing to do here.
+   INIT — all cards start collapsed; expand the first one
    ────────────────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function () {
+    const first = document.querySelector('.queue-card');
+    if (first) toggleCard(first.id);
+});
 </script>
 {% endblock %}
