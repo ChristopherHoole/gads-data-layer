@@ -1,0 +1,429 @@
+{% extends "base_bootstrap.html" %}
+
+{% block title %}Outreach — Queue{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/outreach.css') }}">
+{% endblock %}
+
+{# ── Custom top navbar ── #}
+{% block page_header %}
+<div class="outreach-top-navbar">
+    <div class="outreach-top-navbar-title">Outreach — Queue</div>
+    <div class="outreach-top-navbar-right">
+        <select class="outreach-client-selector"
+                onchange="window.location='/switch-client/'+this.selectedIndex">
+            {% for cname, cpath in available_clients %}
+            <option {% if cpath == current_client_config %}selected{% endif %}>{{ cname }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="queue-content">
+
+    {# ── Stats Row (4 columns) ── #}
+    <div class="stats-row stats-row-4">
+        <div class="stat-card">
+            <span class="material-symbols-outlined stat-icon">pending</span>
+            <div>
+                <div class="stat-val" id="statAwaiting">{{ stats.awaiting }}</div>
+                <div class="stat-lbl">Awaiting approval</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="material-symbols-outlined stat-icon">schedule</span>
+            <div>
+                <div class="stat-val">{{ stats.scheduled_this_week }}</div>
+                <div class="stat-lbl">Scheduled this week</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="material-symbols-outlined stat-icon">send</span>
+            <div>
+                <div class="stat-val">{{ stats.sent_today }}</div>
+                <div class="stat-lbl">Sent today</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="material-symbols-outlined stat-icon">block</span>
+            <div>
+                <div class="stat-val stat-val-grey">{{ stats.daily_limit_remaining }}</div>
+                <div class="stat-lbl">Daily limit remaining</div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Queue header ── #}
+    <div class="queue-header">
+        <div class="queue-header-left">
+            <h2 id="queueCountHeading">{{ queued_emails|length }} email{{ 's' if queued_emails|length != 1 else '' }} awaiting your approval</h2>
+            <p>Review each email before it sends. Click Send to approve, Skip to delay by one cycle, or Discard to remove.</p>
+        </div>
+    </div>
+
+    {# ── Queue cards ── #}
+    <div id="queueList">
+    {% for email in queued_emails %}
+    {% set loop_idx = loop.index %}
+    <div class="queue-card{% if not loop.first %} collapsed{% endif %}"
+         id="card-{{ email.email_id }}">
+
+        {# Card header #}
+        <div class="queue-card-header"
+             onclick="toggleCard('card-{{ email.email_id }}')">
+            <div class="queue-card-header-left">
+                <div class="queue-number"
+                     style="background:{% if loop.first %}#1a73e8{% else %}#5f6368{% endif %};">{{ loop_idx }}</div>
+                <div>
+                    <div class="queue-prospect">
+                        {{ email.company }}
+                        {% if email.full_name %}
+                        <span class="queue-prospect-contact">· {{ email.full_name }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="queue-prospect-sub">
+                        {{ email.email }}
+                        {% if email.city_state %} · {{ email.city_state }}{% endif %}
+                        {% if email.country %} · {{ email.flag }} {{ email.country }}{% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="queue-card-meta">
+                <span class="track-badge {{ email.track_css }}">{{ email.track }}</span>
+                <span class="email-type-pill {{ email.pill_css }}">{{ email.pill_label }}</span>
+                <div class="send-time-badge">
+                    <span class="material-symbols-outlined">schedule</span>
+                    {{ email.send_time }}
+                </div>
+            </div>
+        </div>
+
+        {# Subject bar — always visible #}
+        <div class="queue-subject-bar">
+            <span class="subject-label">SUBJECT</span>{{ email.subject }}
+        </div>
+
+        {# Email preview — hidden when collapsed #}
+        <div class="email-preview">
+            <div class="email-fields">
+                <div class="email-field">
+                    <span class="email-field-label">To</span>
+                    <span class="email-field-value to">{{ email.email }}</span>
+                </div>
+                <div class="email-field">
+                    <span class="email-field-label">Subject</span>
+                    <span class="email-field-value">{{ email.subject }}</span>
+                </div>
+            </div>
+
+            <div class="email-body-area">{{ email.body }}</div>
+
+            <div class="attachment-badge{% if not email.cv_attached %} not-attached{% endif %}"
+                 id="attach-{{ email.email_id }}"
+                 onclick="toggleAttachment('{{ email.email_id }}')"
+                 title="Click to toggle CV attachment">
+                <span class="material-symbols-outlined">attach_file</span>
+                Christopher_Hoole_CV.pdf &nbsp;·&nbsp;
+                <span id="attach-label-{{ email.email_id }}" style="font-weight:700;">
+                    {%- if email.cv_attached %}attached ✕{% else %}not attached +{% endif -%}
+                </span>
+            </div>
+        </div>
+
+        {# Edit bar — hidden when collapsed #}
+        <div class="edit-bar">
+            <button class="edit-bar-btn"
+                    onclick="showToast('Email editor coming soon', 'info')">✏ Edit this email</button>
+            <span class="edit-bar-sep">|</span>
+            <button class="edit-bar-btn"
+                    onclick="showToast('AI regeneration coming soon', 'info')">🔄 Regenerate with AI</button>
+            <span class="edit-bar-sep">|</span>
+            <button class="edit-bar-btn"
+                    onclick="showToast('Template switcher coming soon', 'info')">📋 Switch template</button>
+        </div>
+
+        {# Action row — hidden when collapsed #}
+        <div class="queue-actions">
+            <button class="btn-send" onclick="sendCard('{{ email.email_id }}')">
+                <span class="material-symbols-outlined">send</span>
+                Send now
+            </button>
+            <button class="btn-skip" onclick="skipCard('{{ email.email_id }}')">⏭ Skip</button>
+            <div class="send-schedule-note">
+                <span class="material-symbols-outlined">info</span>
+                {{ email.schedule_note }}
+            </div>
+            <button class="btn-discard" onclick="discardCard('{{ email.email_id }}')">🗑 Discard</button>
+        </div>
+
+    </div>
+    {% endfor %}
+    </div>{# /queueList #}
+
+    {# ── Empty queue state ── #}
+    <div class="empty-queue{% if queued_emails %} d-none{% endif %}" id="emptyQueue">
+        <div class="empty-queue-icon">
+            <span class="material-symbols-outlined" style="font-size:48px; color:#dadce0;">inbox</span>
+        </div>
+        <div class="empty-queue-title">Queue is empty</div>
+        <div class="empty-queue-sub">All emails have been sent or discarded. Add more leads to generate new emails.</div>
+    </div>
+
+</div>{# /queue-content #}
+
+
+{# ══════════════════════════════════════════════════════════
+   DISCARD CONFIRM MODAL (Bootstrap)
+   ══════════════════════════════════════════════════════════ #}
+<div class="modal fade" id="discardModal" tabindex="-1"
+     aria-labelledby="discardModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="discardModalLabel">Remove from queue</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Remove this email from the queue? This cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger"
+                        onclick="confirmDiscard()">Remove</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+/* ══════════════════════════════════════════════════════════════
+   OUTREACH QUEUE — CLIENT-SIDE LOGIC
+   Chat 60
+   ══════════════════════════════════════════════════════════════ */
+
+// ── Attachment state (tracks cv_attached toggle per card) ──────────────────
+const cvAttached = {};
+{% for email in queued_emails %}
+cvAttached['{{ email.email_id }}'] = {{ 'true' if email.cv_attached else 'false' }};
+{% endfor %}
+
+// ── Discard modal state ────────────────────────────────────────────────────
+let discardEmailId = null;
+
+/* ──────────────────────────────────────────────────────────────
+   TOGGLE CARD (expand one, collapse all others)
+   ────────────────────────────────────────────────────────────── */
+function toggleCard(cardId) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    const isCollapsed = card.classList.contains('collapsed');
+
+    // Collapse all cards
+    document.querySelectorAll('.queue-card').forEach(c => {
+        c.classList.add('collapsed');
+        const num = c.querySelector('.queue-number');
+        if (num) num.style.background = '#5f6368';
+    });
+
+    // Expand clicked card if it was collapsed
+    if (isCollapsed) {
+        card.classList.remove('collapsed');
+        const num = card.querySelector('.queue-number');
+        if (num) num.style.background = '#1a73e8';
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   REMOVE CARD (animate out + remove from DOM)
+   ────────────────────────────────────────────────────────────── */
+function removeCard(cardId, callback) {
+    const card = document.getElementById(cardId);
+    if (!card) { if (callback) callback(); return; }
+
+    card.style.transition = 'opacity 0.2s ease, height 0.3s ease, margin 0.3s ease';
+    card.style.opacity = '0';
+    card.style.overflow = 'hidden';
+    const h = card.offsetHeight;
+    card.style.height = h + 'px';
+    card.style.marginBottom = card.style.marginBottom || '16px';
+
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            card.style.height = '0';
+            card.style.marginBottom = '0';
+            card.style.paddingTop = '0';
+            card.style.paddingBottom = '0';
+        });
+    });
+
+    setTimeout(() => {
+        card.remove();
+        if (callback) callback();
+        updateQueue();
+    }, 350);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   SEND CARD
+   ────────────────────────────────────────────────────────────── */
+function sendCard(emailId) {
+    fetch(`/outreach/queue/${emailId}/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            removeCard('card-' + emailId, () => {
+                const next = document.querySelector('.queue-card.collapsed');
+                if (next) toggleCard(next.id);
+            });
+        } else {
+            showToast('Error: ' + (data.message || 'Send failed'), 'error');
+        }
+    })
+    .catch(() => showToast('Network error — could not send email', 'error'));
+}
+
+/* ──────────────────────────────────────────────────────────────
+   SKIP CARD (move to bottom of list)
+   ────────────────────────────────────────────────────────────── */
+function skipCard(emailId) {
+    fetch(`/outreach/queue/${emailId}/skip`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const card = document.getElementById('card-' + emailId);
+            if (!card) return;
+            card.classList.add('collapsed');
+            const num = card.querySelector('.queue-number');
+            if (num) num.style.background = '#5f6368';
+            card.parentNode.appendChild(card);
+            const next = document.querySelector('.queue-card.collapsed');
+            if (next) toggleCard(next.id);
+            updateQueue();
+        } else {
+            showToast('Error: ' + (data.message || 'Skip failed'), 'error');
+        }
+    })
+    .catch(() => showToast('Network error — could not skip email', 'error'));
+}
+
+/* ──────────────────────────────────────────────────────────────
+   DISCARD CARD (show confirm modal)
+   ────────────────────────────────────────────────────────────── */
+function discardCard(emailId) {
+    discardEmailId = emailId;
+    bootstrap.Modal.getOrCreateInstance(
+        document.getElementById('discardModal')
+    ).show();
+}
+
+function confirmDiscard() {
+    if (!discardEmailId) return;
+    const modal = bootstrap.Modal.getOrCreateInstance(
+        document.getElementById('discardModal')
+    );
+    const emailId = discardEmailId;
+    discardEmailId = null;
+
+    fetch(`/outreach/queue/${emailId}/discard`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        modal.hide();
+        if (data.success) {
+            removeCard('card-' + emailId, () => {
+                const next = document.querySelector('.queue-card.collapsed');
+                if (next) toggleCard(next.id);
+            });
+        } else {
+            showToast('Error: ' + (data.message || 'Discard failed'), 'error');
+        }
+    })
+    .catch(() => {
+        modal.hide();
+        showToast('Network error — could not discard email', 'error');
+    });
+}
+
+/* ──────────────────────────────────────────────────────────────
+   UPDATE QUEUE (counts, numbering, empty state, nav badge)
+   ────────────────────────────────────────────────────────────── */
+function updateQueue() {
+    const cards = document.querySelectorAll('.queue-card');
+    const remaining = cards.length;
+
+    // Update awaiting stat
+    const statEl = document.getElementById('statAwaiting');
+    if (statEl) statEl.textContent = remaining;
+
+    // Update queue heading
+    const heading = document.getElementById('queueCountHeading');
+    if (heading) {
+        heading.textContent = remaining + ' email' + (remaining !== 1 ? 's' : '') +
+                              ' awaiting your approval';
+    }
+
+    // Re-number circles
+    cards.forEach((c, i) => {
+        const n = c.querySelector('.queue-number');
+        if (n) n.textContent = i + 1;
+    });
+
+    // Update nav badge(s)
+    document.querySelectorAll('.nav-badge').forEach(b => {
+        b.textContent = remaining;
+        if (remaining === 0) b.classList.add('d-none');
+        else b.classList.remove('d-none');
+    });
+
+    // Show/hide empty queue state
+    const emptyEl = document.getElementById('emptyQueue');
+    if (emptyEl) {
+        if (remaining === 0) emptyEl.classList.remove('d-none');
+        else emptyEl.classList.add('d-none');
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   TOGGLE CV ATTACHMENT
+   ────────────────────────────────────────────────────────────── */
+function toggleAttachment(emailId) {
+    cvAttached[emailId] = !cvAttached[emailId];
+    const badge = document.getElementById('attach-' + emailId);
+    const label = document.getElementById('attach-label-' + emailId);
+    if (!badge || !label) return;
+
+    if (cvAttached[emailId]) {
+        badge.classList.remove('not-attached');
+        label.textContent = 'attached ✕';
+    } else {
+        badge.classList.add('not-attached');
+        label.textContent = 'not attached +';
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   INIT — auto-expand first card on page load
+   ────────────────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function () {
+    const firstCard = document.querySelector('.queue-card');
+    if (firstCard) toggleCard(firstCard.id);
+});
+</script>
+{% endblock %}

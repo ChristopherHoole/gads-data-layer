@@ -209,6 +209,21 @@ def create_app():
         else:
             print(f"⚠️  [Chat 59] Route not found (skipping): {route_name}")
 
+    # Chat 60: CSRF exemption for queue action routes (JSON API, no CSRF tokens sent)
+    # POST /outreach/queue/<id>/send|skip|discard are JSON APIs called from JavaScript
+    # Protected by @login_required decorator instead
+    queue_routes = [
+        'outreach.queue_send',
+        'outreach.queue_skip',
+        'outreach.queue_discard',
+    ]
+    for route_name in queue_routes:
+        if route_name in app.view_functions:
+            csrf.exempt(app.view_functions[route_name])
+            print(f"✅ [Chat 60] CSRF exempted: {route_name}")
+        else:
+            print(f"⚠️  [Chat 60] Route not found (skipping): {route_name}")
+
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
     def csrf_error(reason):

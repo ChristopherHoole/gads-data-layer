@@ -183,6 +183,60 @@ def enrich_email(row, cols):
     return e
 
 
+def compute_email_type_pill(email_type, sequence_step):
+    """Return (label, css_class) for the email type pill on queue cards."""
+    if email_type == "initial":
+        return ("Initial email", "pill-initial")
+    step = int(sequence_step or 1)
+    if step <= 1:
+        return ("Follow-up 1", "pill-followup")
+    elif step == 2:
+        return ("Follow-up 2", "pill-followup")
+    else:
+        return ("Follow-up 3", "pill-followup")
+
+
+def format_send_time(scheduled_at, timezone):
+    """Format datetime as 'Mon 6 Mar · 8:30am EST'."""
+    if not scheduled_at:
+        return ""
+    if isinstance(scheduled_at, str):
+        try:
+            scheduled_at = datetime.fromisoformat(scheduled_at)
+        except ValueError:
+            return ""
+    hour_24 = scheduled_at.hour
+    hour_12 = hour_24 % 12 or 12
+    ampm = "am" if hour_24 < 12 else "pm"
+    minute = scheduled_at.strftime("%M")
+    time_str = f"{hour_12}:{minute}{ampm}" if minute != "00" else f"{hour_12}{ampm}"
+    return (
+        f"{scheduled_at.strftime('%a')} {scheduled_at.day} "
+        f"{scheduled_at.strftime('%b')} · {time_str} {timezone or 'GMT'}"
+    )
+
+
+def format_schedule_note(scheduled_at, timezone):
+    """Format 'Will send Mon 6 Mar at 8:30am EST (recipient local time)'."""
+    if not scheduled_at:
+        return ""
+    if isinstance(scheduled_at, str):
+        try:
+            scheduled_at = datetime.fromisoformat(scheduled_at)
+        except ValueError:
+            return ""
+    hour_24 = scheduled_at.hour
+    hour_12 = hour_24 % 12 or 12
+    ampm = "am" if hour_24 < 12 else "pm"
+    minute = scheduled_at.strftime("%M")
+    time_str = f"{hour_12}:{minute}{ampm}" if minute != "00" else f"{hour_12}{ampm}"
+    return (
+        f"Will send {scheduled_at.strftime('%a')} {scheduled_at.day} "
+        f"{scheduled_at.strftime('%b')} at {time_str} {timezone or 'GMT'} "
+        f"(recipient local time)"
+    )
+
+
 def _get_lead_columns(conn):
     """Return column names for outreach_leads."""
     info = conn.execute("PRAGMA table_info(outreach_leads)").fetchall()
@@ -468,6 +522,177 @@ def add_lead():
         return jsonify({"success": True, "lead_id": lead_id})
     except Exception as e:
         print(f"[OUTREACH] Add lead error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── GET /outreach/queue ───────────────────────────────────────────────────────
+@bp.route("/queue")
+@login_required
+def queue():
+    """Queue page — emails awaiting approval before sending."""
+    config  = get_current_config()
+    clients = get_available_clients()
+    current_client_path = session.get("current_client_config")
+
+    conn = get_outreach_db()
+    try:
+        awaiting = conn.execute(
+            "SELECT COUNT(*) FROM outreach_emails WHERE status = 'queued'"
+        ).fetchone()[0]
+
+        scheduled_this_week = conn.execute(
+            "SELECT COUNT(*) FROM outreach_emails WHERE status = 'queued' "
+            "AND scheduled_at <= CURRENT_TIMESTAMP + INTERVAL '7 days'"
+        ).fetchone()[0]
+
+        sent_today = conn.execute(
+            "SELECT COUNT(*) FROM outreach_emails WHERE status = 'sent' "
+            "AND sent_at >= CURRENT_DATE"
+        ).fetchone()[0]
+
+        daily_limit_remaining = max(0, 50 - sent_today)
+
+        stats = {
+            "awaiting":              awaiting,
+            "scheduled_this_week":   scheduled_this_week,
+            "sent_today":            sent_today,
+            "daily_limit_remaining": daily_limit_remaining,
+        }
+
+        rows = conn.execute("""
+            SELECT e.email_id, e.lead_id, e.email_type, e.subject, e.body,
+                   e.cv_attached, e.scheduled_at,
+                   l.company, l.full_name, l.role, l.email, l.city_state,
+                   l.country, l.track, l.timezone, l.sequence_step
+            FROM outreach_emails e
+            JOIN outreach_leads l ON e.lead_id = l.lead_id
+            WHERE e.status = 'queued'
+            ORDER BY e.scheduled_at ASC
+        """).fetchall()
+
+        queued_emails = []
+        for row in rows:
+            (email_id, lead_id, email_type, subject, body, cv_attached,
+             scheduled_at, company, full_name, role, email_addr, city_state,
+             country, track, timezone, sequence_step) = row
+
+            pill_label, pill_css = compute_email_type_pill(email_type, sequence_step)
+            send_time     = format_send_time(scheduled_at, timezone)
+            schedule_note = format_schedule_note(scheduled_at, timezone)
+
+            queued_emails.append({
+                "email_id":      email_id,
+                "lead_id":       lead_id,
+                "email_type":    email_type or "",
+                "subject":       subject or "",
+                "body":          body or "",
+                "cv_attached":   bool(cv_attached),
+                "company":       company or "",
+                "full_name":     full_name or "",
+                "role":          role or "",
+                "email":         email_addr or "",
+                "city_state":    city_state or "",
+                "country":       country or "",
+                "flag":          COUNTRY_FLAG.get(country or "", ""),
+                "track":         track or "",
+                "track_css":     track_css(track or ""),
+                "timezone":      timezone or "GMT",
+                "sequence_step": int(sequence_step or 0),
+                "pill_label":    pill_label,
+                "pill_css":      pill_css,
+                "send_time":     send_time,
+                "schedule_note": schedule_note,
+            })
+
+    except Exception as e:
+        print(f"[OUTREACH] Error loading queue: {e}")
+        stats = {
+            "awaiting": 0, "scheduled_this_week": 0,
+            "sent_today": 0, "daily_limit_remaining": 50,
+        }
+        queued_emails = []
+    finally:
+        conn.close()
+
+    return render_template(
+        "outreach/queue.html",
+        client_name=config.client_name,
+        available_clients=clients,
+        current_client_config=current_client_path,
+        stats=stats,
+        queued_emails=queued_emails,
+    )
+
+
+# ── POST /outreach/queue/<email_id>/send ─────────────────────────────────────
+@bp.route("/queue/<email_id>/send", methods=["POST"])
+@login_required
+def queue_send(email_id):
+    """Mark email as sent; update lead status to contacted. AJAX — CSRF exempt."""
+    conn = get_outreach_db()
+    try:
+        row = conn.execute(
+            "SELECT lead_id FROM outreach_emails WHERE email_id = ?", [email_id]
+        ).fetchone()
+        if not row:
+            return jsonify({"success": False, "message": "Email not found"}), 404
+
+        lead_id = row[0]
+        now = datetime.now()
+
+        conn.execute(
+            "UPDATE outreach_emails SET status = 'sent', sent_at = ? WHERE email_id = ?",
+            [now, email_id],
+        )
+        conn.execute(
+            "UPDATE outreach_leads SET status = 'contacted', progress_stage = 3, "
+            "last_activity = ? WHERE lead_id = ? AND status IN ('cold', 'queued')",
+            [now, lead_id],
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"[OUTREACH] queue send error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /outreach/queue/<email_id>/skip ─────────────────────────────────────
+@bp.route("/queue/<email_id>/skip", methods=["POST"])
+@login_required
+def queue_skip(email_id):
+    """Delay email by 2 days (move to back of queue). AJAX — CSRF exempt."""
+    conn = get_outreach_db()
+    try:
+        conn.execute(
+            "UPDATE outreach_emails SET scheduled_at = scheduled_at + INTERVAL '2 days' "
+            "WHERE email_id = ?",
+            [email_id],
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"[OUTREACH] queue skip error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /outreach/queue/<email_id>/discard ───────────────────────────────────
+@bp.route("/queue/<email_id>/discard", methods=["POST"])
+@login_required
+def queue_discard(email_id):
+    """Mark email as discarded. AJAX — CSRF exempt."""
+    conn = get_outreach_db()
+    try:
+        conn.execute(
+            "UPDATE outreach_emails SET status = 'discarded' WHERE email_id = ?",
+            [email_id],
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"[OUTREACH] queue discard error: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         conn.close()

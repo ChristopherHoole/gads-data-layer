@@ -1053,3 +1053,396 @@
 #statusModal .form-select {
   height: 42px;
 }
+
+/* ══════════════════════════════════════════════════════════
+   QUEUE PAGE STYLES — Chat 60
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Queue content wrapper ── */
+.queue-content {
+  padding: 20px 24px;
+  max-width: 900px;
+}
+
+/* ── Stats row (4-column override for queue) ── */
+.stats-row-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* Grey stat value (daily limit remaining) */
+.stat-val-grey {
+  color: #5f6368;
+}
+
+/* ── Queue header ── */
+.queue-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.queue-header-left h2 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #202124;
+  margin: 0;
+}
+
+.queue-header-left p {
+  font-size: 12px;
+  color: #5f6368;
+  margin-top: 2px;
+  margin-bottom: 0;
+}
+
+/* ── Queue card ── */
+.queue-card {
+  background: white;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.queue-card-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8f9fa;
+  cursor: pointer;
+}
+
+.queue-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.queue-number {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #1a73e8;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.queue-prospect {
+  font-size: 14px;
+  font-weight: 600;
+  color: #202124;
+}
+
+.queue-prospect-contact {
+  color: #5f6368;
+  font-weight: 400;
+}
+
+.queue-prospect-sub {
+  font-size: 12px;
+  color: #5f6368;
+  margin-top: 1px;
+}
+
+.queue-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Email type pill ── */
+.email-type-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.pill-initial  { background: #e8f0fe; color: #1a73e8; }
+.pill-followup { background: #fff3e0; color: #e65100; }
+
+/* ── Send time badge ── */
+.send-time-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #5f6368;
+  white-space: nowrap;
+}
+
+.send-time-badge .material-symbols-outlined {
+  font-size: 14px;
+}
+
+/* ── Subject bar ── */
+.queue-subject-bar {
+  padding: 8px 18px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #fff;
+  font-size: 13px;
+  color: #202124;
+}
+
+.subject-label {
+  color: #9aa0a6;
+  font-size: 11px;
+  font-weight: 600;
+  margin-right: 8px;
+  letter-spacing: 0.3px;
+}
+
+/* ── Email preview area ── */
+.email-preview {
+  padding: 18px 18px 14px;
+}
+
+.email-fields {
+  margin-bottom: 12px;
+}
+
+.email-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f1f3f4;
+  font-size: 13px;
+}
+
+.email-field:last-child {
+  border-bottom: none;
+}
+
+.email-field-label {
+  width: 50px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9aa0a6;
+  letter-spacing: 0.3px;
+  padding-top: 1px;
+}
+
+.email-field-value {
+  color: #202124;
+  line-height: 1.5;
+}
+
+.email-field-value.to {
+  color: #1a73e8;
+}
+
+.email-body-area {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: #202124;
+  line-height: 1.7;
+  max-height: 220px;
+  overflow-y: auto;
+  white-space: pre-line;
+}
+
+.email-body-area::-webkit-scrollbar        { width: 4px; }
+.email-body-area::-webkit-scrollbar-track  { background: transparent; }
+.email-body-area::-webkit-scrollbar-thumb  { background: #dadce0; border-radius: 2px; }
+
+/* ── Attachment badge ── */
+.attachment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #1a73e8;
+  background: #e8f0fe;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-top: 8px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.attachment-badge:hover {
+  background: #d2e3fc;
+}
+
+.attachment-badge .material-symbols-outlined {
+  font-size: 13px;
+}
+
+.attachment-badge.not-attached {
+  background: #f1f3f4;
+  color: #5f6368;
+}
+
+.attachment-badge.not-attached:hover {
+  background: #e8eaed;
+}
+
+/* ── Edit bar ── */
+.edit-bar {
+  padding: 4px 18px 10px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.edit-bar-btn {
+  font-size: 12px;
+  color: #1a73e8;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.edit-bar-btn:hover {
+  text-decoration: underline;
+}
+
+.edit-bar-sep {
+  color: #dadce0;
+  font-size: 12px;
+}
+
+/* ── Action row ── */
+.queue-actions {
+  padding: 12px 18px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: white;
+}
+
+.btn-send {
+  padding: 9px 22px;
+  background: #1a73e8;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-send:hover { background: #1557b0; }
+
+.btn-send .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.btn-skip {
+  padding: 9px 16px;
+  background: white;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  color: #5f6368;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-skip:hover { background: #f8f9fa; color: #202124; }
+
+.btn-discard {
+  padding: 9px 16px;
+  background: white;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  color: #ea4335;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-left: auto;
+}
+
+.btn-discard:hover { background: #fef2f2; }
+
+.send-schedule-note {
+  font-size: 11px;
+  color: #5f6368;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.send-schedule-note .material-symbols-outlined {
+  font-size: 14px;
+}
+
+/* ── Collapsed card state ── */
+.queue-card.collapsed .email-preview  { display: none; }
+.queue-card.collapsed .edit-bar       { display: none; }
+.queue-card.collapsed .queue-actions  { display: none; }
+
+.queue-card.collapsed .queue-card-header {
+  background: white;
+  border-bottom: none;
+}
+
+.queue-card.collapsed .queue-card-header:hover {
+  background: #f8f9fa;
+}
+
+/* ── Empty queue state ── */
+.empty-queue {
+  background: white;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  padding: 48px 24px;
+  text-align: center;
+  color: #5f6368;
+}
+
+.empty-queue-icon {
+  font-size: 48px;
+  color: #dadce0;
+  margin-bottom: 12px;
+}
+
+.empty-queue-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #202124;
+  margin-bottom: 6px;
+}
+
+.empty-queue-sub {
+  font-size: 13px;
+  color: #5f6368;
+}
+
+/* ── Discard modal Bootstrap button fixes ── */
+#discardModal .btn-secondary {
+  background: #f1f3f4;
+  color: #202124;
+  border: 1px solid #dadce0;
+}
+
+#discardModal .btn-danger {
+  background: #ea4335;
+  color: #ffffff;
+  border: none;
+}
