@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wireframe — Outreach: Replies</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+<style>
+.material-symbols-outlined { font-variation-settings: 'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 40; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size:13px; background:#f8f9fa; color:#202124; }
+
+/* ── NAV ── */
+.nav-sidebar { width:110px; background:#ffffff; border-right:1px solid #dadce0; display:flex; flex-direction:column; position:fixed; left:0; top:0; height:100vh; z-index:1000; }
+.nav-brand { padding:16px 12px; display:flex; flex-direction:column; align-items:center; border-bottom:1px solid #dadce0; }
+.nav-brand-logo { width:48px; height:48px; margin-bottom:8px; }
+.nav-brand-text { font-size:14px; font-weight:600; color:#202124; text-align:center; line-height:1.3; }
+.nav-items { flex:1; padding:8px 0; overflow-y:auto; }
+.nav-item { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 8px; margin:2px 8px; text-decoration:none; color:#5f6368; border-radius:8px; transition:all 150ms ease; cursor:pointer; min-height:68px; }
+.nav-item:hover { background:#f1f3f4; color:#202124; }
+.nav-item.active { background:#e8f0fe; color:#1a73e8; }
+.nav-item-icon { font-size:28px; margin-bottom:4px; }
+.nav-item-text { font-size:12px; font-weight:500; text-align:center; line-height:1.2; }
+.nav-item-text.small { font-size:10px; }
+.nav-sub { background:#f8f9fa; border-left:2px solid #1a73e8; margin:0 8px 4px; border-radius:0 6px 6px 0; }
+.nav-sub-item { display:block; padding:7px 10px; font-size:11px; font-weight:500; color:#5f6368; text-decoration:none; transition:color 0.15s; text-align:center; }
+.nav-sub-item:hover { color:#202124; background:#f1f3f4; }
+.nav-sub-item.active { color:#1a73e8; font-weight:700; }
+.nav-badge { background:#ea4335; color:white; font-size:8px; border-radius:10px; padding:1px 4px; font-weight:700; margin-left:2px; vertical-align:middle; }
+
+/* ── LAYOUT ── */
+.main-wrapper { margin-left:110px; }
+.top-navbar { background:#ffffff; border-bottom:1px solid #dadce0; padding:0 24px; height:56px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:500; }
+.top-navbar-title { font-size:18px; font-weight:600; color:#202124; }
+.client-selector { padding:6px 12px; background:white; border:1px solid #dadce0; border-radius:4px; font-size:13px; color:#202124; cursor:pointer; }
+
+/* ── CONTENT ── */
+.content-area { padding:20px 24px; }
+
+/* ── STATS ── */
+.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+.stat-card { background:white; border:1px solid #dadce0; border-radius:8px; padding:14px 16px; display:flex; align-items:center; gap:12px; }
+.stat-icon { font-size:22px; color:#5f6368; }
+.stat-val { font-size:22px; font-weight:600; color:#202124; line-height:1; }
+.stat-lbl { font-size:11px; color:#5f6368; margin-top:2px; }
+
+/* ── CONTROL BAR ── */
+.control-bar { background:white; border:1px solid #dadce0; border-radius:8px 8px 0 0; padding:12px 16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; border-bottom:none; }
+.filter-tabs { display:flex; gap:2px; background:#f1f3f4; border-radius:6px; padding:3px; }
+.filter-tab { padding:5px 14px; border-radius:4px; font-size:12px; font-weight:500; color:#5f6368; cursor:pointer; border:none; background:none; white-space:nowrap; transition:all 0.15s; }
+.filter-tab.active { background:white; color:#1a73e8; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.12); }
+.filter-tab:hover:not(.active) { color:#202124; }
+.control-spacer { flex:1; }
+.control-search { padding:6px 12px; border:1px solid #dadce0; border-radius:4px; font-size:13px; color:#202124; width:200px; outline:none; }
+.control-search:focus { border-color:#1a73e8; }
+.control-select { padding:6px 10px; border:1px solid #dadce0; border-radius:4px; font-size:12px; color:#202124; background:white; cursor:pointer; outline:none; }
+
+/* ── REPLY CARDS ── */
+.cards-wrap { background:white; border:1px solid #dadce0; border-radius:0 0 8px 8px; }
+
+.reply-card { border-bottom:1px solid #f1f3f4; padding:18px 20px; cursor:pointer; transition:background 0.1s; }
+.reply-card:last-child { border-bottom:none; }
+.reply-card:hover { background:#f8f9fa; }
+.reply-card.unread { border-left:3px solid #1a73e8; }
+.reply-card.unread .prospect-name { font-weight:700; }
+
+.card-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; }
+.card-top-left { display:flex; align-items:center; gap:10px; }
+.prospect-name { font-size:13px; font-weight:600; color:#202124; }
+.prospect-company { font-size:12px; color:#5f6368; margin-top:1px; }
+.card-top-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.reply-date { font-size:11px; color:#9aa0a6; white-space:nowrap; }
+
+.reply-snippet { font-size:13px; color:#5f6368; line-height:1.5; margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:600px; }
+.reply-snippet strong { color:#202124; }
+
+.card-bottom { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+
+.track-badge { padding:2px 7px; border-radius:4px; font-size:11px; font-weight:600; white-space:nowrap; }
+.track-job       { background:#fef3c7; color:#92400e; }
+.track-recruiter { background:#ede9fe; color:#6d28d9; }
+.track-agency    { background:#dbeafe; color:#1d4ed8; }
+.track-direct    { background:#d1fae5; color:#065f46; }
+
+.status-pill { padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; white-space:nowrap; }
+.status-replied  { background:#e6f4ea; color:#137333; }
+.status-meeting  { background:#e8f5e9; color:#1b5e20; }
+.status-won      { background:#d4edda; color:#155724; }
+
+.unread-dot { width:8px; height:8px; border-radius:50%; background:#1a73e8; flex-shrink:0; }
+
+/* ── ACTIONS ── */
+.card-actions { display:flex; gap:6px; margin-left:auto; }
+.btn-small { padding:5px 12px; border:1px solid #dadce0; border-radius:4px; font-size:12px; font-weight:500; color:#202124; background:white; cursor:pointer; white-space:nowrap; transition:background 0.15s; }
+.btn-small:hover { background:#f1f3f4; }
+.btn-small.primary { background:#1a73e8; color:white; border-color:#1a73e8; }
+.btn-small.primary:hover { background:#1557b0; }
+
+/* ── PAGINATION ── */
+.pagination-bar { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:white; border:1px solid #dadce0; border-radius:0 0 8px 8px; border-top:1px solid #e0e0e0; margin-top:-1px; }
+.pagination-info { font-size:12px; color:#5f6368; }
+.pagination-controls { display:flex; align-items:center; gap:4px; }
+.page-btn { padding:5px 10px; background:white; border:1px solid #dadce0; border-radius:4px; font-size:12px; color:#202124; cursor:pointer; transition:all 0.1s; }
+.page-btn:hover { background:#f1f3f4; }
+.page-btn.active { background:#1a73e8; color:white; border-color:#1a73e8; }
+.page-btn:disabled { color:#dadce0; cursor:default; }
+
+/* ── SLIDE PANEL ── */
+.panel-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:900; opacity:0; pointer-events:none; transition:opacity 0.3s ease; }
+.panel-overlay.open { opacity:1; pointer-events:all; }
+.slide-panel { position:fixed; right:0; top:0; height:100vh; width:540px; background:white; border-left:1px solid #dadce0; z-index:1000; transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); overflow-y:auto; display:flex; flex-direction:column; }
+.slide-panel.open { transform:translateX(0); }
+.panel-header { padding:16px 20px; border-bottom:1px solid #dadce0; display:flex; align-items:flex-start; justify-content:space-between; background:white; position:sticky; top:0; z-index:10; }
+.panel-header-left h3 { font-size:15px; font-weight:600; color:#202124; }
+.panel-header-left p { font-size:12px; color:#5f6368; margin-top:2px; }
+.panel-close { background:none; border:none; cursor:pointer; color:#5f6368; font-size:20px; padding:0; line-height:1; }
+.panel-close:hover { color:#202124; }
+.panel-body { padding:20px; flex:1; }
+.panel-section { margin-bottom:24px; }
+.panel-section-title { font-size:11px; font-weight:600; color:#9aa0a6; margin-bottom:10px; }
+.panel-row { display:flex; gap:8px; margin-bottom:8px; font-size:13px; }
+.panel-row-label { width:100px; flex-shrink:0; color:#5f6368; font-weight:500; }
+
+/* Reply bubble */
+.reply-bubble-panel { background:#e6f4ea; border:1px solid #ceead6; border-radius:8px; padding:14px 16px; font-size:13px; color:#202124; line-height:1.7; white-space:pre-wrap; }
+.reply-meta { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.reply-from-label { font-size:11px; font-weight:600; color:#137333; background:#ceead6; padding:2px 8px; border-radius:4px; }
+.reply-from-name { font-size:11px; color:#5f6368; }
+.reply-time { font-size:11px; color:#9aa0a6; margin-left:auto; }
+
+/* Compose response */
+.compose-area { border:1px solid #dadce0; border-radius:6px; overflow:hidden; }
+.compose-toolbar { padding:8px 12px; background:#f8f9fa; border-bottom:1px solid #e0e0e0; display:flex; align-items:center; gap:8px; }
+.compose-toolbar-btn { background:none; border:none; font-size:12px; color:#5f6368; cursor:pointer; padding:3px 6px; border-radius:3px; }
+.compose-toolbar-btn:hover { background:#e0e0e0; color:#202124; }
+.compose-textarea { width:100%; min-height:120px; padding:12px; border:none; outline:none; font-size:13px; color:#202124; line-height:1.7; resize:vertical; font-family:inherit; }
+.compose-footer { padding:8px 12px; border-top:1px solid #e0e0e0; display:flex; align-items:center; gap:8px; }
+.btn-send-reply { padding:8px 20px; background:#1a73e8; border:none; border-radius:4px; color:white; font-size:13px; font-weight:600; cursor:pointer; }
+.btn-send-reply:hover { background:#1557b0; }
+.attachment-badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; color:#1a73e8; background:#e8f0fe; padding:2px 8px; border-radius:4px; cursor:pointer; }
+.attachment-badge:hover { background:#d2e3fc; }
+.compose-hint { font-size:11px; color:#9aa0a6; margin-left:auto; }
+
+/* Thread history */
+.thread-item { border:1px solid #e0e0e0; border-radius:6px; margin-bottom:8px; overflow:hidden; }
+.thread-header { padding:10px 14px; background:#f8f9fa; display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none; }
+.thread-header:hover { background:#f1f3f4; }
+.thread-type { padding:2px 7px; border-radius:4px; font-size:11px; font-weight:600; background:#e8f0fe; color:#1a73e8; }
+.thread-date { font-size:11px; color:#9aa0a6; }
+.thread-subject { font-size:12px; color:#5f6368; margin-top:3px; }
+.thread-body { padding:12px 14px; font-size:13px; color:#202124; line-height:1.7; border-top:1px solid #e0e0e0; white-space:pre-line; display:none; }
+
+/* Panel actions */
+.panel-actions { padding:16px 20px; border-top:1px solid #dadce0; display:flex; gap:8px; flex-wrap:wrap; position:sticky; bottom:0; background:white; }
+.btn-panel { padding:8px 16px; border-radius:4px; font-size:13px; font-weight:500; cursor:pointer; border:1px solid #dadce0; background:white; color:#202124; transition:background 0.15s; }
+.btn-panel:hover { background:#f8f9fa; }
+.btn-panel.success { background:#34a853; color:white; border-color:#34a853; }
+.btn-panel.success:hover { background:#2d8f47; }
+.btn-panel.danger { color:#ea4335; border-color:#fecaca; }
+.btn-panel.danger:hover { background:#fef2f2; }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav class="nav-sidebar">
+  <div class="nav-brand">
+    <svg class="nav-brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="41" fill="none" stroke="#4285F4" stroke-width="10"/>
+      <circle cx="50" cy="50" r="29" fill="none" stroke="#EA4335" stroke-width="10"/>
+      <circle cx="50" cy="50" r="17" fill="none" stroke="#FBBC05" stroke-width="10"/>
+      <circle cx="50" cy="50" r="10" fill="#34A853"/>
+    </svg>
+    <div class="nav-brand-text">Ads<br>Control<br>Tower</div>
+  </div>
+  <div class="nav-items">
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">home</span><span class="nav-item-text">Dashboard</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">campaign</span><span class="nav-item-text">Campaigns</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">folder</span><span class="nav-item-text">Ad Groups</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">search</span><span class="nav-item-text">Keywords</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">article</span><span class="nav-item-text">Ads</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">shopping_cart</span><span class="nav-item-text">Shopping</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">lightbulb</span><span class="nav-item-text small">Recommendations</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">history</span><span class="nav-item-text">Changes</span></a>
+    <a class="nav-item active" href="#">
+      <span class="material-symbols-outlined nav-item-icon">send</span>
+      <span class="nav-item-text">Outreach</span>
+    </a>
+    <div class="nav-sub">
+      <a class="nav-sub-item" href="#">Leads</a>
+      <a class="nav-sub-item" href="#">Queue <span class="nav-badge">3</span></a>
+      <a class="nav-sub-item" href="#">Sent</a>
+      <a class="nav-sub-item active" href="#">Replies <span class="nav-badge">4</span></a>
+      <a class="nav-sub-item" href="#">Templates</a>
+      <a class="nav-sub-item" href="#">Analytics</a>
+    </div>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">settings</span><span class="nav-item-text">Settings</span></a>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<div class="main-wrapper">
+  <div class="top-navbar">
+    <div class="top-navbar-title">Outreach — Replies</div>
+    <div class="top-navbar-right">
+      <select class="client-selector"><option>Synthetic_Test_Client</option></select>
+    </div>
+  </div>
+
+  <div class="content-area">
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <span class="material-symbols-outlined stat-icon" style="color:#34a853;">mark_email_read</span>
+        <div><div class="stat-val" style="color:#34a853;">11</div><div class="stat-lbl">Total replies</div></div>
+      </div>
+      <div class="stat-card">
+        <span class="material-symbols-outlined stat-icon" style="color:#1a73e8;">notifications_unread</span>
+        <div><div class="stat-val" style="color:#1a73e8;">4</div><div class="stat-lbl">Unread</div></div>
+      </div>
+      <div class="stat-card">
+        <span class="material-symbols-outlined stat-icon" style="color:#00897b;">event</span>
+        <div><div class="stat-val" style="color:#00897b;">2</div><div class="stat-lbl">Meetings booked</div></div>
+      </div>
+      <div class="stat-card">
+        <span class="material-symbols-outlined stat-icon" style="color:#9aa0a6;">reply</span>
+        <div><div class="stat-val" style="color:#9aa0a6;">6</div><div class="stat-lbl">Awaiting your reply</div></div>
+      </div>
+    </div>
+
+    <!-- CONTROL BAR -->
+    <div class="control-bar">
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="setTab(this,'all')">All <span style="font-weight:400;color:#9aa0a6;">(11)</span></button>
+        <button class="filter-tab" onclick="setTab(this,'unread')">Unread <span style="font-weight:400;color:#1a73e8;">(4)</span></button>
+        <button class="filter-tab" onclick="setTab(this,'action')">Needs action <span style="font-weight:400;color:#e65100;">(6)</span></button>
+        <button class="filter-tab" onclick="setTab(this,'meeting')">Meeting booked</button>
+        <button class="filter-tab" onclick="setTab(this,'won')">Won</button>
+      </div>
+      <select class="control-select" id="rowsPerPageSelect" onchange="changeRowsPerPage()">
+        <option value="10" selected>10 rows</option>
+        <option value="25">25 rows</option>
+        <option value="50">50 rows</option>
+      </select>
+      <div class="control-spacer"></div>
+      <input class="control-search" type="text" placeholder="Search company or contact…" oninput="filterCards(this.value)">
+      <select class="control-select" onchange="filterCards()">
+        <option value="">All tracks</option>
+        <option>Job</option>
+        <option>Recruiter</option>
+        <option>Agency</option>
+        <option>Direct</option>
+      </select>
+    </div>
+
+    <!-- REPLY CARDS -->
+    <div class="cards-wrap" id="cardsWrap"></div>
+
+    <!-- PAGINATION -->
+    <div class="pagination-bar">
+      <div class="pagination-info" id="paginationInfo"></div>
+      <div class="pagination-controls" id="paginationControls"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── SLIDE PANEL ── -->
+<div class="panel-overlay" id="overlay" onclick="closePanel()"></div>
+<div class="slide-panel" id="slidePanel">
+  <div class="panel-header">
+    <div class="panel-header-left">
+      <h3 id="panelName">—</h3>
+      <p id="panelSub">—</p>
+    </div>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+  <div class="panel-actions" id="panelActions"></div>
+</div>
+
+<script>
+const replies = [
+  {
+    id:1, name:'Rachel Green', company:'Paid Media Co.', email:'r.green [at] paidmediaco.com',
+    track:'Direct',
+    status:'action', statusLabel:'Awaiting reply', statusPill:'status-replied',
+    unread:true, repliedDate:'4 Mar 2026', repliedTime:'11:42am',
+    snippet:'Hi Christopher, thanks for reaching out. I have reviewed your background and I\'d love to set up a call this week. Are you free Thursday afternoon?',
+    replyText:'Hi Christopher, thanks for reaching out. I have reviewed your background and I\'d love to set up a call this week. Are you free Thursday afternoon?',
+    emailType:'Follow-up 2',
+  },
+  {
+    id:2, name:'David Park', company:'Search Matters', email:'d.park [at] searchmatters.com',
+    track:'Recruiter',
+    status:'action', statusLabel:'Awaiting reply', statusPill:'status-replied',
+    unread:true, repliedDate:'4 Mar 2026', repliedTime:'9:15am',
+    snippet:'Hi Christopher! Great timing — we have a client looking for a senior Google Ads specialist right now. Can you send over your CV?',
+    replyText:'Hi Christopher! Great timing — we have a client looking for a senior Google Ads specialist right now. Can you send over your CV?',
+    emailType:'Follow-up 1',
+  },
+  {
+    id:3, name:'Sophie Tan', company:'The Ads Agency', email:'s.tan [at] theadsagency.com.au',
+    track:'Agency',
+    status:'meeting', statusLabel:'Meeting booked', statusPill:'status-meeting',
+    unread:false, repliedDate:'3 Mar 2026', repliedTime:'2:30pm',
+    snippet:'Hi Christopher, yes I\'d love to find out more. Let\'s set something up for next week — how does Tuesday at 10am work?',
+    replyText:'Hi Christopher, yes I\'d love to find out more. Let\'s set something up for next week — how does Tuesday at 10am work?',
+    emailType:'Follow-up 2',
+  },
+  {
+    id:4, name:'Owen Walsh', company:'Paid Search Pro', email:'o.walsh [at] paidsearchpro.ie',
+    track:'Direct',
+    status:'action', statusLabel:'Awaiting reply', statusPill:'status-replied',
+    unread:true, repliedDate:'3 Mar 2026', repliedTime:'10:05am',
+    snippet:'Hi Christopher! We\'re actually actively recruiting at the moment. What\'s your day rate and are you open to a permanent position?',
+    replyText:'Hi Christopher! We\'re actually actively recruiting at the moment. What\'s your day rate and are you open to a permanent position?',
+    emailType:'Initial email',
+  },
+  {
+    id:5, name:'James Whitfield', company:'Apex Digital', email:'james [at] apexdigital.co.uk',
+    track:'Agency',
+    status:'action', statusLabel:'Awaiting reply', statusPill:'status-replied',
+    unread:false, repliedDate:'2 Mar 2026', repliedTime:'3:18pm',
+    snippet:'Thanks for getting in touch. We are always on the lookout for strong Google Ads talent. Could you share more about the types of accounts you have managed?',
+    replyText:'Thanks for getting in touch. We are always on the lookout for strong Google Ads talent. Could you share more about the types of accounts you have managed?',
+    emailType:'Follow-up 1',
+  },
+  {
+    id:6, name:'Priya Nair', company:'GrowthLab', email:'p.nair [at] growthlab.io',
+    track:'Agency',
+    status:'meeting', statusLabel:'Meeting booked', statusPill:'status-meeting',
+    unread:false, repliedDate:'1 Mar 2026', repliedTime:'8:50am',
+    snippet:'Hi Christopher, great to hear from you! We have a client in the ecommerce space who needs serious Google Ads expertise. Let\'s jump on a call.',
+    replyText:'Hi Christopher, great to hear from you! We have a client in the ecommerce space who needs serious Google Ads expertise. Let\'s jump on a call.',
+    emailType:'Initial email',
+  },
+  {
+    id:7, name:'Marcus Webb', company:'PPC Talent', email:'marcus [at] ppctalent.com',
+    track:'Recruiter',
+    status:'action', statusLabel:'Awaiting reply', statusPill:'status-replied',
+    unread:true, repliedDate:'28 Feb 2026', repliedTime:'4:22pm',
+    snippet:'Hi Christopher, thanks for the message. I have a few live roles that could be a great fit. Are you looking for contract or permanent?',
+    replyText:'Hi Christopher, thanks for the message. I have a few live roles that could be a great fit. Are you looking for contract or permanent?',
+    emailType:'Initial email',
+  },
+  {
+    id:8, name:'Emma Johnson', company:'Click Collective', email:'e.johnson [at] clickcollective.co.uk',
+    track:'Agency',
+    status:'action', statusLabel:'Awaiting reply', statusPill:'status-replied',
+    unread:false, repliedDate:'26 Feb 2026', repliedTime:'11:10am',
+    snippet:'Hi Christopher, appreciate you reaching out. We don\'t have anything right now but I\'d love to stay in touch. Are you open to freelance work?',
+    replyText:'Hi Christopher, appreciate you reaching out. We don\'t have anything right now but I\'d love to stay in touch. Are you open to freelance work?',
+    emailType:'Follow-up 2',
+  },
+  {
+    id:9, name:'Tom Hargreaves', company:'Blue Sky PPC', email:'tom [at] blueskyppc.co.uk',
+    track:'Agency',
+    status:'replied', statusLabel:'Replied', statusPill:'status-replied',
+    unread:false, repliedDate:'25 Feb 2026', repliedTime:'9:30am',
+    snippet:'Hi Christopher, thanks for the follow up. We\'re currently fully staffed but I\'ll keep your details on file.',
+    replyText:'Hi Christopher, thanks for the follow up. We\'re currently fully staffed but I\'ll keep your details on file.',
+    emailType:'Follow-up 1',
+  },
+  {
+    id:10, name:'Maria Santos', company:'Conversion Kings', email:'m.santos [at] conversionkings.com',
+    track:'Agency',
+    status:'replied', statusLabel:'Replied', statusPill:'status-replied',
+    unread:false, repliedDate:'24 Feb 2026', repliedTime:'2:45pm',
+    snippet:'Thanks Christopher. We\'re not hiring right now but your background is impressive. I\'ll reach out if something comes up.',
+    replyText:'Thanks Christopher. We\'re not hiring right now but your background is impressive. I\'ll reach out if something comes up.',
+    emailType:'Initial email',
+  },
+  {
+    id:11, name:'Lena Fischer', company:'Bid Wars GmbH', email:'l.fischer [at] bidwars.de',
+    track:'Agency',
+    status:'replied', statusLabel:'Replied', statusPill:'status-replied',
+    unread:false, repliedDate:'22 Feb 2026', repliedTime:'10:00am',
+    snippet:'Hallo Christopher, danke für Ihre Nachricht. Wir haben aktuell keine offenen Stellen, aber ich merke mir Ihre Kontaktdaten.',
+    replyText:'Hallo Christopher, danke für Ihre Nachricht. Wir haben aktuell keine offenen Stellen, aber ich merke mir Ihre Kontaktdaten.',
+    emailType:'Initial email',
+  },
+];
+
+let currentTab = 'all';
+let currentPage = 1;
+let rowsPerPage = 10;
+let searchTerm = '';
+
+const trackClass = { Job:'track-job', Recruiter:'track-recruiter', Agency:'track-agency', Direct:'track-direct' };
+
+function getFiltered() {
+  return replies.filter(r => {
+    if (currentTab === 'unread'  && !r.unread) return false;
+    if (currentTab === 'action'  && r.status !== 'action') return false;
+    if (currentTab === 'meeting' && r.status !== 'meeting') return false;
+    if (currentTab === 'won'     && r.status !== 'won') return false;
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      if (!r.name.toLowerCase().includes(q) && !r.company.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function renderCards() {
+  const filtered = getFiltered();
+  const start = (currentPage - 1) * rowsPerPage;
+  const page  = filtered.slice(start, start + rowsPerPage);
+  const wrap  = document.getElementById('cardsWrap');
+
+  if (page.length === 0) {
+    wrap.innerHTML = '<div style="padding:48px;text-align:center;color:#5f6368;">No replies found.</div>';
+    document.getElementById('paginationInfo').textContent = '';
+    document.getElementById('paginationControls').innerHTML = '';
+    return;
+  }
+
+  wrap.innerHTML = page.map(r => {
+    const unreadDot = r.unread ? '<span class="unread-dot"></span>' : '';
+    const statusBadge = r.status === 'meeting'
+      ? '<span class="status-pill status-meeting">Meeting booked</span>'
+      : r.status === 'won'
+      ? '<span class="status-pill status-won">Won</span>'
+      : r.status === 'action'
+      ? '<span class="status-pill status-replied" style="background:#fff3e0;color:#e65100;">Needs action</span>'
+      : '<span class="status-pill status-replied">Replied</span>';
+
+    return `<div class="reply-card ${r.unread ? 'unread' : ''}" onclick="openPanel(${r.id})">
+      <div class="card-top">
+        <div class="card-top-left">
+          <div>
+            <div class="prospect-name">${r.name} ${r.unread ? '· <span style="color:#1a73e8;font-size:11px;">New</span>' : ''}</div>
+            <div class="prospect-company">${r.company}</div>
+          </div>
+        </div>
+        <div class="card-top-right">
+          ${unreadDot}
+          <span class="reply-date">${r.repliedDate} · ${r.repliedTime}</span>
+        </div>
+      </div>
+      <div class="reply-snippet"><strong>${r.name.split(' ')[0]}:</strong> ${r.snippet}</div>
+      <div class="card-bottom">
+        <span class="track-badge ${trackClass[r.track]}">${r.track}</span>
+        ${statusBadge}
+        <div class="card-actions" onclick="event.stopPropagation()">
+          <button class="btn-small primary" onclick="openPanel(${r.id})">Reply</button>
+          <button class="btn-small">Mark as won</button>
+          <button class="btn-small">Queue follow-up</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  renderPagination(filtered.length);
+}
+
+function renderPagination(total) {
+  const totalPages = Math.ceil(total / rowsPerPage);
+  const start = (currentPage - 1) * rowsPerPage + 1;
+  const end   = Math.min(currentPage * rowsPerPage, total);
+  document.getElementById('paginationInfo').textContent = total === 0 ? '' : `${start}–${end} of ${total}`;
+  const ctrl = document.getElementById('paginationControls');
+  let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>← Prev</button>`;
+  for (let i = 1; i <= totalPages; i++) {
+    html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  }
+  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage>=totalPages?'disabled':''}>Next →</button>`;
+  ctrl.innerHTML = html;
+}
+
+function goPage(p) {
+  const max = Math.ceil(getFiltered().length / rowsPerPage);
+  if (p < 1 || p > max) return;
+  currentPage = p;
+  renderCards();
+}
+
+function changeRowsPerPage() {
+  rowsPerPage = parseInt(document.getElementById('rowsPerPageSelect').value);
+  currentPage = 1;
+  renderCards();
+}
+
+function setTab(el, tab) {
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentTab = tab;
+  currentPage = 1;
+  renderCards();
+}
+
+function filterCards(val) {
+  if (val !== undefined) searchTerm = val;
+  currentPage = 1;
+  renderCards();
+}
+
+// ── PANEL ──
+function openPanel(id) {
+  const r = replies.find(x => x.id === id);
+  if (!r) return;
+
+  // Mark as read
+  r.unread = false;
+  renderCards();
+
+  document.getElementById('panelName').textContent = r.name + ' · ' + r.company;
+  document.getElementById('panelSub').textContent = r.email + ' · ' + r.track;
+
+  document.getElementById('panelBody').innerHTML = `
+    <div class="panel-section">
+      <div class="panel-section-title">Their reply · ${r.repliedDate} at ${r.repliedTime}</div>
+      <div class="reply-bubble-panel">
+        <div class="reply-meta">
+          <span class="reply-from-label">Reply</span>
+          <span class="reply-from-name">${r.name}</span>
+          <span class="reply-time">${r.repliedDate} · ${r.repliedTime}</span>
+        </div>${r.replyText}
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Your reply</div>
+      <div class="compose-area">
+        <div class="compose-toolbar">
+          <button class="compose-toolbar-btn" title="Bold"><b>B</b></button>
+          <button class="compose-toolbar-btn" title="Italic"><i>I</i></button>
+          <button class="compose-toolbar-btn" title="Link">🔗</button>
+          <button class="compose-toolbar-btn" onclick="insertSignature()">+ Signature</button>
+          <button class="compose-toolbar-btn">🔄 AI draft</button>
+        </div>
+        <textarea class="compose-textarea" id="replyText" placeholder="Write your reply…"></textarea>
+        <div class="compose-footer">
+          <button class="btn-send-reply" onclick="closePanel()">Send reply</button>
+          <span class="attachment-badge" id="cvToggle" onclick="toggleCV()">
+            <span class="material-symbols-outlined" style="font-size:13px;">attach_file</span>
+            CV · <span id="cvLabel">not attached +</span>
+          </span>
+          <span class="compose-hint">Sending from chrishoole101 [at] gmail.com</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Email thread</div>
+      <div class="thread-item">
+        <div class="thread-header" onclick="toggleThread(this)">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="thread-type">${r.emailType}</span>
+              <span class="thread-date">24 Feb 2026 · 8:30am</span>
+            </div>
+            <div class="thread-subject" style="margin-top:3px;">Google Ads Specialist — 16 Years Experience</div>
+          </div>
+          <span style="font-size:11px;color:#9aa0a6;">▾</span>
+        </div>
+        <div class="thread-body">Hi ${r.name.split(' ')[0]},
+
+I'm a Google Ads specialist with 16 years of experience managing £50M+ in ad spend across 200+ accounts — and I'm currently exploring new opportunities.
+
+I specialise in Search, Shopping and Performance Max for both lead gen and ecommerce clients.
+
+Would you be open to a quick call?
+
+Best regards,
+Christopher Hoole
++44 7999 500 184
+christopherhoole.online</div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('panelActions').innerHTML = `
+    <button class="btn-panel success" onclick="closePanel()">Mark as won</button>
+    <button class="btn-panel" onclick="closePanel()">Book meeting</button>
+    <button class="btn-panel" onclick="closePanel()">Update status</button>
+    <button class="btn-panel danger" onclick="closePanel()">Mark as lost</button>
+  `;
+
+  document.getElementById('slidePanel').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closePanel() {
+  document.getElementById('slidePanel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function toggleThread(header) {
+  const body = header.nextElementSibling;
+  const isHidden = body.style.display === 'none' || body.style.display === '';
+  body.style.display = isHidden ? 'block' : 'none';
+  header.querySelector('span:last-child').textContent = isHidden ? '▴' : '▾';
+}
+
+function insertSignature() {
+  const ta = document.getElementById('replyText');
+  if (ta) ta.value += '\n\nBest regards,\nChristopher Hoole\n+44 7999 500 184\nchristopherhoole.online';
+}
+
+function toggleCV() {
+  const label = document.getElementById('cvLabel');
+  const badge = document.getElementById('cvToggle');
+  const attached = label.textContent.includes('not attached');
+  label.textContent = attached ? 'attached ✕' : 'not attached +';
+  badge.style.background = attached ? '#e8f0fe' : '#f1f3f4';
+  badge.style.color = attached ? '#1a73e8' : '#5f6368';
+}
+
+document.addEventListener('DOMContentLoaded', renderCards);
+</script>
+</body>
+</html>

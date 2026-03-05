@@ -1769,3 +1769,236 @@
 
 #sentStatusModal .modal-body { padding-top: 8px; }
 #sentStatusModal .form-select { height: 42px; }
+
+/* ══════════════════════════════════════════════════════════
+   REPLIES PAGE STYLES — Chat 62
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Reply cards container ── */
+.cards-wrap {
+  background: white;
+  border: 1px solid #dadce0;
+  border-radius: 0 0 8px 8px;
+}
+
+/* ── Individual reply card ── */
+.reply-card {
+  border-bottom: 1px solid #f1f3f4;
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.reply-card:last-child { border-bottom: none; }
+.reply-card:hover      { background: #f8f9fa; }
+
+/* Unread state */
+.reply-card.unread                    { border-left: 3px solid #1a73e8; }
+.reply-card.unread .reply-card-name   { font-weight: 700; }
+
+/* ── Card top row ── */
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.card-top-left  { display: flex; align-items: center; gap: 10px; }
+.card-top-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.reply-date { font-size: 11px; color: #9aa0a6; white-space: nowrap; }
+
+/* ── Reply snippet (truncated) ── */
+.reply-snippet {
+  font-size: 13px;
+  color: #5f6368;
+  line-height: 1.5;
+  margin-bottom: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 700px;
+}
+
+/* ── Card bottom row ── */
+.card-bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.card-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* ── Small inline action buttons ── */
+.btn-small {
+  padding: 5px 12px;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #202124;
+  background: white;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.btn-small:hover          { background: #f1f3f4; }
+.btn-small.primary        { background: #1a73e8; color: white; border-color: #1a73e8; }
+.btn-small.primary:hover  { background: #1557b0; }
+.btn-small.success        { background: #34a853; color: white; border-color: #34a853; }
+.btn-small.success:hover  { background: #2d8f47; }
+
+/* ── Unread indicator dot ── */
+.unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1a73e8;
+  flex-shrink: 0;
+}
+
+/* ── Status pills (replies page) ── */
+.status-pill-needs-action {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.status-pill-meeting {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.status-pill-won {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: #d4edda;
+  color: #155724;
+}
+
+/* ── Compose area (reply panel) ── */
+.compose-area {
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.compose-toolbar {
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compose-toolbar-btn {
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: #5f6368;
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-family: inherit;
+}
+
+.compose-toolbar-btn:hover { background: #e0e0e0; color: #202124; }
+
+.compose-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: #202124;
+  line-height: 1.7;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.compose-footer {
+  padding: 8px 12px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-send-reply {
+  padding: 8px 20px;
+  background: #1a73e8;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-send-reply:hover { background: #1557b0; }
+
+.compose-hint { font-size: 11px; color: #9aa0a6; margin-left: auto; }
+
+/* ── Reply time (in panel bubble header) ── */
+.reply-time { font-size: 11px; color: #9aa0a6; margin-left: auto; }
+
+/* ── Replies pagination bar ── */
+.replies-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: white;
+  border: 1px solid #dadce0;
+  border-radius: 0 0 8px 8px;
+  border-top: 1px solid #e0e0e0;
+  margin-top: -1px;
+}
+
+/* ── Replies panel footer (sticky bottom) ── */
+.replies-panel-footer {
+  padding: 14px 20px;
+  border-top: 1px solid #dadce0;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: white;
+  flex-shrink: 0;
+}
+
+/* ── Update status modal Bootstrap fixes (replies page) ── */
+#repliesStatusModal .btn-secondary {
+  background: #f1f3f4;
+  color: #202124;
+  border: 1px solid #dadce0;
+}
+
+#repliesStatusModal .btn-primary {
+  background: #1a73e8;
+  color: #ffffff;
+  border: none;
+}
+
+#repliesStatusModal .modal-body  { padding-top: 8px; }
+#repliesStatusModal .form-select { height: 42px; }

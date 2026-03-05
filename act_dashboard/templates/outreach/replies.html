@@ -1,0 +1,629 @@
+{% extends "base_bootstrap.html" %}
+
+{% block title %}Outreach — Replies{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/outreach.css') }}">
+{% endblock %}
+
+{# ── Custom top navbar ── #}
+{% block page_header %}
+<div class="outreach-top-navbar">
+    <div class="outreach-top-navbar-title">Outreach — Replies</div>
+    <div class="outreach-top-navbar-right">
+        <select class="outreach-client-selector"
+                onchange="window.location='/switch-client/'+this.selectedIndex">
+            {% for cname, cpath in available_clients %}
+            <option {% if cpath == current_client_config %}selected{% endif %}>{{ cname }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="outreach-content">
+
+    {# ── Stats Row (5-col) ── #}
+    <div class="stats-row">
+        <div class="stat-card">
+            <span class="material-symbols-outlined stat-icon stat-icon-green">mark_email_read</span>
+            <div>
+                <div class="stat-val stat-val-green">{{ stats.total_replies }}</div>
+                <div class="stat-lbl">Total replies</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="material-symbols-outlined stat-icon" style="color:#1a73e8;">notifications_unread</span>
+            <div>
+                <div class="stat-val" id="statUnread" style="color:#1a73e8;">{{ stats.unread }}</div>
+                <div class="stat-lbl">Unread</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="material-symbols-outlined stat-icon" style="color:#00897b;">event</span>
+            <div>
+                <div class="stat-val" style="color:#00897b;">{{ stats.meetings }}</div>
+                <div class="stat-lbl">Meetings booked</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="material-symbols-outlined stat-icon stat-icon-muted">reply</span>
+            <div>
+                <div class="stat-val stat-val-muted">{{ stats.awaiting }}</div>
+                <div class="stat-lbl">Awaiting your reply</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="material-symbols-outlined stat-icon" style="color:#1b5e20;">emoji_events</span>
+            <div>
+                <div class="stat-val" style="color:#1b5e20;">{{ stats.won }}</div>
+                <div class="stat-lbl">Won</div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Control Bar ── #}
+    <div class="sent-control-bar">
+        <div class="filter-tabs">
+            <button class="filter-tab active" onclick="setTab('all', this)">
+                All <span id="tabCountAll" class="tab-count-muted"></span>
+            </button>
+            <button class="filter-tab" onclick="setTab('unread', this)">
+                Unread <span class="tab-count-muted" id="tabCountUnread">({{ stats.unread }})</span>
+            </button>
+            <button class="filter-tab" onclick="setTab('action', this)">
+                Needs action <span class="tab-count-orange">({{ stats.awaiting }})</span>
+            </button>
+            <button class="filter-tab" onclick="setTab('meeting', this)">
+                Meeting booked <span class="tab-count-green">({{ stats.meetings }})</span>
+            </button>
+            <button class="filter-tab" onclick="setTab('won', this)">
+                Won <span class="tab-count-muted" id="tabCountWon"></span>
+            </button>
+        </div>
+        <select class="control-select" id="rowsPerPageSelect" onchange="changeRowsPerPage()">
+            <option value="10" selected>10 rows</option>
+            <option value="25">25 rows</option>
+            <option value="50">50 rows</option>
+        </select>
+        <div class="control-spacer"></div>
+        <input class="control-search" type="text" id="searchInput"
+               placeholder="Search company or contact…"
+               oninput="filterAndRender()">
+        <select class="control-select" id="filterTrack" onchange="filterAndRender()">
+            <option value="">All tracks</option>
+            <option value="Job">Job</option>
+            <option value="Recruiter">Recruiter</option>
+            <option value="Agency">Agency</option>
+            <option value="Direct">Direct</option>
+        </select>
+    </div>
+
+    {# ── Reply Cards ── #}
+    <div class="cards-wrap" id="cardsWrap">
+        <div style="padding:48px;text-align:center;color:#9aa0a6;">Loading replies…</div>
+    </div>
+
+    {# ── Pagination ── #}
+    <div class="replies-pagination-bar">
+        <div class="pagination-info" id="paginationInfo">—</div>
+        <div class="pagination-controls" id="paginationControls"></div>
+    </div>
+
+</div>{# /outreach-content #}
+
+
+{# ══════════════════════════════════════════════════════════
+   SLIDE-OUT PANEL
+   ══════════════════════════════════════════════════════════ #}
+<div class="panel-overlay" id="panelOverlay" onclick="closePanel()"></div>
+
+<div class="slide-panel" id="slidePanel">
+    <div class="panel-header">
+        <div class="panel-header-left">
+            <div class="panel-prospect-name" id="panelName">—</div>
+            <div class="panel-meta" id="panelMeta">—</div>
+        </div>
+        <button class="panel-close" onclick="closePanel()">✕</button>
+    </div>
+    <div class="panel-body" id="panelBody"></div>
+    <div class="replies-panel-footer" id="panelFooter"></div>
+</div>
+
+
+{# ══════════════════════════════════════════════════════════
+   UPDATE STATUS MODAL
+   ══════════════════════════════════════════════════════════ #}
+<div class="modal fade" id="repliesStatusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label fw-semibold mb-2">New status</label>
+                <select class="form-select" id="repliesStatusSelect">
+                    <option value="meeting">Meeting booked</option>
+                    <option value="won">Won</option>
+                    <option value="lost">Lost</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveStatusUpdate()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+/* ══════════════════════════════════════════════════════════════
+   OUTREACH REPLIES — CLIENT-SIDE LOGIC
+   Chat 62
+   ══════════════════════════════════════════════════════════════ */
+
+// ── Server data ────────────────────────────────────────────────
+const REPLIES_DATA = {{ replies_json | safe }};
+const EMAILS_DATA  = {{ emails_json  | safe }};
+
+// ── State ──────────────────────────────────────────────────────
+let currentPage   = 1;
+let rowsPerPage   = 10;
+let currentTab    = 'all';
+let currentLeadId = null;
+let actionLeadId  = null;
+let liveUnread    = {{ stats.unread }};
+
+// ── Init ───────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('tabCountAll').textContent = '(' + REPLIES_DATA.length + ')';
+    // Won tab count — computed client-side from data
+    const wonCount = REPLIES_DATA.filter(r => (r.status || '').trim().toLowerCase() === 'won').length;
+    const wonBadge = document.getElementById('tabCountWon');
+    if (wonBadge) wonBadge.textContent = '(' + wonCount + ')';
+    renderCards();
+});
+
+/* ──────────────────────────────────────────────────────────────
+   LIVE UNREAD COUNTER — updates stat card, tab badge, nav badge
+   ────────────────────────────────────────────────────────────── */
+function updateUnreadCounts(delta) {
+    liveUnread = Math.max(0, liveUnread - delta);
+
+    // Stat card
+    const statEl = document.getElementById('statUnread');
+    if (statEl) statEl.textContent = liveUnread;
+
+    // Filter tab count
+    const tabEl = document.getElementById('tabCountUnread');
+    if (tabEl) tabEl.textContent = '(' + liveUnread + ')';
+
+    // Nav sidebar badge
+    const navEl = document.getElementById('navRepliesBadge');
+    if (navEl) {
+        if (liveUnread > 0) {
+            navEl.textContent  = liveUnread;
+            navEl.style.display = '';
+        } else {
+            navEl.style.display = 'none';
+        }
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   FILTERING + PAGINATION
+   ────────────────────────────────────────────────────────────── */
+function getFiltered() {
+    const search = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+    const track  = document.getElementById('filterTrack').value;
+
+    return REPLIES_DATA.filter(r => {
+        const status = (r.status || '').trim().toLowerCase();
+        if (currentTab === 'unread'  && !r.unread)              return false;
+        if (currentTab === 'action'  && status !== 'replied')   return false;
+        if (currentTab === 'meeting' && status !== 'meeting')   return false;
+        if (currentTab === 'won'     && status !== 'won')       return false;
+        if (search && !(r.full_name + ' ' + r.company).toLowerCase().includes(search)) return false;
+        if (track  && r.track !== track)                        return false;
+        return true;
+    });
+}
+
+function renderCards() {
+    const filtered = getFiltered();
+    const total    = filtered.length;
+    const start    = (currentPage - 1) * rowsPerPage;
+    const page     = filtered.slice(start, start + rowsPerPage);
+    const wrap     = document.getElementById('cardsWrap');
+
+    if (page.length === 0) {
+        wrap.innerHTML = '<div style="padding:48px;text-align:center;color:#9aa0a6;">No replies found.</div>';
+        document.getElementById('paginationInfo').textContent = '';
+        document.getElementById('paginationControls').innerHTML = '';
+        return;
+    }
+
+    wrap.innerHTML = page.map(r => buildCard(r)).join('');
+    renderPagination(total);
+}
+
+function buildCard(r) {
+    const unreadDot  = r.unread ? '<span class="unread-dot"></span>' : '';
+    const newLabel   = r.unread ? ' &middot; <span style="color:#1a73e8;font-size:11px;">New</span>' : '';
+    const statusPill = statusPillHtml(r.status);
+    const firstName  = esc((r.full_name || '').split(' ')[0]);
+    const snippet    = esc(r.reply_text || '(No reply text)');
+
+    return `<div class="reply-card ${r.unread ? 'unread' : ''}" onclick="openPanel('${esc(r.lead_id)}')">
+        <div class="card-top">
+            <div class="card-top-left">
+                <div>
+                    <div class="reply-card-name prospect-name">${esc(r.full_name)}${newLabel}</div>
+                    <div class="prospect-company">${esc(r.company)}</div>
+                </div>
+            </div>
+            <div class="card-top-right">
+                ${unreadDot}
+                <span class="reply-date">${esc(r.replied_date)} &middot; ${esc(r.replied_time)}</span>
+            </div>
+        </div>
+        <div class="reply-snippet"><strong>${firstName}:</strong> ${snippet}</div>
+        <div class="card-bottom">
+            <span class="track-badge ${esc(r.track_css)}">${esc(r.track)}</span>
+            ${statusPill}
+            <div class="card-actions" onclick="event.stopPropagation()">
+                <button class="btn-small primary" onclick="openPanel('${esc(r.lead_id)}')">Reply</button>
+                <button class="btn-small success" onclick="markWon('${esc(r.lead_id)}')">Mark as won</button>
+                <button class="btn-small" onclick="showToast('Queue follow-up coming soon','info')">Queue follow-up</button>
+            </div>
+        </div>
+    </div>`;
+}
+
+function statusPillHtml(status) {
+    if (status === 'meeting') return '<span class="status-pill-meeting">Meeting booked</span>';
+    if (status === 'won')     return '<span class="status-pill-won">Won</span>';
+    return '<span class="status-pill-needs-action">Needs action</span>';
+}
+
+function renderPagination(total) {
+    const totalPages = Math.max(1, Math.ceil(total / rowsPerPage));
+    const start      = (currentPage - 1) * rowsPerPage + 1;
+    const end        = Math.min(currentPage * rowsPerPage, total);
+
+    document.getElementById('paginationInfo').textContent =
+        total === 0 ? 'No results' : `${start}–${end} of ${total} replies`;
+
+    const container = document.getElementById('paginationControls');
+    container.innerHTML = '';
+
+    const prev = document.createElement('button');
+    prev.textContent = '← Prev';
+    prev.disabled    = currentPage === 1;
+    prev.onclick     = () => { currentPage--; renderCards(); };
+    container.appendChild(prev);
+
+    const maxVisible = 7;
+    let startPage = Math.max(1, currentPage - 3);
+    let endPage   = Math.min(totalPages, startPage + maxVisible - 1);
+    if (endPage - startPage < maxVisible - 1) startPage = Math.max(1, endPage - maxVisible + 1);
+    for (let i = startPage; i <= endPage; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        if (i === currentPage) btn.classList.add('active');
+        btn.onclick = (function(p) { return function () { currentPage = p; renderCards(); }; })(i);
+        container.appendChild(btn);
+    }
+
+    const next = document.createElement('button');
+    next.textContent = 'Next →';
+    next.disabled    = currentPage === totalPages;
+    next.onclick     = () => { currentPage++; renderCards(); };
+    container.appendChild(next);
+}
+
+function setTab(tab, btn) {
+    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTab  = tab;
+    currentPage = 1;
+    renderCards();
+}
+
+function filterAndRender() {
+    currentPage = 1;
+    renderCards();
+}
+
+function changeRowsPerPage() {
+    rowsPerPage = parseInt(document.getElementById('rowsPerPageSelect').value);
+    currentPage = 1;
+    renderCards();
+}
+
+/* ──────────────────────────────────────────────────────────────
+   SLIDE PANEL
+   ────────────────────────────────────────────────────────────── */
+function openPanel(leadId) {
+    const r = REPLIES_DATA.find(x => x.lead_id === leadId);
+    if (!r) return;
+
+    currentLeadId = leadId;
+
+    // Mark as read (fire and forget) — update all unread counters immediately
+    if (r.unread) {
+        r.unread     = false;
+        r.reply_read = true;
+        updateUnreadCounts(1);
+        fetch(`/outreach/replies/${leadId}/mark-read`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }
+        }).catch(() => {});
+        renderCards();
+    }
+
+    // Panel header
+    document.getElementById('panelName').textContent = esc(r.full_name) + ' · ' + esc(r.company);
+    document.getElementById('panelMeta').textContent = r.email + ' · ' + r.track;
+
+    // Panel body
+    let html = buildReplyBubble(r);
+    html += buildComposeSection(leadId);
+    html += buildThreadSection(EMAILS_DATA[leadId] || []);
+    document.getElementById('panelBody').innerHTML = html;
+
+    // Panel footer
+    document.getElementById('panelFooter').innerHTML = `
+        <button class="panel-btn success" onclick="panelMarkWon()">Mark as won</button>
+        <button class="panel-btn" onclick="panelBookMeeting()">Book meeting</button>
+        <button class="panel-btn" onclick="openStatusModal()">Update status</button>
+        <button class="panel-btn danger" onclick="panelMarkLost()">Mark as lost</button>
+    `;
+
+    document.getElementById('panelOverlay').classList.add('overlay-visible');
+    document.getElementById('slidePanel').classList.add('panel-open');
+}
+
+function closePanel() {
+    document.getElementById('panelOverlay').classList.remove('overlay-visible');
+    document.getElementById('slidePanel').classList.remove('panel-open');
+}
+
+function buildReplyBubble(r) {
+    const replyText = (r.reply_text || '(No reply received yet)').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `
+        <div class="panel-section">
+            <div class="panel-section-title">Their reply &middot; ${esc(r.replied_date)} at ${esc(r.replied_time)}</div>
+            <div class="reply-bubble">
+                <div class="reply-header">
+                    <span class="reply-label">Reply</span>
+                    <span class="reply-from">${esc(r.full_name)}</span>
+                    <span class="reply-time">${esc(r.replied_date)} &middot; ${esc(r.replied_time)}</span>
+                </div>${replyText}
+            </div>
+        </div>`;
+}
+
+function buildComposeSection(leadId) {
+    return `
+        <div class="panel-section">
+            <div class="panel-section-title">Your reply</div>
+            <div class="compose-area">
+                <div class="compose-toolbar">
+                    <button class="compose-toolbar-btn" title="Bold"><b>B</b></button>
+                    <button class="compose-toolbar-btn" title="Italic"><i>I</i></button>
+                    <button class="compose-toolbar-btn" title="Link">🔗</button>
+                    <button class="compose-toolbar-btn" onclick="insertSignature()">+ Signature</button>
+                    <button class="compose-toolbar-btn" onclick="showToast('AI draft coming soon','info')">🔄 AI draft</button>
+                </div>
+                <textarea class="compose-textarea" id="replyTextarea" placeholder="Write your reply…"></textarea>
+                <div class="compose-footer">
+                    <button class="btn-send-reply" onclick="sendReply('${esc(leadId)}')">Send reply</button>
+                    <span class="attachment-badge not-attached" id="cvToggle" onclick="toggleCV()">
+                        <span class="material-symbols-outlined" style="font-size:13px;">attach_file</span>
+                        CV &middot; <span id="cvLabel">not attached +</span>
+                    </span>
+                    <span class="compose-hint">Sending from chrishoole101@gmail.com</span>
+                </div>
+            </div>
+        </div>`;
+}
+
+function buildThreadSection(thread) {
+    const sent = thread
+        .filter(e => e.status === 'sent')
+        .sort((a, b) => (b.sent_at || '').localeCompare(a.sent_at || ''));
+
+    const items = sent.map((e, i) => {
+        const pillCls = e.email_type === 'initial' ? 'pill-initial' : 'pill-followup';
+        const pillLbl = e.email_type === 'initial'     ? 'Initial email'
+                      : e.email_type === 'follow_up_2' ? 'Follow-up 2'
+                      : e.email_type === 'follow_up_3' ? 'Follow-up 3'
+                      : 'Follow-up 1';
+        const dateStr = formatDate(e.sent_at);
+        const subject = e.subject || 'Google Ads Specialist — 16 Years Experience';
+        const bodyId  = 'rthread-body-' + i;
+        const bodyTxt = (e.body || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const cvBadge = (e.cv_attached === true || e.cv_attached === 'True')
+            ? `<div class="attachment-badge" style="margin-top:8px;">
+                <span class="material-symbols-outlined" style="font-size:13px;">attach_file</span>
+                Christopher_Hoole_CV.pdf &middot; attached
+               </div>` : '';
+        return `
+            <div class="email-thread-item">
+                <div class="thread-item-header" onclick="toggleThread('${bodyId}')">
+                    <div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span class="email-type-pill ${pillCls}">${pillLbl}</span>
+                            <span class="thread-date">${dateStr}</span>
+                        </div>
+                        <div class="thread-subject">${esc(subject)}</div>
+                    </div>
+                    <span class="thread-chevron" id="chev-${bodyId}">▾</span>
+                </div>
+                <div class="thread-body hidden" id="${bodyId}">${bodyTxt}${cvBadge}</div>
+            </div>`;
+    }).join('');
+
+    return `
+        <div class="panel-section">
+            <div class="panel-section-title">Email thread</div>
+            ${items || '<p style="color:#9aa0a6;font-size:12px;">No sent emails found.</p>'}
+        </div>`;
+}
+
+function toggleThread(bodyId) {
+    const body = document.getElementById(bodyId);
+    if (!body) return;
+    body.classList.toggle('hidden');
+    const chev = document.getElementById('chev-' + bodyId);
+    if (chev) chev.textContent = body.classList.contains('hidden') ? '▾' : '▴';
+}
+
+function insertSignature() {
+    const ta = document.getElementById('replyTextarea');
+    if (ta) ta.value += '\n\nBest regards,\nChristopher Hoole\n+44 7999 500 184\nchristopherhoole.online';
+}
+
+function toggleCV() {
+    const badge = document.getElementById('cvToggle');
+    const label = document.getElementById('cvLabel');
+    if (!badge || !label) return;
+    const isAttached = !badge.classList.contains('not-attached');
+    if (isAttached) {
+        badge.classList.add('not-attached');
+        label.textContent = 'not attached +';
+    } else {
+        badge.classList.remove('not-attached');
+        label.textContent = 'attached ✕';
+    }
+}
+
+function sendReply(leadId) {
+    const btn = document.querySelector('.btn-send-reply');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+    showToast('Sending your reply…', 'info');
+    fetch(`/outreach/replies/${leadId}/send-reply`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (btn) { btn.disabled = false; btn.textContent = 'Send reply'; }
+        showToast(d.message || 'Reply sent', 'success');
+    })
+    .catch(() => {
+        if (btn) { btn.disabled = false; btn.textContent = 'Send reply'; }
+        showToast('Could not send reply. Please try again.', 'error');
+    });
+}
+
+function formatDate(isoStr) {
+    if (!isoStr) return '—';
+    try {
+        const d = new Date(isoStr);
+        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+             + ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    } catch(e) { return isoStr; }
+}
+
+function esc(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+/* ──────────────────────────────────────────────────────────────
+   PANEL ACTIONS
+   ────────────────────────────────────────────────────────────── */
+function markWon(leadId) {
+    fetch(`/outreach/replies/${leadId}/mark-won`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) { showToast('Lead marked as won', 'success'); setTimeout(() => location.reload(), 800); }
+        else showToast('Error: ' + (d.message || 'unknown'), 'error');
+    })
+    .catch(() => showToast('Network error', 'error'));
+}
+
+function panelMarkWon() {
+    if (!currentLeadId) return;
+    if (!confirm('Mark this lead as Won?')) return;
+    fetch(`/outreach/replies/${currentLeadId}/mark-won`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) { showToast('Lead marked as won', 'success'); setTimeout(() => location.reload(), 800); }
+        else showToast('Error: ' + (d.message || 'unknown'), 'error');
+    })
+    .catch(() => showToast('Network error', 'error'));
+}
+
+function panelMarkLost() {
+    if (!currentLeadId) return;
+    if (!confirm('Mark this lead as Lost?')) return;
+    fetch(`/outreach/replies/${currentLeadId}/mark-lost`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) { showToast('Lead marked as lost', 'success'); setTimeout(() => location.reload(), 800); }
+        else showToast('Error: ' + (d.message || 'unknown'), 'error');
+    })
+    .catch(() => showToast('Network error', 'error'));
+}
+
+function panelBookMeeting() {
+    if (!currentLeadId) return;
+    fetch(`/outreach/replies/${currentLeadId}/book-meeting`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) { showToast('Meeting booked', 'success'); setTimeout(() => location.reload(), 800); }
+        else showToast('Error: ' + (d.message || 'unknown'), 'error');
+    })
+    .catch(() => showToast('Network error', 'error'));
+}
+
+function openStatusModal() {
+    if (!currentLeadId) return;
+    actionLeadId = currentLeadId;
+    const r = REPLIES_DATA.find(x => x.lead_id === currentLeadId);
+    if (r) document.getElementById('repliesStatusSelect').value = r.status || 'replied';
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('repliesStatusModal')).show();
+}
+
+function saveStatusUpdate() {
+    if (!actionLeadId) return;
+    const newStatus = document.getElementById('repliesStatusSelect').value;
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('repliesStatusModal'));
+    const routeMap = {
+        'won':     'mark-won',
+        'lost':    'mark-lost',
+        'meeting': 'book-meeting',
+    };
+    const route = routeMap[newStatus] || 'mark-won';
+    fetch(`/outreach/replies/${actionLeadId}/${route}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(d => {
+        modal.hide();
+        if (d.success) { showToast('Status updated', 'success'); setTimeout(() => location.reload(), 800); }
+        else showToast('Error: ' + (d.message || 'unknown'), 'error');
+    })
+    .catch(() => { modal.hide(); showToast('Network error', 'error'); });
+}
+</script>
+{% endblock %}

@@ -240,6 +240,23 @@ def create_app():
         else:
             print(f"⚠️  [Chat 61] Route not found (skipping): {route_name}")
 
+    # Chat 62: CSRF exemption for replies page AJAX endpoints (JSON API, no CSRF tokens sent)
+    # POST /outreach/replies/* routes are JSON APIs called from JavaScript
+    # Protected by @login_required decorator instead
+    replies_routes = [
+        'outreach.replies_mark_read',
+        'outreach.replies_mark_won',
+        'outreach.replies_mark_lost',
+        'outreach.replies_book_meeting',
+        'outreach.replies_send_reply',
+    ]
+    for route_name in replies_routes:
+        if route_name in app.view_functions:
+            csrf.exempt(app.view_functions[route_name])
+            print(f"✅ [Chat 62] CSRF exempted: {route_name}")
+        else:
+            print(f"⚠️  [Chat 62] Route not found (skipping): {route_name}")
+
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
     def csrf_error(reason):

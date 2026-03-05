@@ -981,3 +981,263 @@ def sent_mark_lost(lead_id):
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         conn.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# REPLIES PAGE — Chat 62
+# ══════════════════════════════════════════════════════════════════════════════
+
+def format_replied_at(replied_at):
+    """Return ('5 Mar 2026', '8:30am') from a replied_at datetime."""
+    if not replied_at:
+        return ("—", "")
+    if isinstance(replied_at, str):
+        try:
+            replied_at = datetime.fromisoformat(replied_at)
+        except ValueError:
+            return (str(replied_at), "")
+    date_str = replied_at.strftime("%d %b %Y").lstrip("0")
+    hour_24 = replied_at.hour
+    hour_12 = hour_24 % 12 or 12
+    ampm = "am" if hour_24 < 12 else "pm"
+    minute = replied_at.strftime("%M")
+    time_str = f"{hour_12}:{minute}{ampm}" if minute != "00" else f"{hour_12}{ampm}"
+    return (date_str, time_str)
+
+
+# ── GET /outreach/replies ─────────────────────────────────────────────────────
+@bp.route("/replies")
+@login_required
+def replies():
+    """Replies page — leads who have replied, with compose and status actions."""
+    config  = get_current_config()
+    clients = get_available_clients()
+    current_client_path = session.get("current_client_config")
+
+    conn = get_outreach_db()
+    try:
+        # Ensure reply_read column exists on outreach_emails
+        conn.execute(
+            "ALTER TABLE outreach_emails ADD COLUMN IF NOT EXISTS "
+            "reply_read BOOLEAN DEFAULT false"
+        )
+
+        # ── Stats ────────────────────────────────────────────────────────────
+        total_replies = conn.execute(
+            "SELECT COUNT(*) FROM outreach_leads "
+            "WHERE status IN ('replied', 'meeting', 'won')"
+        ).fetchone()[0]
+
+        unread_count = conn.execute(
+            "SELECT COUNT(DISTINCT lead_id) FROM outreach_emails "
+            "WHERE reply_received = true AND reply_read = false"
+        ).fetchone()[0]
+
+        meetings_count = conn.execute(
+            "SELECT COUNT(*) FROM outreach_leads WHERE status = 'meeting'"
+        ).fetchone()[0]
+
+        awaiting_count = conn.execute(
+            "SELECT COUNT(*) FROM outreach_leads WHERE status = 'replied'"
+        ).fetchone()[0]
+
+        won_count = conn.execute(
+            "SELECT COUNT(*) FROM outreach_leads WHERE status = 'won'"
+        ).fetchone()[0]
+
+        stats = {
+            "total_replies": total_replies,
+            "unread":        unread_count,
+            "meetings":      meetings_count,
+            "awaiting":      awaiting_count,
+            "won":           won_count,
+        }
+
+        # ── Replies list ─────────────────────────────────────────────────────
+        rows = conn.execute("""
+            WITH reply_email AS (
+                SELECT lead_id, reply_text, reply_read
+                FROM outreach_emails
+                WHERE reply_received = true
+            ),
+            latest_sent AS (
+                SELECT lead_id, email_type, sequence_step,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY lead_id ORDER BY sent_at DESC
+                       ) AS rn
+                FROM outreach_emails
+                WHERE status = 'sent'
+            )
+            SELECT
+                l.lead_id, l.full_name, l.company, l.email,
+                l.track, l.status,
+                l.last_activity  AS replied_at,
+                re.reply_text,
+                re.reply_read,
+                ls.email_type,
+                ls.sequence_step
+            FROM outreach_leads l
+            LEFT JOIN reply_email re ON l.lead_id = re.lead_id
+            LEFT JOIN latest_sent  ls ON l.lead_id = ls.lead_id AND ls.rn = 1
+            WHERE l.status IN ('replied', 'meeting', 'won')
+            ORDER BY l.last_activity DESC
+        """).fetchall()
+
+        cols = [
+            "lead_id", "full_name", "company", "email",
+            "track", "status",
+            "replied_at",
+            "reply_text", "reply_read",
+            "email_type", "sequence_step",
+        ]
+
+        replies_list = []
+        for row in rows:
+            r = dict(zip(cols, row))
+            r["track_css"]       = track_css(r.get("track") or "")
+            r["status_display"]  = STATUS_DISPLAY.get(r.get("status", ""), "—")
+            date_str, time_str   = format_replied_at(r.get("replied_at"))
+            r["replied_date"]    = date_str
+            r["replied_time"]    = time_str
+            r["reply_read"]      = bool(r.get("reply_read"))
+            r["unread"]          = not r["reply_read"]
+            r["reply_text"]      = r.get("reply_text") or ""
+            r["lead_id"]         = str(r["lead_id"])
+            pill_label, pill_css = compute_email_type_pill(
+                r.get("email_type"), r.get("sequence_step")
+            )
+            r["pill_label"] = pill_label
+            r["pill_css"]   = pill_css
+            replies_list.append(r)
+
+        # ── Email threads per lead (for slide panel) ──────────────────────────
+        lead_ids = list({r["lead_id"] for r in replies_list})
+        emails_by_lead = {}
+        if lead_ids:
+            placeholders = ",".join("?" * len(lead_ids))
+            email_cols   = _get_email_columns(conn)
+            thread_rows  = conn.execute(
+                f"SELECT * FROM outreach_emails WHERE lead_id IN ({placeholders}) "
+                f"ORDER BY sent_at ASC",
+                lead_ids,
+            ).fetchall()
+            for trow in thread_rows:
+                e   = enrich_email(trow, email_cols)
+                lid = str(e.get("lead_id", ""))
+                if lid not in emails_by_lead:
+                    emails_by_lead[lid] = []
+                emails_by_lead[lid].append(e)
+
+        def reply_to_js(r):
+            return {k: _safe_str(v) for k, v in r.items()}
+
+        replies_json = json.dumps([reply_to_js(r) for r in replies_list])
+        emails_json  = json.dumps(emails_by_lead)
+
+    except Exception as ex:
+        print(f"[OUTREACH] Error loading replies: {ex}")
+        stats        = {"total_replies": 0, "unread": 0, "meetings": 0, "awaiting": 0, "won": 0}
+        replies_list = []
+        replies_json = "[]"
+        emails_json  = "{}"
+    finally:
+        conn.close()
+
+    return render_template(
+        "outreach/replies.html",
+        client_name=config.client_name,
+        available_clients=clients,
+        current_client_config=current_client_path,
+        stats=stats,
+        replies=replies_list,
+        replies_json=replies_json,
+        emails_json=emails_json,
+    )
+
+
+# ── POST /outreach/replies/<lead_id>/mark-read ────────────────────────────────
+@bp.route("/replies/<lead_id>/mark-read", methods=["POST"])
+@login_required
+def replies_mark_read(lead_id):
+    """Mark all reply emails for a lead as read. AJAX — CSRF exempt."""
+    conn = get_outreach_db()
+    try:
+        conn.execute(
+            "UPDATE outreach_emails SET reply_read = true "
+            "WHERE lead_id = ? AND reply_received = true",
+            [lead_id],
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"[OUTREACH] replies mark-read error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /outreach/replies/<lead_id>/mark-won ─────────────────────────────────
+@bp.route("/replies/<lead_id>/mark-won", methods=["POST"])
+@login_required
+def replies_mark_won(lead_id):
+    """Mark lead as won from replies page. AJAX — CSRF exempt."""
+    conn = get_outreach_db()
+    try:
+        conn.execute(
+            "UPDATE outreach_leads SET status = 'won', progress_stage = 8, "
+            "last_activity = ? WHERE lead_id = ?",
+            [datetime.now(), lead_id],
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"[OUTREACH] replies mark-won error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /outreach/replies/<lead_id>/mark-lost ────────────────────────────────
+@bp.route("/replies/<lead_id>/mark-lost", methods=["POST"])
+@login_required
+def replies_mark_lost(lead_id):
+    """Mark lead as lost from replies page. AJAX — CSRF exempt."""
+    conn = get_outreach_db()
+    try:
+        conn.execute(
+            "UPDATE outreach_leads SET status = 'lost', progress_stage = 8, "
+            "last_activity = ? WHERE lead_id = ?",
+            [datetime.now(), lead_id],
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"[OUTREACH] replies mark-lost error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /outreach/replies/<lead_id>/book-meeting ─────────────────────────────
+@bp.route("/replies/<lead_id>/book-meeting", methods=["POST"])
+@login_required
+def replies_book_meeting(lead_id):
+    """Mark lead as meeting from replies page. AJAX — CSRF exempt."""
+    conn = get_outreach_db()
+    try:
+        conn.execute(
+            "UPDATE outreach_leads SET status = 'meeting', progress_stage = 7, "
+            "last_activity = ? WHERE lead_id = ?",
+            [datetime.now(), lead_id],
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"[OUTREACH] replies book-meeting error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /outreach/replies/<lead_id>/send-reply ───────────────────────────────
+@bp.route("/replies/<lead_id>/send-reply", methods=["POST"])
+@login_required
+def replies_send_reply(lead_id):
+    """Placeholder: reply sending not yet implemented. AJAX — CSRF exempt."""
+    return jsonify({"success": True, "message": "Reply sending coming soon"})
