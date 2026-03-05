@@ -419,11 +419,8 @@ function toggleAttachment(emailId) {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   INIT — auto-expand first card on page load
+   INIT — first card is rendered without 'collapsed' by Jinja,
+   so it is already expanded on load. Nothing to do here.
    ────────────────────────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', function () {
-    const firstCard = document.querySelector('.queue-card');
-    if (firstCard) toggleCard(firstCard.id);
-});
 </script>
 {% endblock %}
