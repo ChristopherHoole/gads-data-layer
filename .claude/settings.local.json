@@ -3,7 +3,8 @@
     "allow": [
       "Bash(pkill:*)",
       "Bash(curl:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(.venv/Scripts/python.exe:*)"
     ]
   }
 }

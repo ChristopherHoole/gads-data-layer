@@ -94,6 +94,31 @@
                 <span class="nav-item-text">Changes</span>
             </a>
 
+            <!-- OUTREACH — Chat 59 -->
+            <a href="/outreach/leads" class="nav-item {% if request.path.startswith('/outreach') %}active{% endif %}">
+                <span class="material-symbols-outlined nav-item-icon">send</span>
+                <span class="nav-item-text">Outreach</span>
+            </a>
+            {% if request.path.startswith('/outreach') %}
+            <div class="nav-sub">
+                <a class="nav-sub-item {% if request.path == '/outreach/leads' %}active{% endif %}"
+                   href="/outreach/leads">Leads</a>
+                <a class="nav-sub-item" href="#">Queue
+                    {% if outreach_queue_count and outreach_queue_count > 0 %}
+                    <span class="nav-badge">{{ outreach_queue_count }}</span>
+                    {% endif %}
+                </a>
+                <a class="nav-sub-item" href="#">Sent</a>
+                <a class="nav-sub-item" href="#">Replies
+                    {% if outreach_replies_count and outreach_replies_count > 0 %}
+                    <span class="nav-badge">{{ outreach_replies_count }}</span>
+                    {% endif %}
+                </a>
+                <a class="nav-sub-item" href="#">Templates</a>
+                <a class="nav-sub-item" href="#">Analytics</a>
+            </div>
+            {% endif %}
+
             <a href="/settings" class="nav-item {% if request.path == '/settings' %}active{% endif %}">
                 <span class="material-symbols-outlined nav-item-icon">settings</span>
                 <span class="nav-item-text">Settings</span>
@@ -107,7 +132,10 @@
     <div class="main-wrapper" style="margin-left: 110px;">
         <!-- Top Navbar Component -->
         {% include 'components/navbar.html' %}
-        
+
+        <!-- Optional page-level header (overridden by outreach pages) -->
+        {% block page_header %}{% endblock %}
+
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}

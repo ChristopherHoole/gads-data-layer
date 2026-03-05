@@ -67,6 +67,10 @@ def register_blueprints(app: Flask):
     from act_dashboard.routes import changes
     app.register_blueprint(changes.bp)
 
+    # Chat 59: Outreach system — Leads page + AJAX endpoints
+    from act_dashboard.routes import outreach
+    app.register_blueprint(outreach.bp)
+
     print("✅ [Phase 1a] Registered auth blueprint (login, logout, switch-client)")
     print("✅ [Phase 1b] Registered api blueprint (execute, batch, status, approve, reject)")
     print("✅ [Phase 1c] Registered page blueprints (keywords, ads, shopping)")
@@ -77,4 +81,5 @@ def register_blueprints(app: Flask):
     print("✅ [Chat 22] Registered shared blueprint (set-date-range)")
     print("✅ [Chat 26 M5] Registered rules_api blueprint (GET/POST/PUT/DELETE /api/rules)")
     print("✅ [Chat 29 M8] Registered changes blueprint (/changes)")
-    print("🎉 ALL ROUTES REGISTERED - Phase 1 + Bootstrap + Campaigns + Ad Groups + Date Range + Rules API + Changes COMPLETE!")
+    print("✅ [Chat 59] Registered outreach blueprint (/outreach/leads)")
+    print("🎉 ALL ROUTES REGISTERED - Phase 1 + Bootstrap + Campaigns + Ad Groups + Date Range + Rules API + Changes + Outreach COMPLETE!")

@@ -23,7 +23,7 @@
     "monitoring_minutes": 1,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
-    "updated_at": "2026-03-03T20:47:33"
+    "updated_at": "2026-03-04T23:00:37"
   },
   {
     "rule_id": "budget_2",
@@ -48,7 +48,7 @@
     "monitoring_minutes": 2,
     "enabled": true,
     "created_at": "2026-02-22T00:00:00",
-    "updated_at": "2026-03-03T17:50:43"
+    "updated_at": "2026-03-04T23:00:39"
   },
   {
     "rule_id": "budget_3",
@@ -360,7 +360,7 @@
     "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-25T19:00:00",
-    "updated_at": "2026-03-03T20:48:30"
+    "updated_at": "2026-03-05T12:06:11"
   },
   {
     "rule_id": "keyword_2",
@@ -516,7 +516,7 @@
     "monitoring_minutes": 0,
     "enabled": true,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-03-03T20:48:15"
+    "updated_at": "2026-03-05T12:06:03"
   },
   {
     "rule_id": "ad_group_2",
@@ -618,9 +618,9 @@
     "cooldown_days": 14,
     "monitoring_days": 14,
     "monitoring_minutes": 0,
-    "enabled": false,
+    "enabled": true,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-03-03T17:14:17"
+    "updated_at": "2026-03-04T23:01:37"
   },
   {
     "rule_id": "ad_2",
@@ -644,9 +644,9 @@
     "cooldown_days": 14,
     "monitoring_days": 14,
     "monitoring_minutes": 0,
-    "enabled": false,
+    "enabled": true,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-03-03T17:14:18"
+    "updated_at": "2026-03-04T23:01:38"
   },
   {
     "rule_id": "ad_3",
@@ -722,9 +722,9 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": false,
+    "enabled": true,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-03-03T17:14:27"
+    "updated_at": "2026-03-04T23:01:55"
   },
   {
     "rule_id": "shopping_2",
@@ -748,9 +748,9 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": false,
+    "enabled": true,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-03-03T17:14:27"
+    "updated_at": "2026-03-04T23:01:55"
   },
   {
     "rule_id": "shopping_3",

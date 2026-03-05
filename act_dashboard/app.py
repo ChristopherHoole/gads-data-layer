@@ -191,6 +191,24 @@ def create_app():
     print("✅ [Chat 49] CSRF exempted: recommendations.recommendation_accept")
     print("✅ [Chat 49] CSRF exempted: recommendations.recommendation_decline")
 
+    # Chat 59: CSRF exemption for outreach AJAX endpoints (JSON API, no CSRF tokens sent)
+    # PATCH /outreach/leads/<id>/notes and POST /outreach/leads/add are JSON APIs
+    # Protected by @login_required decorator instead
+    outreach_routes = [
+        'outreach.patch_lead_notes',
+        'outreach.add_lead',
+        'outreach.mark_won',
+        'outreach.mark_lost',
+        'outreach.update_status',
+        'outreach.delete_lead',
+    ]
+    for route_name in outreach_routes:
+        if route_name in app.view_functions:
+            csrf.exempt(app.view_functions[route_name])
+            print(f"✅ [Chat 59] CSRF exempted: {route_name}")
+        else:
+            print(f"⚠️  [Chat 59] Route not found (skipping): {route_name}")
+
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
     def csrf_error(reason):
