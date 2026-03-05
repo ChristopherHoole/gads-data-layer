@@ -11,7 +11,7 @@ Routes:
 import json
 import os
 import uuid
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 import duckdb
 from flask import Blueprint, jsonify, render_template, request, session
@@ -184,13 +184,24 @@ def enrich_email(row, cols):
 
 
 def compute_email_type_pill(email_type, sequence_step):
-    """Return (label, css_class) for the email type pill on queue cards."""
+    """Return (label, css_class) for the email type pill.
+
+    Primary dispatch is on email_type (follow_up_1 / follow_up_2 / follow_up_3).
+    Falls back to sequence_step for any legacy 'follow_up' rows.
+    """
     if email_type == "initial":
         return ("Initial email", "pill-initial")
-    step = int(sequence_step or 1)
-    if step <= 1:
+    if email_type == "follow_up_1":
         return ("Follow-up 1", "pill-followup")
-    elif step == 2:
+    if email_type == "follow_up_2":
+        return ("Follow-up 2", "pill-followup")
+    if email_type == "follow_up_3":
+        return ("Follow-up 3", "pill-followup")
+    # Legacy fallback: old 'follow_up' generic value — use sequence_step
+    step = int(sequence_step or 1)
+    if step <= 2:
+        return ("Follow-up 1", "pill-followup")
+    elif step == 3:
         return ("Follow-up 2", "pill-followup")
     else:
         return ("Follow-up 3", "pill-followup")
@@ -693,6 +704,280 @@ def queue_discard(email_id):
         return jsonify({"success": True})
     except Exception as e:
         print(f"[OUTREACH] queue discard error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── Sent page helpers ─────────────────────────────────────────────────────────
+
+def format_sent_at(sent_at, timezone):
+    """Return ('5 Mar 2026', '8:30am EST') from sent_at datetime."""
+    if not sent_at:
+        return ("—", "")
+    if isinstance(sent_at, str):
+        try:
+            sent_at = datetime.fromisoformat(sent_at)
+        except ValueError:
+            return (str(sent_at), "")
+    date_str = sent_at.strftime("%d %b %Y").lstrip("0")
+    hour_24 = sent_at.hour
+    hour_12 = hour_24 % 12 or 12
+    ampm = "am" if hour_24 < 12 else "pm"
+    minute = sent_at.strftime("%M")
+    time_str = f"{hour_12}:{minute}{ampm}" if minute != "00" else f"{hour_12}{ampm}"
+    tz = timezone or "GMT"
+    return (date_str, f"{time_str} {tz}")
+
+
+def compute_followup_status(followup_due, today):
+    """Return (status_key, display_label) for a followup_due date."""
+    if followup_due is None:
+        return ("none", "—")
+    if isinstance(followup_due, str):
+        try:
+            followup_due = datetime.strptime(followup_due, "%Y-%m-%d").date()
+        except ValueError:
+            return ("none", "—")
+    # DuckDB may return datetime; get date portion
+    if hasattr(followup_due, "date") and callable(followup_due.date):
+        followup_due = followup_due.date()
+    if followup_due < today:
+        delta = (today - followup_due).days
+        return ("overdue", f"Overdue · {delta} day{'s' if delta != 1 else ''}")
+    if followup_due == today:
+        return ("today", "Today")
+    label = followup_due.strftime("%d %b %Y").lstrip("0")
+    return ("soon", label)
+
+
+# ── GET /outreach/sent ────────────────────────────────────────────────────────
+@bp.route("/sent")
+@login_required
+def sent():
+    """Sent page — all sent emails with follow-up tracking."""
+    config  = get_current_config()
+    clients = get_available_clients()
+    current_client_path = session.get("current_client_config")
+
+    today = date.today()
+    conn = get_outreach_db()
+    try:
+        total_sent = conn.execute(
+            "SELECT COUNT(*) FROM outreach_emails WHERE status = 'sent'"
+        ).fetchone()[0]
+
+        overdue_count = conn.execute(
+            "SELECT COUNT(*) FROM outreach_emails WHERE status = 'sent' AND followup_due < ?",
+            [today]
+        ).fetchone()[0]
+
+        due_today_count = conn.execute(
+            "SELECT COUNT(*) FROM outreach_emails WHERE status = 'sent' AND followup_due = ?",
+            [today]
+        ).fetchone()[0]
+
+        replied_count = conn.execute(
+            "SELECT COUNT(*) FROM outreach_leads WHERE status IN ('replied', 'meeting', 'won')"
+        ).fetchone()[0]
+
+        closed_count = conn.execute(
+            "SELECT COUNT(*) FROM outreach_leads WHERE status IN ('no_reply', 'lost')"
+        ).fetchone()[0]
+
+        stats = {
+            "total_sent":   total_sent,
+            "overdue":      overdue_count,
+            "due_today":    due_today_count,
+            "replied":      replied_count,
+            "closed":       closed_count,
+        }
+
+        rows = conn.execute("""
+            SELECT e.email_id, e.lead_id, e.email_type, e.subject,
+                   e.sent_at, e.followup_due,
+                   e.cv_attached, e.reply_received, e.reply_text,
+                   l.company, l.full_name, l.email, l.track,
+                   l.status, l.timezone, l.sequence_step
+            FROM outreach_emails e
+            JOIN outreach_leads l ON e.lead_id = l.lead_id
+            WHERE e.status = 'sent'
+            ORDER BY e.sent_at DESC
+        """).fetchall()
+
+        sent_emails = []
+        for row in rows:
+            (email_id, lead_id, email_type, subject,
+             sent_at, followup_due,
+             cv_attached, reply_received, reply_text,
+             company, full_name, email_addr, track,
+             lead_status, timezone, sequence_step) = row
+
+            date_str, time_str = format_sent_at(sent_at, timezone)
+            due_status, due_label = compute_followup_status(followup_due, today)
+            pill_label, pill_css = compute_email_type_pill(email_type, sequence_step)
+            status_css = STATUS_CSS.get(lead_status or "", "cold")
+            status_display = STATUS_DISPLAY.get(lead_status or "", "—")
+
+            sent_emails.append({
+                "email_id":       str(email_id),
+                "lead_id":        str(lead_id),
+                "email_type":     email_type or "",
+                "subject":        subject or "",
+                "sent_date":      date_str,
+                "sent_time":      time_str,
+                "due_status":     due_status,
+                "due_label":      due_label,
+                "company":        company or "",
+                "full_name":      full_name or "",
+                "email":          email_addr or "",
+                "track":          track or "",
+                "track_css":      track_css(track or ""),
+                "status":         lead_status or "",
+                "status_css":     status_css,
+                "status_display": status_display,
+                "pill_label":     pill_label,
+                "pill_css":       pill_css,
+                "reply_received": bool(reply_received),
+                "reply_text":     reply_text or "",
+            })
+
+        # Fetch full email threads for leads visible on this page (for slide panel)
+        lead_ids = list({e["lead_id"] for e in sent_emails})
+        emails_by_lead = {}
+        if lead_ids:
+            placeholders = ",".join("?" * len(lead_ids))
+            email_cols = _get_email_columns(conn)
+            thread_rows = conn.execute(
+                f"SELECT * FROM outreach_emails WHERE lead_id IN ({placeholders}) "
+                f"ORDER BY sent_at ASC",
+                lead_ids,
+            ).fetchall()
+            for trow in thread_rows:
+                e = enrich_email(trow, email_cols)
+                lid = str(e.get("lead_id", ""))
+                if lid not in emails_by_lead:
+                    emails_by_lead[lid] = []
+                emails_by_lead[lid].append(e)
+
+        sent_emails_json = json.dumps(sent_emails)
+        emails_json      = json.dumps(emails_by_lead)
+
+    except Exception as ex:
+        print(f"[OUTREACH] Error loading sent: {ex}")
+        stats = {"total_sent": 0, "overdue": 0, "due_today": 0, "replied": 0, "closed": 0}
+        sent_emails = []
+        sent_emails_json = "[]"
+        emails_json = "{}"
+    finally:
+        conn.close()
+
+    return render_template(
+        "outreach/sent.html",
+        client_name=config.client_name,
+        available_clients=clients,
+        current_client_config=current_client_path,
+        stats=stats,
+        sent_emails=sent_emails,
+        sent_emails_json=sent_emails_json,
+        emails_json=emails_json,
+    )
+
+
+# ── POST /outreach/sent/<email_id>/queue-followup ─────────────────────────────
+@bp.route("/sent/<email_id>/queue-followup", methods=["POST"])
+@login_required
+def sent_queue_followup(email_id):
+    """Set followup_due to tomorrow; mark lead as followed_up. AJAX — CSRF exempt."""
+    conn = get_outreach_db()
+    try:
+        row = conn.execute(
+            "SELECT lead_id FROM outreach_emails WHERE email_id = ?", [email_id]
+        ).fetchone()
+        if not row:
+            return jsonify({"success": False, "message": "Email not found"}), 404
+        lead_id  = row[0]
+        tomorrow = date.today() + timedelta(days=1)
+        now      = datetime.now()
+        conn.execute(
+            "UPDATE outreach_emails SET followup_due = ? WHERE email_id = ?",
+            [tomorrow, email_id],
+        )
+        conn.execute(
+            "UPDATE outreach_leads SET status = 'followed_up', progress_stage = 4, "
+            "last_activity = ? WHERE lead_id = ?",
+            [now, lead_id],
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"[OUTREACH] sent queue-followup error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /outreach/sent/<lead_id>/update-status ───────────────────────────────
+@bp.route("/sent/<lead_id>/update-status", methods=["POST"])
+@login_required
+def sent_update_status(lead_id):
+    """Update lead status from sent page. AJAX — CSRF exempt."""
+    data = request.get_json(silent=True)
+    if not data or "status" not in data:
+        return jsonify({"success": False, "message": "Missing status field"}), 400
+    new_status = str(data["status"]).strip().lower()
+    if new_status not in _STATUS_STAGE:
+        return jsonify({"success": False, "message": f"Invalid status: {new_status}"}), 400
+    stage = _STATUS_STAGE[new_status]
+    conn = get_outreach_db()
+    try:
+        conn.execute(
+            "UPDATE outreach_leads SET status = ?, progress_stage = ?, "
+            "last_activity = ? WHERE lead_id = ?",
+            [new_status, stage, datetime.now(), lead_id],
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"[OUTREACH] sent update-status error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /outreach/sent/<lead_id>/mark-won ────────────────────────────────────
+@bp.route("/sent/<lead_id>/mark-won", methods=["POST"])
+@login_required
+def sent_mark_won(lead_id):
+    """Mark lead as won from sent page. AJAX — CSRF exempt."""
+    conn = get_outreach_db()
+    try:
+        conn.execute(
+            "UPDATE outreach_leads SET status = 'won', progress_stage = 8, "
+            "last_activity = ? WHERE lead_id = ?",
+            [datetime.now(), lead_id],
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"[OUTREACH] sent mark-won error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /outreach/sent/<lead_id>/mark-lost ───────────────────────────────────
+@bp.route("/sent/<lead_id>/mark-lost", methods=["POST"])
+@login_required
+def sent_mark_lost(lead_id):
+    """Mark lead as lost from sent page. AJAX — CSRF exempt."""
+    conn = get_outreach_db()
+    try:
+        conn.execute(
+            "UPDATE outreach_leads SET status = 'lost', progress_stage = 8, "
+            "last_activity = ? WHERE lead_id = ?",
+            [datetime.now(), lead_id],
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"[OUTREACH] sent mark-lost error: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         conn.close()

@@ -634,7 +634,10 @@ function buildTimelineItem(e, idx) {
     } else {
         cls = 'tl-sent';
         dot = '↑';
-        typeLabel = e.email_type === 'initial' ? 'Initial email — Sent' : 'Follow-up — Sent';
+        typeLabel = e.email_type === 'initial'     ? 'Initial email — Sent'
+                  : e.email_type === 'follow_up_2' ? 'Follow-up 2 — Sent'
+                  : e.email_type === 'follow_up_3' ? 'Follow-up 3 — Sent'
+                  : 'Follow-up 1 — Sent';
     }
 
     const dateStr = formatEmailDate(e.sent_at || e.scheduled_at);

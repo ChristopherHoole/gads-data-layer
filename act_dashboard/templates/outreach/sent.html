@@ -1,0 +1,702 @@
+{% extends "base_bootstrap.html" %}
+
+{% block title %}Outreach — Sent{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/outreach.css') }}">
+{% endblock %}
+
+{# ── Custom top navbar ── #}
+{% block page_header %}
+<div class="outreach-top-navbar">
+    <div class="outreach-top-navbar-title">Outreach — Sent</div>
+    <div class="outreach-top-navbar-right">
+        <select class="outreach-client-selector"
+                onchange="window.location='/switch-client/'+this.selectedIndex">
+            {% for cname, cpath in available_clients %}
+            <option {% if cpath == current_client_config %}selected{% endif %}>{{ cname }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="outreach-content">
+
+    {# ── Stats Row ── #}
+    <div class="stats-row">
+        <div class="stat-card">
+            <span class="material-symbols-outlined stat-icon">send</span>
+            <div>
+                <div class="stat-val">{{ stats.total_sent }}</div>
+                <div class="stat-lbl">Total sent</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="material-symbols-outlined stat-icon stat-icon-red">schedule</span>
+            <div>
+                <div class="stat-val stat-val-red">{{ stats.overdue }}</div>
+                <div class="stat-lbl">Follow-ups overdue</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="material-symbols-outlined stat-icon stat-icon-orange">upcoming</span>
+            <div>
+                <div class="stat-val stat-val-orange">{{ stats.due_today }}</div>
+                <div class="stat-lbl">Due today</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="material-symbols-outlined stat-icon stat-icon-green">mark_email_read</span>
+            <div>
+                <div class="stat-val stat-val-green">{{ stats.replied }}</div>
+                <div class="stat-lbl">Replied</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="material-symbols-outlined stat-icon stat-icon-muted">do_not_disturb</span>
+            <div>
+                <div class="stat-val stat-val-muted">{{ stats.closed }}</div>
+                <div class="stat-lbl">No reply / closed</div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Control Bar ── #}
+    <div class="sent-control-bar">
+        <div class="filter-tabs">
+            <button class="filter-tab active" onclick="setTab('all', this)">
+                All <span id="tabCountAll" class="tab-count-muted"></span>
+            </button>
+            <button class="filter-tab" onclick="setTab('overdue', this)">
+                Overdue <span class="tab-count-red">({{ stats.overdue }})</span>
+            </button>
+            <button class="filter-tab" onclick="setTab('today', this)">
+                Due today <span class="tab-count-orange">({{ stats.due_today }})</span>
+            </button>
+            <button class="filter-tab" onclick="setTab('replied', this)">
+                Replied <span class="tab-count-green">({{ stats.replied }})</span>
+            </button>
+            <button class="filter-tab" onclick="setTab('closed', this)">Closed</button>
+        </div>
+        <select class="control-select" id="rowsPerPageSelect" onchange="changeRowsPerPage()">
+            <option value="10" selected>10 rows</option>
+            <option value="25">25 rows</option>
+            <option value="50">50 rows</option>
+            <option value="100">100 rows</option>
+        </select>
+        <div class="control-spacer"></div>
+        <input class="control-search" type="text" id="searchInput"
+               placeholder="Search company or contact…"
+               oninput="filterTable()">
+        <select class="control-select" id="filterTrack" onchange="filterTable()">
+            <option value="">All tracks</option>
+            <option value="Job">Job</option>
+            <option value="Recruiter">Recruiter</option>
+            <option value="Agency">Agency</option>
+            <option value="Direct">Direct</option>
+        </select>
+        <select class="control-select" id="filterEmailType" onchange="filterTable()">
+            <option value="">All email types</option>
+            <option value="initial">Initial email</option>
+            <option value="follow_up_1">Follow-up 1</option>
+            <option value="follow_up_2">Follow-up 2</option>
+            <option value="follow_up_3">Follow-up 3</option>
+        </select>
+    </div>
+
+    {# ── Table ── #}
+    <div class="sent-table-wrap">
+        <table class="sent-table" id="sentTable">
+            <thead>
+                <tr>
+                    <th>Prospect</th>
+                    <th>Email</th>
+                    <th>Track</th>
+                    <th>Email type</th>
+                    <th>Sent</th>
+                    <th>Follow-up due</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="sentTableBody">
+            {% for email in sent_emails %}
+            <tr class="{% if email.due_status == 'overdue' %}overdue-row{% endif %}"
+                onclick="openPanel('{{ email.email_id }}')"
+                data-email-id="{{ email.email_id }}"
+                data-lead-id="{{ email.lead_id }}"
+                data-due-status="{{ email.due_status }}"
+                data-lead-status="{{ email.status }}"
+                data-track="{{ email.track }}"
+                data-email-type-group="{{ email.email_type }}"
+                data-search="{{ (email.company ~ ' ' ~ email.full_name) | lower }}">
+
+                {# Prospect #}
+                <td>
+                    <div class="prospect-name">{{ email.full_name or '—' }}</div>
+                    <div class="prospect-company">{{ email.company }}</div>
+                </td>
+
+                {# Email #}
+                <td><span class="prospect-email">{{ email.email }}</span></td>
+
+                {# Track #}
+                <td><span class="track-badge {{ email.track_css }}">{{ email.track }}</span></td>
+
+                {# Email type #}
+                <td><span class="email-type-pill {{ email.pill_css }}">{{ email.pill_label }}</span></td>
+
+                {# Sent date/time #}
+                <td>
+                    <div class="sent-date">{{ email.sent_date }}</div>
+                    <div class="sent-time">{{ email.sent_time }}</div>
+                </td>
+
+                {# Follow-up due #}
+                <td>
+                    <span class="followup-{{ email.due_status }}">{{ email.due_label }}</span>
+                </td>
+
+                {# Status #}
+                <td>
+                    <span class="status-inline s-{{ email.status_css }}">
+                        <span class="status-dot"></span>
+                        <span class="status-label">{{ email.status_display }}</span>
+                    </span>
+                </td>
+
+                {# Actions #}
+                <td class="actions-cell" onclick="event.stopPropagation()">
+                    <button class="actions-btn"
+                            onclick="toggleDropdown(this)">Actions ▾</button>
+                    <div class="actions-dropdown">
+                        <button onclick="openPanel('{{ email.email_id }}')">👁 View email thread</button>
+                        <button onclick="queueFollowup('{{ email.email_id }}', this)">⏰ Queue follow-up</button>
+                        <button onclick="openStatusModal('{{ email.lead_id }}')">📋 Update status</button>
+                        <div class="dropdown-divider"></div>
+                        <button onclick="quickStatus('{{ email.lead_id }}', 'replied', this)">✓ Mark as replied</button>
+                        <button onclick="quickStatus('{{ email.lead_id }}', 'won', this)">🏆 Mark as won</button>
+                        <button class="danger" onclick="quickStatus('{{ email.lead_id }}', 'lost', this)">✕ Mark as lost</button>
+                        <div class="dropdown-divider"></div>
+                        <button class="danger" onclick="showToast('Delete coming soon', 'info')">🗑 Delete</button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ── Pagination ── #}
+    <div class="sent-pagination-bar">
+        <div class="pagination-info" id="paginationInfo">—</div>
+        <div class="pagination-controls" id="paginationControls"></div>
+    </div>
+
+</div>{# /outreach-content #}
+
+
+{# ══════════════════════════════════════════════════════════
+   SLIDE-OUT PANEL
+   ══════════════════════════════════════════════════════════ #}
+<div class="panel-overlay" id="panelOverlay" onclick="closePanel()"></div>
+
+<div class="slide-panel" id="slidePanel">
+    <div class="panel-header">
+        <div class="panel-header-left">
+            <div class="panel-prospect-name" id="panelName">—</div>
+            <div class="panel-meta" id="panelEmail">—</div>
+        </div>
+        <button class="panel-close" onclick="closePanel()">✕</button>
+    </div>
+    <div class="panel-body" id="panelBody"></div>
+    <div class="sent-panel-footer" id="panelFooter"></div>
+</div>
+
+
+{# ══════════════════════════════════════════════════════════
+   UPDATE STATUS MODAL
+   ══════════════════════════════════════════════════════════ #}
+<div class="modal fade" id="sentStatusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label fw-semibold mb-2">New status</label>
+                <select class="form-select" id="sentStatusSelect">
+                    <option value="contacted">Contacted</option>
+                    <option value="followed_up">Followed Up</option>
+                    <option value="replied">Replied</option>
+                    <option value="meeting">Meeting</option>
+                    <option value="won">Won</option>
+                    <option value="lost">Lost</option>
+                    <option value="no_reply">No Reply</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveStatusUpdate()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+/* ══════════════════════════════════════════════════════════════
+   OUTREACH SENT — CLIENT-SIDE LOGIC
+   Chat 61
+   ══════════════════════════════════════════════════════════════ */
+
+// ── Server data ────────────────────────────────────────────────
+const SENT_DATA   = {{ sent_emails_json | safe }};
+const EMAILS_DATA = {{ emails_json | safe }};
+
+// ── State ──────────────────────────────────────────────────────
+let currentPage   = 1;
+let rowsPerPage   = 10;
+let currentTab    = 'all';
+let currentLeadId = null;
+let currentEmailId = null;
+let actionLeadId  = null;
+
+// ── Init ───────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    // Set "All" tab count
+    document.getElementById('tabCountAll').textContent = '(' + SENT_DATA.length + ')';
+    renderPage();
+});
+
+/* ──────────────────────────────────────────────────────────────
+   FILTERING + PAGINATION
+   ────────────────────────────────────────────────────────────── */
+function getAllRows() {
+    return Array.from(document.querySelectorAll('#sentTableBody tr'));
+}
+
+function getFilteredRows() {
+    const search    = (document.getElementById('searchInput').value || '').toLowerCase();
+    const track     = document.getElementById('filterTrack').value;
+    const emailType = document.getElementById('filterEmailType').value;
+
+    return getAllRows().filter(row => {
+        const due    = row.dataset.dueStatus;
+        const status = row.dataset.leadStatus;
+
+        if (currentTab === 'overdue' && due !== 'overdue') return false;
+        if (currentTab === 'today'   && due !== 'today')   return false;
+        if (currentTab === 'replied' && !['replied','meeting','won'].includes(status)) return false;
+        if (currentTab === 'closed'  && !['no_reply','lost'].includes(status)) return false;
+
+        if (search && !(row.dataset.search || '').includes(search)) return false;
+        if (track  && row.dataset.track !== track)   return false;
+        if (emailType && row.dataset.emailTypeGroup !== emailType) return false;
+
+        return true;
+    });
+}
+
+function renderPage() {
+    const allRows      = getAllRows();
+    allRows.forEach(r => r.classList.add('hidden-row'));
+
+    const filtered = getFilteredRows();
+    const start    = (currentPage - 1) * rowsPerPage;
+    const pageRows = filtered.slice(start, start + rowsPerPage);
+    pageRows.forEach(r => r.classList.remove('hidden-row'));
+
+    const total = filtered.length;
+    const end   = Math.min(start + rowsPerPage, total);
+    document.getElementById('paginationInfo').textContent =
+        total === 0 ? 'No results' : `${start + 1}–${end} of ${total} emails`;
+
+    renderPaginationControls(total);
+}
+
+function renderPaginationControls(total) {
+    const totalPages = Math.max(1, Math.ceil(total / rowsPerPage));
+    const container  = document.getElementById('paginationControls');
+    container.innerHTML = '';
+
+    const prev = document.createElement('button');
+    prev.textContent = '← Prev';
+    prev.disabled    = currentPage === 1;
+    prev.onclick     = () => { currentPage--; renderPage(); };
+    container.appendChild(prev);
+
+    const maxVisible = 7;
+    let startPage = Math.max(1, currentPage - 3);
+    let endPage   = Math.min(totalPages, startPage + maxVisible - 1);
+    if (endPage - startPage < maxVisible - 1) startPage = Math.max(1, endPage - maxVisible + 1);
+
+    for (let i = startPage; i <= endPage; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        if (i === currentPage) btn.classList.add('active');
+        btn.onclick = (function(p) { return function() { currentPage = p; renderPage(); }; })(i);
+        container.appendChild(btn);
+    }
+
+    const next = document.createElement('button');
+    next.textContent = 'Next →';
+    next.disabled    = currentPage === totalPages;
+    next.onclick     = () => { currentPage++; renderPage(); };
+    container.appendChild(next);
+}
+
+function setTab(tab, btn) {
+    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTab  = tab;
+    currentPage = 1;
+    renderPage();
+}
+
+function filterTable() {
+    currentPage = 1;
+    renderPage();
+}
+
+function changeRowsPerPage() {
+    rowsPerPage = parseInt(document.getElementById('rowsPerPageSelect').value);
+    currentPage = 1;
+    renderPage();
+}
+
+/* ──────────────────────────────────────────────────────────────
+   DROPDOWN TOGGLE
+   ────────────────────────────────────────────────────────────── */
+function toggleDropdown(btn) {
+    const dd = btn.nextElementSibling;
+    document.querySelectorAll('.actions-dropdown.show').forEach(d => {
+        if (d !== dd) d.classList.remove('show');
+    });
+    dd.classList.toggle('show');
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.actions-cell')) {
+        document.querySelectorAll('.actions-dropdown.show').forEach(d => d.classList.remove('show'));
+    }
+});
+
+/* ──────────────────────────────────────────────────────────────
+   SLIDE PANEL
+   ────────────────────────────────────────────────────────────── */
+function openPanel(emailId) {
+    document.querySelectorAll('.actions-dropdown.show').forEach(d => d.classList.remove('show'));
+
+    const email = SENT_DATA.find(e => e.email_id === emailId);
+    if (!email) return;
+
+    currentEmailId = emailId;
+    currentLeadId  = email.lead_id;
+
+    // Header
+    document.getElementById('panelName').textContent  = (email.full_name || '—') + ' · ' + email.company;
+    document.getElementById('panelEmail').textContent = email.email;
+
+    // Build body
+    const sc = statusConfig(email.status_css);
+    let html = buildLeadDetails(email, sc);
+
+    if (['replied','meeting','won'].includes(email.status) && email.reply_text) {
+        html += buildReplySection(email);
+    }
+
+    const thread = EMAILS_DATA[email.lead_id] || [];
+    html += buildThreadSection(thread);
+
+    if (email.due_status !== 'none') {
+        html += buildFollowupScheduler(email);
+    }
+
+    document.getElementById('panelBody').innerHTML = html;
+
+    // Footer buttons
+    document.getElementById('panelFooter').innerHTML = `
+        <button class="panel-btn primary" onclick="queueFollowup('${esc(email.email_id)}', this)">Queue follow-up</button>
+        <button class="panel-btn" onclick="openStatusModal('${esc(email.lead_id)}')">Update status</button>
+        <button class="panel-btn" onclick="panelMarkWon()">Mark as won</button>
+        <button class="panel-btn danger" onclick="panelMarkLost()">Mark as lost</button>
+    `;
+
+    document.getElementById('panelOverlay').classList.add('overlay-visible');
+    document.getElementById('slidePanel').classList.add('panel-open');
+}
+
+function closePanel() {
+    document.getElementById('panelOverlay').classList.remove('overlay-visible');
+    document.getElementById('slidePanel').classList.remove('panel-open');
+}
+
+function statusConfig(statusCss) {
+    const map = {
+        cold:        { dot: '#9e9e9e',  label: 'Cold' },
+        queued:      { dot: '#1a73e8',  label: 'Queued' },
+        contacted:   { dot: '#4285f4',  label: 'Contacted' },
+        followedup:  { dot: '#f29900',  label: 'Followed Up' },
+        replied:     { dot: '#34a853',  label: 'Replied' },
+        meeting:     { dot: '#e8710a',  label: 'Meeting' },
+        won:         { dot: '#188038',  label: 'Won' },
+        lost:        { dot: '#ea4335',  label: 'Lost' },
+        noreply:     { dot: '#5f6368',  label: 'No Reply' },
+    };
+    return map[statusCss] || { dot: '#9e9e9e', label: statusCss };
+}
+
+function buildLeadDetails(email, sc) {
+    const dueCls = email.due_status === 'overdue' ? 'followup-overdue'
+                 : email.due_status === 'today'   ? 'followup-today'
+                 : email.due_status === 'soon'     ? 'followup-soon'
+                 : 'followup-none';
+    return `
+        <div class="panel-section">
+            <div class="panel-section-title">Lead details</div>
+            <div class="panel-row">
+                <span class="panel-row-label">Status</span>
+                <span class="panel-row-value">
+                    <span class="status-inline s-${esc(email.status_css)}">
+                        <span class="status-dot"></span>
+                        <span>${esc(email.status_display)}</span>
+                    </span>
+                </span>
+            </div>
+            <div class="panel-row">
+                <span class="panel-row-label">Track</span>
+                <span class="panel-row-value"><span class="track-badge ${esc(email.track_css)}">${esc(email.track)}</span></span>
+            </div>
+            <div class="panel-row">
+                <span class="panel-row-label">Last sent</span>
+                <span class="panel-row-value">${esc(email.sent_date)} at ${esc(email.sent_time)}</span>
+            </div>
+            <div class="panel-row">
+                <span class="panel-row-label">Email type</span>
+                <span class="panel-row-value"><span class="email-type-pill ${esc(email.pill_css)}">${esc(email.pill_label)}</span></span>
+            </div>
+            <div class="panel-row">
+                <span class="panel-row-label">Follow-up</span>
+                <span class="panel-row-value"><span class="${dueCls}">${esc(email.due_label)}</span></span>
+            </div>
+        </div>`;
+}
+
+function buildReplySection(email) {
+    return `
+        <div class="panel-section">
+            <div class="panel-section-title">Their reply</div>
+            <div class="reply-bubble">
+                <div class="reply-header">
+                    <span class="reply-label">Reply received</span>
+                    <span class="reply-from">${esc(email.full_name)}</span>
+                </div>${esc(email.reply_text)}
+            </div>
+        </div>`;
+}
+
+function buildThreadSection(thread) {
+    // Sort newest first
+    const sorted = [...thread].sort((a, b) =>
+        (b.sent_at || b.scheduled_at || '').localeCompare(a.sent_at || a.scheduled_at || '')
+    );
+
+    const items = sorted.map((e, i) => {
+        const pillCls = e.email_type === 'initial' ? 'pill-initial' : 'pill-followup';
+        const pillLbl = e.email_type === 'initial'     ? 'Initial email'
+                      : e.email_type === 'follow_up_2' ? 'Follow-up 2'
+                      : e.email_type === 'follow_up_3' ? 'Follow-up 3'
+                      : 'Follow-up 1';
+        const dateStr = formatThreadDate(e.sent_at || e.scheduled_at);
+        const subject = e.subject || 'Google Ads Specialist — 16 Years Experience';
+        const bodyId  = 'thread-body-' + i;
+        const bodyTxt = (e.body || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const opacity = i > 0 ? ' style="opacity:0.7;"' : '';
+        const cvBadge = (e.cv_attached === true || e.cv_attached === 'True')
+            ? `<div class="attachment-badge" style="margin-top:8px;">
+                <span class="material-symbols-outlined" style="font-size:13px;">attach_file</span>
+                Christopher_Hoole_CV.pdf · attached
+               </div>` : '';
+        return `
+            <div class="email-thread-item"${opacity}>
+                <div class="thread-item-header" onclick="toggleThread(this,'${bodyId}')">
+                    <div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span class="email-type-pill ${pillCls}">${pillLbl}</span>
+                            <span class="thread-date">${dateStr}</span>
+                        </div>
+                        <div class="thread-subject">${esc(subject)}</div>
+                    </div>
+                    <span class="thread-chevron" id="chev-${bodyId}">▾</span>
+                </div>
+                <div class="thread-body hidden" id="${bodyId}">${bodyTxt}${cvBadge}</div>
+            </div>`;
+    }).join('');
+
+    return `
+        <div class="panel-section">
+            <div class="panel-section-title">Email thread</div>
+            ${items || '<p style="color:#9aa0a6;font-size:12px;">No emails found.</p>'}
+        </div>`;
+}
+
+function buildFollowupScheduler(email) {
+    const dueCls  = email.due_status === 'overdue' ? '#ea4335'
+                  : email.due_status === 'today'   ? '#e65100' : '#202124';
+    // Default send date = tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    return `
+        <div class="panel-section">
+            <div class="panel-section-title">Follow-up scheduler</div>
+            <div class="followup-scheduler">
+                <div class="followup-scheduler-title">
+                    <span class="material-symbols-outlined" style="font-size:16px;">schedule</span>
+                    Next follow-up due:
+                    <span style="color:${dueCls};">${esc(email.due_label)}</span>
+                </div>
+                <div class="followup-row">
+                    <label>Send on</label>
+                    <input type="date" value="${tomorrowStr}">
+                </div>
+                <div class="followup-row">
+                    <label>Template</label>
+                    <select>
+                        <option>Follow-up template 1</option>
+                        <option>Follow-up template 2</option>
+                        <option>Custom</option>
+                    </select>
+                </div>
+                <div class="followup-row">
+                    <label>Attach CV</label>
+                    <select><option>No</option><option>Yes</option></select>
+                </div>
+                <button class="btn-schedule" onclick="showToast('Follow-up queued (queue coming soon)', 'info')">
+                    Add to queue
+                </button>
+            </div>
+        </div>`;
+}
+
+function toggleThread(header, bodyId) {
+    const body = document.getElementById(bodyId);
+    if (!body) return;
+    body.classList.toggle('hidden');
+    const chev = document.getElementById('chev-' + bodyId);
+    if (chev) chev.textContent = body.classList.contains('hidden') ? '▾' : '▴';
+}
+
+function formatThreadDate(isoStr) {
+    if (!isoStr) return '—';
+    try {
+        const d = new Date(isoStr);
+        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+             + ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    } catch(e) { return isoStr; }
+}
+
+function esc(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+/* ──────────────────────────────────────────────────────────────
+   PANEL ACTION BUTTONS
+   ────────────────────────────────────────────────────────────── */
+function panelMarkWon() {
+    if (!currentLeadId) return;
+    if (!confirm('Mark this lead as Won?')) return;
+    fetch(`/outreach/sent/${currentLeadId}/mark-won`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) { showToast('Lead marked as won', 'success'); setTimeout(() => location.reload(), 800); }
+        else showToast('Error: ' + (d.message || 'unknown'), 'error');
+    })
+    .catch(() => showToast('Network error', 'error'));
+}
+
+function panelMarkLost() {
+    if (!currentLeadId) return;
+    if (!confirm('Mark this lead as Lost?')) return;
+    fetch(`/outreach/sent/${currentLeadId}/mark-lost`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) { showToast('Lead marked as lost', 'success'); setTimeout(() => location.reload(), 800); }
+        else showToast('Error: ' + (d.message || 'unknown'), 'error');
+    })
+    .catch(() => showToast('Network error', 'error'));
+}
+
+function queueFollowup(emailId, btn) {
+    document.querySelectorAll('.actions-dropdown.show').forEach(d => d.classList.remove('show'));
+    fetch(`/outreach/sent/${emailId}/queue-followup`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) { showToast('Follow-up queued for tomorrow', 'success'); setTimeout(() => location.reload(), 800); }
+        else showToast('Error: ' + (d.message || 'unknown'), 'error');
+    })
+    .catch(() => showToast('Network error', 'error'));
+}
+
+function quickStatus(leadId, status, btn) {
+    document.querySelectorAll('.actions-dropdown.show').forEach(d => d.classList.remove('show'));
+    fetch(`/outreach/sent/${leadId}/update-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: status })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) { showToast('Status updated', 'success'); setTimeout(() => location.reload(), 800); }
+        else showToast('Error: ' + (d.message || 'unknown'), 'error');
+    })
+    .catch(() => showToast('Network error', 'error'));
+}
+
+function openStatusModal(leadId) {
+    if (!leadId) return;
+    actionLeadId = leadId;
+    const email = SENT_DATA.find(e => e.lead_id === leadId);
+    if (email) document.getElementById('sentStatusSelect').value = email.status || 'contacted';
+    document.querySelectorAll('.actions-dropdown.show').forEach(d => d.classList.remove('show'));
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('sentStatusModal')).show();
+}
+
+function saveStatusUpdate() {
+    if (!actionLeadId) return;
+    const newStatus = document.getElementById('sentStatusSelect').value;
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('sentStatusModal'));
+    fetch(`/outreach/sent/${actionLeadId}/update-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+    })
+    .then(r => r.json())
+    .then(d => {
+        modal.hide();
+        if (d.success) { showToast('Status updated', 'success'); setTimeout(() => location.reload(), 800); }
+        else showToast('Error: ' + (d.message || 'unknown'), 'error');
+    })
+    .catch(() => showToast('Network error', 'error'));
+}
+</script>
+{% endblock %}

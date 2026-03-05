@@ -107,7 +107,8 @@
                    href="/outreach/queue">Queue
                     <span class="nav-badge{% if not outreach_queue_count or outreach_queue_count == 0 %} d-none{% endif %}">{{ outreach_queue_count or 0 }}</span>
                 </a>
-                <a class="nav-sub-item" href="#">Sent</a>
+                <a class="nav-sub-item {% if request.path == '/outreach/sent' %}active{% endif %}"
+                   href="/outreach/sent">Sent</a>
                 <a class="nav-sub-item" href="#">Replies
                     {% if outreach_replies_count and outreach_replies_count > 0 %}
                     <span class="nav-badge">{{ outreach_replies_count }}</span>

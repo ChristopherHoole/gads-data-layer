@@ -21,9 +21,9 @@
     "cooldown_days": 7,
     "monitoring_days": 0,
     "monitoring_minutes": 1,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-22T00:00:00",
-    "updated_at": "2026-03-04T23:00:37"
+    "updated_at": "2026-03-05T17:45:23"
   },
   {
     "rule_id": "budget_2",
@@ -358,9 +358,9 @@
     "cooldown_days": 14,
     "monitoring_days": 14,
     "monitoring_minutes": 0,
-    "enabled": false,
+    "enabled": true,
     "created_at": "2026-02-25T19:00:00",
-    "updated_at": "2026-03-05T13:56:20"
+    "updated_at": "2026-03-05T17:46:16"
   },
   {
     "rule_id": "keyword_2",
@@ -514,9 +514,9 @@
     "cooldown_days": 14,
     "monitoring_days": 14,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-03-05T12:06:03"
+    "updated_at": "2026-03-05T17:45:46"
   },
   {
     "rule_id": "ad_group_2",
@@ -618,9 +618,9 @@
     "cooldown_days": 14,
     "monitoring_days": 14,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-03-04T23:01:37"
+    "updated_at": "2026-03-05T17:48:02"
   },
   {
     "rule_id": "ad_2",
@@ -722,9 +722,9 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-03-04T23:01:55"
+    "updated_at": "2026-03-05T17:48:13"
   },
   {
     "rule_id": "shopping_2",

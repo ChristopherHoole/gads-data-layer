@@ -32,6 +32,13 @@ STATUS_STAGE = {
     'no_reply': 4,
 }
 
+# Maps template sequence_step → email_type value stored on outreach_emails
+FOLLOWUP_TYPE = {
+    2: 'follow_up_1',
+    3: 'follow_up_2',
+    4: 'follow_up_3',
+}
+
 COUNTRY_TZ_DEFAULT = {
     'UK': 'GMT',
     'USA': 'EST',
@@ -202,13 +209,13 @@ def insert_templates(conn):
     )
 
     templates = [
-        (gen_id(), "Initial Outreach",  "initial",   1,
+        (gen_id(), "Initial Outreach",  "initial",     1,
          "Google Ads Specialist — 16 Years Experience, Available Now", body1, 0,  True),
-        (gen_id(), "Follow-up 1",       "follow_up", 2,
+        (gen_id(), "Follow-up 1",       "follow_up_1", 2,
          "Re: Google Ads Specialist — 16 Years Experience",            body2, 5,  False),
-        (gen_id(), "Follow-up 2",       "follow_up", 3,
+        (gen_id(), "Follow-up 2",       "follow_up_2", 3,
          "Re: Google Ads Specialist — 16 Years Experience",            body3, 7,  False),
-        (gen_id(), "Final Message",     "follow_up", 4,
+        (gen_id(), "Final Message",     "follow_up_3", 4,
          "Re: Google Ads Specialist — Last message",                   body4, 7,  False),
     ]
 
@@ -481,7 +488,7 @@ def insert_emails(conn, leads):
                          followup_due=(sent1 + timedelta(days=5)).date(),
                          greeting=greeting)
             sent2 = sent1 + timedelta(days=5)
-            insert_email(lid, 2, 'follow_up', 'sent',
+            insert_email(lid, 2, 'follow_up_1', 'sent',
                          sent_at=sent2, open_count=random.choice([0, 1]),
                          followup_due=(sent2 + timedelta(days=7)).date(),
                          greeting=greeting)
@@ -491,10 +498,10 @@ def insert_emails(conn, leads):
             insert_email(lid, 1, 'initial', 'sent', cv_attached=True,
                          sent_at=sent1, open_count=2, greeting=greeting)
             sent2 = sent1 + timedelta(days=5)
-            insert_email(lid, 2, 'follow_up', 'sent',
+            insert_email(lid, 2, 'follow_up_1', 'sent',
                          sent_at=sent2, open_count=1, greeting=greeting)
             sent3 = sent2 + timedelta(days=7)
-            insert_email(lid, 3, 'follow_up', 'sent',
+            insert_email(lid, 3, 'follow_up_2', 'sent',
                          sent_at=sent3, open_count=1, greeting=greeting)
 
         elif status == 'replied':
@@ -509,7 +516,7 @@ def insert_emails(conn, leads):
                          followup_due=(reply_at + timedelta(days=2)).date(),
                          greeting=greeting)
             sent2 = sent1 + timedelta(days=5)
-            insert_email(lid, 2, 'follow_up', 'sent',
+            insert_email(lid, 2, 'follow_up_1', 'sent',
                          sent_at=sent2, open_count=1, greeting=greeting)
 
         elif status == 'meeting':
@@ -525,10 +532,10 @@ def insert_emails(conn, leads):
                          reply_at=reply_at, reply_text=reply_text_val,
                          greeting=greeting)
             sent2 = sent1 + timedelta(days=4)
-            insert_email(lid, 2, 'follow_up', 'sent',
+            insert_email(lid, 2, 'follow_up_1', 'sent',
                          sent_at=sent2, open_count=1, greeting=greeting)
             sent3 = sent2 + timedelta(days=6)
-            insert_email(lid, 3, 'follow_up', 'sent',
+            insert_email(lid, 3, 'follow_up_2', 'sent',
                          sent_at=sent3, open_count=2, greeting=greeting)
 
         elif status == 'won':
@@ -545,7 +552,7 @@ def insert_emails(conn, leads):
                          greeting=greeting)
             for step, days_offset in [(2, 4), (3, 8), (4, 12)]:
                 sent = sent1 + timedelta(days=days_offset)
-                insert_email(lid, step, 'follow_up', 'sent',
+                insert_email(lid, step, FOLLOWUP_TYPE[step], 'sent',
                              sent_at=sent, open_count=2, greeting=greeting)
 
     print(f"  Emails: {len(emails_out)} rows")

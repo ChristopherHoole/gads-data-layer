@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wireframe — Outreach: Sent</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+<style>
+.material-symbols-outlined { font-variation-settings: 'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 40; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size:13px; background:#f8f9fa; color:#202124; }
+
+/* ── NAV ── */
+.nav-sidebar { width:110px; background:#ffffff; border-right:1px solid #dadce0; display:flex; flex-direction:column; position:fixed; left:0; top:0; height:100vh; z-index:1000; }
+.nav-brand { padding:16px 12px; display:flex; flex-direction:column; align-items:center; border-bottom:1px solid #dadce0; }
+.nav-brand-logo { width:48px; height:48px; margin-bottom:8px; }
+.nav-brand-text { font-size:14px; font-weight:600; color:#202124; text-align:center; line-height:1.3; }
+.nav-items { flex:1; padding:8px 0; overflow-y:auto; }
+.nav-item { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 8px; margin:2px 8px; text-decoration:none; color:#5f6368; border-radius:8px; transition:all 150ms ease; cursor:pointer; min-height:68px; }
+.nav-item:hover { background:#f1f3f4; color:#202124; }
+.nav-item.active { background:#e8f0fe; color:#1a73e8; }
+.nav-item-icon { font-size:28px; margin-bottom:4px; }
+.nav-item-text { font-size:12px; font-weight:500; text-align:center; line-height:1.2; }
+.nav-item-text.small { font-size:10px; }
+.nav-sub { background:#f8f9fa; border-left:2px solid #1a73e8; margin:0 8px 4px; border-radius:0 6px 6px 0; }
+.nav-sub-item { display:block; padding:7px 10px; font-size:11px; font-weight:500; color:#5f6368; text-decoration:none; transition:color 0.15s; text-align:center; }
+.nav-sub-item:hover { color:#202124; background:#f1f3f4; }
+.nav-sub-item.active { color:#1a73e8; font-weight:700; }
+.nav-badge { background:#ea4335; color:white; font-size:8px; border-radius:10px; padding:1px 4px; font-weight:700; margin-left:2px; vertical-align:middle; }
+
+/* ── LAYOUT ── */
+.main-wrapper { margin-left:110px; }
+.top-navbar { background:#ffffff; border-bottom:1px solid #dadce0; padding:0 24px; height:56px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:500; }
+.top-navbar-title { font-size:18px; font-weight:600; color:#202124; }
+.top-navbar-right { display:flex; align-items:center; gap:12px; }
+.client-selector { padding:6px 12px; background:white; border:1px solid #dadce0; border-radius:4px; font-size:13px; color:#202124; cursor:pointer; }
+
+/* ── CONTENT ── */
+.content-area { padding:20px 24px; }
+
+/* ── STATS ── */
+.stats-row { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:20px; }
+.stat-card { background:white; border:1px solid #dadce0; border-radius:8px; padding:14px 16px; display:flex; align-items:center; gap:12px; }
+.stat-icon { font-size:22px; color:#5f6368; }
+.stat-val { font-size:22px; font-weight:600; color:#202124; line-height:1; }
+.stat-lbl { font-size:11px; color:#5f6368; margin-top:2px; }
+
+/* ── CONTROL BAR ── */
+.control-bar { background:white; border:1px solid #dadce0; border-radius:8px 8px 0 0; padding:12px 16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; border-bottom:none; }
+.filter-tabs { display:flex; gap:2px; background:#f1f3f4; border-radius:6px; padding:3px; }
+.filter-tab { padding:5px 14px; border-radius:4px; font-size:12px; font-weight:500; color:#5f6368; cursor:pointer; border:none; background:none; white-space:nowrap; transition:all 0.15s; }
+.filter-tab.active { background:white; color:#1a73e8; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.12); }
+.filter-tab:hover:not(.active) { color:#202124; }
+.control-spacer { flex:1; }
+.control-search { padding:6px 12px; border:1px solid #dadce0; border-radius:4px; font-size:13px; color:#202124; width:200px; outline:none; }
+.control-search:focus { border-color:#1a73e8; }
+.control-select { padding:6px 10px; border:1px solid #dadce0; border-radius:4px; font-size:12px; color:#202124; background:white; cursor:pointer; outline:none; }
+.control-select:focus { border-color:#1a73e8; }
+
+/* ── TABLE ── */
+.table-wrap { background:white; border:1px solid #dadce0; border-radius:0 0 8px 8px; overflow-x:auto; }
+table { width:100%; border-collapse:collapse; min-width:900px; }
+thead th { padding:10px 14px; text-align:left; font-size:11px; font-weight:600; color:#5f6368; border-bottom:1px solid #e0e0e0; white-space:nowrap; background:white; position:sticky; top:0; }
+thead th.sortable { cursor:pointer; user-select:none; }
+thead th.sortable:hover { color:#202124; }
+thead th .sort-arrow { margin-left:4px; font-size:10px; color:#dadce0; }
+thead th.sorted .sort-arrow { color:#1a73e8; }
+tbody tr { border-bottom:1px solid #f1f3f4; transition:background 0.1s; cursor:pointer; }
+tbody tr:hover { background:#f8f9fa; }
+tbody tr:last-child { border-bottom:none; }
+tbody td { padding:10px 14px; vertical-align:middle; }
+
+/* ── CELL TYPES ── */
+.prospect-name { font-weight:600; color:#202124; font-size:13px; }
+.prospect-company { font-size:11px; color:#5f6368; margin-top:1px; }
+.email-addr { font-size:12px; color:#5f6368; }
+
+.track-badge { padding:2px 7px; border-radius:4px; font-size:11px; font-weight:600; white-space:nowrap; }
+.track-job       { background:#fef3c7; color:#92400e; }
+.track-recruiter { background:#ede9fe; color:#6d28d9; }
+.track-agency    { background:#dbeafe; color:#1d4ed8; }
+.track-direct    { background:#d1fae5; color:#065f46; }
+
+.email-type-pill { padding:2px 7px; border-radius:4px; font-size:11px; font-weight:600; white-space:nowrap; }
+.pill-initial  { background:#e8f0fe; color:#1a73e8; }
+.pill-followup { background:#fff3e0; color:#e65100; }
+
+.sent-date { font-size:12px; color:#202124; white-space:nowrap; }
+.sent-time { font-size:11px; color:#9aa0a6; margin-top:1px; }
+
+.followup-due { font-size:12px; font-weight:500; white-space:nowrap; }
+.followup-overdue { color:#ea4335; }
+.followup-today   { color:#e65100; }
+.followup-soon    { color:#202124; }
+.followup-none    { color:#9aa0a6; font-style:italic; font-weight:400; }
+
+/* Status dots */
+.status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; flex-shrink:0; }
+.status-label { font-size:12px; font-weight:500; display:flex; align-items:center; white-space:nowrap; }
+.dot-contacted  { background:#1a73e8; }
+.dot-followed   { background:#9c27b0; }
+.dot-replied    { background:#34a853; }
+.dot-meeting    { background:#00897b; }
+.dot-won        { background:#1b5e20; }
+.dot-lost       { background:#ea4335; }
+.dot-noreply    { background:#9aa0a6; }
+.dot-queued     { background:#fbbc05; }
+
+/* ── ACTIONS ── */
+.actions-btn { padding:5px 10px; background:white; border:1px solid #dadce0; border-radius:4px; font-size:12px; color:#202124; cursor:pointer; display:flex; align-items:center; gap:4px; white-space:nowrap; transition:background 0.15s; }
+.actions-btn:hover { background:#f1f3f4; }
+.actions-dropdown { position:absolute; right:14px; background:white; border:1px solid #dadce0; border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,0.12); z-index:200; min-width:190px; padding:4px 0; }
+.actions-item { display:block; padding:8px 16px; font-size:13px; color:#202124; cursor:pointer; white-space:nowrap; transition:background 0.1s; }
+.actions-item:hover { background:#f1f3f4; }
+.actions-item.danger { color:#ea4335; }
+.actions-sep { border:none; border-top:1px solid #f1f3f4; margin:4px 0; }
+td.actions-cell { position:relative; }
+
+/* ── PAGINATION ── */
+.pagination-bar { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:white; border:1px solid #dadce0; border-radius:0 0 8px 8px; border-top:1px solid #e0e0e0; margin-top:-1px; }
+.pagination-info { font-size:12px; color:#5f6368; }
+.pagination-controls { display:flex; align-items:center; gap:4px; }
+.page-btn { padding:5px 10px; background:white; border:1px solid #dadce0; border-radius:4px; font-size:12px; color:#202124; cursor:pointer; transition:all 0.1s; }
+.page-btn:hover { background:#f1f3f4; }
+.page-btn.active { background:#1a73e8; color:white; border-color:#1a73e8; }
+.page-btn:disabled { color:#dadce0; cursor:default; }
+.rows-select { padding:5px 8px; border:1px solid #dadce0; border-radius:4px; font-size:12px; color:#202124; background:white; cursor:pointer; margin-left:12px; }
+
+/* ── SLIDE PANEL ── */
+.panel-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:900; opacity:0; pointer-events:none; transition:opacity 0.3s ease; }
+.panel-overlay.open { opacity:1; pointer-events:all; }
+.slide-panel { position:fixed; right:0; top:0; height:100vh; width:520px; background:white; border-left:1px solid #dadce0; z-index:1000; transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); overflow-y:auto; display:flex; flex-direction:column; }
+.slide-panel.open { transform:translateX(0); }
+.panel-header { padding:16px 20px; border-bottom:1px solid #dadce0; display:flex; align-items:flex-start; justify-content:space-between; background:white; position:sticky; top:0; z-index:10; }
+.panel-header-left h3 { font-size:15px; font-weight:600; color:#202124; }
+.panel-header-left p { font-size:12px; color:#5f6368; margin-top:2px; }
+.panel-close { background:none; border:none; cursor:pointer; color:#5f6368; font-size:20px; padding:0; line-height:1; }
+.panel-close:hover { color:#202124; }
+.panel-body { padding:20px; flex:1; }
+.panel-section { margin-bottom:24px; }
+.panel-section-title { font-size:11px; font-weight:600; color:#9aa0a6; margin-bottom:10px; text-transform:none; letter-spacing:0; }
+.panel-row { display:flex; gap:8px; margin-bottom:8px; font-size:13px; }
+.panel-row-label { width:100px; flex-shrink:0; color:#5f6368; font-weight:500; }
+.panel-row-value { color:#202124; }
+
+/* Email thread */
+.email-thread-item { border:1px solid #e0e0e0; border-radius:6px; margin-bottom:10px; overflow:hidden; }
+.thread-item-header { padding:10px 14px; background:#f8f9fa; display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
+.thread-item-header:hover { background:#f1f3f4; }
+.thread-type-pill { padding:2px 7px; border-radius:4px; font-size:11px; font-weight:600; }
+.thread-date { font-size:11px; color:#9aa0a6; }
+.thread-subject { font-size:13px; font-weight:500; color:#202124; margin-top:2px; }
+.thread-body { padding:12px 14px; font-size:13px; color:#202124; line-height:1.7; border-top:1px solid #e0e0e0; white-space:pre-line; background:white; }
+.thread-body.hidden { display:none; }
+
+.attachment-badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; color:#1a73e8; background:#e8f0fe; padding:2px 8px; border-radius:4px; margin-top:8px; cursor:pointer; }
+.attachment-badge:hover { background:#d2e3fc; }
+
+/* Reply badge */
+.reply-bubble { background:#e6f4ea; border:1px solid #ceead6; border-radius:6px; padding:12px 14px; font-size:13px; color:#202124; line-height:1.7; white-space:pre-line; }
+.reply-header { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.reply-label { font-size:11px; font-weight:600; color:#137333; background:#ceead6; padding:2px 8px; border-radius:4px; }
+.reply-from { font-size:11px; color:#5f6368; }
+
+/* Followup scheduler */
+.followup-scheduler { background:#fff8e1; border:1px solid #ffe082; border-radius:6px; padding:14px; }
+.followup-scheduler-title { font-size:12px; font-weight:600; color:#e65100; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.followup-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.followup-row label { font-size:12px; color:#5f6368; width:90px; flex-shrink:0; }
+.followup-row select, .followup-row input { padding:5px 8px; border:1px solid #dadce0; border-radius:4px; font-size:12px; background:white; }
+.btn-schedule { padding:7px 16px; background:#1a73e8; border:none; border-radius:4px; color:white; font-size:12px; font-weight:600; cursor:pointer; }
+.btn-schedule:hover { background:#1557b0; }
+
+/* Panel actions */
+.panel-actions { padding:16px 20px; border-top:1px solid #dadce0; display:flex; gap:8px; flex-wrap:wrap; position:sticky; bottom:0; background:white; }
+.btn-panel { padding:8px 16px; border-radius:4px; font-size:13px; font-weight:500; cursor:pointer; border:1px solid #dadce0; background:white; color:#202124; transition:background 0.15s; }
+.btn-panel:hover { background:#f8f9fa; }
+.btn-panel.primary { background:#1a73e8; color:white; border-color:#1a73e8; }
+.btn-panel.primary:hover { background:#1557b0; }
+.btn-panel.danger { color:#ea4335; border-color:#fecaca; }
+.btn-panel.danger:hover { background:#fef2f2; }
+
+/* Overdue highlight */
+tr.overdue-row { background:#fff8f8; }
+tr.overdue-row:hover { background:#fff0f0; }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav class="nav-sidebar">
+  <div class="nav-brand">
+    <svg class="nav-brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="41" fill="none" stroke="#4285F4" stroke-width="10"/>
+      <circle cx="50" cy="50" r="29" fill="none" stroke="#EA4335" stroke-width="10"/>
+      <circle cx="50" cy="50" r="17" fill="none" stroke="#FBBC05" stroke-width="10"/>
+      <circle cx="50" cy="50" r="10" fill="#34A853"/>
+    </svg>
+    <div class="nav-brand-text">Ads<br>Control<br>Tower</div>
+  </div>
+  <div class="nav-items">
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">home</span><span class="nav-item-text">Dashboard</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">campaign</span><span class="nav-item-text">Campaigns</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">folder</span><span class="nav-item-text">Ad Groups</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">search</span><span class="nav-item-text">Keywords</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">article</span><span class="nav-item-text">Ads</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">shopping_cart</span><span class="nav-item-text">Shopping</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">lightbulb</span><span class="nav-item-text small">Recommendations</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">history</span><span class="nav-item-text">Changes</span></a>
+    <a class="nav-item active" href="#">
+      <span class="material-symbols-outlined nav-item-icon">send</span>
+      <span class="nav-item-text">Outreach</span>
+    </a>
+    <div class="nav-sub">
+      <a class="nav-sub-item" href="#">Leads</a>
+      <a class="nav-sub-item" href="#">Queue <span class="nav-badge">3</span></a>
+      <a class="nav-sub-item active" href="#">Sent</a>
+      <a class="nav-sub-item" href="#">Replies</a>
+      <a class="nav-sub-item" href="#">Templates</a>
+      <a class="nav-sub-item" href="#">Analytics</a>
+    </div>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">settings</span><span class="nav-item-text">Settings</span></a>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<div class="main-wrapper">
+  <div class="top-navbar">
+    <div class="top-navbar-title">Outreach — Sent</div>
+    <div class="top-navbar-right">
+      <select class="client-selector"><option>Synthetic_Test_Client</option></select>
+    </div>
+  </div>
+
+  <div class="content-area">
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <span class="material-symbols-outlined stat-icon">send</span>
+        <div><div class="stat-val">67</div><div class="stat-lbl">Total sent</div></div>
+      </div>
+      <div class="stat-card">
+        <span class="material-symbols-outlined stat-icon" style="color:#ea4335;">schedule</span>
+        <div><div class="stat-val" style="color:#ea4335;">8</div><div class="stat-lbl">Follow-ups overdue</div></div>
+      </div>
+      <div class="stat-card">
+        <span class="material-symbols-outlined stat-icon" style="color:#e65100;">upcoming</span>
+        <div><div class="stat-val" style="color:#e65100;">5</div><div class="stat-lbl">Due today</div></div>
+      </div>
+      <div class="stat-card">
+        <span class="material-symbols-outlined stat-icon" style="color:#34a853;">mark_email_read</span>
+        <div><div class="stat-val" style="color:#34a853;">11</div><div class="stat-lbl">Replied</div></div>
+      </div>
+      <div class="stat-card">
+        <span class="material-symbols-outlined stat-icon" style="color:#9aa0a6;">do_not_disturb</span>
+        <div><div class="stat-val" style="color:#9aa0a6;">18</div><div class="stat-lbl">No reply / closed</div></div>
+      </div>
+    </div>
+
+    <!-- CONTROL BAR -->
+    <div class="control-bar">
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="setTab(this,'all')">All <span style="font-weight:400;color:#9aa0a6;">(67)</span></button>
+        <button class="filter-tab" onclick="setTab(this,'overdue')">Overdue <span style="font-weight:400;color:#ea4335;">(8)</span></button>
+        <button class="filter-tab" onclick="setTab(this,'today')">Due today <span style="font-weight:400;color:#e65100;">(5)</span></button>
+        <button class="filter-tab" onclick="setTab(this,'replied')">Replied <span style="font-weight:400;color:#34a853;">(11)</span></button>
+        <button class="filter-tab" onclick="setTab(this,'closed')">Closed</button>
+      </div>
+      <select class="control-select" id="rowsPerPageSelect" onchange="changeRowsPerPage()">
+        <option value="10" selected>10 rows</option>
+        <option value="25">25 rows</option>
+        <option value="50">50 rows</option>
+        <option value="100">100 rows</option>
+      </select>
+      <div class="control-spacer"></div>
+      <input class="control-search" type="text" placeholder="Search company or contact…" oninput="filterTable(this.value)">
+      <select class="control-select" onchange="filterTable()">
+        <option value="">All tracks</option>
+        <option>Job</option>
+        <option>Recruiter</option>
+        <option>Agency</option>
+        <option>Direct</option>
+      </select>
+      <select class="control-select" onchange="filterTable()">
+        <option value="">All email types</option>
+        <option>Initial email</option>
+        <option>Follow-up 1</option>
+        <option>Follow-up 2</option>
+        <option>Follow-up 3</option>
+      </select>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <table id="sentTable">
+        <thead>
+          <tr>
+            <th class="sortable sorted">Prospect <span class="sort-arrow">↑</span></th>
+            <th>Email</th>
+            <th>Track</th>
+            <th>Email type</th>
+            <th class="sortable">Sent <span class="sort-arrow">↕</span></th>
+            <th class="sortable">Follow-up due <span class="sort-arrow">↕</span></th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PAGINATION -->
+    <div class="pagination-bar">
+      <div class="pagination-info" id="paginationInfo"></div>
+      <div class="pagination-controls" id="paginationControls"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── SLIDE PANEL ── -->
+<div class="panel-overlay" id="overlay" onclick="closePanel()"></div>
+<div class="slide-panel" id="slidePanel">
+  <div class="panel-header">
+    <div class="panel-header-left">
+      <h3 id="panelName">—</h3>
+      <p id="panelSub">—</p>
+    </div>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+  <div class="panel-actions" id="panelActions"></div>
+</div>
+
+<script>
+// ── DATA ──
+const rows = [
+  { id:1,  name:'Sarah Mitchell',    company:'Digital Talent Group', email:'s.mitchell [at] digitaltalentgroup.com', track:'Recruiter', type:'Follow-up 2', sentDate:'3 Mar 2026', sentTime:'8:30am EST',  dueDate:'overdue', dueLabel:'Overdue · 2 days', status:'contacted',  statusLabel:'Contacted',  reply:false },
+  { id:2,  name:'James Whitfield',   company:'Apex Digital',         email:'james [at] apexdigital.co.uk',           track:'Agency',    type:'Follow-up 1', sentDate:'3 Mar 2026', sentTime:'8:30am GMT',  dueDate:'overdue', dueLabel:'Overdue · 1 day',  status:'contacted',  statusLabel:'Contacted',  reply:false },
+  { id:3,  name:'Priya Nair',        company:'GrowthLab',            email:'p.nair [at] growthlab.io',               track:'Agency',    type:'Initial email',sentDate:'2 Mar 2026', sentTime:'8:30am IST',  dueDate:'today',   dueLabel:'Today',            status:'contacted',  statusLabel:'Contacted',  reply:false },
+  { id:4,  name:'Hiring Manager',    company:'TechScale Agency',     email:'jobs [at] techscaleagency.com',          track:'Job',       type:'Follow-up 1', sentDate:'2 Mar 2026', sentTime:'8:30am CST',  dueDate:'today',   dueLabel:'Today',            status:'contacted',  statusLabel:'Contacted',  reply:false },
+  { id:5,  name:'Alex Dupont',       company:'North Star Marketing', email:'alex [at] northstarmarketing.ca',        track:'Agency',    type:'Initial email',sentDate:'1 Mar 2026', sentTime:'8:30am EST',  dueDate:'soon',    dueLabel:'5 Mar 2026',       status:'contacted',  statusLabel:'Contacted',  reply:false },
+  { id:6,  name:'Rachel Green',      company:'Paid Media Co.',       email:'r.green [at] paidmediaco.com',           track:'Direct',    type:'Follow-up 2', sentDate:'28 Feb 2026',sentTime:'8:30am GMT',  dueDate:'none',    dueLabel:'—',                status:'replied',    statusLabel:'Replied',    reply:true,  replyText:'Hi Christopher, thanks for reaching out. I have reviewed your background and I\'d love to set up a call this week. Are you free Thursday afternoon?' },
+  { id:7,  name:'Tom Hargreaves',    company:'Blue Sky PPC',         email:'tom [at] blueskyppc.co.uk',              track:'Agency',    type:'Follow-up 1', sentDate:'28 Feb 2026',sentTime:'8:30am GMT',  dueDate:'soon',    dueLabel:'6 Mar 2026',       status:'contacted',  statusLabel:'Contacted',  reply:false },
+  { id:8,  name:'Maria Santos',      company:'Conversion Kings',     email:'m.santos [at] conversionkings.com',      track:'Agency',    type:'Initial email',sentDate:'27 Feb 2026',sentTime:'8:30am BRT',  dueDate:'overdue', dueLabel:'Overdue · 3 days', status:'contacted',  statusLabel:'Contacted',  reply:false },
+  { id:9,  name:'David Park',        company:'Search Matters',       email:'d.park [at] searchmatters.com',          track:'Recruiter', type:'Follow-up 1', sentDate:'26 Feb 2026',sentTime:'8:30am PST',  dueDate:'none',    dueLabel:'—',                status:'replied',    statusLabel:'Replied',    reply:true,  replyText:'Hi Christopher! Great timing — we have a client looking for a senior Google Ads specialist right now. Can you send over your CV?' },
+  { id:10, name:'Emma Johnson',      company:'Click Collective',     email:'e.johnson [at] clickcollective.co.uk',   track:'Agency',    type:'Follow-up 2', sentDate:'25 Feb 2026',sentTime:'8:30am GMT',  dueDate:'none',    dueLabel:'—',                status:'noreply',    statusLabel:'No reply',   reply:false },
+  { id:11, name:'Marcus Webb',       company:'PPC Talent',           email:'marcus [at] ppctalent.com',              track:'Recruiter', type:'Initial email',sentDate:'24 Feb 2026',sentTime:'8:30am EST',  dueDate:'overdue', dueLabel:'Overdue · 4 days', status:'contacted',  statusLabel:'Contacted',  reply:false },
+  { id:12, name:'Lena Fischer',      company:'Bid Wars GmbH',        email:'l.fischer [at] bidwars.de',              track:'Agency',    type:'Initial email',sentDate:'24 Feb 2026',sentTime:'8:30am CET',  dueDate:'overdue', dueLabel:'Overdue · 4 days', status:'contacted',  statusLabel:'Contacted',  reply:false },
+  { id:13, name:'Chris Malone',      company:'Indeed.com',           email:'jobs [at] indeed.com',                   track:'Job',       type:'Follow-up 1', sentDate:'23 Feb 2026',sentTime:'8:30am GMT',  dueDate:'none',    dueLabel:'—',                status:'noreply',    statusLabel:'No reply',   reply:false },
+  { id:14, name:'Sophie Tan',        company:'The Ads Agency',       email:'s.tan [at] theadsagency.com.au',         track:'Agency',    type:'Follow-up 2', sentDate:'22 Feb 2026',sentTime:'8:30am AEDT', dueDate:'none',    dueLabel:'—',                status:'meeting',    statusLabel:'Meeting booked', reply:true, replyText:'Hi Christopher, yes I\'d love to find out more. Let\'s set something up for next week?' },
+  { id:15, name:'Owen Walsh',        company:'Paid Search Pro',      email:'o.walsh [at] paidsearchpro.ie',          track:'Direct',    type:'Initial email',sentDate:'21 Feb 2026',sentTime:'8:30am GMT',  dueDate:'none',    dueLabel:'—',                status:'replied',    statusLabel:'Replied',    reply:true,  replyText:'Hi Christopher! We\'re actually actively recruiting at the moment. What\'s your day rate?' },
+];
+
+// ── STATE ──
+let currentPage = 1;
+let rowsPerPage = 10;
+let currentTab = 'all';
+let searchTerm = '';
+let openDropdown = null;
+
+// ── STATUS CONFIG ──
+const statusConfig = {
+  contacted: { dot:'dot-contacted', label:'Contacted' },
+  followed:  { dot:'dot-followed',  label:'Followed up' },
+  replied:   { dot:'dot-replied',   label:'Replied' },
+  meeting:   { dot:'dot-meeting',   label:'Meeting booked' },
+  won:       { dot:'dot-won',       label:'Won' },
+  lost:      { dot:'dot-lost',      label:'Lost' },
+  noreply:   { dot:'dot-noreply',   label:'No reply' },
+  queued:    { dot:'dot-queued',    label:'Queued' },
+};
+
+const trackClass = { Job:'track-job', Recruiter:'track-recruiter', Agency:'track-agency', Direct:'track-direct' };
+const typeClass  = { 'Initial email':'pill-initial', 'Follow-up 1':'pill-followup', 'Follow-up 2':'pill-followup', 'Follow-up 3':'pill-followup' };
+
+function getFilteredRows() {
+  return rows.filter(r => {
+    if (currentTab === 'overdue' && r.dueDate !== 'overdue') return false;
+    if (currentTab === 'today'   && r.dueDate !== 'today')   return false;
+    if (currentTab === 'replied' && r.status  !== 'replied' && r.status !== 'meeting') return false;
+    if (currentTab === 'closed'  && r.status  !== 'noreply' && r.status !== 'lost')    return false;
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      if (!r.name.toLowerCase().includes(q) && !r.company.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function renderTable() {
+  const filtered = getFilteredRows();
+  const start = (currentPage - 1) * rowsPerPage;
+  const pageRows = filtered.slice(start, start + rowsPerPage);
+  const tbody = document.getElementById('tableBody');
+
+  tbody.innerHTML = pageRows.map(r => {
+    const sc = statusConfig[r.status] || statusConfig.contacted;
+    const dueCls = r.dueDate === 'overdue' ? 'followup-overdue' : r.dueDate === 'today' ? 'followup-today' : r.dueDate === 'none' ? 'followup-none' : 'followup-soon';
+    const rowCls = r.dueDate === 'overdue' ? 'overdue-row' : '';
+    return `<tr class="${rowCls}" onclick="openPanel(${r.id})">
+      <td>
+        <div class="prospect-name">${r.name}</div>
+        <div class="prospect-company">${r.company}</div>
+      </td>
+      <td><span class="email-addr">${r.email}</span></td>
+      <td><span class="track-badge ${trackClass[r.track]}">${r.track}</span></td>
+      <td><span class="email-type-pill ${typeClass[r.type]}">${r.type}</span></td>
+      <td>
+        <div class="sent-date">${r.sentDate}</div>
+        <div class="sent-time">${r.sentTime}</div>
+      </td>
+      <td><span class="followup-due ${dueCls}">${r.dueLabel}</span></td>
+      <td><span class="status-label"><span class="status-dot ${sc.dot}"></span>${sc.label}</span></td>
+      <td class="actions-cell" onclick="event.stopPropagation()">
+        <button class="actions-btn" onclick="toggleDropdown(event,${r.id})">
+          Actions <span style="font-size:10px;">▾</span>
+        </button>
+        <div class="actions-dropdown" id="drop-${r.id}" style="display:none;">
+          <div class="actions-item" onclick="openPanel(${r.id});closeDropdown()">View email thread</div>
+          <div class="actions-item">Queue follow-up</div>
+          <div class="actions-item">Update status</div>
+          <hr class="actions-sep">
+          <div class="actions-item">Mark as replied</div>
+          <div class="actions-item">Mark as won</div>
+          <div class="actions-item">Mark as lost</div>
+          <hr class="actions-sep">
+          <div class="actions-item danger">Delete</div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  renderPagination(filtered.length);
+}
+
+function renderPagination(total) {
+  const totalPages = Math.ceil(total / rowsPerPage);
+  const start = (currentPage - 1) * rowsPerPage + 1;
+  const end = Math.min(currentPage * rowsPerPage, total);
+  document.getElementById('paginationInfo').textContent = total === 0 ? 'No results' : `${start}–${end} of ${total}`;
+
+  const ctrl = document.getElementById('paginationControls');
+  let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>← Prev</button>`;
+  for (let i = 1; i <= totalPages; i++) {
+    if (totalPages > 7 && i > 2 && i < totalPages - 1 && Math.abs(i - currentPage) > 1) {
+      if (i === 3 || i === totalPages - 2) html += `<button class="page-btn" disabled>…</button>`;
+      continue;
+    }
+    html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  }
+  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages||totalPages===0?'disabled':''}>Next →</button>`;
+  ctrl.innerHTML = html;
+}
+
+function goPage(p) {
+  const total = getFilteredRows().length;
+  const max = Math.ceil(total / rowsPerPage);
+  if (p < 1 || p > max) return;
+  currentPage = p;
+  renderTable();
+}
+
+function changeRowsPerPage() {
+  rowsPerPage = parseInt(document.getElementById('rowsPerPageSelect').value);
+  currentPage = 1;
+  renderTable();
+}
+
+function setTab(el, tab) {
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentTab = tab;
+  currentPage = 1;
+  renderTable();
+}
+
+function filterTable(val) {
+  if (val !== undefined) searchTerm = val;
+  currentPage = 1;
+  renderTable();
+}
+
+function toggleDropdown(e, id) {
+  e.stopPropagation();
+  const drop = document.getElementById('drop-' + id);
+  if (openDropdown && openDropdown !== drop) openDropdown.style.display = 'none';
+  drop.style.display = drop.style.display === 'none' ? 'block' : 'none';
+  openDropdown = drop.style.display === 'block' ? drop : null;
+}
+
+function closeDropdown() {
+  if (openDropdown) { openDropdown.style.display = 'none'; openDropdown = null; }
+}
+
+document.addEventListener('click', () => closeDropdown());
+
+// ── PANEL ──
+function openPanel(id) {
+  closeDropdown();
+  const r = rows.find(x => x.id === id);
+  if (!r) return;
+
+  document.getElementById('panelName').textContent = r.name + ' · ' + r.company;
+  document.getElementById('panelSub').textContent = r.email;
+
+  const sc = statusConfig[r.status] || statusConfig.contacted;
+
+  let replyHtml = '';
+  if (r.reply && r.replyText) {
+    replyHtml = `
+      <div class="panel-section">
+        <div class="panel-section-title">Their reply</div>
+        <div class="reply-bubble">
+          <div class="reply-header">
+            <span class="reply-label">Reply received</span>
+            <span class="reply-from">${r.name}</span>
+          </div>${r.replyText}
+        </div>
+      </div>`;
+  }
+
+  let followupHtml = '';
+  if (r.dueDate !== 'none') {
+    const dueCls = r.dueDate === 'overdue' ? '#ea4335' : r.dueDate === 'today' ? '#e65100' : '#202124';
+    followupHtml = `
+      <div class="panel-section">
+        <div class="panel-section-title">Follow-up scheduler</div>
+        <div class="followup-scheduler">
+          <div class="followup-scheduler-title">
+            <span class="material-symbols-outlined" style="font-size:16px;">schedule</span>
+            Next follow-up due: <span style="color:${dueCls};">${r.dueLabel}</span>
+          </div>
+          <div class="followup-row">
+            <label>Send on</label>
+            <input type="date" value="2026-03-07">
+          </div>
+          <div class="followup-row">
+            <label>Template</label>
+            <select><option>Follow-up template 1</option><option>Follow-up template 2</option><option>Custom</option></select>
+          </div>
+          <div class="followup-row">
+            <label>Attach CV</label>
+            <select><option>No</option><option>Yes</option></select>
+          </div>
+          <button class="btn-schedule">Add to queue</button>
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('panelBody').innerHTML = `
+    <div class="panel-section">
+      <div class="panel-section-title">Lead details</div>
+      <div class="panel-row"><span class="panel-row-label">Status</span><span class="panel-row-value"><span class="status-dot ${sc.dot}" style="display:inline-block;margin-right:6px;"></span>${sc.label}</span></div>
+      <div class="panel-row"><span class="panel-row-label">Track</span><span class="panel-row-value"><span class="track-badge ${trackClass[r.track]}">${r.track}</span></span></div>
+      <div class="panel-row"><span class="panel-row-label">Last sent</span><span class="panel-row-value">${r.sentDate} at ${r.sentTime}</span></div>
+      <div class="panel-row"><span class="panel-row-label">Email type</span><span class="panel-row-value">${r.type}</span></div>
+    </div>
+
+    ${replyHtml}
+
+    <div class="panel-section">
+      <div class="panel-section-title">Email thread</div>
+      <div class="email-thread-item">
+        <div class="thread-item-header" onclick="toggleThread(this)">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="email-type-pill ${typeClass[r.type]}">${r.type}</span>
+              <span class="thread-date">${r.sentDate} · ${r.sentTime}</span>
+            </div>
+            <div class="thread-subject" style="margin-top:4px;">Re: Google Ads Specialist — 16 Years Experience</div>
+          </div>
+          <span style="color:#9aa0a6;font-size:12px;">▾</span>
+        </div>
+        <div class="thread-body hidden">Hi ${r.name.split(' ')[0]},
+
+Just following up on my previous email — wanted to make sure it didn't get buried.
+
+I have 16 years of hands-on Google Ads experience managing £50M+ across 200+ accounts. I've also recently built Ads Control Tower, a proprietary platform that automates Google Ads optimisation with full audit trails and rollback.
+
+Would love to connect when you have a moment.
+
+Best regards,
+Christopher Hoole
++44 7999 500 184
+christopherhoole.online
+          <div class="attachment-badge"><span class="material-symbols-outlined" style="font-size:13px;">attach_file</span> Christopher_Hoole_CV.pdf · attached</div>
+        </div>
+      </div>
+
+      <div class="email-thread-item" style="opacity:0.6;">
+        <div class="thread-item-header" onclick="toggleThread(this)">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="email-type-pill pill-initial">Initial email</span>
+              <span class="thread-date">24 Feb 2026 · 8:30am</span>
+            </div>
+            <div class="thread-subject" style="margin-top:4px;">Google Ads Specialist — 16 Years Experience</div>
+          </div>
+          <span style="color:#9aa0a6;font-size:12px;">▾</span>
+        </div>
+        <div class="thread-body hidden">Hi ${r.name.split(' ')[0]},
+
+I'm a Google Ads specialist with 16 years of experience managing £50M+ in ad spend across 200+ accounts — and I'm currently exploring new opportunities.
+
+I specialise in Search, Shopping and Performance Max for both lead gen and ecommerce clients.
+
+Would you be open to a quick call?
+
+Best regards,
+Christopher Hoole
+          <div class="attachment-badge"><span class="material-symbols-outlined" style="font-size:13px;">attach_file</span> Christopher_Hoole_CV.pdf · attached</div>
+        </div>
+      </div>
+    </div>
+
+    ${followupHtml}
+  `;
+
+  document.getElementById('panelActions').innerHTML = `
+    <button class="btn-panel primary" onclick="closePanel()">Queue follow-up</button>
+    <button class="btn-panel">Update status</button>
+    <button class="btn-panel">Mark as won</button>
+    <button class="btn-panel danger">Mark as lost</button>
+  `;
+
+  document.getElementById('slidePanel').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closePanel() {
+  document.getElementById('slidePanel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function toggleThread(header) {
+  const body = header.nextElementSibling;
+  body.classList.toggle('hidden');
+  header.querySelector('span:last-child').textContent = body.classList.contains('hidden') ? '▾' : '▴';
+}
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', renderTable);
+</script>
+</body>
+</html>
