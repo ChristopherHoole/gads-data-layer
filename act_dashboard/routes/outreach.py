@@ -1398,7 +1398,7 @@ def analytics():
     conn = get_outreach_db()
     try:
         clients = get_available_clients()
-        current_client_path = get_current_config()
+        current_client_path = session.get("current_client_config")
 
         cutoff = datetime.now() - timedelta(days=days)
         prev_cutoff = datetime.now() - timedelta(days=days * 2)
