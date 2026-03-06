@@ -117,7 +117,8 @@
                 </a>
                 <a class="nav-sub-item {% if request.path == '/outreach/templates' %}active{% endif %}"
                    href="/outreach/templates">Templates</a>
-                <a class="nav-sub-item" href="#">Analytics</a>
+                <a class="nav-sub-item {% if request.path == '/outreach/analytics' %}active{% endif %}"
+                   href="/outreach/analytics">Analytics</a>
             </div>
             {% endif %}
 

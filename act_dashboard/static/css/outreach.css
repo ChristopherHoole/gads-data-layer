@@ -2307,3 +2307,254 @@
   line-height: 1.75;
 }
 .tpl-form-textarea:focus { outline: 2px solid #1a73e8; border-color: transparent; }
+
+
+/* ══════════════════════════════════════════════════════════
+   ANALYTICS PAGE STYLES — Chat 64
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Analytics content wrapper ── */
+.analytics-content {
+  padding: 20px 24px;
+}
+
+/* ── Date range selector ── */
+.analytics-date-select {
+  padding: 6px 10px;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #202124;
+  background: white;
+  cursor: pointer;
+  outline: none;
+}
+.analytics-date-select:focus { border-color: #1a73e8; }
+
+/* ── Caveat banner ── */
+.caveat-banner {
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 11px;
+  color: #795548;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.caveat-banner-icon {
+  font-size: 16px;
+  color: #f9a825;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── KPI grid — 8 columns ── */
+.stats-row-8 {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* Analytics stat card — vertical layout (no icon) */
+.an-stat-card {
+  background: white;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+/* ── KPI value / label / delta / caveat ── */
+.an-stat-val {
+  font-size: 22px;
+  font-weight: 600;
+  color: #202124;
+  line-height: 1;
+}
+.an-stat-lbl {
+  font-size: 11px;
+  color: #5f6368;
+  margin-top: 3px;
+  line-height: 1.3;
+}
+.stat-delta {
+  font-size: 11px;
+  margin-top: 4px;
+  font-weight: 500;
+  color: #5f6368;
+}
+.stat-delta.up     { color: #34a853; }
+.stat-delta.down   { color: #ea4335; }
+.stat-delta.neutral{ color: #9aa0a6; }
+.stat-caveat {
+  font-size: 10px;
+  color: #9aa0a6;
+  margin-top: 3px;
+  font-style: italic;
+}
+
+/* ── Extra stat-val colour utilities ── */
+.stat-val-blue   { color: #1a73e8; }
+.stat-val-purple { color: #6d28d9; }
+.stat-val-teal   { color: #00897b; }
+.stat-val-yellow { color: #f9a825; }
+
+/* ── Engagement funnel ── */
+.eng-funnel {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin-top: 8px;
+}
+.eng-step {
+  flex: 1;
+  text-align: center;
+  padding: 14px 10px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  position: relative;
+}
+.eng-step:first-child { border-radius: 6px 0 0 6px; }
+.eng-step:last-child  { border-radius: 0 6px 6px 0; }
+.eng-step + .eng-step { border-left: none; }
+
+/* Background tints for funnel steps */
+.eng-step-blue    { background: #e8f0fe; }
+.eng-step-plain   { background: #f8f9fa; }
+.eng-step-orange  { background: #fff3e0; }
+.eng-step-purple  { background: #f3e8ff; }
+.eng-step-green   { background: #e6f4ea; }
+.eng-step-dkgreen { background: #e8f5e9; }
+
+.eng-step-val {
+  font-size: 20px;
+  font-weight: 700;
+  color: #202124;
+}
+.eng-step-lbl {
+  font-size: 11px;
+  color: #5f6368;
+  margin-top: 3px;
+}
+.eng-step-pct {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.eng-step-pct-grey   { color: #9aa0a6; }
+.eng-step-pct-muted  { color: #5f6368; }
+.eng-step-pct-orange { color: #e65100; }
+.eng-step-pct-purple { color: #6d28d9; }
+.eng-step-pct-green  { color: #34a853; }
+.eng-step-pct-dkgreen{ color: #2e7d32; }
+
+.eng-arrow {
+  display: flex;
+  align-items: center;
+  padding: 0 2px;
+  color: #dadce0;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* ── Chart layout grids ── */
+.charts-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.charts-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.charts-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* ── Chart card ── */
+.chart-card {
+  background: white;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  padding: 18px 20px;
+}
+.chart-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #202124;
+  margin-bottom: 4px;
+}
+.chart-sub {
+  font-size: 11px;
+  color: #9aa0a6;
+  margin-bottom: 14px;
+}
+
+/* ── Performance tables ── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.data-table th {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9aa0a6;
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 2px solid #e0e0e0;
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 9px 8px;
+  border-bottom: 1px solid #f1f3f4;
+  color: #202124;
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+
+/* ── Step pill ── */
+.pill-step {
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #e8f0fe;
+  color: #1a73e8;
+}
+
+/* ── Progress bar in table cells ── */
+.prog-bar-wrap {
+  height: 8px;
+  background: #e8eaed;
+  border-radius: 4px;
+  overflow: hidden;
+  width: 60px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+.prog-bar-fill {
+  height: 100% !important;
+  border-radius: 4px;
+  display: block !important;
+}
+.fill-orange { background-color: #e65100 !important; }
+.fill-purple { background-color: #6d28d9 !important; }
+.fill-blue   { background-color: #1a73e8 !important; }
+.fill-green  { background-color: #34a853 !important; }
+
+/* ── Reply % colour helpers in step table ── */
+.reply-pct-green  { color: #34a853; font-weight: 600; }
+.reply-pct-blue   { color: #1a73e8; font-weight: 600; }
+.reply-pct-yellow { color: #f9a825; font-weight: 600; }
+.reply-pct-grey   { color: #9aa0a6; font-weight: 600; }

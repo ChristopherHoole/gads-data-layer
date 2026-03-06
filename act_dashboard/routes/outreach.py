@@ -1384,3 +1384,352 @@ def templates_update(template_id):
 def templates_duplicate(template_id):
     """Placeholder: duplicate template. AJAX — CSRF exempt."""
     return jsonify({"success": True, "message": "Duplicate coming soon"})
+
+
+# ── GET /outreach/analytics ────────────────────────────────────────────────────
+@bp.route("/analytics")
+@login_required
+def analytics():
+    """Analytics dashboard for the outreach system — Chat 64."""
+    days = request.args.get("days", 30, type=int)
+    if days not in (7, 14, 30, 90):
+        days = 30
+
+    conn = get_outreach_db()
+    try:
+        clients = get_available_clients()
+        current_client_path = get_current_config()
+
+        cutoff = datetime.now() - timedelta(days=days)
+        prev_cutoff = datetime.now() - timedelta(days=days * 2)
+
+        # ── KPI: core counts (current period) ─────────────────────────────────
+        row = conn.execute("""
+            SELECT
+                COUNT(*) FILTER (WHERE status = 'sent')                          AS total_sent,
+                COUNT(*) FILTER (WHERE status = 'sent' AND opened_at IS NOT NULL) AS total_opened,
+                COUNT(*) FILTER (WHERE status = 'sent' AND clicked_at IS NOT NULL) AS links_clicked,
+                COUNT(*) FILTER (WHERE status = 'sent' AND cv_opened_at IS NOT NULL) AS cv_opens
+            FROM outreach_emails
+            WHERE sent_at >= ?
+        """, [cutoff]).fetchone()
+
+        total_sent    = row[0] or 0
+        total_opened  = row[1] or 0
+        links_clicked = row[2] or 0
+        cv_opens      = row[3] or 0
+
+        open_rate     = round(total_opened  / total_sent * 100, 1) if total_sent else 0
+        click_rate    = round(links_clicked / total_sent * 100, 1) if total_sent else 0
+        cv_open_rate  = round(cv_opens      / total_sent * 100, 1) if total_sent else 0
+
+        # ── KPI: replies & meetings (leads who had emails sent in period) ──────
+        total_replies = conn.execute("""
+            SELECT COUNT(DISTINCT l.lead_id)
+            FROM outreach_leads l
+            JOIN outreach_emails e ON l.lead_id = e.lead_id
+            WHERE e.status = 'sent' AND e.sent_at >= ?
+              AND l.status IN ('replied', 'meeting', 'won')
+        """, [cutoff]).fetchone()[0] or 0
+
+        meetings_booked = conn.execute("""
+            SELECT COUNT(DISTINCT l.lead_id)
+            FROM outreach_leads l
+            JOIN outreach_emails e ON l.lead_id = e.lead_id
+            WHERE e.status = 'sent' AND e.sent_at >= ?
+              AND l.status = 'meeting'
+        """, [cutoff]).fetchone()[0] or 0
+
+        reply_rate = round(total_replies / total_sent * 100, 1) if total_sent else 0
+
+        # ── KPI: warm leads (opened but no reply) ─────────────────────────────
+        opened_no_reply = conn.execute("""
+            SELECT COUNT(DISTINCT l.lead_id)
+            FROM outreach_leads l
+            JOIN outreach_emails e ON l.lead_id = e.lead_id
+            WHERE e.sent_at >= ?
+              AND e.opened_at IS NOT NULL
+              AND l.status NOT IN ('replied', 'meeting', 'won', 'lost')
+        """, [cutoff]).fetchone()[0] or 0
+
+        # ── KPI: avg days to reply ─────────────────────────────────────────────
+        avg_row = conn.execute("""
+            SELECT ROUND(AVG(DATEDIFF('day', e.min_sent, l.last_activity)), 1)
+            FROM outreach_leads l
+            JOIN (
+                SELECT lead_id, MIN(sent_at) AS min_sent
+                FROM outreach_emails
+                WHERE status = 'sent' AND sent_at >= ?
+                GROUP BY lead_id
+            ) e ON l.lead_id = e.lead_id
+            WHERE l.status IN ('replied', 'meeting', 'won')
+              AND l.last_activity IS NOT NULL
+        """, [cutoff]).fetchone()
+        avg_days_to_reply = float(avg_row[0]) if avg_row and avg_row[0] is not None else 0.0
+
+        # ── KPI: prev period (for delta) ───────────────────────────────────────
+        prev_row = conn.execute("""
+            SELECT COUNT(*) FILTER (WHERE status = 'sent') AS prev_sent
+            FROM outreach_emails
+            WHERE sent_at >= ? AND sent_at < ?
+        """, [prev_cutoff, cutoff]).fetchone()
+        prev_sent = prev_row[0] or 0
+
+        prev_meetings = conn.execute("""
+            SELECT COUNT(DISTINCT l.lead_id)
+            FROM outreach_leads l
+            JOIN outreach_emails e ON l.lead_id = e.lead_id
+            WHERE e.status = 'sent' AND e.sent_at >= ? AND e.sent_at < ?
+              AND l.status = 'meeting'
+        """, [prev_cutoff, cutoff]).fetchone()[0] or 0
+
+        prev_days_row = conn.execute("""
+            SELECT ROUND(AVG(DATEDIFF('day', e.min_sent, l.last_activity)), 1)
+            FROM outreach_leads l
+            JOIN (
+                SELECT lead_id, MIN(sent_at) AS min_sent
+                FROM outreach_emails
+                WHERE status = 'sent' AND sent_at >= ? AND sent_at < ?
+                GROUP BY lead_id
+            ) e ON l.lead_id = e.lead_id
+            WHERE l.status IN ('replied', 'meeting', 'won')
+              AND l.last_activity IS NOT NULL
+        """, [prev_cutoff, cutoff]).fetchone()
+        prev_avg_days = float(prev_days_row[0]) if prev_days_row and prev_days_row[0] is not None else 0.0
+
+        # ── Engagement funnel ──────────────────────────────────────────────────
+        leads_total = conn.execute("SELECT COUNT(*) FROM outreach_leads").fetchone()[0] or 0
+
+        # ── Daily activity chart ───────────────────────────────────────────────
+        daily_rows = conn.execute("""
+            SELECT
+                CAST(sent_at AS DATE) AS day,
+                COUNT(*) FILTER (WHERE status = 'sent')                           AS sent,
+                COUNT(*) FILTER (WHERE status = 'sent' AND opened_at IS NOT NULL)  AS opened,
+                COUNT(*) FILTER (WHERE status = 'sent' AND clicked_at IS NOT NULL) AS clicked,
+                COUNT(*) FILTER (WHERE reply_received = true)                      AS replied
+            FROM outreach_emails
+            WHERE sent_at >= ?
+            GROUP BY CAST(sent_at AS DATE)
+            ORDER BY day
+        """, [cutoff]).fetchall()
+
+        from datetime import date as date_cls
+        date_range = [cutoff.date() + timedelta(days=i) for i in range(days + 1)
+                      if cutoff.date() + timedelta(days=i) <= date_cls.today()]
+        daily_dict = {row[0]: row for row in daily_rows}
+        daily_labels  = [f"{d.day} {d.strftime('%b')}" for d in date_range]
+        daily_sent_arr    = [daily_dict.get(d, (None, 0, 0, 0, 0))[1] for d in date_range]
+        daily_opened_arr  = [daily_dict.get(d, (None, 0, 0, 0, 0))[2] for d in date_range]
+        daily_clicked_arr = [daily_dict.get(d, (None, 0, 0, 0, 0))[3] for d in date_range]
+        daily_replied_arr = [daily_dict.get(d, (None, 0, 0, 0, 0))[4] for d in date_range]
+
+        # ── Reply/open/click rate by day of week ───────────────────────────────
+        # isodow: 1=Mon, 2=Tue, ..., 7=Sun
+        dow_rows = conn.execute("""
+            SELECT
+                date_part('isodow', sent_at) AS dow,
+                COUNT(*) AS total,
+                COUNT(*) FILTER (WHERE opened_at IS NOT NULL)  AS opened,
+                COUNT(*) FILTER (WHERE clicked_at IS NOT NULL) AS clicked,
+                COUNT(*) FILTER (WHERE reply_received = true)  AS replied
+            FROM outreach_emails
+            WHERE status = 'sent' AND sent_at >= ?
+            GROUP BY dow
+            ORDER BY dow
+        """, [cutoff]).fetchall()
+
+        dow_map = {int(r[0]): r for r in dow_rows}
+        dow_open_pct  = []
+        dow_click_pct = []
+        dow_reply_pct = []
+        for d in range(1, 8):
+            r = dow_map.get(d)
+            if r and r[1] > 0:
+                dow_open_pct.append(round(r[2] / r[1] * 100))
+                dow_click_pct.append(round(r[3] / r[1] * 100))
+                dow_reply_pct.append(round(r[4] / r[1] * 100))
+            else:
+                dow_open_pct.append(0)
+                dow_click_pct.append(0)
+                dow_reply_pct.append(0)
+
+        # ── Emails sent by DOW ─────────────────────────────────────────────────
+        dow_sent_rows = conn.execute("""
+            SELECT date_part('isodow', sent_at) AS dow, COUNT(*) AS cnt
+            FROM outreach_emails
+            WHERE status = 'sent' AND sent_at >= ?
+            GROUP BY dow
+            ORDER BY dow
+        """, [cutoff]).fetchall()
+        dow_sent_map = {int(r[0]): r[1] for r in dow_sent_rows}
+        dow_sent_arr = [dow_sent_map.get(d, 0) for d in range(1, 8)]
+
+        # ── Performance by track ───────────────────────────────────────────────
+        track_rows_raw = conn.execute("""
+            SELECT
+                l.track,
+                COUNT(e.email_id)                                                 AS sent,
+                COUNT(*) FILTER (WHERE e.opened_at IS NOT NULL)                   AS opened,
+                COUNT(*) FILTER (WHERE e.clicked_at IS NOT NULL)                  AS clicked,
+                COUNT(*) FILTER (WHERE e.cv_opened_at IS NOT NULL)                AS cv_opens,
+                COUNT(*) FILTER (WHERE e.reply_received = true)                   AS replied,
+                COUNT(DISTINCT CASE WHEN l.status = 'meeting' THEN l.lead_id END) AS meetings
+            FROM outreach_emails e
+            JOIN outreach_leads l ON e.lead_id = l.lead_id
+            WHERE e.status = 'sent' AND e.sent_at >= ?
+            GROUP BY l.track
+            ORDER BY sent DESC
+        """, [cutoff]).fetchall()
+
+        def pct(n, d):
+            return round(n / d * 100) if d else 0
+
+        track_rows = []
+        for r in track_rows_raw:
+            s = r[1] or 0
+            track_rows.append({
+                "name":        r[0] or "Unknown",
+                "sent":        s,
+                "opened":      r[2] or 0, "open_pct":    pct(r[2], s),
+                "clicked":     r[3] or 0, "click_pct":   pct(r[3], s),
+                "cv_opens":    r[4] or 0, "cv_pct":      pct(r[4], s),
+                "replied":     r[5] or 0, "reply_pct":   pct(r[5], s),
+                "meetings":    r[6] or 0, "meeting_pct": pct(r[6], s),
+            })
+
+        # ── Performance by template step ───────────────────────────────────────
+        STEP_META = {
+            "initial":     ("Step 1", "Initial"),
+            "follow_up_1": ("Step 2", "Follow-up 1"),
+            "follow_up_2": ("Step 3", "Follow-up 2"),
+            "follow_up_3": ("Step 4", "Follow-up 3"),
+        }
+        STEP_ORDER = ["initial", "follow_up_1", "follow_up_2", "follow_up_3"]
+
+        step_rows_raw = conn.execute("""
+            SELECT
+                e.email_type,
+                COUNT(*)                                               AS sent,
+                COUNT(*) FILTER (WHERE e.opened_at IS NOT NULL)        AS opened,
+                COUNT(*) FILTER (WHERE e.clicked_at IS NOT NULL)       AS clicked,
+                COUNT(*) FILTER (WHERE e.cv_opened_at IS NOT NULL)     AS cv_opens,
+                COUNT(*) FILTER (WHERE e.reply_received = true)        AS replied
+            FROM outreach_emails e
+            WHERE e.status = 'sent' AND e.sent_at >= ?
+            GROUP BY e.email_type
+        """, [cutoff]).fetchall()
+
+        step_dict = {r[0]: r for r in step_rows_raw}
+        step_rows = []
+        for etype in STEP_ORDER:
+            r = step_dict.get(etype)
+            if r is None:
+                continue
+            s = r[1] or 0
+            label, name = STEP_META.get(etype, ("?", etype))
+            step_rows.append({
+                "label":    label,
+                "name":     name,
+                "sent":     s,
+                "opened":   r[2] or 0, "open_pct":  pct(r[2], s),
+                "clicked":  r[3] or 0, "click_pct": pct(r[3], s),
+                "cv_opens": r[4] or 0, "cv_pct":    pct(r[4], s),
+                "replied":  r[5] or 0, "reply_pct": pct(r[5], s),
+            })
+
+        # ── Status distribution donut ──────────────────────────────────────────
+        STATUS_ORDER = ["cold", "queued", "contacted", "followed_up",
+                        "replied", "meeting", "won", "lost", "no_reply"]
+        STATUS_LABEL = {
+            "cold": "Not contacted", "queued": "Queued",
+            "contacted": "Contacted", "followed_up": "Followed up",
+            "replied": "Replied", "meeting": "Meeting booked",
+            "won": "Won", "lost": "Lost", "no_reply": "No reply",
+        }
+        status_raw = conn.execute("""
+            SELECT status, COUNT(*) AS cnt FROM outreach_leads
+            GROUP BY status ORDER BY cnt DESC
+        """).fetchall()
+        status_map = {r[0]: r[1] for r in status_raw}
+        status_labels = [STATUS_LABEL.get(s, s) for s in STATUS_ORDER if s in status_map]
+        status_values = [status_map[s] for s in STATUS_ORDER if s in status_map]
+
+        # ── Link clicks breakdown donut ────────────────────────────────────────
+        cv_click_count  = cv_opens  # cv_opened_at IS NOT NULL
+        web_click_count = conn.execute("""
+            SELECT COUNT(*) FROM outreach_emails
+            WHERE status = 'sent' AND sent_at >= ?
+              AND clicked_at IS NOT NULL AND cv_opened_at IS NULL
+        """, [cutoff]).fetchone()[0] or 0
+        click_labels = ["CV opened", "Website / other link"]
+        click_values = [cv_click_count, web_click_count]
+
+        # ── Pack data dict ─────────────────────────────────────────────────────
+        data = {
+            # KPI
+            "total_sent":       total_sent,
+            "total_opened":     total_opened,
+            "open_rate":        open_rate,
+            "links_clicked":    links_clicked,
+            "click_rate":       click_rate,
+            "cv_opens":         cv_opens,
+            "cv_open_rate":     cv_open_rate,
+            "total_replies":    total_replies,
+            "reply_rate":       reply_rate,
+            "meetings_booked":  meetings_booked,
+            "opened_no_reply":  opened_no_reply,
+            "avg_days_to_reply": avg_days_to_reply,
+            # prev period
+            "prev_sent":     prev_sent,
+            "prev_meetings": prev_meetings,
+            "prev_avg_days": prev_avg_days,
+            # funnel
+            "leads_total": leads_total,
+            # daily activity chart
+            "daily_labels":  daily_labels,
+            "daily_sent":    daily_sent_arr,
+            "daily_opened":  daily_opened_arr,
+            "daily_clicked": daily_clicked_arr,
+            "daily_replied": daily_replied_arr,
+            # DOW reply/open/click rate
+            "dow_open_pct":  dow_open_pct,
+            "dow_click_pct": dow_click_pct,
+            "dow_reply_pct": dow_reply_pct,
+            # DOW sent
+            "dow_sent": dow_sent_arr,
+            # track table
+            "tracks": track_rows,
+            # step table
+            "steps": step_rows,
+            # status donut
+            "status_labels": status_labels,
+            "status_values": status_values,
+            # click breakdown
+            "click_labels": click_labels,
+            "click_values": click_values,
+        }
+
+        return render_template(
+            "outreach/analytics.html",
+            data=data,
+            days=days,
+            page_title="Outreach — Analytics",
+            available_clients=clients,
+            current_client_config=current_client_path,
+        )
+
+    except Exception as exc:
+        import traceback
+        print(f"[OUTREACH ANALYTICS] Error: {exc}")
+        traceback.print_exc()
+        return render_template(
+            "outreach/analytics.html",
+            data={},
+            days=days,
+            page_title="Outreach — Analytics",
+            available_clients=[],
+            current_client_config=None,
+        )
+    finally:
+        conn.close()
