@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wireframe — Outreach: Analytics</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 40;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;background:#f8f9fa;color:#202124;}
+.nav-sidebar{width:110px;background:#fff;border-right:1px solid #dadce0;display:flex;flex-direction:column;position:fixed;left:0;top:0;height:100vh;z-index:1000;}
+.nav-brand{padding:16px 12px;display:flex;flex-direction:column;align-items:center;border-bottom:1px solid #dadce0;}
+.nav-brand-logo{width:48px;height:48px;margin-bottom:8px;}
+.nav-brand-text{font-size:14px;font-weight:600;color:#202124;text-align:center;line-height:1.3;}
+.nav-items{flex:1;padding:8px 0;overflow-y:auto;}
+.nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 8px;margin:2px 8px;text-decoration:none;color:#5f6368;border-radius:8px;transition:all 150ms ease;cursor:pointer;min-height:68px;}
+.nav-item:hover{background:#f1f3f4;color:#202124;}
+.nav-item.active{background:#e8f0fe;color:#1a73e8;}
+.nav-item-icon{font-size:28px;margin-bottom:4px;}
+.nav-item-text{font-size:12px;font-weight:500;text-align:center;line-height:1.2;}
+.nav-item-text.small{font-size:10px;}
+.nav-sub{background:#f8f9fa;border-left:2px solid #1a73e8;margin:0 8px 4px;border-radius:0 6px 6px 0;}
+.nav-sub-item{display:block;padding:7px 10px;font-size:11px;font-weight:500;color:#5f6368;text-decoration:none;transition:color 0.15s;text-align:center;}
+.nav-sub-item:hover{color:#202124;background:#f1f3f4;}
+.nav-sub-item.active{color:#1a73e8;font-weight:700;}
+.nav-badge{background:#ea4335;color:white;font-size:8px;border-radius:10px;padding:1px 4px;font-weight:700;margin-left:2px;vertical-align:middle;}
+.main-wrapper{margin-left:110px;}
+.top-navbar{background:#fff;border-bottom:1px solid #dadce0;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:500;}
+.top-navbar-title{font-size:18px;font-weight:600;color:#202124;}
+.client-selector{padding:6px 12px;background:white;border:1px solid #dadce0;border-radius:4px;font-size:13px;color:#202124;cursor:pointer;}
+.date-select{padding:6px 10px;border:1px solid #dadce0;border-radius:4px;font-size:12px;color:#202124;background:white;cursor:pointer;outline:none;}
+.content-area{padding:20px 24px;}
+
+/* KPI GRID — 8 cards */
+.stats-row{display:grid;grid-template-columns:repeat(8,1fr);gap:10px;margin-bottom:20px;}
+.stat-card{background:white;border:1px solid #dadce0;border-radius:8px;padding:12px 14px;}
+.stat-val{font-size:22px;font-weight:600;color:#202124;line-height:1;}
+.stat-lbl{font-size:11px;color:#5f6368;margin-top:3px;line-height:1.3;}
+.stat-delta{font-size:11px;margin-top:4px;font-weight:500;}
+.stat-delta.up{color:#34a853;}
+.stat-delta.down{color:#ea4335;}
+.stat-delta.neutral{color:#9aa0a6;}
+.stat-caveat{font-size:10px;color:#9aa0a6;margin-top:3px;font-style:italic;}
+
+/* CHARTS */
+.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;}
+.charts-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+.charts-row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.chart-card{background:white;border:1px solid #dadce0;border-radius:8px;padding:18px 20px;}
+.chart-title{font-size:14px;font-weight:600;color:#202124;margin-bottom:4px;}
+.chart-sub{font-size:11px;color:#9aa0a6;margin-bottom:14px;}
+
+/* TABLES */
+.data-table{width:100%;border-collapse:collapse;font-size:12px;}
+.data-table th{font-size:11px;font-weight:600;color:#9aa0a6;padding:6px 8px;text-align:left;border-bottom:2px solid #e0e0e0;white-space:nowrap;}
+.data-table td{padding:9px 8px;border-bottom:1px solid #f1f3f4;color:#202124;vertical-align:middle;}
+.data-table tr:last-child td{border-bottom:none;}
+.track-badge{padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;white-space:nowrap;}
+.track-job{background:#fef3c7;color:#92400e;}
+.track-recruiter{background:#ede9fe;color:#6d28d9;}
+.track-agency{background:#dbeafe;color:#1d4ed8;}
+.track-direct{background:#d1fae5;color:#065f46;}
+.pill-step{padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;background:#e8f0fe;color:#1a73e8;}
+.prog-bar-wrap{height:8px;background:#e8eaed;border-radius:4px;overflow:hidden;width:60px;display:inline-block;vertical-align:middle;margin-left:4px;}
+.prog-bar-fill{height:100% !important;border-radius:4px;display:block !important;}
+.fill-orange{background-color:#e65100 !important;}
+.fill-purple{background-color:#6d28d9 !important;}
+.fill-blue{background-color:#1a73e8 !important;}
+.fill-green{background-color:#34a853 !important;}
+
+/* ENGAGEMENT FUNNEL STEPS */
+.eng-funnel{display:flex;align-items:stretch;gap:0;margin-top:8px;}
+.eng-step{flex:1;text-align:center;padding:14px 10px;background:#f8f9fa;border:1px solid #e0e0e0;position:relative;}
+.eng-step:first-child{border-radius:6px 0 0 6px;}
+.eng-step:last-child{border-radius:0 6px 6px 0;}
+.eng-step+.eng-step{border-left:none;}
+.eng-step-val{font-size:20px;font-weight:700;color:#202124;}
+.eng-step-lbl{font-size:11px;color:#5f6368;margin-top:3px;}
+.eng-step-pct{font-size:11px;font-weight:600;margin-top:4px;}
+.eng-arrow{display:flex;align-items:center;padding:0 2px;color:#dadce0;font-size:18px;flex-shrink:0;}
+
+/* CAVEAT BANNER */
+.caveat-banner{background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:10px 14px;font-size:11px;color:#795548;margin-bottom:16px;display:flex;align-items:flex-start;gap:8px;}
+.caveat-banner-icon{font-size:16px;color:#f9a825;flex-shrink:0;margin-top:1px;}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav-sidebar">
+  <div class="nav-brand">
+    <svg class="nav-brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="41" fill="none" stroke="#4285F4" stroke-width="10"/>
+      <circle cx="50" cy="50" r="29" fill="none" stroke="#EA4335" stroke-width="10"/>
+      <circle cx="50" cy="50" r="17" fill="none" stroke="#FBBC05" stroke-width="10"/>
+      <circle cx="50" cy="50" r="10" fill="#34A853"/>
+    </svg>
+    <div class="nav-brand-text">Ads<br>Control<br>Tower</div>
+  </div>
+  <div class="nav-items">
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">home</span><span class="nav-item-text">Dashboard</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">campaign</span><span class="nav-item-text">Campaigns</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">folder</span><span class="nav-item-text">Ad Groups</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">search</span><span class="nav-item-text">Keywords</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">article</span><span class="nav-item-text">Ads</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">shopping_cart</span><span class="nav-item-text">Shopping</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">lightbulb</span><span class="nav-item-text small">Recommendations</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">history</span><span class="nav-item-text">Changes</span></a>
+    <a class="nav-item active" href="#">
+      <span class="material-symbols-outlined nav-item-icon">send</span>
+      <span class="nav-item-text">Outreach</span>
+    </a>
+    <div class="nav-sub">
+      <a class="nav-sub-item" href="#">Leads</a>
+      <a class="nav-sub-item" href="#">Queue <span class="nav-badge">3</span></a>
+      <a class="nav-sub-item" href="#">Sent</a>
+      <a class="nav-sub-item" href="#">Replies <span class="nav-badge">4</span></a>
+      <a class="nav-sub-item" href="#">Templates</a>
+      <a class="nav-sub-item active" href="#">Analytics</a>
+    </div>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">settings</span><span class="nav-item-text">Settings</span></a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main-wrapper">
+  <div class="top-navbar">
+    <div class="top-navbar-title">Outreach — Analytics</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <select class="date-select">
+        <option>Last 30 days</option>
+        <option>Last 14 days</option>
+        <option>Last 7 days</option>
+        <option>Last 90 days</option>
+      </select>
+      <select class="client-selector"><option>Synthetic_Test_Client</option></select>
+    </div>
+  </div>
+
+  <div class="content-area">
+
+    <!-- CAVEAT -->
+    <div class="caveat-banner">
+      <span class="material-symbols-outlined caveat-banner-icon">info</span>
+      <div>
+        <strong>Open tracking note:</strong> Apple Mail Privacy Protection (iOS 15+) pre-fetches tracking pixels, which can inflate open counts for Apple Mail users. Open rates are a directional signal only. Click tracking is significantly more reliable — if they clicked your website or CV link, that's a strong intent signal.
+      </div>
+    </div>
+
+    <!-- KPI CARDS — 8 -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-val">67</div>
+        <div class="stat-lbl">Total sent</div>
+        <div class="stat-delta up">↑ 12 vs prev</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color:#e65100;">47</div>
+        <div class="stat-lbl">Opened</div>
+        <div class="stat-delta up">70.1% open rate</div>
+        <div class="stat-caveat">Incl. Apple pre-fetch</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color:#1a73e8;">19</div>
+        <div class="stat-lbl">Links clicked</div>
+        <div class="stat-delta up">28.4% click rate</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color:#6d28d9;">12</div>
+        <div class="stat-lbl">CV opens</div>
+        <div class="stat-delta neutral">17.9% of sent</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color:#34a853;">11</div>
+        <div class="stat-lbl">Replies</div>
+        <div class="stat-delta up">16.4% reply rate</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color:#00897b;">2</div>
+        <div class="stat-lbl">Meetings booked</div>
+        <div class="stat-delta neutral">— same as prev</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color:#e65100;">6</div>
+        <div class="stat-lbl">Opened, no reply</div>
+        <div class="stat-delta neutral">Warm leads</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">4.2d</div>
+        <div class="stat-lbl">Avg days to reply</div>
+        <div class="stat-delta up">↓ 0.8d (faster)</div>
+      </div>
+    </div>
+
+    <!-- ENGAGEMENT FUNNEL -->
+    <div class="chart-card" style="margin-bottom:16px;">
+      <div class="chart-title">Full engagement funnel</div>
+      <div class="chart-sub">Leads → sent → opened → clicked → replied → meeting booked</div>
+      <div style="display:flex;align-items:center;gap:0;">
+        <div class="eng-step" style="background:#e8f0fe;">
+          <div class="eng-step-val" style="color:#1a73e8;">130</div>
+          <div class="eng-step-lbl">Leads added</div>
+          <div class="eng-step-pct" style="color:#9aa0a6;">100%</div>
+        </div>
+        <div class="eng-arrow">→</div>
+        <div class="eng-step">
+          <div class="eng-step-val">67</div>
+          <div class="eng-step-lbl">Emails sent</div>
+          <div class="eng-step-pct" style="color:#5f6368;">52% of leads</div>
+        </div>
+        <div class="eng-arrow">→</div>
+        <div class="eng-step" style="background:#fff3e0;">
+          <div class="eng-step-val" style="color:#e65100;">47</div>
+          <div class="eng-step-lbl">Opened</div>
+          <div class="eng-step-pct" style="color:#e65100;">70% of sent</div>
+        </div>
+        <div class="eng-arrow">→</div>
+        <div class="eng-step" style="background:#f3e8ff;">
+          <div class="eng-step-val" style="color:#6d28d9;">19</div>
+          <div class="eng-step-lbl">Links clicked</div>
+          <div class="eng-step-pct" style="color:#6d28d9;">28% of sent</div>
+        </div>
+        <div class="eng-arrow">→</div>
+        <div class="eng-step" style="background:#e6f4ea;">
+          <div class="eng-step-val" style="color:#34a853;">11</div>
+          <div class="eng-step-lbl">Replied</div>
+          <div class="eng-step-pct" style="color:#34a853;">16% of sent</div>
+        </div>
+        <div class="eng-arrow">→</div>
+        <div class="eng-step" style="background:#e8f5e9;">
+          <div class="eng-step-val" style="color:#2e7d32;">2</div>
+          <div class="eng-step-lbl">Meeting booked</div>
+          <div class="eng-step-pct" style="color:#2e7d32;">3% of sent</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW: Volume trend + Day of week -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">Daily activity — sent, opens, clicks, replies</div>
+        <div class="chart-sub">Volume over the selected period</div>
+        <canvas id="volumeChart" height="100"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Reply rate by day sent</div>
+        <div class="chart-sub">Which days drive most replies</div>
+        <canvas id="replyDowChart" height="200"></canvas>
+      </div>
+    </div>
+
+    <!-- ROW: Track table + Template table -->
+    <div class="charts-row-2">
+      <div class="chart-card">
+        <div class="chart-title">Performance by track</div>
+        <div class="chart-sub">Engagement metrics per outreach track</div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Track</th>
+              <th>Sent</th>
+              <th>Opens</th>
+              <th>Clicks</th>
+              <th>CV opens</th>
+              <th>Replies</th>
+              <th>Meetings</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="track-badge track-agency">Agency</span></td>
+              <td>38</td>
+              <td>28 · 73% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-orange" style="width:73%;"></span></span></td>
+              <td>12 · 32% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-purple" style="width:32%;"></span></span></td>
+              <td>8 · 21% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-blue" style="width:21%;"></span></span></td>
+              <td>7 · 18% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-green" style="width:18%;"></span></span></td>
+              <td>1 · 3%</td>
+            </tr>
+            <tr>
+              <td><span class="track-badge track-recruiter">Recruiter</span></td>
+              <td>16</td>
+              <td>11 · 69% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-orange" style="width:69%;"></span></span></td>
+              <td>4 · 25% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-purple" style="width:25%;"></span></span></td>
+              <td>3 · 19% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-blue" style="width:19%;"></span></span></td>
+              <td>3 · 19% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-green" style="width:19%;"></span></span></td>
+              <td>1 · 6%</td>
+            </tr>
+            <tr>
+              <td><span class="track-badge track-direct">Direct</span></td>
+              <td>9</td>
+              <td>6 · 67% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-orange" style="width:67%;"></span></span></td>
+              <td>2 · 22% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-purple" style="width:22%;"></span></span></td>
+              <td>1 · 11% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-blue" style="width:11%;"></span></span></td>
+              <td>1 · 11% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-green" style="width:11%;"></span></span></td>
+              <td>0 · 0%</td>
+            </tr>
+            <tr>
+              <td><span class="track-badge track-job">Job</span></td>
+              <td>4</td>
+              <td>2 · 50% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-orange" style="width:50%;"></span></span></td>
+              <td>0 · 0% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-purple" style="width:0%;"></span></span></td>
+              <td>0 · 0% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-blue" style="width:0%;"></span></span></td>
+              <td>0 · 0% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-green" style="width:0%;"></span></span></td>
+              <td>0 · 0%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Performance by template step</div>
+        <div class="chart-sub">Opens, clicks and replies per sequence step</div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Template</th>
+              <th>Sent</th>
+              <th>Opens</th>
+              <th>Clicks</th>
+              <th>CV opens</th>
+              <th>Replies</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="pill-step">Step 1</span> Initial</td>
+              <td>42</td>
+              <td>31 · 74% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-orange" style="width:74%;"></span></span></td>
+              <td>14 · 33% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-purple" style="width:33%;"></span></span></td>
+              <td>9 · 21% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-blue" style="width:21%;"></span></span></td>
+              <td><strong style="color:#34a853;">11 · 26%</strong></td>
+            </tr>
+            <tr>
+              <td><span class="pill-step">Step 2</span> Follow-up 1</td>
+              <td>31</td>
+              <td>21 · 68% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-orange" style="width:68%;"></span></span></td>
+              <td>8 · 26% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-purple" style="width:26%;"></span></span></td>
+              <td>2 · 6% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-blue" style="width:6%;"></span></span></td>
+              <td><strong style="color:#1a73e8;">5 · 16%</strong></td>
+            </tr>
+            <tr>
+              <td><span class="pill-step">Step 3</span> Follow-up 2</td>
+              <td>18</td>
+              <td>11 · 61% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-orange" style="width:61%;"></span></span></td>
+              <td>3 · 17% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-purple" style="width:17%;"></span></span></td>
+              <td>1 · 6% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-blue" style="width:6%;"></span></span></td>
+              <td><strong style="color:#fbbc05;">2 · 11%</strong></td>
+            </tr>
+            <tr>
+              <td><span class="pill-step">Step 4</span> Follow-up 3</td>
+              <td>9</td>
+              <td>5 · 56% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-orange" style="width:56%;"></span></span></td>
+              <td>1 · 11% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-purple" style="width:11%;"></span></span></td>
+              <td>0 · 0% <span class="prog-bar-wrap"><span class="prog-bar-fill fill-blue" style="width:0%;"></span></span></td>
+              <td><strong style="color:#9aa0a6;">1 · 11%</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ROW: Send DOW + Status donut + CV opens -->
+    <div class="charts-row-3">
+      <div class="chart-card">
+        <div class="chart-title">Emails sent by day of week</div>
+        <div class="chart-sub">Confirming Tue / Wed / Thu send pattern</div>
+        <canvas id="dowChart" height="160"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Status distribution</div>
+        <div class="chart-sub">Where all 130 leads currently sit</div>
+        <canvas id="statusChart" height="160"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Link clicks breakdown</div>
+        <div class="chart-sub">Which links are being clicked in emails</div>
+        <canvas id="clickChart" height="160"></canvas>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const BLUE='#1a73e8',GREEN='#34a853',YELLOW='#fbbc05',RED='#ea4335',ORANGE='#e65100',PURPLE='#6d28d9',GREY='#9aa0a6';
+
+// Volume chart — 4 series
+const volCtx = document.getElementById('volumeChart').getContext('2d');
+const labels30 = Array.from({length:30},(_,i)=>{const d=new Date(2026,1,3);d.setDate(d.getDate()-29+i);return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});});
+const sent30  = [0,2,3,0,0,4,2,0,3,2,0,0,5,3,0,0,4,2,0,3,4,0,0,2,3,0,0,3,4,2];
+const open30  = [0,1,2,0,0,3,1,0,2,1,0,0,4,2,0,0,3,2,0,2,3,0,0,2,2,0,0,2,3,1];
+const click30 = [0,0,1,0,0,1,0,0,1,0,0,0,2,1,0,0,1,1,0,1,1,0,0,0,1,0,0,1,1,0];
+const reply30 = [0,0,1,0,0,0,1,0,0,0,0,0,1,1,0,0,0,1,0,0,1,0,0,0,0,0,0,1,0,1];
+
+new Chart(volCtx,{type:'bar',data:{labels:labels30,datasets:[
+  {label:'Sent',    data:sent30,  backgroundColor:BLUE+'33',  borderColor:BLUE,   borderWidth:1,borderRadius:2},
+  {label:'Opened',  data:open30,  backgroundColor:ORANGE+'44',borderColor:ORANGE, borderWidth:1,borderRadius:2},
+  {label:'Clicked', data:click30, backgroundColor:PURPLE+'66',borderColor:PURPLE, borderWidth:1,borderRadius:2},
+  {label:'Replied', data:reply30, backgroundColor:GREEN+'aa', borderColor:GREEN,  borderWidth:1,borderRadius:2},
+]},options:{responsive:true,plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:12}}},scales:{x:{ticks:{font:{size:9},maxRotation:45},grid:{display:false}},y:{ticks:{font:{size:11},stepSize:1},grid:{color:'#f1f3f4'}}}}});
+
+// Reply rate by DOW
+const rdCtx = document.getElementById('replyDowChart').getContext('2d');
+new Chart(rdCtx,{type:'bar',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+  datasets:[
+    {label:'Open %',   data:[0,72,75,68,0,0,0], backgroundColor:ORANGE+'66', borderColor:ORANGE, borderWidth:1,borderRadius:3},
+    {label:'Click %',  data:[0,30,33,25,0,0,0], backgroundColor:PURPLE+'66', borderColor:PURPLE, borderWidth:1,borderRadius:3},
+    {label:'Reply %',  data:[0,19,21,14,0,0,0], backgroundColor:GREEN+'aa',  borderColor:GREEN,  borderWidth:1,borderRadius:3},
+  ]},
+  options:{responsive:true,plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:12}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw}%`}}},
+    scales:{x:{ticks:{font:{size:11}},grid:{display:false}},y:{ticks:{font:{size:11},callback:v=>v+'%'},grid:{color:'#f1f3f4'},max:100}}}});
+
+// Day of week sent
+const dowCtx = document.getElementById('dowChart').getContext('2d');
+new Chart(dowCtx,{type:'bar',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+  datasets:[{data:[2,18,22,19,6,0,0],backgroundColor:[GREY+'55',BLUE+'aa',BLUE+'aa',BLUE+'aa',GREY+'55',GREY+'22',GREY+'22'],borderColor:[GREY,BLUE,BLUE,BLUE,GREY,GREY,GREY],borderWidth:1,borderRadius:3}]},
+  options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:11}},grid:{display:false}},y:{ticks:{font:{size:11},stepSize:5},grid:{color:'#f1f3f4'}}}}});
+
+// Status donut
+const stCtx = document.getElementById('statusChart').getContext('2d');
+new Chart(stCtx,{type:'doughnut',data:{labels:['Not contacted','Contacted','Followed up','Replied','Meeting booked','No reply','Closed'],
+  datasets:[{data:[63,12,24,9,2,18,2],backgroundColor:['#dadce0',BLUE+'aa',BLUE+'cc',GREEN+'aa',GREEN,GREY+'88',GREY+'44'],borderWidth:1,borderColor:'white'}]},
+  options:{responsive:true,plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:10,padding:6}}}}});
+
+// Click breakdown donut
+const clCtx = document.getElementById('clickChart').getContext('2d');
+new Chart(clCtx,{type:'doughnut',data:{labels:['Website (christopherhoole.online)','CV opened','LinkedIn profile','Other link'],
+  datasets:[{data:[9,12,4,2],backgroundColor:[BLUE+'cc',PURPLE+'cc',GREEN+'aa',GREY+'88'],borderWidth:1,borderColor:'white'}]},
+  options:{responsive:true,plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:10,padding:6}}}}});
+</script>
+</body>
+</html>
