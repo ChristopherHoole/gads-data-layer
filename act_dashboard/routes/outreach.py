@@ -1404,12 +1404,13 @@ def analytics():
         prev_cutoff = datetime.now() - timedelta(days=days * 2)
 
         # ── KPI: core counts (current period) ─────────────────────────────────
+        # opened_at/clicked_at/cv_opened_at are never populated; use *_count columns
         row = conn.execute("""
             SELECT
-                COUNT(*) FILTER (WHERE status = 'sent')                          AS total_sent,
-                COUNT(*) FILTER (WHERE status = 'sent' AND opened_at IS NOT NULL) AS total_opened,
-                COUNT(*) FILTER (WHERE status = 'sent' AND clicked_at IS NOT NULL) AS links_clicked,
-                COUNT(*) FILTER (WHERE status = 'sent' AND cv_opened_at IS NOT NULL) AS cv_opens
+                COUNT(*) FILTER (WHERE status = 'sent')                            AS total_sent,
+                COUNT(*) FILTER (WHERE status = 'sent' AND open_count > 0)         AS total_opened,
+                COUNT(*) FILTER (WHERE status = 'sent' AND click_count > 0)        AS links_clicked,
+                COUNT(*) FILTER (WHERE status = 'sent' AND cv_open_count > 0)      AS cv_opens
             FROM outreach_emails
             WHERE sent_at >= ?
         """, [cutoff]).fetchone()
@@ -1448,7 +1449,7 @@ def analytics():
             FROM outreach_leads l
             JOIN outreach_emails e ON l.lead_id = e.lead_id
             WHERE e.sent_at >= ?
-              AND e.opened_at IS NOT NULL
+              AND e.open_count > 0
               AND l.status NOT IN ('replied', 'meeting', 'won', 'lost')
         """, [cutoff]).fetchone()[0] or 0
 
@@ -1504,10 +1505,10 @@ def analytics():
         daily_rows = conn.execute("""
             SELECT
                 CAST(sent_at AS DATE) AS day,
-                COUNT(*) FILTER (WHERE status = 'sent')                           AS sent,
-                COUNT(*) FILTER (WHERE status = 'sent' AND opened_at IS NOT NULL)  AS opened,
-                COUNT(*) FILTER (WHERE status = 'sent' AND clicked_at IS NOT NULL) AS clicked,
-                COUNT(*) FILTER (WHERE reply_received = true)                      AS replied
+                COUNT(*) FILTER (WHERE status = 'sent')                        AS sent,
+                COUNT(*) FILTER (WHERE status = 'sent' AND open_count > 0)     AS opened,
+                COUNT(*) FILTER (WHERE status = 'sent' AND click_count > 0)    AS clicked,
+                COUNT(*) FILTER (WHERE reply_received = true)                  AS replied
             FROM outreach_emails
             WHERE sent_at >= ?
             GROUP BY CAST(sent_at AS DATE)
@@ -1530,9 +1531,9 @@ def analytics():
             SELECT
                 date_part('isodow', sent_at) AS dow,
                 COUNT(*) AS total,
-                COUNT(*) FILTER (WHERE opened_at IS NOT NULL)  AS opened,
-                COUNT(*) FILTER (WHERE clicked_at IS NOT NULL) AS clicked,
-                COUNT(*) FILTER (WHERE reply_received = true)  AS replied
+                COUNT(*) FILTER (WHERE open_count > 0)      AS opened,
+                COUNT(*) FILTER (WHERE click_count > 0)     AS clicked,
+                COUNT(*) FILTER (WHERE reply_received = true) AS replied
             FROM outreach_emails
             WHERE status = 'sent' AND sent_at >= ?
             GROUP BY dow
@@ -1570,9 +1571,9 @@ def analytics():
             SELECT
                 l.track,
                 COUNT(e.email_id)                                                 AS sent,
-                COUNT(*) FILTER (WHERE e.opened_at IS NOT NULL)                   AS opened,
-                COUNT(*) FILTER (WHERE e.clicked_at IS NOT NULL)                  AS clicked,
-                COUNT(*) FILTER (WHERE e.cv_opened_at IS NOT NULL)                AS cv_opens,
+                COUNT(*) FILTER (WHERE e.open_count > 0)                          AS opened,
+                COUNT(*) FILTER (WHERE e.click_count > 0)                         AS clicked,
+                COUNT(*) FILTER (WHERE e.cv_open_count > 0)                       AS cv_opens,
                 COUNT(*) FILTER (WHERE e.reply_received = true)                   AS replied,
                 COUNT(DISTINCT CASE WHEN l.status = 'meeting' THEN l.lead_id END) AS meetings
             FROM outreach_emails e
@@ -1610,11 +1611,11 @@ def analytics():
         step_rows_raw = conn.execute("""
             SELECT
                 e.email_type,
-                COUNT(*)                                               AS sent,
-                COUNT(*) FILTER (WHERE e.opened_at IS NOT NULL)        AS opened,
-                COUNT(*) FILTER (WHERE e.clicked_at IS NOT NULL)       AS clicked,
-                COUNT(*) FILTER (WHERE e.cv_opened_at IS NOT NULL)     AS cv_opens,
-                COUNT(*) FILTER (WHERE e.reply_received = true)        AS replied
+                COUNT(*)                                            AS sent,
+                COUNT(*) FILTER (WHERE e.open_count > 0)           AS opened,
+                COUNT(*) FILTER (WHERE e.click_count > 0)          AS clicked,
+                COUNT(*) FILTER (WHERE e.cv_open_count > 0)        AS cv_opens,
+                COUNT(*) FILTER (WHERE e.reply_received = true)    AS replied
             FROM outreach_emails e
             WHERE e.status = 'sent' AND e.sent_at >= ?
             GROUP BY e.email_type
@@ -1656,11 +1657,11 @@ def analytics():
         status_values = [status_map[s] for s in STATUS_ORDER if s in status_map]
 
         # ── Link clicks breakdown donut ────────────────────────────────────────
-        cv_click_count  = cv_opens  # cv_opened_at IS NOT NULL
+        cv_click_count  = cv_opens  # emails where cv_open_count > 0
         web_click_count = conn.execute("""
             SELECT COUNT(*) FROM outreach_emails
             WHERE status = 'sent' AND sent_at >= ?
-              AND clicked_at IS NOT NULL AND cv_opened_at IS NULL
+              AND click_count > 0 AND cv_open_count = 0
         """, [cutoff]).fetchone()[0] or 0
         click_labels = ["CV opened", "Website / other link"]
         click_values = [cv_click_count, web_click_count]
