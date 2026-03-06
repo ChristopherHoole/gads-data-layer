@@ -1,9 +1,9 @@
 # PLANNED WORK - Ads Control Tower (A.C.T.)
 
-**Last Updated:** 2026-02-28  
-**Current Status:** 99.7% complete (foundation, dashboard 3.0, rules, multi-entity recommendations complete)  
-**Total Planned Items:** 20  
-**Total Estimated Time:** 200-270 hours  
+**Last Updated:** 2026-03-06
+**Current Status:** Dashboard redesign + Cold Outreach System complete. Website, M9 validation, and outreach enhancements next.
+**Total Planned Items:** 26
+**Total Estimated Time:** 210-300 hours
 
 ---
 
@@ -11,68 +11,51 @@
 
 | Priority | Items | Estimated Time |
 |----------|-------|----------------|
-| **HIGH (Next 6-7 chats)** | 7 items | 50-90 hours |
-| **MEDIUM (Phase 3 + Features)** | 9 items | 65-90 hours |
+| **COMPLETE** | 2 items | ~35 hours spent |
+| **HIGH (Next 10-12 chats)** | 12 items | 80-130 hours |
+| **MEDIUM (Phase 3 + Features)** | 8 items | 55-75 hours |
 | **LONG-TERM (Major expansions)** | 6 items | 85-90 hours |
 
 ---
 
-## 🔥 HIGH PRIORITY (NEXT 6-7 CHATS)
+## ✅ COMPLETE
 
-### **1. Dashboard Design Upgrade** (TBD hours)
-**Status:** PLANNED  
-**Priority:** CRITICAL (NEXT)  
-**Dependencies:** Chat 49 complete ✅
+### **Dashboard Design Upgrade (Module 4)**
+**Completed:** Chat 57-58 — March 3, 2026
+**Commits:** 6f9fafa, 0bcee06, ef93abc, 86e01ed, 72407bf
 
-**Scope:** ⚠️ **TO BE DEFINED**
-
-**Potential Areas:**
-- Visual redesign (colors, spacing, typography)
-- Component updates (cards, tables, charts)
-- Navigation improvements
-- Layout modernization
-- Inspiration from modern SaaS dashboards
-- Google Ads-style improvements
-
-**Questions to Answer:**
-1. Which pages to upgrade? (All 8 pages or specific pages?)
-2. Visual only or functional improvements too?
-3. What's the design inspiration/direction?
-4. Estimated time commitment?
-
-**Placeholder Deliverables:**
-- Updated UI components
-- Modernized color palette
-- Improved spacing/typography
-- Enhanced user experience
-- Design system documentation
+- Google Ads-style table redesign across all 5 entity pages (Campaigns, Ad Groups, Ads, Keywords, Shopping)
+- Control bar, column selector modal, session persistence, status dots, ROAS color coding
+- Shared table-styles.css for consistent design language
 
 ---
 
-### **2. Website Design Upgrade (christopherhoole.online)** (TBD hours)
-**Status:** PLANNED  
-**Priority:** CRITICAL  
-**Dependencies:** None (can run parallel to dashboard work)
+### **Cold Outreach System**
+**Completed:** Chats 59-64 — March 2026
+**Commits:** (see chat history)
 
-**Current Website:** https://christopherhoole.online  
-**Tech Stack:** Next.js 14, Tailwind CSS, Framer Motion, Three.js  
+6-page outreach section built end-to-end:
+- **Leads** — lead database, add/edit/delete, track assignment, notes panel
+- **Queue** — email composition, variable substitution, send/skip/discard
+- **Sent** — sent email history, follow-up triggers, status management
+- **Replies** — inbox, reply compose, real-time unread tracking, won/lost/meeting actions
+- **Templates** — sequence flow diagram, template editor, variable chips, edit modal
+- **Analytics** — 8 KPI cards, engagement funnel, 4 charts, performance tables by track and template step
+
+---
+
+## 🔥 HIGH PRIORITY (NEXT 10-12 CHATS)
+
+### **1. Website Design Upgrade (christopherhoole.online)** (TBD hours)
+**Status:** PLANNED — scope TBD
+**Priority:** CRITICAL (NEXT)
+**Dependencies:** None
+
+**Current Website:** https://christopherhoole.online
+**Tech Stack:** Next.js 14, Tailwind CSS, Framer Motion, Three.js
 **Current Status:** Fully functional, deployed on Vercel
 
-**Scope:** ⚠️ **TO BE DEFINED**
-
-**Potential Areas:**
-- Visual refinements (spacing, typography, colors)
-- Component updates (cards, animations, transitions)
-- Three.js hero animation improvements
-- Mobile responsiveness enhancements
-- New sections or content
-- Performance optimizations
-
-**Questions to Answer:**
-1. What specifically needs upgrading? (visual, functional, content)
-2. Which sections? (Hero, About, FAQ, Contact, all?)
-3. New features or just polish?
-4. Estimated time commitment?
+**Scope:** ⚠️ TO BE DEFINED
 
 **Current Sections (11 total):**
 1. Hero (Three.js shader animation)
@@ -87,18 +70,18 @@
 10. Contact Form
 11. Footer + Navigation
 
-**Placeholder Deliverables:**
-- Updated design elements
-- Improved animations/transitions
-- Enhanced mobile experience
-- Performance improvements
-- Updated content (if needed)
+**Potential Areas:**
+- Visual refinements (spacing, typography, colors)
+- Component updates (cards, animations, transitions)
+- Three.js hero animation improvements
+- Mobile responsiveness enhancements
+- New sections or content updates
 
 ---
 
-### **3. M9 Live Validation** (4-6 hours)
-**Status:** PLANNED  
-**Priority:** HIGH  
+### **2. M9 Live Validation** (4-6 hours)
+**Status:** PLANNED
+**Priority:** HIGH
 **Dependencies:** Real Google Ads account access
 
 **Scope:**
@@ -116,707 +99,375 @@
 
 ---
 
-### **4. Cold Outreach System** (15-20 hours)
-**Status:** PLANNED (moved up from long-term)  
-**Priority:** HIGH  
-**Dependencies:** None (standalone system)
-
-**Scope:**
-Build automated lead generation system targeting digital marketing agencies in English-speaking countries.
-
-**Target Markets:**
-- United Kingdom
-- United States
-- Canada
-- Australia
-- New Zealand
-
-**Features:**
-- Agency database scraping/integration
-- Email sequence automation
-- Personalization engine
-- Response tracking
-- CRM integration (HubSpot/Pipedrive)
-- Follow-up scheduling
-
-**Email Sequences:**
-1. Introduction email (value proposition)
-2. Case study email (proof of results)
-3. Demo offer email (book a call)
-4. Final follow-up (last chance)
-
-**Targeting Criteria:**
-- Agencies with Google Ads clients
-- 5-50 employees (mid-sized)
-- Active on LinkedIn
-- Website has contact form
-
-**Deliverables:**
-- Lead database
-- Email automation system
-- Response tracking
-- Meeting scheduler integration
-- Performance analytics
-
----
-
-### **5. Finalise Shopping Campaigns** (TBD hours)
-**Status:** PLANNED  
-**Priority:** HIGH  
-**Dependencies:** Dashboard design upgrade complete
-
-**Scope:** Shopping-specific dashboard improvements
-
-**Current Status:**
-- 14 shopping rules active and working
-- Shopping page exists with basic functionality
-- 126 shopping recommendations generating
-
-**Potential Improvements:**
-- Enhanced shopping campaign dashboard page
-- Product-level performance breakdown
-- Feed quality metrics visualization
-- Shopping-specific chart improvements
-- Enhanced product group tables
-- Shopping performance analytics
-- Better visualization of feed errors, out-of-stock, impression share
-
-**Questions to Answer:**
-1. What specific shopping dashboard features needed?
-2. Which metrics/charts should be prioritized?
-3. Product-level vs campaign-level focus?
-4. Estimated time commitment?
-
-**Placeholder Deliverables:**
-- Improved shopping dashboard page
-- Enhanced product performance views
-- Better feed quality visualization
-- Shopping-specific optimizations
-
----
-
-### **6. Performance Max Campaigns** (20-30 hours)
-**Status:** PLANNED  
-**Priority:** HIGH (moved up from long-term)  
-**Dependencies:** Dashboard design upgrade complete
-
-**Scope:**
-Performance Max is Google's newest automated campaign type combining Search, Display, YouTube, Discover, Gmail into one campaign. This is a major expansion requiring:
-
-**Database Layer:**
-- New table: `analytics.pmax_asset_group_daily`
-- Asset group performance metrics
-- Asset-level performance data
-- Audience signal effectiveness
-
-**Rules Engine:**
-- Asset group performance rules (10-15 rules estimated)
-- Budget optimization rules
-- ROAS/CPA target adjustments
-- Audience signal expansion/contraction
-- Asset performance evaluation
-
-**Dashboard Pages:**
-- New "Performance Max" page in navigation
-- Asset group table view
-- Asset performance breakdown
-- Audience signals tab
-- Recommendations tab (following Chat 49 pattern)
-- Rules tab
-
-**Recommendations System:**
-- Extend multi-entity engine to support `entity_type: 'pmax_asset_group'`
-- Asset group-specific recommendations
-- Multi-surface optimization (YouTube + Display + Search combined)
-
-**Testing:**
-- Synthetic data generation for Performance Max campaigns
-- Test with real Performance Max campaigns (if available)
-- Full recommendations workflow (generate → accept → monitor → rollback)
-
-**Challenges:**
-- Performance Max has less granular data than Search campaigns
-- Google provides aggregated metrics across surfaces
-- Asset group optimization is more complex than keyword optimization
-- Limited control vs manual campaigns
-
-**Estimated Breakdown:**
-- Database + data pipeline: 5-8 hours
-- Rules creation (10-15 rules): 8-10 hours
-- Dashboard pages (table + tabs): 6-8 hours
-- Recommendations integration: 3-4 hours
-- Testing + documentation: 3-4 hours
-- **Total: 20-30 hours**
-
-**Success Criteria:**
-- Performance Max campaigns visible in dashboard
-- Asset group performance tracking
-- 10-15 optimization rules active
-- Recommendations generating and executable
-- Full audit trail and rollback capability
-
----
-
-### **7. Chat 50: Testing & Polish** (6-8 hours)
-**Status:** PLANNED (moved back from position 1)  
-**Priority:** HIGH  
-**Dependencies:** Dashboard design upgrade complete
-
-**Scope:**
-- Cross-page integration testing for recommendations UI (4 entity pages) AFTER dashboard redesign
-- Performance optimization if needed
-- UI polish and refinements based on new dashboard design
-- Edge case handling
-- Final validation before considering recommendations UI 100% complete
-
-**Rationale for Moving Back:**
-Testing and polishing the recommendations UI now would be pointless if the dashboard is about to be redesigned. All tests would need to be redone after the redesign. Better to complete the dashboard upgrade first, THEN do comprehensive testing on the final design.
-
-**Deliverables:**
-- Comprehensive testing report (post-redesign)
-- Any bug fixes identified
-- Performance benchmarks on new design
-- Documentation updates
-
-**Success Criteria:**
-- All 4 entity pages working seamlessly together with new dashboard design
-- No cross-contamination between entity types
-- Performance targets met (<5s page loads)
-- Zero console errors across all pages
-- Visual consistency with new dashboard design
-
----
-
-### **4. Website Design Upgrade (christopherhoole.online)** (TBD hours)
-**Status:** PLANNED  
-**Priority:** HIGH (new item)  
-**Dependencies:** None (can run parallel to dashboard work)
-
-**Current Website:** https://christopherhoole.online  
-**Tech Stack:** Next.js 14, Tailwind CSS, Framer Motion, Three.js  
-**Current Status:** Fully functional, deployed on Vercel
-
-**Scope:** ⚠️ **TO BE DEFINED**
-
-**Potential Areas:**
-- Visual refinements (spacing, typography, colors)
-- Component updates (cards, animations, transitions)
-- Three.js hero animation improvements
-- Mobile responsiveness enhancements
-- New sections or content
-- Performance optimizations
-
-**Questions to Answer:**
-1. What specifically needs upgrading? (visual, functional, content)
-2. Which sections? (Hero, About, FAQ, Contact, all?)
-3. New features or just polish?
-4. Estimated time commitment?
-
-**Current Sections (11 total):**
-1. Hero (Three.js shader animation)
-2. About Me
-3. The Problem
-4. The Difference
-5. Work History
-6. Skills & Platforms
-7. What A.C.T Does
-8. Why I'm Different (16 USP cards)
-9. FAQ (10 questions)
-10. Contact Form
-11. Footer + Navigation
-
-**Placeholder Deliverables:**
-- Updated design elements
-- Improved animations/transitions
-- Enhanced mobile experience
-- Performance improvements
-- Updated content (if needed)
-
----
-
-## 📋 MEDIUM PRIORITY (AFTER HIGH PRIORITY COMPLETE)
-
-### **8. Website: Contact Form Backend** (2-3 hours)
-**Status:** PLANNED  
+### **3. Website: Contact Form Backend** (2-3 hours)
+**Status:** PLANNED
+**Priority:** HIGH
 **Dependencies:** None (frontend complete)
 
 **Scope:**
-- Create `/api/leads` endpoint
-- Email notification when form submitted
-- Store leads in database (new table or external service)
-- Anti-spam protection (reCAPTCHA or similar)
+- Create `/api/leads` endpoint on Vercel serverless function
+- Email notification to Christopher when form submitted
+- Store leads (Google Sheets via gspread, consistent with existing lead capture)
+- Anti-spam protection (honeypot or reCAPTCHA)
 - Response email to submitter
 
 **Deliverables:**
-- Backend API endpoint
-- Email integration
-- Lead storage system
-- Admin notification system
+- Vercel serverless function for form submission
+- Email notification system
+- Lead storage in Google Sheets
+- Confirmation email to submitter
 
 ---
 
-### **9. Website: SEO Improvements** (3-4 hours)
-**Status:** PLANNED  
+### **4. Outreach: CV Upload/Replace** (4-6 hours)
+**Status:** PLANNED
+**Priority:** HIGH
+**Dependencies:** None
+
+**Current State:** Templates page has CV attachment UI but all buttons (Preview, Replace, Remove, Upload) show placeholder toasts only.
+
+**Scope:**
+- File upload endpoint for CV (PDF)
+- Store CV in `/static/uploads/` or similar
+- Preview — open PDF in new tab
+- Replace — upload new file, update DB reference
+- Remove — delete file reference
+- CV filename shown on Templates page attachment card
+- CV linked correctly when sending emails via Queue
+
+**Deliverables:**
+- Working CV file management on Templates page
+- CV attached to emails when `cv_attached = true` in queue
+
+---
+
+### **5. Outreach: Live Email Sending** (8-12 hours)
+**Status:** PLANNED
+**Priority:** HIGH
+**Dependencies:** CV upload (item 4) recommended first
+
+**Current State:** Queue "Send" button writes to DB but doesn't actually send emails.
+
+**Scope:**
+- SMTP or SendGrid integration
+- Send email on Queue "Send" button click
+- CV attachment support (if cv_attached = true)
+- HTML email templates using existing template bodies
+- Variable substitution ({{first_name}}, {{company}}, {{track}}, {{role}})
+- Error handling (bounce, auth failure, rate limits)
+- Dry-run mode for testing without sending
+- Config: sender email, SMTP credentials stored in client YAML or .env
+
+**Deliverables:**
+- Working email send from Queue page
+- CV attachment support
+- HTML email rendering
+- Error handling and logging
+- Dry-run mode
+
+---
+
+### **6. Outreach: Real Open/Click Tracking** (6-10 hours)
+**Status:** PLANNED
+**Priority:** HIGH
+**Dependencies:** Live email sending (item 5)
+
+**Current State:** `opened_at`, `clicked_at`, `cv_opened_at` columns exist but are never written. Analytics uses `open_count`, `click_count`, `cv_open_count` integer columns populated by seed script only.
+
+**Scope:**
+- Tracking pixel endpoint (`/outreach/track/open/<email_id>`) — 1x1 transparent GIF, increments `open_count` + writes `opened_at`
+- Link redirect endpoint (`/outreach/track/click/<email_id>`) — increments `click_count` + writes `clicked_at`, redirects to actual URL
+- CV redirect endpoint (`/outreach/track/cv/<email_id>`) — increments `cv_open_count` + writes `cv_opened_at`
+- Embed tracking pixel + wrapped links automatically when sending emails
+- Analytics page automatically reflects real data
+
+**Deliverables:**
+- 3 tracking endpoints
+- Automatic pixel/link injection on send
+- Real open/click/CV data in Analytics
+
+---
+
+### **7. Outreach: Apollo.io Data Partner Integration** (8-15 hours)
+**Status:** PLANNED
+**Priority:** HIGH
+**Dependencies:** None (can run parallel)
+
+**Scope:**
+Build bulk lead import from Apollo.io API directly into `outreach_leads` table.
+
+**Features:**
+- Apollo.io API authentication (API key in config)
+- Search/filter leads at import time: country, company size, industry (digital marketing agencies)
+- Field mapping: Apollo fields → ACT schema (name, company, role, track, email, website, linkedin_url)
+- Deduplication on email address before insert
+- Import history log (when, how many imported, filters used)
+- UI on Leads page: "Import from Apollo" button → modal with filter options → preview → confirm import
+- Scheduled sync option (daily/weekly auto-import)
+
+**Target criteria:**
+- Industry: Digital marketing / advertising agencies
+- Countries: UK, US, CA, AU, NZ
+- Company size: 5-50 employees
+- Has Google Ads clients (inferred from job titles / keywords)
+
+**Deliverables:**
+- Apollo.io API integration
+- Bulk import with deduplication
+- Filter UI on Leads page
+- Import history log
+- Optional scheduled sync
+
+---
+
+### **8. Outreach: LinkedIn Integration** (TBD hours)
+**Status:** PLANNED — scope TBD
+**Priority:** HIGH
+**Dependencies:** None
+
+**Scope:** ⚠️ TO BE DEFINED
+
+**Potential areas:**
+- LinkedIn Sales Navigator API or scraping for lead sourcing
+- LinkedIn message outreach alongside email sequences
+- LinkedIn connection tracking in lead status
+- Profile URL stored per lead (already have `linkedin_url` field in leads)
+
+**Questions to answer:**
+1. Outreach via LinkedIn messages or just sourcing leads from LinkedIn?
+2. Use LinkedIn API (limited) or third-party tool integration (Phantombuster, Expandi)?
+3. Track LinkedIn activity within ACT or in external tool?
+
+---
+
+### **9. Website: WhatsApp Button** (1-2 hours)
+**Status:** PLANNED
+**Priority:** HIGH
 **Dependencies:** None
 
 **Scope:**
-- Meta tags (title, description, keywords)
-- Open Graph tags (social media sharing)
-- Twitter Card tags
-- Sitemap.xml generation
-- Robots.txt configuration
-- Schema.org markup (Person, Organization)
-- Page speed optimization
+- Floating WhatsApp button on christopherhoole.online
+- Clicking opens `https://wa.me/[number]` — works on mobile (opens WhatsApp app) and desktop (opens WhatsApp Web)
+- Pre-filled message: "Hi Christopher, I found your website and wanted to get in touch."
+- Positioned bottom-right, above any other floating elements
+- Green WhatsApp icon, subtle animation (pulse or hover lift)
+- Optional: also add WhatsApp link to footer alongside LinkedIn/email
 
 **Deliverables:**
-- Complete meta tag implementation
-- Sitemap.xml
-- Improved search engine visibility
-- Social media preview optimization
+- Floating WhatsApp button component
+- Pre-filled message URL
+- Mobile + desktop compatible
 
 ---
 
-### **10. System Changes Tab → Cards** (4-6 hours)
-**Status:** PLANNED (deferred from Chat 29)  
+### **10. Performance Max Campaigns** (20-30 hours)
+**Status:** PLANNED
+**Priority:** HIGH
 **Dependencies:** None
 
 **Scope:**
-Currently the "System Changes" tab in `/changes` page shows a table. Convert to card-based UI matching the "My Actions" tab and recommendations pages.
+Performance Max is Google's newest automated campaign type combining Search, Display, YouTube, Discover, Gmail.
 
-**Deliverables:**
-- Card-based UI for system changes
-- Same visual style as recommendations cards
-- Improved readability
-- Consistent design language
+**Database Layer:**
+- New table: `analytics.pmax_asset_group_daily`
+- Asset group performance metrics, asset-level data, audience signal effectiveness
+
+**Rules Engine:**
+- 10-15 rules: budget optimisation, ROAS/CPA targets, audience signals, asset performance
+
+**Dashboard:**
+- New "Performance Max" page in navigation
+- Asset group table, asset performance tab, audience signals tab
+- Recommendations tab (following Chat 49 pattern)
+- Rules tab
+
+**Estimated Breakdown:**
+- Database + data pipeline: 5-8h
+- Rules creation (10-15 rules): 8-10h
+- Dashboard pages: 6-8h
+- Recommendations integration: 3-4h
+- Testing + documentation: 3-4h
 
 ---
 
-### **11. Unit Tests** (10-15 hours)
-**Status:** PLANNED (Phase 3: Future-Proofing)  
-**Dependencies:** None
+### **11. Testing & Polish** (6-8 hours)
+**Status:** PLANNED
+**Priority:** HIGH
+**Dependencies:** All high-priority items above complete
 
 **Scope:**
-- Test coverage for all routes (recommendations, rules, campaigns, keywords, etc.)
-- Test coverage for recommendations engine
-- Test coverage for Google Ads API integrations
-- Automated test suite (pytest)
-- CI/CD integration (GitHub Actions)
-
-**Target Coverage:** 80%+
+Comprehensive end-to-end testing across entire platform after all high-priority work:
+- Dashboard entity pages (campaigns, keywords, ad groups, ads, shopping)
+- Recommendations UI across all 4 entity pages
+- All 6 outreach pages
+- Performance benchmarks (<5s page loads)
+- Zero console errors across all pages
+- Visual consistency check
 
 **Deliverables:**
-- Comprehensive test suite
-- CI/CD pipeline
-- Test documentation
-- Coverage reports
+- Comprehensive testing report
+- Bug fixes
+- Performance benchmarks
+- Documentation updates
 
 ---
 
-### **12. Background Job Queue** (8-10 hours)
-**Status:** PLANNED (Phase 3: Future-Proofing)  
+### **12. Finalise Shopping Campaigns** (TBD hours)
+**Status:** PLANNED — scope TBD
+**Priority:** HIGH
 **Dependencies:** None
 
-**Scope:**
-Replace current daemon threads with proper job queue system for:
-- Recommendations engine (scheduled runs)
-- Radar monitoring (continuous evaluation)
-- Email reports (scheduled delivery)
-- Data refresh jobs
+**Current State:**
+- 14 shopping rules active, 126 recommendations generating
+- Shopping page has full Module 4 table redesign
 
-**Technology:** Celery + Redis or similar
-
-**Deliverables:**
-- Job queue infrastructure
-- Scheduled task management
-- Better reliability and scaling
-- Job monitoring dashboard
+**Potential enhancements (to define):**
+- Product-level performance breakdown (separate tab)
+- Feed quality metrics visualisation
+- Out-of-stock tracking improvements
+- Shopping-specific chart improvements
+- Enhanced product group tables
 
 ---
 
-### **13. Database Indexes** (3-5 hours)
-**Status:** PLANNED (Phase 3: Future-Proofing)  
+## 📋 MEDIUM PRIORITY
+
+### **13. Website: SEO Improvements** (3-4 hours)
+**Status:** PLANNED
 **Dependencies:** None
 
-**Scope:**
-- Analyze slow queries (EXPLAIN QUERY PLAN)
-- Add indexes to frequently queried columns
-- Optimize JOIN operations
-- Performance benchmarking
-
-**Tables to Optimize:**
-- recommendations table
-- changes table
-- campaign_features_daily
-- keyword_daily
-- shopping_campaign_daily
-
-**Deliverables:**
-- Index creation scripts
-- Query performance improvements
-- Documentation of optimization decisions
+**Scope:** Meta tags, Open Graph, Twitter Cards, sitemap.xml, robots.txt, Schema.org markup (Person, Organisation), page speed optimisation.
 
 ---
 
-### **14. CSRF Protection** (2-3 hours)
-**Status:** PLANNED (Phase 3: Future-Proofing)  
+### **14. System Changes Tab → Cards** (4-6 hours)
+**Status:** PLANNED (deferred from Chat 29)
 **Dependencies:** None
 
-**Scope:**
-- Full Flask-WTF implementation
-- Remove current CSRF exemptions (from Chat 49)
-- Proper token generation and validation
-- Update all POST routes
-- Update all forms and AJAX calls
-
-**Current Exemptions to Remove:**
-- `/recommendations/accept`
-- `/recommendations/decline`
-- Other API routes
-
-**Deliverables:**
-- Complete CSRF protection
-- No security exemptions
-- All routes properly protected
+**Scope:** Convert "System Changes" tab on `/changes` page from table to card-based UI matching "My Actions" tab.
 
 ---
 
-### **15. Email Reports** (15-20 hours)
-**Status:** PLANNED (Features)  
+### **15. Unit Tests** (10-15 hours)
+**Status:** PLANNED (Phase 3: Future-Proofing)
+**Dependencies:** None
+
+**Scope:** pytest coverage for all routes, recommendations engine, Google Ads API integrations. Target 80%+ coverage. CI/CD via GitHub Actions.
+
+---
+
+### **16. Background Job Queue** (8-10 hours)
+**Status:** PLANNED (Phase 3: Future-Proofing)
+**Dependencies:** None
+
+**Scope:** Replace daemon threads with Celery + Redis job queue for recommendations engine, Radar monitoring, email reports, data refresh.
+
+---
+
+### **17. Database Indexes** (3-5 hours)
+**Status:** PLANNED (Phase 3: Future-Proofing)
+**Dependencies:** None
+
+**Scope:** EXPLAIN QUERY PLAN analysis, indexes on frequently queried columns across recommendations, changes, campaign_features_daily, keyword_daily, shopping_campaign_daily.
+
+---
+
+### **18. CSRF Protection** (2-3 hours)
+**Status:** PLANNED (Phase 3: Future-Proofing)
+**Dependencies:** None
+
+**Scope:** Full Flask-WTF implementation, remove all current CSRF exemptions, proper token generation across all POST routes, forms, and AJAX calls.
+
+---
+
+### **19. Email Reports** (15-20 hours)
+**Status:** PLANNED
 **Dependencies:** Background job queue
 
-**Scope:**
-- Automated weekly reports (every Monday)
-- Automated monthly reports (1st of month)
-- Performance summaries (spend, conversions, ROAS)
-- Recommendation highlights (accepted, monitoring, successful)
-- Email template design (HTML emails)
-- PDF attachment option
-- Configurable recipients per client
-
-**Report Sections:**
-1. Executive Summary (key metrics)
-2. Performance Overview (charts)
-3. Recommendations Activity (actions taken)
-4. Upcoming Recommendations (pending review)
-5. Budget Pacing (on track / overspend / underspend)
-
-**Deliverables:**
-- Email report system
-- Beautiful HTML email templates
-- PDF generation
-- Scheduling system
-- Report customization options
+**Scope:** Automated weekly + monthly reports. Sections: executive summary, performance overview, recommendations activity, upcoming recommendations, budget pacing. HTML email templates + PDF attachment option.
 
 ---
 
-### **16. Smart Alerts** (10-15 hours)
-**Status:** PLANNED (Features)  
+### **20. Smart Alerts** (10-15 hours)
+**Status:** PLANNED
 **Dependencies:** None
 
-**Scope:**
-Real-time alerts for critical events:
-
-**Alert Types:**
-1. Performance degradation (ROAS drop ≥20%, CVR drop ≥15%)
-2. Budget pacing (90% spent with 50%+ of month remaining)
-3. High-value opportunities (ROAS ≥10.0x campaigns underinvesting)
-4. Budget overspend warnings (approaching daily limit)
-5. Recommendation failures (API errors, execution failures)
-6. System health (Radar offline, engine not running)
-
-**Delivery Methods:**
-- Email (immediate)
-- Dashboard banner (persistent until dismissed)
-- SMS (critical alerts only, optional)
-
-**Configuration:**
-- Per-client alert thresholds
-- Alert muting (temporarily disable)
-- Alert history/log
-
-**Deliverables:**
-- Alert detection system
-- Multi-channel delivery
-- Alert management UI
-- Configuration options
+**Scope:** Real-time alerts for performance degradation (ROAS drop ≥20%, CVR drop ≥15%), budget pacing, high-value opportunities, recommendation failures, system health. Delivery via email + dashboard banner.
 
 ---
 
 ## 🚀 LONG-TERM (MAJOR EXPANSIONS)
 
-### **17. Display Campaigns** (15-20 hours)
-**Status:** PLANNED (Campaign Type Expansion)  
+### **21. Display Campaigns** (15-20 hours)
+**Status:** PLANNED
 **Dependencies:** Performance Max complete
 
-**Scope:**
-Extend ACT to support Google Display Network campaigns.
-
-**Database Layer:**
-- New table: `analytics.display_campaign_daily`
-- Placement performance data
-- Audience performance data
-- Creative performance data
-
-**Rules Engine:**
-- Placement optimization (10-12 rules)
-- Audience targeting rules
-- Creative performance rules
-- Budget/bid management
-- Impression share optimization
-
-**Dashboard Pages:**
-- New "Display" page in navigation
-- Placements tab
-- Audiences tab
-- Creatives tab
-- Recommendations tab
-- Rules tab
-
-**Challenges:**
-- Display has different metrics than Search (impressions, viewability, engagement)
-- Less direct conversion tracking
-- Placement-level optimization complexity
-
-**Deliverables:**
-- Full Display campaign support
-- 10-12 optimization rules
-- Complete dashboard integration
-- Recommendations workflow
+Extend ACT to support Google Display Network campaigns. New DB table, 10-12 placement/audience/creative optimisation rules, new dashboard page with placements/audiences/creatives/recommendations/rules tabs.
 
 ---
 
-### **18. Video Campaigns (YouTube)** (15-20 hours)
-**Status:** PLANNED (Campaign Type Expansion)  
+### **22. Video Campaigns (YouTube)** (15-20 hours)
+**Status:** PLANNED
 **Dependencies:** Display complete
 
-**Scope:**
-Extend ACT to support YouTube advertising campaigns.
-
-**Database Layer:**
-- New table: `analytics.video_campaign_daily`
-- Video creative performance
-- Audience performance
-- Placement performance (channels, videos)
-
-**Rules Engine:**
-- Video creative performance rules (10-12 rules)
-- Audience targeting optimization
-- View rate optimization
-- CPV (cost per view) management
-- Ad format rules (skippable, non-skippable, bumper)
-
-**Dashboard Pages:**
-- New "Video" page in navigation
-- Video creatives tab
-- Audiences tab
-- Placements tab
-- Recommendations tab
-- Rules tab
-
-**Challenges:**
-- Video-specific metrics (view rate, watch time, completion rate)
-- Creative quality assessment
-- Different conversion attribution
-
-**Deliverables:**
-- Full YouTube campaign support
-- 10-12 optimization rules
-- Complete dashboard integration
-- Video performance analytics
+Extend ACT to support YouTube advertising. New DB table, 10-12 rules (view rate, CPV, ad format, audience), new dashboard page.
 
 ---
 
-### **19. Demand Gen Campaigns** (15-20 hours)
-**Status:** PLANNED (Campaign Type Expansion)  
+### **23. Demand Gen Campaigns** (15-20 hours)
+**Status:** PLANNED
 **Dependencies:** Video complete
 
-**Scope:**
-Extend ACT to support Demand Gen campaigns (multi-surface: YouTube, Discover, Gmail).
-
-**Database Layer:**
-- New table: `analytics.demand_gen_campaign_daily`
-- Multi-surface performance data
-- Creative performance across surfaces
-- Audience performance
-
-**Rules Engine:**
-- Multi-surface optimization rules (10-12 rules)
-- Creative performance by surface
-- Audience expansion rules
-- Conversion optimization
-- Budget allocation across surfaces
-
-**Dashboard Pages:**
-- New "Demand Gen" page in navigation
-- Surface performance breakdown
-- Creatives tab
-- Audiences tab
-- Recommendations tab
-- Rules tab
-
-**Challenges:**
-- Multi-surface complexity (different user intents)
-- Surface-specific creative requirements
-- Cross-surface optimization trade-offs
-
-**Deliverables:**
-- Full Demand Gen campaign support
-- 10-12 optimization rules
-- Multi-surface analytics
-- Complete dashboard integration
+Extend ACT to support Demand Gen (YouTube + Discover + Gmail). New DB table, 10-12 multi-surface optimisation rules, new dashboard page.
 
 ---
 
-### **20. Automated Report Generator** (20-25 hours)
-**Status:** PLANNED (Advanced Features)  
+### **24. Automated Report Generator** (20-25 hours)
+**Status:** PLANNED
 **Dependencies:** Email reports complete
 
-**Scope:**
-Build AI-powered report generator similar to Markifact, creating monthly slide-based presentations with insights.
-
-**Features:**
-- Automated slide generation (PowerPoint/Google Slides)
-- AI-generated insights and commentary
-- Performance trend analysis
-- Actionable recommendations
-- Executive-ready formatting
-- Custom branding per client
-
-**Report Structure:**
-1. Executive Summary (1 slide)
-2. Month-over-Month Performance (2-3 slides)
-3. Campaign Performance Breakdown (3-4 slides)
-4. Top Performers & Opportunities (2 slides)
-5. Recommendations Executed (2 slides)
-6. Next Month Outlook (1 slide)
-
-**AI Integration:**
-- GPT-4 or similar for insights generation
-- Trend detection and explanation
-- Natural language summaries
-- Anomaly highlighting
-
-**Deliverables:**
-- Report generation engine
-- Slide template system
-- AI insights integration
-- Scheduled delivery system
-- Client-ready monthly reports
+AI-powered monthly slide deck generator (PowerPoint/Google Slides). Sections: executive summary, MoM performance, campaign breakdown, top performers, recommendations executed, next month outlook. AI-generated insights via LLM.
 
 ---
 
-### **21. Multi-User Support** (12-15 hours)
-**Status:** PLANNED (Advanced Features)  
+### **25. Multi-User Support** (12-15 hours)
+**Status:** PLANNED
 **Dependencies:** None
 
-**Scope:**
-Extend ACT from single-user to multi-user system with roles and permissions.
-
-**User Roles:**
-1. **Admin:** Full access (Christopher)
-2. **Manager:** Can approve recommendations, modify rules
-3. **Analyst:** Read-only + recommendation suggestions
-4. **Client:** Limited view (their account only)
-
-**Features:**
-- User registration and authentication
-- Role-based access control (RBAC)
-- Activity logging (who did what, when)
-- User management interface
-- Team collaboration features
-- Client portal (limited view)
-
-**Permissions Matrix:**
-| Action | Admin | Manager | Analyst | Client |
-|--------|-------|---------|---------|--------|
-| View data | ✅ | ✅ | ✅ | ✅ (own only) |
-| Accept recommendations | ✅ | ✅ | ❌ | ❌ |
-| Create rules | ✅ | ✅ | ❌ | ❌ |
-| Modify rules | ✅ | ✅ | ❌ | ❌ |
-| Add users | ✅ | ❌ | ❌ | ❌ |
-| View all clients | ✅ | ✅ | ✅ | ❌ |
-
-**Deliverables:**
-- User management system
-- Role-based permissions
-- Activity audit trail
-- Team collaboration features
-- Client portal
+Extend ACT from single-user to multi-user with RBAC (Admin / Manager / Analyst / Client roles). User registration, activity logging, team collaboration, client portal.
 
 ---
 
-### **22. API Endpoints** (10-12 hours)
-**Status:** PLANNED (Advanced Features)  
-**Dependencies:** Multi-user support (for authentication)
+### **26. API Endpoints** (10-12 hours)
+**Status:** PLANNED
+**Dependencies:** Multi-user support
 
-**Scope:**
-Build public API for external integrations.
-
-**Endpoints:**
-- GET `/api/v1/recommendations` - List recommendations
-- POST `/api/v1/recommendations/{id}/accept` - Accept recommendation
-- POST `/api/v1/recommendations/{id}/decline` - Decline recommendation
-- GET `/api/v1/campaigns` - List campaigns with performance
-- GET `/api/v1/rules` - List active rules
-- POST `/api/v1/rules` - Create new rule
-- GET `/api/v1/changes` - List change history
-
-**Features:**
-- RESTful API design
-- API key authentication
-- Rate limiting (100 requests/hour)
-- Webhook support (for events)
-- API documentation (Swagger/OpenAPI)
-- SDK generation (Python, JavaScript)
-
-**Use Cases:**
-- Custom reporting dashboards
-- Third-party integrations
-- Mobile app development
-- Automation workflows
-
-**Deliverables:**
-- Public API endpoints
-- Authentication system
-- API documentation
-- Rate limiting
-- Webhook system
+Public REST API: recommendations (list/accept/decline), campaigns, rules (list/create), changes. API key auth, rate limiting (100 req/hr), webhook support, Swagger docs.
 
 ---
 
 ## 📊 SUMMARY STATISTICS
 
-**Total Planned Items:** 22  
-**Total Estimated Time:** 200-270 hours
+**Total Planned Items:** 26 (2 complete, 24 remaining)
+**Total Estimated Time Remaining:** 210-300 hours
 
-**Breakdown by Category:**
-- **High Priority (Next 6-7 chats):** 7 items, 50-90 hours
-  - Dashboard Design Upgrade (TBD)
-  - Website Design Upgrade (TBD)
-  - M9 Live Validation (4-6h)
-  - Cold Outreach System (15-20h)
-  - Finalise Shopping Campaigns (TBD)
-  - Performance Max Campaigns (20-30h)
-  - Testing & Polish (6-8h)
-- **Medium Priority (Future-proofing + Features):** 9 items, 65-90 hours
-- **Long-Term Priority (Major expansions):** 6 items, 85-90 hours
-
-**Priority Breakdown:**
-- **HIGH:** 7 items (items 1-7)
-- **MEDIUM:** 9 items (items 8-16)
-- **LONG-TERM:** 6 items (items 17-22)
+| Category | Items | Estimated Hours |
+|----------|-------|----------------|
+| Complete | 2 | ~35h spent |
+| High Priority | 12 | 80-130h |
+| Medium Priority | 8 | 55-75h |
+| Long-Term | 6 | 85-90h |
 
 ---
 
-## 🎯 NEXT STEPS
+## 🎯 NEXT 3 CHATS
 
-1. **Define scope for Dashboard Design Upgrade** (item #1)
-2. **Define scope for Website Design Upgrade** (item #2)
-3. **Define scope for Finalise Shopping Campaigns** (item #5)
-4. **Begin Dashboard Design Upgrade** (NEXT CHAT)
+1. **Website Design Upgrade** — define scope, then build
+2. **M9 Live Validation** — real Google Ads API testing
+3. **Website: Contact Form Backend** — Vercel serverless + Google Sheets
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-02-28  
-**Next Review:** After Chat 50 complete
+**Document Version:** 3.0
+**Last Updated:** 2026-03-06
+**Next Review:** After Website Design Upgrade + M9 Live Validation complete

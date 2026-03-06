@@ -1,7 +1,8 @@
 # KNOWN PITFALLS - ADS CONTROL TOWER (A.C.T)
 
-**Version:** 1.0  
-**Created:** 2026-02-28  
+**Version:** 2.0
+**Created:** 2026-02-28
+**Updated:** 2026-03-06
 **Purpose:** Troubleshooting guide with solutions and prevention strategies
 
 **See Also:** LESSONS_LEARNED.md (best practices), MASTER_KNOWLEDGE_BASE.md (current state)
@@ -12,23 +13,24 @@
 
 1. **Template & CSS Issues** (7 pitfalls)
 2. **Database & Query Issues** (5 pitfalls)
-3. **Blueprint & Route Issues** (3 pitfalls)
+3. **Blueprint & Route Issues** (4 pitfalls)
 4. **Drawer & Modal Issues** (2 pitfalls)
 5. **Campaign & Data Issues** (3 pitfalls)
 6. **Radar & Monitoring Issues** (3 pitfalls)
 7. **Website Deployment Issues** (6 pitfalls)
 8. **Search Terms & API Issues** (4 pitfalls)
 9. **Multi-Entity Issues** (4 pitfalls)
+10. **Outreach System Issues** (5 pitfalls) ← NEW
 
-**Total:** 37 pitfalls with solutions
+**Total:** 43 pitfalls with solutions
 
 ---
 
 ## TEMPLATE & CSS ISSUES
 
 ### 1. Template CSS Missing
-**Problem:** Page loads with no styling, broken layout  
-**Cause:** Template extends base.html instead of base_bootstrap.html  
+**Problem:** Page loads with no styling, broken layout
+**Cause:** Template extends base.html instead of base_bootstrap.html
 **Solution:**
 ```html
 <!-- Change this: -->
@@ -36,474 +38,454 @@
 <!-- To this: -->
 {% extends "base_bootstrap.html" %}
 ```
-**Prevention:** Always use base_bootstrap.html for Bootstrap 5 pages  
-**Related:** Lesson #1
+**Prevention:** Always use base_bootstrap.html for Bootstrap 5 pages
 
 ### 2. Jinja Template 500 Error
-**Problem:** 500 error on page load, no specific error message  
-**Cause:** Jinja2 syntax error (missing {% endif %}, {% endfor %}, unmatched tags)  
+**Problem:** 500 error on page load, no specific error message
+**Cause:** Jinja2 syntax error (missing {% endif %}, {% endfor %}, unmatched tags)
 **Solution:**
 - Check all {% if %} have matching {% endif %}
 - Check all {% for %} have matching {% endfor %}
 - Validate template with jinja2 Environment before deploying
-**Prevention:** Test template rendering in isolation before full deployment  
-**Related:** Chat 49 (Jinja2 syntax error)
+**Prevention:** Test template rendering in isolation before full deployment
 
-### 3. Drawer Visible on Page Load
-**Problem:** Drawer/modal shows immediately on page load instead of hidden  
-**Cause:** Conflicting display values: `style="display:none; display:flex;"`  
-**Solution:** Remove display:flex from inline style, let JavaScript add it
+### 3. Bootstrap Grid Not Working
+**Problem:** Columns stacking vertically instead of side-by-side
+**Cause:** Missing Bootstrap CSS (wrong base template) or incorrect col classes
+**Solution:** Verify base_bootstrap.html extended; check col-md-6 syntax
+**Prevention:** Test responsive layout immediately after page creation
+
+### 4. display:none + display:flex Conflict
+**Problem:** Drawer/panel visible on page load
+**Cause:** Both `display:none` and `display:flex` in same inline style — browser uses last one
+**Solution:**
 ```html
-<!-- Wrong: -->
-<div class="drawer" style="display:none; display:flex;">
-<!-- Correct: -->
-<div class="drawer" style="display:none;">
-<!-- JavaScript: drawer.style.display = 'flex'; -->
-```
-**Prevention:** Initial state in HTML, transitions in JavaScript  
-**Related:** Lesson #10
+<!-- WRONG: -->
+<div style="display:none; display:flex;">
 
-### 4. New Sort Column Not Working
-**Problem:** Clicking column header doesn't sort  
-**Cause:** Column not in ALLOWED_*_SORT whitelist  
-**Solution:** Add column to whitelist in route file
-```python
-ALLOWED_CAMPAIGN_SORT = ['name', 'status', 'budget', 'cost', 'conversions']
-# Add new column: 'roas'
-ALLOWED_CAMPAIGN_SORT = ['name', 'status', 'budget', 'cost', 'conversions', 'roas']
+<!-- CORRECT: HTML has display:none, JS adds display:flex -->
+<div id="drawer" style="display:none;">
 ```
-**Prevention:** Check whitelist when adding new sortable columns
-
-### 5. Sort Not Working on Full Dataset
-**Problem:** Sort only works on visible rows, not entire dataset  
-**Cause:** Client-side sort instead of SQL-side ORDER BY  
-**Solution:** Move sorting to SQL query
-```python
-# Wrong (Python sort, only sorts fetched rows):
-rows = conn.execute("SELECT * FROM table").fetchall()
-rows.sort(key=lambda x: x.cost)
-
-# Correct (SQL sort, sorts entire dataset):
-rows = conn.execute("SELECT * FROM table ORDER BY cost DESC").fetchall()
+```javascript
+document.getElementById('drawer').style.display = 'flex';
 ```
-**Prevention:** Always use SQL ORDER BY for server-side sorting
+**Prevention:** Never put both in inline style
 
-### 6. Ad Group Table Empty
-**Problem:** Ad groups table shows no data  
-**Cause:** Using bid_micros column instead of cpc_bid_micros  
-**Solution:** Use correct column name from schema
-```python
-# Wrong:
-SELECT bid_micros FROM ad_group_daily
-# Correct:
-SELECT cpc_bid_micros FROM ad_group_daily
-```
-**Prevention:** Verify column names in schema before querying
+### 5. Chart.js Canvas Not Rendering
+**Problem:** Chart area blank, no error
+**Cause:** Canvas element missing ID, or Chart.js loaded before DOM ready
+**Solution:** Ensure canvas has unique ID; wrap Chart initialization in DOMContentLoaded
+**Prevention:** Always initialize charts after DOM ready
 
-### 7. Rules Showing 0 Count
-**Problem:** Rules tab shows "0 rules" when rules exist  
-**Cause:** Wrong regex pattern for detecting rule IDs  
-**Solution:** Use correct regex: `r'_\d{3}(?:_|$)'`
-```python
-# Wrong:
-pattern = r'_\d{3}'  # Matches campaign_1, campaign_12, campaign_123
-# Correct:
-pattern = r'_\d{3}(?:_|$)'  # Matches only campaign_001, campaign_002, etc.
+### 6. Flatpickr Date Range Not Persisting
+**Problem:** Date range resets on page navigation
+**Cause:** Not using session-based persistence
+**Solution:** Save dates to Flask session via AJAX on change; read from session on page load
+**Prevention:** Always use session for user preferences, not URL params
+
+### 7. Jinja/JavaScript Brace Conflict
+**Problem:** Jinja2 tries to parse JavaScript template literals containing `{{variable}}`
+**Cause:** Jinja2 processes `{{ }}` before browser sees JavaScript
+**Solution:**
+```javascript
+// WRONG — Jinja processes this:
+let template = `Hello {{first_name}}`;
+
+// CORRECT — split the braces:
+let template = `Hello ${ '{' + '{' }first_name}}`;
+
+// OR use a data attribute to pass Jinja variables to JS:
+// <div data-name="{{ lead.first_name }}">
+// let name = el.dataset.name;
 ```
-**Prevention:** Test regex pattern with sample rule IDs
+**Prevention:** Never use `{{ }}` inside JavaScript strings in Jinja templates
 
 ---
 
 ## DATABASE & QUERY ISSUES
 
-### 8. DB Query Fails
-**Problem:** "no such table: analytics.campaign_daily"  
-**Cause:** Missing ro.analytics.* prefix  
-**Solution:** Add ro prefix to analytics tables
+### 8. DB Query Fails — Wrong Table Prefix
+**Problem:** Query returns error or empty results unexpectedly
+**Cause:** Using `analytics.table_name` instead of `ro.analytics.table_name`
+**Solution:**
 ```sql
--- Wrong:
+-- WRONG:
 SELECT * FROM analytics.campaign_daily
--- Correct:
+
+-- CORRECT:
 SELECT * FROM ro.analytics.campaign_daily
 ```
-**Prevention:** Always use ro.analytics.* for readonly database  
-**Related:** Lesson #2
+**Prevention:** Always use ro.analytics.* for read-only queries
 
-### 9. Route Replacement Fails
-**Problem:** str_replace says "string not found"  
-**Cause:** Quote style mismatch (' vs ")  
-**Solution:** Match exact quote style from original
+### 9. Shopping Metrics Missing
+**Problem:** CTR = 0 or NaN on Shopping page
+**Cause:** `compute_campaign_metrics()` missing total_clicks
+**Solution:** Always include `SUM(clicks) as total_clicks` in aggregation queries
+**Prevention:** Include clicks in every metrics aggregation
+
+### 10. Recommendations Truncated
+**Problem:** Fewer recommendations showing than expected
+**Cause:** Backend query limit=200 caps results
+**Solution:** Increase limit for high-volume entities:
 ```python
-# Original uses single quotes:
-@bp.route('/recommendations', methods=['GET'])
-# str_replace must use single quotes too:
-old_str="@bp.route('/recommendations', methods=['GET'])"
+# In recommendations.py — increase limit:
+limit = 5000  # was 200, caused Keywords to show 162 of 1,256
 ```
-**Prevention:** View file first, copy exact syntax
+**Prevention:** Set limit to 2× expected maximum data volume
 
-### 10. Shopping Metrics Missing
-**Problem:** CTR shows 0% on Shopping page  
-**Cause:** compute_campaign_metrics() doesn't include total_clicks  
-**Solution:** Add SUM(clicks) to aggregation
+### 11. Integer vs Timestamp Tracking Columns
+**Problem:** open_count, click_count showing 0 despite emails being sent
+**Cause:** Route queries `opened_at IS NOT NULL` (timestamp column) but seed script only populates integer columns (`open_count`, `click_count`, `cv_open_count`)
+**Solution:**
 ```python
-metrics = {
-  'cost': SUM(cost),
-  'clicks': SUM(clicks),  # Add this
-  'ctr': (SUM(clicks) / SUM(impressions)) * 100
-}
-```
-**Prevention:** Always include all metrics needed for calculations  
-**Related:** Lesson #5
+# WRONG — timestamp may never be written:
+WHERE opened_at IS NOT NULL
 
-### 11. Collapse State Lost
-**Problem:** Metrics card collapse state doesn't persist  
-**Cause:** Not saving to session  
-**Solution:** POST to /set-metrics-collapse endpoint
-```javascript
-fetch('/set-metrics-collapse', {
-  method: 'POST',
-  body: JSON.stringify({page_id: 'dashboard', collapsed: true})
-})
+# CORRECT — use integer column:
+WHERE open_count > 0
 ```
-**Prevention:** Use session storage for UI preferences
+**Prevention:** Verify which column type the seed script actually populates before querying
 
-### 12. rules_config.json Not Found
-**Problem:** FileNotFoundError when loading rules  
-**Cause:** Wrong path depth from routes/  
-**Solution:** Use .parent.parent.parent (3 levels up)
+### 12. DuckDB: Can't Write After Read-Only Open
+**Problem:** INSERT fails with "read-only" error
+**Cause:** Opening warehouse.duckdb with `read_only=True`
+**Solution:**
 ```python
-# Wrong (only goes up 2):
-Path(__file__).parent.parent / 'rules_config.json'
-# Correct (goes up 3 to project root):
-Path(__file__).parent.parent.parent / 'act_autopilot' / 'rules_config.json'
+# CORRECT pattern for Radar/any component needing reads + writes:
+conn = duckdb.connect('warehouse.duckdb')
+conn.execute("ATTACH 'warehouse_readonly.duckdb' AS ro (READ_ONLY)")
 ```
-**Prevention:** Count directory levels, verify with print(path.exists())  
-**Related:** Lesson #9
+**Prevention:** Never open writable DB as read_only
 
 ---
 
 ## BLUEPRINT & ROUTE ISSUES
 
 ### 13. Blueprint Not Registered
-**Problem:** 404 error for new route  
-**Cause:** Blueprint not added to __init__.py  
-**Solution:** Register blueprint in act_dashboard/routes/__init__.py
+**Problem:** Route returns 404 despite existing in routes file
+**Cause:** Blueprint created but not registered in `act_dashboard/routes/__init__.py`
+**Solution:** Add to `__init__.py`:
 ```python
-from . import dashboard, campaigns, keywords, changes  # Add changes
-def init_app(app):
-  app.register_blueprint(changes.bp)  # Add this
+from .new_module import bp as new_module_bp
+app.register_blueprint(new_module_bp)
 ```
-**Prevention:** Check __init__.py after creating new blueprint
+**Prevention:** Always register new blueprints immediately on creation
 
-### 14. Campaign Picker Empty
-**Problem:** Campaign dropdown shows no options  
-**Cause:** Not fetching from /api/campaigns-list  
-**Solution:** Wire endpoint to fetch campaigns on click
-```javascript
-pickerButton.addEventListener('click', () => {
-  fetch('/api/campaigns-list')
-    .then(res => res.json())
-    .then(data => populatePicker(data.campaigns));
-});
-```
-**Prevention:** Test data fetching before declaring feature complete
+### 14. Route Decorator Quote Style Mismatch
+**Problem:** str_replace fails to find route decorator
+**Cause:** File uses single quotes `'`, str_replace uses double quotes `"`
+**Solution:** View file first, copy exact quote style before any str_replace
+**Prevention:** Always view current file before editing
 
-### 15. "budget budget" Double Word
-**Problem:** UI shows "budget budget" instead of "budget"  
-**Cause:** Using rule_type as label without mapping  
-**Solution:** Use explicit type→label map
+### 15. rules_config.json Not Found
+**Problem:** Rules API returns 500 — file not found
+**Cause:** Routes are 3 levels deep: routes/ → act_dashboard/ → project root
+**Solution:**
 ```python
-type_labels = {
-  'budget': 'Budget',
-  'bid': 'Bid Target',
-  'status': 'Campaign Status'
-}
-label = type_labels.get(rule_type, rule_type)
+# In any file inside routes/:
+config_path = Path(__file__).parent.parent.parent / 'act_autopilot' / 'rules_config.json'
 ```
-**Prevention:** Always map internal names to display labels
+**Prevention:** Always use `.parent.parent.parent` from route files
+
+### 16. CSRF 400 on Accept/Decline
+**Problem:** JavaScript POST to recommendations route returns HTTP 400
+**Cause:** JavaScript fetch() doesn't automatically include CSRF tokens
+**Solution:** Add CSRF exemption in app.py:
+```python
+from flask_wtf.csrf import CSRFProtect
+csrf.exempt(recommendations_bp)
+# Or specific routes:
+@csrf.exempt
+@bp.route('/recommendations/accept', methods=['POST'])
+```
+**Prevention:** Always add CSRF exemptions for JSON API routes called from JavaScript
 
 ---
 
 ## DRAWER & MODAL ISSUES
 
-(Already covered in Template & CSS #3)
+### 17. Campaign Picker Empty
+**Problem:** Scope card shows empty dropdown
+**Cause:** Picker not fetching from API on open
+**Solution:** Fetch on scope card click:
+```javascript
+fetch('/api/campaigns-list')
+  .then(r => r.json())
+  .then(data => populatePicker(data));
+```
+**Prevention:** Always wire campaign picker to live API endpoint
+
+### 18. "Budget Budget" Double Word in UI
+**Problem:** Action labels show "budget budget" or similar repetition
+**Cause:** Using generic label + appending type from data
+**Solution:** Use explicit type→label map:
+```python
+TYPE_LABELS = {
+    'budget': 'Daily Budget',
+    'bid': 'Target ROAS',
+    'status': 'Campaign Status'
+}
+```
+**Prevention:** Use explicit lookup maps, never concatenate type + label
 
 ---
 
 ## CAMPAIGN & DATA ISSUES
 
-### 16. Campaign Scope Pill Name Resolution
-**Problem:** Campaign pill shows ID instead of name  
-**Cause:** Not resolving campaign_id to campaign_name  
-**Solution:** Query campaigns table for name
+### 19. Ad Group Table Empty
+**Problem:** Ad groups table shows no data
+**Cause:** Querying `bid_micros` column which doesn't exist; correct column is `cpc_bid_micros`
+**Solution:** Use `cpc_bid_micros` for ad group bid values
+**Prevention:** Verify actual column names in DuckDB before writing queries
+
+### 20. Sort Not Working on Full Dataset
+**Problem:** Sorting works on current page only, not all data
+**Cause:** Sort applied in Python after fetching page of data
+**Solution:** Sort must be SQL-side `ORDER BY` before pagination
+**Prevention:** Always apply ORDER BY in SQL, never in Python post-fetch
+
+### 21. New Sort Column Not Working
+**Problem:** Clicking new column header doesn't sort
+**Cause:** Column not in ALLOWED_*_SORT whitelist
+**Solution:** Add column to whitelist in route file:
 ```python
-name = conn.execute("""
-  SELECT campaign_name FROM ro.analytics.campaign_daily
-  WHERE campaign_id = ? LIMIT 1
-""", [campaign_id]).fetchone()
+ALLOWED_CAMPAIGN_SORT = ['name', 'cost', 'roas', 'new_column']
 ```
-**Prevention:** Always display names, not IDs
-
-### 17. All Conv. Pipeline
-**Problem:** "All Conversions" metric shows 0  
-**Cause:** Column not populated in database  
-**Solution:** Check if all_conversions column exists and has data
-**Prevention:** Verify data availability before adding metric to UI
-
-### 18. Shopping IS/Opt. Score Columns NULL
-**Problem:** Impression Share and Optimization Score show NULL  
-**Cause:** Columns exist but not populated (Google Ads API limitation)  
-**Solution:** Document that these are future fields, show N/A when NULL
-**Prevention:** Check sample data before adding metrics
+**Prevention:** Add to whitelist when adding new sortable columns
 
 ---
 
 ## RADAR & MONITORING ISSUES
 
-### 19. Radar "ro Catalog Does Not Exist"
-**Problem:** Radar crashes with catalog error  
-**Cause:** Not attaching readonly database  
-**Solution:** ATTACH warehouse_readonly in Radar connection
+### 22. Radar "ro Catalog Does Not Exist"
+**Problem:** Radar crashes with catalog error on startup
+**Cause:** Radar connection doesn't ATTACH warehouse_readonly.duckdb
+**Solution:** Always use the established pattern:
 ```python
 conn = duckdb.connect('warehouse.duckdb')
 conn.execute("ATTACH 'warehouse_readonly.duckdb' AS ro (READ_ONLY)")
 ```
-**Prevention:** Use established connection pattern  
-**Related:** Lesson #20
+**Prevention:** Copy exact connection pattern from radar.py
 
-### 20. Radar Read-Write Conflict
-**Problem:** "database is locked" error  
-**Cause:** Opening warehouse.duckdb with read_only=True  
-**Solution:** Open as writable, ATTACH readonly separately
-```python
-# Wrong:
-conn = duckdb.connect('warehouse.duckdb', read_only=True)
-# Correct:
-conn = duckdb.connect('warehouse.duckdb')  # Writable
-conn.execute("ATTACH 'warehouse_readonly.duckdb' AS ro (READ_ONLY)")
-```
-**Prevention:** Never open writable DB as readonly if writes needed
+### 23. Radar Conflicts with Dashboard Connection
+**Problem:** DuckDB "file is locked" or "already open" error
+**Cause:** Opening same file twice with different configurations
+**Solution:** Never open warehouse.duckdb with read_only=True anywhere if Radar is running
+**Prevention:** All connections to warehouse.duckdb must be read-write
 
-### 21. Changes JOIN to Recommendations
-**Problem:** Can't join changes to recommendations (no FK)  
-**Cause:** No recommendation_id foreign key  
-**Solution:** Use compound key (campaign_id + rule_id) + QUALIFY
+### 24. Changes JOIN to Recommendations Fails
+**Problem:** Changes page shows no data or wrong data
+**Cause:** No recommendation_id FK in changes table
+**Solution:**
 ```sql
-SELECT c.*, r.rule_name
+SELECT c.*, r.display_name
 FROM changes c
-LEFT JOIN (
-  SELECT campaign_id, rule_id, rule_name
-  FROM recommendations
-  QUALIFY ROW_NUMBER() OVER (PARTITION BY campaign_id, rule_id ORDER BY generated_at DESC) = 1
-) r ON c.campaign_id = r.campaign_id AND c.rule_id = r.rule_id
+JOIN recommendations r ON c.campaign_id = r.campaign_id AND c.rule_id = r.rule_id
+QUALIFY ROW_NUMBER() OVER (PARTITION BY c.campaign_id, c.rule_id ORDER BY r.generated_at DESC) = 1
 ```
-**Prevention:** Document intentional lack of FK  
-**Related:** Lesson #21
+**Prevention:** Always join on compound key (campaign_id + rule_id)
 
 ---
 
 ## WEBSITE DEPLOYMENT ISSUES
 
-### 22. Three.js colorSpace Error
-**Problem:** Canvas doesn't render, black screen  
-**Cause:** r128 doesn't support texture.colorSpace property  
-**Solution:** Remove or comment out colorSpace line
-```javascript
-// Wrong (r128 doesn't support):
-texture.colorSpace = THREE.SRGBColorSpace;
-// Correct:
-// texture.colorSpace = THREE.SRGBColorSpace;  // Not supported in r128
-```
-**Prevention:** Check CDN version, use matching docs  
-**Related:** Lesson #25
+### 25. Three.js colorSpace Error
+**Problem:** Hero animation crashes with "colorSpace" property error
+**Cause:** CDN uses Three.js r128 which doesn't support `colorSpace` property
+**Solution:** Remove `texture.colorSpace = THREE.SRGBColorSpace;` line
+**Prevention:** Check CDN version, verify API against that version's docs
 
-### 23. Next.js Build Fails
-**Problem:** Vercel deployment fails  
-**Cause:** TypeScript errors, missing imports, case sensitivity  
-**Solution:** Run npm run build locally first
-```bash
-npm run build  # Catches errors before deploy
-# Fix all errors
-git commit -am "Fixed build errors"
-git push  # Now Vercel succeeds
-```
-**Prevention:** Always test build locally before pushing
+### 26. Next.js Build Fails
+**Problem:** `npm run build` fails, npm run dev was fine
+**Cause:** Dev mode is forgiving; build catches all errors
+**Solution:** Check all imports are valid, remove unused components, fix TypeScript errors
+**Prevention:** Always run `npm run build` locally before pushing to Vercel
 
-### 24. Vercel Deployment 404
-**Problem:** Domain shows 404  
-**Cause:** DNS not configured correctly  
-**Solution:** Add both A and CNAME records in DNS
-```
-A @ 76.76.21.21
-CNAME www cname.vercel-dns.com
-```
-**Prevention:** Follow Vercel DNS setup guide exactly
+### 27. Vercel Deployment 404
+**Problem:** Domain shows 404 after deployment
+**Cause:** DNS not configured or pointing to wrong service
+**Solution:** Add A record (76.76.21.21) + CNAME (cname.vercel-dns.com) in GoDaddy
+**Prevention:** Verify DNS configuration before testing
 
-### 25. www Works But Root Doesn't
-**Problem:** www.domain.com works, domain.com doesn't  
-**Cause:** A record takes longer to propagate (30-60 min)  
-**Solution:** Wait 30-60 minutes, check https://dnschecker.org  
-**Prevention:** Expect propagation delay, document in handoff  
-**Related:** Lesson #26
+### 28. www Works But Root Doesn't
+**Problem:** https://www.christopherhoole.online works, https://christopherhoole.online doesn't
+**Cause:** CNAME propagates in 5-15 min; A record takes 15-60 min
+**Solution:** Wait 30-60 minutes for root domain A record to propagate
+**Prevention:** Test www first; wait before declaring root broken
 
-### 26. GoDaddy DNS Conflicts
-**Problem:** Domain works intermittently  
-**Cause:** Old parking page A records conflict with Vercel  
-**Solution:** Delete ALL old A records before adding Vercel records  
-**Prevention:** Clean slate - remove old before adding new  
-**Related:** Lesson #27
+### 29. GoDaddy DNS Conflict
+**Problem:** New Vercel records don't work despite being added
+**Cause:** Old GoDaddy parking page A records conflict
+**Solution:** Delete ALL existing A records before adding Vercel records
+**Prevention:** Always clear old records first
 
-### 27. Contact Form No Backend
-**Problem:** Form submits but no email/database entry  
-**Cause:** Backend integration not complete  
-**Solution:** Wire to /api/leads endpoint (future work)  
-**Prevention:** Mark as "frontend only" until backend ready
+### 30. Contact Form Doesn't Submit
+**Problem:** Form submissions not reaching backend
+**Cause:** Contact form frontend is complete but /api/leads endpoint not yet built
+**Status:** Planned work item — Google Sheets integration via Vercel serverless function
+**Prevention:** Note this is planned, not a bug
 
 ---
 
 ## SEARCH TERMS & API ISSUES
 
-### 28. Dry-Run Still Loading API
-**Problem:** Dry-run mode slow (500-1000ms)  
-**Cause:** Loading Google Ads client before checking dry_run flag  
-**Solution:** Check dry_run FIRST, before any client loading
+### 31. Dry-Run Still Loading Google Ads Client
+**Problem:** Dry-run mode is slow, sometimes fails despite dry_run=True
+**Cause:** dry_run check happens after client loading
+**Solution:** Check dry_run flag as FIRST thing after request parsing:
 ```python
-def add_negative_keywords(keywords, dry_run=False):
-  if dry_run:
-    return {'success': True, 'dry_run': True}  # Fast return
-  client = GoogleAdsClient.load_from_storage()  # Only if live
+dry_run = request.json.get('dry_run', True)
+if dry_run:
+    return simulate_response()
+# Only reach here for live mode:
+client = load_google_ads_client()
 ```
-**Prevention:** Always check flags before expensive operations  
-**Related:** Lesson #32
+**Prevention:** Always check dry_run before any external API calls
 
-### 29. google_ads_config_path Attribute Error
-**Problem:** AttributeError: 'Config' has no attribute 'google_ads_config_path'  
-**Cause:** Config doesn't have this attribute  
-**Solution:** Manually detect with 3 fallback paths
+### 32. google_ads_config_path Attribute Error
+**Problem:** AttributeError when loading Google Ads config
+**Cause:** Config object doesn't have google_ads_config_path attribute
+**Solution:** Manually detect config with fallback paths:
 ```python
-paths = ['google_ads_config.yaml', 'configs/google_ads_config.yaml', 'secrets/google_ads_config.yaml']
-for path in paths:
-  if os.path.exists(path): return path
+for path in ['.', 'configs/', 'secrets/']:
+    candidate = Path(path) / 'google-ads.yaml'
+    if candidate.exists():
+        config_path = candidate
+        break
 ```
-**Prevention:** Don't assume config attributes, detect paths manually  
-**Related:** Lesson #35
+**Prevention:** Never assume config attribute; always use fallback detection
 
-### 30. Expansion Flags in Wrong Column
-**Problem:** Expansion flag appears in wrong table column  
-**Cause:** Old header count doesn't match new columns  
-**Solution:** Remove old "Flag" header, update colspan to 17 (was 16)  
-**Prevention:** Count columns when adding new ones
+### 33. Expansion Flags in Wrong Column
+**Problem:** Keyword expansion flags appearing in wrong table column
+**Cause:** Old "Flag" header in table with wrong colspan
+**Solution:** Remove old Flag header, update colspan to match actual column count
+**Prevention:** Count columns carefully when adding/removing table columns
 
-### 31. CSRF 400 on Accept/Decline
-**Problem:** HTTP 400 "Security token missing or invalid"  
-**Cause:** JSON API routes require CSRF exemption  
-**Solution:** Add csrf.exempt() in app.py
-```python
-csrf.exempt(recommendations.recommendation_accept)
-csrf.exempt(recommendations.recommendation_decline)
-```
-**Prevention:** Exempt JSON APIs called from JavaScript  
-**Related:** Lesson #43
+### 34. Search Terms Client-Side Search Limitation
+**Problem:** Search only finds terms visible on current page
+**Cause:** Client-side search by design — works on rendered rows only
+**Known limitation:** For cross-page search, server-side required (adds reload)
+**Recommendation:** Accept for Phase 1 (<1,000 rows), add server-side if users request
 
 ---
 
 ## MULTI-ENTITY ISSUES
 
-### 32. Rules Tab Generic Component
-**Problem:** CSS/JS conflicts when multiple entity pages use rules_tab.html  
-**Cause:** Generic component doesn't work for entity-specific schemas  
-**Solution:** Create entity-specific components
+### 35. Entity Type Contamination
+**Problem:** Keywords showing campaign recommendations or vice versa
+**Cause:** Filtering on wrong entity_type string
+**Solution:** Use exact entity_type strings:
 ```
-keywords_rules_tab.html (for keywords page)
-ad_group_rules_tab.html (for ad groups page)
-ad_rules_tab.html (for ads page)
+'campaign'         — Campaign recommendations
+'keyword'          — Keyword recommendations
+'shopping_product' — Shopping recommendations
+'ad_group'         — Ad Group recommendations
+'ad'               — Ad recommendations
 ```
-**Prevention:** Use specific components for different entity types  
-**Related:** Lesson #36
-
-### 33. Schema Field Mismatch
-**Problem:** TypeError: 'condition_1_metric' not found  
-**Cause:** Keywords use old schema (condition_metric), new entities use new (condition_1_metric)  
-**Solution:** Use correct schema for each entity type  
-**Prevention:** Document schema divergence, plan future migration  
-**Related:** Lesson #37
-
-### 34. Backend Limit=200 Truncates Data
-**Problem:** Only 162 of 1,256 keywords show  
-**Cause:** Query has LIMIT 200, keywords exceed limit  
-**Solution:** Increase to limit=5000
-```python
-# Wrong:
-SELECT * FROM recommendations LIMIT 200
-# Correct:
-SELECT * FROM recommendations LIMIT 5000
-```
-**Prevention:** Set limits to max expected × 2  
-**Related:** Lesson #42
-
-### 35. Entity Contamination
-**Problem:** Keywords page shows campaign recommendations  
-**Cause:** Missing entity_type filter  
-**Solution:** Add exact entity_type match
-```javascript
-// Filter:
-recs.filter(r => r.entity_type === 'keyword')  // Exact match
-// Not:
-recs.filter(r => r.entity_type.includes('keyword'))  // Too broad
-```
-**Prevention:** Use exact entity_type values: 'campaign', 'keyword', 'shopping_product', 'ad_group', 'ad'
+**Prevention:** Copy exact string from database values, not guessing
 
 ### 36. Empty State Wrong Alert Style
-**Problem:** Empty state uses wrong color (red when should be blue)  
-**Cause:** Not differentiating temporary vs structural issues  
-**Solution:** 
-- Info (blue/cyan): Temporary, will resolve
-- Warning (yellow): Structural, needs admin
-```html
-<!-- Temporary (conditions not met): -->
-<div class="alert alert-info">
-<!-- Structural (table missing): -->
-<div class="alert alert-warning">
-```
-**Prevention:** Match styling to cause and solution  
-**Related:** Lesson #44
+**Problem:** Empty state styling looks like an error when it's temporary
+**Cause:** Using warning (yellow) for temporary "no data yet" states
+**Solution:**
+- Info (blue/cyan) = temporary state, data will appear when conditions met
+- Warning (yellow/orange) = structural issue (missing table, blocked feature)
+**Prevention:** Choose alert style based on whether the issue is fixable by the user
 
-### 37. Load More Missing on High-Volume
-**Problem:** Page slow to load, browser lag  
-**Cause:** Rendering 1,256 cards at once  
-**Solution:** Add Load More pattern (20 cards/load)
+### 37. Load More Missing on High-Volume Pages
+**Problem:** Page freezes or is very slow loading all recommendations
+**Cause:** Rendering 1,000+ cards at once
+**Solution:** Add Load More pattern (20 cards initial, 20 per click):
 ```javascript
+let loaded = 20;
 function loadMore() {
-  const batch = allRecs.slice(displayedCount, displayedCount + 20);
-  batch.forEach(rec => renderCard(rec));
-  displayedCount += 20;
+    cards.slice(loaded, loaded + 20).forEach(c => c.style.display = '');
+    loaded += 20;
 }
 ```
-**Prevention:** Always use Load More for >100 items  
-**Related:** Lesson #46
+**Prevention:** Any dataset >100 items should use Load More
+
+### 38. Backward Compatibility Broken After Schema Change
+**Problem:** Old campaign recommendations break after multi-entity migration
+**Cause:** Removed campaign_id/campaign_name columns during migration
+**Solution:** Always keep old columns; add new columns alongside:
+```sql
+-- Keep: campaign_id, campaign_name
+-- Add: entity_type, entity_id, entity_name
+```
+**Prevention:** Never remove columns — add new ones alongside existing
 
 ---
 
-## QUICK REFERENCE TABLE
+## OUTREACH SYSTEM ISSUES
 
-| Problem | Cause | Solution | Related Lesson |
-|---------|-------|----------|----------------|
-| No CSS | Wrong base template | Use base_bootstrap.html | #1 |
-| Query fails | Missing ro prefix | Use ro.analytics.* | #2 |
-| Drawer visible | Conflicting display | HTML: none, JS: flex | #10 |
-| Campaign picker empty | No data fetch | Wire /api/campaigns-list | #12 |
-| Radar crash | No ATTACH | ATTACH readonly as ro | #20 |
-| Three.js black | Unsupported property | Remove colorSpace | #25 |
-| Root domain 404 | DNS propagation | Wait 30-60 min | #26 |
-| Dry-run slow | Loading client first | Check flag first | #32 |
-| CSRF 400 | No exemption | csrf.exempt() routes | #43 |
-| Only 162 of 1256 | Low limit | Increase to 5000 | #42 |
+### 39. Opened/Clicked Metrics Showing Zero
+**Problem:** Analytics page shows 0 opened, 0 clicked despite emails being sent
+**Cause:** Route queries `opened_at IS NOT NULL` but that timestamp column is never written by seed script. Actual data lives in `open_count` / `click_count` / `cv_open_count` integer columns.
+**Solution:**
+```python
+# WRONG:
+WHERE opened_at IS NOT NULL
+
+# CORRECT:
+WHERE open_count > 0
+WHERE click_count > 0
+WHERE cv_open_count > 0
+```
+Also run `tools/seed_outreach_clicks.py` to populate integer columns.
+**Prevention:** Check which columns the seed script actually writes before querying
+
+### 40. Client Selector Auto-Switching on Page Load
+**Problem:** Every outreach page load triggers `/switch-client/3` in logs, resetting client
+**Cause:** `current_client_path = get_current_config()` returns a DashboardConfig object. Template comparison `{% if cpath == current_client_config %}` always False (object vs string), putting browser in undefined state that triggers spurious onchange.
+**Solution:**
+```python
+# WRONG — returns DashboardConfig object:
+current_client_path = get_current_config()
+
+# CORRECT — returns string matching template comparison:
+current_client_path = session.get("current_client_config")
+```
+**Prevention:** Always use `session.get("current_client_config")` to get current client path. Check all other routes use this pattern as the established standard.
+
+### 41. Jinja/JavaScript Double Brace Conflict
+**Problem:** Jinja2 tries to evaluate JavaScript template literals or variable placeholders containing `{{ }}`
+**Cause:** Jinja2 pre-processes all `{{ }}` before the browser sees JavaScript
+**Solution:**
+```javascript
+// WRONG — Jinja tries to evaluate {{first_name}}:
+let body = "Hello {{first_name}}, ...";
+
+// CORRECT — split the opening braces:
+let body = "Hello " + '{' + '{' + "first_name}}, ...";
+
+// OR use raw block:
+// {% raw %} ... {{ first_name }} ... {% endraw %}
+```
+**Prevention:** Never use `{{ }}` in JavaScript strings inside Jinja templates. Pass Jinja data to JS via data attributes instead.
+
+### 42. Duplicate Flask Process / Port Already In Use
+**Problem:** Flask won't start — "Address already in use" on port 5000
+**Cause:** Previous Flask process still running from earlier terminal session
+**Solution:**
+```powershell
+taskkill /IM python.exe /F
+# Then start Flask fresh:
+python act_dashboard/app.py
+```
+**Prevention:** Always kill existing processes before starting a new Flask instance. Use a fresh PowerShell window.
+
+### 43. Worktrees Causing Git Issues
+**Problem:** Git operations fail with unexpected errors related to worktrees
+**Cause:** Git worktrees not excluded from tracking
+**Solution:** Add to `.gitignore`:
+```
+.git/worktrees/
+```
+**Prevention:** Add worktrees to .gitignore at project setup
 
 ---
 
-**Total Pitfalls:** 37  
-**Categories:** 9  
-**Purpose:** Quick troubleshooting, prevent recurring issues  
-**Application:** Search by problem, find solution fast
-
-**Version:** 1.0 | **Updated:** 2026-02-28
+**Version:** 2.0 | **Last Updated:** 2026-03-06
+**Total Pitfalls:** 43 (37 original + 6 outreach)
+**See Also:** LESSONS_LEARNED.md | MASTER_KNOWLEDGE_BASE.md
