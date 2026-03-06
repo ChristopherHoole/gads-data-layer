@@ -1747,7 +1747,7 @@ _CREDS_PATH = os.path.normpath(
 @bp.route("/sync-from-sheets", methods=["POST"])
 @login_required
 def sync_from_sheets():
-    """Pull rows with Status='new' from Google Sheet and insert into leads table."""
+    """Pull rows with Status='new' from Google Sheet and insert into outreach_leads."""
     try:
         import gspread
         from google.oauth2.service_account import Credentials as GCredentials
@@ -1791,9 +1791,9 @@ def sync_from_sheets():
                 skipped += 1
                 continue
 
-            # Deduplication check
+            # Deduplication check against outreach_leads
             exists = conn.execute(
-                "SELECT 1 FROM leads WHERE email = ?", [email]
+                "SELECT 1 FROM outreach_leads WHERE email = ?", [email]
             ).fetchone()
 
             if exists:
@@ -1802,12 +1802,25 @@ def sync_from_sheets():
                 sheet.update_cell(row_num, 10, "imported")
                 continue
 
+            # Parse name into parts
+            parts      = name.split(" ", 1)
+            first_name = parts[0] if parts else ""
+            last_name  = parts[1] if len(parts) > 1 else ""
+            notes      = f"Phone: {phone}" if phone else ""
+
             conn.execute(
                 """
-                INSERT INTO leads (name, company, email, phone, source, status)
-                VALUES (?, ?, ?, ?, 'website', 'new')
+                INSERT INTO outreach_leads
+                    (lead_id, first_name, last_name, full_name, company, role, email,
+                     linkedin_url, website, city_state, country, timezone,
+                     track, source, lead_type_score, status, progress_stage,
+                     notes, added_date, last_activity, sequence_step, do_not_contact)
+                VALUES (?, ?, ?, ?, ?, '', ?, '', '', '', '', 'GMT',
+                        'Direct', 'website', 3, 'cold', 1,
+                        ?, ?, ?, 0, false)
                 """,
-                [name or None, company or None, email, phone or None],
+                [str(uuid.uuid4()), first_name, last_name, name, company or "", email,
+                 notes, date.today(), datetime.now()],
             )
             imported += 1
 
