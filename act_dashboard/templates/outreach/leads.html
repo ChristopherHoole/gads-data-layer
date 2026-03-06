@@ -127,6 +127,10 @@
                 </div>
             </div>
             <div class="right-controls">
+                <button class="columns-btn" id="syncSheetsBtn" onclick="syncFromSheets()">
+                    <span class="material-symbols-outlined" style="font-size:16px;">sync</span>
+                    Sync from Sheets
+                </button>
                 <button class="columns-btn" onclick="showToast('Column selector coming soon', 'info')">
                     <span class="material-symbols-outlined" style="font-size:16px;">view_column</span>
                     Columns
@@ -1013,5 +1017,38 @@ function renderPaginationControls(total) {
     next.onclick     = () => { currentPage++; renderPage(); };
     container.appendChild(next);
 }
+
+/* ──────────────────────────────────────────────────────────────
+   SYNC FROM GOOGLE SHEETS
+   ────────────────────────────────────────────────────────────── */
+function syncFromSheets() {
+    const btn = document.getElementById('syncSheetsBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;animation:spin 1s linear infinite;">sync</span> Syncing…';
+
+    fetch('/outreach/sync-from-sheets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`Imported ${data.imported} new lead${data.imported !== 1 ? 's' : ''} from website`, 'success');
+            if (data.imported > 0) {
+                setTimeout(() => location.reload(), 1000);
+            }
+        } else {
+            showToast('Sync failed — ' + (data.message || 'check logs'), 'error');
+        }
+    })
+    .catch(() => showToast('Sync failed — check logs', 'error'))
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">sync</span> Sync from Sheets';
+    });
+}
 </script>
+<style>
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
 {% endblock %}

@@ -6,6 +6,7 @@ Routes:
   GET  /outreach/leads                   — Leads page
   PATCH /outreach/leads/<lead_id>/notes  — Save notes (AJAX)
   POST  /outreach/leads/add              — Add new lead (AJAX)
+  POST  /outreach/sync-from-sheets       — Sync new leads from Google Sheets (Chat 65)
 """
 
 import json
@@ -1734,3 +1735,86 @@ def analytics():
         )
     finally:
         conn.close()
+
+
+# ── Sync leads from Google Sheets ────────────────────────────────────────────
+_SHEET_ID   = "1zRTPuzwvHDSq23RqJ9iiRaNZ8bSOMmndUzxiP_DW38I"
+_CREDS_PATH = os.path.normpath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "google-credentials.json")
+)
+
+
+@bp.route("/sync-from-sheets", methods=["POST"])
+@login_required
+def sync_from_sheets():
+    """Pull rows with Status='new' from Google Sheet and insert into leads table."""
+    try:
+        import gspread
+        from google.oauth2.service_account import Credentials as GCredentials
+
+        scopes = ["https://www.googleapis.com/auth/spreadsheets"]
+        creds  = GCredentials.from_service_account_file(_CREDS_PATH, scopes=scopes)
+        gc     = gspread.authorize(creds)
+        sheet  = gc.open_by_key(_SHEET_ID).sheet1
+
+        rows = sheet.get_all_values()  # includes header row
+    except FileNotFoundError:
+        return jsonify({"success": False, "message": "google-credentials.json not found"}), 500
+    except Exception as exc:
+        return jsonify({"success": False, "message": f"Sheets error: {exc}"}), 500
+
+    if len(rows) < 2:
+        return jsonify({"success": True, "imported": 0, "skipped": 0})
+
+    # Sheet columns: Timestamp(0) Name(1) Email(2) Company(3) Role(4)
+    #                LookingFor(5) Phone(6) IPAddress(7) UserAgent(8) Status(9)
+    imported = 0
+    skipped  = 0
+
+    conn = get_outreach_db()
+    try:
+        for row_num, row in enumerate(rows[1:], start=2):  # skip header; row_num is 1-indexed sheet row
+            # Pad short rows
+            while len(row) < 10:
+                row.append("")
+
+            status = row[9].strip().lower()
+            if status != "new":
+                continue
+
+            email   = row[2].strip()
+            name    = row[1].strip()
+            company = row[3].strip()
+            phone   = row[6].strip()
+
+            if not email:
+                skipped += 1
+                continue
+
+            # Deduplication check
+            exists = conn.execute(
+                "SELECT 1 FROM leads WHERE email = ?", [email]
+            ).fetchone()
+
+            if exists:
+                skipped += 1
+                # Mark as imported in sheet so we don't check it again
+                sheet.update_cell(row_num, 10, "imported")
+                continue
+
+            conn.execute(
+                """
+                INSERT INTO leads (name, company, email, phone, source, status)
+                VALUES (?, ?, ?, ?, 'website', 'new')
+                """,
+                [name or None, company or None, email, phone or None],
+            )
+            imported += 1
+
+            # Mark row as imported in sheet
+            sheet.update_cell(row_num, 10, "imported")
+
+    finally:
+        conn.close()
+
+    return jsonify({"success": True, "imported": imported, "skipped": skipped})
