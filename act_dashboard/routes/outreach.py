@@ -1241,3 +1241,146 @@ def replies_book_meeting(lead_id):
 def replies_send_reply(lead_id):
     """Placeholder: reply sending not yet implemented. AJAX — CSRF exempt."""
     return jsonify({"success": True, "message": "Reply sending coming soon"})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TEMPLATES PAGE — Chat 63
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── GET /outreach/templates ───────────────────────────────────────────────────
+@bp.route("/templates", methods=["GET"])
+@login_required
+def templates():
+    """Outreach Templates page — view and edit email templates."""
+    import re as _re
+
+    config              = get_current_config()
+    clients             = get_available_clients()
+    current_client_path = session.get("current_client_config")
+
+    conn = get_outreach_db()
+    try:
+        tmpl_rows = conn.execute(
+            """SELECT template_id, name, email_type, sequence_step, subject, body,
+                      send_delay_days, cv_attached_default
+               FROM outreach_templates
+               ORDER BY sequence_step ASC"""
+        ).fetchall()
+
+        tmpl_cols = [
+            "template_id", "name", "email_type", "sequence_step",
+            "subject", "body", "send_delay_days", "cv_attached_default",
+        ]
+
+        # Per-email-type stats from outreach_emails
+        stats_rows = conn.execute(
+            """SELECT email_type,
+                      COUNT(*) FILTER (WHERE status = 'sent')          AS times_sent,
+                      COUNT(*) FILTER (WHERE reply_received = true)    AS replies
+               FROM outreach_emails
+               GROUP BY email_type"""
+        ).fetchall()
+        stats = {r[0]: {"times_sent": r[1], "replies": r[2]} for r in stats_rows}
+
+        templates_list = []
+        cumulative_day = 1
+        for row in tmpl_rows:
+            t     = dict(zip(tmpl_cols, row))
+            et    = t["email_type"]
+            s     = stats.get(et, {"times_sent": 0, "replies": 0})
+            sent  = s["times_sent"]
+            reps  = s["replies"]
+
+            t["times_sent"] = sent
+            t["replies"]    = reps
+            t["reply_rate"] = round(reps / sent * 100) if sent > 0 else 0
+
+            # Cumulative day label for sequence flow
+            delay = t["send_delay_days"] or 0
+            if t["sequence_step"] == 1:
+                cumulative_day = 1
+            else:
+                cumulative_day += delay
+            t["day_label"] = f"Day {cumulative_day}"
+
+            # Pill label and class
+            step = t["sequence_step"]
+            if step == 1:
+                t["pill_label"] = "Step 1"
+                t["pill_class"] = "pill-initial"
+            else:
+                t["pill_label"] = f"Step {step} · +{delay} days"
+                t["pill_class"] = "pill-followup"
+
+            # CV toggle display
+            t["cv_label"] = (
+                "CV attached by default" if t["cv_attached_default"]
+                else "No CV by default"
+            )
+            t["cv_class"] = "attach-on" if t["cv_attached_default"] else "attach-off"
+
+            # Detect template variables (preserve insertion order, deduplicate)
+            t["variables"] = list(
+                dict.fromkeys(_re.findall(r"\{\{(\w+)\}\}", t["body"] or ""))
+            )
+
+            templates_list.append(t)
+
+        return render_template(
+            "outreach/templates.html",
+            templates=templates_list,
+            page_title="Outreach — Templates",
+            available_clients=clients,
+            current_client_config=current_client_path,
+        )
+    except Exception as e:
+        print(f"[OUTREACH TEMPLATES] Error loading templates: {e}")
+        return render_template(
+            "outreach/templates.html",
+            templates=[],
+            page_title="Outreach — Templates",
+            available_clients=clients if "clients" in dir() else [],
+            current_client_config=current_client_path if "current_client_path" in dir() else None,
+        )
+    finally:
+        conn.close()
+
+
+# ── POST /outreach/templates/<template_id>/update ─────────────────────────────
+@bp.route("/templates/<template_id>/update", methods=["POST"])
+@login_required
+def templates_update(template_id):
+    """Update template fields. AJAX JSON — CSRF exempt."""
+    data = request.get_json() or {}
+    conn = get_outreach_db()
+    try:
+        cv_attached = str(data.get("cv_attached", "no")).lower() == "yes"
+        delay_days  = int(data.get("send_delay_days", 0) or 0)
+        conn.execute(
+            """UPDATE outreach_templates
+               SET name                = ?,
+                   subject             = ?,
+                   body                = ?,
+                   cv_attached_default = ?,
+                   send_delay_days     = ?,
+                   updated_at          = ?
+               WHERE template_id = ?""",
+            [
+                data.get("name"), data.get("subject"), data.get("body"),
+                cv_attached, delay_days, datetime.now(), template_id,
+            ],
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"[OUTREACH TEMPLATES] Update error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /outreach/templates/<template_id>/duplicate ──────────────────────────
+@bp.route("/templates/<template_id>/duplicate", methods=["POST"])
+@login_required
+def templates_duplicate(template_id):
+    """Placeholder: duplicate template. AJAX — CSRF exempt."""
+    return jsonify({"success": True, "message": "Duplicate coming soon"})

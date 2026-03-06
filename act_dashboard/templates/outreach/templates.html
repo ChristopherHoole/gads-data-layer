@@ -1,0 +1,331 @@
+{% extends "base_bootstrap.html" %}
+
+{% block title %}Outreach — Templates{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/outreach.css') }}">
+{% endblock %}
+
+{# ── Custom top navbar ── #}
+{% block page_header %}
+<div class="outreach-top-navbar">
+    <div class="outreach-top-navbar-title">Outreach — Templates</div>
+    <div class="outreach-top-navbar-right">
+        <select class="outreach-client-selector"
+                onchange="window.location='/switch-client/'+this.selectedIndex">
+            {% for cname, cpath in available_clients %}
+            <option {% if cpath == current_client_config %}selected{% endif %}>{{ cname }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="templates-content-area">
+
+    {# ══ ATTACHMENTS ══ #}
+    <div class="attachments-card">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;">
+            <div>
+                <div class="attachments-title">Attachments</div>
+                <div class="attachments-sub">Files available to attach to outreach emails. Upload a new CV here when your version changes.</div>
+            </div>
+        </div>
+
+        <div class="attachment-row">
+            <span class="material-symbols-outlined attachment-icon">picture_as_pdf</span>
+            <div>
+                <div class="attachment-name">Christopher_Hoole_CV.pdf</div>
+                <div class="attachment-meta">Uploaded 1 Mar 2026 · 284 KB · Used in 4 templates</div>
+            </div>
+            <div class="attachment-spacer"></div>
+            <button class="btn-ghost" onclick="showToast('Preview not available in demo', 'info')">Preview</button>
+            <button class="btn-ghost" onclick="showToast('Replace coming soon', 'info')">Replace</button>
+            <button class="btn-ghost danger" onclick="showToast('Remove coming soon', 'info')">Remove</button>
+        </div>
+
+        <div class="upload-area" onclick="showToast('Upload coming soon', 'info')">
+            <span class="material-symbols-outlined" style="font-size:28px;display:block;margin-bottom:6px;">upload_file</span>
+            Click to upload a new attachment · PDF, DOC, DOCX · Max 5MB
+        </div>
+    </div>
+
+    {# ══ SEQUENCE FLOW ══ #}
+    <div class="sequence-card">
+        <div class="section-header">
+            <div>
+                <div class="section-title">Outreach sequence</div>
+                <div class="section-sub">The order and timing of emails sent to each lead. Click a step to jump to that template.</div>
+            </div>
+        </div>
+
+        <div class="sequence-flow" id="sequenceFlow">
+            {% for t in templates %}
+            {% set is_first = loop.first %}
+
+            <div class="sequence-step">
+                {% if not is_first %}
+                <div class="sequence-arrow">→</div>
+                <div class="sequence-delay">+{{ t.send_delay_days }} days</div>
+                <div class="sequence-arrow">→</div>
+                {% endif %}
+                <div class="sequence-box{% if is_first %} seq-active{% endif %}"
+                     onclick="scrollToTemplate('tpl-{{ t.template_id }}', this)">
+                    <div class="sequence-box-label">Step {{ t.sequence_step }}</div>
+                    <div class="sequence-box-title">{{ t.name }}</div>
+                    <div class="sequence-box-sub">{{ t.day_label }} · {% if t.cv_attached_default %}CV attached{% else %}No CV{% endif %}</div>
+                </div>
+            </div>
+            {% endfor %}
+
+            {# End box #}
+            <div class="sequence-step">
+                <div class="sequence-arrow">→</div>
+                <div class="sequence-delay">No reply →</div>
+                <div class="sequence-arrow">→</div>
+                <div class="sequence-box seq-closed">
+                    <div class="sequence-box-label">End</div>
+                    <div class="sequence-box-title">Closed</div>
+                    <div class="sequence-box-sub">Status: No reply</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ══ TEMPLATE CARDS ══ #}
+    {% for t in templates %}
+    <div class="template-card" id="tpl-{{ t.template_id }}">
+
+        {# Header #}
+        <div class="template-card-header">
+            <div class="template-card-title">{{ t.name }}</div>
+            <span class="email-type-pill {{ t.pill_class }}">{{ t.pill_label }}</span>
+        </div>
+
+        {# Track badges row #}
+        <div class="template-track-row">
+            <span class="track-label">Used for:</span>
+            <span class="track-badge track-job">Job</span>
+            <span class="track-badge track-recruiter">Recruiter</span>
+            <span class="track-badge track-agency">Agency</span>
+            <span class="track-badge track-direct">Direct</span>
+        </div>
+
+        {# Body #}
+        <div class="template-body">
+            <div class="template-field">
+                <div class="template-field-label">Subject line</div>
+                <div class="template-subject" id="subj-{{ t.template_id }}">{{ t.subject }}</div>
+            </div>
+            <div class="template-field">
+                <div class="template-field-label">Body</div>
+                <div class="template-text" id="body-{{ t.template_id }}">{{ t.body }}</div>
+            </div>
+            {% if t.variables %}
+            <div class="template-vars">
+                <span style="font-size:11px;color:#9aa0a6;">Variables:</span>
+                {% for v in t.variables %}
+                <span class="var-chip">&#123;&#123;{{ v }}&#125;&#125;</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        {# Footer #}
+        <div class="template-footer">
+            <div class="template-stats">
+                Sent <span>{{ t.times_sent }}</span> times
+                · <span>{{ t.replies }}</span> replies
+                · <span>{{ t.reply_rate }}%</span> reply rate
+            </div>
+            <div class="template-attach">
+                <span class="attach-toggle">
+                    <span class="material-symbols-outlined" style="font-size:14px;">attach_file</span>
+                    <span class="{{ t.cv_class }}" id="cvlabel-{{ t.template_id }}">{{ t.cv_label }}</span>
+                </span>
+            </div>
+            <div class="template-footer-right">
+                <button class="btn-ghost"
+                        onclick="openEditModal('{{ t.template_id }}')">&#9998; Edit</button>
+                <button class="btn-ghost"
+                        onclick="duplicateTemplate('{{ t.template_id }}')">Duplicate</button>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div style="grid-column:1/-1;padding:40px;text-align:center;color:#9aa0a6;">
+        No templates found.
+    </div>
+    {% endfor %}
+
+</div>{# /templates-content-area #}
+
+
+{# ══ EDIT MODAL ══ #}
+<div class="tpl-modal-overlay" id="tplEditModal" onclick="closeTplModal(event)">
+    <div class="tpl-modal-box" onclick="event.stopPropagation()">
+
+        <div class="tpl-modal-header">
+            <h3 id="tplModalTitle">Edit template</h3>
+            <button class="tpl-modal-close" onclick="closeTplModal()">&times;</button>
+        </div>
+
+        <div class="tpl-modal-body">
+            <input type="hidden" id="tplModalId">
+
+            <div class="tpl-form-group">
+                <label class="form-label">Template name</label>
+                <input class="form-input" id="tplModalName" type="text">
+            </div>
+
+            <div class="tpl-form-group">
+                <label class="form-label">Subject line</label>
+                <input class="form-input" id="tplModalSubject" type="text">
+            </div>
+
+            <div class="tpl-form-group">
+                <label class="form-label">Body</label>
+                <div class="var-chips-row">
+                    <span style="font-size:11px;color:#9aa0a6;">Insert variable:</span>
+                    <span class="var-chip-insert" onclick="insertVar('first_name')">&#123;&#123;first_name&#125;&#125;</span>
+                    <span class="var-chip-insert" onclick="insertVar('company')">&#123;&#123;company&#125;&#125;</span>
+                    <span class="var-chip-insert" onclick="insertVar('track')">&#123;&#123;track&#125;&#125;</span>
+                    <span class="var-chip-insert" onclick="insertVar('role')">&#123;&#123;role&#125;&#125;</span>
+                </div>
+                <textarea class="tpl-form-textarea" id="tplModalBody"></textarea>
+                <div class="form-hint">Use &#123;&#123;first_name&#125;&#125;, &#123;&#123;company&#125;&#125; etc. These are replaced automatically when the email is generated.</div>
+            </div>
+
+            <div class="tpl-form-group">
+                <label class="form-label">CV attachment default</label>
+                <select class="form-input" id="tplModalAttach">
+                    <option value="yes">Attach CV by default</option>
+                    <option value="no">No CV by default</option>
+                </select>
+            </div>
+
+            <div class="tpl-form-group">
+                <label class="form-label">Send delay</label>
+                <select class="form-input" id="tplModalDelay">
+                    <option value="0">Same day (Step 1 only)</option>
+                    <option value="3">+3 days</option>
+                    <option value="5">+5 days</option>
+                    <option value="7">+7 days</option>
+                    <option value="10">+10 days</option>
+                    <option value="14">+14 days</option>
+                    <option value="21">+21 days</option>
+                    <option value="30">+30 days</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="tpl-modal-footer">
+            <button class="btn-secondary-modal" onclick="closeTplModal()">Cancel</button>
+            <button class="btn-primary-modal" onclick="saveTemplate()">Save changes</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Template data map (keyed by template_id) ── */
+const TPL_MAP = {};
+{{ templates|tojson|safe }}.forEach(function(t) { TPL_MAP[t.template_id] = t; });
+
+/* ── Scroll template card into view ── */
+function scrollToTemplate(id, clickedBox) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.querySelectorAll('.sequence-box').forEach(b => b.classList.remove('seq-active'));
+    if (clickedBox) clickedBox.classList.add('seq-active');
+}
+
+/* ── Open edit modal ── */
+function openEditModal(templateId) {
+    const t = TPL_MAP[templateId];
+    if (!t) return;
+    document.getElementById('tplModalTitle').textContent   = 'Edit — ' + t.name;
+    document.getElementById('tplModalId').value            = t.template_id;
+    document.getElementById('tplModalName').value          = t.name;
+    document.getElementById('tplModalSubject').value       = t.subject;
+    document.getElementById('tplModalBody').value          = t.body;
+    document.getElementById('tplModalAttach').value        = t.cv_attached_default ? 'yes' : 'no';
+    document.getElementById('tplModalDelay').value         = String(t.send_delay_days || 0);
+    document.getElementById('tplEditModal').classList.add('tpl-modal-open');
+}
+
+/* ── Close edit modal ── */
+function closeTplModal(e) {
+    if (!e || e.target === document.getElementById('tplEditModal')) {
+        document.getElementById('tplEditModal').classList.remove('tpl-modal-open');
+    }
+}
+
+/* ── Insert variable at cursor ── */
+function insertVar(varName) {
+    const v     = '{' + '{' + varName + '}' + '}';
+    const ta    = document.getElementById('tplModalBody');
+    const start = ta.selectionStart;
+    const end   = ta.selectionEnd;
+    ta.value    = ta.value.slice(0, start) + v + ta.value.slice(end);
+    ta.selectionStart = ta.selectionEnd = start + v.length;
+    ta.focus();
+}
+
+/* ── Save template ── */
+function saveTemplate() {
+    const id      = document.getElementById('tplModalId').value;
+    const payload = {
+        name:           document.getElementById('tplModalName').value,
+        subject:        document.getElementById('tplModalSubject').value,
+        body:           document.getElementById('tplModalBody').value,
+        cv_attached:    document.getElementById('tplModalAttach').value,
+        send_delay_days: parseInt(document.getElementById('tplModalDelay').value, 10),
+    };
+
+    fetch('/outreach/templates/' + id + '/update', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            closeTplModal();
+            updateCardDisplay(id, payload);
+            showToast('Template saved', 'success');
+        } else {
+            showToast('Error: ' + (data.message || 'Save failed'), 'error');
+        }
+    })
+    .catch(() => showToast('Network error — could not save', 'error'));
+}
+
+/* ── Update template card in-place after save ── */
+function updateCardDisplay(id, payload) {
+    const subjEl  = document.getElementById('subj-' + id);
+    const bodyEl  = document.getElementById('body-' + id);
+    const cvEl    = document.getElementById('cvlabel-' + id);
+
+    if (subjEl) subjEl.textContent = payload.subject;
+    if (bodyEl) bodyEl.textContent = payload.body;
+
+    if (cvEl) {
+        const isOn = payload.cv_attached === 'yes';
+        cvEl.textContent = isOn ? 'CV attached by default' : 'No CV by default';
+        cvEl.className   = isOn ? 'attach-on' : 'attach-off';
+    }
+}
+
+/* ── Duplicate placeholder ── */
+function duplicateTemplate(id) {
+    fetch('/outreach/templates/' + id + '/duplicate', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => showToast(data.message || 'Duplicate coming soon', 'info'))
+        .catch(() => showToast('Duplicate coming soon', 'info'));
+}
+</script>
+{% endblock %}

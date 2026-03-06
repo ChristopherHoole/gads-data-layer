@@ -2002,3 +2002,308 @@
 
 #repliesStatusModal .modal-body  { padding-top: 8px; }
 #repliesStatusModal .form-select { height: 42px; }
+
+/* ============================================================
+   Templates page — Chat 63
+   ============================================================ */
+
+/* ── Templates content area ── */
+.templates-content-area {
+  padding: 20px 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  max-width: 1200px;
+}
+
+/* ── Section header ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.section-title { font-size: 15px; font-weight: 600; color: #202124; }
+.section-sub   { font-size: 12px; color: #5f6368; margin-top: 2px; }
+
+.btn-add {
+  padding: 7px 14px;
+  background: #1a73e8;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-add:hover { background: #1557b0; }
+
+/* ── Attachments card ── */
+.attachments-card {
+  background: white;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  padding: 18px 20px;
+  grid-column: 1 / -1;
+}
+.attachments-title { font-size: 15px; font-weight: 600; color: #202124; }
+.attachments-sub   { font-size: 12px; color: #5f6368; margin-top: 2px; }
+
+.attachment-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  background: #f8f9fa;
+  margin-bottom: 10px;
+}
+.attachment-icon    { font-size: 24px; color: #ea4335; flex-shrink: 0; }
+.attachment-name    { font-size: 13px; font-weight: 600; color: #202124; }
+.attachment-meta    { font-size: 11px; color: #9aa0a6; margin-top: 2px; }
+.attachment-spacer  { flex: 1; }
+
+.upload-area {
+  border: 2px dashed #dadce0;
+  border-radius: 6px;
+  padding: 20px;
+  text-align: center;
+  color: #9aa0a6;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.upload-area:hover { border-color: #1a73e8; color: #1a73e8; background: #f8fbff; }
+
+/* ── Ghost button ── */
+.btn-ghost {
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #202124;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-ghost:hover          { background: #f1f3f4; }
+.btn-ghost.danger         { color: #ea4335; border-color: #fecaca; }
+.btn-ghost.danger:hover   { background: #fef2f2; }
+
+/* ── Sequence card ── */
+.sequence-card {
+  background: white;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  padding: 18px 20px;
+  grid-column: 1 / -1;
+}
+
+.sequence-flow {
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  padding: 10px 0;
+}
+
+.sequence-step { display: flex; align-items: center; }
+
+.sequence-box {
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  min-width: 150px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sequence-box:hover        { border-color: #1a73e8; background: #f0f6ff; }
+.sequence-box.seq-active   { border-color: #1a73e8; background: #e8f0fe; }
+.sequence-box.seq-closed   { opacity: 0.6; cursor: default; }
+.sequence-box-label { font-size: 11px; font-weight: 600; color: #9aa0a6; margin-bottom: 4px; }
+.sequence-box-title { font-size: 13px; font-weight: 600; color: #202124; }
+.sequence-box-sub   { font-size: 11px; color: #5f6368; margin-top: 3px; }
+.sequence-arrow     { font-size: 18px; color: #dadce0; padding: 0 8px; flex-shrink: 0; }
+.sequence-delay     { font-size: 11px; color: #9aa0a6; padding: 0 4px; white-space: nowrap; }
+
+/* ── Template card ── */
+.template-card {
+  background: white;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.template-card-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8f9fa;
+}
+.template-card-title { font-size: 14px; font-weight: 600; color: #202124; }
+
+.template-track-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 10px 18px;
+  border-bottom: 1px solid #f1f3f4;
+  align-items: center;
+}
+.track-label { font-size: 11px; color: #9aa0a6; margin-right: 2px; }
+
+.template-body  { padding: 16px 18px; flex: 1; }
+.template-field { margin-bottom: 12px; }
+.template-field-label { font-size: 11px; font-weight: 600; color: #9aa0a6; margin-bottom: 5px; }
+
+.template-subject {
+  font-size: 13px;
+  color: #202124;
+  font-weight: 500;
+  padding: 8px 10px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.template-text {
+  font-size: 13px;
+  color: #202124;
+  line-height: 1.75;
+  padding: 10px 12px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  white-space: pre-line;
+  min-height: 140px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.template-text::-webkit-scrollbar       { width: 4px; }
+.template-text::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 2px; }
+
+.template-vars {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  align-items: center;
+}
+.var-chip {
+  padding: 2px 8px;
+  background: #e8f0fe;
+  color: #1a73e8;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.template-footer {
+  padding: 12px 18px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  flex-wrap: wrap;
+}
+.template-stats      { font-size: 11px; color: #9aa0a6; }
+.template-stats span { color: #202124; font-weight: 600; }
+.template-attach     { display: flex; align-items: center; gap: 5px; }
+.attach-toggle       { display: flex; align-items: center; gap: 5px; cursor: default; }
+.attach-on  { color: #1a73e8; background: #e8f0fe; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; }
+.attach-off { color: #9aa0a6; background: #f1f3f4; padding: 2px 8px; border-radius: 4px; font-weight: 500; font-size: 11px; }
+.template-footer-right { margin-left: auto; display: flex; gap: 6px; }
+
+/* ── Templates edit modal ── */
+.tpl-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1300;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.tpl-modal-overlay.tpl-modal-open { display: flex; }
+
+.tpl-modal-box {
+  background: white;
+  border-radius: 8px;
+  width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+
+.tpl-modal-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid #dadce0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 10;
+}
+.tpl-modal-header h3   { font-size: 15px; font-weight: 600; color: #202124; margin: 0; }
+.tpl-modal-close       { background: none; border: none; cursor: pointer; color: #5f6368; font-size: 20px; padding: 0; }
+.tpl-modal-close:hover { color: #202124; }
+
+.tpl-modal-body   { padding: 22px; }
+.tpl-form-group   { margin-bottom: 16px; }
+
+.tpl-modal-footer {
+  padding: 16px 22px;
+  border-top: 1px solid #dadce0;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  position: sticky;
+  bottom: 0;
+  background: white;
+}
+
+/* ── Variable insert chips (modal) ── */
+.var-chips-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  align-items: center;
+}
+.var-chip-insert {
+  padding: 3px 10px;
+  background: #e8f0fe;
+  color: #1a73e8;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid #c5d9f5;
+}
+.var-chip-insert:hover { background: #d2e3fc; }
+
+/* ── Modal textarea (templates) ── */
+.tpl-form-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #202124;
+  font-family: inherit;
+  min-height: 200px;
+  resize: vertical;
+  line-height: 1.75;
+}
+.tpl-form-textarea:focus { outline: 2px solid #1a73e8; border-color: transparent; }

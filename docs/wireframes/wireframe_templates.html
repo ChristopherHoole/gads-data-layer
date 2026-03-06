@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wireframe — Outreach: Templates</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+<style>
+.material-symbols-outlined { font-variation-settings: 'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 40; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size:13px; background:#f8f9fa; color:#202124; }
+
+/* ── NAV ── */
+.nav-sidebar { width:110px; background:#fff; border-right:1px solid #dadce0; display:flex; flex-direction:column; position:fixed; left:0; top:0; height:100vh; z-index:1000; }
+.nav-brand { padding:16px 12px; display:flex; flex-direction:column; align-items:center; border-bottom:1px solid #dadce0; }
+.nav-brand-logo { width:48px; height:48px; margin-bottom:8px; }
+.nav-brand-text { font-size:14px; font-weight:600; color:#202124; text-align:center; line-height:1.3; }
+.nav-items { flex:1; padding:8px 0; overflow-y:auto; }
+.nav-item { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 8px; margin:2px 8px; text-decoration:none; color:#5f6368; border-radius:8px; transition:all 150ms ease; cursor:pointer; min-height:68px; }
+.nav-item:hover { background:#f1f3f4; color:#202124; }
+.nav-item.active { background:#e8f0fe; color:#1a73e8; }
+.nav-item-icon { font-size:28px; margin-bottom:4px; }
+.nav-item-text { font-size:12px; font-weight:500; text-align:center; line-height:1.2; }
+.nav-item-text.small { font-size:10px; }
+.nav-sub { background:#f8f9fa; border-left:2px solid #1a73e8; margin:0 8px 4px; border-radius:0 6px 6px 0; }
+.nav-sub-item { display:block; padding:7px 10px; font-size:11px; font-weight:500; color:#5f6368; text-decoration:none; transition:color 0.15s; text-align:center; }
+.nav-sub-item:hover { color:#202124; background:#f1f3f4; }
+.nav-sub-item.active { color:#1a73e8; font-weight:700; }
+.nav-badge { background:#ea4335; color:white; font-size:8px; border-radius:10px; padding:1px 4px; font-weight:700; margin-left:2px; vertical-align:middle; }
+
+/* ── LAYOUT ── */
+.main-wrapper { margin-left:110px; }
+.top-navbar { background:#fff; border-bottom:1px solid #dadce0; padding:0 24px; height:56px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:500; }
+.top-navbar-title { font-size:18px; font-weight:600; color:#202124; }
+.client-selector { padding:6px 12px; background:white; border:1px solid #dadce0; border-radius:4px; font-size:13px; color:#202124; cursor:pointer; }
+
+/* ── CONTENT ── */
+.content-area { padding:20px 24px; display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:1200px; }
+.content-area.full { grid-template-columns:1fr; }
+
+/* ── SECTION HEADER ── */
+.section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.section-title { font-size:15px; font-weight:600; color:#202124; }
+.section-sub { font-size:12px; color:#5f6368; margin-top:2px; }
+.btn-add { padding:7px 14px; background:#1a73e8; border:none; border-radius:4px; color:white; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:5px; }
+.btn-add:hover { background:#1557b0; }
+
+/* ── ATTACHMENTS CARD ── */
+.attachments-card { background:white; border:1px solid #dadce0; border-radius:8px; padding:18px 20px; margin-bottom:20px; grid-column: 1 / -1; }
+.attachments-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.attachments-title { font-size:15px; font-weight:600; color:#202124; }
+.attachments-sub { font-size:12px; color:#5f6368; margin-top:2px; }
+.attachment-row { display:flex; align-items:center; gap:14px; padding:12px 14px; border:1px solid #dadce0; border-radius:6px; background:#f8f9fa; }
+.attachment-icon { font-size:24px; color:#ea4335; flex-shrink:0; }
+.attachment-name { font-size:13px; font-weight:600; color:#202124; }
+.attachment-meta { font-size:11px; color:#9aa0a6; margin-top:2px; }
+.attachment-spacer { flex:1; }
+.btn-ghost { padding:6px 12px; background:white; border:1px solid #dadce0; border-radius:4px; font-size:12px; color:#202124; cursor:pointer; transition:background 0.15s; }
+.btn-ghost:hover { background:#f1f3f4; }
+.btn-ghost.danger { color:#ea4335; border-color:#fecaca; }
+.btn-ghost.danger:hover { background:#fef2f2; }
+.upload-area { border:2px dashed #dadce0; border-radius:6px; padding:20px; text-align:center; color:#9aa0a6; font-size:12px; margin-top:10px; cursor:pointer; transition:all 0.15s; }
+.upload-area:hover { border-color:#1a73e8; color:#1a73e8; background:#f8fbff; }
+
+/* ── TEMPLATE CARD ── */
+.template-card { background:white; border:1px solid #dadce0; border-radius:8px; overflow:hidden; display:flex; flex-direction:column; }
+.template-card-header { padding:14px 18px; border-bottom:1px solid #e0e0e0; display:flex; align-items:center; justify-content:space-between; background:#f8f9fa; }
+.template-card-title { font-size:14px; font-weight:600; color:#202124; }
+.template-type-pill { padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+.pill-initial  { background:#e8f0fe; color:#1a73e8; }
+.pill-followup { background:#fff3e0; color:#e65100; }
+.template-track-row { display:flex; gap:6px; flex-wrap:wrap; padding:10px 18px; border-bottom:1px solid #f1f3f4; background:white; }
+.track-badge { padding:2px 7px; border-radius:4px; font-size:11px; font-weight:600; }
+.track-job       { background:#fef3c7; color:#92400e; }
+.track-recruiter { background:#ede9fe; color:#6d28d9; }
+.track-agency    { background:#dbeafe; color:#1d4ed8; }
+.track-direct    { background:#d1fae5; color:#065f46; }
+.track-label { font-size:11px; color:#9aa0a6; align-self:center; margin-right:2px; }
+
+.template-body { padding:16px 18px; flex:1; }
+.template-field { margin-bottom:12px; }
+.template-field-label { font-size:11px; font-weight:600; color:#9aa0a6; margin-bottom:5px; }
+.template-subject { font-size:13px; color:#202124; font-weight:500; padding:8px 10px; background:#f8f9fa; border:1px solid #e0e0e0; border-radius:4px; }
+.template-text { font-size:13px; color:#202124; line-height:1.75; padding:10px 12px; background:#f8f9fa; border:1px solid #e0e0e0; border-radius:4px; white-space:pre-line; min-height:140px; max-height:220px; overflow-y:auto; }
+.template-text::-webkit-scrollbar { width:4px; }
+.template-text::-webkit-scrollbar-thumb { background:#dadce0; border-radius:2px; }
+
+.template-vars { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+.var-chip { padding:2px 8px; background:#e8f0fe; color:#1a73e8; border-radius:4px; font-size:11px; font-weight:500; cursor:default; }
+.var-chip:hover { background:#d2e3fc; }
+
+.template-footer { padding:12px 18px; border-top:1px solid #e0e0e0; display:flex; align-items:center; gap:8px; background:white; }
+.template-stats { font-size:11px; color:#9aa0a6; }
+.template-stats span { color:#202124; font-weight:600; }
+.template-attach { display:flex; align-items:center; gap:5px; font-size:11px; }
+.attach-toggle { display:flex; align-items:center; gap:5px; cursor:pointer; }
+.attach-on  { color:#1a73e8; background:#e8f0fe; padding:2px 8px; border-radius:4px; font-weight:600; }
+.attach-off { color:#9aa0a6; background:#f1f3f4; padding:2px 8px; border-radius:4px; font-weight:500; }
+.template-footer-right { margin-left:auto; display:flex; gap:6px; }
+
+/* ── SEQUENCE FLOW ── */
+.sequence-card { background:white; border:1px solid #dadce0; border-radius:8px; padding:18px 20px; grid-column: 1 / -1; }
+.sequence-flow { display:flex; align-items:center; gap:0; overflow-x:auto; padding:10px 0; }
+.sequence-step { display:flex; align-items:center; }
+.sequence-box { border:1px solid #dadce0; border-radius:8px; padding:12px 16px; background:#f8f9fa; min-width:160px; text-align:center; cursor:pointer; transition:all 0.15s; }
+.sequence-box:hover { border-color:#1a73e8; background:#f0f6ff; }
+.sequence-box.active { border-color:#1a73e8; background:#e8f0fe; }
+.sequence-box-label { font-size:11px; font-weight:600; color:#9aa0a6; margin-bottom:4px; }
+.sequence-box-title { font-size:13px; font-weight:600; color:#202124; }
+.sequence-box-sub { font-size:11px; color:#5f6368; margin-top:3px; }
+.sequence-arrow { font-size:18px; color:#dadce0; padding:0 8px; flex-shrink:0; }
+.sequence-delay { font-size:11px; color:#9aa0a6; text-align:center; padding:0 4px; white-space:nowrap; }
+
+/* ── EDIT MODAL ── */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:900; display:none; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal-box { background:white; border-radius:8px; width:640px; max-height:90vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.18); }
+.modal-header { padding:18px 22px; border-bottom:1px solid #dadce0; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; background:white; z-index:10; }
+.modal-header h3 { font-size:15px; font-weight:600; color:#202124; }
+.modal-close { background:none; border:none; cursor:pointer; color:#5f6368; font-size:20px; }
+.modal-close:hover { color:#202124; }
+.modal-body { padding:22px; }
+.form-group { margin-bottom:16px; }
+.form-label { font-size:12px; font-weight:600; color:#5f6368; margin-bottom:6px; display:block; }
+.form-input { width:100%; padding:8px 12px; border:1px solid #dadce0; border-radius:4px; font-size:13px; color:#202124; outline:none; font-family:inherit; }
+.form-input:focus { border-color:#1a73e8; }
+.form-textarea { width:100%; padding:10px 12px; border:1px solid #dadce0; border-radius:4px; font-size:13px; color:#202124; outline:none; font-family:inherit; min-height:200px; resize:vertical; line-height:1.75; }
+.form-textarea:focus { border-color:#1a73e8; }
+.form-hint { font-size:11px; color:#9aa0a6; margin-top:5px; }
+.var-chips-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+.var-chip-insert { padding:3px 10px; background:#e8f0fe; color:#1a73e8; border-radius:4px; font-size:11px; font-weight:500; cursor:pointer; border:1px solid #c5d9f5; }
+.var-chip-insert:hover { background:#d2e3fc; }
+.modal-footer { padding:16px 22px; border-top:1px solid #dadce0; display:flex; gap:8px; justify-content:flex-end; position:sticky; bottom:0; background:white; }
+.btn-save { padding:9px 22px; background:#1a73e8; border:none; border-radius:4px; color:white; font-size:13px; font-weight:600; cursor:pointer; }
+.btn-save:hover { background:#1557b0; }
+.btn-cancel { padding:9px 16px; background:white; border:1px solid #dadce0; border-radius:4px; font-size:13px; color:#202124; cursor:pointer; }
+.btn-cancel:hover { background:#f8f9fa; }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav class="nav-sidebar">
+  <div class="nav-brand">
+    <svg class="nav-brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="41" fill="none" stroke="#4285F4" stroke-width="10"/>
+      <circle cx="50" cy="50" r="29" fill="none" stroke="#EA4335" stroke-width="10"/>
+      <circle cx="50" cy="50" r="17" fill="none" stroke="#FBBC05" stroke-width="10"/>
+      <circle cx="50" cy="50" r="10" fill="#34A853"/>
+    </svg>
+    <div class="nav-brand-text">Ads<br>Control<br>Tower</div>
+  </div>
+  <div class="nav-items">
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">home</span><span class="nav-item-text">Dashboard</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">campaign</span><span class="nav-item-text">Campaigns</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">folder</span><span class="nav-item-text">Ad Groups</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">search</span><span class="nav-item-text">Keywords</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">article</span><span class="nav-item-text">Ads</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">shopping_cart</span><span class="nav-item-text">Shopping</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">lightbulb</span><span class="nav-item-text small">Recommendations</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">history</span><span class="nav-item-text">Changes</span></a>
+    <a class="nav-item active" href="#">
+      <span class="material-symbols-outlined nav-item-icon">send</span>
+      <span class="nav-item-text">Outreach</span>
+    </a>
+    <div class="nav-sub">
+      <a class="nav-sub-item" href="#">Leads</a>
+      <a class="nav-sub-item" href="#">Queue <span class="nav-badge">3</span></a>
+      <a class="nav-sub-item" href="#">Sent</a>
+      <a class="nav-sub-item" href="#">Replies <span class="nav-badge">4</span></a>
+      <a class="nav-sub-item active" href="#">Templates</a>
+      <a class="nav-sub-item" href="#">Analytics</a>
+    </div>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">settings</span><span class="nav-item-text">Settings</span></a>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<div class="main-wrapper">
+  <div class="top-navbar">
+    <div class="top-navbar-title">Outreach — Templates</div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <select class="client-selector"><option>Synthetic_Test_Client</option></select>
+    </div>
+  </div>
+
+  <div class="content-area">
+
+    <!-- ══ ATTACHMENTS ══ -->
+    <div class="attachments-card">
+      <div class="attachments-header">
+        <div>
+          <div class="attachments-title">Attachments</div>
+          <div class="attachments-sub">Files available to attach to outreach emails. Upload a new CV here when your version changes.</div>
+        </div>
+      </div>
+      <div class="attachment-row">
+        <span class="material-symbols-outlined attachment-icon">picture_as_pdf</span>
+        <div>
+          <div class="attachment-name">Christopher_Hoole_CV.pdf</div>
+          <div class="attachment-meta">Uploaded 1 Mar 2026 · 284 KB · Used in 4 templates</div>
+        </div>
+        <div class="attachment-spacer"></div>
+        <button class="btn-ghost" onclick="alert('Opens CV in new tab')">Preview</button>
+        <button class="btn-ghost" onclick="alert('Replaces file, keeps same filename')">Replace</button>
+        <button class="btn-ghost danger">Remove</button>
+      </div>
+      <div class="upload-area" onclick="alert('File picker — PDF, DOC, DOCX up to 5MB')">
+        <span class="material-symbols-outlined" style="font-size:28px;display:block;margin-bottom:6px;">upload_file</span>
+        Click to upload a new attachment · PDF, DOC, DOCX · Max 5MB
+      </div>
+    </div>
+
+    <!-- ══ SEQUENCE FLOW ══ -->
+    <div class="sequence-card">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Outreach sequence</div>
+          <div class="section-sub" style="font-size:12px;color:#5f6368;margin-top:2px;">The order and timing of emails sent to each lead. Click a step to jump to that template.</div>
+        </div>
+      </div>
+      <div class="sequence-flow">
+        <div class="sequence-step">
+          <div class="sequence-box active" onclick="scrollToTemplate('t1')">
+            <div class="sequence-box-label">Step 1</div>
+            <div class="sequence-box-title">Initial email</div>
+            <div class="sequence-box-sub">Day 1 · CV attached</div>
+          </div>
+        </div>
+        <div class="sequence-step">
+          <div class="sequence-arrow">→</div>
+          <div class="sequence-delay">+7 days</div>
+          <div class="sequence-arrow">→</div>
+        </div>
+        <div class="sequence-step">
+          <div class="sequence-box" onclick="scrollToTemplate('t2')">
+            <div class="sequence-box-label">Step 2</div>
+            <div class="sequence-box-title">Follow-up 1</div>
+            <div class="sequence-box-sub">Day 8 · CV attached</div>
+          </div>
+        </div>
+        <div class="sequence-step">
+          <div class="sequence-arrow">→</div>
+          <div class="sequence-delay">+7 days</div>
+          <div class="sequence-arrow">→</div>
+        </div>
+        <div class="sequence-step">
+          <div class="sequence-box" onclick="scrollToTemplate('t3')">
+            <div class="sequence-box-label">Step 3</div>
+            <div class="sequence-box-title">Follow-up 2</div>
+            <div class="sequence-box-sub">Day 15 · No CV</div>
+          </div>
+        </div>
+        <div class="sequence-step">
+          <div class="sequence-arrow">→</div>
+          <div class="sequence-delay">+14 days</div>
+          <div class="sequence-arrow">→</div>
+        </div>
+        <div class="sequence-step">
+          <div class="sequence-box" onclick="scrollToTemplate('t4')">
+            <div class="sequence-box-label">Step 4</div>
+            <div class="sequence-box-title">Follow-up 3</div>
+            <div class="sequence-box-sub">Day 29 · No CV</div>
+          </div>
+        </div>
+        <div class="sequence-step">
+          <div class="sequence-arrow">→</div>
+          <div style="font-size:11px;color:#9aa0a6;padding:0 8px;white-space:nowrap;">No reply →</div>
+          <div class="sequence-arrow">→</div>
+        </div>
+        <div class="sequence-step">
+          <div class="sequence-box" style="border-color:#dadce0;background:#f8f9fa;opacity:0.6;cursor:default;">
+            <div class="sequence-box-label">End</div>
+            <div class="sequence-box-title">Closed</div>
+            <div class="sequence-box-sub">Status: No reply</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TEMPLATE 1: Initial ══ -->
+    <div class="template-card" id="t1">
+      <div class="template-card-header">
+        <div>
+          <div class="template-card-title">Initial email</div>
+        </div>
+        <span class="template-type-pill pill-initial">Step 1</span>
+      </div>
+      <div class="template-track-row">
+        <span class="track-label">Used for:</span>
+        <span class="track-badge track-job">Job</span>
+        <span class="track-badge track-recruiter">Recruiter</span>
+        <span class="track-badge track-agency">Agency</span>
+        <span class="track-badge track-direct">Direct</span>
+      </div>
+      <div class="template-body">
+        <div class="template-field">
+          <div class="template-field-label">Subject line</div>
+          <div class="template-subject">Google Ads Specialist — 16 Years Experience, Available Now</div>
+        </div>
+        <div class="template-field">
+          <div class="template-field-label">Body</div>
+          <div class="template-text">Hi {{first_name}},
+
+I'm a Google Ads specialist with 16 years of experience managing £50M+ in ad spend across 200+ accounts — and I'm currently exploring new opportunities.
+
+I specialise in Search, Shopping and Performance Max for both lead gen and ecommerce clients. I've also built Ads Control Tower, a proprietary platform that automates Google Ads optimisation with full audit trails and rollback capability.
+
+I'd love to explore whether there's a fit — either as a contractor or a permanent addition to your team.
+
+Would you be open to a quick call?
+
+Best regards,
+Christopher Hoole
++44 7999 500 184
+christopherhoole.online</div>
+        </div>
+        <div class="template-vars">
+          <span style="font-size:11px;color:#9aa0a6;align-self:center;">Variables:</span>
+          <span class="var-chip">{{first_name}}</span>
+          <span class="var-chip">{{company}}</span>
+        </div>
+      </div>
+      <div class="template-footer">
+        <div class="template-stats">Sent <span>42</span> times · <span>11</span> replies · <span>26%</span> reply rate</div>
+        <div class="template-attach">
+          <span class="attach-toggle">
+            <span class="material-symbols-outlined" style="font-size:14px;">attach_file</span>
+            <span class="attach-on">CV attached by default</span>
+          </span>
+        </div>
+        <div class="template-footer-right">
+          <button class="btn-ghost" onclick="openEditModal('t1')">✏ Edit</button>
+          <button class="btn-ghost">Duplicate</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TEMPLATE 2: Follow-up 1 ══ -->
+    <div class="template-card" id="t2">
+      <div class="template-card-header">
+        <div>
+          <div class="template-card-title">Follow-up 1</div>
+        </div>
+        <span class="template-type-pill pill-followup">Step 2 · +7 days</span>
+      </div>
+      <div class="template-track-row">
+        <span class="track-label">Used for:</span>
+        <span class="track-badge track-job">Job</span>
+        <span class="track-badge track-recruiter">Recruiter</span>
+        <span class="track-badge track-agency">Agency</span>
+        <span class="track-badge track-direct">Direct</span>
+      </div>
+      <div class="template-body">
+        <div class="template-field">
+          <div class="template-field-label">Subject line</div>
+          <div class="template-subject">Re: Google Ads Specialist — 16 Years Experience</div>
+        </div>
+        <div class="template-field">
+          <div class="template-field-label">Body</div>
+          <div class="template-text">Hi {{first_name}},
+
+Just a quick follow-up to my email last week — wanted to make sure it didn't get buried in your inbox.
+
+I'm still actively exploring new opportunities in Google Ads. With 16 years of experience and £50M+ managed across 200+ accounts, I'm confident I can add immediate value.
+
+Would love to connect when you have a moment.
+
+Best regards,
+Christopher Hoole
++44 7999 500 184
+christopherhoole.online</div>
+        </div>
+        <div class="template-vars">
+          <span style="font-size:11px;color:#9aa0a6;align-self:center;">Variables:</span>
+          <span class="var-chip">{{first_name}}</span>
+        </div>
+      </div>
+      <div class="template-footer">
+        <div class="template-stats">Sent <span>31</span> times · <span>7</span> replies · <span>23%</span> reply rate</div>
+        <div class="template-attach">
+          <span class="attach-toggle">
+            <span class="material-symbols-outlined" style="font-size:14px;">attach_file</span>
+            <span class="attach-on">CV attached by default</span>
+          </span>
+        </div>
+        <div class="template-footer-right">
+          <button class="btn-ghost" onclick="openEditModal('t2')">✏ Edit</button>
+          <button class="btn-ghost">Duplicate</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TEMPLATE 3: Follow-up 2 ══ -->
+    <div class="template-card" id="t3">
+      <div class="template-card-header">
+        <div>
+          <div class="template-card-title">Follow-up 2</div>
+        </div>
+        <span class="template-type-pill pill-followup">Step 3 · +7 days</span>
+      </div>
+      <div class="template-track-row">
+        <span class="track-label">Used for:</span>
+        <span class="track-badge track-job">Job</span>
+        <span class="track-badge track-recruiter">Recruiter</span>
+        <span class="track-badge track-agency">Agency</span>
+        <span class="track-badge track-direct">Direct</span>
+      </div>
+      <div class="template-body">
+        <div class="template-field">
+          <div class="template-field-label">Subject line</div>
+          <div class="template-subject">Re: Google Ads Specialist — 16 Years Experience</div>
+        </div>
+        <div class="template-field">
+          <div class="template-field-label">Body</div>
+          <div class="template-text">Hi {{first_name}},
+
+I wanted to reach out one more time before I close my search for a while — I'm being selective about the roles I pursue and yours stood out.
+
+I have 16 years of Google Ads experience, £50M+ managed, and a proprietary optimisation platform I've built from scratch. If there's ever a fit, I'd love to connect.
+
+Best regards,
+Christopher Hoole
++44 7999 500 184
+christopherhoole.online</div>
+        </div>
+        <div class="template-vars">
+          <span style="font-size:11px;color:#9aa0a6;align-self:center;">Variables:</span>
+          <span class="var-chip">{{first_name}}</span>
+          <span class="var-chip">{{company}}</span>
+        </div>
+      </div>
+      <div class="template-footer">
+        <div class="template-stats">Sent <span>18</span> times · <span>3</span> replies · <span>17%</span> reply rate</div>
+        <div class="template-attach">
+          <span class="attach-toggle">
+            <span class="material-symbols-outlined" style="font-size:14px;">attach_file</span>
+            <span class="attach-off">No CV by default</span>
+          </span>
+        </div>
+        <div class="template-footer-right">
+          <button class="btn-ghost" onclick="openEditModal('t3')">✏ Edit</button>
+          <button class="btn-ghost">Duplicate</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TEMPLATE 4: Follow-up 3 ══ -->
+    <div class="template-card" id="t4">
+      <div class="template-card-header">
+        <div>
+          <div class="template-card-title">Follow-up 3</div>
+        </div>
+        <span class="template-type-pill pill-followup">Step 4 · +14 days</span>
+      </div>
+      <div class="template-track-row">
+        <span class="track-label">Used for:</span>
+        <span class="track-badge track-job">Job</span>
+        <span class="track-badge track-recruiter">Recruiter</span>
+        <span class="track-badge track-agency">Agency</span>
+        <span class="track-badge track-direct">Direct</span>
+      </div>
+      <div class="template-body">
+        <div class="template-field">
+          <div class="template-field-label">Subject line</div>
+          <div class="template-subject">Re: Google Ads Specialist — Last message</div>
+        </div>
+        <div class="template-field">
+          <div class="template-field-label">Body</div>
+          <div class="template-text">Hi {{first_name}},
+
+I'll keep this short — I know you're busy.
+
+I'm a Google Ads specialist with 16 years of experience and I'd love to work with {{company}}. If the timing is ever right, my details are below.
+
+Best regards,
+Christopher Hoole
++44 7999 500 184
+christopherhoole.online</div>
+        </div>
+        <div class="template-vars">
+          <span style="font-size:11px;color:#9aa0a6;align-self:center;">Variables:</span>
+          <span class="var-chip">{{first_name}}</span>
+          <span class="var-chip">{{company}}</span>
+        </div>
+      </div>
+      <div class="template-footer">
+        <div class="template-stats">Sent <span>9</span> times · <span>1</span> reply · <span>11%</span> reply rate</div>
+        <div class="template-attach">
+          <span class="attach-toggle">
+            <span class="material-symbols-outlined" style="font-size:14px;">attach_file</span>
+            <span class="attach-off">No CV by default</span>
+          </span>
+        </div>
+        <div class="template-footer-right">
+          <button class="btn-ghost" onclick="openEditModal('t4')">✏ Edit</button>
+          <button class="btn-ghost">Duplicate</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content-area -->
+</div><!-- /main-wrapper -->
+
+<!-- ══ EDIT MODAL ══ -->
+<div class="modal-overlay" id="editModal" onclick="closeModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="modalTitle">Edit template</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Template name</label>
+        <input class="form-input" id="modalName" type="text">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Subject line</label>
+        <input class="form-input" id="modalSubject" type="text">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Body</label>
+        <div class="var-chips-row" style="margin-bottom:8px;">
+          <span style="font-size:11px;color:#9aa0a6;align-self:center;">Insert variable:</span>
+          <span class="var-chip-insert" onclick="insertVar('{{first_name}}')">{{first_name}}</span>
+          <span class="var-chip-insert" onclick="insertVar('{{company}}')">{{company}}</span>
+          <span class="var-chip-insert" onclick="insertVar('{{track}}')">{{track}}</span>
+          <span class="var-chip-insert" onclick="insertVar('{{role}}')">{{role}}</span>
+        </div>
+        <textarea class="form-textarea" id="modalBody"></textarea>
+        <div class="form-hint">Use {{first_name}}, {{company}} etc. These are replaced automatically when the email is generated.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">CV attachment default</label>
+        <select class="form-input" id="modalAttach">
+          <option value="yes">Attach CV by default</option>
+          <option value="no">No CV by default</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Send delay</label>
+        <select class="form-input" id="modalDelay">
+          <option>Same day (Step 1 only)</option>
+          <option>+3 days</option>
+          <option>+5 days</option>
+          <option selected>+7 days</option>
+          <option>+10 days</option>
+          <option>+14 days</option>
+          <option>+21 days</option>
+          <option>+30 days</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="closeModal()">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const templateData = {
+  t1: { name:'Initial email',  subject:'Google Ads Specialist — 16 Years Experience, Available Now', attach:'yes', delay:'Same day (Step 1 only)', body:`Hi {{first_name}},
+
+I'm a Google Ads specialist with 16 years of experience managing £50M+ in ad spend across 200+ accounts — and I'm currently exploring new opportunities.
+
+I specialise in Search, Shopping and Performance Max for both lead gen and ecommerce clients. I've also built Ads Control Tower, a proprietary platform that automates Google Ads optimisation with full audit trails and rollback capability.
+
+I'd love to explore whether there's a fit — either as a contractor or a permanent addition to your team.
+
+Would you be open to a quick call?
+
+Best regards,
+Christopher Hoole
++44 7999 500 184
+christopherhoole.online` },
+  t2: { name:'Follow-up 1', subject:'Re: Google Ads Specialist — 16 Years Experience', attach:'yes', delay:'+7 days', body:`Hi {{first_name}},
+
+Just a quick follow-up to my email last week — wanted to make sure it didn't get buried.
+
+I'm still actively exploring new opportunities in Google Ads. With 16 years of experience and £50M+ managed across 200+ accounts, I'm confident I can add immediate value.
+
+Would love to connect when you have a moment.
+
+Best regards,
+Christopher Hoole
++44 7999 500 184
+christopherhoole.online` },
+  t3: { name:'Follow-up 2', subject:'Re: Google Ads Specialist — 16 Years Experience', attach:'no', delay:'+7 days', body:`Hi {{first_name}},
+
+I wanted to reach out one more time before I close my search for a while.
+
+I have 16 years of Google Ads experience, £50M+ managed, and a proprietary optimisation platform I've built from scratch. If there's ever a fit, I'd love to connect.
+
+Best regards,
+Christopher Hoole` },
+  t4: { name:'Follow-up 3', subject:'Re: Google Ads Specialist — Last message', attach:'no', delay:'+14 days', body:`Hi {{first_name}},
+
+I'll keep this short — I know you're busy.
+
+I'm a Google Ads specialist with 16 years of experience and I'd love to work with {{company}}. If the timing is ever right, my details are below.
+
+Best regards,
+Christopher Hoole` },
+};
+
+function openEditModal(id) {
+  const t = templateData[id];
+  document.getElementById('modalTitle').textContent = 'Edit — ' + t.name;
+  document.getElementById('modalName').value    = t.name;
+  document.getElementById('modalSubject').value = t.subject;
+  document.getElementById('modalBody').value    = t.body;
+  document.getElementById('modalAttach').value  = t.attach;
+  document.getElementById('modalDelay').value   = t.delay;
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('editModal')) {
+    document.getElementById('editModal').classList.remove('open');
+  }
+}
+
+function insertVar(v) {
+  const ta = document.getElementById('modalBody');
+  const start = ta.selectionStart;
+  const end   = ta.selectionEnd;
+  ta.value = ta.value.slice(0, start) + v + ta.value.slice(end);
+  ta.selectionStart = ta.selectionEnd = start + v.length;
+  ta.focus();
+}
+
+function scrollToTemplate(id) {
+  document.getElementById(id).scrollIntoView({ behavior:'smooth', block:'start' });
+  document.querySelectorAll('.sequence-box').forEach(b => b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+}
+</script>
+</body>
+</html>

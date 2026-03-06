@@ -115,7 +115,8 @@
                     <span class="nav-badge" id="navRepliesBadge">{{ outreach_replies_count }}</span>
                     {% endif %}
                 </a>
-                <a class="nav-sub-item" href="#">Templates</a>
+                <a class="nav-sub-item {% if request.path == '/outreach/templates' %}active{% endif %}"
+                   href="/outreach/templates">Templates</a>
                 <a class="nav-sub-item" href="#">Analytics</a>
             </div>
             {% endif %}
