@@ -10,10 +10,9 @@ import yaml
 
 
 # Required top-level fields in client config
+# Note: client_id and db_path are not part of the client YAML schema
 REQUIRED_FIELDS = {
-    'client_id': str,
     'customer_id': str,
-    'db_path': str,
 }
 
 # Optional fields with expected types
@@ -27,11 +26,11 @@ OPTIONAL_FIELDS = {
     'target_cpa': (int, float, type(None)),
 }
 
-# Valid enum values
-VALID_CLIENT_TYPES = {'ecom', 'lead_gen', 'brand', 'saas', 'local'}
+# Valid enum values — must match actual YAML values used in all client configs
+VALID_CLIENT_TYPES = {'ecom', 'lead_gen', 'mixed', 'brand', 'saas', 'local'}
 VALID_PRIMARY_KPIS = {'roas', 'cpa', 'ctr', 'conversions', 'revenue'}
-VALID_AUTOMATION_MODES = {'suggest', 'auto_approve', 'full_auto'}
-VALID_RISK_TOLERANCES = {'conservative', 'moderate', 'aggressive'}
+VALID_AUTOMATION_MODES = {'insights', 'suggest', 'auto_approve', 'full_auto', 'auto_low_risk', 'auto_expanded'}
+VALID_RISK_TOLERANCES = {'conservative', 'balanced', 'moderate', 'aggressive'}
 
 
 def validate_config_file(config_path: Path) -> Tuple[bool, List[str]]:
@@ -64,16 +63,17 @@ def validate_config_file(config_path: Path) -> Tuple[bool, List[str]]:
         return False, ["Config must be a YAML dictionary/object"]
     
     # Validate required fields
+    # customer_id may be at top level OR nested inside google_ads (legacy configs)
     for field, expected_type in REQUIRED_FIELDS.items():
-        if field not in config:
+        value = config.get(field)
+        if value is None and field == 'customer_id':
+            # Fall back to google_ads.customer_id (matches DashboardConfig._get_customer_id)
+            value = (config.get('google_ads') or {}).get('customer_id')
+
+        if value is None or value == '':
             errors.append(f"Missing required field: '{field}'")
             continue
-        
-        value = config[field]
-        if value is None or value == '':
-            errors.append(f"Field '{field}' cannot be empty")
-            continue
-        
+
         if not isinstance(value, expected_type):
             errors.append(
                 f"Field '{field}' must be {expected_type.__name__}, "
@@ -128,13 +128,6 @@ def validate_config_file(config_path: Path) -> Tuple[bool, List[str]]:
             f"Invalid risk_tolerance: '{config['risk_tolerance']}'. "
             f"Must be one of: {sorted(VALID_RISK_TOLERANCES)}"
         )
-    
-    # Validate database path exists (if it's a file path)
-    if 'db_path' in config and config['db_path']:
-        db_path = Path(config['db_path'])
-        # Only check if it looks like an absolute path
-        if db_path.is_absolute() and not db_path.exists():
-            errors.append(f"Database file not found: {db_path}")
     
     # Validate spend caps structure if present
     if 'spend_caps' in config:

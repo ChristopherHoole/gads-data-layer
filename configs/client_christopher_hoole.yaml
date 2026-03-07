@@ -1,0 +1,34 @@
+client_name: Christopher Hoole
+customer_id: '1254895944'
+client_type: lead_gen
+primary_kpi: conversions
+google_ads:
+  mcc_id: '4434379827'
+  customer_id: '1254895944'
+targets:
+  target_roas: null
+  target_cpa: 5.00
+conversion_sources:
+  include:
+  - contact_form
+  exclude: []
+currency: GBP
+timezone: Europe/London
+automation_mode: insights
+risk_tolerance: conservative
+spend_caps:
+  daily: 10.00
+  monthly: 300.00
+protected_entities:
+  brand_is_protected: true
+  entities: []
+exclusions:
+  campaign_types_ignore: []
+email_alerts:
+  enabled: true
+  smtp_host: smtp.gmail.com
+  smtp_port: 587
+  smtp_user: chrishoole101@gmail.com
+  smtp_password: ridp widp evgg agjc
+  recipient: chrishoole101@gmail.com
+  daily_summary_time: 08:00
