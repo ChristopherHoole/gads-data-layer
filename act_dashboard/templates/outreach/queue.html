@@ -136,13 +136,13 @@
         {# Edit bar — hidden when collapsed #}
         <div class="edit-bar">
             <button class="edit-bar-btn"
-                    onclick="showToast('Email editor coming soon', 'info')">✏ Edit this email</button>
+                    onclick="openEditModal('{{ email.email_id }}')">✏ Edit this email</button>
             <span class="edit-bar-sep">|</span>
             <button class="edit-bar-btn"
                     onclick="showToast('AI regeneration coming soon', 'info')">🔄 Regenerate with AI</button>
             <span class="edit-bar-sep">|</span>
             <button class="edit-bar-btn"
-                    onclick="showToast('Template switcher coming soon', 'info')">📋 Switch template</button>
+                    onclick="openTemplateModal('{{ email.email_id }}')">📋 Switch template</button>
         </div>
 
         {# Action row — hidden when collapsed #}
@@ -195,6 +195,70 @@
                         data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-danger"
                         onclick="confirmDiscard()">Remove</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ══════════════════════════════════════════════════════════
+   EDIT EMAIL MODAL (Bootstrap)
+   ══════════════════════════════════════════════════════════ #}
+<div class="modal fade" id="editEmailModal" tabindex="-1"
+     aria-labelledby="editEmailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editEmailModalLabel">Edit email</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding:24px;">
+                <div style="margin-bottom:16px;">
+                    <label for="editSubjectInput"
+                           style="display:block;font-weight:600;margin-bottom:6px;">Subject</label>
+                    <input type="text" class="form-control" id="editSubjectInput"
+                           style="display:block;width:100%;">
+                </div>
+                <div style="margin-bottom:8px;">
+                    <label for="editBodyTextarea"
+                           style="display:block;font-weight:600;margin-bottom:6px;">Body</label>
+                    <textarea class="form-control" id="editBodyTextarea" rows="14"
+                              style="display:block;width:100%;font-family:monospace;font-size:13px;resize:vertical;"></textarea>
+                </div>
+                <div style="font-size:12px;color:#6c757d;">
+                    Placeholders like <code>&#123;&#123;first_name&#125;&#125;</code> are substituted at send time — leave them as-is.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary"
+                        onclick="confirmEditEmail()">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ══════════════════════════════════════════════════════════
+   TEMPLATE PICKER MODAL (Bootstrap)
+   ══════════════════════════════════════════════════════════ #}
+<div class="modal fade" id="templatePickerModal" tabindex="-1"
+     aria-labelledby="templatePickerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="templatePickerModalLabel">Switch template</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="max-height:60vh;overflow-y:auto;">
+                <div id="templatePickerList">
+                    <p class="text-muted">Loading templates…</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Cancel</button>
             </div>
         </div>
     </div>
@@ -429,6 +493,164 @@ function toggleAttachment(emailId) {
         badge.classList.add('not-attached');
         label.textContent = 'not attached +';
     }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   EDIT EMAIL MODAL
+   ────────────────────────────────────────────────────────────── */
+let editEmailId = null;
+
+function openEditModal(emailId) {
+    editEmailId = emailId;
+    fetch('/outreach/queue/' + emailId + '/get')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) {
+                showToast('Could not load email: ' + (data.message || 'Unknown error'), 'error');
+                return;
+            }
+            document.getElementById('editSubjectInput').value = data.subject;
+            document.getElementById('editBodyTextarea').value = data.body;
+            bootstrap.Modal.getOrCreateInstance(
+                document.getElementById('editEmailModal')
+            ).show();
+        })
+        .catch(() => showToast('Network error — could not load email', 'error'));
+}
+
+function confirmEditEmail() {
+    if (!editEmailId) return;
+    const subject = document.getElementById('editSubjectInput').value.trim();
+    const body    = document.getElementById('editBodyTextarea').value.trim();
+
+    if (!subject) {
+        showToast('Subject cannot be empty', 'error');
+        return;
+    }
+
+    fetch('/outreach/queue/' + editEmailId + '/edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject: subject, body: body })
+    })
+    .then(r => r.json())
+    .then(data => {
+        bootstrap.Modal.getOrCreateInstance(
+            document.getElementById('editEmailModal')
+        ).hide();
+        if (data.success) {
+            // Update card subject in DOM (subject bar + expanded field)
+            const card = document.getElementById('card-' + editEmailId);
+            if (card) {
+                const subjectBar = card.querySelector('.queue-subject-bar');
+                if (subjectBar) subjectBar.innerHTML = '<span class="subject-label">SUBJECT</span>' + data.subject;
+                const subjectField = card.querySelector('.email-field-value:not(.to)');
+                if (subjectField) subjectField.textContent = data.subject;
+            }
+            showToast('Email updated', 'success');
+        } else {
+            showToast('Error: ' + (data.message || 'Save failed'), 'error');
+        }
+        editEmailId = null;
+    })
+    .catch(() => {
+        bootstrap.Modal.getOrCreateInstance(
+            document.getElementById('editEmailModal')
+        ).hide();
+        showToast('Network error — could not save', 'error');
+        editEmailId = null;
+    });
+}
+
+/* ──────────────────────────────────────────────────────────────
+   TEMPLATE PICKER MODAL
+   ────────────────────────────────────────────────────────────── */
+let templateEmailId = null;
+
+function openTemplateModal(emailId) {
+    templateEmailId = emailId;
+    const list = document.getElementById('templatePickerList');
+    list.innerHTML = '<p class="text-muted">Loading templates\u2026</p>';
+
+    bootstrap.Modal.getOrCreateInstance(
+        document.getElementById('templatePickerModal')
+    ).show();
+
+    fetch('/outreach/queue/' + emailId + '/templates')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) {
+                list.innerHTML = '<p class="text-danger">Error: ' + (data.message || 'Could not load templates') + '</p>';
+                return;
+            }
+            if (!data.templates || data.templates.length === 0) {
+                list.innerHTML = '<p class="text-muted">No templates found for track: ' + data.track + '</p>';
+                return;
+            }
+
+            document.getElementById('templatePickerModalLabel').textContent =
+                'Switch template \u2014 ' + data.track + ' track';
+
+            let html = '';
+            data.templates.forEach(function(tmpl) {
+                // Encode template data in data-attributes to avoid JS/Jinja brace conflict
+                const safeId      = tmpl.template_id;
+                const safeName    = tmpl.name.replace(/"/g, '&quot;');
+                const safeSubject = tmpl.subject.replace(/"/g, '&quot;');
+                html += '<div class="card mb-2">' +
+                        '<div class="card-body py-2 px-3 d-flex justify-content-between align-items-center">' +
+                        '<div>' +
+                        '<div class="fw-semibold">' + tmpl.name + '</div>' +
+                        '<div class="text-muted" style="font-size:12px;">Step ' + tmpl.step + ' &nbsp;&middot;&nbsp; ' + tmpl.subject + '</div>' +
+                        '</div>' +
+                        '<button class="btn btn-sm btn-primary ms-3" ' +
+                        'data-tmpl-id="' + safeId + '" ' +
+                        'onclick="selectTemplate(this)">Select</button>' +
+                        '</div></div>';
+            });
+            list.innerHTML = html;
+        })
+        .catch(() => {
+            list.innerHTML = '<p class="text-danger">Network error — could not load templates</p>';
+        });
+}
+
+function selectTemplate(btn) {
+    const templateId = btn.getAttribute('data-tmpl-id');
+    if (!templateEmailId || !templateId) return;
+
+    fetch('/outreach/queue/' + templateEmailId + '/switch-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ template_id: templateId })
+    })
+    .then(r => r.json())
+    .then(data => {
+        bootstrap.Modal.getOrCreateInstance(
+            document.getElementById('templatePickerModal')
+        ).hide();
+        if (data.success) {
+            // Update card subject in DOM
+            const card = document.getElementById('card-' + templateEmailId);
+            if (card) {
+                const subjectBar = card.querySelector('.queue-subject-bar');
+                if (subjectBar) subjectBar.innerHTML = '<span class="subject-label">SUBJECT</span>' + data.subject;
+                const subjectField = card.querySelector('.email-field-value:not(.to)');
+                if (subjectField) subjectField.textContent = data.subject;
+            }
+            showToast('Template applied', 'success');
+        } else {
+            showToast('Error: ' + (data.message || 'Switch failed'), 'error');
+        }
+        templateEmailId = null;
+    })
+    .catch(() => {
+        bootstrap.Modal.getOrCreateInstance(
+            document.getElementById('templatePickerModal')
+        ).hide();
+        showToast('Network error — could not switch template', 'error');
+        templateEmailId = null;
+    });
 }
 
 /* ──────────────────────────────────────────────────────────────

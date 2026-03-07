@@ -280,6 +280,22 @@ def create_app():
     else:
         print("⚠️  [Chat 65] Route not found (skipping): outreach.sync_from_sheets")
 
+    # Chat 70: CSRF exemption for queue edit/template routes (JSON API, no CSRF tokens sent)
+    # GET+POST /outreach/queue/<id>/get|edit|templates|switch-template are JSON APIs
+    # Protected by @login_required decorator instead
+    chat70_routes = [
+        'outreach.queue_get',
+        'outreach.queue_edit',
+        'outreach.queue_get_templates',
+        'outreach.queue_switch_template',
+    ]
+    for route_name in chat70_routes:
+        if route_name in app.view_functions:
+            csrf.exempt(app.view_functions[route_name])
+            print(f"✅ [Chat 70] CSRF exempted: {route_name}")
+        else:
+            print(f"⚠️  [Chat 70] Route not found (skipping): {route_name}")
+
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
     def csrf_error(reason):

@@ -650,7 +650,7 @@ def queue_send(email_id):
         # Fetch email content + recipient from DB
         row = conn.execute("""
             SELECT e.lead_id, e.subject, e.body,
-                   l.email, l.full_name, l.company
+                   l.email, l.first_name, l.full_name, l.company
             FROM outreach_emails e
             JOIN outreach_leads l ON e.lead_id = l.lead_id
             WHERE e.email_id = ?
@@ -658,7 +658,19 @@ def queue_send(email_id):
         if not row:
             return jsonify({"success": False, "message": "Email not found"}), 404
 
-        lead_id, subject, body, to_email, full_name, company = row
+        lead_id, subject, body, to_email, first_name, full_name, company = row
+
+        # Substitute placeholders with lead data before sending
+        # Templates use single-brace format: {first_name}
+        _vars = {
+            "first_name": first_name or (full_name.split()[0] if full_name else ""),
+            "full_name":  full_name or "",
+            "company":    company or "",
+        }
+        for key, val in _vars.items():
+            subject = subject.replace("{" + key + "}", val)
+            body    = body.replace("{" + key + "}", val)
+        print(f"[OUTREACH] send: email_id={email_id} to={to_email} subject='{subject[:60]}'")
 
         # Check daily sending limit
         limit_info = check_daily_limit(conn)
@@ -738,6 +750,137 @@ def queue_discard(email_id):
         return jsonify({"success": True})
     except Exception as e:
         print(f"[OUTREACH] queue discard error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── GET /outreach/queue/<email_id>/get ────────────────────────────────────────
+@bp.route("/queue/<email_id>/get", methods=["GET"])
+@login_required
+def queue_get(email_id):
+    """Return subject + body for the edit modal. AJAX — CSRF exempt."""
+    conn = get_outreach_db()
+    try:
+        row = conn.execute(
+            "SELECT email_id, subject, body FROM outreach_emails "
+            "WHERE email_id = ? AND status = 'queued'",
+            [email_id],
+        ).fetchone()
+        if not row:
+            return jsonify({"success": False, "message": "Email not found or not queued"}), 404
+        return jsonify({"success": True, "email_id": row[0], "subject": row[1] or "", "body": row[2] or ""})
+    except Exception as e:
+        print(f"[OUTREACH] queue get error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /outreach/queue/<email_id>/edit ──────────────────────────────────────
+@bp.route("/queue/<email_id>/edit", methods=["POST"])
+@login_required
+def queue_edit(email_id):
+    """Save updated subject + body to outreach_emails (queued only). AJAX — CSRF exempt."""
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"success": False, "message": "No JSON body"}), 400
+
+    subject = str(data.get("subject", "")).strip()
+    body    = str(data.get("body", "")).strip()
+
+    if not subject:
+        return jsonify({"success": False, "message": "Subject is required"}), 400
+
+    conn = get_outreach_db()
+    try:
+        result = conn.execute(
+            "UPDATE outreach_emails SET subject = ?, body = ? "
+            "WHERE email_id = ? AND status = 'queued'",
+            [subject, body, email_id],
+        )
+        print(f"[OUTREACH] queue edit: {email_id} subject='{subject[:60]}'")
+        return jsonify({"success": True, "subject": subject})
+    except Exception as e:
+        print(f"[OUTREACH] queue edit error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── GET /outreach/queue/<email_id>/templates ──────────────────────────────────
+@bp.route("/queue/<email_id>/templates", methods=["GET"])
+@login_required
+def queue_get_templates(email_id):
+    """Return templates filtered by the lead's track type. AJAX — CSRF exempt."""
+    conn = get_outreach_db()
+    try:
+        # Fetch lead's track via the email record
+        track_row = conn.execute(
+            "SELECT l.track FROM outreach_emails e "
+            "JOIN outreach_leads l ON e.lead_id = l.lead_id "
+            "WHERE e.email_id = ? AND e.status = 'queued'",
+            [email_id],
+        ).fetchone()
+        if not track_row:
+            return jsonify({"success": False, "message": "Email not found or not queued"}), 404
+
+        track = track_row[0] or "Job"
+
+        rows = conn.execute(
+            "SELECT template_id, name, sequence_step, subject, body "
+            "FROM outreach_templates WHERE active = true ORDER BY sequence_step ASC",
+        ).fetchall()
+
+        templates = [
+            {
+                "template_id": str(r[0]),
+                "name":        r[1] or "",
+                "step":        int(r[2] or 1),
+                "subject":     r[3] or "",
+                "body":        r[4] or "",
+            }
+            for r in rows
+        ]
+        return jsonify({"success": True, "track": track, "templates": templates})
+    except Exception as e:
+        print(f"[OUTREACH] queue get-templates error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /outreach/queue/<email_id>/switch-template ───────────────────────────
+@bp.route("/queue/<email_id>/switch-template", methods=["POST"])
+@login_required
+def queue_switch_template(email_id):
+    """Apply a template's subject + body to the queued email. AJAX — CSRF exempt."""
+    data = request.get_json(silent=True)
+    if not data or "template_id" not in data:
+        return jsonify({"success": False, "message": "Missing template_id"}), 400
+
+    template_id = str(data["template_id"]).strip()
+
+    conn = get_outreach_db()
+    try:
+        tmpl = conn.execute(
+            "SELECT subject, body FROM outreach_templates WHERE template_id = ?",
+            [template_id],
+        ).fetchone()
+        if not tmpl:
+            return jsonify({"success": False, "message": "Template not found"}), 404
+
+        subject, body = tmpl[0] or "", tmpl[1] or ""
+
+        conn.execute(
+            "UPDATE outreach_emails SET subject = ?, body = ? "
+            "WHERE email_id = ? AND status = 'queued'",
+            [subject, body, email_id],
+        )
+        print(f"[OUTREACH] switch-template: email={email_id} template={template_id} subject='{subject[:60]}'")
+        return jsonify({"success": True, "subject": subject})
+    except Exception as e:
+        print(f"[OUTREACH] queue switch-template error: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         conn.close()
