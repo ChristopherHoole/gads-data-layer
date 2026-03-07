@@ -642,18 +642,43 @@ def queue():
 @bp.route("/queue/<email_id>/send", methods=["POST"])
 @login_required
 def queue_send(email_id):
-    """Mark email as sent; update lead status to contacted. AJAX — CSRF exempt."""
+    """Send real email via Gmail SMTP then mark as sent. AJAX — CSRF exempt."""
+    from act_dashboard.email_sender import send_email, check_daily_limit
+
     conn = get_outreach_db()
     try:
-        row = conn.execute(
-            "SELECT lead_id FROM outreach_emails WHERE email_id = ?", [email_id]
-        ).fetchone()
+        # Fetch email content + recipient from DB
+        row = conn.execute("""
+            SELECT e.lead_id, e.subject, e.body,
+                   l.email, l.full_name, l.company
+            FROM outreach_emails e
+            JOIN outreach_leads l ON e.lead_id = l.lead_id
+            WHERE e.email_id = ?
+        """, [email_id]).fetchone()
         if not row:
             return jsonify({"success": False, "message": "Email not found"}), 404
 
-        lead_id = row[0]
-        now = datetime.now()
+        lead_id, subject, body, to_email, full_name, company = row
 
+        # Check daily sending limit
+        limit_info = check_daily_limit(conn)
+        if limit_info["remaining"] <= 0:
+            return jsonify({
+                "success": False,
+                "message": f"Daily limit reached ({limit_info['limit']} emails/day). Try again tomorrow.",
+            }), 429
+
+        # Send the actual email via Gmail SMTP
+        result = send_email(
+            to_email=to_email,
+            subject=subject,
+            body_html=body or "",
+        )
+        if not result["success"]:
+            return jsonify({"success": False, "message": result.get("error", "Send failed")}), 500
+
+        # Update DB on success
+        now = datetime.now()
         conn.execute(
             "UPDATE outreach_emails SET status = 'sent', sent_at = ? WHERE email_id = ?",
             [now, email_id],
@@ -663,7 +688,7 @@ def queue_send(email_id):
             "last_activity = ? WHERE lead_id = ? AND status IN ('cold', 'queued')",
             [now, lead_id],
         )
-        return jsonify({"success": True})
+        return jsonify({"success": True, "message": "Email sent"})
     except Exception as e:
         print(f"[OUTREACH] queue send error: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
