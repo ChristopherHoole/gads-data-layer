@@ -1916,7 +1916,7 @@ def analytics():
 # ── Sync leads from Google Sheets ────────────────────────────────────────────
 _SHEET_ID   = "1zRTPuzwvHDSq23RqJ9iiRaNZ8bSOMmndUzxiP_DW38I"
 _CREDS_PATH = os.path.normpath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "google-credentials.json")
+    os.path.join(os.path.dirname(__file__), "..", "secrets", "google-credentials.json")
 )
 
 
