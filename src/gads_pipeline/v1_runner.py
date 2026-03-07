@@ -690,11 +690,11 @@ def main():
     start_date = snapshot_date.strftime('%Y-%m-%d')
     end_date = snapshot_date.strftime('%Y-%m-%d')
     
-    # Connect to readonly database
-    db_path = Path('warehouse_readonly.duckdb')
+    # Connect to main warehouse database
+    db_path = Path('warehouse.duckdb')
     print(f"[v1_runner] Connecting to {db_path}...")
     ro_con = duckdb.connect(str(db_path))
-    
+
     # Ensure analytics schema exists
     ro_con.execute("CREATE SCHEMA IF NOT EXISTS analytics")
     
