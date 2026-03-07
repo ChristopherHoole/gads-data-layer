@@ -82,6 +82,22 @@ def send_email(to_email, subject, body_html, from_name=None, from_email=None, at
         return {"success": False, "error": str(e)}
 
 
+def get_signature_html():
+    """Return a formatted HTML email signature block for Christopher Hoole."""
+    return (
+        "<br><br>"
+        "<hr style='border:none;border-top:1px solid #ddd;margin:20px 0;'>"
+        "<div style='font-family:Arial,sans-serif;font-size:12px;color:#888;line-height:1.6;'>"
+        "<strong style='color:#555;'>Christopher Hoole</strong><br>"
+        "Google Ads Specialist | 16 Years Experience<br>"
+        "<a href='mailto:chris@christopherhoole.com' style='color:#888;text-decoration:none;'>"
+        "chris@christopherhoole.com</a><br>"
+        "<a href='https://christopherhoole.com' style='color:#888;text-decoration:none;'>"
+        "https://christopherhoole.com</a>"
+        "</div>"
+    )
+
+
 def substitute_variables(template_body, lead_dict):
     """
     Replace {{first_name}}, {{company}}, {{role}}, {{track}} etc.

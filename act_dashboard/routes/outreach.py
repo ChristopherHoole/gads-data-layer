@@ -643,7 +643,7 @@ def queue():
 @login_required
 def queue_send(email_id):
     """Send real email via Gmail SMTP then mark as sent. AJAX — CSRF exempt."""
-    from act_dashboard.email_sender import send_email, check_daily_limit
+    from act_dashboard.email_sender import send_email, check_daily_limit, get_signature_html
 
     conn = get_outreach_db()
     try:
@@ -668,12 +668,13 @@ def queue_send(email_id):
                 "message": f"Daily limit reached ({limit_info['limit']} emails/day). Try again tomorrow.",
             }), 429
 
-        # Convert plain-text body to HTML
+        # Convert plain-text body to HTML and append signature
         body_html = (
             "<div style='font-family:Arial,sans-serif;font-size:14px;"
             "line-height:1.6;color:#333;'>"
             + (body or "").replace("\n", "<br>")
             + "</div>"
+            + get_signature_html()
         )
         # Send the actual email via Gmail SMTP
         result = send_email(
