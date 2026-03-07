@@ -6,8 +6,8 @@ google_ads:
   mcc_id: '4434379827'
   customer_id: '1254895944'
 targets:
-  target_roas: null
-  target_cpa: 5.00
+  target_roas: 3.0
+  target_cpa: 5.0
 conversion_sources:
   include:
   - contact_form
@@ -17,8 +17,8 @@ timezone: Europe/London
 automation_mode: insights
 risk_tolerance: conservative
 spend_caps:
-  daily: 10.00
-  monthly: 300.00
+  daily: 10.0
+  monthly: 300.0
 protected_entities:
   brand_is_protected: true
   entities: []

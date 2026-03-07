@@ -6,7 +6,7 @@ google_ads:
   mcc_id: '2077923976'
   customer_id: '9999999999'
 targets:
-  target_roas: 3.5
+  target_roas: 2.0
 conversion_sources:
   include:
   - purchase
@@ -17,14 +17,12 @@ automation_mode: insights
 risk_tolerance: conservative
 spend_caps:
   daily: 500.0
-  monthly: 15000.0
+  monthly: 30000.0
 protected_entities:
   brand_is_protected: true
   entities: []
 exclusions:
   campaign_types_ignore: []
-
-# Email Alerts Configuration
 email_alerts:
   enabled: true
   smtp_host: smtp.gmail.com
@@ -32,4 +30,4 @@ email_alerts:
   smtp_user: chrishoole101@gmail.com
   smtp_password: ridp widp evgg agjc
   recipient: chrishoole101@gmail.com
-  daily_summary_time: "08:00"
+  daily_summary_time: 08:00
