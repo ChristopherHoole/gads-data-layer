@@ -1,10 +1,10 @@
 # PROJECT ROADMAP - Ads Control Tower (A.C.T.)
 
-**Last Updated:** 2026-03-06
+**Last Updated:** 2026-03-07
 **Overall Completion:** ~99.9%
 **Architecture:** 2-Tier (Master Chat → Claude Code)
 **Local:** `C:\Users\User\Desktop\gads-data-layer`
-**Marketing Site:** https://christopherhoole.online
+**Marketing Sites:** https://christopherhoole.online | https://christopherhoole.com
 
 ---
 
@@ -19,123 +19,151 @@
 | Rules Creation (41 rules across 5 entity types) | 41–46 | ✅ Complete |
 | Multi-Entity Recommendations (1,492 active) | 47–49 | ✅ Complete |
 | Module 4: Dashboard Design Upgrade (Google Ads-style tables) | 57–58 | ✅ Complete |
-| Cold Outreach System (6 pages) | 59–64 | ✅ Complete |
+| Cold Outreach System — UI (6 pages) | 59–64 | ✅ Complete |
+| Real Data Ingestion Pipeline | 67 | ✅ Complete (blocked on API access) |
+| Live Email Sending (Gmail SMTP) | 68 | ✅ Complete |
 
 ---
 
-## ✅ MODULE 4: DASHBOARD DESIGN UPGRADE (Chats 57-58)
+## ✅ CHAT 67 — REAL DATA INGESTION PIPELINE
 
-**Commits:** 6f9fafa, 0bcee06, ef93abc, 86e01ed, 72407bf
+**Commit:** e9bcb3f
 
-Google Ads-style table redesign across all 5 entity pages:
-- Control bar (All/Enabled/Paused filters, rows per page, action buttons)
-- Column selector modal (Default / Performance / Additional groups)
-- Session-based column persistence per entity
-- Status dots: Green (enabled) / Grey (paused)
-- ROAS color coding: Green ≥4.0x / Yellow 2.0–4.0x / Red <2.0x
-- Actions menus per entity type
-- Shared table-styles.css
+- `src/gads_pipeline/v1_runner.py` — fixed DB write path to warehouse.duckdb
+- `scripts/copy_all_to_readonly.py` — copies all 5 analytics tables to warehouse_readonly
+- `tools/run_ingestion.py` — orchestration script (pull + copy + summary)
+
+**Status:** Built and tested with mock data. Live pull blocked on Google Ads API Basic Access approval (Case ID 24460840136 — applied March 4, 2026).
 
 ---
 
-## ✅ COLD OUTREACH SYSTEM (Chats 59-64)
+## ✅ CHAT 68 — LIVE EMAIL SENDING
 
-**Commits:** d524448, c0e0eb8, 194ef2c
+**Commit:** fe4a0d7 + subsequent bug fixes
 
-6 pages under `/outreach/` blueprint:
+**Infrastructure:**
+- Domain: `christopherhoole.com` (Namecheap)
+- Email: `chris@christopherhoole.com` (Google Workspace Business Starter)
+- DKIM/SPF: ✅ Authenticated
+- `act_dashboard/secrets/email_config.yaml` — local only, gitignored
 
-| Page | Route | Status |
-|------|-------|--------|
-| Leads | /outreach/leads | ✅ Complete |
-| Queue | /outreach/queue | ✅ Complete |
-| Sent | /outreach/sent | ✅ Complete |
-| Replies | /outreach/replies | ✅ Complete |
-| Templates | /outreach/templates | ✅ Complete |
-| Analytics | /outreach/analytics | ✅ Complete |
+**Files:**
+- `act_dashboard/email_sender.py` — `send_email()`, `load_email_config()`, `substitute_variables()`, `check_daily_limit()`
+- `act_dashboard/routes/outreach.py` — `queue_send()` upgraded to live SMTP
 
-**Analytics page features:** 8 KPI cards, 6-step engagement funnel, 5 charts, performance by track + template step tables.
+**Bugs fixed post-commit:**
+- MIMEText missing `"utf-8"` third arg — special chars garbled → fixed
+- `body_html` conversion (`\n → <br>`) missing from `queue_send()` — emails sent as plain text → fixed
+- `showToast` missing from success branch of `sendCard()` — no toast on send → fixed
 
-**What's DB-only (live implementation planned):**
-- Email sending (no SMTP/SendGrid yet)
-- Open/click tracking (integer columns populated; no tracking pixel yet)
-- CV attachment (placeholder toasts; no real file management yet)
+**Daily limit:** 100 emails/day (configurable in email_config.yaml)
+
+---
+
+## 🔴 OUTREACH SYSTEM — FUNCTIONS NOT YET LIVE
+
+The following are confirmed incomplete as of Chat 68. Master Chat 8.0 tackles these before moving on.
+
+| # | Function | Location | Status |
+|---|----------|----------|--------|
+| 1 | Email signature | All outgoing emails | ❌ Not built |
+| 2 | CV upload & file storage | Templates page | ❌ Placeholder UI only |
+| 3 | CV attachment on send | Queue page | ❌ Toggle exists, never attaches |
+| 4 | Open/click tracking pixel | Analytics | ❌ Integer columns seeded only |
+| 5 | Reply inbox polling | Replies page | ❌ No Gmail polling |
+| 6 | Send reply | Replies page | ❌ "Coming soon" toast |
+| 7 | Edit this email | Queue page ✏ button | ❌ "Coming soon" toast |
+| 8 | Regenerate with AI | Queue page 🔄 button | ❌ "Coming soon" toast |
+| 9 | Switch template | Queue page 📋 button | ❌ "Coming soon" toast |
+| 10 | Queue auto-scheduling | Queue page | ❌ All sends are manual |
 
 ---
 
 ## 🎯 NEXT PRIORITIES
 
-### HIGH — Next 3-5 Chats
+### IMMEDIATE — Master Chat 8.0 (Outreach completion)
 
-**1. Website Design Upgrade** (TBD hours)
-Refinements to christopherhoole.online. Scope to be defined.
-- Visual/typography/spacing improvements
-- Animation enhancements
-- Mobile responsiveness
-- Potentially new sections
+Complete the 10 outstanding outreach functions listed above. Suggested grouping for Claude Code briefs:
 
-**2. M9 Live Validation** (4-6 hours)
-Test negative keyword blocking and keyword expansion against real Google Ads account.
-- Requires real Google Ads API credentials
-- Validate dry-run → live execution flow
-- Confirm changes write correctly
+**Brief A — Email Signature** (1-2 hours)
+- HTML signature block appended to every outgoing email
+- Configurable in email_config.yaml
 
-**3. Website: Contact Form Backend** (2-3 hours)
-- POST to /api/leads endpoint
-- Store in Google Sheets (consistent with existing lead capture on Vercel)
-- Anti-spam protection
+**Brief B — Queue Actions** (3-4 hours)
+- ✏ Edit this email — inline edit modal
+- 📋 Switch template — template picker modal
+- 🔄 Regenerate with AI — Claude API call to rewrite body
 
-**4. Outreach: Live Email Sending** (8-12 hours)
-- SMTP or SendGrid integration
-- HTML templates with variable substitution
-- CV attachment support
-- Dry-run mode, error handling
+**Brief C — CV Upload & Attach** (4-6 hours)
+- File upload endpoint → `/static/uploads/cv/`
+- Templates page: upload, preview, replace, remove
+- Queue page: CV attachment on send (real file, not toast)
 
-**5. Outreach: CV Upload/Replace** (4-6 hours)
-- File upload endpoint
-- Store in /static/uploads/
-- Preview, replace, remove
-- Attach on send from Queue
+**Brief D — Reply Send** (2-3 hours)
+- Replies page "Send Reply" button → live SMTP send
+- Saves reply to `outreach_emails` table
 
-**6. Outreach: Open/Click Tracking** (6-10 hours)
-- Tracking pixel endpoint: /outreach/track/open/<email_id>
-- Link redirect: /outreach/track/click/<email_id>
-- CV open: /outreach/track/cv/<email_id>
+**Brief E — Open/Click Tracking** (6-8 hours)
+- Tracking pixel: `/outreach/track/open/<email_id>`
+- Link redirect: `/outreach/track/click/<email_id>`
+- CV open: `/outreach/track/cv/<email_id>`
 - Auto-inject pixel + wrapped links on send
-- Write to opened_at, clicked_at, cv_opened_at timestamp columns
+- Writes to `opened_at`, `clicked_at`, `cv_opened_at` timestamp columns
 
-**7. Outreach: Apollo.io Integration** (8-15 hours)
+**Brief F — Reply Inbox Polling** (6-8 hours)
+- Gmail API (or IMAP) polling for replies to `chris@christopherhoole.com`
+- Match reply to `outreach_emails` record by thread/subject
+- Write to `outreach_emails`: `reply_received=true`, `reply_text`, `replied_at`
+- Replies page auto-updates
+
+**Brief G — Queue Auto-Scheduling** (3-4 hours)
+- Background scheduler (APScheduler or daemon thread)
+- Check `scheduled_at` every 5 minutes
+- Auto-send emails whose `scheduled_at` has passed
+- Skip if daily limit reached
+
+### NEXT — After Outreach Complete
+
+**Apollo.io Lead Import** (8-15 hours)
 - API authentication
 - Search/filter: country (UK/US/CA/AU/NZ), company size (5-50), industry (digital marketing)
 - Field mapping: Apollo → ACT schema
-- Deduplication on email
 - UI: "Import from Apollo" modal with preview + confirm
-- Import history log
 
-**8. Testing & Polish** (6-8 hours)
-Comprehensive post-redesign testing across dashboard + outreach.
+**M9 Live Validation** (4-6 hours)
+- Test negative keyword blocking and keyword expansion against real Google Ads account
+- Requires Basic Access approval (pending)
+
+**Website Design Upgrade** (TBD hours)
+- Refinements to christopherhoole.com / christopherhoole.online
+- Scope to be defined
+
+**Testing & Polish** (6-8 hours)
+- Comprehensive post-outreach testing
 
 ### MEDIUM — Phase 3 + Features
 
+- Website: Contact Form Backend (Google Sheets integration)
 - Website: SEO improvements (meta tags, sitemap, Open Graph)
-- Website: LinkedIn integration (messaging or lead sourcing — scope TBD)
-- Website: WhatsApp floating button (wa.me link with pre-filled message)
-- System Changes tab → card grid (currently table, deferred from Chat 29)
+- Website: LinkedIn integration
+- Website: WhatsApp floating button
+- System Changes tab → card grid (deferred from Chat 29)
 - Unit tests (pytest, 80%+ coverage)
-- Background job queue (Celery + Redis — replace daemon threads)
-- Database indexes (optimize slow queries)
-- CSRF protection (full Flask-WTF, remove current exemptions)
+- Background job queue (Celery + Redis)
+- Database indexes
 - Email reports (automated weekly/monthly)
-- Smart alerts (ROAS drop, budget pacing, budget overspend)
+- Smart alerts (ROAS drop, budget pacing)
 
 ### LONG-TERM — Major Expansions
 
-- Performance Max Campaigns (20-30 hours — asset groups, 10-15 rules, new page)
+- Performance Max Campaigns (20-30 hours)
 - Display Campaigns (15-20 hours)
-- Video Campaigns / YouTube (15-20 hours)
+- Video/YouTube Campaigns (15-20 hours)
 - Demand Gen Campaigns (15-20 hours)
-- Automated Report Generator (AI insights, monthly slide-based — 20-25 hours)
-- Multi-User Support (roles, permissions, client portal — 12-15 hours)
-- API Endpoints (REST API for external integrations — 10-12 hours)
+- Automated Report Generator (20-25 hours)
+- Multi-User Support (12-15 hours)
+- API Endpoints (10-12 hours)
+- Indeed job listing connector (planned)
 
 ---
 
@@ -144,20 +172,21 @@ Comprehensive post-redesign testing across dashboard + outreach.
 **Rules:** 41 active (13 campaign + 6 keyword + 4 ad_group + 4 ad + 14 shopping)
 
 **Recommendations:**
-- Campaigns: 110 (13 rules generating)
-- Keywords: 1,256 (6 rules generating)
-- Shopping: 126 (13 rules generating)
-- Ad Groups: 0 (conditions not met with current data — expected)
-- Ads: 0 (analytics.ad_daily table missing — known limitation)
+- Campaigns: 110 | Keywords: 1,256 | Shopping: 126
+- Ad Groups: 0 (conditions not met) | Ads: 0 (ad_daily table missing)
 - **Total: 1,492 active**
 
 **Outreach:**
-- Leads: seeded synthetic data
-- Email templates: 4 steps × 4 tracks = 16 templates
-- Analytics: open_count/click_count populated via tools/seed_outreach_clicks.py
+- Live email sending: ✅ Gmail SMTP via chris@christopherhoole.com
+- 16 email templates (4 steps × 4 tracks)
+- Daily limit: 100 emails/day
+- 10 functions still not live (see table above)
 
 **Known Database Gap:**
 - `analytics.ad_daily` table does not exist → Ads rules cannot generate recommendations
+
+**Google Ads API:**
+- Test Access only — Basic Access application pending (Case 24460840136)
 
 ---
 
@@ -178,20 +207,20 @@ python act_dashboard/app.py
 ```
 Test at http://localhost:5000 in Opera.
 
-**Git commit (after Master Chat approval):**
+**Git commit (Master Chat only — after Christopher confirms in Opera):**
 ```powershell
+taskkill /IM python.exe /F
+cd C:\Users\User\Desktop\gads-data-layer
 git add .
 git commit -m "Chat XX: [Description]"
 git push origin main
 ```
 
 **Reference docs:**
-- CLAUDE_CODE_WORKFLOW.md — how to work with Claude Code
 - MASTER_KNOWLEDGE_BASE.md — full project history and technical detail
-- PLANNED_WORK.md — detailed work items with time estimates
 - KNOWN_PITFALLS.md — troubleshooting
 - LESSONS_LEARNED.md — best practices
 
 ---
 
-**Version:** 3.0 | **Last Updated:** 2026-03-06
+**Version:** 4.0 | **Last Updated:** 2026-03-07

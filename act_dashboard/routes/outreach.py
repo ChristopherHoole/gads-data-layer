@@ -668,11 +668,18 @@ def queue_send(email_id):
                 "message": f"Daily limit reached ({limit_info['limit']} emails/day). Try again tomorrow.",
             }), 429
 
+        # Convert plain-text body to HTML
+        body_html = (
+            "<div style='font-family:Arial,sans-serif;font-size:14px;"
+            "line-height:1.6;color:#333;'>"
+            + (body or "").replace("\n", "<br>")
+            + "</div>"
+        )
         # Send the actual email via Gmail SMTP
         result = send_email(
             to_email=to_email,
             subject=subject,
-            body_html=body or "",
+            body_html=body_html,
         )
         if not result["success"]:
             return jsonify({"success": False, "message": result.get("error", "Send failed")}), 500

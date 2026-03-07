@@ -220,6 +220,18 @@ cvAttached['{{ email.email_id }}'] = {{ 'true' if email.cv_attached else 'false'
 let discardEmailId = null;
 
 /* ──────────────────────────────────────────────────────────────
+   TOAST NOTIFICATION (inline override of base template version)
+   ────────────────────────────────────────────────────────────── */
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:6px;color:#fff;font-size:14px;z-index:9999;transition:opacity 0.4s;';
+    toast.style.background = type === 'success' ? '#34A853' : type === 'error' ? '#EA4335' : '#4285F4';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, 3000);
+}
+
+/* ──────────────────────────────────────────────────────────────
    TOGGLE CARD (expand one, collapse all others)
    ────────────────────────────────────────────────────────────── */
 function toggleCard(cardId) {
@@ -283,6 +295,7 @@ function sendCard(emailId) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
+            showToast('Email sent successfully!', 'success');
             removeCard('card-' + emailId, () => {
                 const next = document.querySelector('.queue-card.collapsed');
                 if (next) toggleCard(next.id);

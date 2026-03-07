@@ -48,7 +48,7 @@ def send_email(to_email, subject, body_html, from_name=None, from_email=None, at
         msg["From"]    = f"{_from_name} <{_from_email}>"
         msg["To"]      = to_email
 
-        msg.attach(MIMEText(body_html, "html"))
+        msg.attach(MIMEText(body_html, "html", "utf-8"))
 
         # Optional file attachment
         if attachment_path:
