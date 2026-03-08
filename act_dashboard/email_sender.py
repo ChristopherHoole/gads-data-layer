@@ -43,7 +43,7 @@ def send_email(to_email, subject, body_html, from_name=None, from_email=None, at
         _from_name  = from_name  or config.get("from_name",  "Christopher Hoole")
         _from_email = from_email or config.get("from_email", config["smtp_username"])
 
-        msg = MIMEMultipart("alternative")
+        msg = MIMEMultipart("mixed")
         msg["Subject"] = subject
         msg["From"]    = f"{_from_name} <{_from_email}>"
         msg["To"]      = to_email
@@ -55,12 +55,12 @@ def send_email(to_email, subject, body_html, from_name=None, from_email=None, at
             attach = Path(attachment_path)
             if attach.exists():
                 with open(attach, "rb") as f:
-                    part = MIMEBase("application", "octet-stream")
+                    part = MIMEBase("application", "pdf")
                     part.set_payload(f.read())
                 encoders.encode_base64(part)
                 part.add_header(
                     "Content-Disposition",
-                    f"attachment; filename={attach.name}",
+                    f'attachment; filename="{attach.name}"',
                 )
                 msg.attach(part)
             else:

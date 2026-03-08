@@ -13,6 +13,7 @@ import json
 import os
 import uuid
 from datetime import datetime, date, timedelta
+from pathlib import Path
 
 import duckdb
 from flask import Blueprint, jsonify, render_template, request, session
@@ -31,6 +32,34 @@ _WAREHOUSE_PATH = os.path.normpath(
 def get_outreach_db():
     """Return a read-write connection to warehouse.duckdb for outreach tables."""
     return duckdb.connect(_WAREHOUSE_PATH)
+
+
+# ── CV upload directory ───────────────────────────────────────────────────────
+_CV_DIR = Path(__file__).parent.parent / "static" / "uploads" / "cv"
+
+
+def _ensure_schema():
+    """Create system_config table and add cv_attached column to outreach_emails if missing."""
+    try:
+        conn = get_outreach_db()
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS system_config (
+                key   VARCHAR PRIMARY KEY,
+                value VARCHAR
+            )
+        """)
+        try:
+            conn.execute(
+                "ALTER TABLE outreach_emails ADD COLUMN cv_attached BOOLEAN DEFAULT FALSE"
+            )
+        except Exception:
+            pass  # Column already exists
+        conn.close()
+    except Exception as e:
+        print(f"[OUTREACH] Schema setup warning: {e}")
+
+
+_ensure_schema()
 
 
 # ── Context processor: nav badge counts for all templates ────────────────────
@@ -649,7 +678,7 @@ def queue_send(email_id):
     try:
         # Fetch email content + recipient from DB
         row = conn.execute("""
-            SELECT e.lead_id, e.subject, e.body,
+            SELECT e.lead_id, e.subject, e.body, e.cv_attached,
                    l.email, l.first_name, l.full_name, l.company
             FROM outreach_emails e
             JOIN outreach_leads l ON e.lead_id = l.lead_id
@@ -658,7 +687,7 @@ def queue_send(email_id):
         if not row:
             return jsonify({"success": False, "message": "Email not found"}), 404
 
-        lead_id, subject, body, to_email, first_name, full_name, company = row
+        lead_id, subject, body, cv_attached, to_email, first_name, full_name, company = row
 
         # Substitute placeholders with lead data before sending
         # Templates use single-brace format: {first_name}
@@ -688,11 +717,21 @@ def queue_send(email_id):
             + "</div>"
             + get_signature_html()
         )
+        # Resolve CV attachment path if toggle is on
+        attachment_path = None
+        if cv_attached:
+            cv_files = [f for f in _CV_DIR.iterdir() if f.is_file()] if _CV_DIR.exists() else []
+            if cv_files:
+                attachment_path = str(cv_files[0])
+            else:
+                print(f"[OUTREACH] WARNING: cv_attached=True for {email_id} but no CV file found on disk")
+
         # Send the actual email via Gmail SMTP
         result = send_email(
             to_email=to_email,
             subject=subject,
             body_html=body_html,
+            attachment_path=attachment_path,
         )
         if not result["success"]:
             return jsonify({"success": False, "message": result.get("error", "Send failed")}), 500
@@ -881,6 +920,111 @@ def queue_switch_template(email_id):
         return jsonify({"success": True, "subject": subject})
     except Exception as e:
         print(f"[OUTREACH] queue switch-template error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── GET /outreach/cv/status ───────────────────────────────────────────────────
+@bp.route("/cv/status", methods=["GET"])
+@login_required
+def cv_status():
+    """Return CV upload status. AJAX — CSRF exempt."""
+    _CV_DIR.mkdir(parents=True, exist_ok=True)
+    files = [f for f in _CV_DIR.iterdir() if f.is_file()]
+    if files:
+        f = files[0]
+        return jsonify({
+            "uploaded":  True,
+            "filename":  f.name,
+            "filesize":  f.stat().st_size,
+        })
+    return jsonify({"uploaded": False, "filename": "", "filesize": 0})
+
+
+# ── POST /outreach/cv/upload ──────────────────────────────────────────────────
+@bp.route("/cv/upload", methods=["POST"])
+@login_required
+def cv_upload():
+    """Upload a PDF as the active CV. AJAX — CSRF exempt."""
+    if "cv_file" not in request.files:
+        return jsonify({"success": False, "message": "No file provided"}), 400
+    f = request.files["cv_file"]
+    if not f.filename:
+        return jsonify({"success": False, "message": "No file selected"}), 400
+    if not f.filename.lower().endswith(".pdf"):
+        return jsonify({"success": False, "message": "Only PDF files are allowed"}), 400
+
+    data = f.read()
+    if len(data) > 5 * 1024 * 1024:
+        return jsonify({"success": False, "message": "File exceeds 5MB limit"}), 400
+
+    _CV_DIR.mkdir(parents=True, exist_ok=True)
+    for old in _CV_DIR.iterdir():
+        if old.is_file():
+            old.unlink()
+
+    filename = f.filename
+    dest = _CV_DIR / filename
+    dest.write_bytes(data)
+
+    conn = get_outreach_db()
+    try:
+        conn.execute(
+            "INSERT INTO system_config (key, value) VALUES ('cv_path', ?) "
+            "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+            [str(dest)],
+        )
+    except Exception as e:
+        print(f"[OUTREACH] cv_upload db error: {e}")
+    finally:
+        conn.close()
+
+    print(f"[OUTREACH] CV uploaded: {filename} ({len(data)} bytes)")
+    return jsonify({"success": True, "filename": filename, "filesize": len(data)})
+
+
+# ── POST /outreach/cv/remove ──────────────────────────────────────────────────
+@bp.route("/cv/remove", methods=["POST"])
+@login_required
+def cv_remove():
+    """Remove the active CV. AJAX — CSRF exempt."""
+    _CV_DIR.mkdir(parents=True, exist_ok=True)
+    for old in _CV_DIR.iterdir():
+        if old.is_file():
+            old.unlink()
+    conn = get_outreach_db()
+    try:
+        conn.execute("DELETE FROM system_config WHERE key = 'cv_path'")
+    except Exception as e:
+        print(f"[OUTREACH] cv_remove db error: {e}")
+    finally:
+        conn.close()
+    print("[OUTREACH] CV removed")
+    return jsonify({"success": True})
+
+
+# ── POST /outreach/queue/<email_id>/toggle-cv ─────────────────────────────────
+@bp.route("/queue/<email_id>/toggle-cv", methods=["POST"])
+@login_required
+def queue_toggle_cv(email_id):
+    """Toggle cv_attached boolean on outreach_emails row. AJAX — CSRF exempt."""
+    conn = get_outreach_db()
+    try:
+        row = conn.execute(
+            "SELECT cv_attached FROM outreach_emails WHERE email_id = ?",
+            [email_id],
+        ).fetchone()
+        if not row:
+            return jsonify({"success": False, "message": "Email not found"}), 404
+        new_val = not bool(row[0])
+        conn.execute(
+            "UPDATE outreach_emails SET cv_attached = ? WHERE email_id = ?",
+            [new_val, email_id],
+        )
+        return jsonify({"success": True, "cv_attached": new_val})
+    except Exception as e:
+        print(f"[OUTREACH] toggle_cv error: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         conn.close()

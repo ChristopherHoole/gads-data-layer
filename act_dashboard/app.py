@@ -296,6 +296,22 @@ def create_app():
         else:
             print(f"⚠️  [Chat 70] Route not found (skipping): {route_name}")
 
+    # Chat 71: CSRF exemption for CV upload/remove/status and toggle-cv routes
+    # POST /outreach/cv/upload|remove, GET /outreach/cv/status, POST /outreach/queue/<id>/toggle-cv
+    # Protected by @login_required decorator instead
+    chat71_routes = [
+        'outreach.cv_upload',
+        'outreach.cv_remove',
+        'outreach.cv_status',
+        'outreach.queue_toggle_cv',
+    ]
+    for route_name in chat71_routes:
+        if route_name in app.view_functions:
+            csrf.exempt(app.view_functions[route_name])
+            print(f"✅ [Chat 71] CSRF exempted: {route_name}")
+        else:
+            print(f"⚠️  [Chat 71] Route not found (skipping): {route_name}")
+
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
     def csrf_error(reason):

@@ -481,18 +481,29 @@ function updateQueue() {
    TOGGLE CV ATTACHMENT
    ────────────────────────────────────────────────────────────── */
 function toggleAttachment(emailId) {
-    cvAttached[emailId] = !cvAttached[emailId];
-    const badge = document.getElementById('attach-' + emailId);
-    const label = document.getElementById('attach-label-' + emailId);
-    if (!badge || !label) return;
-
-    if (cvAttached[emailId]) {
-        badge.classList.remove('not-attached');
-        label.textContent = 'attached ✕';
-    } else {
-        badge.classList.add('not-attached');
-        label.textContent = 'not attached +';
-    }
+    fetch('/outreach/queue/' + emailId + '/toggle-cv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (!data.success) {
+            showToast('Could not update attachment', 'error');
+            return;
+        }
+        cvAttached[emailId] = data.cv_attached;
+        const badge = document.getElementById('attach-' + emailId);
+        const label = document.getElementById('attach-label-' + emailId);
+        if (!badge || !label) return;
+        if (data.cv_attached) {
+            badge.classList.remove('not-attached');
+            label.textContent = 'attached \u2715';
+        } else {
+            badge.classList.add('not-attached');
+            label.textContent = 'not attached +';
+        }
+    })
+    .catch(function() { showToast('Network error', 'error'); });
 }
 
 /* ──────────────────────────────────────────────────────────────

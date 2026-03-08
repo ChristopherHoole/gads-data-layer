@@ -33,22 +33,30 @@
             </div>
         </div>
 
-        <div class="attachment-row">
+        {# Uploaded state — shown when a CV is on disk #}
+        <div class="attachment-row" id="cvUploadedState" style="display:none;">
             <span class="material-symbols-outlined attachment-icon">picture_as_pdf</span>
             <div>
-                <div class="attachment-name">Christopher_Hoole_CV.pdf</div>
-                <div class="attachment-meta">Uploaded 1 Mar 2026 · 284 KB · Used in 4 templates</div>
+                <div class="attachment-name" id="cvFilename"></div>
+                <div class="attachment-meta" id="cvFilemeta"></div>
             </div>
             <div class="attachment-spacer"></div>
-            <button class="btn-ghost" onclick="showToast('Preview not available in demo', 'info')">Preview</button>
-            <button class="btn-ghost" onclick="showToast('Replace coming soon', 'info')">Replace</button>
-            <button class="btn-ghost danger" onclick="showToast('Remove coming soon', 'info')">Remove</button>
+            <a id="cvPreviewLink" href="#" target="_blank" rel="noopener" class="btn-ghost">Preview</a>
+            <button class="btn-ghost" onclick="triggerCvUpload()">Replace</button>
+            <button class="btn-ghost danger" onclick="removeCv()">Remove</button>
         </div>
 
-        <div class="upload-area" onclick="showToast('Upload coming soon', 'info')">
-            <span class="material-symbols-outlined" style="font-size:28px;display:block;margin-bottom:6px;">upload_file</span>
-            Click to upload a new attachment · PDF, DOC, DOCX · Max 5MB
+        {# Empty state — shown when no CV is uploaded #}
+        <div id="cvEmptyState" style="display:none;">
+            <div class="upload-area" onclick="triggerCvUpload()">
+                <span class="material-symbols-outlined" style="font-size:28px;display:block;margin-bottom:6px;">upload_file</span>
+                Click to upload your CV &middot; PDF only &middot; Max 5MB
+            </div>
         </div>
+
+        {# Hidden file input — triggered by both Replace and upload-area #}
+        <input type="file" id="cvFileInput" accept=".pdf" style="display:none;"
+               onchange="handleCvUpload(this)">
     </div>
 
     {# ══ SEQUENCE FLOW ══ #}
@@ -231,6 +239,78 @@
 
 {% block extra_js %}
 <script>
+/* ── CV Upload ── */
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function loadCvStatus() {
+    fetch('/outreach/cv/status')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.uploaded) {
+                showCvUploaded(data.filename, data.filesize);
+            } else {
+                showCvEmpty();
+            }
+        })
+        .catch(function() { showCvEmpty(); });
+}
+
+function showCvUploaded(filename, filesize) {
+    document.getElementById('cvEmptyState').style.display    = 'none';
+    document.getElementById('cvUploadedState').style.display = 'flex';
+    document.getElementById('cvFilename').textContent = filename;
+    document.getElementById('cvFilemeta').textContent = formatFileSize(filesize);
+    document.getElementById('cvPreviewLink').href = '/static/uploads/cv/' + filename;
+}
+
+function showCvEmpty() {
+    document.getElementById('cvUploadedState').style.display = 'none';
+    document.getElementById('cvEmptyState').style.display    = 'block';
+}
+
+function triggerCvUpload() {
+    document.getElementById('cvFileInput').click();
+}
+
+function handleCvUpload(input) {
+    var file = input.files[0];
+    if (!file) return;
+    var formData = new FormData();
+    formData.append('cv_file', file);
+    fetch('/outreach/cv/upload', { method: 'POST', body: formData })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                showCvUploaded(data.filename, data.filesize);
+                showToast('CV uploaded successfully', 'success');
+            } else {
+                showToast('Upload failed: ' + (data.message || 'Unknown error'), 'error');
+            }
+        })
+        .catch(function() { showToast('Network error \u2014 could not upload', 'error'); });
+    input.value = '';
+}
+
+function removeCv() {
+    fetch('/outreach/cv/remove', { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                showCvEmpty();
+                showToast('CV removed', 'success');
+            } else {
+                showToast('Remove failed: ' + (data.message || 'Unknown error'), 'error');
+            }
+        })
+        .catch(function() { showToast('Network error', 'error'); });
+}
+
+document.addEventListener('DOMContentLoaded', loadCvStatus);
+
 /* ── Template data map (keyed by template_id) ── */
 const TPL_MAP = {};
 {{ templates|tojson|safe }}.forEach(function(t) { TPL_MAP[t.template_id] = t; });
