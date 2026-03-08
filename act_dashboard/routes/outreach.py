@@ -1479,8 +1479,7 @@ def replies():
         ).fetchone()[0]
 
         unread_count = conn.execute(
-            "SELECT COUNT(DISTINCT lead_id) FROM outreach_emails "
-            "WHERE reply_received = true AND reply_read = false"
+            "SELECT COUNT(DISTINCT lead_id) FROM email_replies WHERE read = false"
         ).fetchone()[0]
 
         meetings_count = conn.execute(
@@ -1503,12 +1502,14 @@ def replies():
             "won":           won_count,
         }
 
-        # ── Replies list ─────────────────────────────────────────────────────
+        # ── Replies list — Chat 74: reads body/read/received_at from email_replies
         rows = conn.execute("""
-            WITH reply_email AS (
-                SELECT lead_id, reply_text, reply_read
-                FROM outreach_emails
-                WHERE reply_received = true
+            WITH latest_reply AS (
+                SELECT lead_id, id, body, received_at, read,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY lead_id ORDER BY received_at DESC NULLS LAST
+                       ) AS rn
+                FROM email_replies
             ),
             latest_sent AS (
                 SELECT lead_id, email_type, sequence_step,
@@ -1521,16 +1522,17 @@ def replies():
             SELECT
                 l.lead_id, l.full_name, l.company, l.email,
                 l.track, l.status,
-                l.last_activity  AS replied_at,
-                re.reply_text,
-                re.reply_read,
+                lr.received_at AS replied_at,
+                lr.body        AS reply_text,
+                lr.read        AS reply_read,
                 ls.email_type,
-                ls.sequence_step
+                ls.sequence_step,
+                lr.id          AS reply_id
             FROM outreach_leads l
-            LEFT JOIN reply_email re ON l.lead_id = re.lead_id
+            LEFT JOIN latest_reply lr ON l.lead_id = lr.lead_id AND lr.rn = 1
             LEFT JOIN latest_sent  ls ON l.lead_id = ls.lead_id AND ls.rn = 1
             WHERE l.status IN ('replied', 'meeting', 'won')
-            ORDER BY l.last_activity DESC
+            ORDER BY lr.received_at DESC NULLS LAST
         """).fetchall()
 
         cols = [
@@ -1539,6 +1541,7 @@ def replies():
             "replied_at",
             "reply_text", "reply_read",
             "email_type", "sequence_step",
+            "reply_id",
         ]
 
         replies_list = []
@@ -1553,6 +1556,7 @@ def replies():
             r["unread"]          = not r["reply_read"]
             r["reply_text"]      = r.get("reply_text") or ""
             r["lead_id"]         = str(r["lead_id"])
+            r["reply_id"]        = str(r["reply_id"]) if r.get("reply_id") else ""
             pill_label, pill_css = compute_email_type_pill(
                 r.get("email_type"), r.get("sequence_step")
             )
@@ -1577,24 +1581,6 @@ def replies():
                 if lid not in emails_by_lead:
                     emails_by_lead[lid] = []
                 emails_by_lead[lid].append(e)
-
-        # ── Chat 74: reply_id from email_replies (for Mark as Unread) ─────────
-        reply_id_map = {}
-        try:
-            if lead_ids:
-                placeholders2 = ",".join("?" * len(lead_ids))
-                rr = conn.execute(
-                    f"SELECT lead_id, id FROM email_replies "
-                    f"WHERE lead_id IN ({placeholders2}) "
-                    f"QUALIFY ROW_NUMBER() OVER "
-                    f"(PARTITION BY lead_id ORDER BY received_at DESC NULLS LAST) = 1",
-                    lead_ids,
-                ).fetchall()
-                reply_id_map = {str(row[0]): str(row[1]) for row in rr}
-        except Exception:
-            pass
-        for r in replies_list:
-            r["reply_id"] = reply_id_map.get(r["lead_id"], "")
 
         def reply_to_js(r):
             return {k: _safe_str(v) for k, v in r.items()}

@@ -129,21 +129,22 @@ def _run_poll_cycle():
     username = config["smtp_username"]
     password = config["smtp_password"]
 
-    mail = imaplib.IMAP4_SSL("imap.gmail.com")
-    mail.login(username, password)
-    mail.select("INBOX")
-
-    # Search for all unseen messages
-    status, data = mail.uid("SEARCH", None, "UNSEEN")
-    if status != "OK":
-        mail.logout()
-        return 0
-
-    uid_list = data[0].split() if data[0] else []
-    imported = 0
-
-    conn = _get_db()
+    mail = None
+    conn = None
     try:
+        mail = imaplib.IMAP4_SSL("imap.gmail.com")
+        mail.login(username, password)
+        mail.select("INBOX")
+
+        # Search for all unseen messages
+        status, data = mail.uid("SEARCH", None, "UNSEEN")
+        if status != "OK":
+            return 0
+
+        uid_list = data[0].split() if data[0] else []
+        imported = 0
+
+        conn = _get_db()
         for uid_bytes in uid_list:
             uid_str = uid_bytes.decode("utf-8")
 
@@ -176,14 +177,18 @@ def _run_poll_cycle():
                 except Exception:
                     received_at = datetime.now()
 
+                # Skip emails with no Message-ID — can't deduplicate safely
+                if not message_id:
+                    print(f"[POLLER] Skipping email with no Message-ID (uid={uid_str})")
+                    continue
+
                 # Deduplication: skip if message_id already imported
-                if message_id:
-                    existing = conn.execute(
-                        "SELECT id FROM email_replies WHERE message_id = ?",
-                        [message_id],
-                    ).fetchone()
-                    if existing:
-                        continue
+                existing = conn.execute(
+                    "SELECT id FROM email_replies WHERE message_id = ?",
+                    [message_id],
+                ).fetchone()
+                if existing:
+                    continue
 
                 # Strip Re:/Fwd: prefixes and match against outreach_emails
                 clean_subject = _strip_re_prefixes(subject_raw)
@@ -236,14 +241,16 @@ def _run_poll_cycle():
                 print(f"[POLLER] WARNING: Error processing uid={uid_str}: {e}")
                 continue
 
-    finally:
-        conn.close()
-        try:
-            mail.logout()
-        except Exception:
-            pass
+        return imported
 
-    return imported
+    finally:
+        if conn:
+            conn.close()
+        if mail:
+            try:
+                mail.logout()
+            except Exception:
+                pass
 
 
 # ── Poll loop ─────────────────────────────────────────────────────────────────
