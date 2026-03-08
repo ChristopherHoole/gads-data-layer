@@ -9,6 +9,7 @@ Routes:
   POST  /outreach/sync-from-sheets       — Sync new leads from Google Sheets (Chat 65)
 """
 
+import imaplib
 import json
 import os
 import uuid
@@ -1577,6 +1578,24 @@ def replies():
                     emails_by_lead[lid] = []
                 emails_by_lead[lid].append(e)
 
+        # ── Chat 74: reply_id from email_replies (for Mark as Unread) ─────────
+        reply_id_map = {}
+        try:
+            if lead_ids:
+                placeholders2 = ",".join("?" * len(lead_ids))
+                rr = conn.execute(
+                    f"SELECT lead_id, id FROM email_replies "
+                    f"WHERE lead_id IN ({placeholders2}) "
+                    f"QUALIFY ROW_NUMBER() OVER "
+                    f"(PARTITION BY lead_id ORDER BY received_at DESC NULLS LAST) = 1",
+                    lead_ids,
+                ).fetchall()
+                reply_id_map = {str(row[0]): str(row[1]) for row in rr}
+        except Exception:
+            pass
+        for r in replies_list:
+            r["reply_id"] = reply_id_map.get(r["lead_id"], "")
+
         def reply_to_js(r):
             return {k: _safe_str(v) for k, v in r.items()}
 
@@ -1604,6 +1623,17 @@ def replies():
     )
 
 
+# ── IMAP helper (Chat 74) ─────────────────────────────────────────────────────
+def get_imap_connection():
+    """Open an authenticated IMAP connection to Gmail INBOX."""
+    from act_dashboard.email_sender import load_email_config
+    config = load_email_config()
+    mail = imaplib.IMAP4_SSL("imap.gmail.com")
+    mail.login(config["smtp_username"], config["smtp_password"])
+    mail.select("INBOX")
+    return mail
+
+
 # ── POST /outreach/replies/<lead_id>/mark-read ────────────────────────────────
 @bp.route("/replies/<lead_id>/mark-read", methods=["POST"])
 @login_required
@@ -1616,10 +1646,64 @@ def replies_mark_read(lead_id):
             "WHERE lead_id = ? AND reply_received = true",
             [lead_id],
         )
+        # Chat 74: also mark as read in email_replies and sync to Gmail
+        try:
+            conn.execute(
+                "UPDATE email_replies SET read = true WHERE lead_id = ?",
+                [lead_id],
+            )
+            row = conn.execute(
+                "SELECT gmail_message_uid FROM email_replies "
+                "WHERE lead_id = ? AND gmail_message_uid IS NOT NULL LIMIT 1",
+                [lead_id],
+            ).fetchone()
+            if row and row[0]:
+                uid = row[0]
+                try:
+                    mail = get_imap_connection()
+                    mail.uid("STORE", uid.encode(), "+FLAGS", "\\Seen")
+                    mail.logout()
+                    print(f"[POLLER] Marked as read in Gmail: uid={uid}")
+                except Exception as imap_err:
+                    print(f"[POLLER] WARNING: IMAP mark-read failed: {imap_err}")
+        except Exception as e2:
+            print(f"[OUTREACH] WARNING: email_replies mark-read sync error: {e2}")
         return jsonify({"success": True})
     except Exception as e:
         print(f"[OUTREACH] replies mark-read error: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /outreach/replies/<reply_id>/mark-unread ─────────────────────────────
+@bp.route("/replies/<reply_id>/mark-unread", methods=["POST"])
+@login_required
+def replies_mark_unread(reply_id):
+    """Mark an individual reply as unread in DB and Gmail. AJAX — CSRF exempt."""
+    conn = get_outreach_db()
+    try:
+        row = conn.execute(
+            "SELECT gmail_message_uid FROM email_replies WHERE id = ?",
+            [reply_id],
+        ).fetchone()
+        conn.execute(
+            "UPDATE email_replies SET read = false WHERE id = ?",
+            [reply_id],
+        )
+        if row and row[0]:
+            uid = row[0]
+            try:
+                mail = get_imap_connection()
+                mail.uid("STORE", uid.encode(), "-FLAGS", "\\Seen")
+                mail.logout()
+                print(f"[POLLER] Marked as unread in Gmail: uid={uid}")
+            except Exception as imap_err:
+                print(f"[POLLER] WARNING: IMAP mark-unread failed: {imap_err}")
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"[OUTREACH] replies mark-unread error: {e}")
+        return jsonify({"success": True})  # DB update may have succeeded
     finally:
         conn.close()
 

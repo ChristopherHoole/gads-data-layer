@@ -327,6 +327,15 @@ def create_app():
         else:
             print(f"⚠️  [Chat 73] Route not found (skipping): {route_name}")
 
+    # Chat 74: CSRF exemption for mark-unread route (JSON API, no CSRF tokens sent)
+    # POST /outreach/replies/<reply_id>/mark-unread is a JSON API called from JavaScript
+    # Protected by @login_required decorator instead
+    if 'outreach.replies_mark_unread' in app.view_functions:
+        csrf.exempt(app.view_functions['outreach.replies_mark_unread'])
+        print("✅ [Chat 74] CSRF exempted: outreach.replies_mark_unread")
+    else:
+        print("⚠️  [Chat 74] Route not found (skipping): outreach.replies_mark_unread")
+
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
     def csrf_error(reason):
@@ -345,6 +354,11 @@ def create_app():
     radar_thread = threading.Thread(target=radar_loop, daemon=True, name="RadarThread")
     radar_thread.start()
     print("✅ [Chat 29 M8] Radar background thread started (60s cycle)")
+
+    # Chat 74: Start outreach reply-inbox polling thread (2min cycle)
+    from act_dashboard.outreach_poller import start_poller
+    start_poller()
+    print("✅ [Chat 74] Outreach poller thread started (120s cycle)")
 
     # Centralized error handlers (Phase 1i)
     

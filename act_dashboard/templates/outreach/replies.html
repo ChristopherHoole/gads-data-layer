@@ -283,6 +283,7 @@ function buildCard(r) {
                     <button class="btn-small primary" onclick="toggleCompose('${safeId}')">Send Reply</button>
                     <button class="btn-small success" onclick="markWon('${safeId}')">Mark as won</button>
                     <button class="btn-small" onclick="showToast('Queue follow-up coming soon','info')">Queue follow-up</button>
+                    ${!r.unread && r.reply_id ? `<button class="btn-small" style="font-size:11px;opacity:0.7;" onclick="markUnread('${esc(r.reply_id)}','${safeId}')">Mark as Unread</button>` : ''}
                 </div>
             </div>
         </div>
@@ -686,6 +687,25 @@ function saveStatusUpdate() {
         else showToast('Error: ' + (d.message || 'unknown'), 'error');
     })
     .catch(() => { modal.hide(); showToast('Network error', 'error'); });
+}
+
+/* ──────────────────────────────────────────────────────────────
+   MARK AS UNREAD — Chat 74
+   ────────────────────────────────────────────────────────────── */
+function markUnread(replyId, leadId) {
+    fetch(`/outreach/replies/${replyId}/mark-unread`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            const r = REPLIES_DATA.find(x => x.lead_id === leadId);
+            if (r) { r.unread = true; r.reply_read = false; }
+            updateUnreadCounts(-1);
+            renderCards();
+        }
+    })
+    .catch(() => {});
 }
 </script>
 {% endblock %}
