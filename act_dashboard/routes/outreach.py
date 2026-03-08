@@ -59,6 +59,16 @@ def _ensure_schema():
         conn.execute(
             "ALTER TABLE outreach_emails ADD COLUMN IF NOT EXISTS direction VARCHAR DEFAULT 'outbound'"
         )
+        # Chat 76: migrate replied → reply_received in outreach_leads
+        try:
+            migrated = conn.execute(
+                "UPDATE outreach_leads SET status = 'reply_received', progress_stage = 6 "
+                "WHERE status = 'replied'"
+            ).rowcount
+            if migrated:
+                print(f"[OUTREACH] Chat76 migration: updated {migrated} leads replied→reply_received")
+        except Exception:
+            pass  # Already migrated or no rows
         conn.close()
     except Exception as e:
         print(f"[OUTREACH] Schema setup warning: {e}")
@@ -77,8 +87,7 @@ def inject_outreach_badge_counts():
             "SELECT COUNT(*) FROM outreach_emails WHERE status = 'queued'"
         ).fetchone()[0]
         replies_count = conn.execute(
-            "SELECT COUNT(*) FROM outreach_emails "
-            "WHERE reply_received = true AND reply_read = false"
+            "SELECT COUNT(DISTINCT lead_id) FROM email_replies WHERE read = false"
         ).fetchone()[0]
         conn.close()
         return {
@@ -95,7 +104,8 @@ STATUS_DISPLAY = {
     "queued":          "Queued",
     "contacted":       "Contacted",
     "followed_up":     "Followed Up",
-    "replied":         "Replied",
+    "replied":         "Reply Received",   # legacy — display updated Chat 76
+    "reply_received":  "Reply Received",   # canonical value Chat 76
     "in_conversation": "In Conversation",
     "meeting":         "Meeting",
     "won":             "Won",
@@ -104,27 +114,29 @@ STATUS_DISPLAY = {
 }
 
 STATUS_CSS = {
-    "cold":        "cold",
-    "queued":      "queued",
-    "contacted":   "contacted",
-    "followed_up": "followedup",
-    "replied":     "replied",
-    "meeting":     "meeting",
-    "won":         "won",
-    "lost":        "lost",
-    "no_reply":    "noreply",
+    "cold":           "cold",
+    "queued":         "queued",
+    "contacted":      "contacted",
+    "followed_up":    "followedup",
+    "replied":        "replied",
+    "reply_received": "replied",   # same CSS class Chat 76
+    "meeting":        "meeting",
+    "won":            "won",
+    "lost":           "lost",
+    "no_reply":       "noreply",
 }
 
 STATUS_PROG_CSS = {
-    "cold":        "cold",
-    "queued":      "queued",
-    "contacted":   "contacted",
-    "followed_up": "followedup",
-    "replied":     "replied",
-    "meeting":     "meeting",
-    "won":         "won",
-    "lost":        "lost",
-    "no_reply":    "noreply",
+    "cold":           "cold",
+    "queued":         "queued",
+    "contacted":      "contacted",
+    "followed_up":    "followedup",
+    "replied":        "replied",
+    "reply_received": "replied",   # Chat 76
+    "meeting":        "meeting",
+    "won":            "won",
+    "lost":           "lost",
+    "no_reply":       "noreply",
 }
 
 COUNTRY_FLAG = {
@@ -143,6 +155,17 @@ TZ_DISPLAY = {
     "MST":  "🕐 MST (UTC-7)",
     "GST":  "🕐 GST (UTC+4)",
     "AEST": "🕐 AEST (UTC+10)",
+}
+
+# Chat 76: compact timezone badge labels
+TZ_BADGE = {
+    "GMT":  "GMT+0",
+    "EST":  "EST-5",
+    "PST":  "PST-8",
+    "CST":  "CST-6",
+    "MST":  "MST-7",
+    "GST":  "GST+4",
+    "AEST": "AEST+10",
 }
 
 
@@ -203,6 +226,7 @@ def enrich_lead(row, cols):
     lead["track_css"]       = track_css(track)
     lead["flag"]            = COUNTRY_FLAG.get(country, "")
     lead["tz_display"]      = TZ_DISPLAY.get(lead.get("timezone", "GMT"), "")
+    lead["tz_badge"]        = TZ_BADGE.get(lead.get("timezone", "GMT"), lead.get("timezone", ""))
     lead["added_date_fmt"]  = format_added_date(lead.get("added_date"))
 
     # Determine contact display name
@@ -217,6 +241,76 @@ def enrich_email(row, cols):
     """Convert a DuckDB email row to a dict for JSON serialisation."""
     e = {cols[i]: _safe_str(row[i]) for i in range(len(cols))}
     return e
+
+
+def build_thread_by_lead(conn, lead_ids):
+    """Chat 76: Merge outbound emails + inbound replies per lead, newest first.
+
+    Returns dict: { lead_id_str: [ {direction, ts, subject?, body, ...}, ... ] }
+    Each item has direction='outbound'|'inbound', ts=ISO string, body, and
+    optionally subject (outbound) or sender_name (inbound).
+    """
+    if not lead_ids:
+        return {}
+
+    placeholders = ",".join("?" * len(lead_ids))
+    thread_by_lead = {}
+
+    # Outbound: sent emails only
+    try:
+        outbound_rows = conn.execute(
+            f"SELECT e.lead_id, e.subject, e.body, e.sent_at, e.email_type "
+            f"FROM outreach_emails e "
+            f"WHERE e.lead_id IN ({placeholders}) AND e.status = 'sent' "
+            f"ORDER BY e.sent_at DESC",
+            lead_ids,
+        ).fetchall()
+    except Exception as e:
+        print(f"[OUTREACH] thread outbound error: {e}")
+        outbound_rows = []
+
+    for row in outbound_rows:
+        lid = str(row[0])
+        if lid not in thread_by_lead:
+            thread_by_lead[lid] = []
+        thread_by_lead[lid].append({
+            "direction":  "outbound",
+            "ts":         _safe_str(row[3]) or "",
+            "subject":    row[1] or "",
+            "body":       row[2] or "",
+            "email_type": row[4] or "initial",
+        })
+
+    # Inbound: email_replies table
+    try:
+        inbound_rows = conn.execute(
+            f"SELECT er.lead_id, er.body, er.received_at, l.full_name "
+            f"FROM email_replies er "
+            f"JOIN outreach_leads l ON er.lead_id = l.lead_id "
+            f"WHERE er.lead_id IN ({placeholders}) "
+            f"ORDER BY er.received_at DESC",
+            lead_ids,
+        ).fetchall()
+    except Exception as e:
+        print(f"[OUTREACH] thread inbound error: {e}")
+        inbound_rows = []
+
+    for row in inbound_rows:
+        lid = str(row[0])
+        if lid not in thread_by_lead:
+            thread_by_lead[lid] = []
+        thread_by_lead[lid].append({
+            "direction":   "inbound",
+            "ts":          _safe_str(row[2]) or "",
+            "body":        row[1] or "",
+            "sender_name": row[3] or "Unknown",
+        })
+
+    # Sort each lead's thread newest first
+    for lid in thread_by_lead:
+        thread_by_lead[lid].sort(key=lambda x: x["ts"], reverse=True)
+
+    return thread_by_lead
 
 
 def compute_email_type_pill(email_type, sequence_step):
@@ -361,15 +455,21 @@ def leads():
         def lead_to_js(lead):
             return {k: _safe_str(v) for k, v in lead.items()}
 
-        leads_json = json.dumps([lead_to_js(l) for l in leads_list])
+        leads_json  = json.dumps([lead_to_js(l) for l in leads_list])
         emails_json = json.dumps(emails_by_lead)
+
+        # Chat 76: build merged conversation thread per lead
+        lead_ids    = [str(l["lead_id"]) for l in leads_list]
+        thread_by_lead = build_thread_by_lead(conn, lead_ids)
+        thread_json = json.dumps(thread_by_lead)
 
     except Exception as e:
         print(f"[OUTREACH] Error loading leads: {e}")
         stats = {"total": 0, "contacted": 0, "replies": 0, "hot_leads": 0, "won": 0}
-        leads_list = []
-        leads_json = "[]"
+        leads_list  = []
+        leads_json  = "[]"
         emails_json = "{}"
+        thread_json = "{}"
     finally:
         conn.close()
 
@@ -382,6 +482,7 @@ def leads():
         leads=leads_list,
         leads_json=leads_json,
         emails_json=emails_json,
+        thread_json=thread_json,
     )
 
 
@@ -449,10 +550,145 @@ def mark_lost(lead_id):
         conn.close()
 
 
+# ── POST /outreach/leads/<lead_id>/queue-email ────────────────────────────────
+@bp.route("/leads/<lead_id>/queue-email", methods=["POST"])
+@login_required
+def queue_email(lead_id):
+    """Queue Step 1 (initial) email for a lead. AJAX endpoint — CSRF exempt."""
+    conn = get_outreach_db()
+    try:
+        # Fetch lead
+        lead_cols = _get_lead_columns(conn)
+        row = conn.execute(
+            "SELECT * FROM outreach_leads WHERE lead_id = ?", [lead_id]
+        ).fetchone()
+        if not row:
+            return jsonify({"success": False, "message": "Lead not found"}), 404
+        lead = dict(zip(lead_cols, row))
+
+        # Check duplicate — already queued or sent Step 1 for this lead
+        existing = conn.execute(
+            "SELECT COUNT(*) FROM outreach_emails "
+            "WHERE lead_id = ? AND email_type = 'initial' AND status IN ('queued', 'sent')",
+            [lead_id]
+        ).fetchone()[0]
+        if existing > 0:
+            return jsonify({"success": False, "message": "Email already queued or sent for this lead"}), 409
+
+        # Look up Step 1 template (sequence_step=1, active)
+        tmpl = conn.execute(
+            "SELECT template_id, subject, body, cv_attached_default "
+            "FROM outreach_templates WHERE sequence_step = 1 AND active = true LIMIT 1"
+        ).fetchone()
+        if not tmpl:
+            return jsonify({"success": False, "message": "No active Step 1 template found"}), 500
+        template_id, subject, body, cv_attached = tmpl
+
+        # Substitute template variables (templates use single-brace format)
+        full_name  = lead.get("full_name") or ""
+        first_name = lead.get("first_name") or (full_name.split()[0] if full_name else "")
+        subs = {
+            "first_name": first_name,
+            "last_name":  lead.get("last_name") or "",
+            "full_name":  full_name,
+            "company":    lead.get("company") or "",
+            "email":      lead.get("email") or "",
+        }
+        for key, val in subs.items():
+            subject = subject.replace("{" + key + "}", val)
+            body    = body.replace("{" + key + "}", val)
+
+        # Insert queued email
+        email_id = str(uuid.uuid4())
+        conn.execute(
+            """INSERT INTO outreach_emails
+               (email_id, lead_id, template_id, email_type, subject, body,
+                status, cv_attached, created_at)
+               VALUES (?, ?, ?, 'initial', ?, ?, 'queued', ?, now())""",
+            [email_id, lead_id, template_id, subject, body, bool(cv_attached)]
+        )
+
+        # Advance lead status cold → queued
+        if lead.get("status") == "cold":
+            conn.execute(
+                "UPDATE outreach_leads SET status = 'queued', progress_stage = 2, "
+                "last_activity = ? WHERE lead_id = ?",
+                [datetime.now(), lead_id]
+            )
+
+        return jsonify({"success": True, "message": "Email queued — go to Queue page to send"})
+    except Exception as e:
+        print(f"[OUTREACH] queue-email error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── PUT /outreach/leads/<lead_id>/edit ────────────────────────────────────────
+@bp.route("/leads/<lead_id>/edit", methods=["PUT"])
+@login_required
+def edit_lead(lead_id):
+    """Update lead fields. AJAX endpoint — CSRF exempt."""
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"success": False, "message": "No JSON body"}), 400
+
+    _SCORE_MAP = {"Cold": 1, "Warm": 2, "Medium": 3, "Hot": 4}
+
+    fields = {
+        "first_name":      (data.get("first_name") or "").strip(),
+        "last_name":       (data.get("last_name") or "").strip(),
+        "company":         (data.get("company") or "").strip(),
+        "email":           (data.get("email") or "").strip(),
+        "city_state":      (data.get("city_state") or "").strip(),
+        "country":         (data.get("country") or "").strip(),
+        "track":           (data.get("track") or "").strip(),
+        "source":          (data.get("source") or "").strip(),
+        "lead_type_score": _SCORE_MAP.get(data.get("type_score"), None),
+    }
+
+    # Derive full_name if names provided
+    if fields["first_name"] or fields["last_name"]:
+        fields["full_name"] = f"{fields['first_name']} {fields['last_name']}".strip()
+
+    conn = get_outreach_db()
+    try:
+        updates, params = [], []
+        for col, val in fields.items():
+            if val is not None and val != "":
+                updates.append(f"{col} = ?")
+                params.append(val)
+
+        if not updates:
+            return jsonify({"success": False, "message": "No fields to update"}), 400
+
+        updates.append("last_activity = ?")
+        params.append(datetime.now())
+        params.append(lead_id)
+
+        conn.execute(
+            f"UPDATE outreach_leads SET {', '.join(updates)} WHERE lead_id = ?",
+            params
+        )
+
+        # Return updated lead for panel refresh
+        lead_cols = _get_lead_columns(conn)
+        row = conn.execute(
+            "SELECT * FROM outreach_leads WHERE lead_id = ?", [lead_id]
+        ).fetchone()
+        enriched = enrich_lead(row, lead_cols) if row else {}
+        return jsonify({"success": True, "lead": {k: _safe_str(v) for k, v in enriched.items()}})
+    except Exception as e:
+        print(f"[OUTREACH] edit-lead error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
 # ── Status → pipeline stage mapping ──────────────────────────────────────────
 _STATUS_STAGE = {
     "cold": 1, "queued": 2, "contacted": 3, "followed_up": 4,
-    "no_reply": 5, "replied": 6, "meeting": 7, "won": 8, "lost": 8,
+    "no_reply": 5, "replied": 6, "reply_received": 6, "meeting": 7, "won": 8, "lost": 8,
 }
 
 
@@ -1228,7 +1464,8 @@ def sent():
         ).fetchone()[0]
 
         replied_count = conn.execute(
-            "SELECT COUNT(*) FROM outreach_leads WHERE status IN ('replied', 'meeting', 'won')"
+            "SELECT COUNT(*) FROM outreach_leads "
+            "WHERE status IN ('replied', 'reply_received', 'meeting', 'won')"
         ).fetchone()[0]
 
         closed_count = conn.execute(
@@ -1248,7 +1485,7 @@ def sent():
                    e.sent_at, e.followup_due,
                    e.cv_attached, e.reply_received, e.reply_text,
                    l.company, l.full_name, l.email, l.track,
-                   l.status, l.timezone, l.sequence_step
+                   l.status, l.timezone, l.sequence_step, l.notes
             FROM outreach_emails e
             JOIN outreach_leads l ON e.lead_id = l.lead_id
             WHERE e.status = 'sent'
@@ -1261,7 +1498,7 @@ def sent():
              sent_at, followup_due,
              cv_attached, reply_received, reply_text,
              company, full_name, email_addr, track,
-             lead_status, timezone, sequence_step) = row
+             lead_status, timezone, sequence_step, notes) = row
 
             date_str, time_str = format_sent_at(sent_at, timezone)
             due_status, due_label = compute_followup_status(followup_due, today)
@@ -1290,6 +1527,8 @@ def sent():
                 "pill_css":       pill_css,
                 "reply_received": bool(reply_received),
                 "reply_text":     reply_text or "",
+                "notes":          notes or "",
+                "tz_badge":       TZ_BADGE.get(timezone or "GMT", timezone or ""),
             })
 
         # Fetch full email threads for leads visible on this page (for slide panel)
@@ -1310,15 +1549,19 @@ def sent():
                     emails_by_lead[lid] = []
                 emails_by_lead[lid].append(e)
 
+        # Chat 76: build merged conversation thread per lead
+        thread_by_lead   = build_thread_by_lead(conn, lead_ids)
         sent_emails_json = json.dumps(sent_emails)
         emails_json      = json.dumps(emails_by_lead)
+        thread_json      = json.dumps(thread_by_lead)
 
     except Exception as ex:
         print(f"[OUTREACH] Error loading sent: {ex}")
         stats = {"total_sent": 0, "overdue": 0, "due_today": 0, "replied": 0, "closed": 0}
-        sent_emails = []
+        sent_emails      = []
         sent_emails_json = "[]"
-        emails_json = "{}"
+        emails_json      = "{}"
+        thread_json      = "{}"
     finally:
         conn.close()
 
@@ -1331,6 +1574,7 @@ def sent():
         sent_emails=sent_emails,
         sent_emails_json=sent_emails_json,
         emails_json=emails_json,
+        thread_json=thread_json,
     )
 
 
@@ -1475,7 +1719,7 @@ def replies():
         # ── Stats ────────────────────────────────────────────────────────────
         total_replies = conn.execute(
             "SELECT COUNT(*) FROM outreach_leads "
-            "WHERE status IN ('replied', 'meeting', 'won')"
+            "WHERE status IN ('replied', 'reply_received', 'meeting', 'won')"
         ).fetchone()[0]
 
         unread_count = conn.execute(
@@ -1487,7 +1731,8 @@ def replies():
         ).fetchone()[0]
 
         awaiting_count = conn.execute(
-            "SELECT COUNT(*) FROM outreach_leads WHERE status = 'replied'"
+            "SELECT COUNT(*) FROM outreach_leads "
+            "WHERE status IN ('replied', 'reply_received')"
         ).fetchone()[0]
 
         won_count = conn.execute(
@@ -1527,11 +1772,12 @@ def replies():
                 lr.read        AS reply_read,
                 ls.email_type,
                 ls.sequence_step,
-                lr.id          AS reply_id
+                lr.id          AS reply_id,
+                l.notes, l.timezone
             FROM outreach_leads l
             LEFT JOIN latest_reply lr ON l.lead_id = lr.lead_id AND lr.rn = 1
             LEFT JOIN latest_sent  ls ON l.lead_id = ls.lead_id AND ls.rn = 1
-            WHERE l.status IN ('replied', 'meeting', 'won')
+            WHERE l.status IN ('replied', 'reply_received', 'meeting', 'won')
             ORDER BY lr.received_at DESC NULLS LAST
         """).fetchall()
 
@@ -1542,6 +1788,7 @@ def replies():
             "reply_text", "reply_read",
             "email_type", "sequence_step",
             "reply_id",
+            "notes", "timezone",
         ]
 
         replies_list = []
@@ -1562,10 +1809,14 @@ def replies():
             )
             r["pill_label"] = pill_label
             r["pill_css"]   = pill_css
+            r["tz_badge"]   = TZ_BADGE.get(r.get("timezone") or "GMT", r.get("timezone") or "")
             replies_list.append(r)
 
-        # ── Email threads per lead (for slide panel) ──────────────────────────
+        # Chat 76: build merged conversation thread per lead
         lead_ids = list({r["lead_id"] for r in replies_list})
+        thread_by_lead = build_thread_by_lead(conn, lead_ids)
+
+        # ── Legacy email threads (kept for back-compat) ───────────────────────
         emails_by_lead = {}
         if lead_ids:
             placeholders = ",".join("?" * len(lead_ids))
@@ -1587,6 +1838,7 @@ def replies():
 
         replies_json = json.dumps([reply_to_js(r) for r in replies_list])
         emails_json  = json.dumps(emails_by_lead)
+        thread_json  = json.dumps(thread_by_lead)
 
     except Exception as ex:
         print(f"[OUTREACH] Error loading replies: {ex}")
@@ -1594,6 +1846,7 @@ def replies():
         replies_list = []
         replies_json = "[]"
         emails_json  = "{}"
+        thread_json  = "{}"
     finally:
         conn.close()
 
@@ -1606,6 +1859,7 @@ def replies():
         replies=replies_list,
         replies_json=replies_json,
         emails_json=emails_json,
+        thread_json=thread_json,
     )
 
 
@@ -1764,6 +2018,7 @@ def replies_send_reply(lead_id):
 
     data = request.get_json(silent=True) or {}
     body_text = (data.get("body") or "").strip()
+    attach_cv = bool(data.get("attach_cv", False))
     if not body_text:
         return jsonify({"success": False, "error": "Reply body is required"}), 400
 
@@ -1812,8 +2067,17 @@ def replies_send_reply(lead_id):
 
         print(f"[OUTREACH] send-reply: lead_id={lead_id} to={to_email} subject='{subject[:60]}'")
 
-        # Send via Gmail SMTP — no CV attachment on replies
-        result = send_email(to_email=to_email, subject=subject, body_html=body_html)
+        # Resolve CV attachment path if requested
+        attachment_path = None
+        if attach_cv:
+            cv_files = [f for f in _CV_DIR.iterdir() if f.is_file()] if _CV_DIR.exists() else []
+            if cv_files:
+                attachment_path = str(cv_files[0])
+            else:
+                print(f"[OUTREACH] WARNING: attach_cv=True for {lead_id} but no CV file found")
+
+        result = send_email(to_email=to_email, subject=subject, body_html=body_html,
+                            attachment_path=attachment_path)
         if not result["success"]:
             return jsonify({"success": False, "error": result.get("error", "Send failed")}), 500
 

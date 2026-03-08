@@ -115,21 +115,99 @@
 
 
 {# ══════════════════════════════════════════════════════════
-   SLIDE-OUT PANEL
+   SLIDEIN PANEL — Chat 76 redesign
    ══════════════════════════════════════════════════════════ #}
-<div class="panel-overlay" id="panelOverlay" onclick="closePanel()"></div>
+<div class="si-overlay" id="siOverlay" onclick="closePanel()"></div>
 
-<div class="slide-panel" id="slidePanel">
-    <div class="panel-header">
-        <div class="panel-header-left">
-            <div class="panel-prospect-name" id="panelName">—</div>
-            <div class="panel-meta" id="panelMeta">—</div>
+<div class="si-panel" id="siPanel">
+
+    {# ── Fixed Header ── #}
+    <div class="si-header">
+        <div class="si-header-top">
+            <div>
+                <div class="si-name" id="siName">—</div>
+                <div class="si-email" id="siEmail">—</div>
+            </div>
+            <button class="si-close" onclick="closePanel()">✕</button>
         </div>
-        <button class="panel-close" onclick="closePanel()">✕</button>
+        <div class="si-badges" id="siBadges"></div>
+        <div class="si-progress" id="siProgress"></div>
+        <div class="si-prog-labels">
+            <div class="si-prog-label">Cold</div>
+            <div class="si-prog-label">Queued</div>
+            <div class="si-prog-label">Contacted</div>
+            <div class="si-prog-label">Reply Received</div>
+            <div class="si-prog-label">Meeting</div>
+            <div class="si-prog-label">Won</div>
+        </div>
     </div>
-    <div class="panel-body" id="panelBody"></div>
-    <div class="replies-panel-footer" id="panelFooter"></div>
-</div>
+
+    {# ── Scrollable Body ── #}
+    <div class="si-body">
+
+        {# Composer #}
+        <div class="si-composer">
+            <div class="si-composer-label">Reply</div>
+            <textarea class="si-composer-textarea" id="siComposerText" placeholder="Write a reply…"></textarea>
+            <div class="si-composer-toolbar">
+                <button class="si-toolbar-btn bold">B</button>
+                <button class="si-toolbar-btn italic">I</button>
+                <button class="si-toolbar-btn ai-draft" onclick="showToast('AI draft coming soon','info')">AI draft</button>
+                <label class="si-sig-toggle" onclick="siToggleSignature()">
+                    <div class="si-toggle-pip" id="siSigPip"></div>
+                    + Signature
+                </label>
+                <button class="si-send-btn" onclick="siSendReply()">Send Reply</button>
+            </div>
+            {# CV attach toggle #}
+            <div class="si-cv-row" id="siCvRow" style="margin-top:6px;">
+                <label class="si-cv-label" id="siCvLabel" title="">
+                    <input type="checkbox" id="siCvCheck" disabled style="margin-right:5px;">
+                    Attach CV
+                </label>
+            </div>
+            {# Signature preview #}
+            <div id="siSigPreview" style="margin-top:8px;padding:8px 12px;border:1px solid #e8eaed;border-radius:6px;background:#f8f9fa;font-size:11px;color:#9aa0a6;line-height:1.5;display:block;">
+                <strong style="color:#888;">Christopher Hoole</strong><br>
+                Google Ads Specialist | 16 Years Experience<br>
+                chris@christopherhoole.com<br>
+                https://christopherhoole.com
+            </div>
+        </div>
+
+        {# Notes #}
+        <div class="si-notes">
+            <div class="si-notes-header">
+                <span class="si-notes-title">Notes</span>
+                <button class="si-notes-edit-btn" id="siNotesEditBtn" onclick="siStartEditNotes()">Edit</button>
+            </div>
+            <div id="siNotesDisplay"></div>
+            <div id="siNotesEditWrap" class="si-notes-edit-wrap" style="display:none;">
+                <textarea class="si-notes-textarea" id="siNotesTextarea" placeholder="Add notes about this lead…"></textarea>
+                <div class="si-notes-save-row">
+                    <button class="si-notes-save-btn" onclick="siSaveNotes()">Save</button>
+                    <button class="si-notes-cancel-btn" onclick="siCancelNotes()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        {# Thread #}
+        <div class="si-thread">
+            <div class="si-thread-label">Conversation</div>
+            <div id="siThread"></div>
+        </div>
+
+    </div>{# /si-body #}
+
+    {# ── Fixed Footer ── #}
+    <div class="si-footer">
+        <button class="si-footer-btn success" onclick="siMarkWon()">✓ Mark as won</button>
+        <button class="si-footer-btn" onclick="siBookMeeting()">Book meeting</button>
+        <button class="si-footer-btn" onclick="openStatusModal()">Update status</button>
+        <button class="si-footer-btn danger" onclick="siMarkLost()">✕ Mark as lost</button>
+    </div>
+
+</div>{# /si-panel #}
 
 
 {# ══════════════════════════════════════════════════════════
@@ -171,6 +249,7 @@
 // ── Server data ────────────────────────────────────────────────
 const REPLIES_DATA = {{ replies_json | safe }};
 const EMAILS_DATA  = {{ emails_json  | safe }};
+const THREAD_DATA  = {{ thread_json  | safe }};
 
 // ── State ──────────────────────────────────────────────────────
 let currentPage   = 1;
@@ -226,7 +305,7 @@ function getFiltered() {
     return REPLIES_DATA.filter(r => {
         const status = (r.status || '').trim().toLowerCase();
         if (currentTab === 'unread'  && !r.unread)              return false;
-        if (currentTab === 'action'  && status !== 'replied')   return false;
+        if (currentTab === 'action'  && !['replied','reply_received'].includes(status)) return false;
         if (currentTab === 'meeting' && status !== 'meeting')   return false;
         if (currentTab === 'won'     && status !== 'won')       return false;
         if (search && !(r.full_name + ' ' + r.company).toLowerCase().includes(search)) return false;
@@ -359,15 +438,23 @@ function changeRowsPerPage() {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   SLIDE PANEL
+   SLIDE PANEL — Chat 76 si-panel
    ────────────────────────────────────────────────────────────── */
+
+// 6-stage progress map
+const SI_STAGE_MAP = {
+    cold:1, queued:2, contacted:3, followed_up:3, no_reply:3,
+    replied:4, reply_received:4, in_conversation:4,
+    meeting:5, won:6, lost:6
+};
+
 function openPanel(leadId) {
     const r = REPLIES_DATA.find(x => x.lead_id === leadId);
     if (!r) return;
 
     currentLeadId = leadId;
 
-    // Mark as read (fire and forget) — update all unread counters immediately
+    // Mark as read (fire and forget)
     if (r.unread) {
         r.unread     = false;
         r.reply_read = true;
@@ -378,167 +465,228 @@ function openPanel(leadId) {
         renderCards();
     }
 
-    // Panel header
-    document.getElementById('panelName').textContent = esc(r.full_name) + ' · ' + esc(r.company);
-    document.getElementById('panelMeta').textContent = r.email + ' · ' + r.track;
+    // Header
+    const nameStr = [r.full_name, r.company].filter(Boolean).join(' · ') || '—';
+    document.getElementById('siName').textContent  = nameStr;
+    document.getElementById('siEmail').textContent = r.email || '—';
 
-    // Panel body
-    let html = buildReplyBubble(r);
-    html += buildComposeSection(leadId);
-    html += buildThreadSection(EMAILS_DATA[leadId] || []);
-    document.getElementById('panelBody').innerHTML = html;
-
-    // Panel footer
-    document.getElementById('panelFooter').innerHTML = `
-        <button class="panel-btn success" onclick="panelMarkWon()">Mark as won</button>
-        <button class="panel-btn" onclick="panelBookMeeting()">Book meeting</button>
-        <button class="panel-btn" onclick="openStatusModal()">Update status</button>
-        <button class="panel-btn danger" onclick="panelMarkLost()">Mark as lost</button>
+    // Badges
+    const trackBadgeClass = {
+        Agency:'si-badge-agency', Direct:'si-badge-direct',
+        Recruiter:'si-badge-recruiter', Job:'si-badge-job'
+    }[r.track] || 'si-badge-job';
+    const statusBadgeClass = {
+        replied:'si-badge-rr', reply_received:'si-badge-rr',
+        meeting:'si-badge-rr', won:'si-badge-hot', lost:'si-badge-low'
+    }[r.status] || 'si-badge-cold';
+    const tzBadge = r.tz_badge ? `<span class="si-badge si-badge-tz">${esc(r.tz_badge)}</span>` : '';
+    document.getElementById('siBadges').innerHTML = `
+        <span class="si-badge ${trackBadgeClass}">${esc(r.track||'')}</span>
+        <span class="si-badge ${statusBadgeClass}">${esc(r.status_display||'')}</span>
+        ${tzBadge}
     `;
 
-    document.getElementById('panelOverlay').classList.add('overlay-visible');
-    document.getElementById('slidePanel').classList.add('panel-open');
+    // Progress bar
+    const stage = SI_STAGE_MAP[r.status] || 4;
+    document.getElementById('siProgress').innerHTML = Array.from({length:6}, (_,i) => {
+        const cls = i+1 < stage ? 'done' : (i+1 === stage ? 'active' : '');
+        return `<div class="si-prog-stage ${cls}"></div>`;
+    }).join('');
+
+    // Notes
+    siRenderNotes(r.notes || '');
+    siCancelNotes();
+
+    // Thread
+    siRenderThread(THREAD_DATA[leadId] || []);
+
+    // Reset composer
+    document.getElementById('siComposerText').value = '';
+    siSigOn = true;
+    const pip = document.getElementById('siSigPip');
+    if (pip) pip.classList.remove('off');
+    const preview = document.getElementById('siSigPreview');
+    if (preview) preview.style.display = 'block';
+    siLoadCvStatus();
+
+    // Open
+    document.getElementById('siOverlay').classList.add('si-open');
+    document.getElementById('siPanel').classList.add('si-open');
 }
 
 function closePanel() {
-    document.getElementById('panelOverlay').classList.remove('overlay-visible');
-    document.getElementById('slidePanel').classList.remove('panel-open');
+    document.getElementById('siOverlay').classList.remove('si-open');
+    document.getElementById('siPanel').classList.remove('si-open');
+    currentLeadId = null;
 }
 
-function buildReplyBubble(r) {
-    const replyText = (r.reply_text || '(No reply received yet)').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    return `
-        <div class="panel-section">
-            <div class="panel-section-title">Their reply &middot; ${esc(r.replied_date)} at ${esc(r.replied_time)}</div>
-            <div class="reply-bubble">
-                <div class="reply-header">
-                    <span class="reply-label">Reply</span>
-                    <span class="reply-from">${esc(r.full_name)}</span>
-                    <span class="reply-time">${esc(r.replied_date)} &middot; ${esc(r.replied_time)}</span>
-                </div>${replyText}
-            </div>
-        </div>`;
-}
-
-function buildComposeSection(leadId) {
-    return `
-        <div class="panel-section">
-            <div class="panel-section-title">Your reply</div>
-            <div class="compose-area">
-                <div class="compose-toolbar">
-                    <button class="compose-toolbar-btn" title="Bold"><b>B</b></button>
-                    <button class="compose-toolbar-btn" title="Italic"><i>I</i></button>
-                    <button class="compose-toolbar-btn" title="Link">🔗</button>
-                    <button class="compose-toolbar-btn" onclick="insertSignature()">+ Signature</button>
-                    <button class="compose-toolbar-btn" onclick="showToast('AI draft coming soon','info')">🔄 AI draft</button>
-                </div>
-                <textarea class="compose-textarea" id="replyTextarea" placeholder="Write your reply…"></textarea>
-                <div class="compose-footer">
-                    <button class="btn-send-reply" onclick="sendReply('${esc(leadId)}')">Send reply</button>
-                    <span class="attachment-badge not-attached" id="cvToggle" onclick="toggleCV()">
-                        <span class="material-symbols-outlined" style="font-size:13px;">attach_file</span>
-                        CV &middot; <span id="cvLabel">not attached +</span>
-                    </span>
-                    <span class="compose-hint">Sending from chrishoole101@gmail.com</span>
-                </div>
-            </div>
-        </div>`;
-}
-
-function buildThreadSection(thread) {
-    const sent = thread
-        .filter(e => e.status === 'sent')
-        .sort((a, b) => (b.sent_at || '').localeCompare(a.sent_at || ''));
-
-    const items = sent.map((e, i) => {
-        const pillCls = e.email_type === 'initial' ? 'pill-initial' : 'pill-followup';
-        const pillLbl = e.email_type === 'initial'     ? 'Initial email'
-                      : e.email_type === 'follow_up_2' ? 'Follow-up 2'
-                      : e.email_type === 'follow_up_3' ? 'Follow-up 3'
-                      : 'Follow-up 1';
-        const dateStr = formatDate(e.sent_at);
-        const subject = e.subject || 'Google Ads Specialist — 16 Years Experience';
-        const bodyId  = 'rthread-body-' + i;
-        const bodyTxt = (e.body || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const cvBadge = (e.cv_attached === true || e.cv_attached === 'True')
-            ? `<div class="attachment-badge" style="margin-top:8px;">
-                <span class="material-symbols-outlined" style="font-size:13px;">attach_file</span>
-                Christopher_Hoole_CV.pdf &middot; attached
-               </div>` : '';
-        return `
-            <div class="email-thread-item">
-                <div class="thread-item-header" onclick="toggleThread('${bodyId}')">
-                    <div>
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <span class="email-type-pill ${pillCls}">${pillLbl}</span>
-                            <span class="thread-date">${dateStr}</span>
-                        </div>
-                        <div class="thread-subject">${esc(subject)}</div>
-                    </div>
-                    <span class="thread-chevron" id="chev-${bodyId}">▾</span>
-                </div>
-                <div class="thread-body hidden" id="${bodyId}">${bodyTxt}${cvBadge}</div>
-            </div>`;
-    }).join('');
-
-    return `
-        <div class="panel-section">
-            <div class="panel-section-title">Email thread</div>
-            ${items || '<p style="color:#9aa0a6;font-size:12px;">No sent emails found.</p>'}
-        </div>`;
-}
-
-function toggleThread(bodyId) {
-    const body = document.getElementById(bodyId);
-    if (!body) return;
-    body.classList.toggle('hidden');
-    const chev = document.getElementById('chev-' + bodyId);
-    if (chev) chev.textContent = body.classList.contains('hidden') ? '▾' : '▴';
-}
-
-function insertSignature() {
-    const ta = document.getElementById('replyTextarea');
-    if (ta) ta.value += '\n\nBest regards,\nChristopher Hoole\n+44 7999 500 184\nchristopherhoole.online';
-}
-
-function toggleCV() {
-    const badge = document.getElementById('cvToggle');
-    const label = document.getElementById('cvLabel');
-    if (!badge || !label) return;
-    const isAttached = !badge.classList.contains('not-attached');
-    if (isAttached) {
-        badge.classList.add('not-attached');
-        label.textContent = 'not attached +';
+/* Notes */
+function siRenderNotes(text) {
+    const disp = document.getElementById('siNotesDisplay');
+    if (text && text.trim()) {
+        disp.className = 'si-notes-body';
+        disp.textContent = text;
     } else {
-        badge.classList.remove('not-attached');
-        label.textContent = 'attached ✕';
+        disp.className = 'si-notes-empty';
+        disp.textContent = 'No notes yet. Click Edit to add some.';
     }
 }
-
-function sendReply(leadId) {
-    const ta   = document.getElementById('replyTextarea');
-    const body = ta ? ta.value.trim() : '';
-    if (!body) { showToast('Please type a reply first.', 'error'); return; }
-    const btn = document.querySelector('.btn-send-reply');
-    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
-    fetch(`/outreach/replies/${leadId}/send-reply`, {
-        method: 'POST',
+function siStartEditNotes() {
+    const r = REPLIES_DATA.find(x => x.lead_id === currentLeadId);
+    document.getElementById('siNotesTextarea').value = (r && r.notes) || '';
+    document.getElementById('siNotesDisplay').style.display  = 'none';
+    document.getElementById('siNotesEditBtn').style.display  = 'none';
+    document.getElementById('siNotesEditWrap').style.display = '';
+}
+function siCancelNotes() {
+    document.getElementById('siNotesDisplay').style.display  = '';
+    document.getElementById('siNotesEditBtn').style.display  = '';
+    document.getElementById('siNotesEditWrap').style.display = 'none';
+}
+function siSaveNotes() {
+    if (!currentLeadId) return;
+    const notes = document.getElementById('siNotesTextarea').value.trim();
+    fetch(`/outreach/leads/${currentLeadId}/notes`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body: body }),
+        body: JSON.stringify({ notes })
     })
     .then(r => r.json())
     .then(d => {
-        if (btn) { btn.disabled = false; btn.textContent = 'Send reply'; }
+        if (d.success) {
+            const rec = REPLIES_DATA.find(x => x.lead_id === currentLeadId);
+            if (rec) rec.notes = notes;
+            siRenderNotes(notes);
+            siCancelNotes();
+            showToast('Notes saved', 'success');
+        } else showToast('Error saving notes', 'error');
+    })
+    .catch(() => showToast('Network error', 'error'));
+}
+
+/* Thread */
+function siFormatTs(tsStr) {
+    if (!tsStr) return '—';
+    try {
+        const d = new Date(tsStr);
+        return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})
+            + ' · ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    } catch { return tsStr; }
+}
+function siRenderThread(items) {
+    const container = document.getElementById('siThread');
+    if (!items || items.length === 0) {
+        container.innerHTML = '<div class="si-thread-empty">No conversation yet</div>';
+        return;
+    }
+    const sorted = [...items].sort((a,b) => (b.ts||'').localeCompare(a.ts||''));
+    container.innerHTML = sorted.map((item,idx) => {
+        const ts = siFormatTs(item.ts);
+        if (item.direction === 'outbound') {
+            const subj = item.subject ? `<div class="si-thread-subject">${esc(item.subject)}</div>` : '';
+            const body = item.body || '';
+            const id   = 'si-body-' + idx;
+            const clamped = body.length > 200 ? 'clamped' : '';
+            const more = body.length > 200 ? `<button class="si-show-more-btn" onclick="siToggleBody(this,'${id}')">Show more</button>` : '';
+            return `<div class="si-thread-item outbound">
+                <div class="si-thread-item-header">
+                    <span class="si-thread-badge sent">SENT</span>
+                    <span class="si-thread-ts">${ts}</span>
+                </div>${subj}
+                <div class="si-thread-body ${clamped}" id="${id}">${esc(body)}</div>
+                ${more}</div>`;
+        } else {
+            const body = item.body || '';
+            const { main, quoted } = siSplitBody(body);
+            const quotedHtml = quoted
+                ? `<button class="si-quoted-toggle" onclick="siToggleQuoted(this)">··· Show original</button><div class="si-quoted-content">${esc(quoted)}</div>`
+                : '';
+            return `<div class="si-thread-item inbound">
+                <div class="si-thread-item-header">
+                    <span class="si-thread-badge reply-received">REPLY RECEIVED</span>
+                    <span class="si-thread-ts">${esc(item.sender_name||'')} · ${ts}</span>
+                </div>
+                <div class="si-thread-body">${esc(main)}${quotedHtml}</div></div>`;
+        }
+    }).join('');
+}
+function siSplitBody(body) {
+    const m = /\n(On [\s\S]+?wrote:[\s\S]*)/.exec(body);
+    if (m) return { main: body.slice(0, m.index).trim(), quoted: m[1].trim() };
+    const lines = body.split('\n');
+    const qi = lines.findIndex(l => l.trimStart().startsWith('>'));
+    if (qi > 0) return { main: lines.slice(0, qi).join('\n').trim(), quoted: lines.slice(qi).join('\n').trim() };
+    return { main: body, quoted: '' };
+}
+function siToggleQuoted(btn) {
+    const content = btn.nextElementSibling;
+    content.classList.toggle('open');
+    btn.textContent = content.classList.contains('open') ? '··· Hide original' : '··· Show original';
+}
+function siToggleBody(btn, id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('clamped');
+    btn.textContent = el.classList.contains('clamped') ? 'Show more' : 'Show less';
+}
+
+/* ── Signature toggle ────────────────────────────────────────── */
+let siSigOn = true;
+function siToggleSignature() {
+    siSigOn = !siSigOn;
+    const pip = document.getElementById('siSigPip');
+    const preview = document.getElementById('siSigPreview');
+    if (pip) pip.classList.toggle('off', !siSigOn);
+    if (preview) preview.style.display = siSigOn ? 'block' : 'none';
+}
+
+/* ── CV status ───────────────────────────────────────────────── */
+let siCvAvailable = false;
+function siLoadCvStatus() {
+    fetch('/outreach/cv/status')
+        .then(r => r.json())
+        .then(d => {
+            siCvAvailable = d.uploaded;
+            const chk   = document.getElementById('siCvCheck');
+            const label = document.getElementById('siCvLabel');
+            if (chk) {
+                chk.disabled = !d.uploaded;
+                chk.checked  = d.uploaded;
+            }
+            if (label) {
+                label.title = d.uploaded ? d.filename : 'No CV uploaded';
+                label.style.opacity = d.uploaded ? '1' : '0.5';
+            }
+        })
+        .catch(() => {});
+}
+
+/* Send reply from si-panel composer */
+function siSendReply() {
+    if (!currentLeadId) return;
+    const ta   = document.getElementById('siComposerText');
+    const body = ta ? ta.value.trim() : '';
+    if (!body) { showToast('Please type a reply first.', 'error'); return; }
+    const attachCv = !!(document.getElementById('siCvCheck') || {}).checked;
+    const btn = document.querySelector('.si-send-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+    fetch(`/outreach/replies/${currentLeadId}/send-reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body, attach_cv: attachCv }),
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (btn) { btn.disabled = false; btn.textContent = 'Send Reply'; }
         if (d.success) {
             showToast('Reply sent', 'success');
             if (ta) ta.value = '';
-        } else {
-            showToast(d.error || 'Failed to send reply', 'error');
-        }
+            siRenderThread(THREAD_DATA[currentLeadId] || []);
+        } else showToast(d.error || 'Failed to send reply', 'error');
     })
     .catch(() => {
-        if (btn) { btn.disabled = false; btn.textContent = 'Send reply'; }
-        showToast('Could not send reply. Please try again.', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = 'Send Reply'; }
+        showToast('Network error sending reply', 'error');
     });
 }
 
@@ -585,15 +733,6 @@ function sendInlineReply(leadId) {
     });
 }
 
-function formatDate(isoStr) {
-    if (!isoStr) return '—';
-    try {
-        const d = new Date(isoStr);
-        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-             + ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    } catch(e) { return isoStr; }
-}
-
 function esc(str) {
     if (!str) return '';
     return String(str)
@@ -604,7 +743,7 @@ function esc(str) {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   PANEL ACTIONS
+   PANEL ACTIONS — Chat 76 si-panel
    ────────────────────────────────────────────────────────────── */
 function markWon(leadId) {
     fetch(`/outreach/replies/${leadId}/mark-won`, {
@@ -618,7 +757,7 @@ function markWon(leadId) {
     .catch(() => showToast('Network error', 'error'));
 }
 
-function panelMarkWon() {
+function siMarkWon() {
     if (!currentLeadId) return;
     if (!confirm('Mark this lead as Won?')) return;
     fetch(`/outreach/replies/${currentLeadId}/mark-won`, {
@@ -632,7 +771,7 @@ function panelMarkWon() {
     .catch(() => showToast('Network error', 'error'));
 }
 
-function panelMarkLost() {
+function siMarkLost() {
     if (!currentLeadId) return;
     if (!confirm('Mark this lead as Lost?')) return;
     fetch(`/outreach/replies/${currentLeadId}/mark-lost`, {
@@ -646,7 +785,7 @@ function panelMarkLost() {
     .catch(() => showToast('Network error', 'error'));
 }
 
-function panelBookMeeting() {
+function siBookMeeting() {
     if (!currentLeadId) return;
     fetch(`/outreach/replies/${currentLeadId}/book-meeting`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }

@@ -215,7 +215,7 @@
                         <button class="actions-btn" onclick="toggleDropdown(this)">Actions ▾</button>
                         <div class="actions-dropdown">
                             <button onclick="openPanel('{{ lead.lead_id }}')">👁 View prospect</button>
-                            <button onclick="showToast('Email queue coming soon','info')">+ Queue email</button>
+                            <button onclick="queueEmailForLead('{{ lead.lead_id }}', this)">+ Queue email</button>
                             <button onclick="openStatusModal('{{ lead.lead_id }}')">📋 Update status</button>
                             <div class="dropdown-divider"></div>
                             <button onclick="markWon('{{ lead.lead_id }}', this)">✓ Mark won</button>
@@ -240,57 +240,99 @@
 
 
 {# ══════════════════════════════════════════════════════════
-   SLIDE-OUT PANEL
+   SLIDEIN PANEL — Chat 76 redesign
    ══════════════════════════════════════════════════════════ #}
-<div class="panel-overlay" id="panelOverlay" onclick="closePanel()"></div>
+<div class="si-overlay" id="siOverlay" onclick="closePanel()"></div>
 
-<div class="slide-panel" id="slidePanel">
-    <div class="panel-header">
-        <div style="flex:1;">
-            <div class="panel-prospect-name" id="panelCompany">—</div>
-            <div class="panel-meta" id="panelMeta">—</div>
-            <div class="panel-badges" id="panelBadges"></div>
-            <div class="panel-progress" id="panelProgress"></div>
-        </div>
-        <div class="panel-close-area">
-            <button class="panel-close" onclick="closePanel()">✕</button>
-            <div class="panel-tz" id="panelTz"></div>
-        </div>
-    </div>
+<div class="si-panel" id="siPanel">
 
-    <div class="panel-actions-bar">
-        <button class="panel-btn primary" onclick="showToast('Email queue coming soon','info')">+ Queue email</button>
-        <button class="panel-btn" onclick="showToast('Edit coming soon','info')">✏ Edit lead</button>
-        <button class="panel-btn success" id="panelMarkWon" onclick="panelMarkWon()">✓ Mark won</button>
-        <button class="panel-btn danger" id="panelMarkLost" onclick="panelMarkLost()">✕ Mark lost</button>
-        <button class="panel-btn auto-left" onclick="openStatusModal(currentLeadId)">📋 Update status</button>
-    </div>
-
-    <div class="panel-body">
-        {# Notes #}
-        <div class="panel-section-label">Notes</div>
-        <div class="notes-box">
-            <div class="notes-box-header">
-                <span class="notes-box-title">📝 My notes</span>
-                <button class="notes-edit-btn" onclick="startEditNotes()">✏ Edit</button>
+    {# ── Fixed Header ── #}
+    <div class="si-header">
+        <div class="si-header-top">
+            <div>
+                <div class="si-name" id="siName">—</div>
+                <div class="si-email" id="siEmail">—</div>
             </div>
-            <div id="notesDisplay" class="notes-text"></div>
-            <div id="notesEditArea" class="d-none">
-                <textarea id="notesTextarea" class="notes-edit-area" rows="4" placeholder="Add notes about this lead…"></textarea>
-                <div class="notes-save-row">
-                    <button class="notes-save-btn" onclick="saveNotes()">Save</button>
-                    <button class="notes-cancel-btn" onclick="cancelNotes()">Cancel</button>
+            <button class="si-close" onclick="closePanel()">✕</button>
+        </div>
+        <div class="si-badges" id="siBadges"></div>
+        <div class="si-progress" id="siProgress"></div>
+        <div class="si-prog-labels">
+            <div class="si-prog-label">Cold</div>
+            <div class="si-prog-label">Queued</div>
+            <div class="si-prog-label">Contacted</div>
+            <div class="si-prog-label">Reply Received</div>
+            <div class="si-prog-label">Meeting</div>
+            <div class="si-prog-label">Won</div>
+        </div>
+    </div>
+
+    {# ── Scrollable Body ── #}
+    <div class="si-body">
+
+        {# Composer #}
+        <div class="si-composer">
+            <div class="si-composer-label">Reply</div>
+            <textarea class="si-composer-textarea" id="siComposerText" placeholder="Write a reply…"></textarea>
+            <div class="si-composer-toolbar">
+                <button class="si-toolbar-btn bold" onclick="siFormatBold()">B</button>
+                <button class="si-toolbar-btn italic" onclick="siFormatItalic()">I</button>
+                <label class="si-sig-toggle" id="siSigToggle" onclick="siToggleSignature()">
+                    <div class="si-toggle-pip" id="siSigPip"></div>
+                    + Signature
+                </label>
+                <button class="si-send-btn" onclick="siSendReply()">Send Reply</button>
+            </div>
+            {# CV attach toggle #}
+            <div class="si-cv-row" id="siCvRow" style="margin-top:6px;">
+                <label class="si-cv-label" id="siCvLabel" title="">
+                    <input type="checkbox" id="siCvCheck" disabled style="margin-right:5px;">
+                    Attach CV
+                </label>
+            </div>
+            {# Signature preview #}
+            <div id="siSigPreview" style="margin-top:8px;padding:8px 12px;border:1px solid #e8eaed;border-radius:6px;background:#f8f9fa;font-size:11px;color:#9aa0a6;line-height:1.5;display:block;">
+                <strong style="color:#888;">Christopher Hoole</strong><br>
+                Google Ads Specialist | 16 Years Experience<br>
+                chris@christopherhoole.com<br>
+                https://christopherhoole.com
+            </div>
+        </div>
+
+        {# Notes #}
+        <div class="si-notes">
+            <div class="si-notes-header">
+                <span class="si-notes-title">Notes</span>
+                <button class="si-notes-edit-btn" id="siNotesEditBtn" onclick="siStartEditNotes()">Edit</button>
+            </div>
+            <div id="siNotesDisplay"></div>
+            <div id="siNotesEditWrap" class="si-notes-edit-wrap" style="display:none;">
+                <textarea class="si-notes-textarea" id="siNotesTextarea" placeholder="Add notes about this lead…"></textarea>
+                <div class="si-notes-save-row">
+                    <button class="si-notes-save-btn" onclick="siSaveNotes()">Save</button>
+                    <button class="si-notes-cancel-btn" onclick="siCancelNotes()">Cancel</button>
                 </div>
             </div>
         </div>
 
-        {# Email timeline #}
-        <div class="panel-section-label">Email timeline</div>
-        <div class="timeline" id="emailTimeline">
-            <p style="color:#9aa0a6; font-size:12px;">No emails yet.</p>
+        {# Thread #}
+        <div class="si-thread">
+            <div class="si-thread-label">Conversation</div>
+            <div id="siThread"></div>
         </div>
+
+    </div>{# /si-body #}
+
+    {# ── Fixed Footer ── #}
+    <div class="si-footer">
+        <button class="si-footer-btn primary" onclick="siQueueEmail()">+ Queue email</button>
+        <button class="si-footer-btn" onclick="openEditModal()">✏ Edit lead</button>
+        <button class="si-footer-btn success" onclick="siMarkWon()">✓ Mark won</button>
+        <button class="si-footer-btn danger" onclick="siMarkLost()">✕ Mark lost</button>
+        <button class="si-footer-btn" onclick="openStatusModal(currentLeadId)">Update status</button>
     </div>
-</div>
+
+</div>{# /si-panel #}
 
 
 {# ══════════════════════════════════════════════════════════
@@ -403,6 +445,87 @@
 </div>
 
 {# ══════════════════════════════════════════════════════════
+   EDIT LEAD MODAL
+   ══════════════════════════════════════════════════════════ #}
+<div class="modal-overlay-custom" id="editModal">
+    <div class="modal-box">
+        <div class="modal-header-custom">
+            <h3>Edit lead</h3>
+            <button class="modal-close-btn" onclick="closeEditModal()">✕</button>
+        </div>
+        <div class="modal-body-custom">
+            <div class="form-grid-2">
+                <div>
+                    <label class="form-label">First Name</label>
+                    <input class="form-input" type="text" id="editFirstName">
+                </div>
+                <div>
+                    <label class="form-label">Last Name</label>
+                    <input class="form-input" type="text" id="editLastName">
+                </div>
+            </div>
+            <div class="form-grid-2">
+                <div>
+                    <label class="form-label">Company</label>
+                    <input class="form-input" type="text" id="editCompany">
+                </div>
+                <div>
+                    <label class="form-label">Email</label>
+                    <input class="form-input" type="email" id="editEmail">
+                </div>
+            </div>
+            <div class="form-grid-2">
+                <div>
+                    <label class="form-label">City / State</label>
+                    <input class="form-input" type="text" id="editCityState">
+                </div>
+                <div>
+                    <label class="form-label">Country</label>
+                    <select class="form-select-modal" id="editCountry">
+                        <option value="">Select…</option>
+                        <option>UK</option>
+                        <option>USA</option>
+                        <option>UAE</option>
+                        <option>Canada</option>
+                        <option>Australia</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-grid-3">
+                <div>
+                    <label class="form-label">Track</label>
+                    <select class="form-select-modal" id="editTrack">
+                        <option value="">Select…</option>
+                        <option>Agency</option>
+                        <option>Recruiter</option>
+                        <option>Direct</option>
+                        <option>Job</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Type Score</label>
+                    <select class="form-select-modal" id="editTypeScore">
+                        <option value="">Select…</option>
+                        <option>Cold</option>
+                        <option>Warm</option>
+                        <option>Medium</option>
+                        <option>Hot</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Source</label>
+                    <input class="form-input" type="text" id="editSource">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer-custom">
+            <button class="btn-secondary-modal" onclick="closeEditModal()">Cancel</button>
+            <button class="btn-primary-modal" onclick="submitEditLead()">Save changes</button>
+        </div>
+    </div>
+</div>
+
+{# ══════════════════════════════════════════════════════════
    DELETE CONFIRM MODAL (Bootstrap)
    ══════════════════════════════════════════════════════════ #}
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
@@ -436,6 +559,7 @@
 // ── Data from server ──────────────────────────────────────────
 const LEADS_DATA  = {{ leads_json | safe }};
 const EMAILS_DATA = {{ emails_json | safe }};
+const THREAD_DATA = {{ thread_json | safe }};
 
 // ── Panel state ───────────────────────────────────────────────
 let currentLeadId    = null;
@@ -475,80 +599,8 @@ document.addEventListener('click', function(e) {
 });
 
 /* ──────────────────────────────────────────────────────────────
-   SLIDE PANEL
+   SLIDE PANEL — Chat 76 si-panel
    ────────────────────────────────────────────────────────────── */
-function openPanel(leadId) {
-    currentLeadId = leadId;
-    const lead   = LEADS_DATA.find(l => l.lead_id === leadId);
-    const emails = EMAILS_DATA[leadId] || [];
-
-    if (!lead) return;
-
-    // Company name
-    document.getElementById('panelCompany').textContent = lead.company || '—';
-
-    // Meta line
-    const metaParts = [];
-    if (lead.full_name)  metaParts.push('<strong>' + esc(lead.full_name) + '</strong>');
-    if (lead.role)       metaParts.push(esc(lead.role));
-    if (lead.email)      metaParts.push(esc(lead.email));
-    if (lead.city_state) metaParts.push(esc(lead.city_state));
-    const flag = lead.flag || '';
-    if (lead.country)    metaParts.push(flag + ' ' + esc(lead.country));
-    document.getElementById('panelMeta').innerHTML = metaParts.join(' · ');
-
-    // Badges row
-    const badgesEl = document.getElementById('panelBadges');
-    badgesEl.innerHTML = `
-        <span class="track-badge ${esc(lead.track_css)}">${esc(lead.track)}</span>
-        <span class="source-badge">${esc(lead.source)}</span>
-        <span class="s-${esc(lead.status_css)}" style="display:inline-flex; align-items:center; gap:4px; margin:0 2px;">
-          <span class="status-dot"></span>
-          <span style="font-size:12px; color:#5f6368;">${esc(lead.status_display)}</span>
-        </span>
-        <span class="type-score ${esc(lead.score_css)}" style="font-size:12px;">${esc(lead.score_label)}</span>
-    `;
-
-    // Progress bar in header
-    const stage = parseInt(lead.progress_stage) || 0;
-    const progColor = getPipColor(lead.status_css);
-    const pips = Array.from({length: 8}, (_, i) =>
-        `<div class="panel-pip" style="background:${i < stage ? progColor : '#e0e0e0'};"></div>`
-    ).join('');
-    document.getElementById('panelProgress').innerHTML = pips;
-
-    // Timezone
-    const tzEl = document.getElementById('panelTz');
-    tzEl.textContent = lead.tz_display || '';
-
-    // Notes
-    originalNotes = lead.notes || '';
-    renderNotes(originalNotes);
-    cancelNotes();
-
-    // Timeline
-    renderTimeline(emails);
-
-    // Open panel
-    document.getElementById('panelOverlay').classList.add('overlay-visible');
-    document.getElementById('slidePanel').classList.add('panel-open');
-}
-
-function closePanel() {
-    document.getElementById('panelOverlay').classList.remove('overlay-visible');
-    document.getElementById('slidePanel').classList.remove('panel-open');
-    currentLeadId = null;
-}
-
-function getPipColor(statusCss) {
-    const map = {
-        cold: '#9e9e9e', queued: '#1a73e8', contacted: '#4285f4',
-        followedup: '#f29900', replied: '#34a853', meeting: '#e8710a',
-        won: '#188038', lost: '#ea4335', noreply: '#5f6368'
-    };
-    return map[statusCss] || '#e0e0e0';
-}
-
 function esc(str) {
     if (!str) return '';
     return String(str)
@@ -558,48 +610,119 @@ function esc(str) {
         .replace(/"/g, '&quot;');
 }
 
+// 6-stage progress: Cold=1, Queued=2, Contacted=3, Replied=4, Meeting=5, Won=6
+const SI_STAGE_MAP = {
+    cold:1, queued:2, contacted:3, followed_up:3, no_reply:3,
+    replied:4, reply_received:4, in_conversation:4,
+    meeting:5, won:6, lost:6
+};
+
+function openPanel(leadId) {
+    currentLeadId = leadId;
+    const lead = LEADS_DATA.find(l => l.lead_id === leadId);
+    if (!lead) return;
+
+    // Name + email
+    const nameStr = [lead.company, lead.full_name].filter(Boolean).join(' · ') || '—';
+    document.getElementById('siName').textContent  = nameStr;
+    document.getElementById('siEmail').textContent = lead.email || '—';
+
+    // Badges row
+    const trackBadgeClass = {
+        Agency:'si-badge-agency', Direct:'si-badge-direct',
+        Recruiter:'si-badge-recruiter', Job:'si-badge-job'
+    }[lead.track] || 'si-badge-job';
+    const statusBadgeClass = {
+        cold:'si-badge-cold', queued:'si-badge-queued',
+        contacted:'si-badge-contacted', followed_up:'si-badge-contacted',
+        replied:'si-badge-rr', reply_received:'si-badge-rr', meeting:'si-badge-rr',
+        won:'si-badge-hot', lost:'si-badge-low', no_reply:'si-badge-low'
+    }[lead.status] || 'si-badge-cold';
+    document.getElementById('siBadges').innerHTML = `
+        <span class="si-badge ${trackBadgeClass}">${esc(lead.track||'')}</span>
+        <span class="si-badge si-badge-website">${esc(lead.source||'')}</span>
+        <span class="si-badge ${statusBadgeClass}">${esc(lead.status_display||'')}</span>
+        ${lead.tz_badge ? `<span class="si-badge si-badge-tz">${esc(lead.tz_badge)}</span>` : ''}
+    `;
+
+    // 6-stage progress bar
+    const stage = SI_STAGE_MAP[lead.status] || 1;
+    const bars = Array.from({length:6}, (_,i) => {
+        const cls = i+1 < stage ? 'done' : (i+1 === stage ? 'active' : '');
+        return `<div class="si-prog-stage ${cls}"></div>`;
+    }).join('');
+    document.getElementById('siProgress').innerHTML = bars;
+
+    // Notes
+    siRenderNotes(lead.notes || '');
+    siCancelNotes();
+
+    // Thread
+    siRenderThread(THREAD_DATA[leadId] || []);
+
+    // Reset composer
+    document.getElementById('siComposerText').value = '';
+    siSigOn = true;
+    const pip = document.getElementById('siSigPip');
+    if (pip) pip.classList.remove('off');
+    const preview = document.getElementById('siSigPreview');
+    if (preview) preview.style.display = 'block';
+    siLoadCvStatus();
+
+    // Open
+    document.getElementById('siOverlay').classList.add('si-open');
+    document.getElementById('siPanel').classList.add('si-open');
+}
+
+function closePanel() {
+    document.getElementById('siOverlay').classList.remove('si-open');
+    document.getElementById('siPanel').classList.remove('si-open');
+    currentLeadId = null;
+}
+
 /* ──────────────────────────────────────────────────────────────
-   NOTES SECTION
+   NOTES — si-panel version
    ────────────────────────────────────────────────────────────── */
-function renderNotes(text) {
-    const disp = document.getElementById('notesDisplay');
+function siRenderNotes(text) {
+    const disp = document.getElementById('siNotesDisplay');
     if (text && text.trim()) {
-        disp.className = 'notes-text';
+        disp.className = 'si-notes-body';
         disp.textContent = text;
     } else {
-        disp.className = 'notes-empty';
+        disp.className = 'si-notes-empty';
         disp.textContent = 'No notes yet. Click Edit to add some.';
     }
 }
 
-function startEditNotes() {
+function siStartEditNotes() {
     const lead = LEADS_DATA.find(l => l.lead_id === currentLeadId);
-    document.getElementById('notesTextarea').value = (lead && lead.notes) || '';
-    document.getElementById('notesDisplay').classList.add('d-none');
-    document.getElementById('notesEditArea').classList.remove('d-none');
+    document.getElementById('siNotesTextarea').value = (lead && lead.notes) || '';
+    document.getElementById('siNotesDisplay').style.display  = 'none';
+    document.getElementById('siNotesEditBtn').style.display  = 'none';
+    document.getElementById('siNotesEditWrap').style.display = '';
 }
 
-function cancelNotes() {
-    document.getElementById('notesDisplay').classList.remove('d-none');
-    document.getElementById('notesEditArea').classList.add('d-none');
+function siCancelNotes() {
+    document.getElementById('siNotesDisplay').style.display  = '';
+    document.getElementById('siNotesEditBtn').style.display  = '';
+    document.getElementById('siNotesEditWrap').style.display = 'none';
 }
 
-function saveNotes() {
+function siSaveNotes() {
     if (!currentLeadId) return;
-    const notes = document.getElementById('notesTextarea').value.trim();
+    const notes = document.getElementById('siNotesTextarea').value.trim();
     fetch(`/outreach/leads/${currentLeadId}/notes`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: notes })
+        body: JSON.stringify({ notes })
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Update local data
             const lead = LEADS_DATA.find(l => l.lead_id === currentLeadId);
             if (lead) lead.notes = notes;
-            renderNotes(notes);
-            cancelNotes();
+            siRenderNotes(notes);
+            siCancelNotes();
             showToast('Notes saved', 'success');
         } else {
             showToast('Error saving notes: ' + (data.message || 'unknown'), 'error');
@@ -609,12 +732,155 @@ function saveNotes() {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   EMAIL TIMELINE
+   THREAD RENDERER — Chat 76
+   ────────────────────────────────────────────────────────────── */
+function siFormatTs(tsStr) {
+    if (!tsStr) return '—';
+    try {
+        const d = new Date(tsStr);
+        return d.toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'})
+            + ' · ' + d.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+    } catch { return tsStr; }
+}
+
+function siRenderThread(items) {
+    const container = document.getElementById('siThread');
+    if (!items || items.length === 0) {
+        container.innerHTML = '<div class="si-thread-empty">No emails yet — queue an email to start the conversation</div>';
+        return;
+    }
+    // Sort newest first
+    const sorted = [...items].sort((a,b) => (b.ts||'').localeCompare(a.ts||''));
+    container.innerHTML = sorted.map((item, idx) => buildSiThreadItem(item, idx)).join('');
+}
+
+function buildSiThreadItem(item, idx) {
+    const id = 'si-body-' + idx;
+    const ts = siFormatTs(item.ts);
+    if (item.direction === 'outbound') {
+        const subj = item.subject ? `<div class="si-thread-subject">${esc(item.subject)}</div>` : '';
+        const body = item.body || '';
+        const clamped = body.length > 200 ? 'clamped' : '';
+        const showMore = body.length > 200
+            ? `<button class="si-show-more-btn" onclick="siToggleBody(this,'${id}')">Show more</button>` : '';
+        return `
+        <div class="si-thread-item outbound">
+            <div class="si-thread-item-header">
+                <span class="si-thread-badge sent">SENT</span>
+                <span class="si-thread-ts">${ts}</span>
+            </div>
+            ${subj}
+            <div class="si-thread-body ${clamped}" id="${id}">${esc(body)}</div>
+            ${showMore}
+        </div>`;
+    } else {
+        const body = item.body || '';
+        const { main, quoted } = siSplitBody(body);
+        const quotedHtml = quoted
+            ? `<button class="si-quoted-toggle" onclick="siToggleQuoted(this)">··· Show original</button><div class="si-quoted-content">${esc(quoted)}</div>`
+            : '';
+        return `
+        <div class="si-thread-item inbound">
+            <div class="si-thread-item-header">
+                <span class="si-thread-badge reply-received">REPLY RECEIVED</span>
+                <span class="si-thread-ts">${esc(item.sender_name||'')} · ${ts}</span>
+            </div>
+            <div class="si-thread-body">${esc(main)}${quotedHtml}</div>
+        </div>`;
+    }
+}
+
+function siToggleBody(btn, id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const open = el.classList.toggle('clamped');
+    btn.textContent = el.classList.contains('clamped') ? 'Show more' : 'Show less';
+}
+function siSplitBody(body) {
+    const m = /\n(On [\s\S]+?wrote:[\s\S]*)/.exec(body);
+    if (m) return { main: body.slice(0, m.index).trim(), quoted: m[1].trim() };
+    const lines = body.split('\n');
+    const qi = lines.findIndex(l => l.trimStart().startsWith('>'));
+    if (qi > 0) return { main: lines.slice(0, qi).join('\n').trim(), quoted: lines.slice(qi).join('\n').trim() };
+    return { main: body, quoted: '' };
+}
+function siToggleQuoted(btn) {
+    const content = btn.nextElementSibling;
+    content.classList.toggle('open');
+    btn.textContent = content.classList.contains('open') ? '··· Hide original' : '··· Show original';
+}
+
+/* Composer helpers */
+function siFormatBold()   { /* placeholder */ }
+function siFormatItalic() { /* placeholder */ }
+
+/* ── Signature toggle ────────────────────────────────────────── */
+let siSigOn = true;
+function siToggleSignature() {
+    siSigOn = !siSigOn;
+    const pip = document.getElementById('siSigPip');
+    const preview = document.getElementById('siSigPreview');
+    if (pip) pip.classList.toggle('off', !siSigOn);
+    if (preview) preview.style.display = siSigOn ? 'block' : 'none';
+}
+
+/* ── CV status ───────────────────────────────────────────────── */
+let siCvAvailable = false;
+function siLoadCvStatus() {
+    fetch('/outreach/cv/status')
+        .then(r => r.json())
+        .then(d => {
+            siCvAvailable = d.uploaded;
+            const chk   = document.getElementById('siCvCheck');
+            const label = document.getElementById('siCvLabel');
+            if (chk) {
+                chk.disabled = !d.uploaded;
+                chk.checked  = d.uploaded;
+            }
+            if (label) {
+                label.title = d.uploaded ? d.filename : 'No CV uploaded';
+                label.style.opacity = d.uploaded ? '1' : '0.5';
+            }
+        })
+        .catch(() => {});
+}
+
+/* ── Send reply ──────────────────────────────────────────────── */
+function siSendReply() {
+    if (!currentLeadId) return;
+    const ta   = document.getElementById('siComposerText');
+    const body = ta ? ta.value.trim() : '';
+    if (!body) { showToast('Please type a reply first.', 'error'); return; }
+    const attachCv = !!(document.getElementById('siCvCheck') || {}).checked;
+    const btn = document.querySelector('.si-send-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+    fetch(`/outreach/replies/${currentLeadId}/send-reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body, attach_cv: attachCv }),
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (btn) { btn.disabled = false; btn.textContent = 'Send Reply'; }
+        if (d.success) {
+            showToast('Reply sent', 'success');
+            if (ta) ta.value = '';
+            siRenderThread(THREAD_DATA[currentLeadId] || []);
+        } else showToast(d.error || 'Failed to send reply', 'error');
+    })
+    .catch(() => {
+        if (btn) { btn.disabled = false; btn.textContent = 'Send Reply'; }
+        showToast('Network error sending reply', 'error');
+    });
+}
+
+/* ──────────────────────────────────────────────────────────────
+   EMAIL TIMELINE (legacy — kept for internal reference)
    ────────────────────────────────────────────────────────────── */
 function renderTimeline(emails) {
     const container = document.getElementById('emailTimeline');
     if (!emails || emails.length === 0) {
-        container.innerHTML = '<p style="color:#9aa0a6;font-size:12px;">No emails yet.</p>';
+        if (container) container.innerHTML = '<p style="color:#9aa0a6;font-size:12px;">No emails yet.</p>';
         return;
     }
 
@@ -719,9 +985,11 @@ function toggleFull(btn, id) {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   PANEL ACTION BUTTONS
+   PANEL ACTION BUTTONS — Chat 76 si-panel
    ────────────────────────────────────────────────────────────── */
-function panelMarkWon() {
+function siQueueEmail() { queueEmail(); }
+
+function siMarkWon() {
     if (!currentLeadId) return;
     if (!confirm('Mark this lead as Won?')) return;
     fetch(`/outreach/leads/${currentLeadId}/mark-won`, {
@@ -735,7 +1003,7 @@ function panelMarkWon() {
     .catch(() => showToast('Network error', 'error'));
 }
 
-function panelMarkLost() {
+function siMarkLost() {
     if (!currentLeadId) return;
     if (!confirm('Mark this lead as Lost?')) return;
     fetch(`/outreach/leads/${currentLeadId}/mark-lost`, {
@@ -748,6 +1016,10 @@ function panelMarkLost() {
     })
     .catch(() => showToast('Network error', 'error'));
 }
+
+// Legacy aliases for table-row action buttons
+function panelMarkWon()  { siMarkWon(); }
+function panelMarkLost() { siMarkLost(); }
 
 function markWon(leadId) {
     if (!confirm('Mark this lead as Won?')) return;
@@ -1046,6 +1318,124 @@ function syncFromSheets() {
         btn.disabled = false;
         btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">sync</span> Sync from Sheets';
     });
+}
+
+/* ──────────────────────────────────────────────────────────────
+   QUEUE EMAIL
+   ────────────────────────────────────────────────────────────── */
+function queueEmail() {
+    if (!currentLeadId) return;
+    const btn = document.getElementById('panelQueueEmailBtn');
+    btn.disabled = true;
+    fetch(`/outreach/leads/${currentLeadId}/queue-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message || 'Email queued', 'success');
+            // Update local lead status to queued
+            const lead = LEADS_DATA.find(l => l.lead_id === currentLeadId);
+            if (lead && lead.status === 'cold') {
+                lead.status = 'queued';
+                lead.status_display = 'Queued';
+                lead.status_css = 'queued';
+            }
+        } else {
+            showToast(data.message || 'Error queueing email', 'error');
+        }
+    })
+    .catch(() => showToast('Network error', 'error'))
+    .finally(() => { btn.disabled = false; });
+}
+
+function queueEmailForLead(leadId, btn) {
+    if (btn) btn.disabled = true;
+    fetch(`/outreach/leads/${leadId}/queue-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message || 'Email queued', 'success');
+        } else {
+            showToast(data.message || 'Error queueing email', 'error');
+        }
+    })
+    .catch(() => showToast('Network error', 'error'))
+    .finally(() => { if (btn) btn.disabled = false; });
+}
+
+/* ──────────────────────────────────────────────────────────────
+   EDIT LEAD MODAL
+   ────────────────────────────────────────────────────────────── */
+function _scoreToLabel(score) {
+    score = parseInt(score) || 1;
+    if (score >= 4) return 'Hot';
+    if (score >= 3) return 'Medium';
+    if (score >= 2) return 'Warm';
+    return 'Cold';
+}
+
+function openEditModal() {
+    if (!currentLeadId) return;
+    const lead = LEADS_DATA.find(l => l.lead_id === currentLeadId);
+    if (!lead) return;
+
+    document.getElementById('editFirstName').value  = lead.first_name  || '';
+    document.getElementById('editLastName').value   = lead.last_name   || '';
+    document.getElementById('editCompany').value    = lead.company     || '';
+    document.getElementById('editEmail').value      = lead.email       || '';
+    document.getElementById('editCityState').value  = lead.city_state  || '';
+    document.getElementById('editCountry').value    = lead.country     || '';
+    document.getElementById('editTrack').value      = lead.track       || '';
+    document.getElementById('editTypeScore').value  = _scoreToLabel(lead.lead_type_score);
+    document.getElementById('editSource').value     = lead.source      || '';
+
+    document.getElementById('editModal').classList.add('modal-open');
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').classList.remove('modal-open');
+}
+
+function submitEditLead() {
+    if (!currentLeadId) return;
+    const body = {
+        first_name: document.getElementById('editFirstName').value.trim(),
+        last_name:  document.getElementById('editLastName').value.trim(),
+        company:    document.getElementById('editCompany').value.trim(),
+        email:      document.getElementById('editEmail').value.trim(),
+        city_state: document.getElementById('editCityState').value.trim(),
+        country:    document.getElementById('editCountry').value,
+        track:      document.getElementById('editTrack').value,
+        type_score: document.getElementById('editTypeScore').value,
+        source:     document.getElementById('editSource').value.trim(),
+    };
+
+    fetch(`/outreach/leads/${currentLeadId}/edit`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            closeEditModal();
+            showToast('Lead updated', 'success');
+            // Update local data and refresh panel
+            if (data.lead) {
+                const idx = LEADS_DATA.findIndex(l => l.lead_id === currentLeadId);
+                if (idx !== -1) LEADS_DATA[idx] = data.lead;
+                openPanel(currentLeadId);
+            }
+        } else {
+            showToast('Error: ' + (data.message || 'unknown'), 'error');
+        }
+    })
+    .catch(() => showToast('Network error', 'error'));
 }
 </script>
 <style>

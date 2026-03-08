@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACT — Slidein Wireframes v2</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blue: #4285F4;
+  --green: #34A853;
+  --yellow: #FBBC05;
+  --red: #EA4335;
+  --sent-bg: #f8f9fa;
+  --sent-border: #4285F4;
+  --reply-bg: #f0fdf4;
+  --reply-border: #34A853;
+  --sent-badge-bg: #e5e7eb;
+  --sent-badge-text: #374151;
+  --reply-badge-bg: #dcfce7;
+  --reply-badge-text: #15803d;
+  --divider: #e5e7eb;
+  --muted: #6b7280;
+  --font: 'DM Sans', sans-serif;
+}
+
+body {
+  font-family: var(--font);
+  background: #f1f3f4;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.topbar {
+  width: 100%;
+  background: #1a1d23;
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.topbar-title { color: #fff; font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
+.topbar-sub { color: #9ca3af; font-size: 12px; margin-top: 2px; }
+.spec-note { font-size: 11px; color: #9ca3af; font-family: 'DM Mono', monospace; }
+
+.layout {
+  display: flex;
+  width: 100%;
+  max-width: 1200px;
+  height: calc(100vh - 104px);
+  gap: 0;
+}
+
+.page-bg {
+  flex: 1;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+.page-title { font-size: 20px; font-weight: 600; color: #1a1d23; }
+
+.fake-table {
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid var(--divider);
+  overflow: hidden;
+}
+.fake-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  gap: 16px;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.fake-row:last-child { border-bottom: none; }
+.fake-row:hover { background: #f8f9fa; }
+.fake-row.selected { background: #eff6ff; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot-cold { background: #9ca3af; }
+.dot-reply-received { background: #34A853; }
+.dot-queued { background: #FBBC05; }
+.dot-contacted { background: #4285F4; }
+.fake-name { font-size: 13px; font-weight: 600; color: #1a1d23; }
+.fake-email { font-size: 12px; color: var(--muted); }
+.fake-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; margin-left: auto; }
+.badge-agency { background: #dbeafe; color: #1d4ed8; }
+.badge-direct { background: #f3e8ff; color: #7e22ce; }
+
+/* ── SLIDEIN ── */
+.slidein {
+  width: 500px;
+  flex-shrink: 0;
+  background: #fff;
+  border-left: 1px solid var(--divider);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  animation: slideIn 0.2s ease;
+}
+@keyframes slideIn {
+  from { transform: translateX(30px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* HEADER — shared across all pages */
+.si-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--divider);
+  flex-shrink: 0;
+  background: #fff;
+}
+.si-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.si-name { font-size: 15px; font-weight: 600; color: #1a1d23; }
+.si-email { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.si-close {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.1s;
+}
+.si-close:hover { background: #e5e7eb; color: #111; }
+.si-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.si-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; }
+.sb-agency { background: #dbeafe; color: #1d4ed8; }
+.sb-direct { background: #f3e8ff; color: #7e22ce; }
+.sb-recruiter { background: #fef3c7; color: #92400e; }
+.sb-website { background: #f3f4f6; color: #374151; }
+.sb-reply-received { background: #dcfce7; color: #15803d; }
+.sb-cold { background: #f3f4f6; color: #6b7280; }
+.sb-queued { background: #fef9c3; color: #854d0e; }
+.sb-contacted { background: #dbeafe; color: #1d4ed8; }
+.sb-low { background: #fef2f2; color: #991b1b; }
+.sb-medium { background: #fff7ed; color: #9a3412; }
+.sb-hot { background: #dcfce7; color: #166534; }
+.sb-tz { background: #f0f9ff; color: #0369a1; }
+
+.si-progress { margin-top: 10px; display: flex; gap: 3px; }
+.prog-stage { flex: 1; height: 4px; border-radius: 2px; background: #e5e7eb; }
+.prog-stage.done { background: #34A853; }
+.prog-stage.active { background: #4285F4; }
+.prog-labels { display: flex; justify-content: space-between; margin-top: 4px; }
+.prog-label { font-size: 9px; color: #9ca3af; text-align: center; flex: 1; }
+
+/* BODY */
+.si-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+/* COMPOSER */
+.si-composer {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--divider);
+  background: #fafafa;
+  flex-shrink: 0;
+}
+.composer-label {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.6px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 8px;
+}
+.composer-textarea {
+  width: 100%;
+  min-height: 80px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-family: var(--font);
+  font-size: 13px;
+  color: #374151;
+  resize: none;
+  background: #fff;
+  transition: border-color 0.15s;
+  outline: none;
+}
+.composer-textarea:focus { border-color: #4285F4; }
+.composer-textarea::placeholder { color: #d1d5db; }
+.composer-toolbar { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+.toolbar-btn {
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 12px; font-weight: 500;
+  color: #374151; cursor: pointer;
+  transition: all 0.1s; font-family: var(--font);
+}
+.toolbar-btn:hover { background: #f3f4f6; }
+.toolbar-btn.bold { font-weight: 700; }
+.toolbar-btn.italic { font-style: italic; }
+.toolbar-toggle { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); cursor: pointer; margin-left: 4px; }
+.toggle-pip { width: 28px; height: 16px; border-radius: 8px; background: #34A853; position: relative; }
+.toggle-pip::after { content: ''; width: 12px; height: 12px; border-radius: 50%; background: #fff; position: absolute; top: 2px; right: 2px; }
+.send-btn {
+  margin-left: auto;
+  padding: 6px 16px;
+  background: #4285F4; color: #fff;
+  border: none; border-radius: 6px;
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; font-family: var(--font);
+  transition: background 0.15s;
+}
+.send-btn:hover { background: #2b6de4; }
+
+/* NOTES — directly under composer */
+.si-notes {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--divider);
+  background: #fffbeb;
+  flex-shrink: 0;
+}
+.notes-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+.notes-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: #92400e; }
+.notes-edit { font-size: 11px; color: #4285F4; cursor: pointer; background: none; border: none; font-family: var(--font); }
+.notes-body { font-size: 12px; color: #78350f; line-height: 1.5; }
+
+/* THREAD */
+.si-thread {
+  flex: 1;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+.thread-label {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.6px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 4px;
+}
+.thread-order-note {
+  font-size: 11px; color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  margin-bottom: 8px;
+}
+
+.thread-item {
+  border-radius: 6px;
+  padding: 12px 14px;
+  border-left: 3px solid;
+}
+.thread-item.outbound { background: var(--sent-bg); border-left-color: var(--sent-border); }
+.thread-item.inbound { background: var(--reply-bg); border-left-color: var(--reply-border); }
+
+.thread-item-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.thread-badge {
+  font-size: 10px; font-weight: 600;
+  padding: 2px 7px; border-radius: 3px;
+  letter-spacing: 0.3px; text-transform: uppercase;
+}
+.thread-badge.sent { background: var(--sent-badge-bg); color: var(--sent-badge-text); }
+.thread-badge.reply-received { background: var(--reply-badge-bg); color: var(--reply-badge-text); }
+.thread-ts { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+.thread-subject { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 4px; }
+.thread-body { font-size: 12px; color: #4b5563; line-height: 1.5; }
+.thread-body.clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.show-more-btn {
+  font-size: 11px; color: #4285F4;
+  background: none; border: none;
+  cursor: pointer; padding: 2px 0;
+  font-family: var(--font); margin-top: 4px;
+}
+.show-more-btn:hover { text-decoration: underline; }
+
+.quoted-toggle {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 6px; padding: 2px 8px;
+  background: #e5e7eb; border-radius: 3px;
+  font-size: 11px; color: #6b7280;
+  cursor: pointer; border: none;
+  font-family: var(--font); transition: background 0.1s;
+}
+.quoted-toggle:hover { background: #d1d5db; }
+.quoted-content {
+  margin-top: 8px; padding: 8px 10px;
+  background: #f9fafb;
+  border-left: 2px solid #d1d5db;
+  font-size: 11px; color: #9ca3af;
+  line-height: 1.5;
+  border-radius: 0 4px 4px 0;
+  display: none;
+}
+.quoted-content.open { display: block; }
+
+/* FOOTER */
+.si-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--divider);
+  display: flex; gap: 8px; flex-wrap: wrap;
+  flex-shrink: 0; background: #fff;
+}
+.footer-btn {
+  padding: 7px 12px; border-radius: 6px;
+  font-size: 12px; font-weight: 500;
+  cursor: pointer; border: 1px solid #e5e7eb;
+  background: #fff; color: #374151;
+  font-family: var(--font); transition: all 0.1s; white-space: nowrap;
+}
+.footer-btn:hover { background: #f3f4f6; }
+.footer-btn.primary { background: #4285F4; color: #fff; border-color: #4285F4; }
+.footer-btn.primary:hover { background: #2b6de4; }
+.footer-btn.danger { color: #dc2626; border-color: #fecaca; }
+.footer-btn.danger:hover { background: #fef2f2; }
+.footer-btn.success { background: #34A853; color: #fff; border-color: #34A853; }
+.footer-btn.success:hover { background: #2d9248; }
+
+/* PAGE SELECTOR */
+.page-selector {
+  width: 100%;
+  background: #fff;
+  border-bottom: 1px solid var(--divider);
+  padding: 0 32px;
+  display: flex;
+}
+.page-selector-tab {
+  padding: 14px 20px;
+  font-size: 13px; font-weight: 500;
+  color: var(--muted); cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  background: none;
+  border-top: none; border-left: none; border-right: none;
+  font-family: var(--font);
+}
+.page-selector-tab:hover { color: #1a1d23; }
+.page-selector-tab.active { color: #4285F4; border-bottom-color: #4285F4; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">ACT — Slidein Wireframes v2</div>
+    <div class="topbar-sub">Interactive design review · Switch pages using the tabs</div>
+  </div>
+  <div class="spec-note">500px · Composer top · Notes under composer · Newest thread item first · "Reply Received"</div>
+</div>
+
+<div class="page-selector">
+  <button class="page-selector-tab active" onclick="showPage('leads')">📋 Leads Page</button>
+  <button class="page-selector-tab" onclick="showPage('replies')">💬 Replies Page</button>
+  <button class="page-selector-tab" onclick="showPage('sent')">📤 Sent Page</button>
+</div>
+
+<div class="layout">
+
+  <!-- ══ LEADS PAGE ══ -->
+  <div id="page-leads" class="page-bg">
+    <div class="page-title">Outreach — Leads</div>
+    <div class="fake-table">
+      <div class="fake-row" onclick="selectRow(this)">
+        <div class="status-dot dot-cold"></div>
+        <div><div class="fake-name">Acme Digital</div><div class="fake-email">sarah@acmedigital.com</div></div>
+        <span class="fake-badge badge-agency">Agency</span>
+      </div>
+      <div class="fake-row selected" onclick="selectRow(this)">
+        <div class="status-dot dot-reply-received"></div>
+        <div><div class="fake-name">test company 1</div><div class="fake-email">chrishoole101@gmail.com</div></div>
+        <span class="fake-badge badge-agency">Agency</span>
+      </div>
+      <div class="fake-row" onclick="selectRow(this)">
+        <div class="status-dot dot-queued"></div>
+        <div><div class="fake-name">Peak Performance Ltd</div><div class="fake-email">james@peakperf.co.uk</div></div>
+        <span class="fake-badge badge-direct">Direct</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ REPLIES PAGE ══ -->
+  <div id="page-replies" class="page-bg" style="display:none;">
+    <div class="page-title">Outreach — Replies</div>
+    <div class="fake-table">
+      <div class="fake-row selected" onclick="selectRow(this)">
+        <div class="status-dot dot-reply-received"></div>
+        <div>
+          <div class="fake-name">Christopher Hoole · test company 1</div>
+          <div class="fake-email">reply test 1 — 8 Mar 2026 at 7:27pm</div>
+        </div>
+        <span class="fake-badge badge-agency">Needs action</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SENT PAGE ══ -->
+  <div id="page-sent" class="page-bg" style="display:none;">
+    <div class="page-title">Outreach — Sent</div>
+    <div class="fake-table">
+      <div class="fake-row selected" onclick="selectRow(this)">
+        <div class="status-dot dot-contacted"></div>
+        <div>
+          <div class="fake-name">test company 1</div>
+          <div class="fake-email">Google Ads Specialist — 16 Years Experience, Available Now</div>
+        </div>
+        <span class="fake-badge badge-agency">Agency</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDEIN: LEADS ══ -->
+  <div id="slidein-leads" class="slidein">
+    <!-- HEADER -->
+    <div class="si-header">
+      <div class="si-header-top">
+        <div>
+          <div class="si-name">Christopher Hoole · test company 1</div>
+          <div class="si-email">chrishoole101@gmail.com · GMT(+0)</div>
+        </div>
+        <button class="si-close">×</button>
+      </div>
+      <div class="si-badges">
+        <span class="si-badge sb-agency">Agency</span>
+        <span class="si-badge sb-website">website</span>
+        <span class="si-badge sb-reply-received">● Reply Received</span>
+        <span class="si-badge sb-low">Low</span>
+        <span class="si-badge sb-tz">GMT+0</span>
+      </div>
+      <div class="si-progress">
+        <div class="prog-stage done"></div>
+        <div class="prog-stage done"></div>
+        <div class="prog-stage done"></div>
+        <div class="prog-stage active"></div>
+        <div class="prog-stage"></div>
+        <div class="prog-stage"></div>
+      </div>
+      <div class="prog-labels">
+        <div class="prog-label">Cold</div>
+        <div class="prog-label">Queued</div>
+        <div class="prog-label">Contacted</div>
+        <div class="prog-label">Reply Received</div>
+        <div class="prog-label">Meeting</div>
+        <div class="prog-label">Won</div>
+      </div>
+    </div>
+
+    <div class="si-body">
+      <!-- COMPOSER -->
+      <div class="si-composer">
+        <div class="composer-label">Reply</div>
+        <textarea class="composer-textarea" placeholder="Write a reply to chrishoole101@gmail.com..."></textarea>
+        <div class="composer-toolbar">
+          <button class="toolbar-btn bold">B</button>
+          <button class="toolbar-btn italic">I</button>
+          <button class="toolbar-btn">📎</button>
+          <div class="toolbar-toggle">
+            <div class="toggle-pip"></div>
+            <span>Signature</span>
+          </div>
+          <button class="send-btn">Send reply</button>
+        </div>
+      </div>
+
+      <!-- NOTES — under composer -->
+      <div class="si-notes">
+        <div class="notes-header">
+          <span class="notes-title">📋 My Notes</span>
+          <button class="notes-edit">— Edit</button>
+        </div>
+        <div class="notes-body">Phone: +447999500184 asdasd</div>
+      </div>
+
+      <!-- THREAD — newest first -->
+      <div class="si-thread">
+        <div class="thread-label">Conversation thread</div>
+        <div class="thread-order-note">↑ Newest first</div>
+
+        <!-- Inbound reply (newest — at top) -->
+        <div class="thread-item inbound">
+          <div class="thread-item-header">
+            <span class="thread-badge reply-received">Reply Received</span>
+            <span class="thread-ts">8 Mar 2026 · 19:27</span>
+          </div>
+          <div class="thread-body">
+            reply test 1<br><br>
+            Regards<br>
+            Christopher Hoole
+          </div>
+          <button class="quoted-toggle" onclick="toggleQuoted(this)">··· Show original</button>
+          <div class="quoted-content">
+            On Sun, 8 Mar 2026 at 19:09, Christopher Hoole &lt;chris@christopherhoole.com&gt; wrote:<br><br>
+            &gt; Hi Christopher, asdd<br>
+            &gt; I'm a Google Ads specialist with 16 years of hands-on experience...
+          </div>
+        </div>
+
+        <!-- Outbound email (oldest — at bottom) -->
+        <div class="thread-item outbound">
+          <div class="thread-item-header">
+            <span class="thread-badge sent">Sent</span>
+            <span class="thread-ts">8 Mar 2026 · 19:09</span>
+          </div>
+          <div class="thread-subject">Google Ads Specialist — 16 Years Experience, Available Now</div>
+          <div class="thread-body clamped" id="leads-out-body">
+            Hi Christopher, asdd<br><br>
+            I'm a Google Ads specialist with 16 years of hands-on experience managing over £50M in ad spend across 200+ accounts — and I'm currently looking for my next opportunity.
+          </div>
+          <button class="show-more-btn" onclick="toggleBody('leads-out-body', this)">Show more</button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="si-footer">
+      <button class="footer-btn primary">+ Queue email</button>
+      <button class="footer-btn">Edit lead</button>
+      <button class="footer-btn success">✓ Mark won</button>
+      <button class="footer-btn danger">✕ Mark lost</button>
+      <button class="footer-btn">Update status</button>
+    </div>
+  </div>
+
+  <!-- ══ SLIDEIN: REPLIES ══ -->
+  <div id="slidein-replies" class="slidein" style="display:none;">
+    <!-- HEADER — full detail matching leads -->
+    <div class="si-header">
+      <div class="si-header-top">
+        <div>
+          <div class="si-name">Christopher Hoole · test company 1</div>
+          <div class="si-email">chrishoole101@gmail.com · GMT(+0)</div>
+        </div>
+        <button class="si-close">×</button>
+      </div>
+      <div class="si-badges">
+        <span class="si-badge sb-agency">Agency</span>
+        <span class="si-badge sb-website">website</span>
+        <span class="si-badge sb-reply-received">● Reply Received</span>
+        <span class="si-badge" style="background:#fef9c3;color:#854d0e;">Needs action</span>
+        <span class="si-badge sb-tz">GMT+0</span>
+      </div>
+      <div class="si-progress">
+        <div class="prog-stage done"></div>
+        <div class="prog-stage done"></div>
+        <div class="prog-stage done"></div>
+        <div class="prog-stage active"></div>
+        <div class="prog-stage"></div>
+        <div class="prog-stage"></div>
+      </div>
+      <div class="prog-labels">
+        <div class="prog-label">Cold</div>
+        <div class="prog-label">Queued</div>
+        <div class="prog-label">Contacted</div>
+        <div class="prog-label">Reply Received</div>
+        <div class="prog-label">Meeting</div>
+        <div class="prog-label">Won</div>
+      </div>
+    </div>
+
+    <div class="si-body">
+      <!-- COMPOSER -->
+      <div class="si-composer">
+        <div class="composer-label">Reply</div>
+        <textarea class="composer-textarea" placeholder="Write a reply..."></textarea>
+        <div class="composer-toolbar">
+          <button class="toolbar-btn bold">B</button>
+          <button class="toolbar-btn italic">I</button>
+          <button class="toolbar-btn">📎</button>
+          <div class="toolbar-toggle">
+            <div class="toggle-pip"></div>
+            <span>Signature</span>
+          </div>
+          <button class="toolbar-btn" style="margin-left:4px;background:#f0fdf4;border-color:#86efac;color:#166534;">🤖 AI draft</button>
+          <button class="send-btn">Send reply</button>
+        </div>
+      </div>
+
+      <!-- NOTES -->
+      <div class="si-notes">
+        <div class="notes-header">
+          <span class="notes-title">📋 My Notes</span>
+          <button class="notes-edit">— Edit</button>
+        </div>
+        <div class="notes-body">Phone: +447999500184 asdasd</div>
+      </div>
+
+      <!-- THREAD — newest first -->
+      <div class="si-thread">
+        <div class="thread-label">Conversation thread</div>
+        <div class="thread-order-note">↑ Newest first</div>
+
+        <div class="thread-item inbound">
+          <div class="thread-item-header">
+            <span class="thread-badge reply-received">Reply Received</span>
+            <span class="thread-ts">8 Mar 2026 · 19:27</span>
+          </div>
+          <div class="thread-body">
+            reply test 1<br><br>Regards<br>Christopher Hoole
+          </div>
+          <button class="quoted-toggle" onclick="toggleQuoted(this)">··· Show original</button>
+          <div class="quoted-content">
+            On Sun, 8 Mar 2026 at 19:09, Christopher Hoole wrote:<br>
+            &gt; Hi Christopher, asdd...
+          </div>
+        </div>
+
+        <div class="thread-item outbound">
+          <div class="thread-item-header">
+            <span class="thread-badge sent">Sent</span>
+            <span class="thread-ts">8 Mar 2026 · 19:09</span>
+          </div>
+          <div class="thread-subject">Google Ads Specialist — 16 Years Experience, Available Now</div>
+          <div class="thread-body clamped" id="replies-out-body">
+            Hi Christopher, asdd<br><br>
+            I'm a Google Ads specialist with 16 years of hands-on experience managing over £50M in ad spend across 200+ accounts.
+          </div>
+          <button class="show-more-btn" onclick="toggleBody('replies-out-body', this)">Show more</button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="si-footer">
+      <button class="footer-btn success">✓ Mark as won</button>
+      <button class="footer-btn">📅 Book meeting</button>
+      <button class="footer-btn">Update status</button>
+      <button class="footer-btn danger">✕ Mark as lost</button>
+    </div>
+  </div>
+
+  <!-- ══ SLIDEIN: SENT ══ -->
+  <div id="slidein-sent" class="slidein" style="display:none;">
+    <!-- HEADER — full detail matching leads -->
+    <div class="si-header">
+      <div class="si-header-top">
+        <div>
+          <div class="si-name">test company 1</div>
+          <div class="si-email">chrishoole101@gmail.com · GMT(+0)</div>
+        </div>
+        <button class="si-close">×</button>
+      </div>
+      <div class="si-badges">
+        <span class="si-badge sb-agency">Agency</span>
+        <span class="si-badge sb-website">website</span>
+        <span class="si-badge sb-reply-received">● Reply Received</span>
+        <span class="si-badge sb-medium">Medium</span>
+        <span class="si-badge sb-tz">GMT+0</span>
+      </div>
+      <div class="si-progress">
+        <div class="prog-stage done"></div>
+        <div class="prog-stage done"></div>
+        <div class="prog-stage done"></div>
+        <div class="prog-stage active"></div>
+        <div class="prog-stage"></div>
+        <div class="prog-stage"></div>
+      </div>
+      <div class="prog-labels">
+        <div class="prog-label">Cold</div>
+        <div class="prog-label">Queued</div>
+        <div class="prog-label">Contacted</div>
+        <div class="prog-label">Reply Received</div>
+        <div class="prog-label">Meeting</div>
+        <div class="prog-label">Won</div>
+      </div>
+    </div>
+
+    <div class="si-body">
+      <!-- COMPOSER -->
+      <div class="si-composer">
+        <div class="composer-label">Reply</div>
+        <textarea class="composer-textarea" placeholder="Write a reply..."></textarea>
+        <div class="composer-toolbar">
+          <button class="toolbar-btn bold">B</button>
+          <button class="toolbar-btn italic">I</button>
+          <button class="toolbar-btn">📎</button>
+          <div class="toolbar-toggle">
+            <div class="toggle-pip"></div>
+            <span>Signature</span>
+          </div>
+          <button class="send-btn">Send reply</button>
+        </div>
+      </div>
+
+      <!-- NOTES -->
+      <div class="si-notes">
+        <div class="notes-header">
+          <span class="notes-title">📋 My Notes</span>
+          <button class="notes-edit">— Edit</button>
+        </div>
+        <div class="notes-body">Phone: +447999500184</div>
+      </div>
+
+      <!-- THREAD — newest first -->
+      <div class="si-thread">
+        <div class="thread-label">Conversation thread</div>
+        <div class="thread-order-note">↑ Newest first</div>
+
+        <div class="thread-item inbound">
+          <div class="thread-item-header">
+            <span class="thread-badge reply-received">Reply Received</span>
+            <span class="thread-ts">8 Mar 2026 · 19:27</span>
+          </div>
+          <div class="thread-body">
+            reply test 1<br><br>Regards<br>Christopher Hoole
+          </div>
+          <button class="quoted-toggle" onclick="toggleQuoted(this)">··· Show original</button>
+          <div class="quoted-content">
+            On Sun, 8 Mar 2026 at 19:09, Christopher Hoole wrote:<br>
+            &gt; Hi Christopher, asdd...
+          </div>
+        </div>
+
+        <div class="thread-item outbound">
+          <div class="thread-item-header">
+            <span class="thread-badge sent">Sent</span>
+            <span class="thread-ts">8 Mar 2026 · 19:09</span>
+          </div>
+          <div class="thread-subject">Google Ads Specialist — 16 Years Experience, Available Now</div>
+          <div class="thread-body clamped" id="sent-out-body">
+            Hi Christopher, asdd<br><br>
+            I'm a Google Ads specialist with 16 years of hands-on experience managing over £50M in ad spend across 200+ accounts — and I'm currently looking for my next opportunity.
+          </div>
+          <button class="show-more-btn" onclick="toggleBody('sent-out-body', this)">Show more</button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="si-footer">
+      <button class="footer-btn primary">+ Queue follow-up</button>
+      <button class="footer-btn">Update status</button>
+      <button class="footer-btn success">✓ Mark won</button>
+      <button class="footer-btn danger">✕ Mark lost</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function showPage(page) {
+  ['leads','replies','sent'].forEach(p => {
+    document.getElementById('page-' + p).style.display = p === page ? 'flex' : 'none';
+    document.getElementById('slidein-' + p).style.display = p === page ? 'flex' : 'none';
+  });
+  document.querySelectorAll('.page-selector-tab').forEach((t, i) => {
+    t.classList.toggle('active', ['leads','replies','sent'][i] === page);
+  });
+}
+
+function selectRow(el) {
+  el.closest('.fake-table').querySelectorAll('.fake-row').forEach(r => r.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function toggleBody(id, btn) {
+  const el = document.getElementById(id);
+  if (el.classList.contains('clamped')) {
+    el.classList.remove('clamped');
+    btn.textContent = 'Show less';
+  } else {
+    el.classList.add('clamped');
+    btn.textContent = 'Show more';
+  }
+}
+
+function toggleQuoted(btn) {
+  const content = btn.nextElementSibling;
+  content.classList.toggle('open');
+  btn.textContent = content.classList.contains('open') ? '··· Hide original' : '··· Show original';
+}
+</script>
+</body>
+</html>

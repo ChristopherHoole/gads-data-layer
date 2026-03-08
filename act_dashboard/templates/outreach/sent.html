@@ -199,21 +199,98 @@
 
 
 {# ══════════════════════════════════════════════════════════
-   SLIDE-OUT PANEL
+   SLIDEIN PANEL — Chat 76 redesign
    ══════════════════════════════════════════════════════════ #}
-<div class="panel-overlay" id="panelOverlay" onclick="closePanel()"></div>
+<div class="si-overlay" id="siOverlay" onclick="closePanel()"></div>
 
-<div class="slide-panel" id="slidePanel">
-    <div class="panel-header">
-        <div class="panel-header-left">
-            <div class="panel-prospect-name" id="panelName">—</div>
-            <div class="panel-meta" id="panelEmail">—</div>
+<div class="si-panel" id="siPanel">
+
+    {# ── Fixed Header ── #}
+    <div class="si-header">
+        <div class="si-header-top">
+            <div>
+                <div class="si-name" id="siName">—</div>
+                <div class="si-email" id="siEmail">—</div>
+            </div>
+            <button class="si-close" onclick="closePanel()">✕</button>
         </div>
-        <button class="panel-close" onclick="closePanel()">✕</button>
+        <div class="si-badges" id="siBadges"></div>
+        <div class="si-progress" id="siProgress"></div>
+        <div class="si-prog-labels">
+            <div class="si-prog-label">Cold</div>
+            <div class="si-prog-label">Queued</div>
+            <div class="si-prog-label">Contacted</div>
+            <div class="si-prog-label">Reply Received</div>
+            <div class="si-prog-label">Meeting</div>
+            <div class="si-prog-label">Won</div>
+        </div>
     </div>
-    <div class="panel-body" id="panelBody"></div>
-    <div class="sent-panel-footer" id="panelFooter"></div>
-</div>
+
+    {# ── Scrollable Body ── #}
+    <div class="si-body">
+
+        {# Composer #}
+        <div class="si-composer">
+            <div class="si-composer-label">Reply</div>
+            <textarea class="si-composer-textarea" id="siComposerText" placeholder="Write a reply…"></textarea>
+            <div class="si-composer-toolbar">
+                <button class="si-toolbar-btn bold">B</button>
+                <button class="si-toolbar-btn italic">I</button>
+                <label class="si-sig-toggle" onclick="siToggleSignature()">
+                    <div class="si-toggle-pip" id="siSigPip"></div>
+                    + Signature
+                </label>
+                <button class="si-send-btn" onclick="siSendReply()">Send Reply</button>
+            </div>
+            {# CV attach toggle #}
+            <div class="si-cv-row" id="siCvRow" style="margin-top:6px;">
+                <label class="si-cv-label" id="siCvLabel" title="">
+                    <input type="checkbox" id="siCvCheck" disabled style="margin-right:5px;">
+                    Attach CV
+                </label>
+            </div>
+            {# Signature preview #}
+            <div id="siSigPreview" style="margin-top:8px;padding:8px 12px;border:1px solid #e8eaed;border-radius:6px;background:#f8f9fa;font-size:11px;color:#9aa0a6;line-height:1.5;display:block;">
+                <strong style="color:#888;">Christopher Hoole</strong><br>
+                Google Ads Specialist | 16 Years Experience<br>
+                chris@christopherhoole.com<br>
+                https://christopherhoole.com
+            </div>
+        </div>
+
+        {# Notes #}
+        <div class="si-notes">
+            <div class="si-notes-header">
+                <span class="si-notes-title">Notes</span>
+                <button class="si-notes-edit-btn" id="siNotesEditBtn" onclick="siStartEditNotes()">Edit</button>
+            </div>
+            <div id="siNotesDisplay"></div>
+            <div id="siNotesEditWrap" class="si-notes-edit-wrap" style="display:none;">
+                <textarea class="si-notes-textarea" id="siNotesTextarea" placeholder="Add notes about this lead…"></textarea>
+                <div class="si-notes-save-row">
+                    <button class="si-notes-save-btn" onclick="siSaveNotes()">Save</button>
+                    <button class="si-notes-cancel-btn" onclick="siCancelNotes()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        {# Thread #}
+        <div class="si-thread">
+            <div class="si-thread-label">Conversation</div>
+            <div id="siThread"></div>
+        </div>
+
+    </div>{# /si-body #}
+
+    {# ── Fixed Footer ── #}
+    <div class="si-footer">
+        <button class="si-footer-btn primary" id="siQueueFollowupBtn" onclick="siQueueFollowup()">Queue follow-up</button>
+        <button class="si-footer-btn" onclick="openStatusModal(currentLeadId)">Update status</button>
+        <button class="si-footer-btn success" onclick="siMarkWon()">✓ Mark won</button>
+        <button class="si-footer-btn danger" onclick="siMarkLost()">✕ Mark lost</button>
+    </div>
+
+</div>{# /si-panel #}
 
 
 {# ══════════════════════════════════════════════════════════
@@ -259,6 +336,7 @@
 // ── Server data ────────────────────────────────────────────────
 const SENT_DATA   = {{ sent_emails_json | safe }};
 const EMAILS_DATA = {{ emails_json | safe }};
+const THREAD_DATA = {{ thread_json | safe }};
 
 // ── State ──────────────────────────────────────────────────────
 let currentPage   = 1;
@@ -293,7 +371,7 @@ function getFilteredRows() {
 
         if (currentTab === 'overdue' && due !== 'overdue') return false;
         if (currentTab === 'today'   && due !== 'today')   return false;
-        if (currentTab === 'replied' && !['replied','meeting','won'].includes(status)) return false;
+        if (currentTab === 'replied' && !['replied','reply_received','meeting','won'].includes(status)) return false;
         if (currentTab === 'closed'  && !['no_reply','lost'].includes(status)) return false;
 
         if (search && !(row.dataset.search || '').includes(search)) return false;
@@ -389,8 +467,23 @@ document.addEventListener('click', function(e) {
 });
 
 /* ──────────────────────────────────────────────────────────────
-   SLIDE PANEL
+   SLIDE PANEL — Chat 76 si-panel
    ────────────────────────────────────────────────────────────── */
+function esc(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+const SI_STAGE_MAP = {
+    cold:1, queued:2, contacted:3, followed_up:3, no_reply:3,
+    replied:4, reply_received:4, in_conversation:4,
+    meeting:5, won:6, lost:6
+};
+
 function openPanel(emailId) {
     document.querySelectorAll('.actions-dropdown.show').forEach(d => d.classList.remove('show'));
 
@@ -401,222 +494,237 @@ function openPanel(emailId) {
     currentLeadId  = email.lead_id;
 
     // Header
-    document.getElementById('panelName').textContent  = (email.full_name || '—') + ' · ' + email.company;
-    document.getElementById('panelEmail').textContent = email.email;
+    const nameStr = [email.full_name, email.company].filter(Boolean).join(' · ') || '—';
+    document.getElementById('siName').textContent  = nameStr;
+    document.getElementById('siEmail').textContent = email.email || '—';
 
-    // Build body
-    const sc = statusConfig(email.status_css);
-    let html = buildLeadDetails(email, sc);
-
-    if (['replied','meeting','won'].includes(email.status) && email.reply_text) {
-        html += buildReplySection(email);
-    }
-
-    const thread = EMAILS_DATA[email.lead_id] || [];
-    html += buildThreadSection(thread);
-
-    if (email.due_status !== 'none') {
-        html += buildFollowupScheduler(email);
-    }
-
-    document.getElementById('panelBody').innerHTML = html;
-
-    // Footer buttons
-    document.getElementById('panelFooter').innerHTML = `
-        <button class="panel-btn primary" onclick="queueFollowup('${esc(email.email_id)}', this)">Queue follow-up</button>
-        <button class="panel-btn" onclick="openStatusModal('${esc(email.lead_id)}')">Update status</button>
-        <button class="panel-btn" onclick="panelMarkWon()">Mark as won</button>
-        <button class="panel-btn danger" onclick="panelMarkLost()">Mark as lost</button>
+    // Badges
+    const trackBadgeClass = {
+        Agency:'si-badge-agency', Direct:'si-badge-direct',
+        Recruiter:'si-badge-recruiter', Job:'si-badge-job'
+    }[email.track] || 'si-badge-job';
+    const statusBadgeClass = {
+        contacted:'si-badge-contacted', followed_up:'si-badge-contacted',
+        replied:'si-badge-rr', reply_received:'si-badge-rr',
+        meeting:'si-badge-rr', won:'si-badge-hot',
+        lost:'si-badge-low', no_reply:'si-badge-low',
+        cold:'si-badge-cold', queued:'si-badge-queued'
+    }[email.status] || 'si-badge-cold';
+    const tzBadge = email.tz_badge ? `<span class="si-badge si-badge-tz">${esc(email.tz_badge)}</span>` : '';
+    document.getElementById('siBadges').innerHTML = `
+        <span class="si-badge ${trackBadgeClass}">${esc(email.track||'')}</span>
+        <span class="si-badge ${statusBadgeClass}">${esc(email.status_display||'')}</span>
+        ${tzBadge}
     `;
 
-    document.getElementById('panelOverlay').classList.add('overlay-visible');
-    document.getElementById('slidePanel').classList.add('panel-open');
+    // Progress bar
+    const stage = SI_STAGE_MAP[email.status] || 3;
+    document.getElementById('siProgress').innerHTML = Array.from({length:6}, (_,i) => {
+        const cls = i+1 < stage ? 'done' : (i+1 === stage ? 'active' : '');
+        return `<div class="si-prog-stage ${cls}"></div>`;
+    }).join('');
+
+    // Notes
+    siRenderNotes(email.notes || '');
+    siCancelNotes();
+
+    // Thread
+    siRenderThread(THREAD_DATA[email.lead_id] || []);
+
+    // Reset composer
+    document.getElementById('siComposerText').value = '';
+    siSigOn = true;
+    const pip = document.getElementById('siSigPip');
+    if (pip) pip.classList.remove('off');
+    const preview = document.getElementById('siSigPreview');
+    if (preview) preview.style.display = 'block';
+    siLoadCvStatus();
+
+    // Open
+    document.getElementById('siOverlay').classList.add('si-open');
+    document.getElementById('siPanel').classList.add('si-open');
 }
 
 function closePanel() {
-    document.getElementById('panelOverlay').classList.remove('overlay-visible');
-    document.getElementById('slidePanel').classList.remove('panel-open');
+    document.getElementById('siOverlay').classList.remove('si-open');
+    document.getElementById('siPanel').classList.remove('si-open');
+    currentEmailId = null;
+    currentLeadId  = null;
 }
 
-function statusConfig(statusCss) {
-    const map = {
-        cold:        { dot: '#9e9e9e',  label: 'Cold' },
-        queued:      { dot: '#1a73e8',  label: 'Queued' },
-        contacted:   { dot: '#4285f4',  label: 'Contacted' },
-        followedup:  { dot: '#f29900',  label: 'Followed Up' },
-        replied:     { dot: '#34a853',  label: 'Replied' },
-        meeting:     { dot: '#e8710a',  label: 'Meeting' },
-        won:         { dot: '#188038',  label: 'Won' },
-        lost:        { dot: '#ea4335',  label: 'Lost' },
-        noreply:     { dot: '#5f6368',  label: 'No Reply' },
-    };
-    return map[statusCss] || { dot: '#9e9e9e', label: statusCss };
+/* Notes */
+function siRenderNotes(text) {
+    const disp = document.getElementById('siNotesDisplay');
+    if (text && text.trim()) {
+        disp.className = 'si-notes-body';
+        disp.textContent = text;
+    } else {
+        disp.className = 'si-notes-empty';
+        disp.textContent = 'No notes yet. Click Edit to add some.';
+    }
+}
+function siStartEditNotes() {
+    const email = SENT_DATA.find(e => e.lead_id === currentLeadId);
+    document.getElementById('siNotesTextarea').value = (email && email.notes) || '';
+    document.getElementById('siNotesDisplay').style.display  = 'none';
+    document.getElementById('siNotesEditBtn').style.display  = 'none';
+    document.getElementById('siNotesEditWrap').style.display = '';
+}
+function siCancelNotes() {
+    document.getElementById('siNotesDisplay').style.display  = '';
+    document.getElementById('siNotesEditBtn').style.display  = '';
+    document.getElementById('siNotesEditWrap').style.display = 'none';
+}
+function siSaveNotes() {
+    if (!currentLeadId) return;
+    const notes = document.getElementById('siNotesTextarea').value.trim();
+    fetch(`/outreach/leads/${currentLeadId}/notes`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            SENT_DATA.filter(e => e.lead_id === currentLeadId).forEach(e => e.notes = notes);
+            siRenderNotes(notes);
+            siCancelNotes();
+            showToast('Notes saved', 'success');
+        } else showToast('Error saving notes', 'error');
+    })
+    .catch(() => showToast('Network error', 'error'));
 }
 
-function buildLeadDetails(email, sc) {
-    const dueCls = email.due_status === 'overdue' ? 'followup-overdue'
-                 : email.due_status === 'today'   ? 'followup-today'
-                 : email.due_status === 'soon'     ? 'followup-soon'
-                 : 'followup-none';
-    return `
-        <div class="panel-section">
-            <div class="panel-section-title">Lead details</div>
-            <div class="panel-row">
-                <span class="panel-row-label">Status</span>
-                <span class="panel-row-value">
-                    <span class="status-inline s-${esc(email.status_css)}">
-                        <span class="status-dot"></span>
-                        <span>${esc(email.status_display)}</span>
-                    </span>
-                </span>
-            </div>
-            <div class="panel-row">
-                <span class="panel-row-label">Track</span>
-                <span class="panel-row-value"><span class="track-badge ${esc(email.track_css)}">${esc(email.track)}</span></span>
-            </div>
-            <div class="panel-row">
-                <span class="panel-row-label">Last sent</span>
-                <span class="panel-row-value">${esc(email.sent_date)} at ${esc(email.sent_time)}</span>
-            </div>
-            <div class="panel-row">
-                <span class="panel-row-label">Email type</span>
-                <span class="panel-row-value"><span class="email-type-pill ${esc(email.pill_css)}">${esc(email.pill_label)}</span></span>
-            </div>
-            <div class="panel-row">
-                <span class="panel-row-label">Follow-up</span>
-                <span class="panel-row-value"><span class="${dueCls}">${esc(email.due_label)}</span></span>
-            </div>
-        </div>`;
-}
-
-function buildReplySection(email) {
-    return `
-        <div class="panel-section">
-            <div class="panel-section-title">Their reply</div>
-            <div class="reply-bubble">
-                <div class="reply-header">
-                    <span class="reply-label">Reply received</span>
-                    <span class="reply-from">${esc(email.full_name)}</span>
-                </div>${esc(email.reply_text)}
-            </div>
-        </div>`;
-}
-
-function buildThreadSection(thread) {
-    // Sort newest first
-    const sorted = [...thread].sort((a, b) =>
-        (b.sent_at || b.scheduled_at || '').localeCompare(a.sent_at || a.scheduled_at || '')
-    );
-
-    const items = sorted.map((e, i) => {
-        const pillCls = e.email_type === 'initial' ? 'pill-initial' : 'pill-followup';
-        const pillLbl = e.email_type === 'initial'     ? 'Initial email'
-                      : e.email_type === 'follow_up_2' ? 'Follow-up 2'
-                      : e.email_type === 'follow_up_3' ? 'Follow-up 3'
-                      : 'Follow-up 1';
-        const dateStr = formatThreadDate(e.sent_at || e.scheduled_at);
-        const subject = e.subject || 'Google Ads Specialist — 16 Years Experience';
-        const bodyId  = 'thread-body-' + i;
-        const bodyTxt = (e.body || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const opacity = i > 0 ? ' style="opacity:0.7;"' : '';
-        const cvBadge = (e.cv_attached === true || e.cv_attached === 'True')
-            ? `<div class="attachment-badge" style="margin-top:8px;">
-                <span class="material-symbols-outlined" style="font-size:13px;">attach_file</span>
-                Christopher_Hoole_CV.pdf · attached
-               </div>` : '';
-        return `
-            <div class="email-thread-item"${opacity}>
-                <div class="thread-item-header" onclick="toggleThread(this,'${bodyId}')">
-                    <div>
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <span class="email-type-pill ${pillCls}">${pillLbl}</span>
-                            <span class="thread-date">${dateStr}</span>
-                        </div>
-                        <div class="thread-subject">${esc(subject)}</div>
-                    </div>
-                    <span class="thread-chevron" id="chev-${bodyId}">▾</span>
-                </div>
-                <div class="thread-body hidden" id="${bodyId}">${bodyTxt}${cvBadge}</div>
-            </div>`;
-    }).join('');
-
-    return `
-        <div class="panel-section">
-            <div class="panel-section-title">Email thread</div>
-            ${items || '<p style="color:#9aa0a6;font-size:12px;">No emails found.</p>'}
-        </div>`;
-}
-
-function buildFollowupScheduler(email) {
-    const dueCls  = email.due_status === 'overdue' ? '#ea4335'
-                  : email.due_status === 'today'   ? '#e65100' : '#202124';
-    // Default send date = tomorrow
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
-
-    return `
-        <div class="panel-section">
-            <div class="panel-section-title">Follow-up scheduler</div>
-            <div class="followup-scheduler">
-                <div class="followup-scheduler-title">
-                    <span class="material-symbols-outlined" style="font-size:16px;">schedule</span>
-                    Next follow-up due:
-                    <span style="color:${dueCls};">${esc(email.due_label)}</span>
-                </div>
-                <div class="followup-row">
-                    <label>Send on</label>
-                    <input type="date" value="${tomorrowStr}">
-                </div>
-                <div class="followup-row">
-                    <label>Template</label>
-                    <select>
-                        <option>Follow-up template 1</option>
-                        <option>Follow-up template 2</option>
-                        <option>Custom</option>
-                    </select>
-                </div>
-                <div class="followup-row">
-                    <label>Attach CV</label>
-                    <select><option>No</option><option>Yes</option></select>
-                </div>
-                <button class="btn-schedule" onclick="showToast('Follow-up queued (queue coming soon)', 'info')">
-                    Add to queue
-                </button>
-            </div>
-        </div>`;
-}
-
-function toggleThread(header, bodyId) {
-    const body = document.getElementById(bodyId);
-    if (!body) return;
-    body.classList.toggle('hidden');
-    const chev = document.getElementById('chev-' + bodyId);
-    if (chev) chev.textContent = body.classList.contains('hidden') ? '▾' : '▴';
-}
-
-function formatThreadDate(isoStr) {
-    if (!isoStr) return '—';
+/* Thread */
+function siFormatTs(tsStr) {
+    if (!tsStr) return '—';
     try {
-        const d = new Date(isoStr);
-        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-             + ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    } catch(e) { return isoStr; }
+        const d = new Date(tsStr);
+        return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})
+            + ' · ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    } catch { return tsStr; }
+}
+function siRenderThread(items) {
+    const container = document.getElementById('siThread');
+    if (!items || items.length === 0) {
+        container.innerHTML = '<div class="si-thread-empty">No conversation yet</div>';
+        return;
+    }
+    const sorted = [...items].sort((a,b) => (b.ts||'').localeCompare(a.ts||''));
+    container.innerHTML = sorted.map((item,idx) => {
+        const ts = siFormatTs(item.ts);
+        if (item.direction === 'outbound') {
+            const subj = item.subject ? `<div class="si-thread-subject">${esc(item.subject)}</div>` : '';
+            const body = item.body || '';
+            const id   = 'si-body-' + idx;
+            const clamped = body.length > 200 ? 'clamped' : '';
+            const more = body.length > 200 ? `<button class="si-show-more-btn" onclick="siToggleBody(this,'${id}')">Show more</button>` : '';
+            return `<div class="si-thread-item outbound">
+                <div class="si-thread-item-header">
+                    <span class="si-thread-badge sent">SENT</span>
+                    <span class="si-thread-ts">${ts}</span>
+                </div>${subj}
+                <div class="si-thread-body ${clamped}" id="${id}">${esc(body)}</div>
+                ${more}</div>`;
+        } else {
+            const body = item.body || '';
+            const { main, quoted } = siSplitBody(body);
+            const quotedHtml = quoted
+                ? `<button class="si-quoted-toggle" onclick="siToggleQuoted(this)">··· Show original</button><div class="si-quoted-content">${esc(quoted)}</div>`
+                : '';
+            return `<div class="si-thread-item inbound">
+                <div class="si-thread-item-header">
+                    <span class="si-thread-badge reply-received">REPLY RECEIVED</span>
+                    <span class="si-thread-ts">${esc(item.sender_name||'')} · ${ts}</span>
+                </div>
+                <div class="si-thread-body">${esc(main)}${quotedHtml}</div></div>`;
+        }
+    }).join('');
+}
+function siSplitBody(body) {
+    const m = /\n(On [\s\S]+?wrote:[\s\S]*)/.exec(body);
+    if (m) return { main: body.slice(0, m.index).trim(), quoted: m[1].trim() };
+    const lines = body.split('\n');
+    const qi = lines.findIndex(l => l.trimStart().startsWith('>'));
+    if (qi > 0) return { main: lines.slice(0, qi).join('\n').trim(), quoted: lines.slice(qi).join('\n').trim() };
+    return { main: body, quoted: '' };
+}
+function siToggleQuoted(btn) {
+    const content = btn.nextElementSibling;
+    content.classList.toggle('open');
+    btn.textContent = content.classList.contains('open') ? '··· Hide original' : '··· Show original';
+}
+function siToggleBody(btn, id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('clamped');
+    btn.textContent = el.classList.contains('clamped') ? 'Show more' : 'Show less';
 }
 
-function esc(str) {
-    if (!str) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+/* ── Signature toggle ────────────────────────────────────────── */
+let siSigOn = true;
+function siToggleSignature() {
+    siSigOn = !siSigOn;
+    const pip = document.getElementById('siSigPip');
+    const preview = document.getElementById('siSigPreview');
+    if (pip) pip.classList.toggle('off', !siSigOn);
+    if (preview) preview.style.display = siSigOn ? 'block' : 'none';
+}
+
+/* ── CV status ───────────────────────────────────────────────── */
+let siCvAvailable = false;
+function siLoadCvStatus() {
+    fetch('/outreach/cv/status')
+        .then(r => r.json())
+        .then(d => {
+            siCvAvailable = d.uploaded;
+            const chk   = document.getElementById('siCvCheck');
+            const label = document.getElementById('siCvLabel');
+            if (chk) {
+                chk.disabled = !d.uploaded;
+                chk.checked  = d.uploaded;
+            }
+            if (label) {
+                label.title = d.uploaded ? d.filename : 'No CV uploaded';
+                label.style.opacity = d.uploaded ? '1' : '0.5';
+            }
+        })
+        .catch(() => {});
+}
+
+/* ── Send reply ──────────────────────────────────────────────── */
+function siSendReply() {
+    if (!currentLeadId) return;
+    const ta   = document.getElementById('siComposerText');
+    const body = ta ? ta.value.trim() : '';
+    if (!body) { showToast('Please type a reply first.', 'error'); return; }
+    const attachCv = !!(document.getElementById('siCvCheck') || {}).checked;
+    const btn = document.querySelector('.si-send-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+    fetch(`/outreach/replies/${currentLeadId}/send-reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body, attach_cv: attachCv }),
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (btn) { btn.disabled = false; btn.textContent = 'Send Reply'; }
+        if (d.success) {
+            showToast('Reply sent', 'success');
+            if (ta) ta.value = '';
+            siRenderThread(THREAD_DATA[currentLeadId] || []);
+        } else showToast(d.error || 'Failed to send reply', 'error');
+    })
+    .catch(() => {
+        if (btn) { btn.disabled = false; btn.textContent = 'Send Reply'; }
+        showToast('Network error sending reply', 'error');
+    });
 }
 
 /* ──────────────────────────────────────────────────────────────
-   PANEL ACTION BUTTONS
+   PANEL ACTION BUTTONS — Chat 76
    ────────────────────────────────────────────────────────────── */
-function panelMarkWon() {
+function siMarkWon() {
     if (!currentLeadId) return;
     if (!confirm('Mark this lead as Won?')) return;
     fetch(`/outreach/sent/${currentLeadId}/mark-won`, {
@@ -630,7 +738,7 @@ function panelMarkWon() {
     .catch(() => showToast('Network error', 'error'));
 }
 
-function panelMarkLost() {
+function siMarkLost() {
     if (!currentLeadId) return;
     if (!confirm('Mark this lead as Lost?')) return;
     fetch(`/outreach/sent/${currentLeadId}/mark-lost`, {
@@ -642,6 +750,11 @@ function panelMarkLost() {
         else showToast('Error: ' + (d.message || 'unknown'), 'error');
     })
     .catch(() => showToast('Network error', 'error'));
+}
+
+function siQueueFollowup() {
+    if (!currentEmailId) return;
+    queueFollowup(currentEmailId, null);
 }
 
 function queueFollowup(emailId, btn) {
