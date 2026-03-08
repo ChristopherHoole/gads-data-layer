@@ -312,6 +312,21 @@ def create_app():
         else:
             print(f"⚠️  [Chat 71] Route not found (skipping): {route_name}")
 
+    # Chat 73: CSRF exemption for tracking endpoints (no session — load in email client)
+    # GET /outreach/track/open|click|cv are called by email clients with no session
+    # No auth required by design; all data is append-only counters
+    tracking_routes = [
+        'outreach.track_open',
+        'outreach.track_click',
+        'outreach.track_cv',
+    ]
+    for route_name in tracking_routes:
+        if route_name in app.view_functions:
+            csrf.exempt(app.view_functions[route_name])
+            print(f"✅ [Chat 73] CSRF exempted: {route_name}")
+        else:
+            print(f"⚠️  [Chat 73] Route not found (skipping): {route_name}")
+
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
     def csrf_error(reason):

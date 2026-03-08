@@ -672,12 +672,41 @@ def queue():
     )
 
 
+# ── Chat 73: Tracking helper ──────────────────────────────────────────────────
+def inject_tracking(body_html, email_id, base_url, has_cv=False):
+    """Wrap href links with click-tracking redirect and append open-pixel."""
+    import re
+    import urllib.parse
+
+    # Wrap all http/https links with click-tracking redirect
+    def replace_href(m):
+        original_url = m.group(1)
+        encoded = urllib.parse.quote(original_url, safe='')
+        return f'href="{base_url}/outreach/track/click/{email_id}?url={encoded}"'
+
+    body_html = re.sub(r'href="(https?://[^"]+)"', replace_href, body_html)
+
+    # Inject CV link just before signature separator <br><br><hr
+    if has_cv:
+        cv_link = f'<a href="{base_url}/outreach/track/cv/{email_id}">View my CV</a>'
+        body_html = body_html.replace('<br><br><hr', f'{cv_link}<br><br><hr', 1)
+
+    # Append open-pixel just before closing </div>
+    pixel = (
+        f'<img src="{base_url}/outreach/track/open/{email_id}" '
+        f'width="1" height="1" style="display:none;" />'
+    )
+    body_html = body_html.replace('</div>', f'{pixel}</div>', 1)
+
+    return body_html
+
+
 # ── POST /outreach/queue/<email_id>/send ─────────────────────────────────────
 @bp.route("/queue/<email_id>/send", methods=["POST"])
 @login_required
 def queue_send(email_id):
     """Send real email via Gmail SMTP then mark as sent. AJAX — CSRF exempt."""
-    from act_dashboard.email_sender import send_email, check_daily_limit, get_signature_html
+    from act_dashboard.email_sender import send_email, check_daily_limit, get_signature_html, load_email_config
 
     conn = get_outreach_db()
     try:
@@ -731,6 +760,12 @@ def queue_send(email_id):
             else:
                 print(f"[OUTREACH] WARNING: cv_attached=True for {email_id} but no CV file found on disk")
 
+        # Chat 73: inject open/click/CV tracking into email body
+        email_config = load_email_config()
+        base_url = email_config.get('base_url', 'http://localhost:5000')
+        has_cv = bool(cv_attached and attachment_path)
+        body_html = inject_tracking(body_html, email_id, base_url, has_cv=has_cv)
+
         # Send the actual email via Gmail SMTP
         result = send_email(
             to_email=to_email,
@@ -758,6 +793,94 @@ def queue_send(email_id):
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         conn.close()
+
+
+# ── Chat 73: Tracking endpoints (CSRF exempt — no session in email client) ────
+
+# ── GET /outreach/track/open/<email_id> ──────────────────────────────────────
+@bp.route("/track/open/<email_id>", methods=["GET"])
+def track_open(email_id):
+    """Return 1×1 GIF and increment open_count. No auth — loads in email client."""
+    from flask import Response
+    GIF_1X1 = (
+        b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff'
+        b'\x00\x00\x00\x21\xf9\x04\x00\x00\x00\x00\x00\x2c\x00\x00\x00\x00'
+        b'\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b'
+    )
+    conn = get_outreach_db()
+    try:
+        row = conn.execute(
+            "SELECT email_id FROM outreach_emails WHERE email_id = ?", [email_id]
+        ).fetchone()
+        if row:
+            conn.execute(
+                "UPDATE outreach_emails SET open_count = open_count + 1, "
+                "opened_at = COALESCE(opened_at, now()) WHERE email_id = ?",
+                [email_id],
+            )
+            print(f"[TRACKING] open: email_id={email_id}")
+    except Exception as e:
+        print(f"[TRACKING] open error: {e}")
+    finally:
+        conn.close()
+    return Response(GIF_1X1, mimetype='image/gif',
+                    headers={'Cache-Control': 'no-cache, no-store'})
+
+
+# ── GET /outreach/track/click/<email_id>?url=<target_url> ────────────────────
+@bp.route("/track/click/<email_id>", methods=["GET"])
+def track_click(email_id):
+    """Increment click_count and redirect to target URL. No auth — opens in email client."""
+    from flask import redirect
+    target_url = request.args.get('url', '/')
+    conn = get_outreach_db()
+    try:
+        row = conn.execute(
+            "SELECT email_id FROM outreach_emails WHERE email_id = ?", [email_id]
+        ).fetchone()
+        if row:
+            conn.execute(
+                "UPDATE outreach_emails SET click_count = click_count + 1, "
+                "clicked_at = COALESCE(clicked_at, now()) WHERE email_id = ?",
+                [email_id],
+            )
+            print(f"[TRACKING] click: email_id={email_id} → {target_url}")
+    except Exception as e:
+        print(f"[TRACKING] click error: {e}")
+    finally:
+        conn.close()
+    return redirect(target_url)
+
+
+# ── GET /outreach/track/cv/<email_id> ────────────────────────────────────────
+@bp.route("/track/cv/<email_id>", methods=["GET"])
+def track_cv(email_id):
+    """Increment cv_open_count and redirect to CV file. No auth — opens in email client."""
+    from flask import redirect, url_for
+    conn = get_outreach_db()
+    try:
+        row = conn.execute(
+            "SELECT email_id FROM outreach_emails WHERE email_id = ?", [email_id]
+        ).fetchone()
+        if row:
+            conn.execute(
+                "UPDATE outreach_emails SET cv_open_count = cv_open_count + 1, "
+                "cv_opened_at = COALESCE(cv_opened_at, now()) WHERE email_id = ?",
+                [email_id],
+            )
+            print(f"[TRACKING] cv_open: email_id={email_id}")
+        cv_row = conn.execute(
+            "SELECT value FROM system_config WHERE key = 'cv_path'"
+        ).fetchone()
+    except Exception as e:
+        print(f"[TRACKING] cv error: {e}")
+        return "Not found", 404
+    finally:
+        conn.close()
+    if not cv_row or not cv_row[0]:
+        return "No CV on file", 404
+    cv_filename = Path(cv_row[0]).name
+    return redirect(url_for('static', filename='uploads/cv/' + cv_filename))
 
 
 # ── POST /outreach/queue/<email_id>/skip ─────────────────────────────────────
