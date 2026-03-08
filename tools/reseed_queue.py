@@ -29,7 +29,6 @@ conn.execute("""
               ?, 0, false)
     ON CONFLICT (lead_id) DO UPDATE SET
         email          = excluded.email,
-        status         = 'cold',
         progress_stage = 0,
         sequence_step  = 0
 """, [TEST_LEAD_ID, TEST_EMAIL, date.today()])

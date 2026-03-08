@@ -259,28 +259,38 @@ function buildCard(r) {
     const statusPill = statusPillHtml(r.status);
     const firstName  = esc((r.full_name || '').split(' ')[0]);
     const snippet    = esc(r.reply_text || '(No reply text)');
+    const safeId     = esc(r.lead_id);
 
-    return `<div class="reply-card ${r.unread ? 'unread' : ''}" onclick="openPanel('${esc(r.lead_id)}')">
-        <div class="card-top">
-            <div class="card-top-left">
-                <div>
-                    <div class="reply-card-name prospect-name">${esc(r.full_name)}${newLabel}</div>
-                    <div class="prospect-company">${esc(r.company)}</div>
+    return `<div class="reply-card-wrap" id="card-wrap-${safeId}">
+        <div class="reply-card ${r.unread ? 'unread' : ''}" onclick="openPanel('${safeId}')">
+            <div class="card-top">
+                <div class="card-top-left">
+                    <div>
+                        <div class="reply-card-name prospect-name">${esc(r.full_name)}${newLabel}</div>
+                        <div class="prospect-company">${esc(r.company)}</div>
+                    </div>
+                </div>
+                <div class="card-top-right">
+                    ${unreadDot}
+                    <span class="reply-date">${esc(r.replied_date)} &middot; ${esc(r.replied_time)}</span>
                 </div>
             </div>
-            <div class="card-top-right">
-                ${unreadDot}
-                <span class="reply-date">${esc(r.replied_date)} &middot; ${esc(r.replied_time)}</span>
+            <div class="reply-snippet"><strong>${firstName}:</strong> ${snippet}</div>
+            <div class="card-bottom">
+                <span class="track-badge ${esc(r.track_css)}">${esc(r.track)}</span>
+                <span id="status-pill-${safeId}">${statusPill}</span>
+                <div class="card-actions" onclick="event.stopPropagation()">
+                    <button class="btn-small primary" onclick="toggleCompose('${safeId}')">Send Reply</button>
+                    <button class="btn-small success" onclick="markWon('${safeId}')">Mark as won</button>
+                    <button class="btn-small" onclick="showToast('Queue follow-up coming soon','info')">Queue follow-up</button>
+                </div>
             </div>
         </div>
-        <div class="reply-snippet"><strong>${firstName}:</strong> ${snippet}</div>
-        <div class="card-bottom">
-            <span class="track-badge ${esc(r.track_css)}">${esc(r.track)}</span>
-            ${statusPill}
-            <div class="card-actions" onclick="event.stopPropagation()">
-                <button class="btn-small primary" onclick="openPanel('${esc(r.lead_id)}')">Reply</button>
-                <button class="btn-small success" onclick="markWon('${esc(r.lead_id)}')">Mark as won</button>
-                <button class="btn-small" onclick="showToast('Queue follow-up coming soon','info')">Queue follow-up</button>
+        <div id="inline-compose-${safeId}" style="display:none;padding:12px 16px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 8px 8px;background:#f8f9fa;">
+            <textarea class="form-control" id="inline-compose-text-${safeId}" rows="6" placeholder="Type your reply..." style="font-size:13px;resize:vertical;"></textarea>
+            <div style="margin-top:8px;display:flex;gap:8px;">
+                <button class="btn btn-primary btn-sm" onclick="sendInlineReply('${safeId}')">Send Reply</button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="toggleCompose('${safeId}')">Cancel</button>
             </div>
         </div>
     </div>`;
@@ -505,20 +515,72 @@ function toggleCV() {
 }
 
 function sendReply(leadId) {
+    const ta   = document.getElementById('replyTextarea');
+    const body = ta ? ta.value.trim() : '';
+    if (!body) { showToast('Please type a reply first.', 'error'); return; }
     const btn = document.querySelector('.btn-send-reply');
     if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
-    showToast('Sending your reply…', 'info');
     fetch(`/outreach/replies/${leadId}/send-reply`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: body }),
     })
     .then(r => r.json())
     .then(d => {
         if (btn) { btn.disabled = false; btn.textContent = 'Send reply'; }
-        showToast(d.message || 'Reply sent', 'success');
+        if (d.success) {
+            showToast('Reply sent', 'success');
+            if (ta) ta.value = '';
+        } else {
+            showToast(d.error || 'Failed to send reply', 'error');
+        }
     })
     .catch(() => {
         if (btn) { btn.disabled = false; btn.textContent = 'Send reply'; }
         showToast('Could not send reply. Please try again.', 'error');
+    });
+}
+
+/* ──────────────────────────────────────────────────────────────
+   INLINE COMPOSE — Chat 72
+   ────────────────────────────────────────────────────────────── */
+function toggleCompose(leadId) {
+    const el = document.getElementById('inline-compose-' + leadId);
+    if (!el) return;
+    const isHidden = el.style.display === 'none';
+    el.style.display = isHidden ? 'block' : 'none';
+    if (isHidden) {
+        const ta = document.getElementById('inline-compose-text-' + leadId);
+        if (ta) ta.focus();
+    }
+}
+
+function sendInlineReply(leadId) {
+    const ta = document.getElementById('inline-compose-text-' + leadId);
+    if (!ta || !ta.value.trim()) { showToast('Please type a reply first.', 'error'); return; }
+    const body = ta.value;
+    const compose = document.getElementById('inline-compose-' + leadId);
+    const sendBtn = compose ? compose.querySelector('.btn-primary') : null;
+    if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'Sending…'; }
+    fetch('/outreach/replies/' + leadId + '/send-reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: body }),
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Send Reply'; }
+        if (d.success) {
+            showToast('Reply sent', 'success');
+            if (compose) compose.style.display = 'none';
+            if (ta) ta.value = '';
+        } else {
+            showToast(d.error || 'Failed to send reply', 'error');
+        }
+    })
+    .catch(() => {
+        if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Send Reply'; }
+        showToast('Network error. Please try again.', 'error');
     });
 }
 

@@ -40,6 +40,12 @@ def send_email(to_email, subject, body_html, from_name=None, from_email=None, at
     try:
         config = load_email_config()
 
+        # Test mode: redirect all sends to the safe test address (Chat 73)
+        if config.get("test_mode", False):
+            original_to = to_email
+            to_email = config["test_redirect_email"]
+            print(f"[EMAIL] ⚠️ TEST MODE — redirecting to {to_email} (original: {original_to})")
+
         _from_name  = from_name  or config.get("from_name",  "Christopher Hoole")
         _from_email = from_email or config.get("from_email", config["smtp_username"])
 

@@ -39,7 +39,7 @@ _CV_DIR = Path(__file__).parent.parent / "static" / "uploads" / "cv"
 
 
 def _ensure_schema():
-    """Create system_config table and add cv_attached column to outreach_emails if missing."""
+    """Create system_config table and add missing columns to outreach_emails if missing."""
     try:
         conn = get_outreach_db()
         conn.execute("""
@@ -54,6 +54,10 @@ def _ensure_schema():
             )
         except Exception:
             pass  # Column already exists
+        # Chat 72: add direction column for outbound vs outbound_reply tracking
+        conn.execute(
+            "ALTER TABLE outreach_emails ADD COLUMN IF NOT EXISTS direction VARCHAR DEFAULT 'outbound'"
+        )
         conn.close()
     except Exception as e:
         print(f"[OUTREACH] Schema setup warning: {e}")
@@ -86,15 +90,16 @@ def inject_outreach_badge_counts():
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 STATUS_DISPLAY = {
-    "cold":        "Cold",
-    "queued":      "Queued",
-    "contacted":   "Contacted",
-    "followed_up": "Followed Up",
-    "replied":     "Replied",
-    "meeting":     "Meeting",
-    "won":         "Won",
-    "lost":        "Lost",
-    "no_reply":    "No Reply",
+    "cold":            "Cold",
+    "queued":          "Queued",
+    "contacted":       "Contacted",
+    "followed_up":     "Followed Up",
+    "replied":         "Replied",
+    "in_conversation": "In Conversation",
+    "meeting":         "Meeting",
+    "won":             "Won",
+    "lost":            "Lost",
+    "no_reply":        "No Reply",
 }
 
 STATUS_CSS = {
@@ -1560,8 +1565,88 @@ def replies_book_meeting(lead_id):
 @bp.route("/replies/<lead_id>/send-reply", methods=["POST"])
 @login_required
 def replies_send_reply(lead_id):
-    """Placeholder: reply sending not yet implemented. AJAX — CSRF exempt."""
-    return jsonify({"success": True, "message": "Reply sending coming soon"})
+    """Send a reply email to a lead and record it. AJAX — CSRF exempt. Chat 72."""
+    import re as _re
+    from act_dashboard.email_sender import send_email, get_signature_html, substitute_variables
+
+    data = request.get_json(silent=True) or {}
+    body_text = (data.get("body") or "").strip()
+    if not body_text:
+        return jsonify({"success": False, "error": "Reply body is required"}), 400
+
+    conn = get_outreach_db()
+    try:
+        # Fetch lead info
+        lead_row = conn.execute(
+            "SELECT lead_id, email, full_name, first_name, company "
+            "FROM outreach_leads WHERE lead_id = ?",
+            [lead_id],
+        ).fetchone()
+        if not lead_row:
+            return jsonify({"success": False, "error": "Lead not found"}), 404
+
+        _, to_email, full_name, first_name, company = lead_row
+
+        # Get subject from latest sent email for this lead
+        subj_row = conn.execute(
+            "SELECT subject FROM outreach_emails "
+            "WHERE lead_id = ? AND status = 'sent' "
+            "ORDER BY sent_at DESC LIMIT 1",
+            [lead_id],
+        ).fetchone()
+        orig_subject = subj_row[0] if subj_row else ""
+
+        # Build subject: strip any Re:/RE:/re: prefix, prepend single Re:
+        clean_subject = _re.sub(r"^(re:\s*)+", "", orig_subject, flags=_re.IGNORECASE).strip()
+        subject = f"Re: {clean_subject}"
+
+        # Substitute template variables in body
+        lead_data = {
+            "full_name":  full_name or "",
+            "first_name": first_name or (full_name.split()[0] if full_name else ""),
+            "company":    company or "",
+        }
+        body_text = substitute_variables(body_text, lead_data)
+
+        # Convert plain-text body to HTML and append signature
+        body_html = (
+            "<div style='font-family:Arial,sans-serif;font-size:14px;"
+            "line-height:1.6;color:#333;'>"
+            + body_text.replace("\n", "<br>")
+            + "</div>"
+            + get_signature_html()
+        )
+
+        print(f"[OUTREACH] send-reply: lead_id={lead_id} to={to_email} subject='{subject[:60]}'")
+
+        # Send via Gmail SMTP — no CV attachment on replies
+        result = send_email(to_email=to_email, subject=subject, body_html=body_html)
+        if not result["success"]:
+            return jsonify({"success": False, "error": result.get("error", "Send failed")}), 500
+
+        # Record outbound reply in outreach_emails
+        new_email_id = str(uuid.uuid4())
+        conn.execute(
+            """INSERT INTO outreach_emails
+               (email_id, lead_id, email_type, subject, body, status, direction, sent_at, created_at)
+               VALUES (?, ?, 'outbound_reply', ?, ?, 'sent', 'outbound_reply', now(), now())""",
+            [new_email_id, lead_id, subject, body_text],
+        )
+
+        # Update lead status to in_conversation
+        conn.execute(
+            "UPDATE outreach_leads SET status = 'in_conversation', last_activity = now() "
+            "WHERE lead_id = ?",
+            [lead_id],
+        )
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        print(f"[OUTREACH] replies send-reply error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        conn.close()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
