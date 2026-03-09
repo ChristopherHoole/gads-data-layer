@@ -1,135 +1,446 @@
 {#
-  Date Filter Component — Chat 22 / M1
+  Date Filter Component — Chat 79
+  Google Ads-style date picker — no Flatpickr dependency.
+
   Variables expected from including template:
     active_days : int — 7, 30, or 90 for preset; 0 for custom range
     date_from   : str or None — ISO date string (YYYY-MM-DD) for custom range start
     date_to     : str or None — ISO date string (YYYY-MM-DD) for custom range end
 #}
 
-<!-- Flatpickr CSS (self-contained — no changes to base_bootstrap.html needed) -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<div class="dp-wrapper" id="date-filter-component">
 
-<div class="d-flex align-items-center gap-2" id="date-filter-component">
-
-  <!-- Flatpickr custom range input -->
-  <div class="input-group input-group-sm" style="width: 210px;">
-    <span class="input-group-text bg-white border-end-0 px-2">
-      <i class="bi bi-calendar3 text-muted"></i>
-    </span>
-    <input type="text"
-           id="date-range-input"
-           class="form-control form-control-sm border-start-0"
-           placeholder="Custom range..."
-           readonly
-           style="cursor: pointer;"
-           value="{% if date_from and date_to %}{{ date_from }} to {{ date_to }}{% endif %}">
-  </div>
-
-  <!-- Apply button — only enabled once both dates are selected in Flatpickr -->
-  <button id="date-apply-btn"
-          class="btn btn-sm btn-success"
-          disabled
-          title="Apply custom date range">
-    Apply
+  <!-- Trigger button -->
+  <button class="dp-trigger" id="dp-trigger" type="button" aria-haspopup="true" aria-expanded="false">
+    <i class="bi bi-calendar3"></i>
+    <span id="dp-trigger-label">Loading…</span>
+    <i class="bi bi-chevron-down" id="dp-chevron"></i>
   </button>
 
-  <!-- Preset buttons -->
-  <div class="btn-group btn-group-sm" role="group" aria-label="Date preset">
-    <button type="button"
-            class="btn {% if active_days == 7 %}btn-primary{% else %}btn-outline-secondary{% endif %}"
-            onclick="actSetPresetRange(7)">
-      7d
-    </button>
-    <button type="button"
-            class="btn {% if active_days == 30 %}btn-primary{% else %}btn-outline-secondary{% endif %}"
-            onclick="actSetPresetRange(30)">
-      30d
-    </button>
-    <button type="button"
-            class="btn {% if active_days == 90 %}btn-primary{% else %}btn-outline-secondary{% endif %}"
-            onclick="actSetPresetRange(90)">
-      90d
-    </button>
+  <!-- Quick preset buttons -->
+  <div class="dp-quick-btns">
+    <button class="dp-quick-btn{% if active_days == 7 %} active{% endif %}" type="button" data-quick="7">7d</button>
+    <button class="dp-quick-btn{% if active_days == 30 %} active{% endif %}" type="button" data-quick="30">30d</button>
+    <button class="dp-quick-btn{% if active_days == 90 %} active{% endif %}" type="button" data-quick="90">90d</button>
   </div>
 
-</div>
+  <!-- Dropdown panel (hidden by default) -->
+  <div class="dp-panel" id="dp-panel" hidden>
 
-<!-- Flatpickr JS (self-contained) -->
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- Left: preset list -->
+    <div class="dp-presets">
+      <div class="dp-preset" data-preset="today">Today</div>
+      <div class="dp-preset" data-preset="yesterday">Yesterday</div>
+      <div class="dp-preset" data-preset="7d">Last 7 days</div>
+      <div class="dp-preset" data-preset="14d">Last 14 days</div>
+      <div class="dp-preset" data-preset="30d">Last 30 days</div>
+      <div class="dp-preset" data-preset="this_month">This month</div>
+      <div class="dp-preset" data-preset="last_month">Last month</div>
+      <div class="dp-preset" data-preset="90d">Last 90 days</div>
+      <div class="dp-preset" data-preset="all_time">All time</div>
+      <div class="dp-preset" data-preset="custom">Custom range</div>
+    </div>
+
+    <!-- Right: date inputs + calendar + footer -->
+    <div class="dp-right">
+
+      <!-- Date text inputs -->
+      <div class="dp-date-inputs">
+        <input class="dp-date-input" id="dp-from-input" type="text" placeholder="DD/MM/YYYY" autocomplete="off">
+        <span class="dp-date-sep">–</span>
+        <input class="dp-date-input" id="dp-to-input" type="text" placeholder="DD/MM/YYYY" autocomplete="off">
+      </div>
+
+      <!-- Calendar navigation -->
+      <div class="cal-nav">
+        <button class="cal-nav-btn" id="cal-prev" type="button" aria-label="Previous month">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <span class="cal-month-label" id="cal-month-label"></span>
+        <button class="cal-nav-btn" id="cal-next" type="button" aria-label="Next month">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+
+      <!-- Calendar grid (populated by JS) -->
+      <div class="cal-grid" id="cal-grid"></div>
+
+      <!-- Footer -->
+      <div class="dp-footer">
+        <button class="dp-btn-cancel" id="dp-cancel" type="button">Cancel</button>
+        <button class="dp-btn-apply" id="dp-apply" type="button">Apply</button>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 <script>
 (function () {
   'use strict';
 
-  var applyBtn      = document.getElementById('date-apply-btn');
-  var selectedDates = [];
+  /* ── Session state injected from server ─────────────────────────── */
+  var ACTIVE_DAYS = {{ active_days | default(30) }};
+  var INIT_FROM   = {{ date_from | tojson }};
+  var INIT_TO     = {{ date_to   | tojson }};
 
-  // Initialise Flatpickr in range mode
-  flatpickr('#date-range-input', {
-    mode: 'range',
-    dateFormat: 'Y-m-d',
-    maxDate: 'today',
-    {% if date_from and date_to %}
-    defaultDate: ["{{ date_from }}", "{{ date_to }}"],
-    {% endif %}
-    onChange: function (dates) {
-      selectedDates = dates;
-      // Enable Apply only when both ends of the range are chosen
-      applyBtn.disabled = (dates.length !== 2);
-    }
+  /* ── DOM refs ───────────────────────────────────────────────────── */
+  var wrapper   = document.getElementById('date-filter-component');
+  var trigger   = document.getElementById('dp-trigger');
+  var trigLabel = document.getElementById('dp-trigger-label');
+  var chevron   = document.getElementById('dp-chevron');
+  var panel     = document.getElementById('dp-panel');
+  var fromInput = document.getElementById('dp-from-input');
+  var toInput   = document.getElementById('dp-to-input');
+  var calGrid   = document.getElementById('cal-grid');
+  var calLabel  = document.getElementById('cal-month-label');
+  var applyBtn  = document.getElementById('dp-apply');
+  var cancelBtn = document.getElementById('dp-cancel');
+  var presetEls = wrapper.querySelectorAll('.dp-preset');
+  var quickBtns = wrapper.querySelectorAll('.dp-quick-btn');
+
+  /* ── Mutable state ─────────────────────────────────────────────── */
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  var calYear  = today.getFullYear();
+  var calMonth = today.getMonth();   /* 0-based */
+
+  var selFrom = null;          /* Date | null — selection start */
+  var selTo   = null;          /* Date | null — selection end   */
+  var clickPhase = 'start';    /* 'start' | 'end'               */
+
+  var savedFrom   = null;
+  var savedTo     = null;
+  var savedPreset = null;
+  var currentPreset = null;
+
+  /* ── Initialise from server-side session state ──────────────────── */
+  if (INIT_FROM && INIT_TO) {
+    selFrom = isoToDate(INIT_FROM);
+    selTo   = isoToDate(INIT_TO);
+    currentPreset = 'custom';
+  } else {
+    var _dmap = { 7: '7d', 30: '30d', 90: '90d' };
+    currentPreset = _dmap[ACTIVE_DAYS] || '30d';
+    var _r = calcPreset(currentPreset);
+    selFrom = _r.from;
+    selTo   = _r.to;
+  }
+
+  savedFrom   = selFrom;
+  savedTo     = selTo;
+  savedPreset = currentPreset;
+
+  /* Navigate calendar to the selFrom month on init */
+  if (selFrom) { calYear = selFrom.getFullYear(); calMonth = selFrom.getMonth(); }
+
+  updateTriggerLabel();
+  updatePresetHighlight();
+
+  /* ── Event: trigger open/close ──────────────────────────────────── */
+  trigger.addEventListener('click', function (e) {
+    e.stopPropagation();
+    if (panel.hidden) { dpOpen(); } else { dpClose(); }
   });
 
-  // Apply button: POST custom range then reload
+  document.addEventListener('click', function (e) {
+    if (!wrapper.contains(e.target)) { dpClose(); }
+  });
+
+  /* ── Events: quick preset buttons (7d / 30d / 90d) ─────────────── */
+  quickBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      submitDateRange(btn.dataset.quick, null, null);
+    });
+  });
+
+  /* ── Events: preset list ────────────────────────────────────────── */
+  presetEls.forEach(function (el) {
+    el.addEventListener('click', function () {
+      var preset = el.dataset.preset;
+      currentPreset = preset;
+      updatePresetHighlight();
+
+      if (preset === 'custom') {
+        /* Stay open — let user pick dates manually */
+        selFrom = null;
+        selTo   = null;
+        clickPhase = 'start';
+        updateInputs();
+        renderCalendar();
+        return;
+      }
+
+      var r = calcPreset(preset);
+      selFrom = r.from;
+      selTo   = r.to;
+      updateInputs();
+
+      /* Map preset key to the range_type the backend expects */
+      var rangeType, dateFrom, dateTo;
+      if      (preset === '7d')  { rangeType = '7';      dateFrom = null; dateTo = null; }
+      else if (preset === '30d') { rangeType = '30';     dateFrom = null; dateTo = null; }
+      else if (preset === '90d') { rangeType = '90';     dateFrom = null; dateTo = null; }
+      else                       { rangeType = 'custom'; dateFrom = dateToISO(selFrom); dateTo = dateToISO(selTo); }
+
+      submitDateRange(rangeType, dateFrom, dateTo);
+    });
+  });
+
+  /* ── Events: calendar month navigation ─────────────────────────── */
+  document.getElementById('cal-prev').addEventListener('click', function () {
+    calMonth -= 1;
+    if (calMonth < 0) { calMonth = 11; calYear -= 1; }
+    renderCalendar();
+  });
+
+  document.getElementById('cal-next').addEventListener('click', function () {
+    calMonth += 1;
+    if (calMonth > 11) { calMonth = 0; calYear += 1; }
+    renderCalendar();
+  });
+
+  /* ── Events: date text inputs ───────────────────────────────────── */
+  fromInput.addEventListener('input', function () {
+    var iso = displayToISO(fromInput.value);
+    if (!iso) { return; }
+    selFrom = isoToDate(iso);
+    if (selTo && selFrom > selTo) { selTo = null; toInput.value = ''; }
+    currentPreset = 'custom';
+    updatePresetHighlight();
+    renderCalendar();
+  });
+
+  toInput.addEventListener('input', function () {
+    var iso = displayToISO(toInput.value);
+    if (!iso) { return; }
+    selTo = isoToDate(iso);
+    if (selFrom && selTo < selFrom) { selFrom = null; fromInput.value = ''; }
+    currentPreset = 'custom';
+    updatePresetHighlight();
+    renderCalendar();
+  });
+
+  /* ── Events: Apply / Cancel ─────────────────────────────────────── */
   applyBtn.addEventListener('click', function () {
-    if (selectedDates.length !== 2) return;
-    actPostDateRange('custom', null, actFmtDate(selectedDates[0]), actFmtDate(selectedDates[1]));
+    if (!selFrom || !selTo) { return; }
+    savedFrom   = selFrom;
+    savedTo     = selTo;
+    savedPreset = currentPreset;
+    submitDateRange('custom', dateToISO(selFrom), dateToISO(selTo));
   });
 
-  // Preset button handler — called by onclick attributes above
-  window.actSetPresetRange = function (days) {
-    actPostDateRange(String(days), days, null, null);
-  };
+  cancelBtn.addEventListener('click', function () {
+    selFrom       = savedFrom;
+    selTo         = savedTo;
+    currentPreset = savedPreset;
+    updateInputs();
+    updateTriggerLabel();
+    updatePresetHighlight();
+    dpClose();
+  });
 
-  // POST to /set-date-range, then reload preserving current URL query params.
-  // Auto-detects params (tab, status, per_page, etc.) so Shopping tab and
-  // other filters survive date changes without special-casing per page.
-  function actPostDateRange(rangeType, days, dateFrom, dateTo) {
-    var payload = { range_type: rangeType };
-    if (dateFrom) payload.date_from = dateFrom;
-    if (dateTo)   payload.date_to   = dateTo;
+  /* ── Functions ──────────────────────────────────────────────────── */
 
+  function dpOpen() {
+    if (selFrom) { calYear = selFrom.getFullYear(); calMonth = selFrom.getMonth(); }
+    clickPhase = 'start';
+    renderCalendar();
+    updateInputs();
+    updatePresetHighlight();
+    panel.hidden = false;
+    chevron.className = 'bi bi-chevron-up';
+    trigger.style.borderColor = '#1a73e8';
+    trigger.style.boxShadow   = '0 0 0 2px rgba(26,115,232,.2)';
+    trigger.setAttribute('aria-expanded', 'true');
+  }
+
+  function dpClose() {
+    panel.hidden = true;
+    chevron.className = 'bi bi-chevron-down';
+    trigger.style.borderColor = '';
+    trigger.style.boxShadow   = '';
+    trigger.setAttribute('aria-expanded', 'false');
+  }
+
+  function renderCalendar() {
+    var MONTHS = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+    calLabel.textContent = MONTHS[calMonth] + ' ' + calYear;
+
+    var html = '';
+
+    /* Day-of-week headers: Monday first */
+    var dows = ['M','T','W','T','F','S','S'];
+    for (var i = 0; i < 7; i++) {
+      html += '<div class="cal-dow">' + dows[i] + '</div>';
+    }
+
+    /* Leading empty cells: offset so Monday = column 0 */
+    var first  = new Date(calYear, calMonth, 1);
+    var offset = (first.getDay() + 6) % 7;   /* Sun→6, Mon→0, … Sat→5 */
+    for (var p = 0; p < offset; p++) {
+      html += '<div class="cal-day other-month"></div>';
+    }
+
+    /* Day cells */
+    var daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    for (var d = 1; d <= daysInMonth; d++) {
+      var dt     = new Date(calYear, calMonth, d);
+      var cls    = 'cal-day';
+      var isTod   = sameDay(dt, today);
+      var isFrom  = selFrom && sameDay(dt, selFrom);
+      var isTo    = selTo   && sameDay(dt, selTo);
+      var inRange = selFrom && selTo && dt > selFrom && dt < selTo;
+
+      if      (isFrom && isTo) { cls += ' selected'; }
+      else if (isFrom)         { cls += ' range-start'; }
+      else if (isTo)           { cls += ' range-end'; }
+      else if (inRange)        { cls += ' in-range'; }
+
+      if (isTod) { cls += ' today'; }
+
+      html += '<div class="' + cls + '" data-date="' + dateToISO(dt) + '">' + d + '</div>';
+    }
+
+    calGrid.innerHTML = html;
+
+    /* Bind click handlers */
+    calGrid.querySelectorAll('.cal-day[data-date]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var dt = isoToDate(el.dataset.date);
+        if (clickPhase === 'start') {
+          selFrom    = dt;
+          selTo      = null;
+          clickPhase = 'end';
+        } else {
+          if (dt < selFrom) { selTo = selFrom; selFrom = dt; }
+          else              { selTo = dt; }
+          clickPhase = 'start';
+        }
+        currentPreset = 'custom';
+        updatePresetHighlight();
+        updateInputs();
+        renderCalendar();
+      });
+    });
+  }
+
+  function updateInputs() {
+    fromInput.value = selFrom ? isoToDisplay(dateToISO(selFrom)) : '';
+    toInput.value   = selTo   ? isoToDisplay(dateToISO(selTo))   : '';
+  }
+
+  function updateTriggerLabel() {
+    var named = {
+      'today':      'Today',
+      'yesterday':  'Yesterday',
+      '7d':         'Last 7 days',
+      '14d':        'Last 14 days',
+      '30d':        'Last 30 days',
+      'this_month': 'This month',
+      'last_month': 'Last month',
+      '90d':        'Last 90 days',
+      'all_time':   'All time'
+    };
+    if (named[currentPreset]) {
+      trigLabel.textContent = named[currentPreset];
+    } else if (selFrom && selTo) {
+      trigLabel.textContent = fmtRangeLabel(selFrom, selTo);
+    } else {
+      trigLabel.textContent = 'Select range';
+    }
+  }
+
+  function updatePresetHighlight() {
+    presetEls.forEach(function (el) {
+      el.classList.toggle('active', el.dataset.preset === currentPreset);
+    });
+  }
+
+  function calcPreset(preset) {
+    var t  = new Date(today);
+    var from, to;
+    to = new Date(t);
+    if      (preset === 'today')      { from = new Date(t); }
+    else if (preset === 'yesterday')  { from = new Date(t); from.setDate(from.getDate() - 1); to = new Date(from); }
+    else if (preset === '7d')         { from = new Date(t); from.setDate(from.getDate() - 6); }
+    else if (preset === '14d')        { from = new Date(t); from.setDate(from.getDate() - 13); }
+    else if (preset === '30d')        { from = new Date(t); from.setDate(from.getDate() - 29); }
+    else if (preset === 'this_month') { from = new Date(t.getFullYear(), t.getMonth(), 1); }
+    else if (preset === 'last_month') { from = new Date(t.getFullYear(), t.getMonth() - 1, 1); to = new Date(t.getFullYear(), t.getMonth(), 0); }
+    else if (preset === '90d')        { from = new Date(t); from.setDate(from.getDate() - 89); }
+    else if (preset === 'all_time')   { from = new Date(2000, 0, 1); }
+    else                              { from = new Date(t); }
+    return { from: from, to: to };
+  }
+
+  function submitDateRange(rangeType, dateFrom, dateTo) {
+    var payload = { range_type: String(rangeType) };
+    if (dateFrom) { payload.date_from = dateFrom; }
+    if (dateTo)   { payload.date_to   = dateTo; }
     fetch('/set-date-range', {
-      method: 'POST',
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body:    JSON.stringify(payload)
     })
     .then(function (res) { return res.json(); })
     .then(function (data) {
       if (data.success) {
-        // Remove 'days' URL param — session now drives date range.
-        // Reset page to 1 to avoid landing on an empty page after range change.
         var url = new URL(window.location.href);
         url.searchParams.delete('days');
         url.searchParams.set('page', '1');
         window.location.href = url.toString();
       } else {
-        console.error('[DateFilter] Server error:', data.error);
+        console.error('[DatePicker] Server error:', data.error);
         alert('Could not set date range: ' + (data.error || 'unknown error'));
       }
     })
     .catch(function (err) {
-      console.error('[DateFilter] Fetch failed:', err);
+      console.error('[DatePicker] Fetch failed:', err);
       alert('Date range update failed. Please try again.');
     });
   }
 
-  // Format a JS Date object to YYYY-MM-DD string
-  function actFmtDate(d) {
-    var y   = d.getFullYear();
-    var m   = String(d.getMonth() + 1).padStart(2, '0');
-    var day = String(d.getDate()).padStart(2, '0');
-    return y + '-' + m + '-' + day;
+  /* ── Utilities ──────────────────────────────────────────────────── */
+
+  function sameDay(a, b) {
+    return a.getFullYear() === b.getFullYear() &&
+           a.getMonth()    === b.getMonth()    &&
+           a.getDate()     === b.getDate();
   }
 
-})();
+  function dateToISO(d) {
+    return d.getFullYear() + '-' +
+           String(d.getMonth() + 1).padStart(2, '0') + '-' +
+           String(d.getDate()).padStart(2, '0');
+  }
+
+  function isoToDate(s) {
+    var p = s.split('-');
+    return new Date(+p[0], +p[1] - 1, +p[2]);
+  }
+
+  function isoToDisplay(iso) {
+    var p = iso.split('-');
+    return p[2] + '/' + p[1] + '/' + p[0];   /* DD/MM/YYYY */
+  }
+
+  function displayToISO(str) {
+    var m = str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    return m ? (m[3] + '-' + m[2] + '-' + m[1]) : null;
+  }
+
+  function fmtRangeLabel(from, to) {
+    var MO = ['Jan','Feb','Mar','Apr','May','Jun',
+              'Jul','Aug','Sep','Oct','Nov','Dec'];
+    var fromStr = MO[from.getMonth()] + '\u00a0' + from.getDate();
+    var toStr   = MO[to.getMonth()]   + '\u00a0' + to.getDate();
+    var yr      = to.getFullYear();
+    if (from.getFullYear() !== yr) { fromStr += ', ' + from.getFullYear(); }
+    return fromStr + ' \u2013 ' + toStr + ', ' + yr;
+  }
+
+}());
 </script>

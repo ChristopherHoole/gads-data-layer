@@ -313,3 +313,5 @@ body {
 .toast-body {
     padding: 0.75rem;
 }
+
+/* Date picker styles moved to datepicker.css (Chat 79) */

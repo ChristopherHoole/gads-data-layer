@@ -1,0 +1,180 @@
+/* ============================================================================
+   DATE PICKER — Ads Control Tower (Chat 79)
+   Google Ads-style dropdown date picker
+   ============================================================================ */
+
+.dp-wrapper {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.dp-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #3c4043;
+  user-select: none;
+  transition: box-shadow .15s;
+}
+.dp-trigger:hover { box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.dp-trigger .bi-calendar3  { color: #5f6368; font-size: 15px; }
+.dp-trigger #dp-trigger-label { font-weight: 500; }
+.dp-trigger #dp-chevron    { color: #5f6368; font-size: 13px; margin-left: 2px; }
+
+.dp-quick-btns { display: flex; gap: 4px; }
+.dp-quick-btn {
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 13px;
+  color: #3c4043;
+  cursor: pointer;
+  transition: background .12s;
+}
+.dp-quick-btn:hover  { background: #f1f3f4; }
+.dp-quick-btn.active { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+
+/* FIX: was min-width: 560px which stretched .dp-right beyond 284px causing calendar gaps */
+.dp-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+  display: inline-flex;
+  z-index: 1050;
+  overflow: hidden;
+}
+
+.dp-presets {
+  width: 180px;
+  flex-shrink: 0;
+  flex-grow: 0;
+  border-right: 1px solid #e8eaed;
+  padding: 8px 0;
+}
+.dp-preset {
+  padding: 8px 20px;
+  font-size: 13px;
+  color: #3c4043;
+  cursor: pointer;
+  transition: background .1s;
+  white-space: nowrap;
+}
+.dp-preset:hover  { background: #f1f3f4; }
+.dp-preset.active { background: #e8f0fe; color: #1a73e8; font-weight: 500; }
+
+/* 284px = 7 × 36px calendar + 16px padding each side */
+.dp-right {
+  width: 284px;
+  flex-shrink: 0;
+  flex-grow: 0;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.dp-date-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.dp-date-input {
+  flex: 1;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: #3c4043;
+  outline: none;
+  min-width: 0;
+}
+.dp-date-input:focus { border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,.15); }
+.dp-date-sep { color: #5f6368; font-size: 13px; }
+
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.cal-nav-btn {
+  width: 28px; height: 28px;
+  border: none; background: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #5f6368;
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .1s;
+}
+.cal-nav-btn:hover    { background: #f1f3f4; }
+.cal-month-label { font-size: 13px; font-weight: 500; color: #3c4043; }
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 36px);
+  text-align: center;
+}
+.cal-dow  { font-size: 11px; color: #70757a; font-weight: 500; padding: 4px 0; width: 36px; }
+.cal-day  {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  color: #3c4043;
+  cursor: pointer;
+  transition: background .1s;
+  margin: 0;
+}
+.cal-day:not(.in-range):not(.range-start):not(.range-end):not(.selected):hover {
+  background: #f1f3f4;
+  border-radius: 50%;
+}
+.cal-day.today       { font-weight: 700; color: #1a73e8; }
+.cal-day.selected    { background: #1a73e8; color: #fff; border-radius: 50%; }
+.cal-day.in-range    { background: #e8f0fe; border-radius: 0; color: #1a73e8; }
+.cal-day.range-start { background: #1a73e8; color: #fff; border-radius: 50% 0 0 50%; }
+.cal-day.range-end   { background: #1a73e8; color: #fff; border-radius: 0 50% 50% 0; }
+.cal-day.range-start.range-end { border-radius: 50%; }
+.cal-day.other-month { color: #bdc1c6; cursor: default; pointer-events: none; }
+
+.dp-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #e8eaed;
+}
+.dp-btn-cancel {
+  background: none;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-size: 13px;
+  color: #3c4043;
+  cursor: pointer;
+}
+.dp-btn-apply {
+  background: #1a73e8;
+  border: 1px solid #1a73e8;
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-size: 13px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 500;
+}
+.dp-btn-apply:hover { background: #1765cc; }

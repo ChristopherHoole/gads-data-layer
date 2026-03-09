@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACT Date Picker — Wireframe</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<style>
+  body { background: #f8f9fa; font-family: Arial, sans-serif; padding: 40px; }
+
+  /* ── Trigger bar (replaces current input + Apply + 7d/30d/90d) ── */
+  .date-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #3c4043;
+    user-select: none;
+    transition: box-shadow .15s;
+  }
+  .date-trigger:hover { box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+  .date-trigger .date-icon { color: #5f6368; font-size: 15px; }
+  .date-trigger .date-label { font-weight: 500; }
+  .date-trigger .chevron { color: #5f6368; font-size: 13px; margin-left: 2px; }
+
+  /* ── Quick preset buttons (7d / 30d / 90d) — unchanged ── */
+  .quick-btns { display: flex; gap: 4px; }
+  .quick-btn {
+    background: #fff;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 13px;
+    color: #3c4043;
+    cursor: pointer;
+    transition: background .12s;
+  }
+  .quick-btn:hover { background: #f1f3f4; }
+  .quick-btn.active { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+
+  /* ── Dropdown panel ── */
+  .dp-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: #fff;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.15);
+    display: flex;
+    z-index: 1000;
+    min-width: 580px;
+    overflow: hidden;
+  }
+
+  /* LEFT — presets */
+  .dp-presets {
+    width: 180px;
+    flex-shrink: 0;
+    border-right: 1px solid #e8eaed;
+    padding: 8px 0;
+  }
+  .dp-preset {
+    padding: 8px 20px;
+    font-size: 13px;
+    color: #3c4043;
+    cursor: pointer;
+    transition: background .1s;
+    white-space: nowrap;
+  }
+  .dp-preset:hover { background: #f1f3f4; }
+  .dp-preset.active { background: #e8f0fe; color: #1a73e8; font-weight: 500; }
+
+  /* RIGHT — calendar + inputs */
+  .dp-right { flex: 1; padding: 16px; }
+
+  .dp-date-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .dp-date-input {
+    flex: 1;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 13px;
+    color: #3c4043;
+    outline: none;
+  }
+  .dp-date-input:focus { border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,.15); }
+  .dp-date-sep { color: #5f6368; font-size: 13px; }
+
+  /* Calendar header */
+  .cal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .cal-nav-btn {
+    width: 28px; height: 28px;
+    border: none; background: none;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #5f6368;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .1s;
+  }
+  .cal-nav-btn:hover { background: #f1f3f4; }
+  .cal-month-label { font-size: 13px; font-weight: 500; color: #3c4043; }
+
+  /* Calendar grid */
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 32px);
+    gap: 0;
+    text-align: center;
+  }
+  .cal-dow {
+    font-size: 11px;
+    color: #70757a;
+    font-weight: 500;
+    padding: 4px 0;
+  }
+  .cal-day {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    font-size: 12px;
+    color: #3c4043;
+    cursor: pointer;
+    margin: auto;
+    transition: background .1s;
+  }
+  .cal-day:hover { background: #f1f3f4; }
+  .cal-day.today { font-weight: 700; color: #1a73e8; }
+  .cal-day.selected { background: #1a73e8; color: #fff; }
+  .cal-day.in-range { background: #e8f0fe; border-radius: 0; color: #1a73e8; }
+  .cal-day.range-start { background: #1a73e8; color: #fff; border-radius: 50% 0 0 50%; }
+  .cal-day.range-end { background: #1a73e8; color: #fff; border-radius: 0 50% 50% 0; }
+  .cal-day.other-month { color: #bdc1c6; }
+  .cal-day.disabled { color: #bdc1c6; cursor: default; pointer-events: none; }
+
+  /* Footer */
+  .dp-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #e8eaed;
+  }
+  .dp-btn-cancel {
+    background: none;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    padding: 6px 16px;
+    font-size: 13px;
+    color: #3c4043;
+    cursor: pointer;
+  }
+  .dp-btn-apply {
+    background: #1a73e8;
+    border: 1px solid #1a73e8;
+    border-radius: 4px;
+    padding: 6px 16px;
+    font-size: 13px;
+    color: #fff;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .dp-btn-apply:hover { background: #1765cc; }
+
+  /* Demo layout */
+  .demo-topbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 24px;
+    background: #fff;
+    border-bottom: 1px solid #e8eaed;
+    border-radius: 8px 8px 0 0;
+    position: relative;
+  }
+  .demo-page { background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+  .demo-body { padding: 24px; color: #bdc1c6; font-size: 13px; text-align: center; padding-top: 60px; }
+
+  /* Annotation */
+  .annotation {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #664d03;
+    margin-bottom: 20px;
+  }
+</style>
+</head>
+<body>
+
+<h5 class="mb-1" style="color:#3c4043">ACT — Date Picker Redesign</h5>
+<p class="text-muted small mb-4">Wireframe v1.0 · Google Ads style · Bootstrap 5</p>
+
+<div class="annotation">
+  ℹ️ <strong>Trigger bar:</strong> Calendar icon + selected range label + chevron. Quick 7d/30d/90d buttons remain alongside. Clicking the trigger opens the dropdown panel below.
+</div>
+
+<!-- ── TRIGGER STATE (closed) ── -->
+<div class="demo-page mb-5">
+  <div class="demo-topbar" style="flex-direction: column; align-items: flex-end; gap: 6px;">
+    <div class="date-trigger">
+      <i class="bi bi-calendar3 date-icon"></i>
+      <span class="date-label">Mar 3 – Mar 9, 2026</span>
+      <i class="bi bi-chevron-down chevron"></i>
+    </div>
+    <div class="quick-btns">
+      <button class="quick-btn active">7d</button>
+      <button class="quick-btn">30d</button>
+      <button class="quick-btn">90d</button>
+    </div>
+  </div>
+  <div class="demo-body">Page content (dashboard / campaigns / etc.)</div>
+</div>
+
+<!-- ── TRIGGER STATE (open — panel visible) ── -->
+<div class="annotation">
+  ℹ️ <strong>Panel open:</strong> Clicking the trigger opens this dropdown. Left column = presets. Right = date inputs + calendar. Cancel/Apply at bottom right.
+</div>
+
+<div class="demo-page mb-5">
+  <div class="demo-topbar" style="flex-direction: column; align-items: flex-end; gap: 6px;">
+    <div class="date-trigger" style="border-color:#1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,.2);">
+      <i class="bi bi-calendar3 date-icon"></i>
+      <span class="date-label">Mar 3 – Mar 9, 2026</span>
+      <i class="bi bi-chevron-up chevron"></i>
+    </div>
+    <div class="quick-btns">
+      <button class="quick-btn active">7d</button>
+      <button class="quick-btn">30d</button>
+      <button class="quick-btn">90d</button>
+    </div>
+
+    <!-- PANEL -->
+    <div class="dp-panel">
+
+      <!-- LEFT: presets -->
+      <div class="dp-presets">
+        <div class="dp-preset">Today</div>
+        <div class="dp-preset">Yesterday</div>
+        <div class="dp-preset active">Last 7 days</div>
+        <div class="dp-preset">Last 14 days</div>
+        <div class="dp-preset">Last 30 days</div>
+        <div class="dp-preset">This month</div>
+        <div class="dp-preset">Last month</div>
+        <div class="dp-preset">Last 90 days</div>
+        <div class="dp-preset">All time</div>
+        <div class="dp-preset">Custom range</div>
+      </div>
+
+      <!-- RIGHT: inputs + calendar -->
+      <div class="dp-right">
+
+        <!-- Date inputs -->
+        <div class="dp-date-inputs">
+          <input class="dp-date-input" value="03/03/2026" style="border-color:#1a73e8;">
+          <span class="dp-date-sep">–</span>
+          <input class="dp-date-input" value="03/09/2026">
+        </div>
+
+        <!-- Calendar nav -->
+        <div class="cal-nav">
+          <button class="cal-nav-btn"><i class="bi bi-chevron-left"></i></button>
+          <span class="cal-month-label">March 2026</span>
+          <button class="cal-nav-btn"><i class="bi bi-chevron-right"></i></button>
+        </div>
+
+        <!-- Calendar grid -->
+        <div class="cal-grid">
+          <div class="cal-dow">M</div><div class="cal-dow">T</div><div class="cal-dow">W</div>
+          <div class="cal-dow">T</div><div class="cal-dow">F</div><div class="cal-dow">S</div>
+          <div class="cal-dow">S</div>
+
+          <!-- Row 1 -->
+          <div class="cal-day other-month"></div>
+          <div class="cal-day other-month"></div>
+          <div class="cal-day other-month"></div>
+          <div class="cal-day other-month"></div>
+          <div class="cal-day other-month"></div>
+          <div class="cal-day other-month">1</div>
+
+          <!-- Row 2 -->
+          <div class="cal-day range-start">3</div>
+          <div class="cal-day in-range">4</div>
+          <div class="cal-day in-range">5</div>
+          <div class="cal-day in-range">6</div>
+          <div class="cal-day in-range">7</div>
+          <div class="cal-day in-range">8</div>
+          <div class="cal-day range-end today">9</div>
+
+          <!-- Row 3 -->
+          <div class="cal-day">10</div>
+          <div class="cal-day">11</div>
+          <div class="cal-day">12</div>
+          <div class="cal-day">13</div>
+          <div class="cal-day">14</div>
+          <div class="cal-day">15</div>
+          <div class="cal-day">16</div>
+
+          <!-- Row 4 -->
+          <div class="cal-day">17</div>
+          <div class="cal-day">18</div>
+          <div class="cal-day">19</div>
+          <div class="cal-day">20</div>
+          <div class="cal-day">21</div>
+          <div class="cal-day">22</div>
+          <div class="cal-day">23</div>
+
+          <!-- Row 5 -->
+          <div class="cal-day">24</div>
+          <div class="cal-day">25</div>
+          <div class="cal-day">26</div>
+          <div class="cal-day">27</div>
+          <div class="cal-day">28</div>
+          <div class="cal-day">29</div>
+          <div class="cal-day">30</div>
+
+          <!-- Row 6 -->
+          <div class="cal-day">31</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="dp-footer">
+          <button class="dp-btn-cancel">Cancel</button>
+          <button class="dp-btn-apply">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="demo-body">Page content (dashboard / campaigns / etc.)</div>
+</div>
+
+<p class="text-muted small">
+  <strong>Notes:</strong><br>
+  • 7d / 30d / 90d quick buttons remain — they set the range and close the panel instantly, no Apply needed.<br>
+  • Selecting a preset from the left list populates the date inputs + highlights the calendar range automatically.<br>
+  • "Custom range" preset leaves inputs editable — requires clicking Apply to confirm.<br>
+  • All other presets apply immediately on click (no Apply needed) — same as Google Ads behaviour.<br>
+  • This component replaces <code>components/date_filter.html</code> only — no other files change.
+</p>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
