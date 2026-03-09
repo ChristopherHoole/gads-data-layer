@@ -11,11 +11,6 @@
 <div class="outreach-top-navbar">
     <div class="outreach-top-navbar-title">Outreach — Leads</div>
     <div class="outreach-top-navbar-right">
-        <select class="outreach-client-selector" onchange="window.location='/switch-client/'+this.selectedIndex">
-            {% for cname, cpath in available_clients %}
-            <option {% if cpath == current_client_config %}selected{% endif %}>{{ cname }}</option>
-            {% endfor %}
-        </select>
         <button class="create-btn" onclick="openAddModal()">+ Add Lead</button>
     </div>
 </div>

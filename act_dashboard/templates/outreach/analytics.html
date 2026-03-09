@@ -19,12 +19,6 @@
                 <option value="90" {% if days == 90 %}selected{% endif %}>Last 90 days</option>
             </select>
         </form>
-        <select class="outreach-client-selector"
-                onchange="window.location='/switch-client/'+this.selectedIndex">
-            {% for cname, cpath in available_clients %}
-            <option {% if cpath == current_client_config %}selected{% endif %}>{{ cname }}</option>
-            {% endfor %}
-        </select>
     </div>
 </div>
 {% endblock %}

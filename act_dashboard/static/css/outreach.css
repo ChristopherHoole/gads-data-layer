@@ -784,7 +784,7 @@
   border-radius: 4px; color: #202124; font-size: 13px; cursor: pointer;
 }
 
-.d-none { display: none !important; }
+
 
 /* ── EMAIL TIMELINE ── */
 .timeline { position: relative; padding-left: 32px; }

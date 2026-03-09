@@ -2391,6 +2391,7 @@ def templates():
             page_title="Outreach — Templates",
             available_clients=clients,
             current_client_config=current_client_path,
+            client_name=config.client_name,
         )
     except Exception as e:
         print(f"[OUTREACH TEMPLATES] Error loading templates: {e}")
@@ -2454,6 +2455,7 @@ def analytics():
     if days not in (7, 14, 30, 90):
         days = 30
 
+    config = get_current_config()
     conn = get_outreach_db()
     try:
         clients = get_available_clients()
@@ -2777,6 +2779,7 @@ def analytics():
             page_title="Outreach — Analytics",
             available_clients=clients,
             current_client_config=current_client_path,
+            client_name=config.client_name,
         )
 
     except Exception as exc:
