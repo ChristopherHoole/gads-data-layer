@@ -2,8 +2,8 @@
 
 **Purpose:** Defines the EXACT structure Master Chat must use when creating Claude Code briefs
 **Architecture:** 2-Tier (Master Chat → Claude Code). Worker Chats are eliminated.
-**Last Updated:** 2026-03-07
-**Template Version:** 3.0
+**Last Updated:** 2026-03-09
+**Template Version:** 4.0
 
 ---
 
@@ -56,6 +56,19 @@ cd C:\Users\User\Desktop\gads-data-layer
 .\.venv\Scripts\Activate.ps1
 python act_dashboard/app.py
 ```
+
+### RULE 7: QUICK FIXES STAY IN MASTER CHAT
+❌ **NEVER send Claude Code a brief for a 1–3 file fix with a clear, well-defined change**
+
+✅ **Quick fixes (single file edits, CSS tweaks, route bug fixes) are handled directly in Master Chat:**
+- Christopher uploads the current file(s)
+- Master Chat edits and returns the complete fixed file(s)
+- Christopher saves and restarts Flask
+
+✅ **Only send to Claude Code when the task requires:**
+- 4+ files to be modified
+- New routes, blueprints, or database tables
+- Significant new logic or features
 
 ---
 
@@ -315,6 +328,6 @@ npx @anthropic-ai/claude-code
 
 ---
 
-**Document Version:** 3.0
-**Last Updated:** 2026-03-07
-**Replaces:** WORKER_BRIEF_STRUCTURE.md v2.0 (3-tier worker chat pattern — archived)
+**Document Version:** 4.0
+**Last Updated:** 2026-03-09
+**Replaces:** WORKER_BRIEF_STRUCTURE.md v3.0

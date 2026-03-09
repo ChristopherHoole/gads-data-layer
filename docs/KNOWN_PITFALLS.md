@@ -454,6 +454,45 @@ if (data.success) {
 
 ---
 
-**Version:** 3.0 | **Last Updated:** 2026-03-07
-**Total Pitfalls:** 47
+## LAYOUT & CSS ISSUES
+
+### 48. White Box Gap on All Entity Pages
+**Problem:** Campaigns, Keywords, Ad Groups, Ads, Shopping pages all show white rounded box with padding gap. Dashboard unaffected.
+**Cause:** `table-styles.css` was written as a standalone HTML prototype and contained `body { padding: 20px }` and `.container { background: white; border-radius: 8px; padding: 24px }`. These override Flask app layout when the file is loaded.
+**Solution:** Remove the `body { ... }` and `.container { ... }` blocks from table-styles.css entirely. Keep only `* { box-sizing: border-box }` and table-specific rules.
+**Prevention:** Any CSS file brought in from a prototype must have its body/html/container resets stripped before use in Flask.
+**Chat:** 81
+
+### 49. Navbar Text Hidden on Outreach Pages
+**Problem:** Client name and "User" text not visible in top navbar on all outreach pages. Dropdowns still work — text just hidden.
+**Cause:** `outreach.css` contained `.d-none { display: none !important }`. Bootstrap uses `.d-none` + `.d-sm-inline` / `.d-lg-inline` for responsive text visibility in navbar. The override permanently hides these spans on any page that loads outreach.css.
+**Solution:** Remove `.d-none { display: none !important }` from outreach.css entirely.
+**Prevention:** Never redefine Bootstrap utility classes (`.d-none`, `.d-flex`, `.d-block`, etc.) in custom CSS files.
+**Chat:** 82
+
+### 50. Client Name Blank on Specific Outreach Pages
+**Problem:** After fixing the CSS, client name still blank on Templates and Analytics pages but correct on all other outreach pages.
+**Cause:** Templates and Analytics routes were missing `client_name=config.client_name` in their `render_template()` calls. The Analytics route also had no `config = get_current_config()` call at all.
+**Solution:**
+```python
+# In analytics route — add at top of function:
+config = get_current_config()
+
+# In both Templates and Analytics render_template() calls:
+return render_template("outreach/analytics.html", ..., client_name=config.client_name)
+```
+**Prevention:** Every new outreach route must include `config = get_current_config()` and pass `client_name=config.client_name` to render_template(). Check all routes when adding new pages.
+**Chat:** 82
+
+### 51. Duplicate Client Selector on All Outreach Pages
+**Problem:** Two client picker dropdowns visible on every outreach page.
+**Cause:** Each outreach template had `<select class="outreach-client-selector">` in its page header block. `base_bootstrap.html` loads `navbar.html` which already renders a client selector — so both appear.
+**Solution:** Remove the `<select class="outreach-client-selector">` block from all outreach templates. The navbar.html version handles client switching globally.
+**Prevention:** Do not add client switching UI inside page templates — navbar.html handles it.
+**Chat:** 82
+
+---
+
+**Version:** 4.0 | **Last Updated:** 2026-03-09
+**Total Pitfalls:** 51
 **See Also:** LESSONS_LEARNED.md | MASTER_KNOWLEDGE_BASE.md

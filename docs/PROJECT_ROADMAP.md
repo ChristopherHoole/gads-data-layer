@@ -1,6 +1,6 @@
 # PROJECT ROADMAP - Ads Control Tower (A.C.T.)
 
-**Last Updated:** 2026-03-07
+**Last Updated:** 2026-03-09
 **Overall Completion:** ~99.9%
 **Architecture:** 2-Tier (Master Chat → Claude Code)
 **Local:** `C:\Users\User\Desktop\gads-data-layer`
@@ -22,6 +22,8 @@
 | Cold Outreach System — UI (6 pages) | 59–64 | ✅ Complete |
 | Real Data Ingestion Pipeline | 67 | ✅ Complete (blocked on API access) |
 | Live Email Sending (Gmail SMTP) | 68 | ✅ Complete |
+| Outreach Functions + UI Polish | 69–80 | ✅ Complete |
+| UI Cleanup (layout gap, client selector, rules card) | 81–83 | ✅ Complete |
 
 ---
 
@@ -60,69 +62,54 @@
 
 ---
 
-## 🔴 OUTREACH SYSTEM — FUNCTIONS NOT YET LIVE
+## ✅ CHATS 69–80 — OUTREACH FUNCTIONS + UI POLISH
 
-The following are confirmed incomplete as of Chat 68. Master Chat 8.0 tackles these before moving on.
+| Chat | Feature |
+|------|---------|
+| 69 | Email signature appended to all outgoing emails |
+| 70 | CV upload & file storage (Templates page) |
+| 71 | CV attachment on send (Queue page) |
+| 72 | Open/click/CV tracking pixels + auto-inject on send |
+| 73 | Reply inbox polling (Gmail IMAP, 120s daemon — outreach_poller.py) |
+| 74 | Send reply from Replies page via SMTP |
+| 75 | Edit this email (Queue ✏ button) |
+| 76 | Universal slidein design across all outreach pages |
+| 77 | Switch template (Queue 📋 button) |
+| 78 | Queue auto-scheduling (queue_scheduler.py, daemon thread, 300s) |
+| 79 | Google Ads-style date picker (replaces Flatpickr, datepicker.css) |
+| 80 | Remove rules slidein from Campaigns, Keywords, Ads, Shopping |
 
-| # | Function | Location | Status |
-|---|----------|----------|--------|
-| 1 | Email signature | All outgoing emails | ❌ Not built |
-| 2 | CV upload & file storage | Templates page | ❌ Placeholder UI only |
-| 3 | CV attachment on send | Queue page | ❌ Toggle exists, never attaches |
-| 4 | Open/click tracking pixel | Analytics | ❌ Integer columns seeded only |
-| 5 | Reply inbox polling | Replies page | ❌ No Gmail polling |
-| 6 | Send reply | Replies page | ❌ "Coming soon" toast |
-| 7 | Edit this email | Queue page ✏ button | ❌ "Coming soon" toast |
-| 8 | Regenerate with AI | Queue page 🔄 button | ❌ "Coming soon" toast |
-| 9 | Switch template | Queue page 📋 button | ❌ "Coming soon" toast |
-| 10 | Queue auto-scheduling | Queue page | ❌ All sends are manual |
+---
+
+## ✅ CHAT 81 — TABLE-STYLES.CSS LAYOUT FIX
+
+**Commit:** 8968d64
+- `table-styles.css` was originally written as a standalone HTML prototype — contained `body { padding: 20px }` and `.container { background: white; border-radius: 8px; padding: 24px }` which overrode Flask app layout
+- Caused a white rounded box with gaps on all 5 entity pages; dashboard unaffected (doesn't load table-styles.css)
+- Fix: removed `body` and `.container` blocks entirely
+
+---
+
+## ✅ CHAT 82 — REMOVE DUPLICATE CLIENT SELECTOR FROM OUTREACH
+
+**Commit:** 9ee01fb — three separate bugs:
+1. All 6 outreach templates had `<select class="outreach-client-selector">` in their page header — navbar.html already renders a client selector → two pickers visible → removed select from all 6 templates
+2. `outreach.css` had `.d-none { display: none !important }` overriding Bootstrap responsive classes → navbar text hidden on all outreach pages → removed the rule
+3. Templates and Analytics routes missing `client_name=config.client_name` in `render_template()` → client name blank → added `config = get_current_config()` to analytics route + `client_name=config.client_name` to both render_template calls
+
+---
+
+## ✅ CHAT 83 — REMOVE RULES CARD FROM CAMPAIGNS AND SHOPPING
+
+**Commit:** f531bd8
+- Removed `{% include 'components/rules_card.html' %}` from campaigns.html and shopping_new.html
+- Rules tab (Rules (41)) preserved on both pages — only the bottom summary block removed
 
 ---
 
 ## 🎯 NEXT PRIORITIES
 
-### IMMEDIATE — Master Chat 8.0 (Outreach completion)
-
-Complete the 10 outstanding outreach functions listed above. Suggested grouping for Claude Code briefs:
-
-**Brief A — Email Signature** (1-2 hours)
-- HTML signature block appended to every outgoing email
-- Configurable in email_config.yaml
-
-**Brief B — Queue Actions** (3-4 hours)
-- ✏ Edit this email — inline edit modal
-- 📋 Switch template — template picker modal
-- 🔄 Regenerate with AI — Claude API call to rewrite body
-
-**Brief C — CV Upload & Attach** (4-6 hours)
-- File upload endpoint → `/static/uploads/cv/`
-- Templates page: upload, preview, replace, remove
-- Queue page: CV attachment on send (real file, not toast)
-
-**Brief D — Reply Send** (2-3 hours)
-- Replies page "Send Reply" button → live SMTP send
-- Saves reply to `outreach_emails` table
-
-**Brief E — Open/Click Tracking** (6-8 hours)
-- Tracking pixel: `/outreach/track/open/<email_id>`
-- Link redirect: `/outreach/track/click/<email_id>`
-- CV open: `/outreach/track/cv/<email_id>`
-- Auto-inject pixel + wrapped links on send
-- Writes to `opened_at`, `clicked_at`, `cv_opened_at` timestamp columns
-
-**Brief F — Reply Inbox Polling** (6-8 hours)
-- Gmail API (or IMAP) polling for replies to `chris@christopherhoole.com`
-- Match reply to `outreach_emails` record by thread/subject
-- Write to `outreach_emails`: `reply_received=true`, `reply_text`, `replied_at`
-- Replies page auto-updates
-
-**Brief G — Queue Auto-Scheduling** (3-4 hours)
-- Background scheduler (APScheduler or daemon thread)
-- Check `scheduled_at` every 5 minutes
-- Auto-send emails whose `scheduled_at` has passed
-- Skip if daily limit reached
-
-### NEXT — After Outreach Complete
+### IMMEDIATE
 
 **Apollo.io Lead Import** (8-15 hours)
 - API authentication
@@ -180,7 +167,8 @@ Complete the 10 outstanding outreach functions listed above. Suggested grouping 
 - Live email sending: ✅ Gmail SMTP via chris@christopherhoole.com
 - 16 email templates (4 steps × 4 tracks)
 - Daily limit: 100 emails/day
-- 10 functions still not live (see table above)
+- All 10 original outreach functions now live ✅
+- Single client selector on all outreach pages ✅
 
 **Known Database Gap:**
 - `analytics.ad_daily` table does not exist → Ads rules cannot generate recommendations
@@ -223,4 +211,4 @@ git push origin main
 
 ---
 
-**Version:** 4.0 | **Last Updated:** 2026-03-07
+**Version:** 5.0 | **Last Updated:** 2026-03-09

@@ -1,23 +1,23 @@
 # MASTER KNOWLEDGE BASE - ADS CONTROL TOWER (A.C.T)
 
-**Version:** 16.0
+**Version:** 17.0
 **Created:** 2026-02-19
-**Updated:** 2026-03-07
+**Updated:** 2026-03-09
 **Purpose:** Complete project context for Master Chat coordination
 
 ---
 
 ## EXECUTIVE SUMMARY
 
-### Current State (March 7, 2026)
+### Current State (March 9, 2026)
 - **Overall Completion:** ~99.9%
-- **Phase:** Outreach system live email sending complete — 10 functions still not live
-- **Active Development:** Master Chat 8.0 — complete remaining outreach functions
+- **Phase:** Outreach complete + UI cleanup done — Apollo.io import + M9 validation next
+- **Active Development:** Master Chat 8.0
 - **Marketing Websites:** https://christopherhoole.online | https://christopherhoole.com
 - **Email:** chris@christopherhoole.com (Google Workspace, live, DKIM/SPF authenticated)
 - **Rules:** 41 total (13 campaign + 6 keyword + 4 ad_group + 4 ad + 14 shopping)
 - **Recommendations:** 1,492 active (1,256 keywords + 126 shopping + 110 campaigns)
-- **Outreach:** 6 pages complete, live email sending working, 10 functions not yet live
+- **Outreach:** 6 pages complete, all 10 original functions now live
 
 ### Tech Stack
 
@@ -25,8 +25,9 @@
 - **Backend:** Python 3.11, Flask
 - **Database:** DuckDB (warehouse.duckdb + warehouse_readonly.duckdb)
 - **API:** Google Ads API (v15) — Test Access only, Basic Access pending
-- **Frontend:** Bootstrap 5.3, Chart.js 4.4, Vanilla JS, Flatpickr
+- **Frontend:** Bootstrap 5.3, Chart.js 4.4, Vanilla JS
 - **Templating:** Jinja2 Macros (metrics_section M2 + performance_chart M3)
+- **Date Picker:** Custom Google Ads-style dropdown (Chat 79, datepicker.css)
 - **Email:** Gmail SMTP (chris@christopherhoole.com, port 587 TLS, App Password)
 
 **Marketing Website:**
@@ -42,10 +43,11 @@
 
 ```
 Master Chat (Claude Desktop App)
- → Creates concise task briefs (2 pages max)
+ → Quick fixes done directly here (file download/replace)
+ → Large builds: creates concise task briefs (2 pages max) as downloadable files
 
 Claude Code (PowerShell Terminal)
- → Executes entire task autonomously
+ → Executes large builds autonomously
  → npx @anthropic-ai/claude-code from C:\Users\User\Desktop\gads-data-layer
 ```
 
@@ -208,24 +210,40 @@ body_html = (
 
 **Reseed tool:** `tools/reseed_queue.py` — resets sent emails back to queued for testing
 
----
+### Chats 69–80 — Outreach Functions + UI Polish ✅
 
-## OUTREACH SYSTEM — FUNCTIONS NOT YET LIVE
+| Chat | Feature |
+|------|---------|
+| 69 | Email signature appended to all outgoing emails |
+| 70 | CV upload & file storage (Templates page) |
+| 71 | CV attachment on send (Queue page) |
+| 72 | Open/click/CV tracking pixels + auto-inject on send |
+| 73 | Reply inbox polling (Gmail IMAP, 120s daemon — outreach_poller.py) |
+| 74 | Send reply from Replies page via SMTP |
+| 75 | Edit this email (Queue ✏ button) |
+| 76 | Universal slidein design across all outreach pages |
+| 77 | Switch template (Queue 📋 button) |
+| 78 | Queue auto-scheduling (queue_scheduler.py, daemon thread, 300s) |
+| 79 | Google Ads-style date picker (replaces Flatpickr, datepicker.css) |
+| 80 | Remove rules slidein from Campaigns, Keywords, Ads, Shopping |
 
-As of Chat 68, these 10 functions are confirmed not working:
+### Chat 81 — table-styles.css Layout Fix ✅
+**Commit:** 8968d64
+- `table-styles.css` had `body { padding: 20px }` and `.container { background: white; border-radius: 8px }` left over from standalone HTML prototype
+- Caused white rounded box with gaps on all 5 entity pages (Campaigns, Keywords, Ad Groups, Ads, Shopping)
+- Dashboard unaffected — it does not load table-styles.css
+- Fix: removed `body` and `.container` blocks entirely from table-styles.css
 
-| # | Function | Location | Status |
-|---|----------|----------|--------|
-| 1 | Email signature | All outgoing emails | ❌ Not built |
-| 2 | CV upload & file storage | Templates page | ❌ Placeholder UI only |
-| 3 | CV attachment on send | Queue page | ❌ Toggle exists, never attaches |
-| 4 | Open/click tracking pixel | Analytics | ❌ Integer columns seeded only |
-| 5 | Reply inbox polling | Replies page | ❌ No Gmail polling |
-| 6 | Send reply | Replies page | ❌ "Coming soon" toast |
-| 7 | Edit this email | Queue page ✏ | ❌ "Coming soon" toast |
-| 8 | Regenerate with AI | Queue page 🔄 | ❌ "Coming soon" toast |
-| 9 | Switch template | Queue page 📋 | ❌ "Coming soon" toast |
-| 10 | Queue auto-scheduling | Queue page | ❌ All sends are manual |
+### Chat 82 — Remove Duplicate Client Selector from Outreach Pages ✅
+**Commit:** 9ee01fb — three separate bugs fixed:
+1. All 6 outreach templates had `<select class="outreach-client-selector">` in their page header — navbar.html (loaded by base_bootstrap.html) already renders a client selector → two pickers visible → removed select from all 6 templates
+2. `outreach.css` had `.d-none { display: none !important }` overriding Bootstrap responsive classes → navbar text (client name, "User") hidden on all outreach pages → removed the rule
+3. Templates and Analytics routes missing `client_name=config.client_name` in `render_template()` → client name blank on those two pages → added `config = get_current_config()` to analytics route + `client_name=config.client_name` to both render_template calls
+
+### Chat 83 — Remove Rules Card from Campaigns and Shopping ✅
+**Commit:** f531bd8
+- Removed `{% include 'components/rules_card.html' %}` from campaigns.html and shopping_new.html
+- Rules tab (Rules (41)) preserved on both pages — only the bottom summary block removed
 
 ---
 
@@ -234,16 +252,18 @@ As of Chat 68, these 10 functions are confirmed not working:
 ### Overall: ~99.9% Complete
 
 **What's Working:**
-- All 6 dashboard pages with Google Ads-style tables
+- All 6 dashboard pages with Google Ads-style tables (layout gap fixed Chat 81)
+- Google Ads-style date picker on all entity pages (Chat 79)
 - 41 optimization rules across 5 entity types
 - 1,492 active recommendations
 - Accept/Decline/Modify operations for all entity types
 - Radar monitoring and automatic rollback
 - Changes audit trail
 - Search Terms tab with live negative keyword blocking + keyword expansion
-- Rules Tab UI on all pages
-- Cold Outreach System — 6 pages complete
-- Live email sending via Gmail SMTP (chris@christopherhoole.com)
+- Rules Tab UI on all pages (rules slidein removed from entity pages Chat 80)
+- Cold Outreach System — 6 pages, all 10 original functions live, single client selector (Chat 82)
+- Live email sending + signature + CV attachment + open/click tracking + scheduling
+- Reply inbox polling + send reply from Replies page
 - Marketing websites live (christopherhoole.online + christopherhoole.com)
 - Google Sheets → outreach leads sync
 - Real data ingestion pipeline (blocked on API access)
@@ -252,14 +272,12 @@ As of Chat 68, these 10 functions are confirmed not working:
 - Ad Groups: 4 rules enabled but 0 recommendations (conditions not met)
 - Ads: 4 rules blocked (analytics.ad_daily table missing)
 - Google Ads API: Test Access only — Basic Access pending
-- Outreach: 10 functions not yet live (see table above)
 
 **Next Priorities:**
-1. Complete 10 outstanding outreach functions (Master Chat 8.0)
-2. Apollo.io lead import
-3. M9 Live Validation (pending API access)
-4. Website Design Upgrade
-5. Testing & Polish
+1. Apollo.io lead import
+2. M9 Live Validation (pending API access)
+3. Website Design Upgrade
+4. Testing & Polish
 
 ---
 
@@ -285,9 +303,13 @@ As of Chat 68, these 10 functions are confirmed not working:
 | **Outreach:** Client selector switching | Use session.get("current_client_config") not get_current_config() |
 | **Outreach:** Jinja/JS brace conflict | Split: `'{' + '{'` instead of `{{` in JS |
 | **Outreach:** Duplicate Flask process | Run `taskkill /IM python.exe /F` before starting |
+| **Outreach:** Duplicate client selector | outreach page templates had own select — navbar.html already has one |
+| **Outreach:** navbar text hidden on outreach pages | outreach.css had `.d-none { display:none !important }` — never redefine Bootstrap utilities |
+| **Outreach:** client_name blank on Templates/Analytics | render_template() calls missing `client_name=config.client_name` |
 | **Email:** No formatting in Gmail | body_html conversion missing from queue_send() — add \n→<br> wrap |
 | **Email:** Garbled special chars | MIMEText needs all 3 args: `MIMEText(body_html, "html", "utf-8")` |
 | **Email:** No toast on send | Add showToast to success branch of sendCard(), not just error branch |
+| **Layout:** White box gap on entity pages | table-styles.css had prototype body/container CSS — remove both blocks |
 | **Website:** Three.js colorSpace error | Remove t.colorSpace line for r128 compatibility |
 
 **See KNOWN_PITFALLS.md for full detail with code examples.**
@@ -314,8 +336,12 @@ As of Chat 68, these 10 functions are confirmed not working:
 16. Toast success path is always missing — explicitly add showToast to if (data.success) branch
 17. Never commit before Christopher confirms in Opera — Claude Code success ≠ visual confirmation
 18. Diagnose email formatting via Gmail "Show original" → base64 decode
+19. Prototype CSS (body padding, .container styles) must be stripped before using in Flask app
+20. Never define `.d-none` in page-specific CSS — overrides Bootstrap responsive utilities
+21. All render_template() calls must include `client_name=config.client_name` — easy to miss on new routes
+22. Quick fixes (1-3 files, clear change) done directly in Master Chat — only large multi-file builds go to Claude Code
 
-**See LESSONS_LEARNED.md for all 61 lessons with context.**
+**See LESSONS_LEARNED.md for all 65 lessons with context.**
 
 ---
 
@@ -324,9 +350,15 @@ As of Chat 68, these 10 functions are confirmed not working:
 | File | Purpose |
 |------|---------|
 | `act_dashboard/email_sender.py` | SMTP sending module |
-| `act_dashboard/routes/outreach.py` | All outreach routes (1,859 lines) |
-| `act_dashboard/secrets/email_config.yaml` | SMTP credentials — local only, gitignored |
+| `act_dashboard/outreach_poller.py` | IMAP reply polling daemon (120s) |
+| `act_dashboard/queue_scheduler.py` | Queue auto-send scheduler (300s) |
+| `act_dashboard/routes/outreach.py` | All outreach routes |
+| `act_dashboard/secrets/email_config.yaml` | SMTP/IMAP credentials — local only, gitignored |
 | `act_dashboard/templates/outreach/queue.html` | Queue page template |
+| `act_dashboard/static/css/table-styles.css` | Entity page table styles (no body/container overrides) |
+| `act_dashboard/static/css/outreach.css` | Outreach CSS (no .d-none override) |
+| `act_dashboard/static/css/datepicker.css` | Google Ads-style date picker CSS |
+| `act_dashboard/templates/components/date_filter.html` | Date picker component |
 | `tools/reseed_queue.py` | Reset sent emails to queued for testing |
 | `tools/run_ingestion.py` | Data pipeline orchestration |
 | `scripts/copy_all_to_readonly.py` | Copy analytics tables to warehouse_readonly |
@@ -335,6 +367,6 @@ As of Chat 68, these 10 functions are confirmed not working:
 
 ---
 
-**Version:** 16.0 | **Last Updated:** 2026-03-07
+**Version:** 17.0 | **Last Updated:** 2026-03-09
 **Architecture:** 2-Tier (Master Chat → Claude Code)
-**Next Step:** Master Chat 8.0 — Complete 10 outstanding outreach functions
+**Next Step:** Apollo.io lead import / M9 Live Validation (pending API access)

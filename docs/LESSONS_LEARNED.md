@@ -336,8 +336,31 @@ Use unique prefix per section/feature when adding to shared CSS files.
 - **Apply:** `an-` for analytics, `re-` for replies, `qu-` for queue, etc.
 - **Chat:** 64 (outreach.css)
 
+### 62. Prototype CSS Must Be Stripped Before Using in Flask App
+CSS written for standalone HTML prototypes often contains `body { padding: 20px }` and `.container { background: white; border-radius: 8px }`. These override Flask app layout when the stylesheet is loaded inside base_bootstrap.html.
+- **Symptom:** White rounded box with gaps on all sides of main content area
+- **Apply:** Before adding any prototype stylesheet to Flask, remove all `body`, `html`, and `.container` resets
+- **Chat:** 81 (table-styles.css layout gap)
+
+### 63. Never Define `.d-none` in Page-Specific CSS Files
+Bootstrap uses `.d-none`, `.d-sm-inline`, `.d-lg-inline` etc. for responsive visibility. Defining `.d-none { display: none !important }` in any custom stylesheet permanently overrides Bootstrap responsive classes on every element — including navbar text spans.
+- **Symptom:** Client name and user label hidden in navbar on affected pages only
+- **Apply:** Never redefine Bootstrap utility classes in custom CSS files
+- **Chat:** 82 (outreach.css)
+
+### 64. All render_template() Calls Must Pass client_name
+New routes often copy structure from older routes but miss `client_name=config.client_name`. The navbar component requires this to display the current client. If the route doesn't already have `config = get_current_config()`, add it at the top.
+- **Symptom:** Client name blank in navbar on specific pages but fine on others
+- **Apply:** Every outreach render_template() call must include `client_name=config.client_name`
+- **Chat:** 82 (Templates and Analytics routes)
+
+### 65. Quick Fixes in Master Chat, Large Builds in Claude Code
+Small, well-defined changes (1–3 files, clear fix) are faster to handle directly in Master Chat — upload file, fix, download, replace. Only tasks requiring multiple files, new routes, or significant logic go to Claude Code via a brief.
+- **Apply:** Ask "is this 1–3 file edits with a clear change?" → Master Chat. Otherwise → Claude Code brief.
+- **Chat:** 81–83
+
 ---
 
-**Total:** 61 lessons
+**Total:** 65 lessons
 **Coverage:** Database, recommendations, website, search, API, components, UI, outreach, email, process
-**Version:** 3.0 | **Updated:** 2026-03-07
+**Version:** 4.0 | **Updated:** 2026-03-09
