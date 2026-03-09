@@ -350,6 +350,18 @@ def create_app():
         else:
             print(f"⚠️  [Chat 75] Route not found (skipping): {route_name}")
 
+    # Chat 78: CSRF exemption for queue schedule/cancel-schedule routes (JSON APIs)
+    chat78_routes = [
+        'outreach.schedule_email',
+        'outreach.cancel_schedule_email',
+    ]
+    for route_name in chat78_routes:
+        if route_name in app.view_functions:
+            csrf.exempt(app.view_functions[route_name])
+            print(f"✅ [Chat 78] CSRF exempted: {route_name}")
+        else:
+            print(f"⚠️  [Chat 78] Route not found (skipping): {route_name}")
+
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
     def csrf_error(reason):
@@ -373,6 +385,13 @@ def create_app():
     from act_dashboard.outreach_poller import start_poller
     start_poller()
     print("✅ [Chat 74] Outreach poller thread started (120s cycle)")
+
+    # Chat 78: Start queue scheduler thread (auto-sends elapsed scheduled emails, 5min cycle)
+    from act_dashboard.queue_scheduler import QueueScheduler
+    scheduler = QueueScheduler(app)
+    scheduler_thread = threading.Thread(target=scheduler.run, daemon=True, name="QueueScheduler")
+    scheduler_thread.start()
+    print("✅ [Chat 78] Queue scheduler thread started (300s cycle)")
 
     # Centralized error handlers (Phase 1i)
     

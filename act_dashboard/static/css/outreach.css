@@ -2558,3 +2558,144 @@
 .reply-pct-blue   { color: #1a73e8; font-weight: 600; }
 .reply-pct-yellow { color: #f9a825; font-weight: 600; }
 .reply-pct-grey   { color: #9aa0a6; font-weight: 600; }
+/* ============================================================
+   CHAT 78 — Queue Scheduling CSS
+   Add to bottom of outreach.css
+   All new classes prefixed with no conflict against existing
+   ============================================================ */
+
+/* ── Scheduled card — yellow left border ── */
+.queue-card.is-scheduled {
+  border-left: 3px solid #FBBC05;
+}
+
+/* ── Scheduled number bubble — yellow instead of grey ── */
+.queue-number.is-scheduled {
+  background: #FBBC05;
+}
+
+/* ── Auto-send badge (shown in card meta row when scheduled) ── */
+.auto-send-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #e6f4ea;
+  color: #137333;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ── Scheduled banner (sits between card header and subject bar) ── */
+.scheduled-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #fffbeb;
+  border-top: 1px solid #fde68a;
+  border-bottom: 1px solid #fde68a;
+  font-size: 13px;
+}
+
+.scheduled-banner .material-symbols-outlined {
+  font-size: 16px;
+  color: #FBBC05;
+  flex-shrink: 0;
+}
+
+.sched-banner-label {
+  color: #78350f;
+  font-weight: 500;
+}
+
+.sched-banner-time {
+  font-family: 'DM Mono', monospace;
+  color: #78350f;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.sched-banner-local {
+  color: #92400e;
+  font-size: 11px;
+}
+
+.sched-banner-cancel {
+  margin-left: auto;
+  color: #EA4335;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+}
+
+.sched-banner-cancel:hover {
+  color: #c5221f;
+}
+
+/* ── Schedule button (blue outline, sits next to Send Now) ── */
+.btn-schedule {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #ffffff;
+  color: #1a73e8;
+  border: 1px solid #1a73e8;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.btn-schedule .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.btn-schedule:hover {
+  background: #e8f0fe;
+}
+
+/* ── Cancel Schedule button (red outline, replaces Send Now on scheduled cards) ── */
+.btn-cancel-schedule {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #ffffff;
+  color: #EA4335;
+  border: 1px solid #EA4335;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.btn-cancel-schedule:hover {
+  background: #fce8e6;
+}
+
+/* ── Schedule note (replaces send-schedule-note text on scheduled cards) ── */
+.sched-auto-note {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #137333;
+  font-style: italic;
+}
+
+.sched-auto-note .material-symbols-outlined {
+  font-size: 14px;
+  color: #34A853;
+}

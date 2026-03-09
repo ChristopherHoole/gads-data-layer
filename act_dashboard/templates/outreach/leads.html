@@ -325,7 +325,7 @@
 
     {# ── Fixed Footer ── #}
     <div class="si-footer">
-        <button class="si-footer-btn primary" onclick="siQueueEmail()">+ Queue email</button>
+        <button id="panelQueueEmailBtn" class="si-footer-btn primary" onclick="siQueueEmail()">+ Queue email</button>
         <button class="si-footer-btn" onclick="openEditModal()">✏ Edit lead</button>
         <button class="si-footer-btn success" onclick="siMarkWon()">✓ Mark won</button>
         <button class="si-footer-btn danger" onclick="siMarkLost()">✕ Mark lost</button>
@@ -758,17 +758,26 @@ function buildSiThreadItem(item, idx) {
     const id = 'si-body-' + idx;
     const ts = siFormatTs(item.ts);
     if (item.direction === 'outbound') {
+        const isQueued    = item.status === 'queued';
+        const isScheduled = isQueued && !!item.scheduled_at;
+        const badgeClass  = isScheduled ? 'scheduled' : (isQueued ? 'queued' : 'sent');
+        const badgeText   = isScheduled ? 'SCHEDULED' : (isQueued ? 'QUEUED' : 'SENT');
+        const tsDisplay   = ts || (isScheduled ? siFormatTs(item.scheduled_at) : '');
         const subj = item.subject ? `<div class="si-thread-subject">${esc(item.subject)}</div>` : '';
         const body = item.body || '';
         const clamped = body.length > 200 ? 'clamped' : '';
         const showMore = body.length > 200
             ? `<button class="si-show-more-btn" onclick="siToggleBody(this,'${id}')">Show more</button>` : '';
+        const itemClass = isScheduled ? 'si-thread-item outbound scheduled' : 'si-thread-item outbound';
+        const schedLine = isScheduled && item.scheduled_display
+            ? `<div class="si-thread-sched-time">${esc(item.scheduled_display)}</div>` : '';
         return `
-        <div class="si-thread-item outbound">
+        <div class="${itemClass}">
             <div class="si-thread-item-header">
-                <span class="si-thread-badge sent">SENT</span>
-                <span class="si-thread-ts">${ts}</span>
+                <span class="si-thread-badge ${badgeClass}">${badgeText}</span>
+                <span class="si-thread-ts">${tsDisplay}</span>
             </div>
+            ${schedLine}
             ${subj}
             <div class="si-thread-body ${clamped}" id="${id}">${esc(body)}</div>
             ${showMore}

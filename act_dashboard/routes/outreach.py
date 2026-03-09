@@ -69,6 +69,10 @@ def _ensure_schema():
                 print(f"[OUTREACH] Chat76 migration: updated {migrated} leads replied→reply_received")
         except Exception:
             pass  # Already migrated or no rows
+        # Chat 78: add scheduled_at column to outreach_emails
+        conn.execute(
+            "ALTER TABLE outreach_emails ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMP"
+        )
         conn.close()
     except Exception as e:
         print(f"[OUTREACH] Schema setup warning: {e}")
@@ -256,13 +260,15 @@ def build_thread_by_lead(conn, lead_ids):
     placeholders = ",".join("?" * len(lead_ids))
     thread_by_lead = {}
 
-    # Outbound: sent emails only
+    # Outbound: sent + queued (so pending emails appear in the thread)
     try:
         outbound_rows = conn.execute(
-            f"SELECT e.lead_id, e.subject, e.body, e.sent_at, e.email_type "
+            f"SELECT e.lead_id, e.subject, e.body, e.sent_at, e.email_type, "
+            f"       e.status, e.scheduled_at, l.country, l.timezone "
             f"FROM outreach_emails e "
-            f"WHERE e.lead_id IN ({placeholders}) AND e.status = 'sent' "
-            f"ORDER BY e.sent_at DESC",
+            f"JOIN outreach_leads l ON e.lead_id = l.lead_id "
+            f"WHERE e.lead_id IN ({placeholders}) AND e.status IN ('queued', 'sent') "
+            f"ORDER BY COALESCE(e.sent_at, e.scheduled_at) DESC",
             lead_ids,
         ).fetchall()
     except Exception as e:
@@ -273,12 +279,23 @@ def build_thread_by_lead(conn, lead_ids):
         lid = str(row[0])
         if lid not in thread_by_lead:
             thread_by_lead[lid] = []
+        status       = row[5] or "queued"
+        scheduled_at = row[6]
+        country      = row[7] or ""
+        tz_abbr      = row[8] or "UTC"
+        scheduled_display = (
+            _format_scheduled_display(scheduled_at, country, tz_abbr)
+            if scheduled_at else ""
+        )
         thread_by_lead[lid].append({
-            "direction":  "outbound",
-            "ts":         _safe_str(row[3]) or "",
-            "subject":    row[1] or "",
-            "body":       row[2] or "",
-            "email_type": row[4] or "initial",
+            "direction":        "outbound",
+            "ts":               _safe_str(row[3]) or "",
+            "subject":          row[1] or "",
+            "body":             row[2] or "",
+            "email_type":       row[4] or "initial",
+            "status":           status,
+            "scheduled_at":     _safe_str(scheduled_at) or "",
+            "scheduled_display": scheduled_display,
         })
 
     # Inbound: email_replies table
@@ -376,6 +393,102 @@ def format_schedule_note(scheduled_at, timezone):
         f"{scheduled_at.strftime('%b')} at {time_str} {timezone or 'GMT'} "
         f"(recipient local time)"
     )
+
+
+# Chat 78: country → pytz timezone name mapping
+_COUNTRY_TZ = {
+    "United Kingdom": "Europe/London",
+    "UK":             "Europe/London",
+    "United States":  "America/New_York",
+    "USA":            "America/New_York",
+    "Canada":         "America/Toronto",
+    "Australia":      "Australia/Sydney",
+    "New Zealand":    "Pacific/Auckland",
+}
+
+# (standard, daylight) abbreviation pairs — avoids relying on strftime("%Z")
+# which can return "UTC" even for UTC-equivalent zones like Europe/London in winter
+_TZ_ABBR = {
+    "Europe/London":    ("GMT",  "BST"),
+    "America/New_York": ("EST",  "EDT"),
+    "America/Toronto":  ("EST",  "EDT"),
+    "Australia/Sydney": ("AEST", "AEDT"),
+    "Pacific/Auckland": ("NZST", "NZDT"),
+    "UTC":              ("UTC",  "UTC"),
+}
+
+
+def _find_next_send_window(country):
+    """Return next Tue/Wed/Thu 10:00 or 14:00 as a tz-aware datetime in lead's local zone."""
+    import pytz
+    from datetime import timedelta
+
+    tz_name = _COUNTRY_TZ.get(country or "")
+    if not tz_name:
+        print(f"[OUTREACH] Unknown country '{country}' — defaulting to UTC for scheduling")
+        tz_name = "UTC"
+
+    tz = pytz.timezone(tz_name)
+    now_utc = datetime.utcnow().replace(tzinfo=pytz.UTC)
+    local_now = now_utc.astimezone(tz)
+
+    VALID_WEEKDAYS = {1, 2, 3}  # Tue=1, Wed=2, Thu=3
+    WINDOWS = [10, 14]
+
+    for day_offset in range(8):
+        candidate = local_now + timedelta(days=day_offset)
+        if candidate.weekday() not in VALID_WEEKDAYS:
+            continue
+        for hour in WINDOWS:
+            local_candidate = candidate.replace(hour=hour, minute=0, second=0, microsecond=0)
+            if local_candidate > local_now:
+                return local_candidate
+
+    # Fallback: next Tuesday at 10:00
+    import pytz as _pytz
+    days_until_tuesday = (1 - local_now.weekday()) % 7 or 7
+    return (local_now + timedelta(days=days_until_tuesday)).replace(
+        hour=10, minute=0, second=0, microsecond=0
+    )
+
+
+def _format_scheduled_display(scheduled_at_utc, country, tz_fallback="UTC"):
+    """Convert UTC scheduled_at back to lead's local time for display.
+
+    Returns string like 'Tue 10 Mar · 10:00am GMT'.
+    tz_fallback: abbreviation string from lead.timezone, used when country
+                 is not in _COUNTRY_TZ (so we can show 'GMT' instead of 'UTC').
+    """
+    try:
+        import pytz
+        tz_name = _COUNTRY_TZ.get(country or "", "UTC")
+        tz = pytz.timezone(tz_name)
+
+        if isinstance(scheduled_at_utc, str):
+            scheduled_at_utc = datetime.fromisoformat(scheduled_at_utc)
+        if scheduled_at_utc is None:
+            return ""
+        # Attach UTC if naive
+        if scheduled_at_utc.tzinfo is None:
+            scheduled_at_utc = scheduled_at_utc.replace(tzinfo=pytz.UTC)
+        local_dt = scheduled_at_utc.astimezone(tz)
+        hour_24 = local_dt.hour
+        hour_12 = hour_24 % 12 or 12
+        ampm = "am" if hour_24 < 12 else "pm"
+        abbr_pair = _TZ_ABBR.get(tz_name)
+        if abbr_pair and tz_name != "UTC":
+            # Known country timezone — use explicit abbreviation pair
+            tz_abbr = abbr_pair[1] if local_dt.dst() else abbr_pair[0]
+        else:
+            # Unknown country — use the lead's timezone field (e.g. 'GMT') as label
+            tz_abbr = tz_fallback or local_dt.strftime("%Z")
+        return (
+            f"{local_dt.strftime('%a')} {local_dt.day} "
+            f"{local_dt.strftime('%b')} · {hour_12}:{local_dt.strftime('%M')}{ampm} {tz_abbr}"
+        )
+    except Exception as e:
+        print(f"[OUTREACH] _format_scheduled_display error: {e}")
+        return ""
 
 
 def _get_lead_columns(conn):
@@ -827,6 +940,8 @@ def queue():
 
         scheduled_this_week = conn.execute(
             "SELECT COUNT(*) FROM outreach_emails WHERE status = 'queued' "
+            "AND scheduled_at IS NOT NULL "
+            "AND scheduled_at >= CURRENT_TIMESTAMP "
             "AND scheduled_at <= CURRENT_TIMESTAMP + INTERVAL '7 days'"
         ).fetchone()[0]
 
@@ -863,30 +978,49 @@ def queue():
 
             pill_label, pill_css = compute_email_type_pill(email_type, sequence_step)
             send_time     = format_send_time(scheduled_at, timezone)
-            schedule_note = format_schedule_note(scheduled_at, timezone)
+            is_scheduled  = scheduled_at is not None
+
+            # Chat 78: compute scheduled display in lead's local timezone
+            scheduled_display = ""
+            scheduled_at_utc  = ""
+            if is_scheduled:
+                scheduled_display = _format_scheduled_display(scheduled_at, country or "", timezone or "UTC")
+                if isinstance(scheduled_at, str):
+                    scheduled_at_utc = scheduled_at
+                else:
+                    scheduled_at_utc = scheduled_at.isoformat() if scheduled_at else ""
+
+            # schedule_note: hint for unscheduled cards, or will-auto-send note for scheduled
+            if is_scheduled:
+                schedule_note = ""  # shown separately via sched-auto-note div
+            else:
+                schedule_note = "Best time: Tue–Thu, 10am or 2pm (recipient local time)"
 
             queued_emails.append({
-                "email_id":      email_id,
-                "lead_id":       lead_id,
-                "email_type":    email_type or "",
-                "subject":       subject or "",
-                "body":          body or "",
-                "cv_attached":   bool(cv_attached),
-                "company":       company or "",
-                "full_name":     full_name or "",
-                "role":          role or "",
-                "email":         email_addr or "",
-                "city_state":    city_state or "",
-                "country":       country or "",
-                "flag":          COUNTRY_FLAG.get(country or "", ""),
-                "track":         track or "",
-                "track_css":     track_css(track or ""),
-                "timezone":      timezone or "GMT",
-                "sequence_step": int(sequence_step or 0),
-                "pill_label":    pill_label,
-                "pill_css":      pill_css,
-                "send_time":     send_time,
-                "schedule_note": schedule_note,
+                "email_id":         email_id,
+                "lead_id":          lead_id,
+                "email_type":       email_type or "",
+                "subject":          subject or "",
+                "body":             body or "",
+                "cv_attached":      bool(cv_attached),
+                "company":          company or "",
+                "full_name":        full_name or "",
+                "role":             role or "",
+                "email":            email_addr or "",
+                "city_state":       city_state or "",
+                "country":          country or "",
+                "flag":             COUNTRY_FLAG.get(country or "", ""),
+                "track":            track or "",
+                "track_css":        track_css(track or ""),
+                "timezone":         timezone or "GMT",
+                "sequence_step":    int(sequence_step or 0),
+                "pill_label":       pill_label,
+                "pill_css":         pill_css,
+                "send_time":        send_time,
+                "schedule_note":    schedule_note,
+                "is_scheduled":     is_scheduled,
+                "scheduled_display": scheduled_display,
+                "scheduled_at_utc": scheduled_at_utc,
             })
 
     except Exception as e:
@@ -1154,6 +1288,68 @@ def queue_discard(email_id):
         return jsonify({"success": True})
     except Exception as e:
         print(f"[OUTREACH] queue discard error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /outreach/queue/<email_id>/schedule — Chat 78 ────────────────────────
+@bp.route("/queue/<email_id>/schedule", methods=["POST"])
+@login_required
+def schedule_email(email_id):
+    """Pick next optimal send window and write scheduled_at. AJAX — CSRF exempt."""
+    conn = get_outreach_db()
+    try:
+        row = conn.execute(
+            "SELECT e.email_id, l.country, l.timezone "
+            "FROM outreach_emails e "
+            "JOIN outreach_leads l ON e.lead_id = l.lead_id "
+            "WHERE e.email_id = ? AND e.status = 'queued' AND e.scheduled_at IS NULL",
+            [email_id],
+        ).fetchone()
+        if not row:
+            return jsonify({"success": False, "message": "Email not found, not queued, or already scheduled"}), 404
+
+        country  = row[1] or ""
+        tz_abbr  = row[2] or "UTC"
+        local_dt = _find_next_send_window(country)
+
+        # Convert to UTC for storage
+        import pytz
+        utc_dt = local_dt.astimezone(pytz.UTC).replace(tzinfo=None)
+
+        conn.execute(
+            "UPDATE outreach_emails SET scheduled_at = ? WHERE email_id = ?",
+            [utc_dt, email_id],
+        )
+
+        scheduled_display = _format_scheduled_display(utc_dt, country, tz_abbr)
+        return jsonify({
+            "success":           True,
+            "scheduled_at_utc":  utc_dt.isoformat(),
+            "scheduled_display": scheduled_display,
+        })
+    except Exception as e:
+        print(f"[OUTREACH] schedule error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── POST /outreach/queue/<email_id>/cancel-schedule — Chat 78 ─────────────────
+@bp.route("/queue/<email_id>/cancel-schedule", methods=["POST"])
+@login_required
+def cancel_schedule_email(email_id):
+    """Clear scheduled_at — returns card to unscheduled state. AJAX — CSRF exempt."""
+    conn = get_outreach_db()
+    try:
+        conn.execute(
+            "UPDATE outreach_emails SET scheduled_at = NULL WHERE email_id = ?",
+            [email_id],
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"[OUTREACH] cancel-schedule error: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         conn.close()

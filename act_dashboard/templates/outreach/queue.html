@@ -68,15 +68,15 @@
     <div id="queueList">
     {% for email in queued_emails %}
     {% set loop_idx = loop.index %}
-    <div class="queue-card collapsed"
+    <div class="queue-card collapsed{% if email.is_scheduled %} is-scheduled{% endif %}"
          id="card-{{ email.email_id }}">
 
         {# Card header #}
         <div class="queue-card-header"
              onclick="toggleCard('card-{{ email.email_id }}')">
             <div class="queue-card-header-left">
-                <div class="queue-number"
-                     style="background:#5f6368;">{{ loop_idx }}</div>
+                <div class="queue-number{% if email.is_scheduled %} is-scheduled{% endif %}"
+                     style="background:{% if email.is_scheduled %}#FBBC05{% else %}#5f6368{% endif %};">{{ loop_idx }}</div>
                 <div>
                     <div class="queue-prospect">
                         {{ email.company }}
@@ -94,12 +94,27 @@
             <div class="queue-card-meta">
                 <span class="track-badge {{ email.track_css }}">{{ email.track }}</span>
                 <span class="email-type-pill {{ email.pill_css }}">{{ email.pill_label }}</span>
+                {% if email.is_scheduled %}
+                <span class="auto-send-badge">⚡ Auto-send</span>
+                {% endif %}
                 <div class="send-time-badge">
                     <span class="material-symbols-outlined">schedule</span>
                     {{ email.send_time }}
                 </div>
             </div>
         </div>
+
+        {# Scheduled banner — shown only when scheduled_at is set #}
+        {% if email.is_scheduled %}
+        <div class="scheduled-banner">
+            <span class="material-symbols-outlined">calendar_clock</span>
+            <span class="sched-banner-label">Scheduled for</span>
+            <span class="sched-banner-time">{{ email.scheduled_display }}</span>
+            <span class="sched-banner-local">&nbsp;(recipient's local time)</span>
+            <button class="sched-banner-cancel"
+                    onclick="cancelSchedule('{{ email.email_id }}')">Cancel</button>
+        </div>
+        {% endif %}
 
         {# Subject bar — always visible #}
         <div class="queue-subject-bar">
@@ -147,15 +162,30 @@
 
         {# Action row — hidden when collapsed #}
         <div class="queue-actions">
+            {% if email.is_scheduled %}
+            <button class="btn-cancel-schedule"
+                    onclick="cancelSchedule('{{ email.email_id }}')">
+                ✕ Cancel Schedule
+            </button>
+            <div class="sched-auto-note">
+                <span class="material-symbols-outlined">check_circle</span>
+                Will auto-send {{ email.scheduled_display }} — no action needed
+            </div>
+            {% else %}
             <button class="btn-send" onclick="sendCard('{{ email.email_id }}')">
                 <span class="material-symbols-outlined">send</span>
                 Send now
+            </button>
+            <button class="btn-schedule" onclick="scheduleCard('{{ email.email_id }}')">
+                <span class="material-symbols-outlined">calendar_clock</span>
+                Schedule
             </button>
             <button class="btn-skip" onclick="skipCard('{{ email.email_id }}')">⏭ Skip</button>
             <div class="send-schedule-note">
                 <span class="material-symbols-outlined">info</span>
                 {{ email.schedule_note }}
             </div>
+            {% endif %}
             <button class="btn-discard" onclick="discardCard('{{ email.email_id }}')">🗑 Discard</button>
         </div>
 
@@ -303,11 +333,11 @@ function toggleCard(cardId) {
     if (!card) return;
     const isCollapsed = card.classList.contains('collapsed');
 
-    // Collapse all cards
+    // Collapse all cards (restore bubble colour to scheduled=yellow or default=grey)
     document.querySelectorAll('.queue-card').forEach(c => {
         c.classList.add('collapsed');
         const num = c.querySelector('.queue-number');
-        if (num) num.style.background = '#5f6368';
+        if (num) num.style.background = c.classList.contains('is-scheduled') ? '#FBBC05' : '#5f6368';
     });
 
     // Expand clicked card if it was collapsed
@@ -662,6 +692,40 @@ function selectTemplate(btn) {
         showToast('Network error — could not switch template', 'error');
         templateEmailId = null;
     });
+}
+
+/* ──────────────────────────────────────────────────────────────
+   SCHEDULE CARD — Chat 78
+   ────────────────────────────────────────────────────────────── */
+function scheduleCard(emailId) {
+    fetch('/outreach/queue/' + emailId + '/schedule', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Scheduled for ' + data.scheduled_display, 'success');
+                setTimeout(() => location.reload(), 800);
+            } else {
+                showToast(data.message || 'Could not schedule', 'error');
+            }
+        })
+        .catch(() => showToast('Network error', 'error'));
+}
+
+/* ──────────────────────────────────────────────────────────────
+   CANCEL SCHEDULE — Chat 78
+   ────────────────────────────────────────────────────────────── */
+function cancelSchedule(emailId) {
+    fetch('/outreach/queue/' + emailId + '/cancel-schedule', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Schedule cancelled', 'success');
+                setTimeout(() => location.reload(), 800);
+            } else {
+                showToast(data.message || 'Could not cancel', 'error');
+            }
+        })
+        .catch(() => showToast('Network error', 'error'));
 }
 
 /* ──────────────────────────────────────────────────────────────
