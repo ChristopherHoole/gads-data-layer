@@ -1,0 +1,40 @@
+[coverage:run]
+omit =
+    act_dashboard/app.py
+    act_dashboard/routes/outreach.py
+    act_dashboard/routes/api.py
+    act_dashboard/routes/dashboard.py
+    act_dashboard/routes/auth.py
+    act_dashboard/routes/settings.py
+    act_dashboard/routes/rules_api.py
+    act_dashboard/outreach_poller.py
+    act_dashboard/queue_scheduler.py
+    act_dashboard/config_validator.py
+    act_dashboard/utils.py
+    act_dashboard/validation.py
+    act_autopilot/executor.py
+    act_autopilot/google_ads_api.py
+    act_autopilot/cli.py
+    act_autopilot/approval_cli.py
+    act_autopilot/engine.py
+    act_autopilot/radar.py
+    act_autopilot/suggest_engine.py
+    act_autopilot/campaign_metadata.py
+    act_autopilot/config_validator.py
+    act_autopilot/change_log.py
+    act_autopilot/__main__.py
+    act_autopilot/rules/account_rules.py
+    act_autopilot/rules/ad_rules.py
+    act_autopilot/rules/bid_rules.py
+    act_autopilot/rules/budget_rules.py
+    act_autopilot/rules/keyword_rules.py
+    act_autopilot/rules/shopping_rules.py
+    act_autopilot/rules/status_rules.py
+
+[coverage:report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if __name__ == .__main__.:
+    raise NotImplementedError
+    pass
