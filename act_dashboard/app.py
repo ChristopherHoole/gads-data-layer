@@ -372,26 +372,18 @@ def create_app():
             'message': 'Security token missing or invalid. Please refresh the page.'
         }), 400
 
-    # Chat 29 (M8): Start Radar background monitoring thread
-    # daemon=True ensures thread dies when Flask process exits
-    # Started AFTER register_blueprints so all routes are available first
-    import threading
-    from act_autopilot.radar import radar_loop
-    radar_thread = threading.Thread(target=radar_loop, daemon=True, name="RadarThread")
-    radar_thread.start()
-    print("✅ [Chat 29 M8] Radar background thread started (60s cycle)")
-
-    # Chat 74: Start outreach reply-inbox polling thread (2min cycle)
-    from act_dashboard.outreach_poller import start_poller
-    start_poller()
-    print("✅ [Chat 74] Outreach poller thread started (120s cycle)")
-
-    # Chat 78: Start queue scheduler thread (auto-sends elapsed scheduled emails, 5min cycle)
-    from act_dashboard.queue_scheduler import QueueScheduler
-    scheduler = QueueScheduler(app)
-    scheduler_thread = threading.Thread(target=scheduler.run, daemon=True, name="QueueScheduler")
-    scheduler_thread.start()
-    print("✅ [Chat 78] Queue scheduler thread started (300s cycle)")
+    # Chat 90: Background scheduling is now handled by Celery + Redis (not daemon threads).
+    # Start the Celery worker separately — Flask does NOT start Celery.
+    #
+    #   Terminal 1: memurai
+    #   Terminal 2: celery -A act_dashboard.celery_app worker --beat --loglevel=info
+    #   Terminal 3: python act_dashboard/app.py
+    #
+    # Tasks registered in act_dashboard/celery_app.py:
+    #   run_outreach_poller  — every 120s  (replaces Chat 74 OutreachPoller thread)
+    #   run_queue_scheduler  — every 300s  (replaces Chat 78 QueueScheduler thread)
+    #   run_radar            — every 60s   (replaces Chat 29 M8 RadarThread)
+    print("ℹ️  [Chat 90] Background tasks handled by Celery beat — start separately")
 
     # Centralized error handlers (Phase 1i)
     

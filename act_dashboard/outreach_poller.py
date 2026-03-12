@@ -271,3 +271,20 @@ def _poll_loop():
 def start_poller():
     thread = threading.Thread(target=_poll_loop, daemon=True, name="OutreachPoller")
     thread.start()
+
+
+# ── Celery task (Chat 90) ─────────────────────────────────────────────────────
+
+from act_dashboard.celery_app import celery_app  # noqa: E402
+
+
+@celery_app.task(name="act_dashboard.outreach_poller.run_outreach_poller")
+def run_outreach_poller():
+    """Celery periodic task — replaces _poll_loop daemon thread. Every 120s."""
+    _ensure_schema()
+    print("[POLLER] Celery task start")
+    try:
+        n = _run_poll_cycle()
+        print(f"[POLLER] Celery task complete — {n} new replies imported")
+    except Exception as e:
+        print(f"[POLLER] WARNING: Celery task error: {e}")

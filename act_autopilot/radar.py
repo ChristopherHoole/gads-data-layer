@@ -457,3 +457,21 @@ def radar_loop():
             logger.error("[RADAR] Unexpected error in cycle: %s", e)
 
         time.sleep(60)
+
+
+# ---------------------------------------------------------------------------
+# Celery task (Chat 90)
+# ---------------------------------------------------------------------------
+
+from act_dashboard.celery_app import celery_app  # noqa: E402
+
+
+@celery_app.task(name="act_autopilot.radar.run_radar")
+def run_radar():
+    """Celery periodic task — replaces radar_loop daemon thread. Every 60s."""
+    logger.info("[RADAR] Celery task start — %s", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    try:
+        _evaluate_all_monitoring_recs(_DB_PATH, _RO_DB_PATH)
+        logger.info("[RADAR] Celery task complete")
+    except Exception as e:
+        logger.error("[RADAR] Celery task error: %s", e)

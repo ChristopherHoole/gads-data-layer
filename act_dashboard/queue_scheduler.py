@@ -152,3 +152,18 @@ class QueueScheduler:
             print(f"[SCHEDULER] Cycle complete — {auto_sent} auto-sent")
         finally:
             conn.close()
+
+
+# ── Celery task (Chat 90) ─────────────────────────────────────────────────────
+
+from act_dashboard.celery_app import celery_app  # noqa: E402
+
+
+@celery_app.task(name="act_dashboard.queue_scheduler.run_queue_scheduler")
+def run_queue_scheduler():
+    """Celery periodic task — replaces QueueScheduler daemon thread. Every 300s."""
+    from act_dashboard.app import create_app
+    app = create_app()
+    scheduler = QueueScheduler(app)
+    with app.app_context():
+        scheduler._run_cycle()
