@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  body {
+    width: 1584px;
+    height: 396px;
+    overflow: hidden;
+    font-family: 'Sora', sans-serif;
+  }
+
+  .banner {
+    width: 1584px;
+    height: 396px;
+    background: #0a0f1e;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    padding: 0 80px;
+  }
+
+  /* Grid lines background */
+  .grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(37, 99, 235, 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(37, 99, 235, 0.07) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* Glowing orb top-right */
+  .orb {
+    position: absolute;
+    top: -120px;
+    right: 200px;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.25) 0%, transparent 65%);
+    border-radius: 50%;
+  }
+
+  /* Subtle orb bottom-left */
+  .orb2 {
+    position: absolute;
+    bottom: -150px;
+    left: 300px;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(99, 37, 235, 0.12) 0%, transparent 65%);
+    border-radius: 50%;
+  }
+
+  /* Left accent line */
+  .accent-line {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, transparent, #2563eb, transparent);
+  }
+
+  /* Content */
+  .content {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .left {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: #2563eb;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .name {
+    font-size: 52px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .title {
+    font-size: 17px;
+    font-weight: 300;
+    color: #94a3b8;
+    letter-spacing: 0.01em;
+    line-height: 1.4;
+    max-width: 580px;
+  }
+
+  .title span {
+    color: #cbd5e1;
+    font-weight: 400;
+  }
+
+  .right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 20px;
+  }
+
+  .stats {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-end;
+  }
+
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(37, 99, 235, 0.08);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    border-radius: 6px;
+    padding: 10px 20px;
+    min-width: 280px;
+  }
+
+  .stat-num {
+    font-size: 22px;
+    font-weight: 800;
+    color: #2563eb;
+    font-family: 'JetBrains Mono', monospace;
+    min-width: 70px;
+    text-align: right;
+  }
+
+  .stat-label {
+    font-size: 13px;
+    font-weight: 400;
+    color: #94a3b8;
+    letter-spacing: 0.02em;
+  }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #2563eb;
+    opacity: 0.5;
+  }
+
+  .website {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: rgba(148, 163, 184, 0.6);
+    letter-spacing: 0.05em;
+  }
+
+  /* Bottom border glow */
+  .bottom-glow {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.4), transparent);
+  }
+</style>
+</head>
+<body>
+<div class="banner">
+  <div class="grid"></div>
+  <div class="orb"></div>
+  <div class="orb2"></div>
+  <div class="accent-line"></div>
+  <div class="bottom-glow"></div>
+
+  <div class="content">
+    <div class="left">
+      <div class="label">Senior Google Ads Specialist</div>
+      <div class="name">Christopher Hoole</div>
+      <div class="title">
+        Builder of <span>A.C.T</span> — AI-Powered Google Ads Optimisation Platform<br>
+        Google Ads · Search · Shopping · Performance Max · Display
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-num">16 yrs</div>
+          <div class="dot"></div>
+          <div class="stat-label">Google Ads Experience</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">£50M+</div>
+          <div class="dot"></div>
+          <div class="stat-label">Total Ad Spend Managed</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">100+</div>
+          <div class="dot"></div>
+          <div class="stat-label">Accounts Managed</div>
+        </div>
+      </div>
+      <div class="website">christopherhoole.com</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

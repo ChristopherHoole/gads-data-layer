@@ -165,7 +165,8 @@
   'campaign': 'primary',
   'keyword': 'success',
   'shopping': 'info',
-  'ad_group': 'warning'
+  'ad_group': 'warning',
+  'ad': 'danger'
 } %}
 
 <div class="py-4">
@@ -227,10 +228,11 @@
     </button>
     <ul class="dropdown-menu" id="entity-type-filter">
       <li><a class="dropdown-item active" href="#" data-entity="all">All Entity Types</a></li>
-      <li><a class="dropdown-item" href="#" data-entity="campaign">Campaigns (110)</a></li>
-      <li><a class="dropdown-item" href="#" data-entity="keyword">Keywords (1,256)</a></li>
-      <li><a class="dropdown-item" href="#" data-entity="shopping">Shopping (126)</a></li>
-      <li><a class="dropdown-item" href="#" data-entity="ad_group">Ad Groups (0)</a></li>
+      <li><a class="dropdown-item" href="#" data-entity="campaign">Campaigns ({{ pending_recs|selectattr('entity_type','eq','campaign')|list|length }})</a></li>
+      <li><a class="dropdown-item" href="#" data-entity="keyword">Keywords ({{ pending_recs|selectattr('entity_type','eq','keyword')|list|length }})</a></li>
+      <li><a class="dropdown-item" href="#" data-entity="ad_group">Ad Groups ({{ pending_recs|selectattr('entity_type','eq','ad_group')|list|length }})</a></li>
+      <li><a class="dropdown-item" href="#" data-entity="ad">Ads ({{ pending_recs|selectattr('entity_type','eq','ad')|list|length }})</a></li>
+      <li><a class="dropdown-item" href="#" data-entity="shopping">Shopping ({{ pending_recs|selectattr('entity_type','eq','shopping')|list|length }})</a></li>
     </ul>
   </div>
 </div>

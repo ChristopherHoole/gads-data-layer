@@ -57,7 +57,7 @@ ENTITY_TABLES = {
     "keyword":  "ro.analytics.keyword_daily",
     "ad_group": "ro.analytics.ad_group_daily",
     "shopping": "ro.analytics.shopping_campaign_daily",
-    # "ad" table doesn't exist in database - will be skipped
+    "ad":       "ro.analytics.ad_daily",
 }
 
 # Entity ID and Name column mappings
@@ -66,6 +66,7 @@ ENTITY_ID_COLUMNS = {
     "keyword":  ("keyword_id", "keyword_text"),
     "ad_group": ("ad_group_id", "ad_group_name"),
     "shopping": ("campaign_id", "campaign_name"),  # Shopping uses campaign-level data
+    "ad":       ("ad_id", "ad_name"),
 }
 
 # ---------------------------------------------------------------------------
@@ -126,6 +127,21 @@ AD_GROUP_METRIC_MAP = {
 # NOTE: feed_error_count and out_of_stock_product_count do NOT exist
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Metric → DB column mapping (ADS) - Chat 88
+# Based on analytics.ad_daily schema: ctr, impressions, ad_strength, roas, conversions
+# ---------------------------------------------------------------------------
+
+AD_METRIC_MAP = {
+    "ctr":         ("ctr",         None, None),   # DOUBLE (decimal, e.g. 0.05 = 5%)
+    "impressions": ("impressions", None, None),   # BIGINT
+    "ad_strength": ("ad_strength", None, None),   # VARCHAR (POOR/AVERAGE/GOOD/EXCELLENT)
+    "roas":        ("roas",        None, None),   # DOUBLE
+    "conversions": ("conversions", None, None),   # DOUBLE
+    "clicks":      ("clicks",      None, None),   # BIGINT
+    "cost":        ("cost_micros", None, None),   # BIGINT (micros; column renamed from cost)
+}
+
 SHOPPING_METRIC_MAP = {
     "cost":                ("cost_micros", None, None),         # BIGINT (needs /1M conversion)
     "conversions":         ("conversions", None, None),         # DOUBLE field
@@ -151,6 +167,8 @@ def _get_metric_map_for_entity(entity_type: str) -> dict:
         return AD_GROUP_METRIC_MAP
     elif entity_type == "shopping":
         return SHOPPING_METRIC_MAP
+    elif entity_type == "ad":
+        return AD_METRIC_MAP
     else:
         return {}
 
@@ -173,17 +191,24 @@ RISK_TO_CONFIDENCE = {
 def _detect_entity_type(rule_id: str) -> str:
     """
     Detect entity type from rule_id.
-    Examples: "campaign_1" → "campaign", "keyword_3" → "keyword"
+    Examples: "campaign_1" -> "campaign", "keyword_3" -> "keyword",
+              "ad_group_1" -> "ad_group", "ad_1" -> "ad"
+
+    Note: "ad_group" must be checked before "ad" since both share the "ad" prefix.
     """
     if "_" not in rule_id:
         return "campaign"  # fallback
-    
+
+    # "ad_group" rules start with "ad_group_" — check before generic split
+    if rule_id.startswith("ad_group_"):
+        return "ad_group"
+
     entity_type = rule_id.split("_")[0]
-    
+
     # Validate known types
-    if entity_type in ("campaign", "keyword", "ad_group", "ad", "shopping"):
+    if entity_type in ("campaign", "keyword", "ad", "shopping"):
         return entity_type
-    
+
     return "campaign"  # fallback for unknown types
 
 
@@ -341,7 +366,14 @@ def _get_current_value(entity_type: str, rule_type: str, features: dict) -> floa
         if cost_micros and float(cost_micros) > 0:
             return float(cost_micros) / 1_000_000
         return 100.0  # fallback £100
-    
+
+    elif entity_type == "ad":
+        # Ads: use cost as spend proxy
+        cost = features.get("cost")
+        if cost and float(cost) > 0:
+            return float(cost)
+        return 10.0  # fallback £10
+
     return 0.0  # unknown entity type
 
 
@@ -439,9 +471,9 @@ def run_recommendations_engine(
     for entity_type, table_name in ENTITY_TABLES.items():
         if _table_exists(conn, table_name):
             available_entities[entity_type] = table_name
-            print(f"[ENGINE] ✅ {entity_type}: {table_name} available")
+            print(f"[ENGINE] [OK] {entity_type}: {table_name} available")
         else:
-            print(f"[ENGINE] ❌ {entity_type}: {table_name} NOT FOUND - will skip")
+            print(f"[ENGINE] [NO] {entity_type}: {table_name} NOT FOUND - will skip")
 
     # --- Get existing pending recommendations for duplicate check -----------
     try:
