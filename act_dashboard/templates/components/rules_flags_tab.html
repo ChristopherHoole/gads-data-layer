@@ -114,10 +114,10 @@
             <th style="width:50px;">On/off</th>
             <th>Flag name</th>
             <th>Type</th>
+            <th>Direction</th>
             <th>Campaigns</th>
             <th class="rules-plain-english" style="min-width:280px;">Plain English</th>
             <th>Condition</th>
-            <th>Direction</th>
             <th>Window</th>
             <th style="width:70px;"></th>
           </tr>
@@ -415,13 +415,109 @@ function rfActionCell(row) {
   return '<span class="' + css + '">' + arrow + label + mag + '</span>';
 }
 
+
+// ── Flag-specific Plain English ───────────────────────────────────────────────
+var FLAG_PE_MAP = {
+  'roas_w7_vs_prev_pct':            {pos: 'ROAS has spiked unusually high — could be a real opportunity or an anomaly worth checking', neg: 'ROAS is consistently declining vs the campaign\'s own normal performance'},
+  'cpa_w7_vs_prev_pct':             {pos: 'CPA has improved week on week — a good signal that bidding or quality is improving', neg: 'CPA has risen week on week — check if competition or quality score is driving this'},
+  'ctr_w7_vs_prev_pct':             {pos: 'CTR has spiked vs last week — ads may be gaining relevance or competition has dropped', neg: 'Click through rate is trending down — ads may be losing relevance or competition has increased'},
+  'cpc_w7_vs_prev_pct':             {pos: 'Average CPC has risen week on week — review bids and auction competition', neg: 'Average CPC has dropped week on week — check if impression share is being lost'},
+  'cvr_w7_vs_prev_pct':             {pos: 'Conversion rate has improved week on week — landing page or offer resonance is improving', neg: 'Conversion rate has dropped week on week — check landing page and offer relevance'},
+  'conversions_w7_vs_prev_pct':     {pos: 'Conversions have spiked vs the previous week — check if tracking is double counting', neg: 'Conversions have dropped vs the previous week — check bids, quality and landing pages'},
+  'cost_w7_vs_prev_pct':            {pos: 'Spend has risen sharply above the campaign\'s normal level — review before it hits the cap', neg: 'Spend has dropped sharply vs the previous week — check if ads are being limited'},
+  'impression_share_w7_vs_prev_pct':{pos: 'Impression share has risen week on week — the campaign is gaining more auction coverage', neg: 'Impression share has dropped week on week — check budget, bid and quality score'},
+  'impressions_7d':                 {eq: 'Campaign recorded no impressions today — could be a budget, targeting, approval or billing issue'},
+  'conversions_7d':                 {eq: 'Conversions are at zero — check tracking, bids and landing page performance'},
+  'click_z_score':                  {pos: 'Click volume spike detected — check for invalid clicks or unusual traffic', neg: 'Click volume drop detected — ads may have stopped serving or lost auction coverage'},
+  'cost_z_score':                   {pos: 'The system detected a statistically abnormal cost surge — review immediately before budget is exhausted', neg: 'Spend has dropped to an anomalous level — check if ads are serving normally'},
+  'impression_z_score':             {pos: 'Impression volume spike detected — check for anomalous traffic patterns', neg: 'Impression volume drop detected — ads may have limited reach'},
+  'conv_tracking_loss_detected':    {eq: 'Conversions dropped to zero after previously recording — very likely a broken tracking tag'},
+  'landing_page_status':            {eq: 'Landing page is returning an error — ads may be running to a broken destination'},
+  'landing_page_load_ms':           {eq: 'Landing page is loading slowly — this will hurt Quality Score and conversion rate'},
+  'ads_disapproved_count':          {eq: 'One or more ads have been disapproved — impressions may be limited'},
+  'billing_issue_detected':         {eq: 'A billing issue has been detected — campaigns may stop running'},
+  'tracking_tag_present':           {eq: 'Tracking tag is missing from the landing page — conversion data will not be recorded'},
+  'budget_exhausted_hour':          {eq: 'Daily budget was fully spent before the end of the day — the campaign is missing evening traffic'}
+};
+
+function rfFlagPlainEnglish(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  var c = conds[0];
+  if (!c) return row.name;
+  var metric = c.metric || '';
+  var op = c.operator || c.op || '';
+  var entry = FLAG_PE_MAP[metric];
+  if (!entry) {
+    // fallback
+    var mLabel = METRIC_LABELS[metric] || metric;
+    var opLabel = OP_LABELS[op] || op;
+    var _u = c.ref || c.unit || ''; var unit = (_u === 'x_target') ? '× target' : (_u === 'percent' || _u === 'pct') ? '%' : '';
+    return 'Alert when ' + mLabel + ' ' + opLabel + ' ' + c.value + unit;
+  }
+  if (entry.eq) return entry.eq;
+  var isPos = (op === '>' || op === '>=' || op === 'gt' || op === 'gte');
+  return isPos ? (entry.pos || entry.neg || row.name) : (entry.neg || entry.pos || row.name);
+}
+
+// ── Flag-specific Condition text ──────────────────────────────────────────────
+var FLAG_COND_LABELS = {
+  'roas_w7_vs_prev_pct':             {pos: 'ROAS increased', neg: 'ROAS declined'},
+  'cpa_w7_vs_prev_pct':              {pos: 'CPA increased',  neg: 'CPA declined'},
+  'ctr_w7_vs_prev_pct':              {pos: 'CTR increased',  neg: 'CTR declined'},
+  'cpc_w7_vs_prev_pct':              {pos: 'CPC increased',  neg: 'CPC declined'},
+  'cvr_w7_vs_prev_pct':              {pos: 'CVR increased',  neg: 'CVR declined'},
+  'conversions_w7_vs_prev_pct':      {pos: 'Conversions increased', neg: 'Conversions declined'},
+  'cost_w7_vs_prev_pct':             {pos: 'Spend increased', neg: 'Spend declined'},
+  'impression_share_w7_vs_prev_pct': {pos: 'IS increased',   neg: 'IS declined'},
+  'impressions_7d':                  {eq: 'Impressions'},
+  'conversions_7d':                  {eq: 'Conversions'},
+  'click_z_score':                   {eq: 'Click Volume Anomaly'},
+  'cost_z_score':                    {eq: 'Cost Anomaly'},
+  'impression_z_score':              {eq: 'Impression Anomaly'},
+  'conv_tracking_loss_detected':     {eq: 'Conversion Tracking Loss'},
+  'landing_page_status':             {eq: 'Landing Page Down'},
+  'landing_page_load_ms':            {eq: 'Landing Page Slow'},
+  'ads_disapproved_count':           {eq: 'Ads Disapproved'},
+  'billing_issue_detected':          {eq: 'Billing Issue'},
+  'tracking_tag_present':            {eq: 'Tracking Tag Missing'},
+  'budget_exhausted_hour':           {eq: 'Budget Exhausted Early'}
+};
+
+var SYSTEM_METRICS = ['click_z_score','cost_z_score','impression_z_score','conv_tracking_loss_detected',
+  'landing_page_status','landing_page_load_ms','ads_disapproved_count','billing_issue_detected',
+  'tracking_tag_present','budget_exhausted_hour'];
+
+function rfFlagCondText(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  var c = conds[0];
+  if (!c) return '—';
+  var metric = c.metric || '';
+  var isSystem = SYSTEM_METRICS.indexOf(metric) >= 0;
+  var rawOp = c.operator || c.op || '';
+  var isPos = (rawOp === '>' || rawOp === '>=' || rawOp === 'gt' || rawOp === 'gte');
+  var entry = FLAG_COND_LABELS[metric];
+  var label;
+  if (entry) {
+    if (entry.eq) label = entry.eq;
+    else label = isPos ? entry.pos : entry.neg;
+  } else {
+    label = METRIC_LABELS[metric] || metric;
+  }
+  var op = OP_LABELS[rawOp] || rawOp;
+  var _u = c.ref || c.unit || ''; var unit = (_u === 'percent' || _u === 'pct') ? '%' : (_u === 'x_target' ? '× target' : '');
+  var sysTag = isSystem ? ' <span class="badge-system">system</span>' : '';
+  return '<strong>' + rfEsc(label) + '</strong> ' + op + ' ' + rfEsc(String(c.value)) + unit + sysTag;
+}
+
 function rfDirectionCell(row) {
   var conds = Array.isArray(row.conditions) ? row.conditions : [];
   try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
   if (!conds.length) return '<span class="dir-neu">Either</span>';
-  var op = conds[0].operator;
-  if (op === '>' || op === '>=') return '<span class="dir-pos">▲ Rising</span>';
-  if (op === '<' || op === '<=') return '<span class="dir-neg">▼ Falling</span>';
+  var op = conds[0].operator || conds[0].op || '';
+  if (op === '>' || op === '>=' || op === 'gt' || op === 'gte') return '<span class="dir-pos">▲ Positive</span>';
+  if (op === '<' || op === '<=' || op === 'lt' || op === 'lte') return '<span class="dir-neg">▼ Negative</span>';
   return '<span class="dir-neu">Either</span>';
 }
 
@@ -430,9 +526,10 @@ function rfWindowCell(row) {
   try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
   if (!conds.length) return '—';
   var m = (conds[0].metric || '');
-  if (m.includes('z_score') || m.includes('_detected') || m === 'billing_issue_detected') return 'Real-time';
-  if (m.includes('14d') || m.includes('_14d')) return '14 days';
-  if (m.includes('30d') || m.includes('_30d')) return '30 days';
+  if (m.includes('_vs_prev_pct') || m.includes('_w7_vs_') || m.includes('_w14_vs_') || m.includes('WoW')) return 'Trend';
+  if (m.includes('z_score') || m.includes('_detected') || m === 'billing_issue_detected' || m === 'anomaly_cost_z') return 'Real-time';
+  if (m.includes('14d') || m.includes('_14d') || m.includes('_w14_')) return '14 days';
+  if (m.includes('30d') || m.includes('_30d') || m.includes('_w30_')) return '30 days';
   if (m.includes('7d') || m.includes('_7d') || m.includes('_w7_')) return '7 days';
   return '1 day';
 }
@@ -571,10 +668,10 @@ function rfRenderFlags() {
         + (r.enabled ? ' checked' : '') + ' onchange="rfToggle(' + r.id + ',this)"></div></td>'
         + '<td style="font-weight:600;white-space:nowrap;">' + rfEsc(r.name) + '</td>'
         + '<td><span class="badge badge-type-' + rfEsc(r.type) + '" style="font-size:11px;">' + rfEsc(r.type.charAt(0).toUpperCase()+r.type.slice(1)) + '</span></td>'
-        + '<td style="font-size:12px;color:#5f6368;">' + rfEsc(rfScopeLabel(r)) + '</td>'
-        + '<td class="rules-plain-english">' + rfEsc(rfPlainEnglish(r)) + '</td>'
-        + '<td style="font-size:12px;">' + rfCondText(r) + '</td>'
         + '<td>' + rfDirectionCell(r) + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;">' + rfEsc(rfScopeLabel(r)) + '</td>'
+        + '<td class="rules-plain-english">' + rfFlagPlainEnglish(r) + '</td>'
+        + '<td style="font-size:12px;">' + rfFlagCondText(r) + '</td>'
         + '<td style="font-size:12px;">' + rfEsc(rfWindowCell(r)) + '</td>'
         + '<td><div class="d-flex gap-1">'
         + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="rfEditRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button>'
