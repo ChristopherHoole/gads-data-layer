@@ -78,6 +78,7 @@ def _ensure_features_table(con: duckdb.DuckDBPyConnection) -> None:
             ("source_table", "TEXT", True),
             ("has_conversion_value", "BOOLEAN", True),
             ("has_impr_share", "BOOLEAN", True),
+            ("impression_share_lost_rank", "DOUBLE", False),
         ]
     )
 
@@ -149,7 +150,7 @@ def build_campaign_features_daily(
     cfg: ClientConfig,
     snapshot_date: date,
     feature_set_version: str = "lighthouse_campaign_v0",
-    schema_version: int = 1,
+    schema_version: int = 2,
 ) -> FeatureBuildResult:
     """
     Reads from ro.analytics.campaign_daily (readonly DB attached as 'ro'),
@@ -168,6 +169,7 @@ def build_campaign_features_daily(
     campaign_name_expr = _pick_expr(cols, "campaign_name", "VARCHAR")
     campaign_status_expr = _pick_expr(cols, "campaign_status", "VARCHAR")
     channel_type_expr = _pick_expr(cols, "channel_type", "VARCHAR")
+    rank_lost_is_expr = _pick_expr(cols, "search_rank_lost_impression_share", "DOUBLE")
 
     windows = [1, 3, 7, 14, 30]
     base_metrics: list[tuple[str, str]] = [
@@ -390,6 +392,7 @@ def build_campaign_features_daily(
         "low_data_conversions_30d",
         "low_data_impressions_7d",
         "low_data_flag",
+        "impression_share_lost_rank",
     ]
 
     insert_cols_sql = ", ".join(insert_cols)
@@ -409,7 +412,8 @@ def build_campaign_features_daily(
         CAST(COALESCE(cd.clicks, 0) AS BIGINT) AS clicks,
         CAST(COALESCE(cd.cost_micros, 0) AS BIGINT) AS cost_micros,
         CAST(COALESCE(cd.conversions, 0) AS DOUBLE) AS conversions,
-        {conv_value_expr} AS conversion_value
+        {conv_value_expr} AS conversion_value,
+        {rank_lost_is_expr} AS rank_lost_is
       FROM ro.analytics.campaign_daily cd
       WHERE CAST(cd.customer_id AS VARCHAR) = ?
         AND CAST(cd.snapshot_date AS DATE) BETWEEN ? AND ?
@@ -434,7 +438,8 @@ def build_campaign_features_daily(
         COALESCE(src.clicks, 0) AS clicks,
         COALESCE(src.cost_micros, 0) AS cost_micros,
         COALESCE(src.conversions, 0) AS conversions,
-        COALESCE(src.conversion_value, NULL) AS conversion_value
+        COALESCE(src.conversion_value, NULL) AS conversion_value,
+        src.rank_lost_is AS rank_lost_is
       FROM calendar cal
       LEFT JOIN src
         ON src.customer_id = cal.customer_id
@@ -462,6 +467,7 @@ def build_campaign_features_daily(
         cost_micros,
         conversions,
         conversion_value,
+        rank_lost_is,
         {roll_sql}
       FROM dense
     ),
@@ -496,7 +502,13 @@ def build_campaign_features_daily(
         (clicks_w7_sum < 30) AS low_data_clicks_7d,
         (conversions_w30_sum < 15) AS low_data_conversions_30d,
         (impressions_w7_sum < 500) AS low_data_impressions_7d,
-        ((clicks_w7_sum < 30) OR (conversions_w30_sum < 15) OR (impressions_w7_sum < 500)) AS low_data_flag
+        ((clicks_w7_sum < 30) OR (conversions_w30_sum < 15) OR (impressions_w7_sum < 500)) AS low_data_flag,
+
+        AVG(roll2.rank_lost_is) OVER (
+            PARTITION BY roll2.customer_id, roll2.campaign_id
+            ORDER BY roll2.snapshot_date
+            ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+        ) AS impression_share_lost_rank
 
       FROM roll2
       LEFT JOIN dims_today d

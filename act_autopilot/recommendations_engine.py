@@ -119,6 +119,7 @@ CAMPAIGN_METRIC_MAP = {
 
     # ── Pacing & impression share ─────────────────────────────────────────────
     "pacing_vs_cap":        ("acct_pacing_vs_cap_pct",   None, None),
+    "impression_share_lost_rank": ("impression_share_lost_rank", None, None),
 
     # ── Week-on-week % change ─────────────────────────────────────────────────
     "roas_w7_vs_prev_pct":              ("roas_w7_vs_prev_pct",             None, None),
