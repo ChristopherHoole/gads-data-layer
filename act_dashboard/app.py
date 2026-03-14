@@ -94,6 +94,7 @@ def create_app():
     # Flask settings
     app.config["TEMPLATES_AUTO_RELOAD"] = True
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+    app.jinja_env.auto_reload = True  # Chat 91: ensure Jinja2 re-reads templates from disk
 
     # Configure logging (Phase 1g)
     if not app.debug:
@@ -361,6 +362,23 @@ def create_app():
             print(f"✅ [Chat 78] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 78] Route not found (skipping): {route_name}")
+
+    # Chat 91: CSRF exemption for campaign rules CRUD endpoints (JSON API, no CSRF tokens sent)
+    # GET/POST/PUT/DELETE/toggle /campaigns/rules/* are JSON APIs called from JavaScript
+    # Protected by @login_required decorator instead
+    chat91_routes = [
+        'campaigns.list_rules',
+        'campaigns.create_rule',
+        'campaigns.update_rule',
+        'campaigns.delete_rule',
+        'campaigns.toggle_rule',
+    ]
+    for route_name in chat91_routes:
+        if route_name in app.view_functions:
+            csrf.exempt(app.view_functions[route_name])
+            print(f"✅ [Chat 91] CSRF exempted: {route_name}")
+        else:
+            print(f"⚠️  [Chat 91] Route not found (skipping): {route_name}")
 
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)

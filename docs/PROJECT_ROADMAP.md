@@ -1,10 +1,10 @@
 # PROJECT ROADMAP - Ads Control Tower (A.C.T.)
 
-**Last Updated:** 2026-03-09
+**Last Updated:** 2026-03-12
 **Overall Completion:** ~99.9%
 **Architecture:** 2-Tier (Master Chat → Claude Code)
 **Local:** `C:\Users\User\Desktop\gads-data-layer`
-**Marketing Sites:** https://christopherhoole.online | https://christopherhoole.com
+**Primary Website:** https://christopherhoole.com (always — never christopherhoole.online)
 
 ---
 
@@ -15,7 +15,7 @@
 | Foundation (Flask, DuckDB, auth, multi-client) | 1–17 | ✅ Complete |
 | Code Cleanup (blueprints, validation, logging) | 18–21 | ✅ Complete |
 | Dashboard 3.0 M1–M9 (date picker → live keyword execution) | 22–30b | ✅ Complete |
-| Marketing Website (Next.js, Vercel, christopherhoole.online) | 31 + Master 4.0 | ✅ Complete |
+| Marketing Website (Next.js, Vercel, christopherhoole.com) | 31 + Master 4.0 | ✅ Complete |
 | Rules Creation (41 rules across 5 entity types) | 41–46 | ✅ Complete |
 | Multi-Entity Recommendations (1,492 active) | 47–49 | ✅ Complete |
 | Module 4: Dashboard Design Upgrade (Google Ads-style tables) | 57–58 | ✅ Complete |
@@ -24,133 +24,98 @@
 | Live Email Sending (Gmail SMTP) | 68 | ✅ Complete |
 | Outreach Functions + UI Polish | 69–80 | ✅ Complete |
 | UI Cleanup (layout gap, client selector, rules card) | 81–83 | ✅ Complete |
+| Website + CV Polish (CV download, SEO, WhatsApp, LinkedIn) | 84–87 | ✅ Complete |
+| ad_daily Table + Database Indexes | 88 | ✅ Complete |
+| Unit Tests (pytest 80%+, 620 tests) | 89 | ✅ Complete |
+| Celery + Redis Background Job Queue | 90 | ✅ Complete |
 
 ---
 
-## ✅ CHAT 67 — REAL DATA INGESTION PIPELINE
+## ✅ CHAT 88 — AD_DAILY TABLE + DATABASE INDEXES
 
-**Commit:** e9bcb3f
+**Commit:** 088317d
 
-- `src/gads_pipeline/v1_runner.py` — fixed DB write path to warehouse.duckdb
-- `scripts/copy_all_to_readonly.py` — copies all 5 analytics tables to warehouse_readonly
-- `tools/run_ingestion.py` — orchestration script (pull + copy + summary)
-
-**Status:** Built and tested with mock data. Live pull blocked on Google Ads API Basic Access approval (Case ID 24460840136 — applied March 4, 2026).
-
----
-
-## ✅ CHAT 68 — LIVE EMAIL SENDING
-
-**Commit:** fe4a0d7 + subsequent bug fixes
-
-**Infrastructure:**
-- Domain: `christopherhoole.com` (Namecheap)
-- Email: `chris@christopherhoole.com` (Google Workspace Business Starter)
-- DKIM/SPF: ✅ Authenticated
-- `act_dashboard/secrets/email_config.yaml` — local only, gitignored
-
-**Files:**
-- `act_dashboard/email_sender.py` — `send_email()`, `load_email_config()`, `substitute_variables()`, `check_daily_limit()`
-- `act_dashboard/routes/outreach.py` — `queue_send()` upgraded to live SMTP
-
-**Bugs fixed post-commit:**
-- MIMEText missing `"utf-8"` third arg — special chars garbled → fixed
-- `body_html` conversion (`\n → <br>`) missing from `queue_send()` — emails sent as plain text → fixed
-- `showToast` missing from success branch of `sendCard()` — no toast on send → fixed
-
-**Daily limit:** 100 emails/day (configurable in email_config.yaml)
+- `tools/seed_ad_daily.py` — populates ad_daily with 90 days synthetic data
+- `scripts/copy_all_to_readonly.py` — updated to include ad_daily (6 tables total)
+- `scripts/add_indexes.py` — indexes on all 6 analytics tables in warehouse_readonly.duckdb
+- **Result:** 23 Ad recommendations now generating (was 0). 983 ads, 12 rules active.
 
 ---
 
-## ✅ CHATS 69–80 — OUTREACH FUNCTIONS + UI POLISH
+## ✅ CHAT 89 — UNIT TESTS (pytest 80%+)
 
-| Chat | Feature |
-|------|---------|
-| 69 | Email signature appended to all outgoing emails |
-| 70 | CV upload & file storage (Templates page) |
-| 71 | CV attachment on send (Queue page) |
-| 72 | Open/click/CV tracking pixels + auto-inject on send |
-| 73 | Reply inbox polling (Gmail IMAP, 120s daemon — outreach_poller.py) |
-| 74 | Send reply from Replies page via SMTP |
-| 75 | Edit this email (Queue ✏ button) |
-| 76 | Universal slidein design across all outreach pages |
-| 77 | Switch template (Queue 📋 button) |
-| 78 | Queue auto-scheduling (queue_scheduler.py, daemon thread, 300s) |
-| 79 | Google Ads-style date picker (replaces Flatpickr, datepicker.css) |
-| 80 | Remove rules slidein from Campaigns, Keywords, Ads, Shopping |
+**Commit:** 51e79c6
+
+- `tests/` folder — 19 test files, 620 tests, 0 failures
+- Coverage: campaigns 85%, ads 85%, changes 94%, rule_helpers 94%, shared 86%, recommendations 80%
+- **Note:** ~30-40% of rule-specific tests will need updating after Rules & Recommendations overhaul
 
 ---
 
-## ✅ CHAT 81 — TABLE-STYLES.CSS LAYOUT FIX
+## ✅ CHAT 90 — CELERY + REDIS BACKGROUND JOB QUEUE
 
-**Commit:** 8968d64
-- `table-styles.css` was originally written as a standalone HTML prototype — contained `body { padding: 20px }` and `.container { background: white; border-radius: 8px; padding: 24px }` which overrode Flask app layout
-- Caused a white rounded box with gaps on all 5 entity pages; dashboard unaffected (doesn't load table-styles.css)
-- Fix: removed `body` and `.container` blocks entirely
+**Commit:** a932ee7
 
----
+- `act_dashboard/celery_app.py` — Celery instance, Redis broker, 3 periodic tasks
+- `outreach_poller.py`, `queue_scheduler.py`, `radar.py` — converted to Celery tasks
+- Daemon thread starts removed from `app.py`
+- `requirements.txt` — celery 5.6.2 + redis 7.3.0 added
+- `docs/CELERY_STARTUP.md` — full startup instructions
 
-## ✅ CHAT 82 — REMOVE DUPLICATE CLIENT SELECTOR FROM OUTREACH
+**Manual prerequisite:** Install Memurai (Windows Redis) from https://www.memurai.com/
 
-**Commit:** 9ee01fb — three separate bugs:
-1. All 6 outreach templates had `<select class="outreach-client-selector">` in their page header — navbar.html already renders a client selector → two pickers visible → removed select from all 6 templates
-2. `outreach.css` had `.d-none { display: none !important }` overriding Bootstrap responsive classes → navbar text hidden on all outreach pages → removed the rule
-3. Templates and Analytics routes missing `client_name=config.client_name` in `render_template()` → client name blank → added `config = get_current_config()` to analytics route + `client_name=config.client_name` to both render_template calls
-
----
-
-## ✅ CHAT 83 — REMOVE RULES CARD FROM CAMPAIGNS AND SHOPPING
-
-**Commit:** f531bd8
-- Removed `{% include 'components/rules_card.html' %}` from campaigns.html and shopping_new.html
-- Rules tab (Rules (41)) preserved on both pages — only the bottom summary block removed
+**Startup sequence (3 terminals):**
+```
+Terminal 1: memurai
+Terminal 2: celery -A act_dashboard.celery_app worker --beat --loglevel=info
+Terminal 3: python act_dashboard/app.py
+```
 
 ---
 
 ## 🎯 NEXT PRIORITIES
 
-### IMMEDIATE
+### IMMEDIATE — Master Chat 11
 
-**Apollo.io Lead Import** (8-15 hours)
-- API authentication
-- Search/filter: country (UK/US/CA/AU/NZ), company size (5-50), industry (digital marketing)
-- Field mapping: Apollo → ACT schema
-- UI: "Import from Apollo" modal with preview + confirm
+**Rules & Recommendations Overhaul** (major — multiple Claude Code chats)
+- Deep design discussion in Master Chat 11 — wireframes required before any build
+- Review all 41 rules — thresholds, conditions, cooldowns
+- Review recommendation generation logic — entity-specific scoring
+- Note: ~30-40% of Chat 89 unit tests will need updating after this overhaul
 
-**M9 Live Validation** (4-6 hours)
-- Test negative keyword blocking and keyword expansion against real Google Ads account
-- Requires Basic Access approval (pending)
+**Google Ads Account Suspension** (waiting on Google)
+- Appeal ID: 6448619522 — submitted 12 Mar 2026
+- Check chris@christopherhoole.com (1–10 days). Do NOT submit another appeal.
 
-**Website Design Upgrade** (TBD hours)
-- Refinements to christopherhoole.com / christopherhoole.online
-- Scope to be defined
+**Google Ads API Basic Access** (waiting on Google)
+- Case 24460840136 — submitted 4 Mar 2026
+- Once approved → run `tools/run_ingestion.py`
 
-**Testing & Polish** (6-8 hours)
-- Comprehensive post-outreach testing
+**Conversion Tracking** — verify "Enviar formulário de lead" count > 0 in Google Ads Goals
 
-### MEDIUM — Phase 3 + Features
+### MEDIUM
 
-- Website: Contact Form Backend (Google Sheets integration)
-- Website: SEO improvements (meta tags, sitemap, Open Graph)
-- Website: LinkedIn integration
-- Website: WhatsApp floating button
-- System Changes tab → card grid (deferred from Chat 29)
-- Unit tests (pytest, 80%+ coverage)
-- Background job queue (Celery + Redis)
-- Database indexes
-- Email reports (automated weekly/monthly)
+- Apollo.io lead import (8-15 hrs)
+- M9 Live Validation — blocked on API Basic Access
+- Automated email reports (weekly/monthly)
 - Smart alerts (ROAS drop, budget pacing)
+- Website design upgrade / Hero upgrade
+- Mobile performance optimisation
+- Contact form backend (currently manual)
+- Install Memurai for Celery
 
-### LONG-TERM — Major Expansions
+### LONG-TERM
 
-- Performance Max Campaigns (20-30 hours)
-- Display Campaigns (15-20 hours)
-- Video/YouTube Campaigns (15-20 hours)
-- Demand Gen Campaigns (15-20 hours)
-- Automated Report Generator (20-25 hours)
-- Multi-User Support (12-15 hours)
-- API Endpoints (10-12 hours)
-- Indeed job listing connector (planned)
+- Performance Max Campaigns (20-30 hrs)
+- Display Campaigns (15-20 hrs)
+- Video/YouTube Campaigns (15-20 hrs)
+- Demand Gen Campaigns (15-20 hrs)
+- Automated Report Generator (20-25 hrs)
+- Multi-User Support (12-15 hrs)
+- API Endpoints (10-12 hrs)
+- Indeed job listing connector
+- ACT deployment (Railway/Render — security hardening first)
+- Custom domain for ACT (app.christopherhoole.com)
 
 ---
 
@@ -159,56 +124,37 @@
 **Rules:** 41 active (13 campaign + 6 keyword + 4 ad_group + 4 ad + 14 shopping)
 
 **Recommendations:**
-- Campaigns: 110 | Keywords: 1,256 | Shopping: 126
-- Ad Groups: 0 (conditions not met) | Ads: 0 (ad_daily table missing)
-- **Total: 1,492 active**
+- Campaigns: 110 | Keywords: 1,256 | Shopping: 126 | Ads: 23 | Ad Groups: 0
+- **Total: 1,515 active**
 
-**Outreach:**
-- Live email sending: ✅ Gmail SMTP via chris@christopherhoole.com
-- 16 email templates (4 steps × 4 tracks)
-- Daily limit: 100 emails/day
-- All 10 original outreach functions now live ✅
-- Single client selector on all outreach pages ✅
+**Tests:** 620 tests, 0 failures, 80% coverage
 
-**Known Database Gap:**
-- `analytics.ad_daily` table does not exist → Ads rules cannot generate recommendations
+**Background Jobs:** Celery + Redis (requires Memurai install)
+- outreach_poller 120s | queue_scheduler 300s | radar 60s
 
-**Google Ads API:**
-- Test Access only — Basic Access application pending (Case 24460840136)
+**Google Ads:**
+- Account 487-268-1731 — suspended, appeal in review (ID 6448619522)
+- Account 125-489-5944 — active, Campaign 1 running, Manual CPC £3, England
+- API: Test Access only, Basic Access pending (Case 24460840136)
 
 ---
 
 ## 🔧 DEVELOPMENT WORKFLOW
 
-**Start Claude Code:**
-```powershell
-cd C:\Users\User\Desktop\gads-data-layer
-npx @anthropic-ai/claude-code
-```
-
-**Test Flask:**
+**Flask:**
 ```powershell
 taskkill /IM python.exe /F
 cd C:\Users\User\Desktop\gads-data-layer
 .\.venv\Scripts\Activate.ps1
 python act_dashboard/app.py
 ```
-Test at http://localhost:5000 in Opera.
 
-**Git commit (Master Chat only — after Christopher confirms in Opera):**
-```powershell
-taskkill /IM python.exe /F
-cd C:\Users\User\Desktop\gads-data-layer
-git add .
-git commit -m "Chat XX: [Description]"
-git push origin main
-```
+**Git (ACT):** `git push origin main`
+**Git (Website):** `git push origin master`
 
-**Reference docs:**
-- MASTER_KNOWLEDGE_BASE.md — full project history and technical detail
-- KNOWN_PITFALLS.md — troubleshooting
-- LESSONS_LEARNED.md — best practices
+**Claude Code:** Code tab in Claude Desktop App only — NOT PowerShell.
+**Briefs:** Always save as downloadable files to `/docs/` — never inline in chat.
 
 ---
 
-**Version:** 5.0 | **Last Updated:** 2026-03-09
+**Version:** 6.0 | **Last Updated:** 2026-03-12

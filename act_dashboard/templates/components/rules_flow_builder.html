@@ -1,0 +1,1169 @@
+{# ──────────────────────────────────────────────────────────────────────────────
+   rules_flow_builder.html  — Chat 91 FIXED_v3_RELOAD_TEST
+   5-step full-page overlay flow builder for creating / editing rules & flags.
+   Included at bottom of campaigns.html content block.
+   Defines: openRulesFlow(existingRow), closeRulesFlow()
+   On save: POST /campaigns/rules → success → refresh rules table + toast.
+────────────────────────────────────────────────────────────────────────────── #}
+
+<!-- ══ RULES FLOW BUILDER OVERLAY ══════════════════════════════════════════ -->
+<div id="rules-flow-overlay" role="dialog" aria-modal="true" aria-label="Rule builder">
+<div class="flow-panel">
+
+  <!-- Header -->
+  <div class="flow-overlay-header">
+    <div>
+      <h4 class="mb-0" id="rfb-title">Add rule or flag</h4>
+      <div class="flow-overlay-sub" id="rfb-subtitle">Step 1 of 5 — Select the campaigns this rule will apply to</div>
+    </div>
+    <button class="btn btn-sm btn-light border" onclick="closeRulesFlow()" title="Close">✕ Close</button>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="flow-progress-bar">
+    <div class="flow-prog-step" id="rfb-prog-1">
+      <div class="flow-prog-circle">1</div>
+      <span class="flow-prog-label">Campaigns</span>
+    </div>
+    <div class="flow-prog-line" id="rfb-pline-1"></div>
+    <div class="flow-prog-step" id="rfb-prog-2">
+      <div class="flow-prog-circle">2</div>
+      <span class="flow-prog-label">Rule or flag</span>
+    </div>
+    <div class="flow-prog-line" id="rfb-pline-2"></div>
+    <div class="flow-prog-step" id="rfb-prog-3">
+      <div class="flow-prog-circle">3</div>
+      <span class="flow-prog-label">Type</span>
+    </div>
+    <div class="flow-prog-line" id="rfb-pline-3"></div>
+    <div class="flow-prog-step" id="rfb-prog-4">
+      <div class="flow-prog-circle">4</div>
+      <span class="flow-prog-label">Conditions &amp; action</span>
+    </div>
+    <div class="flow-prog-line" id="rfb-pline-4"></div>
+    <div class="flow-prog-step" id="rfb-prog-5">
+      <div class="flow-prog-circle">5</div>
+      <span class="flow-prog-label">Summary</span>
+    </div>
+  </div>
+
+  <!-- Editing label — shown below progress bar in edit mode -->
+  <div id="rfb-editing-label" style="display:none;padding:8px 28px;font-size:13px;font-weight:600;color:#202124;border-bottom:1px solid #e0e0e0;background:#fafafa;"></div>
+
+  <!-- Body + Sidebar wrapper -->
+  <div class="flow-body-wrap">
+  <div class="flow-body">
+
+    <!-- ── Step 1: Campaigns ── -->
+    <div id="rfb-sc-1">
+      <div class="mb-4">
+        <div class="flow-section-label mb-2">Select the campaigns this rule applies to</div>
+        <div class="flow-camp-picker">
+          <input class="flow-camp-search" id="rfb-camp-search" type="text" placeholder="Search campaigns..."
+                 oninput="rfbFilterCampaigns(this.value)" autocomplete="off">
+          <div style="display:flex;gap:8px;padding:6px 12px;border-bottom:1px solid #e0e0e0;background:#fafafa;">
+            <button class="btn btn-sm" type="button" onclick="rfbSelectAll()">Select all</button>
+            <button class="btn btn-sm" type="button" onclick="rfbClearAll()">Clear</button>
+          </div>
+          <div class="flow-camp-list" id="rfb-camp-list">
+            <!-- Populated by JS from _rfbAllCampaigns -->
+          </div>
+        </div>
+        <div class="flow-strategy-lock" id="rfb-strategy-lock" style="display:none">
+          <span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">lock</span>
+          <span id="rfb-lock-msg">Strategy lock active — mixed strategies are not allowed in a single rule.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Step 2: Rule or Flag ── -->
+    <div id="rfb-sc-2">
+      <div class="mb-4">
+        <div class="flow-section-label mb-3">What do you want to create?</div>
+        <div class="flow-choice-grid">
+          <div class="flow-choice-card" id="rfb-rof-rule" onclick="rfbPickRoF('rule')">
+            <div class="flow-choice-icon">
+              <span class="material-symbols-outlined" style="font-size:28px;vertical-align:middle">bolt</span>
+            </div>
+            <h5>Rule</h5>
+            <p>The system evaluates conditions on a schedule and generates a recommendation for you to act on.<br>You confirm before anything changes in Google Ads.</p>
+          </div>
+          <div class="flow-choice-card" id="rfb-rof-flag" onclick="rfbPickRoF('flag')">
+            <div class="flow-choice-icon">
+              <span class="material-symbols-outlined" style="font-size:28px;vertical-align:middle">flag</span>
+            </div>
+            <h5>Flag</h5>
+            <p>The system monitors for a condition and raises an alert in the dashboard.<br>No action is taken — flags are information only.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Step 3: Type ── -->
+    <div id="rfb-sc-3">
+      <div class="mb-4">
+        <div class="flow-section-label mb-3" id="rfb-type-label">Rule type</div>
+        <div class="flow-cat-grid" id="rfb-type-grid">
+          <!-- Populated by rfbRenderTypeStep() -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Step 4: Conditions & Action ── -->
+    <div id="rfb-sc-4">
+
+      <div class="mb-4">
+        <div class="flow-section-label mb-2">Condition 1 (required)</div>
+        <div class="flow-cond-box">
+          <div class="flow-cond-row">
+            <select class="flow-cond-select" id="rfb-cond1-metric">
+              <option disabled>── ROAS ──</option>
+              <option value="roas_7d">ROAS (7d)</option>
+              <option value="roas_14d">ROAS (14d)</option>
+              <option value="roas_30d">ROAS (30d)</option>
+              <option disabled>── CPA ──</option>
+              <option value="cpa_7d">CPA (7d)</option>
+              <option value="cpa_14d">CPA (14d)</option>
+              <option value="cpa_30d">CPA (30d)</option>
+              <option disabled>── CTR ──</option>
+              <option value="ctr_7d">CTR (7d)</option>
+              <option value="ctr_14d">CTR (14d)</option>
+              <option value="ctr_30d">CTR (30d)</option>
+              <option disabled>── Avg CPC ──</option>
+              <option value="cpc_avg_7d">Avg CPC (7d)</option>
+              <option value="cpc_avg_14d">Avg CPC (14d)</option>
+              <option value="cpc_avg_30d">Avg CPC (30d)</option>
+              <option disabled>── Clicks ──</option>
+              <option value="clicks_7d">Clicks (7d)</option>
+              <option value="clicks_14d">Clicks (14d)</option>
+              <option value="clicks_30d">Clicks (30d)</option>
+              <option disabled>── Conversions ──</option>
+              <option value="conversions_7d">Conversions (7d)</option>
+              <option value="conversions_14d">Conversions (14d)</option>
+              <option value="conversions_30d">Conversions (30d)</option>
+              <option disabled>── Cost ──</option>
+              <option value="cost_7d">Cost (7d)</option>
+              <option value="cost_14d">Cost (14d)</option>
+              <option value="cost_30d">Cost (30d)</option>
+              <option disabled>── Impressions ──</option>
+              <option value="impressions_7d">Impressions (7d)</option>
+              <option value="impressions_14d">Impressions (14d)</option>
+              <option value="impressions_30d">Impressions (30d)</option>
+              <option disabled>── Pacing &amp; IS ──</option>
+              <option value="pacing_vs_cap">Pacing vs cap</option>
+              <option disabled>── Week-on-week % ──</option>
+              <option value="roas_w7_vs_prev_pct">ROAS WoW %</option>
+              <option value="cpa_w7_vs_prev_pct">CPA WoW %</option>
+              <option value="ctr_w7_vs_prev_pct">CTR WoW %</option>
+              <option value="cpc_w7_vs_prev_pct">CPC WoW %</option>
+              <option value="cvr_w7_vs_prev_pct">CVR WoW %</option>
+              <option value="conversions_w7_vs_prev_pct">Conversions WoW %</option>
+              <option value="cost_w7_vs_prev_pct">Spend WoW %</option>
+              <option value="impression_share_w7_vs_prev_pct">IS WoW %</option>
+              <option disabled>── System signals ──</option>
+              <option value="click_z_score">Click Volume Anomaly ⚙</option>
+              <option value="cost_z_score">Cost Anomaly ⚙</option>
+              <option value="impression_z_score">Impression Anomaly ⚙</option>
+              <option value="conv_tracking_loss_detected">Conversion Tracking Loss ⚙</option>
+              <option value="landing_page_status">Landing Page Down ⚙</option>
+              <option value="landing_page_load_ms">Landing Page Slow ⚙</option>
+              <option value="ads_disapproved_count">Ads Disapproved ⚙</option>
+              <option value="billing_issue_detected">Billing Issue ⚙</option>
+              <option value="tracking_tag_present">Tracking Tag Missing ⚙</option>
+              <option value="budget_exhausted_hour">Budget Exhausted Early ⚙</option>
+            </select>
+            <select class="flow-cond-select" id="rfb-cond1-op">
+              <option value="gt">is greater than</option>
+              <option value="lt">is less than</option>
+              <option value="gte">is greater than or equal to</option>
+              <option value="eq">is equal to</option>
+              <option value="lte">is less than or equal to</option>
+            </select>
+            <input class="flow-cond-input" id="rfb-cond1-val" type="text" value="1.15">
+            <select class="flow-cond-select" id="rfb-cond1-ref">
+              <option value="x_target">× target</option>
+              <option value="absolute">absolute</option>
+              <option value="pct">%</option>
+            </select>
+          </div>
+          <button class="flow-add-cond-btn" type="button" id="rfb-add-cond-btn" onclick="rfbToggleCond2()">+ Add second condition (optional)</button>
+          <div id="rfb-cond-2" class="flow-cond-2">
+            <div class="flow-section-label mt-2 mb-2">Condition 2 (optional)</div>
+            <div class="flow-cond-row">
+              <select class="flow-cond-select" id="rfb-cond2-metric">
+                <option disabled>── ROAS ──</option>
+                <option value="roas_7d">ROAS (7d)</option>
+                <option value="roas_14d">ROAS (14d)</option>
+                <option value="roas_30d">ROAS (30d)</option>
+                <option disabled>── CPA ──</option>
+                <option value="cpa_7d">CPA (7d)</option>
+                <option value="cpa_14d">CPA (14d)</option>
+                <option value="cpa_30d">CPA (30d)</option>
+                <option disabled>── CTR ──</option>
+                <option value="ctr_7d">CTR (7d)</option>
+                <option value="ctr_14d">CTR (14d)</option>
+                <option value="ctr_30d">CTR (30d)</option>
+                <option disabled>── Avg CPC ──</option>
+                <option value="cpc_avg_7d">Avg CPC (7d)</option>
+                <option value="cpc_avg_14d">Avg CPC (14d)</option>
+                <option value="cpc_avg_30d">Avg CPC (30d)</option>
+                <option disabled>── Clicks ──</option>
+                <option value="clicks_7d">Clicks (7d)</option>
+                <option value="clicks_14d">Clicks (14d)</option>
+                <option value="clicks_30d">Clicks (30d)</option>
+                <option disabled>── Conversions ──</option>
+                <option value="conversions_7d">Conversions (7d)</option>
+                <option value="conversions_14d">Conversions (14d)</option>
+                <option value="conversions_30d">Conversions (30d)</option>
+                <option disabled>── Cost ──</option>
+                <option value="cost_7d">Cost (7d)</option>
+                <option value="cost_14d">Cost (14d)</option>
+                <option value="cost_30d">Cost (30d)</option>
+                <option disabled>── Impressions ──</option>
+                <option value="impressions_7d">Impressions (7d)</option>
+                <option value="impressions_14d">Impressions (14d)</option>
+                <option value="impressions_30d">Impressions (30d)</option>
+                <option disabled>── IS ──</option>
+                <option value="impression_share_lost_rank">IS lost to rank</option>
+              </select>
+              <select class="flow-cond-select" id="rfb-cond2-op">
+                <option value="gte">is greater than or equal to</option>
+                <option value="gt">is greater than</option>
+                <option value="lt">is less than</option>
+                <option value="lte">is less than or equal to</option>
+              </select>
+              <input class="flow-cond-input" id="rfb-cond2-val" type="text" value="30">
+              <select class="flow-cond-select" id="rfb-cond2-ref">
+                <option value="absolute">absolute</option>
+                <option value="pct">%</option>
+                <option value="x_target">× target</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action section (rules only — hidden for flags) -->
+      <div id="rfb-action-section">
+        <div class="flow-section-divider"><span>Action</span></div>
+        <div class="mb-4">
+          <div class="flow-section-label mb-2">What should happen when conditions are met?</div>
+          <div class="flow-action-box">
+            <div class="flow-action-row">
+              <select class="flow-cond-select" id="rfb-action-type">
+                <option value="increase_budget">Increase budget by</option>
+                <option value="decrease_budget">Decrease budget by</option>
+                <option value="increase_troas">Increase tROAS target by</option>
+                <option value="decrease_troas">Decrease tROAS target by</option>
+                <option value="increase_tcpa">Increase tCPA target by</option>
+                <option value="decrease_tcpa">Decrease tCPA target by</option>
+                <option value="increase_max_cpc">Increase Max CPC cap by</option>
+                <option value="decrease_max_cpc">Decrease Max CPC cap by</option>
+                <option value="pause">Pause campaign</option>
+              </select>
+              <input class="flow-cond-input" id="rfb-action-mag" type="text" value="10" style="width:70px">
+              <span id="rfb-pct-label" style="font-size:13px;color:#5f6368;">%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rule settings -->
+      <div id="rfb-rule-settings">
+        <div class="flow-section-label mb-2">Rule settings</div>
+        <div class="flow-cond-box">
+        <div class="flow-settings-grid">
+          <div class="flow-settings-field">
+            <label>Cooldown period</label>
+            <select id="rfb-cooldown">
+              <option value="7">7 days</option>
+              <option value="14">14 days</option>
+              <option value="30">30 days</option>
+            </select>
+          </div>
+          <div class="flow-settings-field">
+            <label>Risk level (auto-calculated)</label>
+            <select id="rfb-risk" disabled>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+        </div><!-- end flow-cond-box -->
+      </div>
+
+      <!-- Warnings — shown above footer buttons -->
+      <div id="rfb-warnings-section">
+        <div class="flow-guardrail-note mt-3">
+          <span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle">warning</span>
+          The system will cap this at the guardrail limit defined in Client Settings.<br>Even if you enter a higher value here, the guardrail takes precedence.
+        </div>
+        <div class="flow-human-note">
+          <span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle">lock</span>
+          All campaign-level actions require your confirmation before anything changes in Google Ads.<br>This rule generates a recommendation only.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Step 5: Summary & Save ── -->
+    <div id="rfb-sc-5">
+
+      <div class="mb-4">
+        <div class="flow-section-label mb-2">Rule name</div>
+        <input type="text" class="flow-name-field" id="rfb-name-field" placeholder="Give this rule a clear name">
+        <div class="flow-name-hint">Give this rule a clear name so it's easy to identify in the table</div>
+      </div>
+
+      <div class="mb-3">
+        <div class="flow-section-label mb-2">Review everything before saving</div>
+        <div class="flow-summary-box" id="rfb-summary-box">
+          <!-- Populated by rfbBuildSummary() -->
+        </div>
+      </div>
+
+      <div id="rfb-save-error" class="flow-error-msg"></div>
+
+    </div>
+
+  </div><!-- end flow-body -->
+
+  <!-- Option A: Sidebar — your choices so far -->
+  <div class="flow-sidebar" id="rfb-sidebar">
+    <div class="flow-sidebar-title">Your choices</div>
+
+    <div class="flow-sidebar-row" id="sb-row-1">
+      <div class="flow-sidebar-step">Step 1</div>
+      <div class="flow-sidebar-label">Campaigns</div>
+      <div class="flow-sidebar-value pending" id="sb-val-1">—</div>
+    </div>
+    <div class="flow-sidebar-divider"></div>
+
+    <div class="flow-sidebar-row" id="sb-row-2">
+      <div class="flow-sidebar-step">Step 2</div>
+      <div class="flow-sidebar-label">Rule or flag</div>
+      <div class="flow-sidebar-value pending" id="sb-val-2">—</div>
+    </div>
+    <div class="flow-sidebar-divider"></div>
+
+    <div class="flow-sidebar-row" id="sb-row-3">
+      <div class="flow-sidebar-step">Step 3</div>
+      <div class="flow-sidebar-label">Type</div>
+      <div class="flow-sidebar-value pending" id="sb-val-3">—</div>
+    </div>
+    <div class="flow-sidebar-divider"></div>
+
+    <div class="flow-sidebar-row" id="sb-row-4">
+      <div class="flow-sidebar-step">Step 4</div>
+      <div class="flow-sidebar-label">Conditions &amp; action</div>
+      <div class="flow-sidebar-value pending" id="sb-val-4a">—</div>
+      <div class="flow-sidebar-value pending" id="sb-val-4b" style="display:none;"></div>
+      <div class="flow-sidebar-value pending sb-action-val" id="sb-val-4c" style="display:none;margin-top:4px;padding-top:4px;border-top:1px solid #e8e8e8;"></div>
+      <div class="flow-sidebar-value pending" id="sb-val-4d" style="display:none;"></div>
+    </div>
+    <div class="flow-sidebar-divider"></div>
+
+    <div class="flow-sidebar-row" id="sb-row-5">
+      <div class="flow-sidebar-step">Step 5</div>
+      <div class="flow-sidebar-label">Summary</div>
+      <div class="flow-sidebar-value pending" id="sb-val-5">—</div>
+    </div>
+
+  </div><!-- end flow-sidebar -->
+
+  </div><!-- end flow-body-wrap -->
+
+  <!-- Footer -->
+  <div class="flow-footer">
+    <button class="btn" id="rfb-btn-back" type="button" onclick="rfbPrevStep()">← Back</button>
+    <div class="flow-step-indicator" id="rfb-step-ind">Step 1 of 5</div>
+    <button class="btn btn-primary" id="rfb-btn-next" type="button" onclick="rfbNextStep()">Next →</button>
+  </div>
+
+</div><!-- end flow-panel -->
+</div><!-- end rules-flow-overlay -->
+
+
+<script>
+// ── Flow builder state ────────────────────────────────────────────────────────
+var _rfbStep        = 1;
+var _rfbEditId      = null;   // rule id when editing
+var _rfbRoF         = 'rule'; // 'rule' or 'flag'
+var _rfbType        = 'budget';
+var _rfbCond2Open   = false;
+var _rfbLockStrategy = null;  // e.g. 'troas', 'tcpa', 'max_clicks', null
+
+// Campaign list — pre-sanitised in the route as rfb_campaigns (plain string dicts)
+var _rfbAllCampaigns = {{ rfb_campaigns | tojson if rfb_campaigns is defined else '[]' }};
+
+// Strategy normalisation
+function _rfbNormStrategy(s) {
+  s = (s || '').toLowerCase();
+  if (s.indexOf('target_roas') >= 0 || s === 'troas') return 'troas';
+  if (s.indexOf('target_cpa')  >= 0 || s === 'tcpa')  return 'tcpa';
+  if (s.indexOf('maximize_clicks') >= 0 || s.indexOf('max_clicks') >= 0 || s.indexOf('manual_cpc') >= 0) return 'max_clicks';
+  return 'other';
+}
+
+var RFB_STRATEGY_LABELS = {troas:'tROAS', tcpa:'tCPA', max_clicks:'Max Clicks', other:'Other', all:'All'};
+
+var RFB_TYPE_FOR_ROF = {
+  rule:  [{v:'budget',label:'Budget',icon:'payments',desc:'Increase or decrease daily budget amount'},
+          {v:'bid',   label:'Bid',   icon:'my_location',desc:'Adjust tROAS, tCPA or Max CPC.'},
+          {v:'status',label:'Status',icon:'pause_circle',desc:'Pause campaign (enable is always manual)'}],
+  flag:  [{v:'performance',label:'Performance',icon:'trending_down',desc:'Monitor key performance metrics'},
+          {v:'anomaly',    label:'Anomaly',     icon:'warning',     desc:'Detect abnormal behaviour in real time'},
+          {v:'technical',  label:'Technical',   icon:'build',       desc:'Detect technical/tracking issues'}]
+};
+
+var RFB_STEP_TITLES = ['','Select campaigns','Rule or flag?','Choose type','Set conditions & action','Review & save'];
+var RFB_STEP_SUBS   = [
+  '',
+  'Step 1 of 5 — Select the campaigns this rule will apply to',
+  'Step 2 of 5 — Choose whether to create a rule or a flag',
+  'Step 3 of 5 — Choose the type',
+  'Step 4 of 5 — Define conditions and the action to take',
+  'Step 5 of 5 — Name the rule and review everything before saving'
+];
+
+// ── Open / close ──────────────────────────────────────────────────────────────
+function openRulesFlow(existingRow) {
+  _rfbEditId    = existingRow ? (existingRow.id || null) : null;
+  _rfbRoF       = 'rule';
+  _rfbType      = 'budget';
+  _rfbCond2Open = false;
+  _rfbLockStrategy = null;
+
+  if (existingRow) {
+    _rfbRoF  = existingRow.rule_or_flag || existingRow.rof || 'rule';
+    _rfbType = existingRow.type || 'budget';
+  }
+
+  rfbResetForm();
+
+  if (existingRow && existingRow.id) {
+    rfbPopulateFromRow(existingRow);
+  }
+
+  _rfbStep = 1;
+  rfbRenderStep();
+
+  var overlay = document.getElementById('rules-flow-overlay');
+  overlay.style.display = 'flex';
+  setTimeout(function(){ overlay.classList.add('show'); }, 10);
+}
+
+function closeRulesFlow() {
+  var overlay = document.getElementById('rules-flow-overlay');
+  overlay.classList.remove('show');
+  setTimeout(function(){ overlay.style.display = 'none'; }, 220);
+}
+
+// ── Form reset / populate ─────────────────────────────────────────────────────
+function rfbResetForm() {
+  document.getElementById('rfb-camp-search').value = '';
+  document.getElementById('rfb-cond-2').style.display = 'none';   // FIX: was 'rfb-cond2'
+  document.getElementById('rfb-add-cond-btn').textContent = '+ Add second condition (optional)';
+  document.getElementById('rfb-save-error').style.display = 'none';
+  document.getElementById('rfb-save-error').textContent   = '';
+  document.getElementById('rfb-name-field').value = '';
+  document.getElementById('rfb-cond1-val').value  = '1.15';
+  document.getElementById('rfb-cond2-val').value  = '30';
+  document.getElementById('rfb-action-mag').value = '10';
+  document.getElementById('rfb-cooldown').value   = '7';
+  _rfbSelectedIds    = [];
+  _rfbCond2Open      = false;
+  _rfbSavedActionType = null;
+  rfbRenderCampList('');
+  rfbUpdateStrategyLock();
+}
+
+function rfbPopulateFromRow(row) {
+  document.getElementById('rfb-name-field').value = row.name || '';
+  document.getElementById('rfb-cooldown').value   = String(row.cooldown_days || 7);
+
+  // Risk
+  var riskSel = document.getElementById('rfb-risk');
+  if (row.risk_level) riskSel.value = row.risk_level;
+
+  // Entity scope → pre-select campaigns
+  try {
+    var scope = typeof row.entity_scope === 'string' ? JSON.parse(row.entity_scope) : row.entity_scope;
+    if (scope && scope.scope === 'specific' && Array.isArray(scope.campaigns)) {
+      _rfbSelectedIds = scope.campaigns.map(String);
+    } else {
+      _rfbSelectedIds = [];
+    }
+  } catch(e) { _rfbSelectedIds = []; }
+
+  // Conditions
+  try {
+    var conds = typeof row.conditions === 'string' ? JSON.parse(row.conditions) : row.conditions;
+    if (Array.isArray(conds) && conds.length > 0) {
+      rfbSetCondRow(1, conds[0]);
+      if (conds.length > 1) {
+        rfbSetCondRow(2, conds[1]);
+        rfbToggleCond2();
+      }
+    }
+  } catch(e) {}
+
+  // Action
+  _rfbSavedActionType = row.action_type || null;
+  if (row.action_type) {
+    var at = document.getElementById('rfb-action-type');
+    if (at) { for (var i=0; i<at.options.length; i++) { if (at.options[i].value === row.action_type) { at.selectedIndex = i; break; } } }
+  }
+  if (row.action_magnitude != null) {
+    document.getElementById('rfb-action-mag').value = row.action_magnitude;
+  }
+}
+
+var _rfbSelectedIds    = [];
+var _rfbSavedActionType = null;
+
+function rfbNormOp(op) {
+  var map = {'>': 'gt', '<': 'lt', '>=': 'gte', '<=': 'lte', '=': 'eq'};
+  return map[op] || op;
+}
+function rfbNormUnit(unit) {
+  var map = {'percent': 'pct', 'x_target': 'x_target', 'absolute': 'absolute'};
+  return map[unit] || unit;
+}
+
+function rfbSetCondRow(n, cond) {
+  var pfx = 'rfb-cond' + n + '-';
+  var mSel = document.getElementById(pfx + 'metric');
+  var oSel = document.getElementById(pfx + 'op');
+  var vIn  = document.getElementById(pfx + 'val');
+  var rSel = document.getElementById(pfx + 'ref');
+  if (!mSel) return;
+  var normOp  = cond.op  || rfbNormOp(cond.operator || '');
+  var normRef = cond.ref || rfbNormUnit(cond.unit || '');
+  if (cond.metric)    { for (var i=0;i<mSel.options.length;i++) { if (mSel.options[i].value===cond.metric) { mSel.selectedIndex=i; break; } } }
+  if (normOp)         { for (var i=0;i<oSel.options.length;i++) { if (oSel.options[i].value===normOp)      { oSel.selectedIndex=i; break; } } }
+  if (cond.value != null) vIn.value = cond.value;
+  if (normRef && rSel){ for (var i=0;i<rSel.options.length;i++) { if (rSel.options[i].value===normRef)     { rSel.selectedIndex=i; break; } } }
+}
+
+// ── Campaign list rendering ───────────────────────────────────────────────────
+function rfbRenderCampList(filter) {
+  var list = document.getElementById('rfb-camp-list');
+  if (!list) return;
+  filter = (filter || '').toLowerCase();
+  var html = '';
+  _rfbAllCampaigns.forEach(function(c) {
+    if (filter && c.name.toLowerCase().indexOf(filter) < 0) return;
+    var norm   = _rfbNormStrategy(c.strategy);
+    var locked = _rfbLockStrategy && norm !== _rfbLockStrategy;
+    var sel    = _rfbSelectedIds.indexOf(c.id) >= 0;
+    var stratLabel = RFB_STRATEGY_LABELS[norm] || c.strategy;
+    html += '<div class="flow-camp-item' + (sel?' selected':'') + (locked?' disabled-camp':'') + '"' +
+            ' data-id="' + rfbEsc(c.id) + '"' +
+            ' data-strategy="' + norm + '"' +
+            (locked ? ' title="Different bidding strategy — incompatible"' : '') +
+            ' onclick="rfbToggleCamp(this)">' +
+            '<input type="checkbox"' + (sel?' checked':'') + (locked?' disabled':'') +
+            ' style="width:14px;height:14px;accent-color:#1a73e8;flex-shrink:0;cursor:' + (locked?'default':'pointer') + '">' +
+            '<span style="flex:1;font-size:13px">' + rfbEsc(c.name) + '</span>' +
+            '<span class="badge-strategy">' + rfbEsc(stratLabel) + '</span>' +
+            '</div>';
+  });
+  if (!html) html = '<div style="padding:12px;font-size:13px;color:#5f6368">No campaigns found</div>';
+  list.innerHTML = html;
+}
+
+function rfbFilterCampaigns(v) {
+  rfbRenderCampList(v);
+}
+
+function rfbToggleCamp(el) {
+  if (el.classList.contains('disabled-camp')) return;
+  var id = el.getAttribute('data-id');
+  var idx = _rfbSelectedIds.indexOf(id);
+  if (idx >= 0) {
+    _rfbSelectedIds.splice(idx, 1);
+    el.classList.remove('selected');
+    el.querySelector('input').checked = false;
+  } else {
+    _rfbSelectedIds.push(id);
+    el.classList.add('selected');
+    el.querySelector('input').checked = true;
+  }
+  rfbUpdateStrategyLock();
+  rfbRenderCampList(document.getElementById('rfb-camp-search').value);
+}
+
+function rfbSelectAll() {
+  _rfbSelectedIds = [];
+  _rfbAllCampaigns.forEach(function(c) {
+    var norm = _rfbNormStrategy(c.strategy);
+    if (!_rfbLockStrategy || norm === _rfbLockStrategy) {
+      _rfbSelectedIds.push(c.id);
+    }
+  });
+  rfbRenderCampList(document.getElementById('rfb-camp-search').value);
+  rfbUpdateStrategyLock();
+}
+
+function rfbClearAll() {
+  _rfbSelectedIds = [];
+  rfbRenderCampList(document.getElementById('rfb-camp-search').value);
+  rfbUpdateStrategyLock();
+}
+
+function rfbUpdateStrategyLock() {
+  var strategies = [];
+  _rfbSelectedIds.forEach(function(id) {
+    var c = _rfbAllCampaigns.filter(function(x){ return x.id === id; })[0];
+    if (c) {
+      var n = _rfbNormStrategy(c.strategy);
+      if (strategies.indexOf(n) < 0) strategies.push(n);
+    }
+  });
+
+  var lockEl   = document.getElementById('rfb-strategy-lock');
+  var lockMsg  = document.getElementById('rfb-lock-msg');
+  if (strategies.length === 1) {
+    _rfbLockStrategy = strategies[0];
+    lockEl.style.cssText = '';  // clear any warning overrides
+    lockEl.style.display = 'flex';
+    lockMsg.innerHTML = 'Strategy lock active: <strong>' + (RFB_STRATEGY_LABELS[_rfbLockStrategy] || _rfbLockStrategy) +
+      '</strong> — other strategy campaigns are greyed out. Mixed strategies are not allowed in a single rule.';
+  } else if (strategies.length === 0) {
+    _rfbLockStrategy = null;
+    lockEl.style.display = 'none';
+  } else {
+    // mixed — warn
+    _rfbLockStrategy = null;
+    lockEl.style.display = 'flex';
+    lockEl.style.background = '#fff8e1';
+    lockEl.style.borderColor = '#ffe082';
+    lockEl.style.color = '#b45309';
+    lockMsg.innerHTML = '<strong>Warning:</strong> Selected campaigns have mixed bidding strategies. Please select campaigns with the same strategy.';
+  }
+}
+
+// ── RoF + Type selection ──────────────────────────────────────────────────────
+function rfbPickRoF(v) {
+  _rfbRoF = v;
+  document.getElementById('rfb-rof-rule').classList.toggle('selected', v === 'rule');
+  document.getElementById('rfb-rof-flag').classList.toggle('selected', v === 'flag');
+  // Default type for each
+  _rfbType = v === 'rule' ? 'budget' : 'performance';
+}
+
+function rfbRenderTypeStep() {
+  var label = document.getElementById('rfb-type-label');
+  var grid  = document.getElementById('rfb-type-grid');
+  label.textContent = _rfbRoF === 'rule' ? 'Rule type' : 'Flag type';
+  var cards = RFB_TYPE_FOR_ROF[_rfbRoF] || RFB_TYPE_FOR_ROF.rule;
+  grid.innerHTML = cards.map(function(t) {
+    var sel = _rfbType === t.v;
+    return '<div class="flow-cat-card' + (sel?' selected':'') + '" onclick="rfbPickType(this,\'' + t.v + '\')">' +
+      '<div class="flow-cat-icon"><span class="material-symbols-outlined" style="font-size:26px;vertical-align:middle">' + t.icon + '</span></div>' +
+      '<h5>' + t.label + '</h5><p>' + t.desc + '</p></div>';
+  }).join('');
+}
+
+function rfbPickType(el, v) {
+  _rfbType = v;
+  document.querySelectorAll('#rfb-type-grid .flow-cat-card').forEach(function(c){ c.classList.remove('selected'); });
+  el.classList.add('selected');
+  rfbUpdateActionTypeOptions();
+}
+
+// ── Step 4 dynamic adjustments ────────────────────────────────────────────────
+var RFB_ACTION_OPTIONS = {
+  budget: [
+    {v:'increase_budget', l:'Increase budget by'},
+    {v:'decrease_budget', l:'Decrease budget by'}
+  ],
+  bid: [
+    {v:'increase_troas',   l:'Increase tROAS target by'},
+    {v:'decrease_troas',   l:'Decrease tROAS target by'},
+    {v:'increase_tcpa',    l:'Increase tCPA target by'},
+    {v:'decrease_tcpa',    l:'Decrease tCPA target by'},
+    {v:'increase_max_cpc', l:'Increase Max CPC cap by'},
+    {v:'decrease_max_cpc', l:'Decrease Max CPC cap by'}
+  ],
+  status: [
+    {v:'pause', l:'Pause campaign'}
+  ]
+};
+
+function rfbUpdateActionTypeOptions() {
+  var sel  = document.getElementById('rfb-action-type');
+  var mag  = document.getElementById('rfb-action-mag');
+  var pct  = document.getElementById('rfb-pct-label');
+  if (!sel) return;
+  var opts = RFB_ACTION_OPTIONS[_rfbType] || RFB_ACTION_OPTIONS.budget;
+  sel.innerHTML = opts.map(function(o){ return '<option value="' + o.v + '">' + o.l + '</option>'; }).join('');
+  if (_rfbSavedActionType) {
+    for (var i=0;i<sel.options.length;i++) { if (sel.options[i].value===_rfbSavedActionType) { sel.selectedIndex=i; break; } }
+  }
+  var isPause = _rfbType === 'status';
+  mag.style.display = isPause ? 'none' : '';
+  pct.style.display = isPause ? 'none' : '';
+  if (!isPause) sel.style.minWidth = '200px';
+}
+
+function rfbShowStep4ForRoF() {
+  var actionSec    = document.getElementById('rfb-action-section');
+  var ruleSettings = document.getElementById('rfb-rule-settings');
+  var warningsSec  = document.getElementById('rfb-warnings-section');
+  if (_rfbRoF === 'flag') {
+    actionSec.style.display    = 'none';
+    ruleSettings.style.display = 'none';
+    if (warningsSec) warningsSec.style.display = 'none';
+  } else {
+    actionSec.style.display    = '';
+    ruleSettings.style.display = '';
+    if (warningsSec) warningsSec.style.display = '';
+    rfbUpdateActionTypeOptions();
+  }
+}
+
+function rfbAutoName() {
+  var nameField = document.getElementById('rfb-name-field');
+  if (nameField.value.trim()) return; // don't overwrite user's choice
+  var typeLabels = {budget:'Budget',bid:'Bid',status:'Status',performance:'Performance',anomaly:'Anomaly',technical:'Technical'};
+  var metric1 = document.getElementById('rfb-cond1-metric').options[document.getElementById('rfb-cond1-metric').selectedIndex].text.replace(' ⚙','');
+  var action  = '';
+  if (_rfbRoF === 'rule') {
+    var at = document.getElementById('rfb-action-type');
+    action = at ? at.options[at.selectedIndex].text : '';
+    action = action.replace(' by','').replace(' target','');
+  }
+  var stratLabel = _rfbLockStrategy ? ' (' + (RFB_STRATEGY_LABELS[_rfbLockStrategy] || _rfbLockStrategy) + ')' : '';
+  if (_rfbRoF === 'rule') {
+    nameField.value = action + ' — ' + metric1 + stratLabel;
+  } else {
+    nameField.value = 'Flag: ' + metric1 + ' (' + (typeLabels[_rfbType] || _rfbType) + ')' + stratLabel;
+  }
+}
+
+// ── Condition 2 toggle ────────────────────────────────────────────────────────
+function rfbToggleCond2() {
+  _rfbCond2Open = !_rfbCond2Open;
+  var el = document.getElementById('rfb-cond-2');
+  var btn = document.getElementById('rfb-add-cond-btn');
+  el.style.display = _rfbCond2Open ? 'block' : 'none';
+  btn.textContent = _rfbCond2Open ? '− Remove second condition' : '+ Add second condition (optional)';
+}
+
+// ── Step navigation ───────────────────────────────────────────────────────────
+function rfbNextStep() {
+  if (!rfbValidateStep(_rfbStep)) return;
+  if (_rfbStep < 5) {
+    _rfbStep++;
+    rfbRenderStep();
+  } else {
+    rfbSave();
+  }
+}
+
+function rfbPrevStep() {
+  if (_rfbStep > 1) { _rfbStep--; rfbRenderStep(); }
+}
+
+function rfbValidateStep(step) {
+  if (step === 1) {
+    // Empty selection = "All campaigns" — valid. Only block on mixed strategies if specific campaigns are chosen.
+    if (_rfbSelectedIds.length > 1) {
+      var strategies = [];
+      _rfbSelectedIds.forEach(function(id) {
+        var c = _rfbAllCampaigns.filter(function(x){ return x.id === id; })[0];
+        if (c) { var n = _rfbNormStrategy(c.strategy); if (strategies.indexOf(n) < 0) strategies.push(n); }
+      });
+      if (strategies.length > 1) {
+        rfbShowToast('Mixed bidding strategies are not allowed. Please select campaigns with the same strategy.', 'warning');
+        return false;
+      }
+    }
+  }
+  if (step === 5) {
+    var name = document.getElementById('rfb-name-field').value.trim();
+    if (!name) {
+      document.getElementById('rfb-save-error').textContent = 'Please enter a name for this rule.';
+      document.getElementById('rfb-save-error').style.display = 'block';
+      return false;
+    }
+    document.getElementById('rfb-save-error').style.display = 'none';
+  }
+  return true;
+}
+
+
+// ── Sidebar: update "your choices" panel ──────────────────────────────────────
+function rfbUpdateSidebar() {
+  var RFB_TYPE_LABELS = {budget:'Budget', bid:'Bid', status:'Status', performance:'Performance', anomaly:'Anomaly', technical:'Technical'};
+  var RFB_STRAT_LABELS = {troas:'tROAS', tcpa:'tCPA', max_clicks:'Max Clicks', all:'All', manual_cpc:'Manual CPC'};
+
+  function setVal(id, text, done) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'flow-sidebar-value' + (done ? '' : ' pending');
+  }
+
+  // Step 1 — campaigns
+  if (_rfbStep > 1 || _rfbEditId) {
+    var campLabel = _rfbSelectedIds.length === 0
+      ? 'All campaigns'
+      : (_rfbSelectedIds.length === 1 ? '1 campaign' : _rfbSelectedIds.length + ' campaigns');
+    if (_rfbLockStrategy) campLabel += ' · ' + (RFB_STRAT_LABELS[_rfbLockStrategy] || _rfbLockStrategy);
+    setVal('sb-val-1', campLabel, true);
+  }
+
+  // Step 2 — rule or flag
+  if (_rfbStep > 2 || _rfbEditId) {
+    setVal('sb-val-2', _rfbRoF === 'rule' ? 'Rule' : 'Flag', true);
+  }
+
+  // Step 3 — type
+  if (_rfbStep > 3 || _rfbEditId) {
+    var typeLabel = RFB_TYPE_LABELS[_rfbType] || _rfbType;
+    setVal('sb-val-3', typeLabel, true);
+  }
+
+  // Step 4 — conditions + action + cooldown
+  if (_rfbStep > 4 || (_rfbStep === 4) || _rfbEditId) {
+    var OP_SYMBOLS = {gt:'>',lt:'<',gte:'≥',lte:'≤',eq:'='};
+    var REF_LABELS = {x_target:'× target', pct:'%', absolute:''};
+
+    function fmtCond(mEl, oEl, vEl, rEl) {
+      if (!mEl) return '—';
+      var metric = mEl.options[mEl.selectedIndex].text.replace(' ⚙','');
+      var op     = OP_SYMBOLS[oEl ? oEl.value : ''] || (oEl ? oEl.value : '');
+      var val    = vEl ? vEl.value.trim() : '';
+      var ref    = REF_LABELS[rEl ? rEl.value : ''] !== undefined ? REF_LABELS[rEl.value] : '';
+      return metric + ' ' + op + ' ' + val + (ref ? ref : '');
+    }
+
+    function fmtLine(prefix, text, el, extraClass) {
+      if (!el) return;
+      el.innerHTML = '<span style="display:inline-block;width:18px;color:#202124;font-size:10px;flex-shrink:0;">' + prefix + '</span>' + text;
+      el.className = 'flow-sidebar-value sb-line' + (extraClass ? ' ' + extraClass : '');
+      el.style.display = text ? '' : 'none';
+    }
+
+    // C1
+    var c1 = fmtCond(
+      document.getElementById('rfb-cond1-metric'),
+      document.getElementById('rfb-cond1-op'),
+      document.getElementById('rfb-cond1-val'),
+      document.getElementById('rfb-cond1-ref')
+    );
+    fmtLine('C1', c1, document.getElementById('sb-val-4a'));
+
+    // C2
+    var el4b = document.getElementById('sb-val-4b');
+    if (_rfbCond2Open) {
+      var c2 = fmtCond(
+        document.getElementById('rfb-cond2-metric'),
+        document.getElementById('rfb-cond2-op'),
+        document.getElementById('rfb-cond2-val'),
+        document.getElementById('rfb-cond2-ref')
+      );
+      fmtLine('C2', c2, el4b);
+    } else if (el4b) { el4b.style.display = 'none'; }
+
+    // Action
+    var el4c = document.getElementById('sb-val-4c');
+    if (_rfbRoF === 'rule') {
+      var atEl  = document.getElementById('rfb-action-type');
+      var magEl = document.getElementById('rfb-action-mag');
+      var aStr  = _rfbType === 'status' ? 'Pause campaign'
+                : (atEl ? atEl.options[atEl.selectedIndex].text.replace(' by','') + (magEl ? ' ' + magEl.value + '%' : '') : '');
+      fmtLine('→', aStr, el4c, 'sb-action-val');
+    } else if (el4c) { el4c.style.display = 'none'; }
+
+    // Cooldown
+    var el4d = document.getElementById('sb-val-4d');
+    if (_rfbRoF === 'rule') {
+      var cdEl = document.getElementById('rfb-cooldown');
+      fmtLine('⏱', cdEl ? cdEl.value + 'd cooldown' : '', el4d);
+    } else if (el4d) { el4d.style.display = 'none'; }
+  }
+
+  // Step 5 — name
+  if (_rfbStep === 5 || _rfbEditId) {
+    var nameEl = document.getElementById('rfb-name-field');
+    var nameVal = nameEl && nameEl.value.trim() ? nameEl.value.trim() : 'In progress…';
+    setVal('sb-val-5', nameVal, nameEl && nameEl.value.trim().length > 0);
+  }
+
+  // Highlight the current step row
+  for (var i = 1; i <= 5; i++) {
+    var row = document.getElementById('sb-row-' + i);
+    if (row) row.classList.toggle('active', i === _rfbStep);
+  }
+}
+
+function rfbRenderStep() {
+  // Title / subtitle
+  document.getElementById('rfb-title').textContent    = _rfbEditId ? 'Edit rule or flag' : RFB_STEP_TITLES[_rfbStep];
+  document.getElementById('rfb-subtitle').textContent = RFB_STEP_SUBS[_rfbStep];
+  var editLbl = document.getElementById('rfb-editing-label');
+  if (editLbl) {
+    var nameEl = document.getElementById('rfb-name-field');
+    var editName = nameEl && nameEl.value.trim() ? nameEl.value.trim() : '';
+    if (_rfbEditId && editName) { editLbl.textContent = 'Editing: ' + editName; editLbl.style.display = ''; }
+    else { editLbl.style.display = 'none'; }
+  }
+  document.getElementById('rfb-step-ind').textContent = 'Step ' + _rfbStep + ' of 5';
+
+  // Back / next buttons
+  document.getElementById('rfb-btn-back').style.visibility = _rfbStep === 1 ? 'hidden' : 'visible';
+  document.getElementById('rfb-btn-next').textContent = _rfbStep === 5 ? '✓ Save' : 'Next →';
+
+  // Progress circles — use 'active' and 'done' to match CSS (.flow-prog-step.active / .done)
+  for (var i = 1; i <= 5; i++) {
+    var prog = document.getElementById('rfb-prog-' + i);
+    prog.classList.remove('active', 'done');
+    if (i < _rfbStep) prog.classList.add('done');
+    else if (i === _rfbStep) prog.classList.add('active');
+    if (i < 5) {
+      var pl = document.getElementById('rfb-pline-' + i);
+      if (pl) pl.classList.toggle('done', i < _rfbStep);
+    }
+  }
+
+  // Step content — show/hide via inline style (IDs rfb-sc-1 through rfb-sc-5)
+  for (var j = 1; j <= 5; j++) {
+    var sc = document.getElementById('rfb-sc-' + j);
+    if (sc) sc.style.display = j === _rfbStep ? 'block' : 'none';
+  }
+
+  // Step-specific setup
+  if (_rfbStep === 2) {
+    document.getElementById('rfb-rof-rule').classList.toggle('selected', _rfbRoF === 'rule');
+    document.getElementById('rfb-rof-flag').classList.toggle('selected', _rfbRoF === 'flag');
+  }
+  if (_rfbStep === 3) {
+    rfbRenderTypeStep();
+  }
+  if (_rfbStep === 4) {
+    rfbShowStep4ForRoF();
+  }
+  if (_rfbStep === 5) {
+    rfbAutoName();
+    rfbAutoRisk();
+    rfbBuildSummary();
+  }
+  rfbUpdateSidebar();
+}
+
+function rfbAutoRisk() {
+  var riskSel = document.getElementById('rfb-risk');
+  if (!riskSel) return;
+  var mag = parseFloat(document.getElementById('rfb-action-mag').value || '10');
+  var risk = 'low';
+  if (_rfbRoF === 'flag') risk = 'low';
+  else if (_rfbType === 'status') risk = 'high';
+  else if (_rfbType === 'bid') risk = mag > 10 ? 'high' : 'medium';
+  else { risk = mag > 15 ? 'medium' : 'low'; }
+  riskSel.value = risk;
+}
+
+// ── Summary ───────────────────────────────────────────────────────────────────
+function rfbBuildSummary() {
+  var box = document.getElementById('rfb-summary-box');
+
+  var campNames = _rfbSelectedIds.length === 0 ? 'All campaigns' :
+    _rfbSelectedIds.map(function(id) {
+      var c = _rfbAllCampaigns.filter(function(x){ return x.id===id; })[0];
+      return c ? c.name : id;
+    }).join(', ');
+
+  var stratLabel = _rfbLockStrategy ? (RFB_STRATEGY_LABELS[_rfbLockStrategy] || _rfbLockStrategy) + ' campaigns only' : 'All strategies';
+
+  var typeLabel = {budget:'Budget rule',bid:'Bid rule',status:'Status rule',
+                   performance:'Performance flag',anomaly:'Anomaly flag',technical:'Technical flag'}[_rfbType] || _rfbType;
+
+  var m1Sel = document.getElementById('rfb-cond1-metric');
+  var m1    = m1Sel.options[m1Sel.selectedIndex].text.replace(' ⚙','');
+  var o1Sel = document.getElementById('rfb-cond1-op');
+  var o1    = o1Sel.options[o1Sel.selectedIndex].text;
+  var v1    = document.getElementById('rfb-cond1-val').value;
+  var r1Sel = document.getElementById('rfb-cond1-ref');
+  var r1    = r1Sel.options[r1Sel.selectedIndex].text;
+  var cond1Str = m1 + ' ' + o1 + ' ' + v1 + (r1 !== 'absolute' ? ' ' + r1 : '');
+
+  var cond2Str = '';
+  if (_rfbCond2Open) {
+    var m2Sel = document.getElementById('rfb-cond2-metric');
+    var m2    = m2Sel.options[m2Sel.selectedIndex].text;
+    var o2Sel = document.getElementById('rfb-cond2-op');
+    var o2    = o2Sel.options[o2Sel.selectedIndex].text;
+    var v2    = document.getElementById('rfb-cond2-val').value;
+    var r2Sel = document.getElementById('rfb-cond2-ref');
+    var r2    = r2Sel.options[r2Sel.selectedIndex].text;
+    cond2Str  = m2 + ' ' + o2 + ' ' + v2 + (r2 !== 'absolute' ? ' ' + r2 : '');
+  }
+
+  var actionStr = '—';
+  var cooldownStr = '—';
+  var riskStr = '—';
+  if (_rfbRoF === 'rule') {
+    if (_rfbType === 'status') {
+      actionStr = 'Pause campaign';
+    } else {
+      var atSel = document.getElementById('rfb-action-type');
+      var at    = atSel.options[atSel.selectedIndex].text;
+      var mag   = document.getElementById('rfb-action-mag').value;
+      actionStr = at + ' ' + mag + '%';
+    }
+    cooldownStr = document.getElementById('rfb-cooldown').value + ' days';
+    var riskSel = document.getElementById('rfb-risk');
+    riskStr = riskSel.options[riskSel.selectedIndex].text || riskSel.value;
+    riskStr = riskStr.charAt(0).toUpperCase() + riskStr.slice(1);
+  }
+
+  var line = function(icon, label, value) {
+    return '<div class="flow-summary-line">' +
+      '<span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle;margin-right:5px">' + icon + '</span>' +
+      '<strong>' + label + ':</strong>&nbsp;' + rfbEsc(value) + '</div>';
+  };
+
+  var html = '<h5>' + (_rfbRoF === 'rule' ? 'Rule' : 'Flag') + ' summary</h5>' +
+    line('push_pin',  'Campaigns',     campNames) +
+    line('lock',      'Strategy lock', stratLabel) +
+    line('bolt',      'Type',          typeLabel) +
+    line('list_alt',  'Condition 1',   cond1Str);
+  if (cond2Str) html += line('list_alt', 'Condition 2', cond2Str);
+  if (_rfbRoF === 'rule') {
+    html += line('ads_click', 'Action',   actionStr) +
+            line('shield',    'Guardrail', 'Capped by Client Settings') +
+            line('lock',      'Confirmation', 'Required before execution') +
+            line('timer',     'Cooldown', cooldownStr) +
+            line('bar_chart', 'Risk',     riskStr);
+  }
+
+  box.innerHTML = html;
+}
+
+// ── Save ──────────────────────────────────────────────────────────────────────
+function rfbSave() {
+  var btnNext = document.getElementById('rfb-btn-next');
+  btnNext.disabled = true;
+  btnNext.textContent = 'Saving…';
+
+  // Build conditions array
+  var m1Sel = document.getElementById('rfb-cond1-metric');
+  var o1Sel = document.getElementById('rfb-cond1-op');
+  var r1Sel = document.getElementById('rfb-cond1-ref');
+  var conds = [{
+    metric: m1Sel.value,
+    op:     o1Sel.value,
+    value:  document.getElementById('rfb-cond1-val').value,
+    ref:    r1Sel.value
+  }];
+  if (_rfbCond2Open) {
+    var m2Sel = document.getElementById('rfb-cond2-metric');
+    var o2Sel = document.getElementById('rfb-cond2-op');
+    var r2Sel = document.getElementById('rfb-cond2-ref');
+    conds.push({
+      metric: m2Sel.value,
+      op:     o2Sel.value,
+      value:  document.getElementById('rfb-cond2-val').value,
+      ref:    r2Sel.value
+    });
+  }
+
+  // Entity scope
+  var entityScope;
+  if (_rfbSelectedIds.length === 0) {
+    entityScope = {scope: 'all'};
+  } else {
+    entityScope = {scope: 'specific', campaigns: _rfbSelectedIds};
+  }
+
+  // Action
+  var actionType = null, actionMag = null;
+  if (_rfbRoF === 'rule') {
+    if (_rfbType === 'status') {
+      actionType = 'pause';
+    } else {
+      var atSel = document.getElementById('rfb-action-type');
+      actionType = atSel.value;
+      actionMag  = parseFloat(document.getElementById('rfb-action-mag').value) || null;
+    }
+  }
+
+  // Risk / cooldown
+  var riskLevel   = null;
+  var cooldownDays = 7;
+  if (_rfbRoF === 'rule') {
+    var riskSel = document.getElementById('rfb-risk');
+    riskLevel   = riskSel.value;
+    cooldownDays = parseInt(document.getElementById('rfb-cooldown').value, 10) || 7;
+  }
+
+  var payload = {
+    name:             document.getElementById('rfb-name-field').value.trim(),
+    rule_or_flag:     _rfbRoF,
+    type:             _rfbType,
+    campaign_type_lock: _rfbLockStrategy || 'all',
+    entity_scope:     entityScope,
+    conditions:       conds,
+    action_type:      actionType,
+    action_magnitude: actionMag,
+    cooldown_days:    cooldownDays,
+    risk_level:       riskLevel,
+    entity_type:      'campaign',
+    enabled:          true
+  };
+
+  var url    = _rfbEditId ? '/campaigns/rules/' + _rfbEditId : '/campaigns/rules';
+  var method = _rfbEditId ? 'PUT' : 'POST';
+
+  fetch(url, {
+    method:  method,
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken()},
+    body:    JSON.stringify(payload)
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    btnNext.disabled = false;
+    btnNext.textContent = '✓ Save';
+    if (data.success) {
+      closeRulesFlow();
+      if (typeof rfLoadData === 'function') rfLoadData();   // FIX: was rfbLoadData (undefined)
+      rfbShowToast((_rfbEditId ? 'Updated' : 'Created') + ' successfully.', 'success');
+    } else {
+      var errEl = document.getElementById('rfb-save-error');
+      errEl.textContent = data.error || 'Save failed. Please try again.';
+      errEl.style.display = 'block';
+    }
+  })
+  .catch(function(err) {
+    btnNext.disabled = false;
+    btnNext.textContent = '✓ Save';
+    var errEl = document.getElementById('rfb-save-error');
+    errEl.textContent = 'Network error. Please try again.';
+    errEl.style.display = 'block';
+  });
+}
+
+// ── Toast (shared with rules_flags_tab if not already defined) ────────────────
+if (typeof rfbShowToast === 'undefined') {
+  function rfbShowToast(msg, type) {
+    if (typeof rfShowToast === 'function') { rfShowToast(msg, type); return; }
+    var t = document.createElement('div');
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 18px;border-radius:6px;font-size:13px;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.15)';
+    t.style.background = type === 'success' ? '#137333' : type === 'warning' ? '#b45309' : '#dc3545';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 3500);
+  }
+}
+
+// ── Utility ───────────────────────────────────────────────────────────────────
+function rfbEsc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>

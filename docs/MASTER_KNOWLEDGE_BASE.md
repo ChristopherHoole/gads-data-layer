@@ -1,23 +1,25 @@
 # MASTER KNOWLEDGE BASE - ADS CONTROL TOWER (A.C.T)
 
-**Version:** 17.0
+**Version:** 18.0
 **Created:** 2026-02-19
-**Updated:** 2026-03-09
+**Updated:** 2026-03-12
 **Purpose:** Complete project context for Master Chat coordination
 
 ---
 
 ## EXECUTIVE SUMMARY
 
-### Current State (March 9, 2026)
+### Current State (March 12, 2026)
 - **Overall Completion:** ~99.9%
-- **Phase:** Outreach complete + UI cleanup done — Apollo.io import + M9 validation next
-- **Active Development:** Master Chat 8.0
-- **Marketing Websites:** https://christopherhoole.online | https://christopherhoole.com
+- **Phase:** Platform hardened — Rules & Recommendations overhaul next
+- **Active Development:** Master Chat 11.0
+- **Primary Website:** https://christopherhoole.com (always use this — never christopherhoole.online)
 - **Email:** chris@christopherhoole.com (Google Workspace, live, DKIM/SPF authenticated)
 - **Rules:** 41 total (13 campaign + 6 keyword + 4 ad_group + 4 ad + 14 shopping)
-- **Recommendations:** 1,492 active (1,256 keywords + 126 shopping + 110 campaigns)
-- **Outreach:** 6 pages complete, all 10 original functions now live
+- **Recommendations:** 1,515 active (1,256 keywords + 126 shopping + 110 campaigns + 23 ads)
+- **Outreach:** 6 pages complete, all 10 original functions live
+- **Tests:** 620 tests, 80% coverage (Chat 89)
+- **Background jobs:** Celery + Redis (replaces daemon threads, Chat 90)
 
 ### Tech Stack
 
@@ -29,6 +31,8 @@
 - **Templating:** Jinja2 Macros (metrics_section M2 + performance_chart M3)
 - **Date Picker:** Custom Google Ads-style dropdown (Chat 79, datepicker.css)
 - **Email:** Gmail SMTP (chris@christopherhoole.com, port 587 TLS, App Password)
+- **Background Jobs:** Celery 5.6.2 + Redis (Memurai on Windows) — see docs/CELERY_STARTUP.md
+- **Tests:** pytest + pytest-cov, 620 tests, 80% coverage
 
 **Marketing Website:**
 - **Framework:** Next.js 14
@@ -37,23 +41,23 @@
 - **Components:** shadcn/ui
 - **Hero:** Three.js WebGL (r128)
 - **Hosting:** Vercel
-- **Domains:** christopherhoole.online (GoDaddy) + christopherhoole.com (Namecheap) — both live on same Vercel project
+- **Domains:** christopherhoole.com (primary) + christopherhoole.online — both live on same Vercel project
 
 ### Development Architecture (2-Tier — Current)
 
 ```
-Master Chat (Claude Desktop App)
+Master Chat (Claude Desktop App / claude.ai)
  → Quick fixes done directly here (file download/replace)
- → Large builds: creates concise task briefs (2 pages max) as downloadable files
+ → Large builds: creates concise task briefs as downloadable files to /docs/
 
-Claude Code (PowerShell Terminal)
+Claude Code (Code tab in Claude Desktop App)
  → Executes large builds autonomously
- → npx @anthropic-ai/claude-code from C:\Users\User\Desktop\gads-data-layer
+ → Reads codebase directly — no file uploads needed
 ```
 
-**Old 3-tier architecture (archived):** Master Chat → Worker Chat → Claude Code. Eliminated due to handoff overhead.
+**Brief delivery rule:** Always save briefs as downloadable files to `/docs/` — never inline in chat.
 
-**Claude Code handles:** file editing, testing, documentation, checkpoint reporting. No file uploads needed — reads codebase directly.
+**Claude Code handles:** file editing, testing, documentation, checkpoint reporting.
 
 ---
 
@@ -109,9 +113,9 @@ Full Google Ads column sets on all 5 entity pages, server-side sort, sticky firs
 - `changes` audit table created in warehouse.duckdb
 
 ### Chat 29 — M8: Changes + Radar Monitoring ✅
-- `act_autopilot/radar.py` — background daemon thread (60s cycle)
+- `act_autopilot/radar.py` — now a Celery task (Chat 90)
 - `act_dashboard/routes/changes.py` — /changes route
-- 5-tab UI (Pending/Monitoring/Successful/Declined/Reverted)
+- 5-tab UI (Pending/Monitoring/Successful/Declined/Reverted) — card grid layout confirmed working
 
 ### Chats 30a/30b — M9: Search Terms + Live Execution ✅
 - Search Terms tab on Keywords page
@@ -119,7 +123,15 @@ Full Google Ads column sets on all 5 entity pages, server-side sort, sticky firs
 - Keyword expansion flagging
 
 ### Marketing Website ✅
-**Deployed:** christopherhoole.online + christopherhoole.com | **Stack:** Next.js 14, Tailwind CSS, Framer Motion, Three.js
+**Deployed:** christopherhoole.com (primary) + christopherhoole.online | **Stack:** Next.js 14, Tailwind CSS, Framer Motion, Three.js
+
+### Chats 84–87 — Website + CV Polish ✅
+| Chat | Feature |
+|------|---------|
+| 84 | CV Download button in Hero + Navigation |
+| 85 | Full SEO (metadata, sitemap, robots, og-image) — PageSpeed Desktop 83, Mobile 76, SEO 100/100 |
+| 86 | WhatsApp floating button + 4 unique messages (WhatsApp: +447999500184) |
+| 87 | LinkedIn URL fix + Insight Tag (partner ID: 9697497) |
 
 ### Rules Creation Phase ✅ (Chats 41-46 — 41 rules complete)
 - Chat 42: 6 Keyword Rules
@@ -129,7 +141,7 @@ Full Google Ads column sets on all 5 entity pages, server-side sort, sticky firs
 - Chat 46: Rules Tab UI Components
 
 ### Multi-Entity Recommendations (Chats 47-49) ✅
-- 1,492 recommendations: 1,256 keywords + 126 shopping + 110 campaigns
+- 1,492 recommendations (pre-Chat 88): 1,256 keywords + 126 shopping + 110 campaigns
 - Entity type filter, color-coded badges, entity-specific pages
 
 ### Module 4: Dashboard Design Upgrade (Chats 57-58) ✅
@@ -161,7 +173,7 @@ Full Google Ads column sets on all 5 entity pages, server-side sort, sticky firs
 | Analytics | /outreach/analytics | 8 KPIs, funnel, 5 charts, performance tables |
 
 ### Chat 65 — Google Sheets → A.C.T Sync ✅
-Contact form leads from christopherhoole.online sync to outreach_leads via `/outreach/sync-from-sheets`
+Contact form leads from christopherhoole.com sync to outreach_leads via `/outreach/sync-from-sheets`
 
 ### Chat 66 — Add Client Modal + Config Validator ✅
 - Christopher Hoole account added: customer_id 1254895944, MCC 4434379827
@@ -169,81 +181,70 @@ Contact form leads from christopherhoole.online sync to outreach_leads via `/out
 
 ### Chat 67 — Real Data Ingestion Pipeline ✅
 **Commit:** e9bcb3f
-
-- `src/gads_pipeline/v1_runner.py` — fixed DB write path (was writing to wrong DB)
-- `scripts/copy_all_to_readonly.py` — copies all 5 analytics tables to warehouse_readonly
+- `src/gads_pipeline/v1_runner.py` — fixed DB write path
+- `scripts/copy_all_to_readonly.py` — copies all 6 analytics tables to warehouse_readonly
 - `tools/run_ingestion.py` — orchestration script
-
-**Blocker:** Google Ads API Basic Access pending (Case 24460840136, applied March 4). Currently Test Access only.
+**Blocker:** Google Ads API Basic Access pending (Case 24460840136, applied March 4)
 
 ### Chat 68 — Live Email Sending ✅
 **Commit:** fe4a0d7 + bug fixes
-
-**Infrastructure setup:**
-- Domain: `christopherhoole.com` purchased on Namecheap
-- Google Workspace Business Starter activated
-- `chris@christopherhoole.com` live with DKIM/SPF authentication
-- Gmail App Password: `iflslbdfppfoehqz` (stored in secrets/email_config.yaml — gitignored)
-
-**Files:**
-- `act_dashboard/email_sender.py` — SMTP sending, config loading, variable substitution, daily limit check
-- `act_dashboard/routes/outreach.py` — `queue_send()` upgraded to live send
-
-**Critical implementation details:**
-- MIMEText: `MIMEText(body_html, "html", "utf-8")` — all three args required
-- Body conversion in `queue_send()`:
-```python
-body_html = (
-    "<div style='font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#333;'>"
-    + (body or "").replace("\n", "<br>")
-    + "</div>"
-)
-```
-- Toast: `showToast('Email sent successfully!', 'success')` fires before `removeCard()` in success branch
-
-**Bugs fixed:**
-1. MIMEText missing `"utf-8"` → special chars garbled
-2. `body_html` conversion missing from `queue_send()` → emails sent as plain text
-3. Toast missing from success branch of `sendCard()` → no visual feedback
-
-**Confirmed working:** Emails deliver with correct formatting, em-dashes/£ signs render correctly, green toast on send.
-
-**Reseed tool:** `tools/reseed_queue.py` — resets sent emails back to queued for testing
+- Domain: christopherhoole.com | Email: chris@christopherhoole.com | DKIM/SPF authenticated
+- Gmail App Password: `iflslbdfppfoehqz` (secrets/email_config.yaml — gitignored)
+- Daily limit: 100 emails/day
 
 ### Chats 69–80 — Outreach Functions + UI Polish ✅
-
 | Chat | Feature |
 |------|---------|
-| 69 | Email signature appended to all outgoing emails |
+| 69 | Email signature on all outgoing emails |
 | 70 | CV upload & file storage (Templates page) |
 | 71 | CV attachment on send (Queue page) |
 | 72 | Open/click/CV tracking pixels + auto-inject on send |
-| 73 | Reply inbox polling (Gmail IMAP, 120s daemon — outreach_poller.py) |
-| 74 | Send reply from Replies page via SMTP |
+| 73 | Reply inbox polling (Gmail IMAP, 120s — now Celery task) |
+| 74 | Send reply from Replies page |
 | 75 | Edit this email (Queue ✏ button) |
 | 76 | Universal slidein design across all outreach pages |
 | 77 | Switch template (Queue 📋 button) |
-| 78 | Queue auto-scheduling (queue_scheduler.py, daemon thread, 300s) |
-| 79 | Google Ads-style date picker (replaces Flatpickr, datepicker.css) |
-| 80 | Remove rules slidein from Campaigns, Keywords, Ads, Shopping |
+| 78 | Queue auto-scheduling (now Celery task) |
+| 79 | Google Ads-style date picker (replaces Flatpickr) |
+| 80 | Remove rules slidein from entity pages |
 
 ### Chat 81 — table-styles.css Layout Fix ✅
-**Commit:** 8968d64
-- `table-styles.css` had `body { padding: 20px }` and `.container { background: white; border-radius: 8px }` left over from standalone HTML prototype
-- Caused white rounded box with gaps on all 5 entity pages (Campaigns, Keywords, Ad Groups, Ads, Shopping)
-- Dashboard unaffected — it does not load table-styles.css
-- Fix: removed `body` and `.container` blocks entirely from table-styles.css
+**Commit:** 8968d64 — removed prototype body/container CSS from table-styles.css
 
-### Chat 82 — Remove Duplicate Client Selector from Outreach Pages ✅
-**Commit:** 9ee01fb — three separate bugs fixed:
-1. All 6 outreach templates had `<select class="outreach-client-selector">` in their page header — navbar.html (loaded by base_bootstrap.html) already renders a client selector → two pickers visible → removed select from all 6 templates
-2. `outreach.css` had `.d-none { display: none !important }` overriding Bootstrap responsive classes → navbar text (client name, "User") hidden on all outreach pages → removed the rule
-3. Templates and Analytics routes missing `client_name=config.client_name` in `render_template()` → client name blank on those two pages → added `config = get_current_config()` to analytics route + `client_name=config.client_name` to both render_template calls
+### Chat 82 — Remove Duplicate Client Selector from Outreach ✅
+**Commit:** 9ee01fb — three bugs: duplicate selector, navbar text hidden, client_name blank
 
 ### Chat 83 — Remove Rules Card from Campaigns and Shopping ✅
 **Commit:** f531bd8
-- Removed `{% include 'components/rules_card.html' %}` from campaigns.html and shopping_new.html
-- Rules tab (Rules (41)) preserved on both pages — only the bottom summary block removed
+
+### Chat 88 — ad_daily Table + Database Indexes ✅
+**Commit:** 088317d
+- `tools/seed_ad_daily.py` — created, populates ad_daily with 90 days synthetic data
+- `scripts/copy_all_to_readonly.py` — updated to include ad_daily
+- `scripts/add_indexes.py` — indexes on all 6 analytics tables in warehouse_readonly
+- **Result:** 23 Ad recommendations now generating (was 0). 983 ads loaded, 12 rules active.
+
+### Chat 89 — Unit Tests (pytest 80%+) ✅
+**Commit:** 51e79c6
+- `tests/` folder created with 19 test files
+- 620 tests, 0 failures, 80% coverage
+- Coverage: campaigns 85%, ads 85%, changes 94%, rule_helpers 94%, shared 86%, recommendations 80%
+- ~30-40% of rule-specific tests will need updating after Rules & Recommendations overhaul
+
+### Chat 90 — Celery + Redis Background Job Queue ✅
+**Commit:** a932ee7
+- `act_dashboard/celery_app.py` — Celery instance, Redis broker, 3 periodic tasks
+- Daemon threads replaced: outreach_poller (120s), queue_scheduler (300s), radar (60s)
+- Flask starts cleanly without Celery — background tasks simply don't fire until Celery worker started
+- **Manual prerequisite:** Install Memurai (Windows Redis) from https://www.memurai.com/
+- Startup instructions: `docs/CELERY_STARTUP.md`
+
+### Google Ads Account Suspension ✅ (appeal submitted)
+- Account 487-268-1731 (chris@christopherhoole.com) suspended — advertiser verification issue
+- Root cause: UK passport submitted but payments profile registered in Brazil
+- RNM document (V770566I, issued 25/02/2026) submitted as correct Brazilian ID
+- **Appeal ID: 6448619522** — submitted 12 Mar 2026, status: "Your appeal is in review"
+- Do NOT submit another appeal. Check chris@christopherhoole.com for Google's response.
 
 ---
 
@@ -252,32 +253,30 @@ body_html = (
 ### Overall: ~99.9% Complete
 
 **What's Working:**
-- All 6 dashboard pages with Google Ads-style tables (layout gap fixed Chat 81)
-- Google Ads-style date picker on all entity pages (Chat 79)
+- All 6 dashboard pages with Google Ads-style tables
+- Google Ads-style date picker on all entity pages
 - 41 optimization rules across 5 entity types
-- 1,492 active recommendations
+- 1,515 active recommendations (including 23 Ad recs — Chat 88)
 - Accept/Decline/Modify operations for all entity types
-- Radar monitoring and automatic rollback
-- Changes audit trail
+- Radar monitoring (Celery task)
+- Changes audit trail (card grid layout confirmed working)
 - Search Terms tab with live negative keyword blocking + keyword expansion
-- Rules Tab UI on all pages (rules slidein removed from entity pages Chat 80)
-- Cold Outreach System — 6 pages, all 10 original functions live, single client selector (Chat 82)
-- Live email sending + signature + CV attachment + open/click tracking + scheduling
-- Reply inbox polling + send reply from Replies page
-- Marketing websites live (christopherhoole.online + christopherhoole.com)
+- Cold Outreach System — 6 pages, all 10 functions live
+- Live email sending + signature + CV + tracking + scheduling (Celery)
+- Reply inbox polling (Celery task)
+- Marketing website live (christopherhoole.com primary)
 - Google Sheets → outreach leads sync
 - Real data ingestion pipeline (blocked on API access)
+- 620 unit tests, 80% coverage
+- Celery + Redis job queue (requires Memurai install)
 
-**What's Partially Working / Not Yet Live:**
-- Ad Groups: 4 rules enabled but 0 recommendations (conditions not met)
-- Ads: 4 rules blocked (analytics.ad_daily table missing)
-- Google Ads API: Test Access only — Basic Access pending
+**What's Blocked / Pending:**
+- Google Ads API Basic Access (Case 24460840136)
+- Advertiser verification appeal (ID 6448619522)
+- Memurai install (for Celery to run)
 
-**Next Priorities:**
-1. Apollo.io lead import
-2. M9 Live Validation (pending API access)
-3. Website Design Upgrade
-4. Testing & Polish
+**Next Priority:**
+- Rules & Recommendations overhaul — deep design discussion in Master Chat 11
 
 ---
 
@@ -303,14 +302,13 @@ body_html = (
 | **Outreach:** Client selector switching | Use session.get("current_client_config") not get_current_config() |
 | **Outreach:** Jinja/JS brace conflict | Split: `'{' + '{'` instead of `{{` in JS |
 | **Outreach:** Duplicate Flask process | Run `taskkill /IM python.exe /F` before starting |
-| **Outreach:** Duplicate client selector | outreach page templates had own select — navbar.html already has one |
-| **Outreach:** navbar text hidden on outreach pages | outreach.css had `.d-none { display:none !important }` — never redefine Bootstrap utilities |
-| **Outreach:** client_name blank on Templates/Analytics | render_template() calls missing `client_name=config.client_name` |
 | **Email:** No formatting in Gmail | body_html conversion missing from queue_send() — add \n→<br> wrap |
 | **Email:** Garbled special chars | MIMEText needs all 3 args: `MIMEText(body_html, "html", "utf-8")` |
-| **Email:** No toast on send | Add showToast to success branch of sendCard(), not just error branch |
+| **Email:** No toast on send | Add showToast to success branch of sendCard() |
 | **Layout:** White box gap on entity pages | table-styles.css had prototype body/container CSS — remove both blocks |
 | **Website:** Three.js colorSpace error | Remove t.colorSpace line for r128 compatibility |
+| **Tests:** Rule tests need updating | After Rules & Recommendations overhaul, ~30-40% of test_rules_engine.py needs rewrite |
+| **Celery:** Worker not running | Install Memurai first — see docs/CELERY_STARTUP.md |
 
 **See KNOWN_PITFALLS.md for full detail with code examples.**
 
@@ -338,10 +336,13 @@ body_html = (
 18. Diagnose email formatting via Gmail "Show original" → base64 decode
 19. Prototype CSS (body padding, .container styles) must be stripped before using in Flask app
 20. Never define `.d-none` in page-specific CSS — overrides Bootstrap responsive utilities
-21. All render_template() calls must include `client_name=config.client_name` — easy to miss on new routes
+21. All render_template() calls must include `client_name=config.client_name`
 22. Quick fixes (1-3 files, clear change) done directly in Master Chat — only large multi-file builds go to Claude Code
+23. Brief delivery: always downloadable files to /docs/ — never inline in chat
+24. Root folder files: always commit, no need to flag
+25. Never send git commit or Flask start commands to Claude Code — Master Chat only
 
-**See LESSONS_LEARNED.md for all 65 lessons with context.**
+**See LESSONS_LEARNED.md for all lessons with context.**
 
 ---
 
@@ -350,23 +351,30 @@ body_html = (
 | File | Purpose |
 |------|---------|
 | `act_dashboard/email_sender.py` | SMTP sending module |
-| `act_dashboard/outreach_poller.py` | IMAP reply polling daemon (120s) |
-| `act_dashboard/queue_scheduler.py` | Queue auto-send scheduler (300s) |
+| `act_dashboard/celery_app.py` | Celery instance + beat schedule (3 tasks) |
+| `act_dashboard/outreach_poller.py` | IMAP reply polling — Celery task (120s) |
+| `act_dashboard/queue_scheduler.py` | Email auto-send scheduler — Celery task (300s) |
+| `act_autopilot/radar.py` | Post-change monitoring — Celery task (60s) |
 | `act_dashboard/routes/outreach.py` | All outreach routes |
 | `act_dashboard/secrets/email_config.yaml` | SMTP/IMAP credentials — local only, gitignored |
-| `act_dashboard/templates/outreach/queue.html` | Queue page template |
 | `act_dashboard/static/css/table-styles.css` | Entity page table styles (no body/container overrides) |
 | `act_dashboard/static/css/outreach.css` | Outreach CSS (no .d-none override) |
 | `act_dashboard/static/css/datepicker.css` | Google Ads-style date picker CSS |
-| `act_dashboard/templates/components/date_filter.html` | Date picker component |
+| `act_autopilot/rules_config.json` | Rules UI config layer (single source of truth) |
+| `act_autopilot/rules/` | Rule execution layer (Python functions) |
+| `act_autopilot/recommendations_engine.py` | Recommendation generation logic |
+| `tests/` | pytest test suite — 620 tests, 80% coverage |
 | `tools/reseed_queue.py` | Reset sent emails to queued for testing |
+| `tools/seed_ad_daily.py` | Seed ad_daily table with synthetic data |
 | `tools/run_ingestion.py` | Data pipeline orchestration |
-| `scripts/copy_all_to_readonly.py` | Copy analytics tables to warehouse_readonly |
+| `scripts/copy_all_to_readonly.py` | Copy all 6 analytics tables to warehouse_readonly |
+| `scripts/add_indexes.py` | Add indexes to warehouse_readonly analytics tables |
+| `docs/CELERY_STARTUP.md` | Full startup instructions for Redis + Celery + Flask |
 | `src/gads_pipeline/v1_runner.py` | Google Ads API pull functions |
 | `configs/client_christopher_hoole.yaml` | Christopher's account config |
 
 ---
 
-**Version:** 17.0 | **Last Updated:** 2026-03-09
+**Version:** 18.0 | **Last Updated:** 2026-03-12
 **Architecture:** 2-Tier (Master Chat → Claude Code)
-**Next Step:** Apollo.io lead import / M9 Live Validation (pending API access)
+**Next Step:** Rules & Recommendations overhaul — design discussion in Master Chat 11

@@ -77,19 +77,78 @@ ENTITY_ID_COLUMNS = {
 # Maps rule condition_metric → (db_column, override_operator, override_threshold)
 # override_operator / override_threshold = None means use rule's own values
 CAMPAIGN_METRIC_MAP = {
-    # Standard rolling metrics
-    "roas_7d":              ("roas_w7_mean",        None,  None),
-    "roas_30d":             ("roas_w30_mean",        None,  None),
-    "clicks_7d":            ("clicks_w7_sum",        None,  None),
-    "conversions_30d":      ("conversions_w30_sum",  None,  None),
-    "cost_cv_14d":          ("cost_w14_cv",          None,  None),
+    # ── ROAS ──────────────────────────────────────────────────────────────────
+    "roas_7d":              ("roas_w7_mean",             None, None),
+    "roas_14d":             ("roas_w14_mean",            None, None),
+    "roas_30d":             ("roas_w30_mean",            None, None),
 
-    # Boolean-flag proxies — operator and threshold are FIXED regardless of rule values
-    "cost_spike_confidence": ("anomaly_cost_z",       "gte", 2.0),   # z >= 2.0 = spike
-    "cost_drop_detected":    ("anomaly_cost_z",       "lte", -2.0),  # z <= -2.0 = drop
-    "pace_over_cap_detected":("pacing_flag_over_105", "eq",  True),  # boolean True
-    "ctr_drop_detected":     ("ctr_w7_vs_prev_pct",   "lt",  -20.0), # pct < -20
-    "cvr_drop_detected":     ("cvr_w7_vs_prev_pct",   "lt",  -20.0), # pct < -20
+    # ── CPA ───────────────────────────────────────────────────────────────────
+    "cpa_7d":               ("cpa_w7_mean",              None, None),
+    "cpa_14d":              ("cpa_w14_mean",             None, None),
+    "cpa_30d":              ("cpa_w30_mean",             None, None),
+
+    # ── CTR ───────────────────────────────────────────────────────────────────
+    "ctr_7d":               ("ctr_w7_mean",              None, None),
+    "ctr_14d":              ("ctr_w14_mean",             None, None),
+    "ctr_30d":              ("ctr_w30_mean",             None, None),
+
+    # ── Avg CPC ───────────────────────────────────────────────────────────────
+    "cpc_avg_7d":           ("cpc_w7_mean",              None, None),
+    "cpc_avg_14d":          ("cpc_w14_mean",             None, None),
+    "cpc_avg_30d":          ("cpc_w30_mean",             None, None),
+
+    # ── Clicks ────────────────────────────────────────────────────────────────
+    "clicks_7d":            ("clicks_w7_sum",            None, None),
+    "clicks_14d":           ("clicks_w14_sum",           None, None),
+    "clicks_30d":           ("clicks_w30_sum",           None, None),
+
+    # ── Conversions ───────────────────────────────────────────────────────────
+    "conversions_7d":       ("conversions_w7_sum",       None, None),
+    "conversions_14d":      ("conversions_w14_sum",      None, None),
+    "conversions_30d":      ("conversions_w30_sum",      None, None),
+
+    # ── Cost (micros → divided by 1,000,000 in evaluation) ───────────────────
+    "cost_7d":              ("cost_micros_w7_sum",       None, None),
+    "cost_14d":             ("cost_micros_w14_sum",      None, None),
+    "cost_30d":             ("cost_micros_w30_sum",      None, None),
+
+    # ── Impressions ───────────────────────────────────────────────────────────
+    "impressions_7d":       ("impressions_w7_sum",       None, None),
+    "impressions_14d":      ("impressions_w14_sum",      None, None),
+    "impressions_30d":      ("impressions_w30_sum",      None, None),
+
+    # ── Pacing & impression share ─────────────────────────────────────────────
+    "pacing_vs_cap":        ("acct_pacing_vs_cap_pct",   None, None),
+
+    # ── Week-on-week % change ─────────────────────────────────────────────────
+    "roas_w7_vs_prev_pct":              ("roas_w7_vs_prev_pct",             None, None),
+    "cpa_w7_vs_prev_pct":               ("cpa_w7_vs_prev_pct",              None, None),
+    "ctr_w7_vs_prev_pct":               ("ctr_w7_vs_prev_pct",              None, None),
+    "cpc_w7_vs_prev_pct":               ("cpc_w7_mean",                     None, None),
+    "cvr_w7_vs_prev_pct":               ("cvr_w7_vs_prev_pct",              None, None),
+    "conversions_w7_vs_prev_pct":       ("conversions_w7_vs_prev_pct",      None, None),
+    "cost_w7_vs_prev_pct":              ("cost_micros_w7_vs_prev_pct",      None, None),
+    "impression_share_w7_vs_prev_pct":  ("impressions_w7_vs_prev_pct",      None, None),
+
+    # ── Legacy cv/volatility ──────────────────────────────────────────────────
+    "cost_cv_14d":          ("cost_w14_cv",              None, None),
+
+    # ── System signals (fixed operator/threshold) ─────────────────────────────
+    "cost_spike_confidence":  ("anomaly_cost_z",         "gte",  2.0),
+    "cost_drop_detected":     ("anomaly_cost_z",         "lte", -2.0),
+    "pace_over_cap_detected": ("pacing_flag_over_105",   "eq",   True),
+    "click_z_score":          ("anomaly_cost_z",         "gte",  2.0),   # proxy until click z added
+    "cost_z_score":           ("anomaly_cost_z",         "gte",  2.0),
+    "impression_z_score":     ("anomaly_cost_z",         "gte",  2.0),   # proxy until impr z added
+    "ctr_drop_detected":      ("ctr_w7_vs_prev_pct",     "lt",  -20.0),
+    "cvr_drop_detected":      ("cvr_w7_vs_prev_pct",     "lt",  -20.0),
+    "conv_tracking_loss_detected": ("conversions_w7_sum","lte",  0.0),   # proxy
+    "landing_page_status":    ("pacing_flag_over_105",   "eq",   False), # proxy
+    "landing_page_load_ms":   ("pacing_flag_over_105",   "eq",   False), # proxy
+    "ads_disapproved_count":  ("pacing_flag_over_105",   "eq",   False), # proxy
+    "billing_issue_detected": ("pacing_flag_over_105",   "eq",   False), # proxy
+    "tracking_tag_present":   ("pacing_flag_over_105",   "eq",   False), # proxy
+    "budget_exhausted_hour":  ("pacing_flag_over_105",   "eq",   True),  # proxy
 }
 
 # ---------------------------------------------------------------------------
