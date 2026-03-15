@@ -1,10 +1,10 @@
 # LESSONS LEARNED - ADS CONTROL TOWER (A.C.T)
 
-**Version:** 3.0
+**Version:** 5.0
 **Created:** 2026-02-28
-**Updated:** 2026-03-07
-**Total Lessons:** 61
-**Purpose:** Best practices from 400+ hours across 68 chats
+**Updated:** 2026-03-15
+**Total Lessons:** 76
+**Purpose:** Best practices from 500+ hours across 93 chats
 
 **See Also:** MASTER_KNOWLEDGE_BASE.md, KNOWN_PITFALLS.md
 
@@ -54,50 +54,58 @@ rules_config.json = what to do. Python = how to do it. Keep separate.
 
 ### 11. Session Consistency: Always session.get(), Never Helper Objects
 Helper functions like `get_current_config()` return objects. Template comparisons expect strings.
-String vs object comparison always False → undefined browser state → spurious side effects.
-- **Apply:** Always use `session.get("current_client_config")` directly. Never compare session strings to objects.
-- **Chat:** 64 (client selector bug)
+- **Apply:** Always use `session.get("current_client_config")` directly.
+- **Chat:** 64
 
 ### 12. Integer Columns vs Timestamp Columns for Tracking
-Seed scripts often only write integer tracking columns (open_count, click_count) but not timestamp columns (opened_at, clicked_at). Querying `IS NOT NULL` on unpopulated timestamps returns zero.
+Seed scripts often only write integer tracking columns, not timestamp columns.
 - **Apply:** Use `WHERE open_count > 0` not `WHERE opened_at IS NOT NULL`
-- **Apply:** When building analytics, verify which column type the seed actually populates
-- **Chat:** 64 (opened/clicked showing 0)
+- **Chat:** 64
 
 ### 13. taskkill /IM python.exe /F for Stuck Flask Processes
 Port 5000 already in use = previous Flask session still running.
 - **Apply:** Run `taskkill /IM python.exe /F` before starting Flask in fresh PowerShell
-- **Chat:** Throughout outreach build (Chats 59-64)
+
+### 14. DuckDB: json_extract_string vs JSON_EXTRACT
+`JSON_EXTRACT` returns values with surrounding quotes (e.g. `"roas_7d"`). Equality comparisons fail silently.
+`json_extract_string` returns clean values without quotes (e.g. `roas_7d`).
+- **Apply:** Always use `json_extract_string` for string comparisons in WHERE clauses.
+- **Chat:** 93 (duplicate detection)
+
+### 15. Open DB Connection BEFORE Using It in Queries
+If `conn = _get_warehouse()` appears after a query that uses `conn`, the query throws a silent `NameError` swallowed by `except Exception: pass`. The save proceeds as if no check occurred.
+- **Apply:** Always open `conn` before any query that uses it. Never place connection opening after validation logic that runs queries.
+- **Chat:** 93 (duplicate detection silently failing)
 
 ---
 
 ## RECOMMENDATIONS SYSTEM
 
-### 14. JSON Endpoints Enable SPA Behavior
+### 16. JSON Endpoints Enable SPA Behavior
 `/recommendations/cards` endpoint = instant tab switching without reload.
 - **Apply:** Use JSON for dynamic content, server-side for initial load
 
-### 15. Recommendations in Writable warehouse.duckdb
+### 17. Recommendations in Writable warehouse.duckdb
 Analytics DB is read-only. Recommendations need INSERT/UPDATE.
 - **Apply:** Write tables in warehouse.duckdb, read tables in ro.analytics.*
 
-### 16. Duplicate Prevention: Check (campaign_id, rule_id)
+### 18. Duplicate Prevention: Check (campaign_id, rule_id)
 Without check, engine creates duplicates every run.
 - **Apply:** SELECT COUNT before INSERT, skip if exists
 
-### 17. Verify DB Column Names Before Writing Routes
+### 19. Verify DB Column Names Before Writing Routes
 Brief says "bid", schema says "cpc_bid_micros". Verify actual names.
 - **Apply:** View schema first, use actual column names
 
-### 18. DuckDB Pattern: Open Writable + ATTACH Readonly
+### 20. DuckDB Pattern: Open Writable + ATTACH Readonly
 Radar needs reads (analytics) and writes (recommendations).
 - **Apply:** `connect(warehouse.duckdb)` + `ATTACH warehouse_readonly AS ro`
 
-### 19. Backend Limit Must Match Data Volume
+### 21. Backend Limit Must Match Data Volume
 limit=200 truncated Keywords to 162 of 1,256 recommendations.
 - **Apply:** Development: 200, Production: 5000+ for high-volume entities
 
-### 20. CSRF Exemptions for JSON APIs
+### 22. CSRF Exemptions for JSON APIs
 JavaScript fetch() doesn't send CSRF tokens automatically. Exempt JSON routes.
 - **Apply:** `csrf.exempt()` for Accept/Decline routes in app.py
 
@@ -105,19 +113,19 @@ JavaScript fetch() doesn't send CSRF tokens automatically. Exempt JSON routes.
 
 ## MARKETING WEBSITE
 
-### 21. Test npm run build Before Deploy
+### 23. Test npm run build Before Deploy
 Development (npm run dev) forgives errors. Build catches them.
 - **Apply:** Always run build locally before pushing
 
-### 22. Three.js r128 Doesn't Support colorSpace
+### 24. Three.js r128 Doesn't Support colorSpace
 CDN version is r128. texture.colorSpace causes runtime error.
 - **Apply:** Remove `texture.colorSpace` line; check CDN version
 
-### 23. CNAME Propagates Faster Than A Record
+### 25. CNAME Propagates Faster Than A Record
 CNAME (www): 5-15 min. A (root): 15-60 min. Normal behavior.
 - **Apply:** Test www first, wait 30-60 min for root
 
-### 24. GoDaddy: Remove Old A Records First
+### 26. GoDaddy: Remove Old A Records First
 Old parking page records conflict with Vercel records.
 - **Apply:** Delete all old records before adding new
 
@@ -125,15 +133,15 @@ Old parking page records conflict with Vercel records.
 
 ## SEARCH TERMS & KEYWORDS
 
-### 25. Dry-Run First: Check Flag BEFORE Loading Client
+### 27. Dry-Run First: Check Flag BEFORE Loading Client
 Check dry_run before loading Google Ads client. Saves 500-1000ms, enables credential-free testing.
 - **Apply:** Validate inputs in dry-run, load client only for live
 
-### 26. Conservative Expansion Criteria
+### 28. Conservative Expansion Criteria
 CVR ≥5%, ROAS ≥4.0×, Conv. ≥10 = high quality. Fewer but better suggestions.
 - **Apply:** Start conservative, track acceptance rate
 
-### 27. Sequential < 10 Items, Batch > 50
+### 29. Sequential < 10 Items, Batch > 50
 Sequential simpler, acceptable for <10 items (2s total).
 - **Apply:** Add batching only when proven necessary
 
@@ -141,226 +149,230 @@ Sequential simpler, acceptable for <10 items (2s total).
 
 ## RULES & COMPONENTS
 
-### 28. Each Page Needs Specific Component Include
+### 30. Each Page Needs Specific Component Include
 Generic rules_tab.html causes CSS/JS conflicts. Need entity-specific.
 - **Apply:** keywords_rules_tab.html, ad_group_rules_tab.html, etc.
 
-### 29. Document Schema Evolution
+### 31. Document Schema Evolution
 Keywords use old schema (condition_metric), new entities use new (condition_1_metric).
 - **Apply:** Document divergence, plan future migration
 
-### 30. Backward Compatibility via Column Retention
+### 32. Backward Compatibility via Column Retention
 Add entity columns, keep campaign columns. Zero breaking changes.
 - **Apply:** Add new columns, populate both, migrate code gradually
 
-### 31. Database Migrations: Zero Data Loss
+### 33. Database Migrations: Zero Data Loss
 70 recs + 49 changes migrated successfully with scripts.
 - **Apply:** Backup, migrate, verify zero NULLs, document
 
-### 32. Backend Filter > Hardcoded Labels
+### 34. Backend Filter > Hardcoded Labels
 get_action_label() filter = single source of truth, easy updates.
 - **Apply:** Dynamic labels from backend functions, not database
+
+### 35. Condition Schema: Always Handle Both op/ref AND operator/unit
+Old seeded rules use `operator`/`unit` keys. New flow-builder rules use `op`/`ref` keys.
+Both must be handled everywhere conditions are read — in rendering, in population, in plain English generation.
+- **Apply:** Always use `cond.op || rfbNormOp(cond.operator)` and `cond.ref || rfbNormUnit(cond.unit)` pattern.
+- **Chat:** 91-93 (flow builder population)
+
+### 36. Duplicate Detection: Don't Include campaign_type_lock in Match
+Including `campaign_type_lock` in duplicate check means tROAS and `all` variants aren't caught.
+A budget rule increasing budget on roas_7d is a duplicate regardless of campaign type lock.
+- **Apply:** Duplicate check = type + action_type + condition_1_metric only. No campaign_type_lock.
+- **Chat:** 93
+
+### 37. JS State Variables Reset by Form Reset — Set Them AFTER
+If `_rfbIsTemplate`, `_rfbEditId`, `_rfbHasPreload` are set before `rfbResetForm()` is called,
+they get wiped. The function resets all state variables to defaults.
+- **Apply:** Always set state variables AFTER calling `rfbResetForm()`, never before.
+- **Chat:** 93 (Save template button text leak)
 
 ---
 
 ## UI & UX
 
-### 33. Empty State: Info vs Warning
+### 38. Empty State: Info vs Warning
 Info (blue) = temporary. Warning (yellow) = structural.
 - **Apply:** Match styling to cause and resolution path
 
-### 34. Component Reuse: First Slow, Next Fast
+### 39. Component Reuse: First Slow, Next Fast
 Keywords: 7h. Shopping: 4h (43% faster). Ad Groups: 3h (57% faster). Ads: 2.5h (64% faster).
 - **Apply:** First establishes pattern, subsequent apply it
 
-### 35. Load More for >100 Items
+### 40. Load More for >100 Items
 1,256 recs at once = 8-10s. Load More (20 at time) = 200ms.
 - **Apply:** >100 items always use Load More (page size 20-50)
 
-### 36. Test AFTER Design Changes
+### 41. Test AFTER Design Changes
 Testing before redesign = wasted effort. Test final design.
 - **Apply:** Test incrementally during dev, comprehensive after design done
 
-### 37. Color-Coded Progress Bars for Performance Tables
+### 42. Color-Coded Progress Bars for Performance Tables
 N · X% format with inline colored progress bars instantly communicates performance tier.
-More scannable than plain percentages, especially for funnel/performance tables.
 - **Apply:** Use `an-` CSS prefix for analytics-specific classes to avoid conflicts
-- **Chat:** 64 (Outreach Analytics)
+- **Chat:** 64
+
+### 43. Unescaped Apostrophes in JS Single-Quoted Strings Cause SyntaxError
+Strings like `'ROAS is declining vs the campaign's own baseline'` break JS parsing silently.
+The entire script block fails to parse — all functions undefined, nothing works.
+- **Symptom:** `Uncaught SyntaxError: Unexpected identifier` in console, page shows "Loading..."
+- **Apply:** Escape apostrophes in JS strings as `\'` or switch to double-quoted strings.
+- **Chat:** 91 (FLAG_PE_MAP labels)
 
 ---
 
 ## OUTREACH & EMAIL SYSTEM
 
-### 38. Jinja/JavaScript Brace Conflict: Split the Braces
-Jinja2 processes `{{ }}` before the browser sees JavaScript. Template literals with `{{variable}}` will cause Jinja errors.
-- **Apply:**
-```javascript
-// WRONG:
-let template = "Hello {{first_name}}";
-// CORRECT:
-let template = "Hello " + '{' + '{' + "first_name}}";
-```
-- **Alternative:** Use data attributes to pass Jinja vars to JS, avoiding inline `{{ }}`
-- **Chat:** 63 (Templates page)
+### 44. Jinja/JavaScript Brace Conflict: Split the Braces
+Jinja2 processes `{{ }}` before the browser sees JavaScript.
+- **Apply:** `let template = "Hello " + '{' + '{' + "first_name}}";`
+- **Chat:** 63
 
-### 39. Pass Jinja Data to JavaScript via data Attributes
-Instead of embedding Jinja variables in JavaScript strings, pass them through HTML data attributes. Cleaner, avoids brace conflicts.
-- **Apply:**
-```html
-<div id="lead-card" data-name="{{ lead.first_name }}" data-company="{{ lead.company }}">
-```
-```javascript
-let name = document.getElementById('lead-card').dataset.name;
-```
-- **Chat:** 63 (Templates page)
+### 45. Pass Jinja Data to JavaScript via data Attributes
+- **Apply:** `<div data-name="{{ lead.first_name }}">` → `document.getElementById('x').dataset.name`
+- **Chat:** 63
 
-### 40. Slide Panel Pattern for Detail Views
-For reply/lead detail views, a slide-in panel (right side, fixed position) is better UX than a modal.
+### 46. Slide Panel Pattern for Detail Views
 - **Apply:** Bootstrap offcanvas or custom fixed-position panel with CSS transition
-- **Chat:** 62 (Replies page)
+- **Chat:** 62
 
-### 41. Unread Counts: Decrement in JavaScript, Don't Reload
-Update count badge in JavaScript immediately on mark-as-read. Don't wait for page reload.
-- **Apply:**
-```javascript
-let count = parseInt(badge.textContent);
-if (count > 0) badge.textContent = count - 1;
-if (count <= 1) badge.style.display = 'none';
-```
-- **Chat:** 62 (Replies page)
+### 47. Unread Counts: Decrement in JavaScript, Don't Reload
+- **Apply:** Decrement badge textContent in JS immediately on mark-as-read.
+- **Chat:** 62
 
-### 42. Outreach Analytics: Integer Tracking Columns Are Truth
-`open_count`, `click_count`, `cv_open_count` integer columns are populated by seed. Timestamp columns (`opened_at` etc.) are for future tracking pixel system.
-- **Apply:** Always query integer columns for current analytics.
-- **Chat:** 64 (Analytics page)
+### 48. Outreach Analytics: Integer Tracking Columns Are Truth
+- **Apply:** Always query `open_count`, `click_count` — not timestamp columns.
+- **Chat:** 64
 
-### 43. Colored Analytics Progress Bars: CSS Prefix Isolation
-Use component-specific CSS prefix to prevent conflicts.
-- **Apply:** `an-` for analytics, `re-` for replies, `qu-` for queue, etc.
-- **Chat:** 64 (Analytics page)
+### 49. MIMEText Requires ALL THREE Arguments for HTML Email
+- **Apply:** `MIMEText(body_html, "html", "utf-8")` — never omit the third arg.
+- **Chat:** 68
 
-### 44. Performance Tables: N · X% Format
-Display raw numbers alongside percentages for full context.
-- **Apply:** Format: `{{ count }} · {{ pct }}%`
-- **Chat:** 64 (Analytics page)
+### 50. HTML Body Conversion Belongs in the Route, Not email_sender.py
+- **Apply:** `(body or "").replace("\n", "<br>")` in `queue_send()` before calling `send_email()`.
+- **Chat:** 68
 
-### 45. MIMEText Requires ALL THREE Arguments for HTML Email
-Without explicit `"utf-8"` as third arg, non-ASCII characters encode incorrectly.
-- **Apply:** Always: `MIMEText(body_html, "html", "utf-8")` — never omit the third arg.
-- **Chat:** 68 (Live email sending)
+### 51. Toast Success Path Often Missing — Always Check Both Branches
+- **Apply:** Always add `showToast('...', 'success')` inside `if (data.success) { ... }`.
+- **Chat:** 68
 
-### 46. HTML Body Conversion Belongs in the Route, Not email_sender.py
-`email_sender.py` receives ready-to-send HTML. The `\n → <br>` conversion must happen in `queue_send()` before calling `send_email()`. Passing raw DB body directly = no formatting.
-- **Apply:**
-```python
-body_html = (
-    "<div style='font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#333;'>"
-    + (body or "").replace("\n", "<br>")
-    + "</div>"
-)
-result = send_email(to_email=to_email, subject=subject, body_html=body_html)
-```
-- **Chat:** 68 (queue_send bug)
-
-### 47. Toast Success Path Often Missing — Always Check Both Branches
-Error path in fetch() callbacks usually gets `showToast` but success path is often forgotten.
-- **Apply:** Always explicitly add `showToast('...', 'success')` inside `if (data.success) { ... }`.
-- **Chat:** 68 (queue send toast)
-
-### 48. Diagnose Email Formatting via Gmail "Show Original" → Base64 Decode
-If emails arrive without formatting: Gmail → ⋮ → Show original → find `Content-Transfer-Encoding: base64` → decode. Decoded HTML reveals whether `<br>` tags are present.
-- **Apply:** This is the definitive debugging method for email formatting issues.
-- **Chat:** 68 (email formatting debug)
+### 52. Diagnose Email Formatting via Gmail "Show Original" → Base64 Decode
+- **Apply:** Gmail → ⋮ → Show original → find base64 block → decode. Definitive debugging method.
+- **Chat:** 68
 
 ---
 
 ## PROCESS & WORKFLOW
 
-### 49. Fresh PowerShell for Each Operation
-Reusing PowerShell commands causes state issues.
+### 53. Fresh PowerShell for Each Operation
 - **Apply:** Always start with `taskkill /IM python.exe /F` then `cd C:\Users\User\Desktop\gads-data-layer`
 
-### 50. Complete Files > Code Snippets
+### 54. Complete Files > Code Snippets
 Christopher prefers complete ready-to-use files, not snippets.
 - **Apply:** Return entire file with save path, not just changed lines
 
-### 51. File Size Limit: Split Files >2000 Lines
+### 55. File Size Limit: Split Files >2000 Lines
 Claude project files don't index properly if >2000 lines or >45KB.
 - **Apply:** Split large files into focused components
 
-### 52. 2-Tier Workflow (Claude Code) Is 40-50% Faster
-Old: Master Chat → Worker Chat → execution (3-tier).
-New: Master Chat → Claude Code (2-tier). Worker Chats eliminated.
-- **Apply:** Use Claude Code (`npx @anthropic-ai/claude-code`) for all implementation work
+### 56. 2-Tier Workflow (Claude Code) Is 40-50% Faster
+- **Apply:** Use Claude Code (`npx @anthropic-ai/claude-code`) for multi-file builds
 
-### 53. Seed Scripts Must Cover All Referenced Columns
-Trace every queried column back to its seed source before building analytics routes.
-- **Apply:** If missing, write a patch seed script immediately.
-- **Chat:** 64 (tools/seed_outreach_clicks.py)
+### 57. Seed Scripts Must Cover All Referenced Columns
+- **Apply:** Trace every queried column back to seed source before building routes.
+- **Chat:** 64
 
-### 54. Worktrees: Add to .gitignore Early
-Git worktrees cause unexpected git behavior if not excluded.
+### 58. Worktrees: Add to .gitignore Early
 - **Apply:** Add `.git/worktrees/` to .gitignore at project setup
 
-### 55. Never Commit Before Christopher Confirms in Opera
-Claude Code may report success before Christopher has manually verified. Commits happen only after Christopher confirms visually.
+### 59. Never Commit Before Christopher Confirms in Opera
 - **Apply:** Test in Opera → Christopher confirms → then commit via Master Chat PowerShell.
 - **Chat:** 68
+
+### 60. Run Diagnostic Scripts Before Each Major Test Session
+Before testing new features, run `full_audit.py` and `check_state.py` to confirm DB is clean.
+Testing on a dirty DB wastes time — junk rows from previous sessions cause false failures.
+- **Apply:** Always run audit scripts before test sessions. Keep cleanup scripts in project root.
+- **Chat:** 93
+
+### 61. Don't Commit Diagnostic Scripts to Repo Root
+Diagnostic/cleanup scripts (check_state.py, full_audit.py, cleanup_junk.py etc.) clutter the repo root.
+- **Apply:** Keep in `tools/` or `scripts/` folder, or add to .gitignore if one-off.
+- **Chat:** 93
 
 ---
 
 ## ARCHITECTURE PRINCIPLES
 
-### 56. Dry-Run Mode Is Non-Negotiable for Live API Operations
-Any feature writing to Google Ads must have a dry-run mode.
+### 62. Dry-Run Mode Is Non-Negotiable for Live API Operations
 - **Apply:** Check `dry_run` flag as first operation, before any external calls
 
-### 57. Changes Audit Trail for Every State-Modifying Action
-Every Accept/Decline/Execute operation writes to the `changes` table.
+### 63. Changes Audit Trail for Every State-Modifying Action
 - **Apply:** Write to changes table before returning success response
 
-### 58. Constitution Framework: Safety Guardrails Are Non-Negotiable
-All automated changes must pass Constitution checks.
+### 64. Constitution Framework: Safety Guardrails Are Non-Negotiable
 - **Apply:** Never bypass Constitution checks even for testing
 
-### 59. Single Source of Truth for Business Rules
-rules_config.json is the single source for all rule definitions.
+### 65. Single Source of Truth for Business Rules
 - **Apply:** Rule changes go through JSON only; Python execution layer reads JSON
 
-### 60. Entity_type String Values Must Be Exact
-Database stores exact strings. Any mismatch returns zero results with no error.
+### 66. Entity_type String Values Must Be Exact
 - **Apply:** Exact values: `'campaign'`, `'keyword'`, `'shopping_product'`, `'ad_group'`, `'ad'`
 
-### 61. Component CSS Prefix Isolation
-Use unique prefix per section/feature when adding to shared CSS files.
+### 67. Component CSS Prefix Isolation
 - **Apply:** `an-` for analytics, `re-` for replies, `qu-` for queue, etc.
-- **Chat:** 64 (outreach.css)
+- **Chat:** 64
 
-### 62. Prototype CSS Must Be Stripped Before Using in Flask App
-CSS written for standalone HTML prototypes often contains `body { padding: 20px }` and `.container { background: white; border-radius: 8px }`. These override Flask app layout when the stylesheet is loaded inside base_bootstrap.html.
+### 68. Prototype CSS Must Be Stripped Before Using in Flask App
 - **Symptom:** White rounded box with gaps on all sides of main content area
-- **Apply:** Before adding any prototype stylesheet to Flask, remove all `body`, `html`, and `.container` resets
-- **Chat:** 81 (table-styles.css layout gap)
+- **Apply:** Remove all `body`, `html`, `.container` resets from prototype stylesheets before Flask use.
+- **Chat:** 81
 
-### 63. Never Define `.d-none` in Page-Specific CSS Files
-Bootstrap uses `.d-none`, `.d-sm-inline`, `.d-lg-inline` etc. for responsive visibility. Defining `.d-none { display: none !important }` in any custom stylesheet permanently overrides Bootstrap responsive classes on every element — including navbar text spans.
+### 69. Never Define `.d-none` in Page-Specific CSS Files
 - **Symptom:** Client name and user label hidden in navbar on affected pages only
 - **Apply:** Never redefine Bootstrap utility classes in custom CSS files
-- **Chat:** 82 (outreach.css)
+- **Chat:** 82
 
-### 64. All render_template() Calls Must Pass client_name
-New routes often copy structure from older routes but miss `client_name=config.client_name`. The navbar component requires this to display the current client. If the route doesn't already have `config = get_current_config()`, add it at the top.
-- **Symptom:** Client name blank in navbar on specific pages but fine on others
-- **Apply:** Every outreach render_template() call must include `client_name=config.client_name`
-- **Chat:** 82 (Templates and Analytics routes)
+### 70. All render_template() Calls Must Pass client_name
+- **Apply:** Every outreach `render_template()` call must include `client_name=config.client_name`
+- **Chat:** 82
 
-### 65. Quick Fixes in Master Chat, Large Builds in Claude Code
-Small, well-defined changes (1–3 files, clear fix) are faster to handle directly in Master Chat — upload file, fix, download, replace. Only tasks requiring multiple files, new routes, or significant logic go to Claude Code via a brief.
-- **Apply:** Ask "is this 1–3 file edits with a clear change?" → Master Chat. Otherwise → Claude Code brief.
+### 71. Quick Fixes in Master Chat, Large Builds in Claude Code
+- **Apply:** 1–3 file edits with a clear change → Master Chat. 4+ files or new routes → Claude Code brief.
 - **Chat:** 81–83
+
+### 72. Templates Use is_template Boolean Flag, Not Separate Table
+Templates are rules/flags rows with `is_template = TRUE`. Keeps the schema simple and reuses all existing CRUD routes.
+- **Apply:** Filter templates with `WHERE is_template = TRUE`. Exclude from rules engine with `WHERE is_template = FALSE`.
+- **Chat:** 93
+
+### 73. except Exception: pass Silently Hides Critical Bugs
+Using bare `except Exception: pass` to "safely" skip validation means real errors (missing conn, wrong syntax) go completely unnoticed and the code proceeds as if validation passed.
+- **Apply:** Always log exceptions: `except Exception as e: print(f"[Warning] check failed: {e}")`. Never use bare pass on validation logic.
+- **Chat:** 93 (duplicate detection)
 
 ---
 
-**Total:** 65 lessons
-**Coverage:** Database, recommendations, website, search, API, components, UI, outreach, email, process
-**Version:** 4.0 | **Updated:** 2026-03-09
+## GOOGLE ADS API APPLICATION
+
+### 74. API Application: Attach Design Document PDF
+Google's compliance team asks for tool design documentation. A professional PDF showing architecture, API usage table, safety guardrails, and rules engine significantly strengthens the application.
+- **Apply:** Always attach a design doc PDF when responding to Google API compliance requests.
+- **Chat:** Master Chat 11 (March 2026)
+
+### 75. API Application: Company URL Must Match Primary Domain
+API centre Company URL should match the primary website. Using `.online` variant instead of `.com` looks less credible.
+- **Apply:** Keep API centre Company URL updated to `christopherhoole.com` at all times.
+- **Chat:** Master Chat 11
+
+### 76. Google Ads API Access Levels: Test → Explorer → Basic → Standard
+Explorer access = read production data, no writes. Basic = full read + write.
+Upgrade from Test to Explorer can happen before full Basic Access is granted.
+- **Apply:** Explorer access is a positive signal during the application review process. Keep monitoring email for Basic Access decision.
+- **Chat:** Master Chat 11
+
+---
+
+**Total:** 76 lessons
+**Coverage:** Database, recommendations, website, search, API, components, UI, outreach, email, process, rules, templates, Google API
+**Version:** 5.0 | **Updated:** 2026-03-15
