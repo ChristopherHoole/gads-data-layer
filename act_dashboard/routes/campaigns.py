@@ -849,6 +849,7 @@ def _serialize_rule(row, cols):
     if d.get('action_magnitude') is not None:
         d['action_magnitude'] = float(d['action_magnitude'])
     d['enabled'] = bool(d.get('enabled', True))
+    d['is_template'] = bool(d.get('is_template', False))
     return d
 
 
@@ -897,8 +898,33 @@ def create_rule():
         return jsonify({'success': False, 'error': 'conditions must be an array'}), 400
 
     entity_scope = data.get('entity_scope', {'scope': 'all'})
+    is_template = bool(data.get('is_template', False))
 
     conn = _get_warehouse()
+
+    # Duplicate detection: check type + action_type + condition_1_metric
+    if not is_template:
+        try:
+            c1_metric = conditions[0].get('metric', '') if conditions else ''
+            dup = conn.execute("""
+                SELECT name FROM rules
+                WHERE client_config = ?
+                  AND type = ?
+                  AND action_type = ?
+                  AND is_template = FALSE
+                  AND json_extract_string(conditions, '$[0].metric') = ?
+                LIMIT 1
+            """, [
+                client_config,
+                data.get('type', ''),
+                data.get('action_type', ''),
+                c1_metric
+            ]).fetchone()
+            if dup:
+                conn.close()
+                return jsonify({'success': False, 'error': f'A similar rule already exists: "{dup[0]}"'}), 409
+        except Exception as e:
+            print(f"[Chat 93] Duplicate check error: {e}")
     try:
         # Generate next id
         next_id = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 FROM rules").fetchone()[0]
@@ -910,14 +936,14 @@ def create_rule():
                 entity_scope, conditions,
                 action_type, action_magnitude,
                 cooldown_days, risk_level, enabled,
-                created_at, updated_at
+                is_template, created_at, updated_at
             ) VALUES (
                 ?, ?, 'campaign', ?,
                 ?, ?, ?,
                 ?, ?,
                 ?, ?,
                 ?, ?, TRUE,
-                NOW(), NOW()
+                ?, NOW(), NOW()
             )
         """, [
             next_id,
@@ -932,6 +958,7 @@ def create_rule():
             data.get('action_magnitude'),
             data.get('cooldown_days', 7),
             data.get('risk_level'),
+            is_template,
         ])
         conn.commit()
 
@@ -972,6 +999,7 @@ def update_rule(rule_id):
 
         conditions = data.get('conditions', [])
         entity_scope = data.get('entity_scope', {'scope': 'all'})
+        is_template = bool(data.get('is_template', False))
 
         conn.execute("""
             UPDATE rules SET
@@ -985,6 +1013,7 @@ def update_rule(rule_id):
                 action_magnitude = ?,
                 cooldown_days = ?,
                 risk_level = ?,
+                is_template = ?,
                 updated_at = NOW()
             WHERE id = ? AND client_config = ?
         """, [
@@ -998,6 +1027,7 @@ def update_rule(rule_id):
             data.get('action_magnitude'),
             data.get('cooldown_days', 7),
             data.get('risk_level'),
+            is_template,
             rule_id,
             client_config,
         ])
@@ -1071,6 +1101,80 @@ def toggle_rule(rule_id):
         conn.commit()
         print(f"[Chat 91] Toggled rule id={rule_id} enabled={new_enabled}")
         return jsonify({'success': True, 'data': {'id': rule_id, 'enabled': new_enabled}})
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@bp.route("/campaigns/rules/<int:rule_id>/save-as-template", methods=['POST'])
+@login_required
+def save_as_template(rule_id):
+    """POST /campaigns/rules/<rule_id>/save-as-template — duplicate as a new template row."""
+    client_config = _client_cfg_name()
+    if not client_config:
+        return jsonify({'success': False, 'error': 'No client selected'}), 400
+
+    conn = _get_warehouse()
+    try:
+        # Fetch original row
+        result = conn.execute(
+            "SELECT * FROM rules WHERE id = ? AND client_config = ?",
+            [rule_id, client_config]
+        )
+        cols = [d[0] for d in result.description]
+        orig = result.fetchone()
+        if not orig:
+            return jsonify({'success': False, 'error': 'Rule not found'}), 404
+
+        orig_dict = dict(zip(cols, orig))
+
+        # Build template name
+        orig_name = orig_dict.get('name', '')
+        new_name = orig_name if orig_name.endswith(' (template)') else orig_name + ' (template)'
+
+        # Generate next id
+        next_id = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 FROM rules").fetchone()[0]
+
+        conn.execute("""
+            INSERT INTO rules (
+                id, client_config, entity_type, name,
+                rule_or_flag, type, campaign_type_lock,
+                entity_scope, conditions,
+                action_type, action_magnitude,
+                cooldown_days, risk_level, enabled,
+                is_template, created_at, updated_at
+            ) VALUES (
+                ?, ?, ?, ?,
+                ?, ?, ?,
+                ?, ?,
+                ?, ?,
+                ?, ?, FALSE,
+                TRUE, NOW(), NOW()
+            )
+        """, [
+            next_id,
+            client_config,
+            orig_dict.get('entity_type', 'campaign'),
+            new_name,
+            orig_dict.get('rule_or_flag'),
+            orig_dict.get('type'),
+            orig_dict.get('campaign_type_lock'),
+            '{"scope": "all"}',
+            _json.dumps(orig_dict.get('conditions')) if isinstance(orig_dict.get('conditions'), list) else orig_dict.get('conditions'),
+            orig_dict.get('action_type'),
+            orig_dict.get('action_magnitude'),
+            orig_dict.get('cooldown_days', 7),
+            orig_dict.get('risk_level'),
+        ])
+        conn.commit()
+
+        result = conn.execute("SELECT * FROM rules WHERE id = ?", [next_id])
+        cols = [d[0] for d in result.description]
+        new_row = _serialize_rule(result.fetchone(), cols)
+        print(f"[Chat 93] Saved rule id={rule_id} as template id={next_id} name='{new_name}'")
+        return jsonify({'success': True, 'data': new_row})
     except Exception as e:
         import traceback; traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500

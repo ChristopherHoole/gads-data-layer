@@ -380,6 +380,15 @@ def create_app():
         else:
             print(f"⚠️  [Chat 91] Route not found (skipping): {route_name}")
 
+    # Chat 93: CSRF exemption for save-as-template endpoint (JSON API, no CSRF tokens sent)
+    # POST /campaigns/rules/<id>/save-as-template is a JSON API called from JavaScript
+    # Protected by @login_required decorator instead
+    if 'campaigns.save_as_template' in app.view_functions:
+        csrf.exempt(app.view_functions['campaigns.save_as_template'])
+        print("✅ [Chat 93] CSRF exempted: campaigns.save_as_template")
+    else:
+        print("⚠️  [Chat 93] Route not found (skipping): campaigns.save_as_template")
+
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
     def csrf_error(reason):

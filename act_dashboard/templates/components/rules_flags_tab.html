@@ -41,7 +41,7 @@
         Flags <span class="rules-sub-badge" id="rf-badge-flags">0</span>
       </button>
       <button class="rules-sub-tab" id="rf-tab-templates" onclick="rfShowSubTab('templates')">
-        Templates
+        Templates <span class="rules-sub-badge" id="rf-badge-templates">0</span>
       </button>
     </div>
   </div>
@@ -136,83 +136,27 @@
     <p class="text-muted mb-3" style="font-size:13px;">
       Pick a template to pre-fill the rule builder. You only need to set the thresholds and select your campaigns.
     </p>
-    <div class="rules-template-grid">
-
-      <div class="rules-template-card" onclick="openRulesFlow({rule_or_flag:'rule',type:'budget'})">
-        <div class="rules-template-icon">
-          <span class="material-symbols-outlined" style="color:#0d6efd;">trending_up</span>
-        </div>
-        <div class="d-flex gap-1 mt-1 mb-1">
-          <span class="badge badge-type-budget" style="font-size:10px;">Budget</span>
-          <span class="badge-strategy">tROAS</span>
-        </div>
-        <h5>Increase Budget – Strong ROAS</h5>
-        <p>Increase daily budget when ROAS beats target with sufficient click volume to be confident</p>
-        <button class="btn btn-sm btn-outline-primary w-100" type="button">Use template</button>
-      </div>
-
-      <div class="rules-template-card" onclick="openRulesFlow({rule_or_flag:'rule',type:'budget'})">
-        <div class="rules-template-icon">
-          <span class="material-symbols-outlined" style="color:#0d6efd;">trending_down</span>
-        </div>
-        <div class="d-flex gap-1 mt-1 mb-1">
-          <span class="badge badge-type-budget" style="font-size:10px;">Budget</span>
-          <span class="badge-strategy">tROAS</span>
-        </div>
-        <h5>Decrease Budget – Weak ROAS</h5>
-        <p>Reduce daily budget when ROAS is below target with enough data to confirm it's a real issue</p>
-        <button class="btn btn-sm btn-outline-primary w-100" type="button">Use template</button>
-      </div>
-
-      <div class="rules-template-card" onclick="openRulesFlow({rule_or_flag:'rule',type:'status'})">
-        <div class="rules-template-icon">
-          <span class="material-symbols-outlined" style="color:#dc3545;">pause_circle</span>
-        </div>
-        <div class="d-flex gap-1 mt-1 mb-1">
-          <span class="badge badge-type-status" style="font-size:10px;">Status</span>
-          <span class="badge-strategy">tROAS</span>
-        </div>
-        <h5>Pause – Poor ROAS Campaign</h5>
-        <p>Recommend pausing a campaign with sustained poor ROAS over 14 days and meaningful spend</p>
-        <button class="btn btn-sm btn-outline-primary w-100" type="button">Use template</button>
-      </div>
-
-      <div class="rules-template-card" onclick="openRulesFlow({rule_or_flag:'flag',type:'performance'})">
-        <div class="rules-template-icon">
-          <span class="material-symbols-outlined" style="color:#fd7e14;">flag</span>
-        </div>
-        <div class="d-flex gap-1 mt-1 mb-1">
-          <span class="badge badge-type-performance" style="font-size:10px;">Performance</span>
-        </div>
-        <h5>Flag ROAS Drop</h5>
-        <p>Alert when ROAS is consistently declining vs the campaign's own baseline performance</p>
-        <button class="btn btn-sm btn-outline-primary w-100" type="button">Use template</button>
-      </div>
-
-      <div class="rules-template-card" onclick="openRulesFlow({rule_or_flag:'flag',type:'anomaly'})">
-        <div class="rules-template-icon">
-          <span class="material-symbols-outlined" style="color:#dc3545;">warning</span>
-        </div>
-        <div class="d-flex gap-1 mt-1 mb-1">
-          <span class="badge badge-type-anomaly" style="font-size:10px;">Anomaly</span>
-        </div>
-        <h5>Flag Cost Spike</h5>
-        <p>Alert immediately when an abnormal cost surge is detected vs recent average spend</p>
-        <button class="btn btn-sm btn-outline-primary w-100" type="button">Use template</button>
-      </div>
-
-      <div class="rules-template-card" onclick="openRulesFlow({rule_or_flag:'flag',type:'technical'})">
-        <div class="rules-template-icon">
-          <span class="material-symbols-outlined" style="color:#6c757d;">link_off</span>
-        </div>
-        <div class="d-flex gap-1 mt-1 mb-1">
-          <span class="badge badge-type-technical" style="font-size:10px;">Technical</span>
-        </div>
-        <h5>Flag Landing Page Down</h5>
-        <p>Alert when the landing page returns a non-200 status — traffic is being wasted immediately</p>
-        <button class="btn btn-sm btn-outline-primary w-100" type="button">Use template</button>
-      </div>
-
+    <div class="table-wrapper">
+      <table class="table table-sm mb-0" id="rf-templates-table">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th>Rule/Flag</th>
+            <th>Type</th>
+            <th>Campaign type</th>
+            <th class="rules-plain-english" style="min-width:280px;">Plain English</th>
+            <th>Conditions</th>
+            <th>Action</th>
+            <th>Cooldown</th>
+            <th style="width:110px;"></th>
+          </tr>
+        </thead>
+        <tbody id="rf-templates-tbody">
+          <tr><td colspan="9" class="text-center text-muted py-4" style="font-size:13px;">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading templates…
+          </td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -267,6 +211,7 @@ function rfLoadData() {
         _rfData = d.data || [];
         rfRenderRules();
         rfRenderFlags();
+        rfRenderTemplates();
         rfUpdateBadges();
       } else {
         rfShowError(d.error || 'Failed to load.');
@@ -288,13 +233,16 @@ function rfShowError(msg) {
 }
 
 function rfUpdateBadges() {
-  var rules = _rfData.filter(function(r) { return r.rule_or_flag === 'rule' && r.enabled; });
-  var flags = _rfData.filter(function(r) { return r.rule_or_flag === 'flag' && r.enabled; });
+  var rules = _rfData.filter(function(r) { return r.rule_or_flag === 'rule' && r.enabled && !r.is_template; });
+  var flags = _rfData.filter(function(r) { return r.rule_or_flag === 'flag' && r.enabled && !r.is_template; });
+  var templates = _rfData.filter(function(r) { return r.is_template === true; });
   document.getElementById('rf-badge-rules').textContent = rules.length;
   document.getElementById('rf-badge-flags').textContent = flags.length;
+  var templatesBadge = document.getElementById('rf-badge-templates');
+  if (templatesBadge) templatesBadge.textContent = templates.length;
   // Update main tab badge
   var mainBadge = document.getElementById('rules-flags-badge');
-  if (mainBadge) mainBadge.textContent = _rfData.length;
+  if (mainBadge) mainBadge.textContent = _rfData.filter(function(r) { return !r.is_template; }).length;
 }
 
 // ── Plain English generator ──────────────────────────────────────
@@ -557,7 +505,7 @@ function rfEsc(s) {
 // ── Render Rules Table ───────────────────────────────────────────
 function rfRenderRules() {
   var search = (document.getElementById('rf-rules-search').value || '').toLowerCase();
-  var rows = _rfData.filter(function(r) { return r.rule_or_flag === 'rule'; });
+  var rows = _rfData.filter(function(r) { return r.rule_or_flag === 'rule' && !r.is_template; });
 
   if (_rfRuleFilter !== 'all') {
     rows = rows.filter(function(r) { return r.type === _rfRuleFilter; });
@@ -617,6 +565,7 @@ function rfRenderRules() {
         + '<td><div class="d-flex gap-1">'
         + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="rfEditRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button>'
         + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete" onclick="rfDeleteRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button>'
+        + '<button class="btn-save-template" title="Save as template" onclick="rfSaveAsTemplate(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button>'
         + '</div></td>'
         + '</tr>';
     });
@@ -631,7 +580,7 @@ function rfRenderRules() {
 // ── Render Flags Table ───────────────────────────────────────────
 function rfRenderFlags() {
   var search = (document.getElementById('rf-flags-search').value || '').toLowerCase();
-  var rows = _rfData.filter(function(r) { return r.rule_or_flag === 'flag'; });
+  var rows = _rfData.filter(function(r) { return r.rule_or_flag === 'flag' && !r.is_template; });
 
   if (_rfFlagFilter !== 'all') {
     rows = rows.filter(function(r) { return r.type === _rfFlagFilter; });
@@ -676,6 +625,7 @@ function rfRenderFlags() {
         + '<td><div class="d-flex gap-1">'
         + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="rfEditRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button>'
         + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete" onclick="rfDeleteRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button>'
+        + '<button class="btn-save-template" title="Save as template" onclick="rfSaveAsTemplate(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button>'
         + '</div></td>'
         + '</tr>';
     });
@@ -685,6 +635,86 @@ function rfRenderFlags() {
   var total = _rfData.filter(function(r){return r.rule_or_flag==='flag';}).length;
   var enabled = _rfData.filter(function(r){return r.rule_or_flag==='flag'&&r.enabled;}).length;
   document.getElementById('rf-flags-info').textContent = total + ' flags\u00a0·\u00a0' + enabled + ' enabled';
+}
+
+// ── Render Templates Table ───────────────────────────────────────
+function rfRenderTemplates() {
+  var rows = _rfData.filter(function(r) { return r.is_template === true; });
+  var tbody = document.getElementById('rf-templates-tbody');
+  if (!tbody) return;
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4" style="font-size:13px;">No templates yet — click <strong>Save as template</strong> <span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle;">bookmark_add</span> on any rule or flag row to create one.</td></tr>';
+    document.getElementById('rf-badge-templates').textContent = '0';
+    return;
+  }
+
+  var groups = {};
+  rows.forEach(function(r) { var t = r.type || 'budget'; groups[t] = groups[t] || []; groups[t].push(r); });
+
+  var html = '';
+  var groupOrder = ['budget', 'bid', 'status', 'performance', 'anomaly', 'technical'];
+  var groupLabels = {budget:'Budget', bid:'Bid', status:'Status', performance:'Performance', anomaly:'Anomaly', technical:'Technical'};
+
+  groupOrder.forEach(function(gtype) {
+    var gRows = (groups[gtype] || []).slice().sort(function(a,b) { return a.name.localeCompare(b.name); });
+    if (!gRows.length) return;
+    html += '<tr class="rules-group-row"><td colspan="9">' + groupLabels[gtype] + ' &nbsp;·&nbsp; ' + gRows.length + ' template' + (gRows.length === 1 ? '' : 's') + '</td></tr>';
+    gRows.forEach(function(r) {
+      var rof = r.rule_or_flag || 'rule';
+      var condHtml = rof === 'flag' ? rfFlagCondText(r) : rfCondText(r);
+      var actionHtml = rof === 'flag' ? '—' : rfActionCell(r);
+      var peHtml = rof === 'flag' ? rfFlagPlainEnglish(r) : rfEsc(r.plain_english || rfPlainEnglish(r));
+      html += '<tr>'
+        + '<td style="font-weight:600;">' + rfEsc(r.name) + '</td>'
+        + '<td><span class="badge badge-rof-' + rfEsc(rof) + '" style="font-size:11px;">' + rfEsc(rof.charAt(0).toUpperCase()+rof.slice(1)) + '</span></td>'
+        + '<td><span class="badge badge-type-' + rfEsc(r.type||'') + '" style="font-size:11px;">' + rfEsc((r.type||'').charAt(0).toUpperCase()+(r.type||'').slice(1)) + '</span></td>'
+        + '<td style="text-align:center;"><span class="badge-strategy">' + rfEsc(rfStrategyLabel(r.campaign_type_lock)) + '</span></td>'
+        + '<td class="rules-plain-english">' + peHtml + '</td>'
+        + '<td style="font-size:12px;color:#202124;white-space:nowrap;">' + condHtml + '</td>'
+        + '<td>' + actionHtml + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;white-space:nowrap;">' + (r.cooldown_days ? r.cooldown_days + 'd' : '—') + '</td>'
+        + '<td><button class="btn btn-sm btn-outline-primary" style="font-size:11px;white-space:nowrap;" onclick="rfEditTemplate(' + r.id + ')">Edit template</button></td>'
+        + '</tr>';
+    });
+  });
+
+  tbody.innerHTML = html;
+  document.getElementById('rf-badge-templates').textContent = rows.length;
+}
+
+// ── Use Template (open flow builder pre-filled, no ID so creates new rule) ───
+function rfEditTemplate(ruleId) {
+  var row = _rfData.find(function(r) { return r.id === ruleId; });
+  if (!row) return;
+  openRulesFlow(row);
+}
+
+function rfUseTemplate(ruleId) {
+  var row = _rfData.find(function(r) { return r.id === ruleId; });
+  if (!row) return;
+  var copy = Object.assign({}, row);
+  copy.id = null;
+  copy.is_template = false;
+  copy.entity_scope = {scope: 'all'};
+  copy.enabled = true;
+  copy.name = (copy.name || '').replace(/\(template\)\s*$/i, '').trim();
+  closeRulesFlow();
+  setTimeout(function() { openRulesFlow(copy); }, 250);
+}
+
+// ── Save As Template ─────────────────────────────────────────────
+function rfSaveAsTemplate(ruleId) {
+  fetch('/campaigns/rules/' + ruleId + '/save-as-template', {method: 'POST'})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        rfShowToast('Saved as template.', 'success');
+        rfLoadData();
+      } else {
+        rfShowToast('Error: ' + (d.error || 'Unknown error'), 'danger');
+      }
+    });
 }
 
 // ── Toggle ───────────────────────────────────────────────────────

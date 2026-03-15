@@ -770,6 +770,20 @@
   color: #5f6368;
 }
 
+/* ── Save-as-template button ──────────────────────────────────────────────── */
+
+.btn-save-template {
+  color: #5f6368;
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+}
+
+.btn-save-template:hover {
+  color: #1558d6;
+}
+
 /* ── Human confirm note ───────────────────────────────────────────────────── */
 
 .rules-human-confirm {

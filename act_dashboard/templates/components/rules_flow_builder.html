@@ -378,7 +378,10 @@
   <div class="flow-footer">
     <button class="btn" id="rfb-btn-back" type="button" onclick="rfbPrevStep()">← Back</button>
     <div class="flow-step-indicator" id="rfb-step-ind">Step 1 of 5</div>
-    <button class="btn btn-primary" id="rfb-btn-next" type="button" onclick="rfbNextStep()">Next →</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-outline-secondary" id="rfb-btn-use-template" type="button" style="display:none;font-size:13px;" onclick="rfbClickUseTemplate()">Use template →</button>
+      <button class="btn btn-primary" id="rfb-btn-next" type="button" onclick="rfbNextStep()">Next →</button>
+    </div>
   </div>
 
 </div><!-- end flow-panel -->
@@ -389,6 +392,8 @@
 // ── Flow builder state ────────────────────────────────────────────────────────
 var _rfbStep        = 1;
 var _rfbEditId      = null;   // rule id when editing
+var _rfbHasPreload  = false;  // true when opened with pre-filled data (edit or template)
+var _rfbIsTemplate  = false;  // true when editing a template row
 var _rfbRoF         = 'rule'; // 'rule' or 'flag'
 var _rfbType        = 'budget';
 var _rfbCond2Open   = false;
@@ -429,7 +434,6 @@ var RFB_STEP_SUBS   = [
 
 // ── Open / close ──────────────────────────────────────────────────────────────
 function openRulesFlow(existingRow) {
-  _rfbEditId    = existingRow ? (existingRow.id || null) : null;
   _rfbRoF       = 'rule';
   _rfbType      = 'budget';
   _rfbCond2Open = false;
@@ -442,7 +446,12 @@ function openRulesFlow(existingRow) {
 
   rfbResetForm();
 
-  if (existingRow && existingRow.id) {
+  // Set these AFTER rfbResetForm() so they are not wiped
+  _rfbEditId     = existingRow ? (existingRow.id || null) : null;
+  _rfbHasPreload = existingRow ? true : false;
+  _rfbIsTemplate = existingRow ? (existingRow.is_template === true) : false;
+
+  if (existingRow) {
     rfbPopulateFromRow(existingRow);
   }
 
@@ -475,6 +484,8 @@ function rfbResetForm() {
   _rfbSelectedIds    = [];
   _rfbCond2Open      = false;
   _rfbSavedActionType = null;
+  _rfbHasPreload     = false;
+  _rfbIsTemplate     = false;
   rfbRenderCampList('');
   rfbUpdateStrategyLock();
 }
@@ -809,7 +820,7 @@ function rfbUpdateSidebar() {
   }
 
   // Step 1 — campaigns
-  if (_rfbStep > 1 || _rfbEditId) {
+  if (_rfbStep > 1 || _rfbEditId || _rfbHasPreload) {
     var campLabel = _rfbSelectedIds.length === 0
       ? 'All campaigns'
       : (_rfbSelectedIds.length === 1 ? '1 campaign' : _rfbSelectedIds.length + ' campaigns');
@@ -818,18 +829,18 @@ function rfbUpdateSidebar() {
   }
 
   // Step 2 — rule or flag
-  if (_rfbStep > 2 || _rfbEditId) {
+  if (_rfbStep > 2 || _rfbEditId || _rfbHasPreload) {
     setVal('sb-val-2', _rfbRoF === 'rule' ? 'Rule' : 'Flag', true);
   }
 
   // Step 3 — type
-  if (_rfbStep > 3 || _rfbEditId) {
+  if (_rfbStep > 3 || _rfbEditId || _rfbHasPreload) {
     var typeLabel = RFB_TYPE_LABELS[_rfbType] || _rfbType;
     setVal('sb-val-3', typeLabel, true);
   }
 
   // Step 4 — conditions + action + cooldown
-  if (_rfbStep > 4 || (_rfbStep === 4) || _rfbEditId) {
+  if (_rfbStep > 4 || (_rfbStep === 4) || _rfbEditId || _rfbHasPreload) {
     var OP_SYMBOLS = {gt:'>',lt:'<',gte:'≥',lte:'≤',eq:'='};
     var REF_LABELS = {x_target:'× target', pct:'%', absolute:''};
 
@@ -889,7 +900,7 @@ function rfbUpdateSidebar() {
   }
 
   // Step 5 — name
-  if (_rfbStep === 5 || _rfbEditId) {
+  if (_rfbStep === 5 || _rfbEditId || _rfbHasPreload) {
     var nameEl = document.getElementById('rfb-name-field');
     var nameVal = nameEl && nameEl.value.trim() ? nameEl.value.trim() : 'In progress…';
     setVal('sb-val-5', nameVal, nameEl && nameEl.value.trim().length > 0);
@@ -902,22 +913,32 @@ function rfbUpdateSidebar() {
   }
 }
 
+function rfbClickUseTemplate() {
+  // Called from "Use template" button in footer — triggers rfUseTemplate in parent
+  if (typeof rfUseTemplate === 'function' && _rfbEditId) {
+    rfUseTemplate(_rfbEditId);
+  }
+}
+
 function rfbRenderStep() {
   // Title / subtitle
-  document.getElementById('rfb-title').textContent    = _rfbEditId ? 'Edit rule or flag' : RFB_STEP_TITLES[_rfbStep];
+  document.getElementById('rfb-title').textContent    = _rfbIsTemplate ? 'Edit template' : (_rfbEditId ? 'Edit rule or flag' : RFB_STEP_TITLES[_rfbStep]);
   document.getElementById('rfb-subtitle').textContent = RFB_STEP_SUBS[_rfbStep];
   var editLbl = document.getElementById('rfb-editing-label');
   if (editLbl) {
     var nameEl = document.getElementById('rfb-name-field');
     var editName = nameEl && nameEl.value.trim() ? nameEl.value.trim() : '';
-    if (_rfbEditId && editName) { editLbl.textContent = 'Editing: ' + editName; editLbl.style.display = ''; }
+    if (_rfbIsTemplate && editName) { editLbl.textContent = 'Template: ' + editName; editLbl.style.display = ''; }
+    else if (_rfbEditId && editName) { editLbl.textContent = 'Editing: ' + editName; editLbl.style.display = ''; }
     else { editLbl.style.display = 'none'; }
   }
   document.getElementById('rfb-step-ind').textContent = 'Step ' + _rfbStep + ' of 5';
 
   // Back / next buttons
   document.getElementById('rfb-btn-back').style.visibility = _rfbStep === 1 ? 'hidden' : 'visible';
-  document.getElementById('rfb-btn-next').textContent = _rfbStep === 5 ? '✓ Save' : 'Next →';
+  document.getElementById('rfb-btn-next').textContent = _rfbStep === 5 ? (_rfbIsTemplate ? '✓ Save template' : '✓ Save') : 'Next →';
+  var useTemplateBtn = document.getElementById('rfb-btn-use-template');
+  if (useTemplateBtn) useTemplateBtn.style.display = _rfbIsTemplate ? '' : 'none';
 
   // Progress circles — use 'active' and 'done' to match CSS (.flow-prog-step.active / .done)
   for (var i = 1; i <= 5; i++) {
@@ -1114,7 +1135,8 @@ function rfbSave() {
     cooldown_days:    cooldownDays,
     risk_level:       riskLevel,
     entity_type:      'campaign',
-    enabled:          true
+    enabled:          true,
+    is_template:      _rfbIsTemplate
   };
 
   var url    = _rfbEditId ? '/campaigns/rules/' + _rfbEditId : '/campaigns/rules';
@@ -1128,7 +1150,7 @@ function rfbSave() {
   .then(function(r){ return r.json(); })
   .then(function(data) {
     btnNext.disabled = false;
-    btnNext.textContent = '✓ Save';
+    btnNext.textContent = _rfbIsTemplate ? '✓ Save template' : '✓ Save';
     if (data.success) {
       closeRulesFlow();
       if (typeof rfLoadData === 'function') rfLoadData();   // FIX: was rfbLoadData (undefined)
@@ -1141,7 +1163,7 @@ function rfbSave() {
   })
   .catch(function(err) {
     btnNext.disabled = false;
-    btnNext.textContent = '✓ Save';
+    btnNext.textContent = _rfbIsTemplate ? '✓ Save template' : '✓ Save';
     var errEl = document.getElementById('rfb-save-error');
     errEl.textContent = 'Network error. Please try again.';
     errEl.style.display = 'block';
