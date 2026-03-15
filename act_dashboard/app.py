@@ -22,6 +22,7 @@ from act_dashboard.routes import register_blueprints
 from act_dashboard.auth import init_auth
 from act_dashboard.cache import ExpiringCache
 from act_dashboard.config_validator import validate_all_configs, print_validation_errors
+from act_dashboard.outreach_poller import start_poller
 
 
 def discover_clients():
@@ -399,18 +400,10 @@ def create_app():
             'message': 'Security token missing or invalid. Please refresh the page.'
         }), 400
 
-    # Chat 90: Background scheduling is now handled by Celery + Redis (not daemon threads).
-    # Start the Celery worker separately — Flask does NOT start Celery.
-    #
-    #   Terminal 1: memurai
-    #   Terminal 2: celery -A act_dashboard.celery_app worker --beat --loglevel=info
-    #   Terminal 3: python act_dashboard/app.py
-    #
-    # Tasks registered in act_dashboard/celery_app.py:
-    #   run_outreach_poller  — every 120s  (replaces Chat 74 OutreachPoller thread)
-    #   run_queue_scheduler  — every 300s  (replaces Chat 78 QueueScheduler thread)
-    #   run_radar            — every 60s   (replaces Chat 29 M8 RadarThread)
-    print("ℹ️  [Chat 90] Background tasks handled by Celery beat — start separately")
+    # Chat 90 note: Celery + Redis was intended for background tasks but Memurai is not installed.
+    # Restored daemon thread approach (Chat 74) — start_poller() runs on Flask startup, no Redis needed.
+    start_poller()
+    print("✅ [Chat 74] Outreach poller started (daemon thread, every 120s)")
 
     # Centralized error handlers (Phase 1i)
     
