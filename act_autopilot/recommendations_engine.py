@@ -147,7 +147,7 @@ CAMPAIGN_METRIC_MAP = {
     "roas_w7_vs_prev_pct":              ("roas_w7_vs_prev_pct",             None, None),
     "cpa_w7_vs_prev_pct":               ("cpa_w7_vs_prev_pct",              None, None),
     "ctr_w7_vs_prev_pct":               ("ctr_w7_vs_prev_pct",              None, None),
-    "cpc_w7_vs_prev_pct":               ("cpc_w7_mean",                     None, None),
+    "cpc_w7_vs_prev_pct":               ("cpc_w7_vs_prev_pct",              None, None),
     "cvr_w7_vs_prev_pct":               ("cvr_w7_vs_prev_pct",              None, None),
     "conversions_w7_vs_prev_pct":       ("conversions_w7_vs_prev_pct",      None, None),
     "cost_w7_vs_prev_pct":              ("cost_micros_w7_vs_prev_pct",      None, None),
