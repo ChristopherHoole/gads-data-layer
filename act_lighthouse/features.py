@@ -72,6 +72,7 @@ def _ensure_features_table(con: duckdb.DuckDBPyConnection) -> None:
             ("campaign_name", "TEXT", False),
             ("campaign_status", "TEXT", False),
             ("channel_type", "TEXT", False),
+            ("bid_strategy_type", "TEXT", False),
             ("feature_set_version", "TEXT", True),
             ("schema_version", "INTEGER", True),
             ("generated_at_utc", "TIMESTAMP", True),
@@ -169,6 +170,7 @@ def build_campaign_features_daily(
     campaign_name_expr = _pick_expr(cols, "campaign_name", "VARCHAR")
     campaign_status_expr = _pick_expr(cols, "campaign_status", "VARCHAR")
     channel_type_expr = _pick_expr(cols, "channel_type", "VARCHAR")
+    bid_strategy_type_expr = _pick_expr(cols, "bid_strategy_type", "VARCHAR")
     rank_lost_is_expr = _pick_expr(cols, "search_rank_lost_impression_share", "DOUBLE")
 
     windows = [1, 3, 7, 14, 30]
@@ -353,6 +355,7 @@ def build_campaign_features_daily(
         "campaign_name",
         "campaign_status",
         "channel_type",
+        "bid_strategy_type",
         "feature_set_version",
         "schema_version",
         "generated_at_utc",
@@ -407,6 +410,7 @@ def build_campaign_features_daily(
         {campaign_name_expr} AS campaign_name,
         {campaign_status_expr} AS campaign_status,
         {channel_type_expr} AS channel_type,
+        {bid_strategy_type_expr} AS bid_strategy_type,
 
         CAST(COALESCE(cd.impressions, 0) AS BIGINT) AS impressions,
         CAST(COALESCE(cd.clicks, 0) AS BIGINT) AS clicks,
@@ -452,7 +456,8 @@ def build_campaign_features_daily(
         campaign_id,
         MAX(campaign_name) AS campaign_name,
         MAX(campaign_status) AS campaign_status,
-        MAX(channel_type) AS channel_type
+        MAX(channel_type) AS channel_type,
+        MAX(bid_strategy_type) AS bid_strategy_type
       FROM src
       WHERE snapshot_date = ?::DATE
       GROUP BY 1,2
@@ -486,6 +491,7 @@ def build_campaign_features_daily(
         d.campaign_name,
         d.campaign_status,
         d.channel_type,
+        d.bid_strategy_type,
 
         ? AS feature_set_version,
         ? AS schema_version,

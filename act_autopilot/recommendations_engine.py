@@ -748,20 +748,27 @@ def run_recommendations_engine(
                     continue
 
                 # --- campaign_type_lock check (DB campaign rules only) -------
-                # TODO: proper lock enforcement requires bidding_strategy column
-                #       in campaign_features_daily
+                # bid_strategy_type values from Google Ads API:
+                # TARGET_ROAS, TARGET_CPA, MANUAL_CPC, MAXIMIZE_CONVERSIONS,
+                # MAXIMIZE_CONVERSION_VALUE, None
+                LOCK_TO_STRATEGY = {
+                    "troas":      "TARGET_ROAS",
+                    "tcpa":       "TARGET_CPA",
+                    "max_clicks": "MANUAL_CPC",
+                }
                 if entity_type == "campaign":
                     lock = rule.get("campaign_type_lock", "all")
                     if lock != "all":
-                        if "bidding_strategy" in features:
-                            if features["bidding_strategy"] != lock:
+                        bid_strategy = features.get("bid_strategy_type")
+                        if bid_strategy is not None:
+                            expected = LOCK_TO_STRATEGY.get(lock)
+                            if expected and bid_strategy != expected:
                                 continue
                         else:
                             if lock not in _warned_locks:
                                 print(
                                     f"[ENGINE] WARNING: campaign_type_lock='{lock}' cannot be "
-                                    f"enforced — bidding_strategy column missing from "
-                                    f"campaign_features_daily. Firing for all campaigns."
+                                    f"enforced — bid_strategy_type is NULL for this campaign."
                                 )
                                 _warned_locks.add(lock)
 
