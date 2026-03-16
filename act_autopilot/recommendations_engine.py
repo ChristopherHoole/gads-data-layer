@@ -48,6 +48,28 @@ _HERE = Path(__file__).parent
 RULES_CONFIG_PATH = _HERE / "rules_config.json"
 
 # ---------------------------------------------------------------------------
+# Operator normalisation (DB conditions Format B → engine short codes)
+# ---------------------------------------------------------------------------
+OP_MAP = {">": "gt", ">=": "gte", "<": "lt", "<=": "lte", "=": "eq", "==": "eq"}
+
+# ---------------------------------------------------------------------------
+# action_type → action_direction mapping (DB → engine)
+# ---------------------------------------------------------------------------
+ACTION_MAP = {
+    "increase_budget":     "increase",
+    "decrease_budget":     "decrease",
+    "increase_troas":      "increase",
+    "decrease_troas":      "decrease",
+    "increase_target_cpa": "increase",
+    "decrease_target_cpa": "decrease",
+    "increase_max_cpc":    "increase",
+    "decrease_max_cpc":    "decrease",
+    "pause":               "pause",
+    "flag":                "flag",
+    "hold":                "hold",
+}
+
+# ---------------------------------------------------------------------------
 # Entity Type Configuration (Chat 47)
 # Maps entity types to their database tables
 # ---------------------------------------------------------------------------
@@ -282,6 +304,105 @@ def _table_exists(conn, table_name: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# DB Campaign Rule Loader (Chat 95)
+# ---------------------------------------------------------------------------
+
+def _normalise_operator(op_str: str) -> str:
+    """Convert symbolic operators to engine short-codes via OP_MAP."""
+    return OP_MAP.get(op_str or "", op_str or "gte")
+
+
+def _load_db_campaign_rules(conn) -> list:
+    """
+    Load enabled campaign rules from the DB rules table.
+    Returns a list of rule dicts normalised to the engine's internal format.
+    Handles both condition schemas (op/ref and operator/unit).
+    """
+    rules = []
+    try:
+        rows = conn.execute("""
+            SELECT id, name, type, campaign_type_lock,
+                   conditions, action_type, action_magnitude,
+                   cooldown_days, risk_level
+            FROM rules
+            WHERE entity_type = 'campaign'
+              AND rule_or_flag = 'rule'
+              AND is_template = FALSE
+              AND enabled = TRUE
+        """).fetchall()
+    except Exception as e:
+        print(f"[ENGINE] ERROR querying DB campaign rules: {e}")
+        return rules
+
+    col_names = [
+        "id", "name", "type", "campaign_type_lock",
+        "conditions", "action_type", "action_magnitude",
+        "cooldown_days", "risk_level",
+    ]
+
+    for row in rows:
+        rd = dict(zip(col_names, row))
+
+        # Parse conditions JSON safely
+        try:
+            conds_raw = rd["conditions"]
+            conditions = json.loads(conds_raw) if isinstance(conds_raw, str) else (conds_raw or [])
+        except Exception as e:
+            print(f"[ENGINE] WARNING: Skipping rule {rd['id']} — bad conditions JSON: {e}")
+            continue
+
+        if not conditions:
+            print(f"[ENGINE] WARNING: Skipping rule {rd['id']} — empty conditions")
+            continue
+
+        # Normalise condition 1
+        c1 = conditions[0]
+        op1  = c1.get("op") or _normalise_operator(c1.get("operator", ""))
+        ref1 = c1.get("ref") or c1.get("unit") or "absolute"
+        try:
+            val1 = float(c1.get("value", 0))
+        except (TypeError, ValueError):
+            val1 = 0.0
+
+        # Normalise condition 2 (optional)
+        c2 = conditions[1] if len(conditions) > 1 else None
+        cond2_metric = cond2_op = cond2_val = None
+        if c2:
+            cond2_metric = c2.get("metric")
+            cond2_op     = c2.get("op") or _normalise_operator(c2.get("operator", ""))
+            try:
+                cond2_val = float(c2.get("value", 0))
+            except (TypeError, ValueError):
+                cond2_val = 0.0
+
+        action_direction = ACTION_MAP.get(rd["action_type"] or "", rd["action_type"] or "hold")
+        try:
+            magnitude = float(rd["action_magnitude"]) if rd["action_magnitude"] is not None else 0.0
+        except (TypeError, ValueError):
+            magnitude = 0.0
+
+        rules.append({
+            "rule_id":              f"db_campaign_{rd['id']}",
+            "rule_type":            rd["type"] or "budget",
+            "condition_metric":     c1.get("metric"),
+            "condition_operator":   op1,
+            "condition_value":      val1,
+            "condition_unit":       ref1,
+            "condition_2_metric":   cond2_metric,
+            "condition_2_operator": cond2_op,
+            "condition_2_value":    cond2_val,
+            "action_direction":     action_direction,
+            "action_magnitude":     magnitude,
+            "risk_level":           rd["risk_level"] or "medium",
+            "cooldown_days":        rd["cooldown_days"] or 7,
+            "campaign_type_lock":   rd["campaign_type_lock"] or "all",
+        })
+
+    print(f"[ENGINE] Loaded {len(rules)} campaign rules from DB")
+    return rules
+
+
+# ---------------------------------------------------------------------------
 # Operator evaluation
 # ---------------------------------------------------------------------------
 
@@ -502,16 +623,31 @@ def run_recommendations_engine(
     print("Customer ID: {}".format(customer_id))
     print("Database: {}".format(db_path))
 
-    # --- Load rules ---------------------------------------------------------
+    # --- Load non-campaign rules from JSON ----------------------------------
+    # Campaign rules are now the DB source of truth; exclude them from JSON.
     with open(RULES_CONFIG_PATH, "r", encoding="utf-8") as f:
         rules_data = json.load(f)
 
-    enabled_rules = [r for r in rules_data if r.get("enabled", False)]
-    print("[ENGINE] Loaded {} enabled rules from rules_config.json".format(len(enabled_rules)))
+    json_enabled = [r for r in rules_data if r.get("enabled", False)]
+    json_non_campaign = [
+        r for r in json_enabled
+        if _detect_entity_type(r["rule_id"]) != "campaign"
+    ]
+    print("[ENGINE] Loaded {} rules from rules_config.json (non-campaign only)".format(
+        len(json_non_campaign)))
 
-    # --- Group rules by entity type -----------------------------------------
+    # --- Connect to database ------------------------------------------------
+    conn = duckdb.connect(db_path)
+    conn.execute(f"ATTACH '{readonly_path}' AS ro (READ_ONLY)")
+    print("[ENGINE] Connected to warehouse + attached readonly")
+
+    # --- Load campaign rules from DB ----------------------------------------
+    db_campaign_rules = _load_db_campaign_rules(conn)
+
+    # --- Group all rules by entity type -------------------------------------
+    all_rules = json_non_campaign + db_campaign_rules
     rules_by_entity = {}
-    for rule in enabled_rules:
+    for rule in all_rules:
         entity_type = _detect_entity_type(rule["rule_id"])
         if entity_type not in rules_by_entity:
             rules_by_entity[entity_type] = []
@@ -520,11 +656,6 @@ def run_recommendations_engine(
     print("[ENGINE] Rules by entity type:")
     for entity_type, rules in rules_by_entity.items():
         print("  - {}: {} rules".format(entity_type, len(rules)))
-
-    # --- Connect to database ------------------------------------------------
-    conn = duckdb.connect(db_path)
-    conn.execute(f"ATTACH '{readonly_path}' AS ro (READ_ONLY)")
-    print("[ENGINE] Connected to warehouse + attached readonly")
 
     # --- Check table availability -------------------------------------------
     available_entities = {}
@@ -564,6 +695,7 @@ def run_recommendations_engine(
     new_recs         = []
     by_entity_type   = {}
     now              = datetime.now()
+    _warned_locks    = set()  # track campaign_type_lock warnings already emitted
 
     for entity_type, entity_rules in rules_by_entity.items():
         
@@ -614,6 +746,24 @@ def run_recommendations_engine(
                 if (entity_id, rule_id) in existing_pending:
                     skipped_duplicate += 1
                     continue
+
+                # --- campaign_type_lock check (DB campaign rules only) -------
+                # TODO: proper lock enforcement requires bidding_strategy column
+                #       in campaign_features_daily
+                if entity_type == "campaign":
+                    lock = rule.get("campaign_type_lock", "all")
+                    if lock != "all":
+                        if "bidding_strategy" in features:
+                            if features["bidding_strategy"] != lock:
+                                continue
+                        else:
+                            if lock not in _warned_locks:
+                                print(
+                                    f"[ENGINE] WARNING: campaign_type_lock='{lock}' cannot be "
+                                    f"enforced — bidding_strategy column missing from "
+                                    f"campaign_features_daily. Firing for all campaigns."
+                                )
+                                _warned_locks.add(lock)
 
                 # --- Evaluate primary condition -----------------------------
                 metric = rule["condition_metric"]

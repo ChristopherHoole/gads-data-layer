@@ -390,6 +390,15 @@ def create_app():
     else:
         print("⚠️  [Chat 93] Route not found (skipping): campaigns.save_as_template")
 
+    # Chat 95: CSRF exemption for recommendations run endpoint (JSON API, no CSRF tokens sent)
+    # POST /recommendations/run is a JSON API called from JavaScript
+    # Protected by @login_required decorator instead
+    if 'recommendations.recommendations_run' in app.view_functions:
+        csrf.exempt(app.view_functions['recommendations.recommendations_run'])
+        print("✅ [Chat 95] CSRF exempted: recommendations.recommendations_run")
+    else:
+        print("⚠️  [Chat 95] Route not found (skipping): recommendations.recommendations_run")
+
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
     def csrf_error(reason):

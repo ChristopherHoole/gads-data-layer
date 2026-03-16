@@ -196,6 +196,47 @@ def _load_monitoring_days(rule_id):
     return {"monitoring_days": 0, "monitoring_minutes": 0}
 
 
+def _build_rule_name_map():
+    """
+    Build a dict of rule_id -> rule_name from both sources:
+    - DB rules table: db_campaign_N -> rule name
+    - JSON rules_config.json: rule_id -> rule name
+
+    Used by _get_recommendations_data() to enrich rec dicts with rule_name.
+    """
+    name_map = {}
+
+    # Load JSON rules
+    try:
+        path = os.path.normpath(_RULES_CONFIG_PATH)
+        with open(path, "r") as f:
+            rules = json.load(f)
+        for rule in rules:
+            rule_id = rule.get("rule_id")
+            name = rule.get("name") or rule.get("display_name") or rule_id
+            if rule_id:
+                name_map[rule_id] = name
+    except Exception as e:
+        print("[RECOMMENDATIONS] Could not load rules_config.json for name map: {}".format(e))
+
+    # Load DB rules (campaign entity)
+    try:
+        import duckdb as _duckdb
+        conn = _duckdb.connect("warehouse.duckdb")
+        rows = conn.execute(
+            "SELECT id, name FROM rules WHERE entity_type = 'campaign' "
+            "AND rule_or_flag = 'rule' AND is_template = FALSE"
+        ).fetchall()
+        conn.close()
+        for row in rows:
+            db_key = "db_campaign_{}".format(row[0])
+            name_map[db_key] = row[1]
+    except Exception as e:
+        print("[RECOMMENDATIONS] Could not load DB rule names: {}".format(e))
+
+    return name_map
+
+
 def _load_rec_by_id(conn, rec_id, customer_id):
     """
     Load a single recommendation row by rec_id + customer_id.
@@ -332,7 +373,15 @@ def _get_recommendations_data(config, status_filter=None, limit=5000):
             "generated_at", "accepted_at", "monitoring_ends_at", "resolved_at",
             "outcome_metric", "created_at", "updated_at",
         ]
-        return [dict(zip(columns, row)) for row in rows]
+        result = [dict(zip(columns, row)) for row in rows]
+
+        # Enrich with rule_name from DB or JSON
+        name_map = _build_rule_name_map()
+        for rec in result:
+            rule_id = rec.get("rule_id", "")
+            rec["rule_name"] = name_map.get(rule_id, rule_id)
+
+        return result
     except Exception as e:
         print("[RECOMMENDATIONS] Error querying recommendations: {}".format(e))
         return []
@@ -453,6 +502,9 @@ def _enrich_rec(rec):
         rec["bar_class"] = "rt-bid"
     else:
         rec["bar_class"] = "rt-status"
+
+    # Action label — used by JS card rendering
+    rec["action_label"] = get_action_label(rec)
 
     # Relative timestamp
     generated = rec.get("generated_at")
