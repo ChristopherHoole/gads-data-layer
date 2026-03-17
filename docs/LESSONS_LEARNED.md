@@ -376,3 +376,30 @@ Upgrade from Test to Explorer can happen before full Basic Access is granted.
 **Total:** 76 lessons
 **Coverage:** Database, recommendations, website, search, API, components, UI, outreach, email, process, rules, templates, Google API
 **Version:** 5.0 | **Updated:** 2026-03-15
+
+---
+
+## SYNTHETIC DATA & FEATURES PIPELINE (Chat 97)
+
+### 77. YAML Unquoted Integers Parse as int, Not str
+YAML parses `customer_id: 1254895944` as Python int. `DashboardConfig._get_customer_id()` must cast to str or all DB queries silently return 0 rows.
+- **Apply:** Always `return str(self.config["customer_id"])` in config loaders. Always quote IDs in YAML: `customer_id: "1254895944"`.
+- **Chat:** 97
+
+### 78. Synthetic Data: Use VARCHAR for All ID Columns
+When generating synthetic data, ID columns (campaign_id, ad_group_id, keyword_id) must match the type used in the primary tables. campaign_daily uses VARCHAR for campaign_id — all other tables must match.
+- **Apply:** In generation scripts, always explicitly cast IDs to VARCHAR. Run type verification after generation.
+- **Chat:** 97
+
+### 79. DuckDB WAL Corruption: Always DETACH ro Before Closing
+If a script attaches `warehouse_readonly.duckdb` as `ro` and exits uncleanly (crash, exception, or incomplete run), DuckDB leaves a `.wal` file. The next connection that tries to open `warehouse.duckdb` will attempt to checkpoint the corrupt WAL and call `os.abort()`, crashing Flask with no traceback.
+- **Apply:** Always `DETACH ro` in a `try/finally` block before closing any connection. If Flask crashes silently after startup log, check for `warehouse.duckdb.wal` and delete it.
+- **Chat:** 97
+
+### 80. Bypass Pipeline Scripts for Local Feature Builds — Use Direct SQL
+Pipeline scripts like `build_keyword_features_daily()` are designed for production API flows and can cause WAL corruption in local dev when they crash mid-run. For synthetic/test data, always build features tables directly with a single `CREATE TABLE AS SELECT` SQL query.
+- **Apply:** Use `build_ad_features_direct.py` and `build_keyword_features.py` as the pattern. One SQL query, `DETACH ro` before close, done. Never use the pipeline for local builds.
+- **Chat:** 97
+
+**Total:** 80 lessons
+**Version:** 6.0 | **Updated:** 2026-03-17

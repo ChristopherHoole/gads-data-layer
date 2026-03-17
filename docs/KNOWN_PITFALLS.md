@@ -1,8 +1,8 @@
 # KNOWN PITFALLS - ADS CONTROL TOWER (A.C.T)
 
-**Version:** 5.0
+**Version:** 6.0
 **Created:** 2026-02-28
-**Updated:** 2026-03-15
+**Updated:** 2026-03-17
 **Purpose:** Troubleshooting guide with solutions and prevention strategies
 
 **See Also:** LESSONS_LEARNED.md (best practices), MASTER_KNOWLEDGE_BASE.md (current state)
@@ -23,9 +23,10 @@
 10. **Outreach System Issues** (5 pitfalls)
 11. **Email Sending Issues** (4 pitfalls)
 12. **Layout & CSS Issues** (4 pitfalls)
-13. **Rules & Templates Issues** (6 pitfalls) ← NEW
+13. **Rules & Templates Issues** (6 pitfalls)
+14. **Synthetic Data & Features Pipeline Issues** (6 pitfalls) ← NEW
 
-**Total:** 59 pitfalls with solutions
+**Total:** 65 pitfalls with solutions
 
 ---
 
@@ -336,4 +337,54 @@ conn.execute("ATTACH 'warehouse_readonly.duckdb' AS ro (READ_ONLY)")
 
 **Version:** 5.0 | **Last Updated:** 2026-03-15
 **Total Pitfalls:** 59
+**See Also:** LESSONS_LEARNED.md | MASTER_KNOWLEDGE_BASE.md
+
+---
+
+## SYNTHETIC DATA & FEATURES PIPELINE ISSUES
+
+### 60. customer_id YAML Integer Type Mismatch
+**Problem:** Keywords/Ads/Ad Groups tables show no rows despite data existing in DB
+**Cause:** YAML parses unquoted integers as Python int (e.g. `customer_id: 1254895944` → int). `DashboardConfig._get_customer_id()` returned int, but DB stores customer_id as VARCHAR. WHERE clause never matched.
+**Solution:** Cast in `_get_customer_id()`: `return str(self.config["customer_id"])`
+**Prevention:** Always quote customer_id in YAML: `customer_id: "1254895944"`. Always `str()` cast in config loader.
+**Chat:** 97
+
+### 61. campaign_id Type Mismatch — BIGINT vs VARCHAR
+**Problem:** Keywords/Ads/Ad Groups tables empty despite data in DB
+**Cause:** Synthetic data generation wrote campaign_id as BIGINT in keyword_daily, ad_daily, ad_group_daily — but campaign_daily stores it as VARCHAR. Route joins failed silently.
+**Solution:** Run migration to cast campaign_id to VARCHAR: `CREATE TABLE t_new AS SELECT * REPLACE (CAST(campaign_id AS VARCHAR) AS campaign_id) FROM t`
+**Prevention:** Always use VARCHAR for all ID columns in synthetic data generation scripts.
+**Chat:** 97
+
+### 62. DuckDB WAL Corruption — Script Exits With ro Attached
+**Problem:** Flask crashes on startup with `os._exit()` — no traceback visible
+**Cause:** A script (e.g. features pipeline) exits uncleanly while `warehouse_readonly.duckdb` is attached as `ro`. DuckDB leaves a `.wal` file. Next connection (Flask → outreach `_ensure_schema()`) tries to checkpoint the corrupt WAL and calls `os.abort()`.
+**Solution:** `del warehouse.duckdb.wal` in PowerShell, then rebuild features.
+**Prevention:** Always `DETACH ro` before closing any connection that had readonly attached. Use `try/finally` to guarantee detach even on crash.
+**Chat:** 97
+
+### 63. Features Pipeline Causes WAL Corruption — Use Direct SQL Instead
+**Problem:** `build_keyword_features_daily()` pipeline inserts rows then crashes on close, leaving corrupt WAL every time
+**Cause:** The pipeline attaches readonly DB, does heavy work, then fails to close cleanly — DuckDB WAL is never checkpointed.
+**Solution:** Bypass the pipeline entirely. Build features tables directly via a single `CREATE TABLE AS SELECT` SQL query from `keyword_daily`/`ad_daily`. Same approach as `build_ad_features_direct.py`.
+**Prevention:** For synthetic/test data, always use direct SQL builds rather than pipeline scripts. Pipeline scripts are designed for production API data flows, not local DB operations.
+**Chat:** 97
+
+### 64. DROP VIEW IF EXISTS on a TABLE Throws Error
+**Problem:** `DROP VIEW IF EXISTS analytics.campaign_features_daily` throws `Catalog Error: Existing object is of type Table`
+**Cause:** DuckDB does not allow DROP VIEW on a TABLE even with IF EXISTS.
+**Solution:** Use `DROP TABLE IF EXISTS` for tables. Check `information_schema.tables.table_type` first if unknown.
+**Chat:** 97
+
+### 65. outreach_poller.py Imports celery_app at Module Level
+**Problem:** Flask crashes on startup if celery_app fails to initialise
+**Cause:** Bottom of `outreach_poller.py` has `from act_dashboard.celery_app import celery_app` at module level. If Celery/Redis is unavailable this line crashes the import silently via `os._exit()`.
+**Prevention:** This import exists for the Celery task decorator. If Memurai is not installed, the WAL corruption issue is more likely the cause of crashes — fix WAL first before suspecting Celery.
+**Chat:** 97
+
+---
+
+**Version:** 6.0 | **Last Updated:** 2026-03-17
+**Total Pitfalls:** 65
 **See Also:** LESSONS_LEARNED.md | MASTER_KNOWLEDGE_BASE.md
