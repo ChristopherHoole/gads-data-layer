@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recommendations — ACT Wireframe v5</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">
+<style>
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;background:#f8f9fa;margin:0}
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 40}
+
+/* Sidebar */
+.nav-sidebar{width:110px;background:#fff;border-right:1px solid #dadce0;display:flex;flex-direction:column;position:fixed;left:0;top:0;height:100vh;z-index:1000}
+.nav-brand{padding:16px 12px;display:flex;flex-direction:column;align-items:center;border-bottom:1px solid #dadce0}
+.nav-brand-logo{width:44px;height:44px;margin-bottom:6px}
+.nav-brand-text{font-size:13px;font-weight:600;color:#202124;text-align:center;line-height:1.3}
+.nav-items{flex:1;padding:8px 0;overflow-y:auto}
+.nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 8px;margin:4px 8px;text-decoration:none;color:#5f6368;border-radius:8px;cursor:pointer;min-height:70px;font-size:12px;font-weight:500;text-align:center;line-height:1.2;transition:all .15s}
+.nav-item:hover{background:#f1f3f4;color:#202124}
+.nav-item.active{background:#e8f0fe;color:#1a73e8}
+.nav-item .material-symbols-outlined{font-size:28px;margin-bottom:4px}
+
+/* Main */
+.main-wrapper{margin-left:110px;display:flex;flex-direction:column;min-height:100vh}
+.top-navbar{height:52px;background:#fff;border-bottom:1px solid #dadce0;display:flex;align-items:center;padding:0 20px;justify-content:flex-end;gap:10px;position:sticky;top:0;z-index:100}
+.navbar-client{font-size:13px;color:#5f6368}
+.navbar-btn{padding:5px 14px;border:1px solid #dadce0;border-radius:4px;font-size:13px;color:#202124;background:#fff;cursor:pointer}
+.main-content{padding:24px;flex:1}
+
+/* Page header */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.page-title{font-size:22px;font-weight:500;color:#202124;margin:0}
+.page-subtitle{font-size:13px;color:#5f6368;margin-top:2px}
+
+/* Buttons */
+.btn-primary-act{background:#1a73e8;border:1px solid #1a73e8;color:#fff;padding:8px 16px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary-act:hover{background:#1557b0}
+.btn-secondary-act{background:#fff;border:1px solid #dadce0;color:#202124;padding:8px 16px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-secondary-act:hover{background:#f8f9fa}
+.btn-danger-act{background:#fff;border:1px solid #fca5a5;color:#dc2626;padding:8px 16px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-danger-act:hover{background:#fef2f2}
+.btn-sm-act{padding:4px 12px;font-size:12px}
+
+/* Status tabs */
+.status-tabs{display:flex;border-bottom:2px solid #e0e0e0;margin-bottom:16px}
+.status-tab{padding:9px 20px;font-size:13px;font-weight:500;color:#5f6368;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;display:flex;align-items:center;gap:6px;transition:all .15s;user-select:none}
+.status-tab:hover{color:#202124}
+.status-tab.active{color:#1a73e8;border-bottom-color:#1a73e8}
+.tab-badge{border-radius:10px;padding:2px 8px;font-size:11px;font-weight:600}
+.tab-badge-blue{background:#e8f0fe;color:#1a73e8}
+.tab-badge-gray{background:#f1f3f4;color:#5f6368}
+
+/* Controls */
+.top-controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.left-controls{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.filter-tabs{display:flex;gap:4px;background:#f1f3f4;padding:4px;border-radius:6px}
+.filter-tab{padding:6px 16px;background:transparent;border:none;border-radius:4px;font-size:13px;color:#5f6368;cursor:pointer;transition:all .15s}
+.filter-tab:hover{background:rgba(0,0,0,.05)}
+.filter-tab.active{background:#fff;color:#202124;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.right-controls{display:flex;gap:12px;align-items:center}
+.search-input{padding:6px 12px;border:1px solid #dadce0;border-radius:4px;font-size:13px;color:#202124;background:#fff;width:220px;outline:none}
+.search-input:focus{border-color:#1a73e8}
+.sort-select{padding:6px 28px 6px 10px;border:1px solid #dadce0;border-radius:4px;font-size:13px;color:#202124;background:#fff;cursor:pointer;outline:none}
+
+/* Bulk bar */
+.bulk-bar{display:flex;align-items:center;gap:10px;padding:9px 14px;background:#e8f0fe;border:1px solid #bfdbfe;border-radius:6px;margin-bottom:12px;font-size:13px;color:#1a73e8;font-weight:500}
+
+/* Table — matches table-styles.css */
+.table-wrapper{overflow-x:auto;border:1px solid #e0e0e0;border-radius:8px}
+table{width:100%;border-collapse:collapse;background:#fff;table-layout:auto}
+thead{background:#f8f9fa;border-bottom:2px solid #e0e0e0}
+th{padding:12px 10px;text-align:left;font-size:13px;font-weight:500;color:#5f6368;white-space:nowrap}
+td{padding:10px 10px;font-size:13px;color:#202124;border-bottom:1px solid #e0e0e0;vertical-align:top;white-space:normal;word-break:break-word}
+tbody tr:last-child td{border-bottom:none}
+tbody tr.data-row:hover td{background:#f8f9fa;cursor:pointer}
+tbody tr.data-row.selected td{background:#e8f0fe}
+tbody tr.data-row.selected:hover td{background:#dbeafe}
+
+/* Column widths */
+.col-cb{width:36px;min-width:36px;max-width:36px}
+.col-type{min-width:90px;max-width:110px}
+.col-name{min-width:130px;max-width:200px}
+.col-campaigns{min-width:130px;max-width:200px}
+.col-rule{min-width:140px;max-width:200px}
+.col-plain{min-width:200px;max-width:280px}
+.col-ruleflag{min-width:70px;max-width:90px}
+.col-ruletype{min-width:70px;max-width:90px}
+.col-conditions{min-width:160px;max-width:220px}
+.col-action{min-width:160px;max-width:200px}
+.col-risk{min-width:70px;max-width:90px}
+.col-age{min-width:50px;max-width:70px}
+.col-acts{min-width:130px;max-width:160px}
+
+/* Type pill */
+.type-pill{display:inline-flex;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;white-space:nowrap}
+.type-campaign{background:#dbeafe;color:#1d4ed8}
+.type-keyword{background:#dcfce7;color:#15803d}
+.type-ad{background:#fef9c3;color:#a16207}
+.type-shopping{background:#fce7f3;color:#9d174d}
+
+/* Rule/Flag badge — matches Rules tab exactly */
+.rf-badge{display:inline-flex;padding:3px 10px;border-radius:4px;font-size:12px;font-weight:500;white-space:nowrap}
+.rf-rule{background:#dbeafe;color:#1d4ed8}
+.rf-flag{background:#fef9c3;color:#a16207}
+
+/* Rule type badge — matches Rules tab exactly */
+.rt-badge{display:inline-flex;padding:3px 10px;border-radius:4px;font-size:12px;font-weight:500;white-space:nowrap}
+.rt-budget{background:#dbeafe;color:#1d4ed8}
+.rt-bid{background:#e0e7ff;color:#4338ca}
+.rt-status{background:#fce7f3;color:#9d174d}
+.rt-keyword{background:#dcfce7;color:#15803d}
+.rt-shopping{background:#fff7ed;color:#c2410c}
+
+/* Conditions cell — matches Rules tab conditions column */
+.conditions-cell{font-size:12px;color:#374151;line-height:1.6}
+.conditions-cell .cond-line{display:block}
+
+/* Action cell — matches Rules tab action column exactly */
+.action-text-cell{font-size:14px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+.action-increase{color:#137333}
+.action-decrease{color:#c5221f}
+.action-pause{color:#b45309}
+.action-flag{color:#3c4043}
+.action-hold{color:#5f6368}
+.action-sub{font-size:12px;color:#5f6368;margin-top:4px;font-weight:400}
+
+/* Risk badges */
+.risk-badge{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:500}
+.risk-low{color:#137333}
+.risk-low::before{content:'●';font-size:10px;color:#34a853}
+.risk-medium{color:#b45309}
+.risk-medium::before{content:'●';font-size:10px;color:#fbbc05}
+.risk-high{color:#c5221f}
+.risk-high::before{content:'●';font-size:10px;color:#ea4335}
+
+/* Human confirm */
+.human-badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #fbbc05;border-radius:4px;font-size:11px;color:#a16207;background:#fef9c3;font-weight:600;white-space:nowrap;margin-bottom:6px}
+
+/* Row action buttons */
+.row-acts{display:flex;gap:4px;flex-wrap:wrap}
+.ra-btn{padding:5px 12px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid;white-space:nowrap;transition:all .15s}
+.ra-accept{background:#1a73e8;color:#fff;border-color:#1a73e8}
+.ra-accept:hover{background:#1557b0}
+.ra-decline{background:#fff;color:#dc2626;border-color:#fca5a5}
+.ra-decline:hover{background:#fef2f2}
+
+/* Expand row */
+.expand-row{display:none}
+.expand-row.open{display:table-row}
+.expand-row td{background:#f8f9fa;padding:16px 20px;border-bottom:1px solid #e0e0e0}
+.expand-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:24px}
+.expand-label{font-size:11px;font-weight:600;color:#5f6368;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.expand-val{font-size:13px;color:#202124;line-height:1.6}
+
+/* Pagination */
+.pagination-row{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-top:1px solid #e0e0e0}
+.pagination-info{font-size:13px;color:#5f6368}
+.pagination-controls{display:flex;gap:4px}
+.pagination-controls button{min-width:32px;padding:6px 12px;background:#fff;border:1px solid #dadce0;border-radius:4px;font-size:13px;cursor:pointer;color:#202124;transition:all .15s}
+.pagination-controls button:hover:not(:disabled):not(.active){background:#f8f9fa}
+.pagination-controls button:disabled{opacity:.4;cursor:not-allowed}
+.pagination-controls button.active{background:#1a73e8;color:#fff;border-color:#1a73e8}
+.rows-per-page{display:flex;align-items:center;gap:8px;font-size:13px;color:#5f6368}
+.rows-per-page select{padding:6px 32px 6px 12px;background:#fff;border:1px solid #dadce0;border-radius:4px;font-size:13px;color:#202124;cursor:pointer}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="nav-sidebar">
+  <div class="nav-brand">
+    <svg class="nav-brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="41" fill="none" stroke="#4285F4" stroke-width="10"/>
+      <circle cx="50" cy="50" r="29" fill="none" stroke="#EA4335" stroke-width="10"/>
+      <circle cx="50" cy="50" r="17" fill="none" stroke="#FBBC05" stroke-width="10"/>
+      <circle cx="50" cy="50" r="10" fill="#34A853"/>
+    </svg>
+    <div class="nav-brand-text">Ads<br>Control<br>Tower</div>
+  </div>
+  <div class="nav-items">
+    <a class="nav-item" href="#"><span class="material-symbols-outlined">home</span>Dashboard</a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined">campaign</span>Campaigns</a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined">folder</span>Ad Groups</a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined">search</span>Keywords</a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined">article</span>Ads</a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined">shopping_cart</span>Shopping</a>
+    <a class="nav-item active" href="#"><span class="material-symbols-outlined">lightbulb</span><span style="font-size:11px">Recommendations</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined">history</span>Changes</a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined">send</span>Outreach</a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined">settings</span>Settings</a>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main-wrapper">
+  <div class="top-navbar">
+    <span class="navbar-client"><i class="bi bi-building"></i> Christopher Hoole</span>
+    <button class="navbar-btn"><i class="bi bi-person-circle"></i> User ▾</button>
+  </div>
+
+  <div class="main-content">
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Recommendations</h1>
+        <div class="page-subtitle">Review and action optimisation recommendations for this account</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-secondary-act" onclick="runEngine()"><i class="bi bi-play-fill"></i> Run engine</button>
+        <button class="btn-primary-act" onclick="acceptAllLowRisk()"><i class="bi bi-check-lg"></i> Accept all low risk</button>
+      </div>
+    </div>
+
+    <!-- Status tabs -->
+    <div class="status-tabs">
+      <div class="status-tab active" onclick="switchTab(this,'pending')">Pending <span class="tab-badge tab-badge-blue" id="tab-badge-pending">5</span></div>
+      <div class="status-tab" onclick="switchTab(this,'monitoring')">Monitoring <span class="tab-badge tab-badge-gray">0</span></div>
+      <div class="status-tab" onclick="switchTab(this,'successful')">Successful <span class="tab-badge tab-badge-gray">0</span></div>
+      <div class="status-tab" onclick="switchTab(this,'history')">History <span class="tab-badge tab-badge-gray">0</span></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="top-controls">
+      <div class="left-controls">
+        <div class="filter-tabs">
+          <button class="filter-tab active" onclick="filterType(this,'all')">All</button>
+          <button class="filter-tab" onclick="filterType(this,'campaign')">Campaigns</button>
+          <button class="filter-tab" onclick="filterType(this,'keyword')">Keywords</button>
+          <button class="filter-tab" onclick="filterType(this,'ad')">Ads</button>
+          <button class="filter-tab" onclick="filterType(this,'shopping')">Shopping</button>
+        </div>
+        <div style="font-size:13px;color:#5f6368" id="row-count">5 recommendations · 5 pending</div>
+      </div>
+      <div class="right-controls">
+        <input class="search-input" placeholder="Search name or rule..." oninput="doSearch(this.value)" />
+        <select class="sort-select" onchange="doSort(this.value)">
+          <option value="risk">Sort: Risk level</option>
+          <option value="name">Sort: Name</option>
+          <option value="type">Sort: Type</option>
+          <option value="rule">Sort: Rule name</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Bulk bar -->
+    <div class="bulk-bar" id="bulk-bar" style="display:none">
+      <input type="checkbox" style="width:14px;height:14px;cursor:pointer" onchange="selectAll(this.checked)" />
+      <span id="sel-count">0 selected</span>
+      <button class="btn-primary-act btn-sm-act" onclick="bulkAccept()"><i class="bi bi-check-lg"></i> Accept selected</button>
+      <button class="btn-danger-act btn-sm-act" onclick="bulkDecline()"><i class="bi bi-x-lg"></i> Decline selected</button>
+      <span style="margin-left:auto;font-size:12px;cursor:pointer;color:#1a73e8;font-weight:400" onclick="clearSel()">Clear selection</span>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-cb"><input type="checkbox" style="width:14px;height:14px;cursor:pointer" onchange="selectAll(this.checked)" /></th>
+            <th class="col-type">Type</th>
+            <th class="col-name">Name</th>
+            <th class="col-campaigns">Campaign/s name</th>
+            <th class="col-rule">Rule name</th>
+            <th class="col-plain">Plain English</th>
+            <th class="col-ruleflag">Rule/Flag</th>
+            <th class="col-ruletype">Rule type</th>
+            <th class="col-conditions">Conditions</th>
+            <th class="col-action">Action</th>
+            <th class="col-risk">Risk</th>
+            <th class="col-age">Age</th>
+            <th class="col-acts"></th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+      <div class="pagination-row">
+        <div class="pagination-info" id="pag-info">Showing 1–5 of 5 recommendations</div>
+        <div style="display:flex;align-items:center;gap:16px">
+          <div class="rows-per-page">
+            Rows per page:
+            <select><option>25</option><option>50</option><option>100</option></select>
+          </div>
+          <div class="pagination-controls">
+            <button disabled>‹ Prev</button>
+            <button class="active">1</button>
+            <button>Next ›</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const DATA = [
+  {id:'r1',name:'Budget Constrained High',entityType:'campaign',campaigns:'Budget Constrained High',rule:'Increase budget – strong ROAS',plainEnglish:'Spend more when ROAS is comfortably beating target with enough clicks to be confident',ruleFlag:'rule',ruleType:'budget',conditions:['ROAS (7d) ≥ 1.15× target','Clicks (7d) ≥ 30'],actionDir:'increase',actionText:'↑ Increase budget 10%',actionSub:'£116.39 → £128.03 daily',risk:'low',age:'2h ago',humanConfirm:false,
+   whyTriggered:'ROAS (7d avg) 4.80× is beating the 1.20× target threshold (4.0× tROAS × 1.20). Clicks (7d sum) = 1,015 meets the minimum 30-click confidence threshold.',
+   proposedChange:'Daily budget £116.39 → £128.03 (+£11.64)',
+   ruleDetails:['7-day cooldown','Low risk','tROAS campaigns only']},
+  {id:'r2',name:'Volatile Low',entityType:'campaign',campaigns:'Volatile Low',rule:'Decrease budget – weak ROAS',plainEnglish:'Pull back spend when ROAS is below target and there is enough data to be sure it is a real problem',ruleFlag:'rule',ruleType:'budget',conditions:['ROAS (7d) < 0.85× target','Clicks (7d) ≥ 30'],actionDir:'decrease',actionText:'↓ Decrease budget 10%',actionSub:'£124.00 → £111.60 daily',risk:'low',age:'2h ago',humanConfirm:false,
+   whyTriggered:'ROAS (7d avg) 3.07× is below the 0.85× target threshold (4.0× tROAS × 0.85 = 3.40×). Clicks (7d sum) = 1,077 meets the minimum 30-click threshold.',
+   proposedChange:'Daily budget £124.00 → £111.60 (−£12.40)',
+   ruleDetails:['7-day cooldown','Low risk','tROAS campaigns only']},
+  {id:'r3',name:'Decline Moderate',entityType:'campaign',campaigns:'Decline Moderate',rule:'Pause – high CPC',plainEnglish:'Recommend pausing if CPC is more than double the threshold and click volume is too low to justify the cost',ruleFlag:'rule',ruleType:'status',conditions:['Avg CPC (14d) > £5','Cost (14d) ≥ £200'],actionDir:'pause',actionText:'⏸ Pause campaign',actionSub:'Requires human confirmation',risk:'high',age:'2h ago',humanConfirm:true,
+   whyTriggered:'Avg CPC (14d) = £804 exceeds the £5 threshold. Cost (14d) = £1,646 meets the minimum £200 spend qualifier. High-risk — requires human confirmation.',
+   proposedChange:'Campaign status: Enabled → Paused',
+   ruleDetails:['14-day cooldown','High risk','All campaigns','Human confirmation required']},
+  {id:'r4',name:'google ads specialist london',entityType:'keyword',campaigns:'Specialist / Freelancer',rule:'Pause high-cost zero-conv',plainEnglish:'Pause keywords with £50+ spend and 0 conversions',ruleFlag:'rule',ruleType:'keyword',conditions:['Cost ≥ £50','Conversions = 0'],actionDir:'pause',actionText:'⏸ Pause keyword',actionSub:'No value change',risk:'low',age:'2h ago',humanConfirm:false,
+   whyTriggered:'Cost = £52.00 meets the minimum £50 spend threshold. Conversions = 0 over the same 14-day period.',
+   proposedChange:'Keyword status: Active → Paused',
+   ruleDetails:['14-day cooldown','Low risk','All keywords']},
+  {id:'r5',name:'ppc management agency uk',entityType:'keyword',campaigns:'Management / Freelancer',rule:'Reduce bid – low quality score',plainEnglish:'Reduce bid 20% on keywords with quality score below 5',ruleFlag:'rule',ruleType:'bid',conditions:['Quality score < 5'],actionDir:'decrease',actionText:'↓ Decrease bid 20%',actionSub:'£1.20 → £0.96 max CPC',risk:'low',age:'2h ago',humanConfirm:false,
+   whyTriggered:'Quality score = 4, which is below the threshold of 5. Reducing the bid reduces wasted spend on a low-quality keyword while it is improved.',
+   proposedChange:'Max CPC bid: £1.20 → £0.96 (−£0.24)',
+   ruleDetails:['14-day cooldown','Low risk','All keywords']},
+];
+
+let sel=new Set(),expanded=null,activeType='all',searchQ='';
+
+function typePill(t){
+  const m={campaign:['type-campaign','Campaign'],keyword:['type-keyword','Keyword'],ad:['type-ad','Ad'],shopping:['type-shopping','Shopping']};
+  const[c,l]=m[t]||['type-campaign','Campaign'];
+  return `<span class="type-pill ${c}">${l}</span>`;
+}
+function rfBadge(rf){
+  return rf==='flag'
+    ?`<span class="rf-badge rf-flag">Flag</span>`
+    :`<span class="rf-badge rf-rule">Rule</span>`;
+}
+function rtBadge(rt){
+  const m={budget:'rt-budget',bid:'rt-bid',status:'rt-status',keyword:'rt-keyword',shopping:'rt-shopping'};
+  const l={budget:'Budget',bid:'Bid',status:'Status',keyword:'Keyword',shopping:'Shopping'};
+  return `<span class="rt-badge ${m[rt]||'rt-budget'}">${l[rt]||rt}</span>`;
+}
+function conditionsCell(conds){
+  return `<div class="conditions-cell">${conds.map(c=>`<span class="cond-line">${c}</span>`).join('')}</div>`;
+}
+function actionCell(dir,text,sub){
+  const m={increase:'action-increase',decrease:'action-decrease',pause:'action-pause',flag:'action-flag',hold:'action-hold'};
+  return `<div>
+    <span class="action-text-cell ${m[dir]||'action-hold'}">${text}</span>
+    <div class="action-sub">${sub}</div>
+  </div>`;
+}
+function riskBadge(r){
+  const m={low:'risk-low',medium:'risk-medium',high:'risk-high'};
+  return `<span class="risk-badge ${m[r]||'risk-low'}">${r.charAt(0).toUpperCase()+r.slice(1)}</span>`;
+}
+
+function render(){
+  const tbody=document.getElementById('table-body');
+  let rows=DATA.filter(r=>{
+    if(activeType!=='all'&&r.entityType!==activeType)return false;
+    if(searchQ){const q=searchQ.toLowerCase();if(!r.name.toLowerCase().includes(q)&&!r.rule.toLowerCase().includes(q))return false;}
+    return true;
+  });
+  tbody.innerHTML='';
+  rows.forEach(rec=>{
+    const isSel=sel.has(rec.id);
+    const tr=document.createElement('tr');
+    tr.className='data-row'+(isSel?' selected':'');
+    tr.innerHTML=`
+      <td class="col-cb"><input type="checkbox" ${isSel?'checked':''} style="width:14px;height:14px;cursor:pointer" onclick="toggleSel('${rec.id}',event)"/></td>
+      <td class="col-type">${typePill(rec.entityType)}</td>
+      <td class="col-name" style="font-weight:500">${rec.name}</td>
+      <td class="col-campaigns" style="color:#5f6368;font-size:12px">${rec.campaigns}</td>
+      <td class="col-rule" style="font-weight:500">${rec.rule}</td>
+      <td class="col-plain" style="color:#5f6368;font-size:12px">${rec.plainEnglish}</td>
+      <td class="col-ruleflag">${rfBadge(rec.ruleFlag)}</td>
+      <td class="col-ruletype">${rtBadge(rec.ruleType)}</td>
+      <td class="col-conditions">${conditionsCell(rec.conditions)}</td>
+      <td class="col-action">${actionCell(rec.actionDir,rec.actionText,rec.actionSub)}</td>
+      <td class="col-risk">${riskBadge(rec.risk)}</td>
+      <td class="col-age" style="font-size:11px;color:#9aa0a6">${rec.age}</td>
+      <td class="col-acts">
+        ${rec.humanConfirm?'<div class="human-badge"><i class="bi bi-exclamation-triangle-fill"></i> Human confirm</div>':''}
+        <div class="row-acts">
+          <button class="ra-btn ra-accept" onclick="acceptOne('${rec.id}',event)">Accept</button>
+          <button class="ra-btn ra-decline" onclick="declineOne('${rec.id}',event)">Decline</button>
+        </div>
+      </td>`;
+    tr.addEventListener('click',e=>{if(e.target.type==='checkbox'||e.target.tagName==='BUTTON')return;toggleExpand(rec.id);});
+    tbody.appendChild(tr);
+
+    const expTr=document.createElement('tr');
+    expTr.className='expand-row';
+    expTr.id='exp-'+rec.id;
+    const detailLines=rec.ruleDetails.map(d=>`<li>${d}</li>`).join('');
+    expTr.innerHTML=`<td colspan="13">
+      <div class="expand-grid">
+        <div>
+          <div class="expand-label">Why this was triggered</div>
+          <div class="expand-val">${rec.whyTriggered}</div>
+        </div>
+        <div>
+          <div class="expand-label">Proposed change</div>
+          <div class="expand-val">${rec.proposedChange}</div>
+        </div>
+        <div>
+          <div class="expand-label">Rule details</div>
+          <div class="expand-val"><ul style="margin:0;padding-left:16px">${detailLines}</ul></div>
+        </div>
+      </div>
+    </td>`;
+    tbody.appendChild(expTr);
+  });
+
+  document.getElementById('pag-info').textContent=`Showing 1–${rows.length} of ${rows.length} recommendations`;
+  document.getElementById('row-count').textContent=`${rows.length} recommendation${rows.length!==1?'s':''} · ${rows.length} pending`;
+  document.getElementById('tab-badge-pending').textContent=DATA.length;
+  updateBulk();
+}
+
+function toggleExpand(id){
+  const e=document.getElementById('exp-'+id);
+  if(expanded&&expanded!==id){const o=document.getElementById('exp-'+expanded);if(o)o.classList.remove('open');}
+  if(expanded===id){e.classList.remove('open');expanded=null;}
+  else{e.classList.add('open');expanded=id;}
+}
+function toggleSel(id,e){e.stopPropagation();if(sel.has(id))sel.delete(id);else sel.add(id);render();}
+function selectAll(v){if(v)DATA.forEach(r=>sel.add(r.id));else sel.clear();render();}
+function clearSel(){sel.clear();render();}
+function updateBulk(){const b=document.getElementById('bulk-bar');document.getElementById('sel-count').textContent=sel.size+' row'+(sel.size!==1?'s':'')+' selected';b.style.display=sel.size>0?'flex':'none';}
+function remove(id){const i=DATA.findIndex(r=>r.id===id);if(i>-1)DATA.splice(i,1);sel.delete(id);}
+function acceptOne(id,e){e.stopPropagation();remove(id);render();toast('Recommendation accepted','success');}
+function declineOne(id,e){e.stopPropagation();remove(id);render();toast('Recommendation declined','info');}
+function bulkAccept(){const n=sel.size;[...sel].forEach(id=>remove(id));sel.clear();render();toast(n+' recommendation'+(n!==1?'s':'')+' accepted','success');}
+function bulkDecline(){const n=sel.size;[...sel].forEach(id=>remove(id));sel.clear();render();toast(n+' recommendation'+(n!==1?'s':'')+' declined','info');}
+function acceptAllLowRisk(){const ids=DATA.filter(r=>r.risk==='low').map(r=>r.id);ids.forEach(id=>remove(id));sel.clear();render();toast(ids.length+' low-risk recommendations accepted','success');}
+function runEngine(){toast('Engine running... (wireframe only)','info');}
+function filterType(btn,type){document.querySelectorAll('.filter-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');activeType=type;render();}
+function doSearch(v){searchQ=v;render();}
+function doSort(v){
+  if(v==='risk'){const o={low:0,medium:1,high:2};DATA.sort((a,b)=>(o[a.risk]||0)-(o[b.risk]||0));}
+  else if(v==='name')DATA.sort((a,b)=>a.name.localeCompare(b.name));
+  else if(v==='type')DATA.sort((a,b)=>a.entityType.localeCompare(b.entityType));
+  else if(v==='rule')DATA.sort((a,b)=>a.rule.localeCompare(b.rule));
+  render();
+}
+function switchTab(el,tab){
+  document.querySelectorAll('.status-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  if(tab!=='pending'){document.getElementById('table-body').innerHTML=`<tr><td colspan="13" style="text-align:center;padding:40px;color:#5f6368;font-size:13px">No ${tab} recommendations</td></tr>`;document.getElementById('pag-info').textContent='';}
+  else render();
+}
+function toast(msg,type){
+  const ex=document.getElementById('wf-toast');if(ex)ex.remove();
+  const t=document.createElement('div');t.id='wf-toast';
+  const c={success:'#34a853',info:'#1a73e8'};
+  t.style.cssText=`position:fixed;top:16px;right:16px;z-index:9999;background:${c[type]||c.info};color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:500;box-shadow:0 2px 8px rgba(0,0,0,.2)`;
+  t.textContent=msg;document.body.appendChild(t);
+  setTimeout(()=>t.remove(),2500);
+}
+render();
+</script>
+</body>
+</html>

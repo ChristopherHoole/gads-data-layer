@@ -1,0 +1,389 @@
+/* ============================================================================
+   RECOMMENDATIONS CSS - Ads Control Tower
+   All styles for the Recommendations page and entity-page Recommendations tabs
+   Companion to: table-styles.css, custom.css, rules.css
+   Created: Master Chat 12 — Job 3
+   ============================================================================ */
+
+
+/* ----------------------------------------------------------------------------
+   TYPE PILLS
+   Entity type indicator: Campaign / Keyword / Ad / Shopping
+   Usage: <span class="rec-type-pill rec-type-campaign">Campaign</span>
+   ---------------------------------------------------------------------------- */
+
+.rec-type-pill {
+    display: inline-flex;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.rec-type-campaign  { background: #dbeafe; color: #1d4ed8; }
+.rec-type-keyword   { background: #dcfce7; color: #15803d; }
+.rec-type-ad        { background: #fef9c3; color: #a16207; }
+.rec-type-shopping  { background: #fce7f3; color: #9d174d; }
+.rec-type-adgroup   { background: #ede9fe; color: #5b21b6; }
+
+
+/* ----------------------------------------------------------------------------
+   RULE/FLAG BADGE
+   Matches Rules & Flags tab Rule/Flag column exactly
+   Usage: <span class="rec-rf-badge rec-rf-rule">Rule</span>
+   ---------------------------------------------------------------------------- */
+
+.rec-rf-badge {
+    display: inline-flex;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.rec-rf-rule { background: #dbeafe; color: #1d4ed8; }
+.rec-rf-flag { background: #fef9c3; color: #a16207; }
+
+
+/* ----------------------------------------------------------------------------
+   RULE TYPE BADGE
+   Matches Rules & Flags tab Rule type column exactly
+   Usage: <span class="rec-rt-badge rec-rt-budget">Budget</span>
+   ---------------------------------------------------------------------------- */
+
+.rec-rt-badge {
+    display: inline-flex;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.rec-rt-budget   { background: #dbeafe; color: #1d4ed8; }
+.rec-rt-bid      { background: #e0e7ff; color: #4338ca; }
+.rec-rt-status   { background: #fce7f3; color: #9d174d; }
+.rec-rt-keyword  { background: #dcfce7; color: #15803d; }
+.rec-rt-shopping { background: #fff7ed; color: #c2410c; }
+
+
+/* ----------------------------------------------------------------------------
+   ACTION TEXT
+   Matches Rules & Flags tab Action column exactly — plain bold coloured text,
+   no border, no background box
+   Usage: <span class="rec-action-text rec-action-increase">↑ Increase budget 10%</span>
+   ---------------------------------------------------------------------------- */
+
+.rec-action-text {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.rec-action-increase { color: #137333; }
+.rec-action-decrease { color: #c5221f; }
+.rec-action-pause    { color: #b45309; }
+.rec-action-flag     { color: #3c4043; }
+.rec-action-hold     { color: #5f6368; }
+
+.rec-action-sub {
+    font-size: 12px;
+    color: #5f6368;
+    margin-top: 4px;
+    font-weight: 400;
+}
+
+
+/* ----------------------------------------------------------------------------
+   RISK BADGE
+   Dot + coloured label. Matches Rules & Flags tab Risk column exactly.
+   Usage: <span class="rec-risk-badge rec-risk-low">Low</span>
+   ---------------------------------------------------------------------------- */
+
+.rec-risk-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.rec-risk-low::before    { content: '●'; font-size: 10px; color: #34a853; }
+.rec-risk-medium::before { content: '●'; font-size: 10px; color: #fbbc05; }
+.rec-risk-high::before   { content: '●'; font-size: 10px; color: #ea4335; }
+
+.rec-risk-low    { color: #137333; }
+.rec-risk-medium { color: #b45309; }
+.rec-risk-high   { color: #c5221f; }
+
+
+/* ----------------------------------------------------------------------------
+   CONDITIONS CELL
+   Each condition on its own line
+   Usage: <div class="rec-conditions-cell"><span>ROAS (7d) ≥ 1.15× target</span><span>Clicks (7d) ≥ 30</span></div>
+   ---------------------------------------------------------------------------- */
+
+.rec-conditions-cell {
+    font-size: 12px;
+    color: #374151;
+    line-height: 1.8;
+}
+
+.rec-conditions-cell span {
+    display: block;
+}
+
+
+/* ----------------------------------------------------------------------------
+   HUMAN CONFIRM BADGE
+   Shown on high-risk recommendations requiring explicit human confirmation
+   Usage: <div class="rec-human-badge"><i class="bi bi-exclamation-triangle-fill"></i> Human confirm</div>
+   ---------------------------------------------------------------------------- */
+
+.rec-human-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 8px;
+    border: 1px solid #fbbc05;
+    border-radius: 4px;
+    font-size: 11px;
+    color: #a16207;
+    background: #fef9c3;
+    font-weight: 600;
+    white-space: nowrap;
+    margin-bottom: 6px;
+}
+
+
+/* ----------------------------------------------------------------------------
+   OUTCOME BADGES
+   Used in History tab Outcome column
+   Usage: <span class="rec-outcome-badge rec-outcome-declined">Declined</span>
+   ---------------------------------------------------------------------------- */
+
+.rec-outcome-badge {
+    display: inline-flex;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.rec-outcome-successful { background: #e6f4ea; color: #137333; }
+.rec-outcome-declined   { background: #fce8e6; color: #c5221f; }
+.rec-outcome-reverted   { background: #fff3e0; color: #e65100; }
+.rec-outcome-monitoring { background: #f3e8ff; color: #7c3aed; }
+
+
+/* ----------------------------------------------------------------------------
+   MONITORING PROGRESS BAR
+   Used in Monitoring tab progress column
+   Usage:
+   <div class="rec-progress-wrap">
+     <div class="rec-progress-bg"><div class="rec-progress-fill" style="width:30%"></div></div>
+     <div class="rec-progress-label">Day 2 of 7 · ends 23 Mar 2026</div>
+   </div>
+   ---------------------------------------------------------------------------- */
+
+.rec-progress-wrap {
+    min-width: 150px;
+}
+
+.rec-progress-bg {
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    overflow: hidden;
+    width: 100%;
+    margin-bottom: 4px;
+}
+
+.rec-progress-fill {
+    height: 6px;
+    border-radius: 3px;
+    background: #7c3aed;
+    transition: width 0.3s ease;
+}
+
+.rec-progress-label {
+    font-size: 11px;
+    color: #5f6368;
+}
+
+
+/* ----------------------------------------------------------------------------
+   EXPAND ROW
+   Expandable detail row — click any data row to toggle
+   ---------------------------------------------------------------------------- */
+
+.rec-expand-row {
+    display: none;
+}
+
+.rec-expand-row.open {
+    display: table-row;
+}
+
+.rec-expand-row td {
+    background: #f8f9fa;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.rec-expand-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 24px;
+}
+
+.rec-expand-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #5f6368;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+}
+
+.rec-expand-val {
+    font-size: 13px;
+    color: #202124;
+    line-height: 1.6;
+}
+
+.rec-expand-val ul {
+    margin: 0;
+    padding-left: 16px;
+}
+
+.rec-expand-val li {
+    margin-bottom: 2px;
+}
+
+
+/* ----------------------------------------------------------------------------
+   ROW ACTION BUTTONS
+   Accept / Decline buttons in the last column
+   ---------------------------------------------------------------------------- */
+
+.rec-row-acts {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.rec-row-btn {
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid;
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+
+.rec-row-btn-accept {
+    background: #1a73e8;
+    color: #fff;
+    border-color: #1a73e8;
+}
+
+.rec-row-btn-accept:hover {
+    background: #1557b0;
+    border-color: #1557b0;
+}
+
+.rec-row-btn-decline {
+    background: #fff;
+    color: #dc2626;
+    border-color: #fca5a5;
+}
+
+.rec-row-btn-decline:hover {
+    background: #fef2f2;
+}
+
+
+/* ----------------------------------------------------------------------------
+   BULK ACTION BAR
+   Shown when one or more rows are selected
+   ---------------------------------------------------------------------------- */
+
+.rec-bulk-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    background: #e8f0fe;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #1a73e8;
+    font-weight: 500;
+}
+
+.rec-bulk-clear {
+    margin-left: auto;
+    font-size: 12px;
+    cursor: pointer;
+    color: #1a73e8;
+    font-weight: 400;
+}
+
+
+/* ----------------------------------------------------------------------------
+   COLUMN WIDTH CONSTRAINTS
+   Apply to <th> and <td> elements per column
+   ---------------------------------------------------------------------------- */
+
+.rec-col-cb         { width: 36px;   min-width: 36px;   max-width: 36px;   }
+.rec-col-type       { min-width: 90px;  max-width: 110px;  }
+.rec-col-name       { min-width: 130px; max-width: 200px;  }
+.rec-col-campaigns  { min-width: 130px; max-width: 200px;  }
+.rec-col-rule       { min-width: 140px; max-width: 200px;  }
+.rec-col-plain      { min-width: 200px; max-width: 280px;  }
+.rec-col-ruleflag   { min-width: 70px;  max-width: 90px;   }
+.rec-col-ruletype   { min-width: 70px;  max-width: 90px;   }
+.rec-col-conditions { min-width: 160px; max-width: 220px;  }
+.rec-col-action     { min-width: 160px; max-width: 200px;  }
+.rec-col-risk       { min-width: 70px;  max-width: 90px;   }
+.rec-col-age        { min-width: 50px;  max-width: 70px;   }
+.rec-col-date       { min-width: 100px; max-width: 130px;  }
+.rec-col-progress   { min-width: 150px; max-width: 200px;  }
+.rec-col-status     { min-width: 90px;  max-width: 120px;  }
+.rec-col-acts       { min-width: 130px; max-width: 160px;  }
+
+
+/* ----------------------------------------------------------------------------
+   SELECTED ROW STATE
+   Applied to <tr> when checkbox is checked
+   ---------------------------------------------------------------------------- */
+
+tbody tr.rec-selected td {
+    background: #e8f0fe;
+}
+
+tbody tr.rec-selected:hover td {
+    background: #dbeafe;
+}
+
+
+/* ----------------------------------------------------------------------------
+   ENTITY PAGE TAB VERSION (slim)
+   Used on Campaigns, Keywords etc. pages where recommendations sit inside a tab
+   Hides columns that aren't needed in the entity-specific context
+   ---------------------------------------------------------------------------- */
+
+.rec-tab-slim .rec-col-campaigns,
+.rec-tab-slim .rec-col-type {
+    display: none;
+}

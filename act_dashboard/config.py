@@ -56,9 +56,9 @@ class DashboardConfig:
     def _get_customer_id(self) -> str:
         """Extract customer_id from config (handles nested structure)."""
         if "customer_id" in self.config:
-            return self.config["customer_id"]
+            return str(self.config["customer_id"])
         elif "google_ads" in self.config and "customer_id" in self.config["google_ads"]:
-            return self.config["google_ads"]["customer_id"]
+            return str(self.config["google_ads"]["customer_id"])
         else:
             return "UNKNOWN"
 

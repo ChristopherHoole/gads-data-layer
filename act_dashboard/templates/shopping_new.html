@@ -934,135 +934,165 @@
     <!-- RECOMMENDATIONS TAB -->
     <div class="tab-pane fade {% if active_tab == 'recommendations' %}show active{% endif %}"
          id="recommendations-tab" role="tabpanel">
-      
-      {# ── SUMMARY STRIP ──────────────────────────────────────────────────────────── #}
-      <div class="summary-strip">
-        <div class="summary-card">
-          <div class="s-icon" style="background:#dbeafe;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          </div>
-          <div>
-            <div class="s-num" style="color:#0d6efd;" id="shop-summary-pending">0</div>
-            <div class="s-label">Pending</div>
-          </div>
+
+      <!-- Header -->
+      <div class="d-flex align-items-start justify-content-between gap-3 mb-4">
+        <div>
+          <h5 style="font-size:16px;font-weight:600;margin:0 0 4px;color:#1a1d23;">Shopping Recommendations</h5>
+          <p style="margin:0;color:#6b7280;font-size:13px;">Rules and flags triggered for shopping products in this account. <a href="/recommendations" style="color:#0d6efd;text-decoration:none;">View full recommendations page &rarr;</a></p>
         </div>
-        <div class="summary-card">
-          <div class="s-icon" style="background:#ede9fe;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
-          <div>
-            <div class="s-num" style="color:#6d28d9;" id="shop-summary-monitoring">0</div>
-            <div class="s-label">Monitoring</div>
-          </div>
-        </div>
-        <div class="summary-card">
-          <div class="s-icon" style="background:#dcfce7;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <div>
-            <div class="s-num" style="color:#15803d;" id="shop-summary-successful">0</div>
-            <div class="s-label">Successful</div>
-          </div>
-        </div>
-        <div class="summary-card">
-          <div class="s-icon" style="background:#fee2e2;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
-          </div>
-          <div>
-            <div class="s-num" style="color:#dc3545;" id="shop-summary-reverted">0</div>
-            <div class="s-label">Reverted</div>
-          </div>
-        </div>
-        <div class="summary-card">
-          <div class="s-icon" style="background:#f3f4f6;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </div>
-          <div>
-            <div class="s-num" style="color:#6b7280;" id="shop-summary-declined">0</div>
-            <div class="s-label">Declined</div>
-          </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <button id="shop-accept-low-risk-btn" class="btn btn-sm btn-outline-success" style="font-size:13px;">Accept all low risk</button>
+          <button id="shop-run-engine-btn" class="btn btn-sm btn-outline-secondary" style="font-size:13px;display:flex;align-items:center;gap:5px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg>
+            Run Recommendations Now
+          </button>
         </div>
       </div>
 
-      {# ── STATUS TAB BAR ─────────────────────────────────────────────────────────── #}
-      <div class="page-tabs">
-        <button class="page-tab active" id="shop-btn-tab-pending" onclick="shopSwitchTab('pending')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Pending <span class="tab-badge" id="shop-tab-badge-pending">0</span>
-        </button>
-        <button class="page-tab" id="shop-btn-tab-monitoring" onclick="shopSwitchTab('monitoring')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Monitoring <span class="tab-badge-orange" id="shop-tab-badge-monitoring">0</span>
-        </button>
-        <button class="page-tab" id="shop-btn-tab-successful" onclick="shopSwitchTab('successful')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          Successful <span class="tab-badge-green" id="shop-tab-badge-successful">0</span>
-        </button>
-        <button class="page-tab" id="shop-btn-tab-reverted" onclick="shopSwitchTab('reverted')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
-          Reverted <span class="tab-badge-red" id="shop-tab-badge-reverted">0</span>
-        </button>
-        <button class="page-tab" id="shop-btn-tab-declined" onclick="shopSwitchTab('declined')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          Declined <span class="tab-badge-grey" id="shop-tab-badge-declined">0</span>
-        </button>
-      </div>
+      <!-- Inner tab nav -->
+      <ul class="nav nav-tabs mb-3" id="shopRecTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="shop-rec-pending-tab" data-bs-toggle="tab" data-bs-target="#shop-rec-pending" type="button" role="tab">
+            Pending <span class="badge bg-secondary ms-1" id="shop-badge-pending">0</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="shop-rec-monitoring-tab" data-bs-toggle="tab" data-bs-target="#shop-rec-monitoring" type="button" role="tab">
+            Monitoring <span class="badge bg-secondary ms-1" id="shop-badge-monitoring">0</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="shop-rec-successful-tab" data-bs-toggle="tab" data-bs-target="#shop-rec-successful" type="button" role="tab">
+            Successful <span class="badge bg-secondary ms-1" id="shop-badge-successful">0</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="shop-rec-history-tab" data-bs-toggle="tab" data-bs-target="#shop-rec-history" type="button" role="tab">
+            History <span class="badge bg-secondary ms-1" id="shop-badge-history">0</span>
+          </button>
+        </li>
+      </ul>
 
-      {# ── TAB CONTENT AREAS ──────────────────────────────────────────────────────── #}
-      <div id="shop-tab-pending">
-        <div id="shop-cards-pending" class="rec-grid-2"></div>
-        <div id="shop-empty-pending" class="empty-state" style="display:none;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <p>No pending recommendations</p>
-        </div>
-      </div>
+      <div class="tab-content" id="shopRecTabContent">
 
-      <div id="shop-tab-monitoring" style="display:none;">
-        <div id="shop-cards-monitoring" class="rec-grid-2"></div>
-        <div id="shop-empty-monitoring" class="empty-state" style="display:none;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
-          </svg>
-          <p>No monitoring recommendations</p>
+        <!-- PENDING -->
+        <div class="tab-pane fade show active" id="shop-rec-pending" role="tabpanel">
+          <div id="shop-bulk-bar" class="rec-bulk-bar" style="display:none;">
+            <span id="shop-bulk-count">0 selected</span>
+            <button class="btn btn-sm btn-primary" onclick="shopDoBulk('accept')">Accept selected</button>
+            <button class="btn btn-sm btn-outline-danger" onclick="shopDoBulk('decline')">Decline selected</button>
+            <span class="rec-bulk-clear" onclick="shopClearSelection()">Clear selection</span>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle rec-tab-slim" id="shop-pending-table">
+              <thead class="table-light">
+                <tr>
+                  <th class="rec-col-cb"><input type="checkbox" id="shop-cb-all-pending" onchange="shopToggleAll(this)"></th>
+                  <th class="rec-col-name">Product</th>
+                  <th class="rec-col-rule">Rule name</th>
+                  <th class="rec-col-plain">Plain English</th>
+                  <th class="rec-col-ruleflag">Rule/Flag</th>
+                  <th class="rec-col-ruletype">Rule type</th>
+                  <th class="rec-col-conditions">Conditions</th>
+                  <th class="rec-col-action">Action</th>
+                  <th class="rec-col-risk">Risk</th>
+                  <th class="rec-col-age">Age</th>
+                  <th class="rec-col-acts">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="shop-pending-tbody">
+                <tr><td colspan="11" class="text-center text-muted py-4">Loading&hellip;</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="shop-pending-paginator" class="d-flex justify-content-between align-items-center mt-2" style="font-size:13px;"></div>
         </div>
-      </div>
 
-      <div id="shop-tab-successful" style="display:none;">
-        <div id="shop-cards-successful" class="rec-grid-2"></div>
-        <div id="shop-empty-successful" class="empty-state" style="display:none;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-          <p>No successful recommendations</p>
+        <!-- MONITORING -->
+        <div class="tab-pane fade" id="shop-rec-monitoring" role="tabpanel">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle rec-tab-slim" id="shop-monitoring-table">
+              <thead class="table-light">
+                <tr>
+                  <th class="rec-col-cb"></th>
+                  <th class="rec-col-date">Accepted</th>
+                  <th class="rec-col-progress">Monitoring progress</th>
+                  <th class="rec-col-name">Product</th>
+                  <th class="rec-col-rule">Rule name</th>
+                  <th class="rec-col-plain">Plain English</th>
+                  <th class="rec-col-ruleflag">Rule/Flag</th>
+                  <th class="rec-col-ruletype">Rule type</th>
+                  <th class="rec-col-conditions">Conditions</th>
+                  <th class="rec-col-action">Action taken</th>
+                  <th class="rec-col-risk">Risk</th>
+                </tr>
+              </thead>
+              <tbody id="shop-monitoring-tbody">
+                <tr><td colspan="11" class="text-center text-muted py-4">Loading&hellip;</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="shop-monitoring-paginator" class="d-flex justify-content-between align-items-center mt-2" style="font-size:13px;"></div>
         </div>
-      </div>
 
-      <div id="shop-tab-reverted" style="display:none;">
-        <div id="shop-cards-reverted" class="rec-grid-2"></div>
-        <div id="shop-empty-reverted" class="empty-state" style="display:none;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <polyline points="1 4 1 10 7 10"/>
-            <path d="M3.51 15a9 9 0 1 0 .49-3.57"/>
-          </svg>
-          <p>No reverted recommendations</p>
+        <!-- SUCCESSFUL -->
+        <div class="tab-pane fade" id="shop-rec-successful" role="tabpanel">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle rec-tab-slim" id="shop-successful-table">
+              <thead class="table-light">
+                <tr>
+                  <th class="rec-col-cb"></th>
+                  <th class="rec-col-date">Accepted</th>
+                  <th class="rec-col-date">Completed</th>
+                  <th class="rec-col-name">Product</th>
+                  <th class="rec-col-rule">Rule name</th>
+                  <th class="rec-col-plain">Plain English</th>
+                  <th class="rec-col-ruleflag">Rule/Flag</th>
+                  <th class="rec-col-ruletype">Rule type</th>
+                  <th class="rec-col-conditions">Conditions</th>
+                  <th class="rec-col-action">Action taken</th>
+                  <th class="rec-col-risk">Risk</th>
+                </tr>
+              </thead>
+              <tbody id="shop-successful-tbody">
+                <tr><td colspan="11" class="text-center text-muted py-4">Loading&hellip;</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="shop-successful-paginator" class="d-flex justify-content-between align-items-center mt-2" style="font-size:13px;"></div>
         </div>
-      </div>
 
-      <div id="shop-tab-declined" style="display:none;">
-        <div id="shop-cards-declined" class="rec-grid-2"></div>
-        <div id="shop-empty-declined" class="empty-state" style="display:none;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-          <p>No declined recommendations</p>
+        <!-- HISTORY (declined + reverted) -->
+        <div class="tab-pane fade" id="shop-rec-history" role="tabpanel">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle rec-tab-slim" id="shop-history-table">
+              <thead class="table-light">
+                <tr>
+                  <th class="rec-col-cb"></th>
+                  <th class="rec-col-status">Outcome</th>
+                  <th class="rec-col-date">Date actioned</th>
+                  <th class="rec-col-name">Product</th>
+                  <th class="rec-col-rule">Rule name</th>
+                  <th class="rec-col-plain">Plain English</th>
+                  <th class="rec-col-ruleflag">Rule/Flag</th>
+                  <th class="rec-col-ruletype">Rule type</th>
+                  <th class="rec-col-conditions">Conditions</th>
+                  <th class="rec-col-action">Action</th>
+                  <th class="rec-col-risk">Risk</th>
+                </tr>
+              </thead>
+              <tbody id="shop-history-tbody">
+                <tr><td colspan="11" class="text-center text-muted py-4">Loading&hellip;</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="shop-history-paginator" class="d-flex justify-content-between align-items-center mt-2" style="font-size:13px;"></div>
         </div>
-      </div>
+
+      </div><!-- /shopRecTabContent -->
+
+    </div>
 
     </div>
 
@@ -1276,464 +1306,340 @@ function applyShopColumns() {
 })();
 
 // ===========================================================================
-// RECOMMENDATIONS TAB - STATUS TAB SWITCHING
+// RECOMMENDATIONS TAB - TABLE UI (Chat 96)
 // ===========================================================================
-const SHOP_TABS = ['pending', 'monitoring', 'successful', 'reverted', 'declined'];
+(function () {
+  'use strict';
 
-function shopSwitchTab(name) {
-  SHOP_TABS.forEach(t => {
-    const tabEl = document.getElementById('shop-tab-' + t);
-    const btnEl = document.getElementById('shop-btn-tab-' + t);
-    if (tabEl) tabEl.style.display = (t === name) ? '' : 'none';
-    if (btnEl) btnEl.classList.toggle('active', t === name);
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function esc(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function rfBadge(v) {
+    if (!v) return '<span class="rec-badge-flag">Flag</span>';
+    var lv = v.toLowerCase();
+    if (lv === 'rule') return '<span class="rec-badge-rule">Rule</span>';
+    return '<span class="rec-badge-flag">Flag</span>';
+  }
+  function rtBadge(v) {
+    var m = { budget:'Budget', bid:'Bid', status:'Status', keyword:'Keyword', shopping:'Shopping' };
+    return '<span class="rec-badge-type">' + esc(m[v] || v || 'Other') + '</span>';
+  }
+  function condCell(v) {
+    if (!v) return '<span class="text-muted">—</span>';
+    return '<span class="rec-cond-cell" title="' + esc(v) + '">' + esc(v.length > 60 ? v.slice(0,58)+'…' : v) + '</span>';
+  }
+  function actionCell(v) {
+    if (!v) return '<span class="text-muted">—</span>';
+    return '<span class="rec-action-pill">' + esc(v) + '</span>';
+  }
+  function riskBadge(r) {
+    var cls = { low:'rec-risk-low', medium:'rec-risk-med', high:'rec-risk-high' };
+    return '<span class="' + (cls[r] || 'rec-risk-low') + '">' + esc(r||'low') + '</span>';
+  }
+  function outcomeBadge(s) {
+    var cls = { declined:'rec-outcome-declined', reverted:'rec-outcome-reverted' };
+    return '<span class="' + (cls[s] || 'rec-outcome-declined') + '">' + esc(s) + '</span>';
+  }
+  function fmtDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  }
+  function ageLabel(d) {
+    if (!d) return '—';
+    var days = Math.round((Date.now() - new Date(d)) / 86400000);
+    return days < 1 ? 'Today' : days + 'd';
+  }
+  function progressBar(r) {
+    var pct = Math.min(100, Math.max(0, r.monitoring_progress_pct || 0));
+    return '<div class="rec-progress-wrap"><div class="rec-progress-bar" style="width:' + pct + '%"></div></div><span style="font-size:11px;color:#6b7280;">' + pct + '%</span>';
+  }
+  function makeExpRow(r, cols) {
+    var plain = r.plain_english || r.action_description || '';
+    var cond  = r.conditions || '';
+    return '<tr class="rec-exp-row"><td colspan="' + cols + '" class="rec-exp-cell">'
+      + (plain ? '<div><strong>Plain English:</strong> ' + esc(plain) + '</div>' : '')
+      + (cond  ? '<div><strong>Conditions:</strong> ' + esc(cond) + '</div>' : '')
+      + '<div><strong>Rec ID:</strong> ' + esc(r.rec_id) + '</div>'
+      + '</td></tr>';
+  }
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  var SHOP_REC = { pending:[], monitoring:[], successful:[], history:[] };
+  var SHOP_SEL = {};
+  var SHOP_PAGE = { pending:1, monitoring:1, successful:1, history:1 };
+  var SHOP_PER_PAGE = 25;
+
+  // ── Row builders ──────────────────────────────────────────────────────────
+  function pendingRow(r) {
+    var id = r.rec_id;
+    var chk = '<input type="checkbox" class="shop-rec-cb" data-id="' + id + '" onchange="shopRecCbChange(this)" ' + (SHOP_SEL[id] ? 'checked' : '') + '>';
+    return '<tr data-id="' + id + '">'
+      + '<td>' + chk + '</td>'
+      + '<td class="rec-col-name">' + esc(r.entity_name || r.campaign_name || '—') + '</td>'
+      + '<td>' + esc(r.rule_name || r.rule_id || '—') + '</td>'
+      + '<td>' + condCell(r.plain_english || r.action_description) + '</td>'
+      + '<td>' + rfBadge(r.rule_or_flag) + '</td>'
+      + '<td>' + rtBadge(r.rule_type_display || r.rule_type) + '</td>'
+      + '<td>' + condCell(r.conditions) + '</td>'
+      + '<td>' + actionCell(r.action_description) + '</td>'
+      + '<td>' + riskBadge(r.risk_level) + '</td>'
+      + '<td>' + ageLabel(r.created_at) + '</td>'
+      + '<td style="white-space:nowrap;">'
+        + '<button class="btn btn-xs btn-link p-0 me-1" onclick="shopRecExp(' + id + ', this)" title="Expand">&#x25BC;</button>'
+        + '<button class="btn btn-xs btn-success py-0 px-1 me-1" style="font-size:11px;" onclick="shopRecAccept(' + id + ', this)">Accept</button>'
+        + '<button class="btn btn-xs btn-outline-danger py-0 px-1" style="font-size:11px;" onclick="shopRecDecline(' + id + ', this)">Decline</button>'
+      + '</td>'
+      + '</tr>';
+  }
+  function monitoringRow(r) {
+    return '<tr>'
+      + '<td></td>'
+      + '<td>' + fmtDate(r.accepted_at) + '</td>'
+      + '<td>' + progressBar(r) + '</td>'
+      + '<td class="rec-col-name">' + esc(r.entity_name || r.campaign_name || '—') + '</td>'
+      + '<td>' + esc(r.rule_name || r.rule_id || '—') + '</td>'
+      + '<td>' + condCell(r.plain_english || r.action_description) + '</td>'
+      + '<td>' + rfBadge(r.rule_or_flag) + '</td>'
+      + '<td>' + rtBadge(r.rule_type_display || r.rule_type) + '</td>'
+      + '<td>' + condCell(r.conditions) + '</td>'
+      + '<td>' + actionCell(r.action_description) + '</td>'
+      + '<td>' + riskBadge(r.risk_level) + '</td>'
+      + '</tr>';
+  }
+  function successfulRow(r) {
+    return '<tr>'
+      + '<td></td>'
+      + '<td>' + fmtDate(r.accepted_at) + '</td>'
+      + '<td>' + fmtDate(r.completed_at) + '</td>'
+      + '<td class="rec-col-name">' + esc(r.entity_name || r.campaign_name || '—') + '</td>'
+      + '<td>' + esc(r.rule_name || r.rule_id || '—') + '</td>'
+      + '<td>' + condCell(r.plain_english || r.action_description) + '</td>'
+      + '<td>' + rfBadge(r.rule_or_flag) + '</td>'
+      + '<td>' + rtBadge(r.rule_type_display || r.rule_type) + '</td>'
+      + '<td>' + condCell(r.conditions) + '</td>'
+      + '<td>' + actionCell(r.action_description) + '</td>'
+      + '<td>' + riskBadge(r.risk_level) + '</td>'
+      + '</tr>';
+  }
+  function historyRow(r) {
+    var dt = r.declined_at || r.reverted_at || r.completed_at;
+    return '<tr>'
+      + '<td></td>'
+      + '<td>' + outcomeBadge(r.status) + '</td>'
+      + '<td>' + fmtDate(dt) + '</td>'
+      + '<td class="rec-col-name">' + esc(r.entity_name || r.campaign_name || '—') + '</td>'
+      + '<td>' + esc(r.rule_name || r.rule_id || '—') + '</td>'
+      + '<td>' + condCell(r.plain_english || r.action_description) + '</td>'
+      + '<td>' + rfBadge(r.rule_or_flag) + '</td>'
+      + '<td>' + rtBadge(r.rule_type_display || r.rule_type) + '</td>'
+      + '<td>' + condCell(r.conditions) + '</td>'
+      + '<td>' + actionCell(r.action_description) + '</td>'
+      + '<td>' + riskBadge(r.risk_level) + '</td>'
+      + '</tr>';
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  function renderTab(tab, rowFn, cols) {
+    var rows = SHOP_REC[tab];
+    var pg   = SHOP_PAGE[tab];
+    var start = (pg - 1) * SHOP_PER_PAGE;
+    var slice = rows.slice(start, start + SHOP_PER_PAGE);
+    var tbody = document.getElementById('shop-' + tab + '-tbody');
+    if (!tbody) return;
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="' + cols + '" class="text-center text-muted py-4">No ' + tab + ' recommendations</td></tr>';
+    } else {
+      tbody.innerHTML = slice.map(rowFn).join('');
+    }
+    buildPag(tab, rows.length, pg, cols);
+    var badge = document.getElementById('shop-badge-' + tab);
+    if (badge) badge.textContent = rows.length;
+  }
+  function buildPag(tab, total, pg, cols) {
+    var el = document.getElementById('shop-' + tab + '-paginator');
+    if (!el) return;
+    var pages = Math.ceil(total / SHOP_PER_PAGE);
+    if (pages <= 1) { el.innerHTML = ''; return; }
+    var btns = '';
+    for (var i = 1; i <= pages; i++) {
+      btns += '<button class="btn btn-xs ' + (i === pg ? 'btn-primary' : 'btn-outline-secondary') + ' py-0 px-2" style="font-size:11px;" onclick="shopRecRenderAll('' + tab + '',' + i + ')">' + i + '</button> ';
+    }
+    el.innerHTML = '<span style="color:#6b7280;">Page ' + pg + ' of ' + pages + '</span><div class="d-flex gap-1">' + btns + '</div>';
+  }
+  function shopRecRenderAll(jumpTab, jumpPage) {
+    if (jumpTab && jumpPage) SHOP_PAGE[jumpTab] = jumpPage;
+    renderTab('pending',    pendingRow,    11);
+    renderTab('monitoring', monitoringRow, 11);
+    renderTab('successful', successfulRow, 11);
+    renderTab('history',    historyRow,    11);
+    var tot = SHOP_REC.pending.length + SHOP_REC.monitoring.length + SHOP_REC.successful.length + SHOP_REC.history.length;
+    var outerBadge = document.getElementById('shop-total-count');
+    if (outerBadge) outerBadge.textContent = tot;
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  function shopShowToast(msg, type) {
+    var wrap = document.getElementById('act-toast-wrap');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.id = 'act-toast-wrap';
+      document.body.appendChild(wrap);
+    }
+    var t = document.createElement('div');
+    t.className = 'act-toast t-' + (type || 'success');
+    t.textContent = msg;
+    wrap.appendChild(t);
+    setTimeout(function () { t.style.opacity = '0'; setTimeout(function () { t.remove(); }, 300); }, 3000);
+  }
+
+  // ── Load data ─────────────────────────────────────────────────────────────
+  function shopRecLoad() {
+    fetch('/recommendations/cards')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        SHOP_REC.pending    = (data.pending    || []).filter(function (r) { return r.entity_type === 'shopping_product'; });
+        SHOP_REC.monitoring = (data.monitoring || []).filter(function (r) { return r.entity_type === 'shopping_product'; });
+        SHOP_REC.successful = (data.successful || []).filter(function (r) { return r.entity_type === 'shopping_product'; });
+        var hist = (data.declined || []).concat(data.reverted || []).filter(function (r) { return r.entity_type === 'shopping_product'; });
+        hist.sort(function (a, b) {
+          var da = a.declined_at || a.reverted_at || ''; var db = b.declined_at || b.reverted_at || '';
+          return da < db ? 1 : da > db ? -1 : 0;
+        });
+        SHOP_REC.history = hist;
+        shopRecRenderAll();
+      })
+      .catch(function (e) { console.error('shopRecLoad error', e); });
+  }
+  window.shopRecLoad = shopRecLoad;
+
+  // ── Expand row ────────────────────────────────────────────────────────────
+  window.shopRecExp = function (id, btn) {
+    var tr = btn.closest('tr');
+    var next = tr.nextElementSibling;
+    if (next && next.classList.contains('rec-exp-row')) {
+      next.remove(); btn.innerHTML = '&#x25BC;'; return;
+    }
+    btn.innerHTML = '&#x25B2;';
+    var r = SHOP_REC.pending.find(function (x) { return x.rec_id === id; });
+    if (!r) return;
+    var exp = document.createElement('tbody');
+    exp.innerHTML = makeExpRow(r, 11);
+    tr.parentNode.insertBefore(exp.firstElementChild, tr.nextSibling);
+  };
+
+  // ── Checkbox selection ────────────────────────────────────────────────────
+  window.shopRecCbChange = function (cb) {
+    var id = parseInt(cb.dataset.id);
+    if (cb.checked) SHOP_SEL[id] = true; else delete SHOP_SEL[id];
+    updateBulkBar();
+  };
+  window.shopToggleAll = function (cb) {
+    document.querySelectorAll('.shop-rec-cb').forEach(function (c) {
+      c.checked = cb.checked;
+      var id = parseInt(c.dataset.id);
+      if (cb.checked) SHOP_SEL[id] = true; else delete SHOP_SEL[id];
+    });
+    updateBulkBar();
+  };
+  window.shopClearSelection = function () {
+    SHOP_SEL = {};
+    document.querySelectorAll('.shop-rec-cb').forEach(function (c) { c.checked = false; });
+    var allCb = document.getElementById('shop-cb-all-pending');
+    if (allCb) allCb.checked = false;
+    updateBulkBar();
+  };
+  function updateBulkBar() {
+    var n = Object.keys(SHOP_SEL).length;
+    var bar = document.getElementById('shop-bulk-bar');
+    var cnt = document.getElementById('shop-bulk-count');
+    if (bar) bar.style.display = n ? '' : 'none';
+    if (cnt) cnt.textContent = n + ' selected';
+  }
+
+  // ── Accept / Decline ──────────────────────────────────────────────────────
+  window.shopRecAccept = function (id, btn) {
+    btn.disabled = true; btn.textContent = '…';
+    fetch('/recommendations/' + id + '/accept', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.success) {
+          var r = SHOP_REC.pending.find(function (x) { return x.rec_id === id; });
+          SHOP_REC.pending = SHOP_REC.pending.filter(function (x) { return x.rec_id !== id; });
+          if (r) { r.status = 'monitoring'; r.accepted_at = new Date().toISOString(); SHOP_REC.monitoring.push(r); }
+          delete SHOP_SEL[id]; updateBulkBar(); shopRecRenderAll();
+          shopShowToast(d.message || 'Accepted', 'success');
+        } else { shopShowToast(d.message || 'Failed', 'error'); btn.disabled = false; btn.textContent = 'Accept'; }
+      })
+      .catch(function () { shopShowToast('Request failed', 'error'); btn.disabled = false; btn.textContent = 'Accept'; });
+  };
+  window.shopRecDecline = function (id, btn) {
+    btn.disabled = true; btn.textContent = '…';
+    fetch('/recommendations/' + id + '/decline', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.success) {
+          var r = SHOP_REC.pending.find(function (x) { return x.rec_id === id; });
+          SHOP_REC.pending = SHOP_REC.pending.filter(function (x) { return x.rec_id !== id; });
+          if (r) { r.status = 'declined'; r.declined_at = new Date().toISOString(); SHOP_REC.history.unshift(r); }
+          delete SHOP_SEL[id]; updateBulkBar(); shopRecRenderAll();
+          shopShowToast(d.message || 'Declined', 'muted');
+        } else { shopShowToast(d.message || 'Failed', 'error'); btn.disabled = false; btn.textContent = 'Decline'; }
+      })
+      .catch(function () { shopShowToast('Request failed', 'error'); btn.disabled = false; btn.textContent = 'Decline'; });
+  };
+  window.shopDoBulk = function (action) {
+    var ids = Object.keys(SHOP_SEL).map(Number);
+    if (!ids.length) return;
+    ids.forEach(function (id) {
+      var btn = document.querySelector('[data-id="' + id + '"]');
+      if (action === 'accept') window.shopRecAccept(id, btn || document.createElement('button'));
+      else window.shopRecDecline(id, btn || document.createElement('button'));
+    });
+  };
+
+  // ── DOMContentLoaded ──────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function () {
+    var runBtn = document.getElementById('shop-run-engine-btn');
+    if (runBtn) {
+      runBtn.addEventListener('click', function () {
+        var btn = this; var orig = btn.innerHTML;
+        btn.disabled = true; btn.innerHTML = 'Running…';
+        fetch('/recommendations/run', { method: 'POST' })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            btn.disabled = false; btn.innerHTML = orig;
+            shopShowToast(d.success ? (d.message || 'Engine complete.') : ('Error: ' + (d.message || 'unknown')), d.success ? 'success' : 'error');
+            if (d.success) shopRecLoad();
+          })
+          .catch(function () { btn.disabled = false; btn.innerHTML = orig; shopShowToast('Request failed.', 'error'); });
+      });
+    }
+    var lowRiskBtn = document.getElementById('shop-accept-low-risk-btn');
+    if (lowRiskBtn) {
+      lowRiskBtn.addEventListener('click', function () {
+        SHOP_REC.pending.filter(function (r) { return (r.risk_level || 'low') === 'low'; }).forEach(function (r) {
+          var btn = document.createElement('button');
+          window.shopRecAccept(r.rec_id, btn);
+        });
+      });
+      var tabBtns = document.querySelectorAll('#shopRecTabs button[data-bs-toggle="tab"]');
+      tabBtns.forEach(function (btn) {
+        btn.addEventListener('shown.bs.tab', function (e) {
+          if (lowRiskBtn) lowRiskBtn.style.display = e.target.id === 'shop-rec-pending-tab' ? '' : 'none';
+        });
+      });
+    }
+    // Trigger load when outer recommendations tab is shown
+    var recTabBtn = document.getElementById('tab-btn-recommendations');
+    if (recTabBtn) recTabBtn.addEventListener('shown.bs.tab', function () { shopRecLoad(); });
+    // Also load if page opened directly on recommendations tab
+    var recPane = document.getElementById('recommendations-tab');
+    if (recPane && recPane.classList.contains('active')) { shopRecLoad(); }
   });
-}
 
-// Initialize to pending tab on load
-if (document.getElementById('shop-tab-pending')) {
-  shopSwitchTab('pending');
-}
-
-// ===========================================================================
-// RECOMMENDATIONS TAB - DATA FETCHING
-// ===========================================================================
-let shopRecommendations = {
-  pending: [],
-  monitoring: [],
-  successful: [],
-  reverted: [],
-  declined: []
-};
-
-// Fetch recommendations from server
-async function shopFetchRecommendations() {
-  try {
-    const response = await fetch('/recommendations/cards');
-    const data = await response.json();
-    
-    if (!data) {
-      console.log('No data returned from server');
-      return;
-    }
-    
-    // API returns data already grouped by status
-    // Filter each status array for shopping entity type only
-    shopRecommendations.pending = (data.pending || []).filter(r => r.entity_type === 'shopping');
-    shopRecommendations.monitoring = (data.monitoring || []).filter(r => r.entity_type === 'shopping');
-    shopRecommendations.successful = (data.successful || []).filter(r => r.entity_type === 'shopping');
-    shopRecommendations.reverted = (data.reverted || []).filter(r => r.entity_type === 'shopping');
-    shopRecommendations.declined = (data.declined || []).filter(r => r.entity_type === 'shopping');
-    
-    // Calculate totals for logging
-    const totalShopping = shopRecommendations.pending.length + 
-                         shopRecommendations.monitoring.length + 
-                         shopRecommendations.successful.length + 
-                         shopRecommendations.reverted.length + 
-                         shopRecommendations.declined.length;
-    
-    console.log(`Total shopping recommendations: ${totalShopping}`);
-    console.log(`  Pending: ${shopRecommendations.pending.length}`);
-    console.log(`  Monitoring: ${shopRecommendations.monitoring.length}`);
-    console.log(`  Successful: ${shopRecommendations.successful.length}`);
-    console.log(`  Reverted: ${shopRecommendations.reverted.length}`);
-    console.log(`  Declined: ${shopRecommendations.declined.length}`);
-    
-    // Update summary counts
-    shopUpdateSummaryCounts();
-    
-    // Update tab badge counts
-    shopUpdateTabBadges();
-    
-    // Render all cards
-    shopRenderAllCards();
-    
-    console.log('Recommendations fetched and counts updated');
-    
-  } catch (error) {
-    console.error('Error fetching recommendations:', error);
-  }
-}
-
-// Update summary strip counts
-function shopUpdateSummaryCounts() {
-  const counts = {
-    pending: shopRecommendations.pending.length,
-    monitoring: shopRecommendations.monitoring.length,
-    successful: shopRecommendations.successful.length,
-    reverted: shopRecommendations.reverted.length,
-    declined: shopRecommendations.declined.length
-  };
-  
-  // Update each summary card
-  for (const [status, count] of Object.entries(counts)) {
-    const el = document.getElementById(`shop-summary-${status}`);
-    if (el) el.textContent = count;
-  }
-  
-  // Update main tab badge (total count)
-  const totalCount = Object.values(counts).reduce((sum, count) => sum + count, 0);
-  const mainBadge = document.getElementById('shop-total-count');
-  if (mainBadge) mainBadge.textContent = totalCount;
-}
-
-// Update tab badges
-function shopUpdateTabBadges() {
-  const counts = {
-    pending: shopRecommendations.pending.length,
-    monitoring: shopRecommendations.monitoring.length,
-    successful: shopRecommendations.successful.length,
-    reverted: shopRecommendations.reverted.length,
-    declined: shopRecommendations.declined.length
-  };
-  
-  for (const [status, count] of Object.entries(counts)) {
-    const badge = document.getElementById(`shop-tab-badge-${status}`);
-    if (badge) badge.textContent = count;
-  }
-}
-
-// ===========================================================================
-// RECOMMENDATIONS TAB - CARD RENDERING
-// ===========================================================================
-
-// Render all status tabs
-function shopRenderAllCards() {
-  SHOP_TABS.forEach(status => shopRenderCards(status));
-}
-
-// Render cards for a specific status - SHOW ALL CARDS (no Load More for Shopping)
-function shopRenderCards(status) {
-  const recs = shopRecommendations[status];
-  const container = document.getElementById(`shop-cards-${status}`);
-  const emptyState = document.getElementById(`shop-empty-${status}`);
-  
-  if (!container) return;
-  
-  // Clear container
-  container.innerHTML = '';
-  
-  // Show all cards (no pagination for 126 shopping recommendations)
-  if (recs.length === 0) {
-    if (emptyState) emptyState.style.display = '';
-  } else {
-    if (emptyState) emptyState.style.display = 'none';
-    recs.forEach(rec => {
-      const cardHtml = shopBuildCard(rec, status);
-      container.insertAdjacentHTML('beforeend', cardHtml);
-    });
-  }
-}
-
-
-function shopBuildCard(rec, status) {
-  const isMonitoring = status === 'monitoring';
-  const isSuccessful = status === 'successful';
-  const isDeclined = status === 'declined';
-  const isReverted = status === 'reverted';
-  const isPending = status === 'pending';
-  
-  // Top bar color
-  let topBarClass = 'rt-budget';
-  if (rec.rule_type === 'bid_target') topBarClass = 'rt-bid';
-  else if (rec.rule_type === 'status') topBarClass = 'rt-status';
-  if (isMonitoring) topBarClass = 'rt-monitoring';
-  if (isSuccessful) topBarClass = 'rt-successful';
-  if (isDeclined) topBarClass = 'rt-declined';
-  if (isReverted) topBarClass = 'rt-reverted';
-  
-  // Card class
-  let cardClass = 'rec-card';
-  if (isMonitoring) cardClass += ' card-monitoring';
-  if (isSuccessful) cardClass += ' card-success';
-  if (isDeclined) cardClass += ' card-declined';
-  if (isReverted) cardClass += ' card-reverted';
-  
-  // Rule type tag
-  let ruleClass = 'rrt-budget';
-  if (rec.rule_type === 'bid_target') ruleClass = 'rrt-bid';
-  else if (rec.rule_type === 'status') ruleClass = 'rrt-status';
-  if (isMonitoring) ruleClass = 'rrt-monitoring';
-  if (isDeclined) ruleClass = 'rrt-declined';
-  if (isReverted) ruleClass = 'rrt-reverted';
-  
-  // Status pill
-  let statusPill = '';
-  if (isPending) statusPill = '<span class="status-pill sp-pending">Pending</span>';
-  if (isMonitoring) statusPill = '<span class="status-pill sp-monitoring">Monitoring</span>';
-  if (isSuccessful) statusPill = '<span class="status-pill sp-successful">Successful</span>';
-  if (isDeclined) statusPill = '<span class="status-pill sp-declined">Declined</span>';
-  if (isReverted) statusPill = '<span class="status-pill sp-reverted">Reverted</span>';
-  
-  // Build card HTML
-  let html = `<div class="${cardClass}" data-rec-id="${rec.rec_id}">`;
-  html += `<div class="rec-top ${topBarClass}"></div>`;
-  html += '<div class="rec-body">';
-  
-  // Header
-  html += '<div class="rec-card-header">';
-  html += '<div>';
-  html += `<div class="rec-rule-tag ${ruleClass}">${rec.rule_type_display || rec.rule_type}</div>`;
-  html += `<div class="rec-campaign-name">${rec.entity_name || 'Keyword'}</div>`;
-  if (rec.campaign_name) {
-    html += `<div style="font-size:12px;color:#6b7280;margin-top:2px;">Campaign: ${rec.campaign_name}</div>`;
-  }
-  html += '</div>';
-  html += statusPill;
-  html += '</div>';
-  
-  // Change block
-  html += shopBuildChangeBlock(rec);
-  
-  // Trigger
-  if (rec.trigger_summary && isPending) {
-    html += `<div class="trigger-block"><div class="trigger-label">TRIGGER</div>${rec.trigger_summary}</div>`;
-  }
-  
-  // Monitoring block
-  if (isMonitoring) {
-    html += shopBuildMonitoringBlock(rec);
-  }
-
-  
-  // Outcome block
-  if (isSuccessful || isDeclined || isReverted) {
-    html += shopBuildOutcomeBlock(rec, status);
-  }
-  
-  // Footer
-  html += shopBuildCardFooter(rec, status);
-  
-  html += '</div></div>';
-  return html;
-}
-
-function shopBuildChangeBlock(rec) {
-  let changeClass = 'cb-budget';
-  let iconClass = 'ciw-budget';
-  if (rec.rule_type === 'bid_target') { changeClass = 'cb-bid'; iconClass = 'ciw-bid'; }
-  else if (rec.rule_type === 'status') { changeClass = 'cb-status'; iconClass = 'ciw-status'; }
-  
-  let icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>';
-  
-  let html = `<div class="change-block ${changeClass}">`;
-  html += `<div class="change-icon-wrap ${iconClass}">${icon}</div>`;
-  html += '<div style="flex:1;">';
-  html += `<div class="change-main">${rec.action_label || rec.action_direction || 'Change'}</div>`;
-  html += `<div class="change-sub">`;
-  if (rec.current_value !== undefined && rec.proposed_value !== undefined) {
-    html += `<strong>${rec.current_value}</strong> → <strong>${rec.proposed_value}</strong>`;
-  } else {
-    html += rec.action_magnitude || '';
-  }
-  html += '</div></div></div>';
-  return html;
-}
-
-// Build monitoring block
-function shopBuildMonitoringBlock(rec) {
-  const daysElapsed = rec.monitoring_elapsed_days || 0;
-  const totalDays = rec.monitoring_total_days || 7;
-  const pct = Math.min(100, (daysElapsed / totalDays) * 100);
-  
-  let html = '<div class="monitoring-block">';
-  html += '<div class="mon-top">';
-  html += '<div class="mon-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> MONITORING</div>';
-  html += `<div class="mon-days">Day ${daysElapsed} of ${totalDays}</div>`;
-  html += '</div>';
-  html += `<div class="mon-bar-wrap"><div class="mon-bar" style="width:${pct}%"></div></div>`;
-  html += '<div class="mon-outcomes">';
-  html += '<div class="mon-outcome-pill mop-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Keep if improves</div>';
-  html += '<div class="mon-outcome-pill mop-revert"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg> Revert if declines</div>';
-  html += '</div></div>';
-  return html;
-}
-
-// Build outcome block
-function shopBuildOutcomeBlock(rec, status) {
-  let blockClass = 'ob-success';
-  let titleClass = 'ot-success';
-  let icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
-  let title = 'Change Successful';
-  
-  if (status === 'declined') {
-    blockClass = 'ob-declined';
-    titleClass = 'ot-declined';
-    icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-    title = 'Recommendation Declined';
-  } else if (status === 'reverted') {
-    blockClass = 'ob-reverted';
-    titleClass = 'ot-reverted';
-    icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>';
-    title = 'Change Reverted';
-  }
-  
-  let html = `<div class="outcome-block ${blockClass}">`;
-  html += icon;
-  html += '<div style="flex:1;">';
-  html += `<div class="outcome-title ${titleClass}">${title}</div>`;
-  if (rec.outcome_metric && rec.proposed_value) {
-    html += `<div class="outcome-sub">${rec.outcome_metric}: ${rec.proposed_value}</div>`;
-  }
-  if (status === 'reverted' && rec.revert_reason) {
-    html += `<div class="revert-reason">${rec.revert_reason}</div>`;
-  }
-  html += '</div></div>';
-  return html;
-}
-
-// Build card footer
-function shopBuildCardFooter(rec, status) {
-  const isPending = status === 'pending';
-  const isMonitoring = status === 'monitoring';
-  
-  let html = '<div class="rec-footer">';
-  html += '<div class="rec-footer-meta">';
-  
-  // Confidence badge (pending only)
-  if (isPending && rec.confidence) {
-    let confClass = 'cb-high';
-    if (rec.confidence === 'medium') confClass = 'cb-med';
-    else if (rec.confidence === 'low') confClass = 'cb-low';
-    html += `<span class="conf-badge ${confClass}">${rec.confidence} confidence</span>`;
-  }
-  
-  // Age
-  if (rec.generated_at) {
-    html += `<span class="rec-age">${rec.generated_at}</span>`;
-  }
-  
-  html += '</div>';
-  
-  // Actions
-  if (isPending) {
-    html += '<div class="rec-footer-actions">';
-    html += `<button class="btn-accept" onclick="shopAcceptRec('${rec.rec_id}', this)">`;
-    html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Accept';
-    html += '</button>';
-    html += `<button class="btn-decline" onclick="shopDeclineRec('${rec.rec_id}', this)">`;
-    html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Decline';
-    html += '</button></div>';
-  } else if (isMonitoring) {
-    html += '<div class="readonly-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Monitoring in progress</div>';
-  } else {
-    html += '<div class="readonly-label">Read-only</div>';
-  }
-  
-  html += '</div>';
-  return html;
-}
-
-// ===========================================================================
-// RECOMMENDATIONS TAB - ACCEPT/DECLINE HANDLERS
-// ===========================================================================
-async function shopAcceptRec(recId, btn) {
-  if (!confirm('Accept this recommendation?')) return;
-  
-  btn.disabled = true;
-  btn.textContent = 'Processing...';
-  
-  try {
-    const response = await fetch(`/recommendations/${recId}/accept`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      // Remove card with animation
-      const card = btn.closest('.rec-card');
-      if (card) {
-        card.classList.add('removing');
-        setTimeout(() => {
-          // Remove from data and re-render
-          shopRecommendations.pending = shopRecommendations.pending.filter(r => r.rec_id !== recId);
-          shopUpdateSummaryCounts();
-          shopUpdateTabBadges();
-          shopRenderCards('pending');
-          shopShowToast('Recommendation accepted', 'success');
-        }, 300);
-      }
-    } else {
-      shopShowToast(data.message || 'Failed to accept recommendation', 'error');
-      btn.disabled = false;
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Accept';
-    }
-  } catch (error) {
-    console.error('Error accepting recommendation:', error);
-    shopShowToast('Error accepting recommendation', 'error');
-    btn.disabled = false;
-    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Accept';
-  }
-}
-
-async function shopDeclineRec(recId, btn) {
-  if (!confirm('Decline this recommendation?')) return;
-  
-  btn.disabled = true;
-  btn.textContent = 'Processing...';
-  
-  try {
-    const response = await fetch(`/recommendations/${recId}/decline`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      // Remove card with animation
-      const card = btn.closest('.rec-card');
-      if (card) {
-        card.classList.add('removing');
-        setTimeout(() => {
-          // Remove from data and re-render
-          shopRecommendations.pending = shopRecommendations.pending.filter(r => r.rec_id !== recId);
-          shopUpdateSummaryCounts();
-          shopUpdateTabBadges();
-          shopRenderCards('pending');
-          shopShowToast('Recommendation declined', 'muted');
-        }, 300);
-      }
-    } else {
-      shopShowToast(data.message || 'Failed to decline recommendation', 'error');
-      btn.disabled = false;
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Decline';
-    }
-  } catch (error) {
-    console.error('Error declining recommendation:', error);
-    shopShowToast('Error declining recommendation', 'error');
-    btn.disabled = false;
-    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Decline';
-  }
-}
-
-// Show toast notification
-function shopShowToast(message, type) {
-  // Check if toast container exists, create if not
-  let toastWrap = document.getElementById('act-toast-wrap');
-  if (!toastWrap) {
-    toastWrap = document.createElement('div');
-    toastWrap.id = 'act-toast-wrap';
-    document.body.appendChild(toastWrap);
-  }
-  
-  const toast = document.createElement('div');
-  toast.className = `act-toast t-${type}`;
-  toast.textContent = message;
-  
-  toastWrap.appendChild(toast);
-  
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-}
-
-// Fetch recommendations when page loads
-if (document.getElementById("shop-tab-pending")) {
-  shopFetchRecommendations();
-}
+})();
 </script>
 
 {% endblock %}

@@ -786,15 +786,178 @@ def recommendations_data():
     })
 
 
+# ---------------------------------------------------------------------------
+# Rule-data enrichment helpers (for /recommendations/cards only)
+# ---------------------------------------------------------------------------
+
+_ACTION_TYPE_TO_RULE_TYPE = {
+    "increase_budget":      "budget",
+    "decrease_budget":      "budget",
+    "pacing_increase":      "budget",
+    "pacing_reduction":     "budget",
+    "increase_troas":       "bid",
+    "decrease_troas":       "bid",
+    "increase_target_cpa":  "bid",
+    "decrease_target_cpa":  "bid",
+    "increase_max_cpc_cap": "bid",
+    "decrease_max_cpc_cap": "bid",
+    "pause":                "status",
+    "enable":               "status",
+}
+
+_METRIC_LABELS = {
+    "roas_7d": "ROAS (7d)", "roas_14d": "ROAS (14d)", "roas_28d": "ROAS (28d)",
+    "clicks_7d": "Clicks (7d)", "clicks_14d": "Clicks (14d)", "clicks_28d": "Clicks (28d)",
+    "cost_7d": "Cost (7d)", "cost_14d": "Cost (14d)", "cost_28d": "Cost (28d)",
+    "avg_cpc": "Avg CPC", "avg_cpc_7d": "Avg CPC (7d)", "avg_cpc_14d": "Avg CPC (14d)",
+    "cpc_7d": "CPC (7d)", "cpc_14d": "CPC (14d)",
+    "conversions_7d": "Conversions (7d)", "conversions_14d": "Conversions (14d)",
+    "conv_value_7d": "Conv. value (7d)", "conv_value_14d": "Conv. value (14d)",
+    "cpa_7d": "CPA (7d)", "cpa_14d": "CPA (14d)",
+    "quality_score": "Quality score", "qs": "Quality score",
+    "impression_share": "Impression share",
+    "pacing_ratio": "Pacing ratio",
+    "budget_utilization": "Budget utilisation",
+    "search_impr_share": "Search impr. share",
+    "spend_7d": "Spend (7d)", "spend_14d": "Spend (14d)",
+}
+
+_OP_SYMBOLS = {">=": "≥", "<=": "≤", ">": ">", "<": "<", "==": "=", "=": "=", "!=": "≠"}
+
+_CURRENCY_METRIC_PARTS = {"cost", "cpc", "cpa", "budget", "spend", "value"}
+
+
+def _format_condition_item(cond):
+    """Format a single condition dict into a plain-English string."""
+    metric = cond.get("metric", "")
+    op = cond.get("op") or cond.get("operator", "")
+    ref = cond.get("ref")
+    unit = cond.get("unit", "") or ""
+
+    metric_label = _METRIC_LABELS.get(metric, metric.replace("_", " ").title())
+    op_symbol = _OP_SYMBOLS.get(str(op).strip(), str(op))
+
+    if ref is None:
+        return metric_label
+
+    unit_str = str(unit).lower()
+    if "target" in unit_str or unit_str in ("x_target", "×target"):
+        ref_str = "{}× target".format(ref)
+    elif unit_str in ("pct", "percent", "%"):
+        ref_str = "{}%".format(ref)
+    elif any(p in metric for p in _CURRENCY_METRIC_PARTS):
+        try:
+            ref_str = "£{:,.2f}".format(float(ref)).rstrip("0").rstrip(".")
+        except (ValueError, TypeError):
+            ref_str = "£{}".format(ref)
+    else:
+        try:
+            fval = float(ref)
+            ref_str = str(int(fval)) if fval == int(fval) else str(fval)
+        except (ValueError, TypeError):
+            ref_str = str(ref)
+
+    return "{} {} {}".format(metric_label, op_symbol, ref_str).strip()
+
+
+def _format_conditions(conditions_raw):
+    """Parse conditions JSON string and return list of formatted strings."""
+    if not conditions_raw:
+        return []
+    try:
+        data = json.loads(conditions_raw) if isinstance(conditions_raw, str) else conditions_raw
+        if isinstance(data, list):
+            return [_format_condition_item(c) for c in data if isinstance(c, dict)]
+    except Exception:
+        pass
+    return []
+
+
+def _derive_rule_type_for_display(action_type, entity_type):
+    """Map action_type + entity_type to display rule_type string."""
+    if entity_type == "keyword":
+        return "keyword"
+    if entity_type in ("shopping_product", "shopping"):
+        return "shopping"
+    return _ACTION_TYPE_TO_RULE_TYPE.get(str(action_type or ""), "status")
+
+
+def _build_rule_data_map():
+    """
+    Query rules table and return dict keyed by str(id) with enrichment fields.
+    Used exclusively by recommendations_cards() to enrich response payload.
+    """
+    result = {}
+    try:
+        conn = duckdb.connect("warehouse.duckdb")
+        try:
+            rows = conn.execute(
+                "SELECT id, plain_english, rule_or_flag, conditions, "
+                "risk_level, cooldown_days, action_type, entity_type "
+                "FROM rules"
+            ).fetchall()
+            for row in rows:
+                result[str(row[0])] = {
+                    "plain_english": row[1] or "",
+                    "rule_or_flag":  row[2] or "rule",
+                    "conditions_raw": row[3],
+                    "risk_level":    row[4] or "",
+                    "cooldown_days": row[5],
+                    "action_type":   row[6] or "",
+                    "rule_entity_type": row[7] or "",
+                }
+        finally:
+            conn.close()
+    except Exception as e:
+        print("[RECOMMENDATIONS] _build_rule_data_map error: {}".format(e))
+    return result
+
+
+def _enrich_with_rule_data(rec, rule_data_map):
+    """
+    Add plain_english, rule_or_flag, rule_type_display, conditions,
+    risk_level, cooldown_days, completed_at to rec in-place.
+    Chat 96: enriches /recommendations/cards payload for new table UI.
+    """
+    # Extract DB rule integer ID from "db_campaign_N" format
+    rule_id_str = str(rec.get("rule_id", ""))
+    rule_db_id = None
+    if rule_id_str.startswith("db_campaign_"):
+        try:
+            rule_db_id = str(int(rule_id_str[len("db_campaign_"):]))
+        except ValueError:
+            pass
+    elif rule_id_str.isdigit():
+        rule_db_id = rule_id_str
+
+    rule_data = rule_data_map.get(rule_db_id, {}) if rule_db_id else {}
+
+    rec["plain_english"]   = rule_data.get("plain_english", "")
+    rec["rule_or_flag"]    = rule_data.get("rule_or_flag", "rule")
+    rec["conditions"]      = _format_conditions(rule_data.get("conditions_raw"))
+    rec["risk_level"]      = rule_data.get("risk_level") or rec.get("risk_level", "")
+    rec["cooldown_days"]   = rule_data.get("cooldown_days")
+
+    # Derive display rule_type from action_type + entity_type
+    action_type  = rule_data.get("action_type") or ""
+    entity_type  = rec.get("entity_type") or rule_data.get("rule_entity_type") or ""
+    rec["rule_type_display"] = _derive_rule_type_for_display(action_type, entity_type)
+
+    # campaign_name: already present in rec from recommendations table
+    # accepted_at: already in rec
+    # completed_at: map from resolved_at
+    rec["completed_at"] = rec.get("resolved_at")
+
+
 @bp.route("/recommendations/cards")
 @login_required
 def recommendations_cards():
     """
     JSON endpoint returning enriched recommendation cards by status.
-    Used by the Campaigns page Recommendations tab for inline card rendering.
-    
-    Chat 47: No changes needed - entity_type/entity_id/entity_name automatically included
-    via _get_recommendations_data() extension.
+    Used by all entity pages and the full Recommendations page for table rendering.
+
+    Chat 96: Extended with plain_english, rule_or_flag, rule_type_display,
+    conditions (formatted list), risk_level, cooldown_days, completed_at.
     """
     config = get_current_config()
 
@@ -803,6 +966,11 @@ def recommendations_cards():
     successful_recs = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="successful", limit=200)]
     reverted_recs   = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="reverted",   limit=200)]
     declined_recs   = [_enrich_rec(r) for r in _get_recommendations_data(config, status_filter="declined",   limit=200)]
+
+    # Chat 96: Enrich all recs with rules table data
+    rule_data_map = _build_rule_data_map()
+    for rec in (pending_recs + monitoring_recs + successful_recs + reverted_recs + declined_recs):
+        _enrich_with_rule_data(rec, rule_data_map)
 
     def _serialise(rec):
         out = {}

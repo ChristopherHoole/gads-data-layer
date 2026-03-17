@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campaigns — Recommendations Tab Wireframe</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">
+<style>
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;background:#f8f9fa;margin:0}
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 40}
+
+/* Sidebar */
+.nav-sidebar{width:110px;background:#fff;border-right:1px solid #dadce0;display:flex;flex-direction:column;position:fixed;left:0;top:0;height:100vh;z-index:1000}
+.nav-brand{padding:16px 12px;display:flex;flex-direction:column;align-items:center;border-bottom:1px solid #dadce0}
+.nav-brand-logo{width:44px;height:44px;margin-bottom:6px}
+.nav-brand-text{font-size:13px;font-weight:600;color:#202124;text-align:center;line-height:1.3}
+.nav-items{flex:1;padding:8px 0;overflow-y:auto}
+.nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 8px;margin:4px 8px;text-decoration:none;color:#5f6368;border-radius:8px;cursor:pointer;min-height:70px;font-size:12px;font-weight:500;text-align:center;line-height:1.2;transition:all .15s}
+.nav-item:hover{background:#f1f3f4;color:#202124}
+.nav-item.active{background:#e8f0fe;color:#1a73e8}
+.nav-item .material-symbols-outlined{font-size:28px;margin-bottom:4px}
+
+/* Main */
+.main-wrapper{margin-left:110px;display:flex;flex-direction:column;min-height:100vh}
+.top-navbar{height:52px;background:#fff;border-bottom:1px solid #dadce0;display:flex;align-items:center;padding:0 20px;justify-content:flex-end;gap:10px;position:sticky;top:0;z-index:100}
+.navbar-client{font-size:13px;color:#5f6368}
+.navbar-btn{padding:5px 14px;border:1px solid #dadce0;border-radius:4px;font-size:13px;color:#202124;background:#fff;cursor:pointer}
+.main-content{padding:24px;flex:1}
+
+/* Page header */
+.page-title{font-size:22px;font-weight:500;color:#202124;margin:0 0 4px}
+.page-subtitle{font-size:13px;color:#5f6368;margin:0 0 20px}
+
+/* Page-level tabs — Campaigns / Rules & Flags / Recommendations */
+.page-tabs{display:flex;border-bottom:2px solid #e0e0e0;margin-bottom:20px}
+.page-tab{padding:9px 20px;font-size:13px;font-weight:500;color:#5f6368;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;user-select:none}
+.page-tab:hover{color:#202124}
+.page-tab.active{color:#1a73e8;border-bottom-color:#1a73e8}
+
+/* Tab panels */
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* Campaigns tab placeholder */
+.placeholder-notice{background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:40px;text-align:center;color:#5f6368;font-size:13px}
+
+/* Rec tab header row */
+.rec-tab-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.rec-tab-title{font-size:15px;font-weight:600;color:#202124}
+.rec-tab-subtitle{font-size:12px;color:#5f6368;margin-top:2px}
+.rec-tab-actions{display:flex;gap:8px;align-items:center}
+
+/* Buttons */
+.btn-primary-act{background:#1a73e8;border:1px solid #1a73e8;color:#fff;padding:7px 14px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary-act:hover{background:#1557b0}
+.btn-secondary-act{background:#fff;border:1px solid #dadce0;color:#202124;padding:7px 14px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-secondary-act:hover{background:#f8f9fa}
+.btn-danger-act{background:#fff;border:1px solid #fca5a5;color:#dc2626;padding:7px 14px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-danger-act:hover{background:#fef2f2}
+.btn-sm-act{padding:4px 12px;font-size:12px}
+.view-full-link{font-size:12px;color:#1a73e8;text-decoration:none;white-space:nowrap}
+.view-full-link:hover{text-decoration:underline}
+
+/* Status tabs — inner tabs within the Recommendations tab */
+.status-tabs{display:flex;border-bottom:2px solid #e0e0e0;margin-bottom:16px}
+.status-tab{padding:8px 18px;font-size:13px;font-weight:500;color:#5f6368;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;display:flex;align-items:center;gap:6px;transition:all .15s;user-select:none}
+.status-tab:hover{color:#202124}
+.status-tab.active{color:#1a73e8;border-bottom-color:#1a73e8}
+.tab-badge{border-radius:10px;padding:2px 7px;font-size:11px;font-weight:600}
+.tab-badge-blue{background:#e8f0fe;color:#1a73e8}
+.tab-badge-green{background:#e6f4ea;color:#137333}
+.tab-badge-purple{background:#f3e8ff;color:#7c3aed}
+.tab-badge-gray{background:#f1f3f4;color:#5f6368}
+
+/* Controls */
+.top-controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px}
+.left-controls{display:flex;gap:16px;align-items:center}
+.right-controls{display:flex;gap:8px;align-items:center}
+.search-input{padding:6px 12px;border:1px solid #dadce0;border-radius:4px;font-size:13px;color:#202124;background:#fff;width:200px;outline:none}
+.search-input:focus{border-color:#1a73e8}
+.sort-select{padding:6px 28px 6px 10px;border:1px solid #dadce0;border-radius:4px;font-size:13px;color:#202124;background:#fff;cursor:pointer;outline:none}
+
+/* Bulk bar */
+.bulk-bar{display:flex;align-items:center;gap:10px;padding:9px 14px;background:#e8f0fe;border:1px solid #bfdbfe;border-radius:6px;margin-bottom:12px;font-size:13px;color:#1a73e8;font-weight:500}
+
+/* Table */
+.table-wrapper{overflow-x:auto;border:1px solid #e0e0e0;border-radius:8px}
+table{width:100%;border-collapse:collapse;background:#fff;table-layout:auto}
+thead{background:#f8f9fa;border-bottom:2px solid #e0e0e0}
+th{padding:12px 10px;text-align:left;font-size:13px;font-weight:500;color:#5f6368;white-space:nowrap}
+td{padding:10px 10px;font-size:13px;color:#202124;border-bottom:1px solid #e0e0e0;vertical-align:top;white-space:normal;word-break:break-word}
+tbody tr:last-child td{border-bottom:none}
+tbody tr.data-row:hover td{background:#f8f9fa;cursor:pointer}
+tbody tr.data-row.selected td{background:#e8f0fe}
+
+/* Column widths — slim version (no Type, no Campaign/s name) */
+.col-cb        {width:36px;min-width:36px;max-width:36px}
+.col-name      {min-width:150px;max-width:220px}
+.col-rule      {min-width:140px;max-width:200px}
+.col-plain     {min-width:200px;max-width:300px}
+.col-ruleflag  {min-width:70px;max-width:90px}
+.col-ruletype  {min-width:70px;max-width:90px}
+.col-conditions{min-width:160px;max-width:220px}
+.col-action    {min-width:160px;max-width:200px}
+.col-risk      {min-width:70px;max-width:90px}
+.col-age       {min-width:50px;max-width:70px}
+.col-date      {min-width:100px;max-width:130px}
+.col-progress  {min-width:150px;max-width:200px}
+.col-status    {min-width:90px;max-width:120px}
+.col-acts      {min-width:130px;max-width:160px}
+
+/* Badges — from recommendations.css */
+.rec-rf-badge{display:inline-flex;padding:3px 10px;border-radius:4px;font-size:12px;font-weight:500;white-space:nowrap}
+.rec-rf-rule{background:#dbeafe;color:#1d4ed8}
+.rec-rf-flag{background:#fef9c3;color:#a16207}
+.rec-rt-badge{display:inline-flex;padding:3px 10px;border-radius:4px;font-size:12px;font-weight:500;white-space:nowrap}
+.rec-rt-budget{background:#dbeafe;color:#1d4ed8}
+.rec-rt-bid{background:#e0e7ff;color:#4338ca}
+.rec-rt-status{background:#fce7f3;color:#9d174d}
+.rec-rt-keyword{background:#dcfce7;color:#15803d}
+.rec-conditions-cell{font-size:12px;color:#374151;line-height:1.8}
+.rec-conditions-cell span{display:block}
+.rec-action-text{font-size:14px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+.rec-action-increase{color:#137333}
+.rec-action-decrease{color:#c5221f}
+.rec-action-pause{color:#b45309}
+.rec-action-sub{font-size:12px;color:#5f6368;margin-top:4px;font-weight:400}
+.rec-risk-badge{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:500}
+.rec-risk-low{color:#137333}.rec-risk-low::before{content:'●';font-size:10px;color:#34a853}
+.rec-risk-medium{color:#b45309}.rec-risk-medium::before{content:'●';font-size:10px;color:#fbbc05}
+.rec-risk-high{color:#c5221f}.rec-risk-high::before{content:'●';font-size:10px;color:#ea4335}
+.rec-human-badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #fbbc05;border-radius:4px;font-size:11px;color:#a16207;background:#fef9c3;font-weight:600;white-space:nowrap;margin-bottom:6px}
+.rec-outcome-badge{display:inline-flex;padding:3px 10px;border-radius:4px;font-size:12px;font-weight:600;white-space:nowrap}
+.rec-outcome-declined{background:#fce8e6;color:#c5221f}
+.rec-outcome-reverted{background:#fff3e0;color:#e65100}
+.rec-progress-bg{height:6px;background:#e0e0e0;border-radius:3px;overflow:hidden;width:100%;margin-bottom:4px}
+.rec-progress-fill{height:6px;border-radius:3px;background:#7c3aed}
+.rec-progress-label{font-size:11px;color:#5f6368}
+
+/* Row action buttons */
+.row-acts{display:flex;gap:4px;flex-wrap:wrap}
+.ra-btn{padding:5px 12px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid;white-space:nowrap;transition:all .15s}
+.ra-accept{background:#1a73e8;color:#fff;border-color:#1a73e8}
+.ra-accept:hover{background:#1557b0}
+.ra-decline{background:#fff;color:#dc2626;border-color:#fca5a5}
+.ra-decline:hover{background:#fef2f2}
+
+/* Expand row */
+.expand-row{display:none}
+.expand-row.open{display:table-row}
+.expand-row td{background:#f8f9fa;padding:16px 20px;border-bottom:1px solid #e0e0e0}
+.expand-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:24px}
+.expand-label{font-size:11px;font-weight:600;color:#5f6368;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.expand-val{font-size:13px;color:#202124;line-height:1.6}
+.expand-val ul{margin:0;padding-left:16px}
+
+/* Pagination */
+.pagination-row{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-top:1px solid #e0e0e0}
+.pagination-info{font-size:13px;color:#5f6368}
+.pagination-controls{display:flex;gap:4px}
+.pagination-controls button{min-width:32px;padding:6px 12px;background:#fff;border:1px solid #dadce0;border-radius:4px;font-size:13px;cursor:pointer;color:#202124;transition:all .15s}
+.pagination-controls button:hover:not(:disabled):not(.active){background:#f8f9fa}
+.pagination-controls button:disabled{opacity:.4;cursor:not-allowed}
+.pagination-controls button.active{background:#1a73e8;color:#fff;border-color:#1a73e8}
+.rows-per-page{display:flex;align-items:center;gap:8px;font-size:13px;color:#5f6368}
+.rows-per-page select{padding:6px 32px 6px 12px;background:#fff;border:1px solid #dadce0;border-radius:4px;font-size:13px;color:#202124;cursor:pointer}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="nav-sidebar">
+  <div class="nav-brand">
+    <svg class="nav-brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="41" fill="none" stroke="#4285F4" stroke-width="10"/>
+      <circle cx="50" cy="50" r="29" fill="none" stroke="#EA4335" stroke-width="10"/>
+      <circle cx="50" cy="50" r="17" fill="none" stroke="#FBBC05" stroke-width="10"/>
+      <circle cx="50" cy="50" r="10" fill="#34A853"/>
+    </svg>
+    <div class="nav-brand-text">Ads<br>Control<br>Tower</div>
+  </div>
+  <div class="nav-items">
+    <a class="nav-item" href="#"><span class="material-symbols-outlined">home</span>Dashboard</a>
+    <a class="nav-item active" href="#"><span class="material-symbols-outlined">campaign</span>Campaigns</a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined">folder</span>Ad Groups</a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined">search</span>Keywords</a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined">article</span>Ads</a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined">shopping_cart</span>Shopping</a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined">lightbulb</span><span style="font-size:11px">Recommendations</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined">history</span>Changes</a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined">send</span>Outreach</a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined">settings</span>Settings</a>
+  </div>
+</nav>
+
+<div class="main-wrapper">
+  <div class="top-navbar">
+    <span class="navbar-client"><i class="bi bi-building"></i> Christopher Hoole</span>
+    <button class="navbar-btn"><i class="bi bi-person-circle"></i> User ▾</button>
+  </div>
+
+  <div class="main-content">
+
+    <h1 class="page-title">Campaigns</h1>
+    <p class="page-subtitle">Manage campaigns, rules and recommendations for this account</p>
+
+    <!-- Page-level tabs: Campaigns / Rules & Flags / Recommendations -->
+    <div class="page-tabs">
+      <div class="page-tab" onclick="switchPageTab('campaigns',this)">Campaigns</div>
+      <div class="page-tab" onclick="switchPageTab('rules',this)">Rules &amp; Flags</div>
+      <div class="page-tab active" onclick="switchPageTab('recommendations',this)">Recommendations</div>
+    </div>
+
+    <!-- ── Campaigns tab (placeholder) ── -->
+    <div class="tab-panel" id="page-campaigns">
+      <div class="placeholder-notice">Campaigns table — not shown in this wireframe</div>
+    </div>
+
+    <!-- ── Rules & Flags tab (placeholder) ── -->
+    <div class="tab-panel" id="page-rules">
+      <div class="placeholder-notice">Rules &amp; Flags tab — not shown in this wireframe</div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- RECOMMENDATIONS TAB -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <div class="tab-panel active" id="page-recommendations">
+
+      <!-- Tab header -->
+      <div class="rec-tab-header">
+        <div>
+          <div class="rec-tab-title">Campaign Recommendations</div>
+          <div class="rec-tab-subtitle">Recommendations generated for campaigns in this account</div>
+        </div>
+        <div class="rec-tab-actions">
+          <a class="view-full-link" href="#">View full recommendations page →</a>
+          <button class="btn-secondary-act"><i class="bi bi-play-fill"></i> Run Recommendations Engine</button>
+          <button class="btn-primary-act" id="accept-low-risk-btn"><i class="bi bi-check-lg"></i> Accept all low risk</button>
+        </div>
+      </div>
+
+      <!-- Status tabs -->
+      <div class="status-tabs">
+        <div class="status-tab active" onclick="switchRecTab('pending',this)">Pending <span class="tab-badge tab-badge-blue" id="badge-pending">3</span></div>
+        <div class="status-tab" onclick="switchRecTab('monitoring',this)">Monitoring <span class="tab-badge tab-badge-purple" id="badge-monitoring">1</span></div>
+        <div class="status-tab" onclick="switchRecTab('successful',this)">Successful <span class="tab-badge tab-badge-green" id="badge-successful">1</span></div>
+        <div class="status-tab" onclick="switchRecTab('history',this)">History <span class="tab-badge tab-badge-gray" id="badge-history">1</span></div>
+      </div>
+
+      <!-- ── PENDING ── -->
+      <div id="rec-pending">
+        <div class="top-controls">
+          <div class="left-controls">
+            <div style="font-size:13px;color:#5f6368" id="pending-count">3 recommendations · 3 pending</div>
+          </div>
+          <div class="right-controls">
+            <input class="search-input" placeholder="Search campaign or rule..." />
+            <select class="sort-select"><option>Sort: Risk level</option><option>Sort: Name</option><option>Sort: Rule name</option></select>
+          </div>
+        </div>
+        <div class="bulk-bar" id="pending-bulk" style="display:none">
+          <input type="checkbox" style="width:14px;height:14px;cursor:pointer" />
+          <span>0 selected</span>
+          <button class="btn-primary-act btn-sm-act"><i class="bi bi-check-lg"></i> Accept selected</button>
+          <button class="btn-danger-act btn-sm-act"><i class="bi bi-x-lg"></i> Decline selected</button>
+          <span style="margin-left:auto;font-size:12px;cursor:pointer;color:#1a73e8;font-weight:400">Clear selection</span>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th class="col-cb"><input type="checkbox" style="width:14px;height:14px;cursor:pointer" onchange="document.getElementById('pending-bulk').style.display=this.checked?'flex':'none'" /></th>
+                <th class="col-name">Campaign name</th>
+                <th class="col-rule">Rule name</th>
+                <th class="col-plain">Plain English</th>
+                <th class="col-ruleflag">Rule/Flag</th>
+                <th class="col-ruletype">Rule type</th>
+                <th class="col-conditions">Conditions</th>
+                <th class="col-action">Action</th>
+                <th class="col-risk">Risk</th>
+                <th class="col-age">Age</th>
+                <th class="col-acts"></th>
+              </tr>
+            </thead>
+            <tbody id="pending-body"></tbody>
+          </table>
+          <div class="pagination-row">
+            <div class="pagination-info">Showing 1–3 of 3 recommendations</div>
+            <div style="display:flex;align-items:center;gap:16px">
+              <div class="rows-per-page">Rows per page: <select><option>25</option><option>50</option></select></div>
+              <div class="pagination-controls"><button disabled>‹ Prev</button><button class="active">1</button><button disabled>Next ›</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MONITORING ── -->
+      <div id="rec-monitoring" style="display:none">
+        <div class="top-controls">
+          <div class="left-controls">
+            <div style="font-size:13px;color:#5f6368">1 recommendation · currently monitoring</div>
+          </div>
+          <div class="right-controls">
+            <input class="search-input" placeholder="Search campaign or rule..." />
+            <select class="sort-select"><option>Sort: Monitoring ends</option><option>Sort: Name</option></select>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th class="col-cb" style="width:36px"></th>
+                <th class="col-date">Accepted</th>
+                <th class="col-progress">Monitoring progress</th>
+                <th class="col-name">Campaign name</th>
+                <th class="col-rule">Rule name</th>
+                <th class="col-plain">Plain English</th>
+                <th class="col-ruleflag">Rule/Flag</th>
+                <th class="col-ruletype">Rule type</th>
+                <th class="col-conditions">Conditions</th>
+                <th class="col-action">Action taken</th>
+                <th class="col-risk">Risk</th>
+              </tr>
+            </thead>
+            <tbody id="monitoring-body"></tbody>
+          </table>
+          <div class="pagination-row">
+            <div class="pagination-info">Showing 1–1 of 1 recommendation</div>
+            <div style="display:flex;align-items:center;gap:16px">
+              <div class="rows-per-page">Rows per page: <select><option>25</option></select></div>
+              <div class="pagination-controls"><button disabled>‹ Prev</button><button class="active">1</button><button disabled>Next ›</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SUCCESSFUL ── -->
+      <div id="rec-successful" style="display:none">
+        <div class="top-controls">
+          <div class="left-controls">
+            <div style="font-size:13px;color:#5f6368">1 completed recommendation</div>
+          </div>
+          <div class="right-controls">
+            <input class="search-input" placeholder="Search campaign or rule..." />
+            <select class="sort-select"><option>Sort: Completed date</option><option>Sort: Name</option></select>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th class="col-cb" style="width:36px"></th>
+                <th class="col-date">Accepted</th>
+                <th class="col-date">Completed</th>
+                <th class="col-name">Campaign name</th>
+                <th class="col-rule">Rule name</th>
+                <th class="col-plain">Plain English</th>
+                <th class="col-ruleflag">Rule/Flag</th>
+                <th class="col-ruletype">Rule type</th>
+                <th class="col-conditions">Conditions</th>
+                <th class="col-action">Action taken</th>
+                <th class="col-risk">Risk</th>
+              </tr>
+            </thead>
+            <tbody id="successful-body"></tbody>
+          </table>
+          <div class="pagination-row">
+            <div class="pagination-info">Showing 1–1 of 1 recommendation</div>
+            <div style="display:flex;align-items:center;gap:16px">
+              <div class="rows-per-page">Rows per page: <select><option>25</option></select></div>
+              <div class="pagination-controls"><button disabled>‹ Prev</button><button class="active">1</button><button disabled>Next ›</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── HISTORY ── -->
+      <div id="rec-history" style="display:none">
+        <div class="top-controls">
+          <div class="left-controls">
+            <div style="display:flex;gap:4px;background:#f1f3f4;padding:4px;border-radius:6px">
+              <button style="padding:5px 14px;background:#fff;border:none;border-radius:4px;font-size:13px;color:#202124;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.1)">All</button>
+              <button style="padding:5px 14px;background:transparent;border:none;border-radius:4px;font-size:13px;color:#5f6368;cursor:pointer">Declined</button>
+              <button style="padding:5px 14px;background:transparent;border:none;border-radius:4px;font-size:13px;color:#5f6368;cursor:pointer">Reverted</button>
+            </div>
+            <div style="font-size:13px;color:#5f6368">1 historical recommendation</div>
+          </div>
+          <div class="right-controls">
+            <input class="search-input" placeholder="Search campaign or rule..." />
+            <select class="sort-select"><option>Sort: Date actioned</option><option>Sort: Name</option></select>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th class="col-cb" style="width:36px"></th>
+                <th class="col-status">Outcome</th>
+                <th class="col-date">Date actioned</th>
+                <th class="col-name">Campaign name</th>
+                <th class="col-rule">Rule name</th>
+                <th class="col-plain">Plain English</th>
+                <th class="col-ruleflag">Rule/Flag</th>
+                <th class="col-ruletype">Rule type</th>
+                <th class="col-conditions">Conditions</th>
+                <th class="col-action">Action</th>
+                <th class="col-risk">Risk</th>
+              </tr>
+            </thead>
+            <tbody id="history-body"></tbody>
+          </table>
+          <div class="pagination-row">
+            <div class="pagination-info">Showing 1–1 of 1 recommendation</div>
+            <div style="display:flex;align-items:center;gap:16px">
+              <div class="rows-per-page">Rows per page: <select><option>25</option></select></div>
+              <div class="pagination-controls"><button disabled>‹ Prev</button><button class="active">1</button><button disabled>Next ›</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end recommendations tab -->
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function rfB(rf){return rf==='flag'?`<span class="rec-rf-badge rec-rf-flag">Flag</span>`:`<span class="rec-rf-badge rec-rf-rule">Rule</span>`;}
+function rtB(rt){const m={budget:'rec-rt-budget',bid:'rec-rt-bid',status:'rec-rt-status',keyword:'rec-rt-keyword'};const l={budget:'Budget',bid:'Bid',status:'Status',keyword:'Keyword'};return `<span class="rec-rt-badge ${m[rt]||'rec-rt-budget'}">${l[rt]||rt}</span>`;}
+function condC(conds){return `<div class="rec-conditions-cell">${conds.map(c=>`<span>${c}</span>`).join('')}</div>`;}
+function actC(dir,text,sub){const m={increase:'rec-action-increase',decrease:'rec-action-decrease',pause:'rec-action-pause'};return `<div><span class="rec-action-text ${m[dir]||''}">${text}</span><div class="rec-action-sub">${sub}</div></div>`;}
+function riskB(r){const m={low:'rec-risk-low',medium:'rec-risk-medium',high:'rec-risk-high'};return `<span class="rec-risk-badge ${m[r]||'rec-risk-low'}">${r.charAt(0).toUpperCase()+r.slice(1)}</span>`;}
+function outcomeB(o){const m={declined:'rec-outcome-declined',reverted:'rec-outcome-reverted'};const l={declined:'Declined',reverted:'Reverted'};return `<span class="rec-outcome-badge ${m[o]||''}">${l[o]||o}</span>`;}
+
+let expanded={};
+function makeExpRow(id,cols,w,c,d,wl,cl,dl){
+  const tr=document.createElement('tr');tr.className='expand-row';tr.id='exp-'+id;
+  tr.innerHTML=`<td colspan="${cols}"><div class="expand-grid">
+    <div><div class="expand-label">${wl}</div><div class="expand-val">${w}</div></div>
+    <div><div class="expand-label">${cl}</div><div class="expand-val">${c}</div></div>
+    <div><div class="expand-label">${dl}</div><div class="expand-val"><ul>${d.map(x=>`<li>${x}</li>`).join('')}</ul></div></div>
+  </div></td>`;
+  return tr;
+}
+function toggleExp(id){
+  const e=document.getElementById('exp-'+id);if(!e)return;
+  const k=id.split('-')[0];
+  if(expanded[k]&&expanded[k]!==id){const o=document.getElementById('exp-'+expanded[k]);if(o)o.classList.remove('open');}
+  if(expanded[k]===id){e.classList.remove('open');expanded[k]=null;}
+  else{e.classList.add('open');expanded[k]=id;}
+}
+
+// ── Pending data ──────────────────────────────────────────────────────────────
+const PENDING=[
+  {id:'p1',name:'Budget Constrained High',rule:'Increase budget – strong ROAS',plain:'Spend more when ROAS is comfortably beating target with enough clicks to be confident',rf:'rule',rt:'budget',conds:['ROAS (7d) ≥ 1.15× target','Clicks (7d) ≥ 30'],dir:'increase',act:'↑ Increase budget 10%',sub:'£116.39 → £128.03 daily',risk:'low',age:'2h ago',human:false,why:'ROAS (7d avg) 4.80× is beating the 1.20× target threshold. Clicks = 1,015 meets the 30-click minimum.',change:'Daily budget £116.39 → £128.03 (+£11.64)',det:['7-day cooldown','Low risk','tROAS campaigns only']},
+  {id:'p2',name:'Volatile Low',rule:'Decrease budget – weak ROAS',plain:'Pull back spend when ROAS is below target and there is enough data to be sure it is a real problem',rf:'rule',rt:'budget',conds:['ROAS (7d) < 0.85× target','Clicks (7d) ≥ 30'],dir:'decrease',act:'↓ Decrease budget 10%',sub:'£124.00 → £111.60 daily',risk:'low',age:'2h ago',human:false,why:'ROAS (7d avg) 3.07× is below the 3.40× threshold. Clicks = 1,077 meets the minimum.',change:'Daily budget £124.00 → £111.60 (−£12.40)',det:['7-day cooldown','Low risk','tROAS campaigns only']},
+  {id:'p3',name:'Decline Moderate',rule:'Pause – high CPC',plain:'Recommend pausing if CPC is more than double the threshold and volume is too low to justify the cost',rf:'rule',rt:'status',conds:['Avg CPC (14d) > £5','Cost (14d) ≥ £200'],dir:'pause',act:'⏸ Pause campaign',sub:'Requires human confirmation',risk:'high',age:'2h ago',human:true,why:'Avg CPC (14d) = £804 exceeds the £5 threshold. Cost (14d) = £1,646 meets the £200 minimum.',change:'Campaign status: Enabled → Paused',det:['14-day cooldown','High risk','All campaigns','Human confirmation required']},
+];
+
+function renderPending(){
+  const tb=document.getElementById('pending-body');tb.innerHTML='';
+  PENDING.forEach(r=>{
+    const tr=document.createElement('tr');tr.className='data-row';
+    tr.innerHTML=`
+      <td class="col-cb"><input type="checkbox" style="width:14px;height:14px;cursor:pointer" onclick="document.getElementById('pending-bulk').style.display='flex'"/></td>
+      <td class="col-name" style="font-weight:500">${r.name}</td>
+      <td class="col-rule" style="font-weight:500">${r.rule}</td>
+      <td class="col-plain" style="color:#5f6368;font-size:12px">${r.plain}</td>
+      <td class="col-ruleflag">${rfB(r.rf)}</td>
+      <td class="col-ruletype">${rtB(r.rt)}</td>
+      <td class="col-conditions">${condC(r.conds)}</td>
+      <td class="col-action">${actC(r.dir,r.act,r.sub)}</td>
+      <td class="col-risk">${riskB(r.risk)}</td>
+      <td class="col-age" style="font-size:11px;color:#9aa0a6">${r.age}</td>
+      <td class="col-acts">
+        ${r.human?'<div class="rec-human-badge"><i class="bi bi-exclamation-triangle-fill"></i> Human confirm</div>':''}
+        <div class="row-acts">
+          <button class="ra-btn ra-accept" onclick="removeRec('${r.id}',event,'pending-body')">Accept</button>
+          <button class="ra-btn ra-decline" onclick="removeRec('${r.id}',event,'pending-body')">Decline</button>
+        </div>
+      </td>`;
+    tr.addEventListener('click',e=>{if(e.target.type==='checkbox'||e.target.tagName==='BUTTON')return;toggleExp(r.id);});
+    tb.appendChild(tr);
+    tb.appendChild(makeExpRow(r.id,11,r.why,r.change,r.det,'Why this was triggered','Proposed change','Rule details'));
+  });
+}
+
+// ── Monitoring data ───────────────────────────────────────────────────────────
+function renderMonitoring(){
+  const tb=document.getElementById('monitoring-body');tb.innerHTML='';
+  const r={id:'m1',name:'Budget Constrained High',rule:'Increase budget – strong ROAS',plain:'Spend more when ROAS is comfortably beating target',rf:'rule',rt:'budget',conds:['ROAS (7d) ≥ 1.15× target','Clicks (7d) ≥ 30'],dir:'increase',act:'↑ Increase budget 10%',sub:'£116.39 → £128.03 daily',risk:'low',accepted:'16 Mar 2026',ends:'23 Mar 2026',pct:30,plabel:'Day 2 of 7',why:'ROAS 4.80× beat the 1.20× target. Clicks = 1,015.',change:'Budget increased from £116.39 to £128.03.',det:['Monitoring for 7 days','Will revert if ROAS drops >20%','Low risk']};
+  const tr=document.createElement('tr');tr.className='data-row';
+  tr.innerHTML=`
+    <td style="width:36px"></td>
+    <td class="col-date" style="font-size:12px;color:#5f6368">${r.accepted}</td>
+    <td class="col-progress"><div class="rec-progress-bg"><div class="rec-progress-fill" style="width:${r.pct}%"></div></div><div class="rec-progress-label">${r.plabel} · ends ${r.ends}</div></td>
+    <td class="col-name" style="font-weight:500">${r.name}</td>
+    <td class="col-rule" style="font-weight:500">${r.rule}</td>
+    <td class="col-plain" style="color:#5f6368;font-size:12px">${r.plain}</td>
+    <td class="col-ruleflag">${rfB(r.rf)}</td>
+    <td class="col-ruletype">${rtB(r.rt)}</td>
+    <td class="col-conditions">${condC(r.conds)}</td>
+    <td class="col-action">${actC(r.dir,r.act,r.sub)}</td>
+    <td class="col-risk">${riskB(r.risk)}</td>`;
+  tr.addEventListener('click',()=>toggleExp(r.id));
+  tb.appendChild(tr);
+  tb.appendChild(makeExpRow(r.id,11,r.why,r.change,r.det,'Why this was triggered','What changed','Monitoring details'));
+}
+
+// ── Successful data ───────────────────────────────────────────────────────────
+function renderSuccessful(){
+  const tb=document.getElementById('successful-body');tb.innerHTML='';
+  const r={id:'s1',name:'Volatile Low',rule:'Decrease budget – weak ROAS',plain:'Pull back spend when ROAS is below target',rf:'rule',rt:'budget',conds:['ROAS (7d) < 0.85× target','Clicks (7d) ≥ 30'],dir:'decrease',act:'↓ Decrease budget 10%',sub:'£124.00 → £111.60 daily',risk:'low',accepted:'10 Mar 2026',completed:'17 Mar 2026',why:'ROAS 3.07× was below the 3.40× threshold.',change:'Budget reduced from £124.00 to £111.60. Monitoring period completed with no revert trigger.',det:['Completed after 7-day monitoring','No revert trigger fired','Low risk']};
+  const tr=document.createElement('tr');tr.className='data-row';
+  tr.innerHTML=`
+    <td style="width:36px"></td>
+    <td class="col-date" style="font-size:12px;color:#5f6368">${r.accepted}</td>
+    <td class="col-date" style="font-size:12px;color:#5f6368">${r.completed}</td>
+    <td class="col-name" style="font-weight:500">${r.name}</td>
+    <td class="col-rule" style="font-weight:500">${r.rule}</td>
+    <td class="col-plain" style="color:#5f6368;font-size:12px">${r.plain}</td>
+    <td class="col-ruleflag">${rfB(r.rf)}</td>
+    <td class="col-ruletype">${rtB(r.rt)}</td>
+    <td class="col-conditions">${condC(r.conds)}</td>
+    <td class="col-action">${actC(r.dir,r.act,r.sub)}</td>
+    <td class="col-risk">${riskB(r.risk)}</td>`;
+  tr.addEventListener('click',()=>toggleExp(r.id));
+  tb.appendChild(tr);
+  tb.appendChild(makeExpRow(r.id,11,r.why,r.change,r.det,'Why this was triggered','What changed','Outcome details'));
+}
+
+// ── History data ──────────────────────────────────────────────────────────────
+function renderHistory(){
+  const tb=document.getElementById('history-body');tb.innerHTML='';
+  const r={id:'h1',name:'Decline Moderate',rule:'Pause – high CPC',plain:'Recommend pausing if CPC is more than double the threshold',rf:'rule',rt:'status',conds:['Avg CPC (14d) > £5','Cost (14d) ≥ £200'],dir:'pause',act:'⏸ Pause campaign',sub:'Requires human confirmation',risk:'high',outcome:'declined',date:'14 Mar 2026',why:'Avg CPC (14d) = £804. Cost (14d) = £1,646.',change:'Recommendation declined by user on 14 Mar 2026. No change executed.',det:['Declined by user','No change executed','High risk']};
+  const tr=document.createElement('tr');tr.className='data-row';
+  tr.innerHTML=`
+    <td style="width:36px"></td>
+    <td class="col-status">${outcomeB(r.outcome)}</td>
+    <td class="col-date" style="font-size:12px;color:#5f6368">${r.date}</td>
+    <td class="col-name" style="font-weight:500">${r.name}</td>
+    <td class="col-rule" style="font-weight:500">${r.rule}</td>
+    <td class="col-plain" style="color:#5f6368;font-size:12px">${r.plain}</td>
+    <td class="col-ruleflag">${rfB(r.rf)}</td>
+    <td class="col-ruletype">${rtB(r.rt)}</td>
+    <td class="col-conditions">${condC(r.conds)}</td>
+    <td class="col-action">${actC(r.dir,r.act,r.sub)}</td>
+    <td class="col-risk">${riskB(r.risk)}</td>`;
+  tr.addEventListener('click',()=>toggleExp(r.id));
+  tb.appendChild(tr);
+  tb.appendChild(makeExpRow(r.id,11,r.why,r.change,r.det,'Why this was triggered','What happened','Details'));
+}
+
+function removeRec(id,e,tbodyId){
+  e.stopPropagation();
+  const row=document.querySelector(`tr.data-row`);
+  toast('Recommendation actioned','success');
+}
+
+function switchPageTab(tab,el){
+  document.querySelectorAll('.page-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+}
+
+function switchRecTab(tab,el){
+  document.querySelectorAll('.status-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['pending','monitoring','successful','history'].forEach(t=>{
+    document.getElementById('rec-'+t).style.display=t===tab?'block':'none';
+  });
+  const btn=document.getElementById('accept-low-risk-btn');
+  btn.style.display=tab==='pending'?'inline-flex':'none';
+}
+
+function toast(msg,type){
+  const ex=document.getElementById('wf-toast');if(ex)ex.remove();
+  const t=document.createElement('div');t.id='wf-toast';
+  const c={success:'#34a853',info:'#1a73e8'};
+  t.style.cssText=`position:fixed;top:16px;right:16px;z-index:9999;background:${c[type]||c.info};color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:500;box-shadow:0 2px 8px rgba(0,0,0,.2)`;
+  t.textContent=msg;document.body.appendChild(t);
+  setTimeout(()=>t.remove(),2500);
+}
+
+renderPending();
+renderMonitoring();
+renderSuccessful();
+renderHistory();
+</script>
+</body>
+</html>

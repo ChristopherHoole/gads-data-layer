@@ -10,6 +10,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/table-styles.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/recommendations.css') }}">
 <style>
   :root {
     --border: #e5e9f0;
@@ -446,145 +447,130 @@
     <!-- RECOMMENDATIONS TAB -->
     <div class="tab-pane fade" id="recommendations-tab" role="tabpanel">
 
-      {# ── EMPTY STATE (shown when 0 recommendations) ───────────────────────────── #}
-      <div id="ag-empty-state" class="alert alert-info text-center p-5" style="display: none;">
-        <i class="bi bi-info-circle" style="font-size: 48px; color: #0dcaf0;"></i>
-        <h4 class="mt-3">No Ad Group Recommendations</h4>
-        <p class="mb-2">Ad group rules are enabled but conditions have not yet been met in the current data. This is normal and not an error.</p>
-        <p class="text-muted mb-4">The recommendations engine checks ad group performance against rule conditions. When conditions are met, recommendations will appear here.</p>
-        <button class="btn btn-primary" id="ag-run-engine-btn">
-          <i class="bi bi-play-circle"></i> Run Recommendations Now
-        </button>
-      </div>
-
-      {# ── SUMMARY STRIP (hidden when empty) ────────────────────────────────────── #}
-      <div class="summary-strip" id="ag-summary-strip" style="display: none;">
-        <div class="summary-card">
-          <div class="s-icon" style="background:#dbeafe;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          </div>
-          <div>
-            <div class="s-num" style="color:#0d6efd;" id="ag-summary-pending">0</div>
-            <div class="s-label">Pending</div>
-          </div>
-        </div>
-        <div class="summary-card">
-          <div class="s-icon" style="background:#ede9fe;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
-          <div>
-            <div class="s-num" style="color:#6d28d9;" id="ag-summary-monitoring">0</div>
-            <div class="s-label">Monitoring</div>
-          </div>
-        </div>
-        <div class="summary-card">
-          <div class="s-icon" style="background:#dcfce7;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <div>
-            <div class="s-num" style="color:#15803d;" id="ag-summary-successful">0</div>
-            <div class="s-label">Successful</div>
-          </div>
-        </div>
-        <div class="summary-card">
-          <div class="s-icon" style="background:#fee2e2;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
-          </div>
-          <div>
-            <div class="s-num" style="color:#dc3545;" id="ag-summary-reverted">0</div>
-            <div class="s-label">Reverted</div>
-          </div>
-        </div>
-        <div class="summary-card">
-          <div class="s-icon" style="background:#f3f4f6;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </div>
-          <div>
-            <div class="s-num" style="color:#6b7280;" id="ag-summary-declined">0</div>
-            <div class="s-label">Declined</div>
-          </div>
+      <!-- Header -->
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="mb-0">Ad Group Recommendations</h5>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-outline-secondary" id="ag-accept-low-risk-btn">
+            <i class="bi bi-check2-all"></i> Accept low risk
+          </button>
+          <button class="btn btn-sm btn-primary" id="ag-run-engine-btn">
+            <i class="bi bi-play-circle"></i> Run engine
+          </button>
         </div>
       </div>
 
-      {# ── STATUS TAB BAR (hidden when empty) ───────────────────────────────────── #}
-      <div class="page-tabs" id="ag-status-tabs" style="display: none;">
-        <button class="page-tab active" id="ag-btn-tab-pending" onclick="agSwitchTab('pending')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Pending <span class="tab-badge" id="ag-tab-badge-pending">0</span>
-        </button>
-        <button class="page-tab" id="ag-btn-tab-monitoring" onclick="agSwitchTab('monitoring')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Monitoring <span class="tab-badge-orange" id="ag-tab-badge-monitoring">0</span>
-        </button>
-        <button class="page-tab" id="ag-btn-tab-successful" onclick="agSwitchTab('successful')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          Successful <span class="tab-badge-green" id="ag-tab-badge-successful">0</span>
-        </button>
-        <button class="page-tab" id="ag-btn-tab-reverted" onclick="agSwitchTab('reverted')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
-          Reverted <span class="tab-badge-red" id="ag-tab-badge-reverted">0</span>
-        </button>
-        <button class="page-tab" id="ag-btn-tab-declined" onclick="agSwitchTab('declined')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          Declined <span class="tab-badge-grey" id="ag-tab-badge-declined">0</span>
-        </button>
-      </div>
+      <!-- Sub-tabs -->
+      <ul class="nav nav-tabs mb-3" id="agRecTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="ag-rec-pending-tab" data-bs-toggle="tab" data-bs-target="#ag-rec-pending" type="button" role="tab">
+            Pending <span class="badge bg-secondary ms-1" id="ag-badge-pending">0</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="ag-rec-monitoring-tab" data-bs-toggle="tab" data-bs-target="#ag-rec-monitoring" type="button" role="tab">
+            Monitoring <span class="badge bg-secondary ms-1" id="ag-badge-monitoring">0</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="ag-rec-successful-tab" data-bs-toggle="tab" data-bs-target="#ag-rec-successful" type="button" role="tab">
+            Successful <span class="badge bg-secondary ms-1" id="ag-badge-successful">0</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="ag-rec-history-tab" data-bs-toggle="tab" data-bs-target="#ag-rec-history" type="button" role="tab">
+            History <span class="badge bg-secondary ms-1" id="ag-badge-history">0</span>
+          </button>
+        </li>
+      </ul>
 
-      {# ── TAB CONTENT AREAS (hidden when empty) ────────────────────────────────── #}
-      <div id="ag-tab-pending" style="display: none;">
-        <div id="ag-cards-pending" class="rec-grid-2"></div>
-        <div id="ag-empty-pending" class="empty-state" style="display:none;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <p>No pending recommendations</p>
-        </div>
-      </div>
+      <div class="tab-content" id="agRecTabContent">
 
-      <div id="ag-tab-monitoring" style="display:none;">
-        <div id="ag-cards-monitoring" class="rec-grid-2"></div>
-        <div id="ag-empty-monitoring" class="empty-state" style="display:none;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
-          </svg>
-          <p>No monitoring recommendations</p>
+        <!-- PENDING -->
+        <div class="tab-pane fade show active" id="ag-rec-pending" role="tabpanel">
+          <div id="ag-bulk-bar" class="rec-bulk-bar" style="display:none;">
+            <span id="ag-bulk-count">0 selected</span>
+            <button class="btn btn-sm btn-primary ms-2" onclick="agDoBulk('accept')">Accept selected</button>
+            <button class="btn btn-sm btn-outline-danger ms-1" onclick="agDoBulk('decline')">Decline selected</button>
+            <span class="rec-bulk-clear" onclick="agClearSelection()">Clear</span>
+          </div>
+          <table class="table table-sm table-hover align-middle rec-tab-slim">
+            <thead>
+              <tr>
+                <th class="rec-col-cb"><input type="checkbox" id="ag-chk-all" onchange="agToggleAll(this)"></th>
+                <th class="rec-col-name">Ad group</th>
+                <th class="rec-col-rule">Rule</th>
+                <th class="rec-col-ruleflag">R/F</th>
+                <th class="rec-col-ruletype">Rule type</th>
+                <th class="rec-col-conditions">Conditions</th>
+                <th class="rec-col-action">Action</th>
+                <th class="rec-col-risk">Risk</th>
+                <th class="rec-col-age">Age</th>
+                <th class="rec-col-acts">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ag-pending-tbody"></tbody>
+          </table>
+          <div id="ag-pending-paginator" class="d-flex gap-1 flex-wrap mt-2"></div>
         </div>
-      </div>
 
-      <div id="ag-tab-successful" style="display:none;">
-        <div id="ag-cards-successful" class="rec-grid-2"></div>
-        <div id="ag-empty-successful" class="empty-state" style="display:none;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-          <p>No successful recommendations</p>
+        <!-- MONITORING -->
+        <div class="tab-pane fade" id="ag-rec-monitoring" role="tabpanel">
+          <table class="table table-sm table-hover align-middle rec-tab-slim">
+            <thead>
+              <tr>
+                <th class="rec-col-name">Ad group</th>
+                <th class="rec-col-rule">Rule</th>
+                <th class="rec-col-ruleflag">R/F</th>
+                <th class="rec-col-action">Action taken</th>
+                <th class="rec-col-risk">Risk</th>
+                <th class="rec-col-date">Accepted</th>
+                <th class="rec-col-progress">Progress</th>
+              </tr>
+            </thead>
+            <tbody id="ag-monitoring-tbody"></tbody>
+          </table>
+          <div id="ag-monitoring-paginator" class="d-flex gap-1 flex-wrap mt-2"></div>
         </div>
-      </div>
 
-      <div id="ag-tab-reverted" style="display:none;">
-        <div id="ag-cards-reverted" class="rec-grid-2"></div>
-        <div id="ag-empty-reverted" class="empty-state" style="display:none;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <polyline points="1 4 1 10 7 10"/>
-            <path d="M3.51 15a9 9 0 1 0 .49-3.57"/>
-          </svg>
-          <p>No reverted recommendations</p>
+        <!-- SUCCESSFUL -->
+        <div class="tab-pane fade" id="ag-rec-successful" role="tabpanel">
+          <table class="table table-sm table-hover align-middle rec-tab-slim">
+            <thead>
+              <tr>
+                <th class="rec-col-name">Ad group</th>
+                <th class="rec-col-rule">Rule</th>
+                <th class="rec-col-ruleflag">R/F</th>
+                <th class="rec-col-action">Action taken</th>
+                <th class="rec-col-risk">Risk</th>
+                <th class="rec-col-date">Completed</th>
+              </tr>
+            </thead>
+            <tbody id="ag-successful-tbody"></tbody>
+          </table>
+          <div id="ag-successful-paginator" class="d-flex gap-1 flex-wrap mt-2"></div>
         </div>
-      </div>
 
-      <div id="ag-tab-declined" style="display:none;">
-        <div id="ag-cards-declined" class="rec-grid-2"></div>
-        <div id="ag-empty-declined" class="empty-state" style="display:none;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-          <p>No declined recommendations</p>
+        <!-- HISTORY (declined + reverted) -->
+        <div class="tab-pane fade" id="ag-rec-history" role="tabpanel">
+          <table class="table table-sm table-hover align-middle rec-tab-slim">
+            <thead>
+              <tr>
+                <th class="rec-col-name">Ad group</th>
+                <th class="rec-col-rule">Rule</th>
+                <th class="rec-col-ruleflag">R/F</th>
+                <th class="rec-col-action">Action</th>
+                <th class="rec-col-risk">Risk</th>
+                <th class="rec-col-date">Date</th>
+                <th class="rec-col-status">Outcome</th>
+              </tr>
+            </thead>
+            <tbody id="ag-history-tbody"></tbody>
+          </table>
+          <div id="ag-history-paginator" class="d-flex gap-1 flex-wrap mt-2"></div>
         </div>
-      </div>
+
+      </div><!-- /tab-content -->
 
     </div>
 
@@ -797,23 +783,8 @@ function applyColumns() {
 })();
 
 // ===========================================================================
-// RECOMMENDATIONS TAB - STATUS TAB SWITCHING
+// RECOMMENDATIONS TAB — 4-tab table UI
 // ===========================================================================
-const AG_TABS = ['pending', 'monitoring', 'successful', 'reverted', 'declined'];
-
-function agSwitchTab(name) {
-  AG_TABS.forEach(t => {
-    const tabEl = document.getElementById('ag-tab-' + t);
-    const btnEl = document.getElementById('ag-btn-tab-' + t);
-    if (tabEl) tabEl.style.display = (t === name) ? '' : 'none';
-    if (btnEl) btnEl.classList.toggle('active', t === name);
-  });
-}
-
-// Initialize to pending tab on load
-if (document.getElementById('ag-tab-pending')) {
-  agSwitchTab('pending');
-}
 
 // ===========================================================================
 // RECOMMENDATIONS TAB - DATA FETCHING
@@ -826,439 +797,305 @@ let agRecommendations = {
   declined: []
 };
 
-// Fetch recommendations from server
-async function agFetchRecommendations() {
-  try {
-    const response = await fetch('/recommendations/cards');
-    const data = await response.json();
-
-    if (!data) {
-      console.log('No data returned from server');
+(function () {
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function rfBadge(v) {
+    if (!v) return '';
+    var cls = v === 'rule' ? 'rec-rf-rule' : 'rec-rf-flag';
+    return '<span class="rec-rf-badge ' + cls + '">' + esc(v.charAt(0).toUpperCase()+v.slice(1)) + '</span>';
+  }
+  function rtBadge(v) {
+    if (!v) return '';
+    var map = { budget:'rec-rt-budget', bid:'rec-rt-bid', status:'rec-rt-status', keyword:'rec-rt-keyword', shopping:'rec-rt-shopping' };
+    var cls = map[v] || 'rec-rt-budget';
+    return '<span class="rec-rt-badge ' + cls + '">' + esc(v.charAt(0).toUpperCase()+v.slice(1)) + '</span>';
+  }
+  function condCell(conds) {
+    if (!conds || !conds.length) return '';
+    return '<div class="rec-conditions-cell">' + conds.map(function(c){ return '<span>' + esc(c) + '</span>'; }).join('') + '</div>';
+  }
+  function actionCell(r) {
+    var dir = r.action_direction || '';
+    var cls = dir === 'increase' ? 'rec-action-increase' : dir === 'decrease' ? 'rec-action-decrease' : dir === 'pause' ? 'rec-action-pause' : 'rec-action-flag';
+    var arrow = dir === 'increase' ? '\u2191 ' : dir === 'decrease' ? '\u2193 ' : '';
+    var plain = r.plain_english || (arrow + (r.action_magnitude ? r.action_magnitude + '%' : dir));
+    var html = '<span class="rec-action-text ' + cls + '">' + esc(plain) + '</span>';
+    if (r.current_value != null && r.proposed_value != null) {
+      html += '<div class="rec-action-sub">' + esc(String(r.current_value)) + ' \u2192 ' + esc(String(r.proposed_value)) + '</div>';
+    }
+    return html;
+  }
+  function riskBadge(v) {
+    if (!v) return '';
+    var cls = v === 'low' ? 'rec-risk-low' : v === 'medium' ? 'rec-risk-medium' : 'rec-risk-high';
+    return '<span class="rec-risk-badge ' + cls + '">' + esc(v.charAt(0).toUpperCase()+v.slice(1)) + '</span>';
+  }
+  function outcomeBadge(status) {
+    var map = { successful:'rec-outcome-successful', declined:'rec-outcome-declined', reverted:'rec-outcome-reverted', monitoring:'rec-outcome-monitoring' };
+    var label = { successful:'Successful', declined:'Declined', reverted:'Reverted', monitoring:'Monitoring' };
+    var cls = map[status] || '';
+    return '<span class="rec-outcome-badge ' + cls + '">' + (label[status]||esc(status)) + '</span>';
+  }
+  function fmtDate(s) {
+    if (!s) return '';
+    var d = new Date(s);
+    return isNaN(d) ? esc(s) : d.toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'});
+  }
+  function ageLabel(s) {
+    if (!s) return '';
+    var diff = Math.floor((Date.now() - new Date(s)) / 86400000);
+    return diff === 0 ? 'Today' : diff + 'd';
+  }
+  function progressBar(r) {
+    if (!r.accepted_at || !r.monitoring_ends_at) return '';
+    var start = new Date(r.accepted_at).getTime();
+    var end   = new Date(r.monitoring_ends_at).getTime();
+    var now   = Date.now();
+    var pct   = Math.min(100, Math.max(0, Math.round((now - start) / (end - start) * 100)));
+    var days  = Math.ceil((end - now) / 86400000);
+    var endStr = new Date(r.monitoring_ends_at).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'});
+    return '<div class="rec-progress-wrap"><div class="rec-progress-bg"><div class="rec-progress-fill" style="width:' + pct + '%"></div></div>' +
+           '<div class="rec-progress-label">' + (days > 0 ? days + 'd remaining' : 'Ending') + ' \u00b7 ends ' + endStr + '</div></div>';
+  }
+  function makeExpRow(r, colspan) {
+    var why = esc(r.trigger_summary || r.plain_english || '\u2014');
+    var change = (r.current_value != null && r.proposed_value != null)
+      ? esc(String(r.current_value)) + ' \u2192 ' + esc(String(r.proposed_value))
+      : (r.action_magnitude ? esc(String(r.action_magnitude)) + '%' : '\u2014');
+    var cooldown = r.cooldown_days ? esc(String(r.cooldown_days)) + ' days' : '\u2014';
+    return '<tr class="rec-expand-row" id="exp-' + esc(r.rec_id) + '">' +
+      '<td colspan="' + colspan + '">' +
+        '<div class="rec-expand-grid">' +
+          '<div><div class="rec-expand-label">Why triggered</div><div class="rec-expand-val">' + why + '</div></div>' +
+          '<div><div class="rec-expand-label">Proposed change</div><div class="rec-expand-val">' + change + '</div></div>' +
+          '<div><div class="rec-expand-label">Rule details</div><div class="rec-expand-val"><ul>' +
+            '<li>Cooldown: ' + cooldown + '</li>' +
+            '<li>Rule: ' + esc(r.rule_id||'\u2014') + '</li>' +
+          '</ul></div></div>' +
+        '</div>' +
+      '</td></tr>';
+  }
+  var AG_REC = { pending:[], monitoring:[], successful:[], history:[] };
+  var AG_SEL = {};
+  var AG_PAGE = { pending:1, monitoring:1, successful:1, history:1 };
+  var AG_PER_PAGE = 20;
+  function pendingRow(r) {
+    var checked = AG_SEL[r.rec_id] ? 'checked' : '';
+    var high = (r.risk_level === 'high') ? '<div class="rec-human-badge"><i class="bi bi-exclamation-triangle-fill"></i> Human confirm</div>' : '';
+    return '<tr class="' + (AG_SEL[r.rec_id] ? 'rec-selected' : '') + '" onclick="agRecExp(event,\'' + esc(r.rec_id) + '\')" style="cursor:pointer">' +
+      '<td class="rec-col-cb" onclick="event.stopPropagation()"><input type="checkbox" ' + checked + ' onchange="agRecCbChange(this,\'' + esc(r.rec_id) + '\')" ></td>' +
+      '<td class="rec-col-name">' + esc(r.entity_name||'') + '</td>' +
+      '<td class="rec-col-rule">' + esc(r.rule_name||r.rule_id||'') + '</td>' +
+      '<td class="rec-col-ruleflag">' + rfBadge(r.rule_or_flag) + '</td>' +
+      '<td class="rec-col-ruletype">' + rtBadge(r.rule_type_display) + '</td>' +
+      '<td class="rec-col-conditions">' + condCell(r.conditions) + '</td>' +
+      '<td class="rec-col-action">' + high + actionCell(r) + '</td>' +
+      '<td class="rec-col-risk">' + riskBadge(r.risk_level) + '</td>' +
+      '<td class="rec-col-age">' + ageLabel(r.generated_at) + '</td>' +
+      '<td class="rec-col-acts"><div class="rec-row-acts">' +
+        '<button class="rec-row-btn rec-row-btn-accept" onclick="event.stopPropagation();agRecAccept(\'' + esc(r.rec_id) + '\',this)">Accept</button>' +
+        '<button class="rec-row-btn rec-row-btn-decline" onclick="event.stopPropagation();agRecDecline(\'' + esc(r.rec_id) + '\',this)">Decline</button>' +
+      '</div></td>' +
+    '</tr>' + makeExpRow(r, 10);
+  }
+  function monitoringRow(r) {
+    return '<tr onclick="agRecExp(event,\'' + esc(r.rec_id) + '\')" style="cursor:pointer">' +
+      '<td class="rec-col-name">' + esc(r.entity_name||'') + '</td>' +
+      '<td class="rec-col-rule">' + esc(r.rule_name||r.rule_id||'') + '</td>' +
+      '<td class="rec-col-ruleflag">' + rfBadge(r.rule_or_flag) + '</td>' +
+      '<td class="rec-col-action">' + actionCell(r) + '</td>' +
+      '<td class="rec-col-risk">' + riskBadge(r.risk_level) + '</td>' +
+      '<td class="rec-col-date">' + fmtDate(r.accepted_at) + '</td>' +
+      '<td class="rec-col-progress">' + progressBar(r) + '</td>' +
+    '</tr>' + makeExpRow(r, 7);
+  }
+  function successfulRow(r) {
+    return '<tr onclick="agRecExp(event,\'' + esc(r.rec_id) + '\')" style="cursor:pointer">' +
+      '<td class="rec-col-name">' + esc(r.entity_name||'') + '</td>' +
+      '<td class="rec-col-rule">' + esc(r.rule_name||r.rule_id||'') + '</td>' +
+      '<td class="rec-col-ruleflag">' + rfBadge(r.rule_or_flag) + '</td>' +
+      '<td class="rec-col-action">' + actionCell(r) + '</td>' +
+      '<td class="rec-col-risk">' + riskBadge(r.risk_level) + '</td>' +
+      '<td class="rec-col-date">' + fmtDate(r.completed_at || r.resolved_at) + '</td>' +
+    '</tr>' + makeExpRow(r, 6);
+  }
+  function historyRow(r) {
+    return '<tr onclick="agRecExp(event,\'' + esc(r.rec_id) + '\')" style="cursor:pointer">' +
+      '<td class="rec-col-name">' + esc(r.entity_name||'') + '</td>' +
+      '<td class="rec-col-rule">' + esc(r.rule_name||r.rule_id||'') + '</td>' +
+      '<td class="rec-col-ruleflag">' + rfBadge(r.rule_or_flag) + '</td>' +
+      '<td class="rec-col-action">' + actionCell(r) + '</td>' +
+      '<td class="rec-col-risk">' + riskBadge(r.risk_level) + '</td>' +
+      '<td class="rec-col-date">' + fmtDate(r.resolved_at || r.accepted_at) + '</td>' +
+      '<td class="rec-col-status">' + outcomeBadge(r.status) + '</td>' +
+    '</tr>' + makeExpRow(r, 7);
+  }
+  function renderTab(tab) {
+    var items = AG_REC[tab];
+    var page  = AG_PAGE[tab];
+    var start = (page - 1) * AG_PER_PAGE;
+    var slice = items.slice(start, start + AG_PER_PAGE);
+    var tbody = document.getElementById('ag-' + tab + '-tbody');
+    var pag   = document.getElementById('ag-' + tab + '-paginator');
+    if (!tbody) return;
+    if (!items.length) {
+      tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-4">No ' + tab + ' recommendations for ad groups.</td></tr>';
+      if (pag) pag.innerHTML = '';
       return;
     }
-
-    // API returns data already grouped by status
-    // Filter each status array for ad_group entity type only
-    agRecommendations.pending = (data.pending || []).filter(r => r.entity_type === 'ad_group');
-    agRecommendations.monitoring = (data.monitoring || []).filter(r => r.entity_type === 'ad_group');
-    agRecommendations.successful = (data.successful || []).filter(r => r.entity_type === 'ad_group');
-    agRecommendations.reverted = (data.reverted || []).filter(r => r.entity_type === 'ad_group');
-    agRecommendations.declined = (data.declined || []).filter(r => r.entity_type === 'ad_group');
-
-    // Calculate totals
-    const totalAdGroup = agRecommendations.pending.length +
-                         agRecommendations.monitoring.length +
-                         agRecommendations.successful.length +
-                         agRecommendations.reverted.length +
-                         agRecommendations.declined.length;
-
-    if (totalAdGroup === 0) {
-      const emptyState = document.getElementById('ag-empty-state');
-      const summaryStrip = document.getElementById('ag-summary-strip');
-      const statusTabs = document.getElementById('ag-status-tabs');
-
-      if (emptyState) emptyState.style.display = 'block';
-      if (summaryStrip) summaryStrip.style.display = 'none';
-      if (statusTabs) statusTabs.style.display = 'none';
-    } else {
-      const emptyState = document.getElementById('ag-empty-state');
-      const summaryStrip = document.getElementById('ag-summary-strip');
-      const statusTabs = document.getElementById('ag-status-tabs');
-
-      if (emptyState) emptyState.style.display = 'none';
-      if (summaryStrip) summaryStrip.style.display = '';
-      if (statusTabs) statusTabs.style.display = '';
-
-      agUpdateSummaryCounts();
-      agUpdateTabBadges();
-      agRenderAllCards();
+    var html = '';
+    slice.forEach(function(r) {
+      html += (tab === 'pending' ? pendingRow(r) : tab === 'monitoring' ? monitoringRow(r) : tab === 'successful' ? successfulRow(r) : historyRow(r));
+    });
+    tbody.innerHTML = html;
+    buildPag(pag, items.length, page, function(p) { AG_PAGE[tab] = p; renderTab(tab); });
+  }
+  function buildPag(el, total, current, cb) {
+    if (!el) return;
+    var pages = Math.ceil(total / AG_PER_PAGE);
+    if (pages <= 1) { el.innerHTML = ''; return; }
+    var html = '';
+    for (var i = 1; i <= pages; i++) {
+      html += '<button class="btn btn-sm ' + (i === current ? 'btn-primary' : 'btn-outline-secondary') + '" data-p="' + i + '">' + i + '</button>';
     }
-
-  } catch (error) {
-    console.error('Error fetching recommendations:', error);
-  }
-}
-
-// Update summary strip counts
-function agUpdateSummaryCounts() {
-  const counts = {
-    pending: agRecommendations.pending.length,
-    monitoring: agRecommendations.monitoring.length,
-    successful: agRecommendations.successful.length,
-    reverted: agRecommendations.reverted.length,
-    declined: agRecommendations.declined.length
-  };
-
-  for (const [status, count] of Object.entries(counts)) {
-    const el = document.getElementById(`ag-summary-${status}`);
-    if (el) el.textContent = count;
-  }
-
-  const totalCount = Object.values(counts).reduce((sum, count) => sum + count, 0);
-  const mainBadge = document.getElementById('ag-total-count');
-  if (mainBadge) mainBadge.textContent = totalCount;
-}
-
-// Update tab badges
-function agUpdateTabBadges() {
-  const counts = {
-    pending: agRecommendations.pending.length,
-    monitoring: agRecommendations.monitoring.length,
-    successful: agRecommendations.successful.length,
-    reverted: agRecommendations.reverted.length,
-    declined: agRecommendations.declined.length
-  };
-
-  for (const [status, count] of Object.entries(counts)) {
-    const badge = document.getElementById(`ag-tab-badge-${status}`);
-    if (badge) badge.textContent = count;
-  }
-}
-
-// ===========================================================================
-// RECOMMENDATIONS TAB - CARD RENDERING
-// ===========================================================================
-
-function agRenderAllCards() {
-  AG_TABS.forEach(status => agRenderCards(status));
-}
-
-function agRenderCards(status) {
-  const recs = agRecommendations[status];
-  const container = document.getElementById(`ag-cards-${status}`);
-  const emptyState = document.getElementById(`ag-empty-${status}`);
-
-  if (!container) return;
-
-  container.innerHTML = '';
-
-  if (recs.length === 0) {
-    if (emptyState) emptyState.style.display = '';
-  } else {
-    if (emptyState) emptyState.style.display = 'none';
-    recs.forEach(rec => {
-      const cardHtml = agBuildCard(rec, status);
-      container.insertAdjacentHTML('beforeend', cardHtml);
+    el.innerHTML = html;
+    el.querySelectorAll('button').forEach(function(btn) {
+      btn.addEventListener('click', function() { cb(parseInt(this.dataset.p)); });
     });
   }
-}
-
-function agBuildCard(rec, status) {
-  const isMonitoring = status === 'monitoring';
-  const isSuccessful = status === 'successful';
-  const isDeclined = status === 'declined';
-  const isReverted = status === 'reverted';
-  const isPending = status === 'pending';
-
-  let topBarClass = 'rt-budget';
-  if (rec.rule_type === 'bid_target') topBarClass = 'rt-bid';
-  else if (rec.rule_type === 'status') topBarClass = 'rt-status';
-  if (isMonitoring) topBarClass = 'rt-monitoring';
-  if (isSuccessful) topBarClass = 'rt-successful';
-  if (isDeclined) topBarClass = 'rt-declined';
-  if (isReverted) topBarClass = 'rt-reverted';
-
-  let cardClass = 'rec-card';
-  if (isMonitoring) cardClass += ' card-monitoring';
-  if (isSuccessful) cardClass += ' card-success';
-  if (isDeclined) cardClass += ' card-declined';
-  if (isReverted) cardClass += ' card-reverted';
-
-  let ruleClass = 'rrt-budget';
-  if (rec.rule_type === 'bid_target') ruleClass = 'rrt-bid';
-  else if (rec.rule_type === 'status') ruleClass = 'rrt-status';
-  if (isMonitoring) ruleClass = 'rrt-monitoring';
-  if (isDeclined) ruleClass = 'rrt-declined';
-  if (isReverted) ruleClass = 'rrt-reverted';
-
-  let statusPill = '';
-  if (isPending) statusPill = '<span class="status-pill sp-pending">Pending</span>';
-  if (isMonitoring) statusPill = '<span class="status-pill sp-monitoring">Monitoring</span>';
-  if (isSuccessful) statusPill = '<span class="status-pill sp-successful">Successful</span>';
-  if (isDeclined) statusPill = '<span class="status-pill sp-declined">Declined</span>';
-  if (isReverted) statusPill = '<span class="status-pill sp-reverted">Reverted</span>';
-
-  let html = `<div class="${cardClass}" data-rec-id="${rec.rec_id}">`;
-  html += `<div class="rec-top ${topBarClass}"></div>`;
-  html += '<div class="rec-body">';
-
-  html += '<div class="rec-card-header">';
-  html += '<div>';
-  html += `<div class="rec-rule-tag ${ruleClass}">${rec.rule_type_display || rec.rule_type}</div>`;
-  html += `<div class="rec-campaign-name">${rec.entity_name || 'Keyword'}</div>`;
-  if (rec.campaign_name) {
-    html += `<div style="font-size:12px;color:#6b7280;margin-top:2px;">Campaign: ${rec.campaign_name}</div>`;
-  }
-  html += '</div>';
-  html += statusPill;
-  html += '</div>';
-
-  html += agBuildChangeBlock(rec);
-
-  if (rec.trigger_summary && isPending) {
-    html += `<div class="trigger-block"><div class="trigger-label">TRIGGER</div>${rec.trigger_summary}</div>`;
-  }
-
-  if (isMonitoring) {
-    html += agBuildMonitoringBlock(rec);
-  }
-
-  if (isSuccessful || isDeclined || isReverted) {
-    html += agBuildOutcomeBlock(rec, status);
-  }
-
-  html += agBuildCardFooter(rec, status);
-
-  html += '</div></div>';
-  return html;
-}
-
-function agBuildChangeBlock(rec) {
-  let changeClass = 'cb-budget';
-  let iconClass = 'ciw-budget';
-  if (rec.rule_type === 'bid_target') { changeClass = 'cb-bid'; iconClass = 'ciw-bid'; }
-  else if (rec.rule_type === 'status') { changeClass = 'cb-status'; iconClass = 'ciw-status'; }
-
-  let icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>';
-
-  let html = `<div class="change-block ${changeClass}">`;
-  html += `<div class="change-icon-wrap ${iconClass}">${icon}</div>`;
-  html += '<div style="flex:1;">';
-  html += `<div class="change-main">${rec.action_label || rec.action_direction || 'Change'}</div>`;
-  html += `<div class="change-sub">`;
-  if (rec.current_value !== undefined && rec.proposed_value !== undefined) {
-    html += `<strong>${rec.current_value}</strong> → <strong>${rec.proposed_value}</strong>`;
-  } else {
-    html += rec.action_magnitude || '';
-  }
-  html += '</div></div></div>';
-  return html;
-}
-
-function agBuildMonitoringBlock(rec) {
-  const daysElapsed = rec.monitoring_elapsed_days || 0;
-  const totalDays = rec.monitoring_total_days || 7;
-  const pct = Math.min(100, (daysElapsed / totalDays) * 100);
-
-  let html = '<div class="monitoring-block">';
-  html += '<div class="mon-top">';
-  html += '<div class="mon-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> MONITORING</div>';
-  html += `<div class="mon-days">Day ${daysElapsed} of ${totalDays}</div>`;
-  html += '</div>';
-  html += `<div class="mon-bar-wrap"><div class="mon-bar" style="width:${pct}%"></div></div>`;
-  html += '<div class="mon-outcomes">';
-  html += '<div class="mon-outcome-pill mop-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Keep if improves</div>';
-  html += '<div class="mon-outcome-pill mop-revert"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg> Revert if declines</div>';
-  html += '</div></div>';
-  return html;
-}
-
-function agBuildOutcomeBlock(rec, status) {
-  let blockClass = 'ob-success';
-  let titleClass = 'ot-success';
-  let icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
-  let title = 'Change Successful';
-
-  if (status === 'declined') {
-    blockClass = 'ob-declined';
-    titleClass = 'ot-declined';
-    icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-    title = 'Recommendation Declined';
-  } else if (status === 'reverted') {
-    blockClass = 'ob-reverted';
-    titleClass = 'ot-reverted';
-    icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>';
-    title = 'Change Reverted';
-  }
-
-  let html = `<div class="outcome-block ${blockClass}">`;
-  html += icon;
-  html += '<div style="flex:1;">';
-  html += `<div class="outcome-title ${titleClass}">${title}</div>`;
-  if (rec.outcome_metric && rec.proposed_value) {
-    html += `<div class="outcome-sub">${rec.outcome_metric}: ${rec.proposed_value}</div>`;
-  }
-  if (status === 'reverted' && rec.revert_reason) {
-    html += `<div class="revert-reason">${rec.revert_reason}</div>`;
-  }
-  html += '</div></div>';
-  return html;
-}
-
-function agBuildCardFooter(rec, status) {
-  const isPending = status === 'pending';
-  const isMonitoring = status === 'monitoring';
-
-  let html = '<div class="rec-footer">';
-  html += '<div class="rec-footer-meta">';
-
-  if (isPending && rec.confidence) {
-    let confClass = 'cb-high';
-    if (rec.confidence === 'medium') confClass = 'cb-med';
-    else if (rec.confidence === 'low') confClass = 'cb-low';
-    html += `<span class="conf-badge ${confClass}">${rec.confidence} confidence</span>`;
-  }
-
-  if (rec.generated_at) {
-    html += `<span class="rec-age">${rec.generated_at}</span>`;
-  }
-
-  html += '</div>';
-
-  if (isPending) {
-    html += '<div class="rec-footer-actions">';
-    html += `<button class="btn-accept" onclick="agAcceptRec('${rec.rec_id}', this)">`;
-    html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Accept';
-    html += '</button>';
-    html += `<button class="btn-decline" onclick="agDeclineRec('${rec.rec_id}', this)">`;
-    html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Decline';
-    html += '</button></div>';
-  } else if (isMonitoring) {
-    html += '<div class="readonly-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Monitoring in progress</div>';
-  } else {
-    html += '<div class="readonly-label">Read-only</div>';
-  }
-
-  html += '</div>';
-  return html;
-}
-
-// ===========================================================================
-// RECOMMENDATIONS TAB - ACCEPT/DECLINE HANDLERS
-// ===========================================================================
-async function agAcceptRec(recId, btn) {
-  if (!confirm('Accept this recommendation?')) return;
-
-  btn.disabled = true;
-  btn.textContent = 'Processing...';
-
-  try {
-    const response = await fetch(`/recommendations/${recId}/accept`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+  function agRecRenderAll() {
+    ['pending','monitoring','successful','history'].forEach(renderTab);
+    ['pending','monitoring','successful','history'].forEach(function(k) {
+      var el = document.getElementById('ag-badge-' + k);
+      if (el) el.textContent = AG_REC[k].length;
     });
-
-    const data = await response.json();
-
-    if (data.success) {
-      const card = btn.closest('.rec-card');
-      if (card) {
-        card.classList.add('removing');
-        setTimeout(() => {
-          agRecommendations.pending = agRecommendations.pending.filter(r => r.rec_id !== recId);
-          agUpdateSummaryCounts();
-          agUpdateTabBadges();
-          agRenderCards('pending');
+  }
+  function agShowToast(msg, type) {
+    var wrap = document.getElementById('act-toast-wrap');
+    if (!wrap) return;
+    var cls = type === 'success' ? 't-success' : type === 'error' ? 't-error' : 't-muted';
+    wrap.innerHTML = '<div class="act-toast ' + cls + '">' + esc(msg) + '</div>';
+    var t = wrap.querySelector('.act-toast');
+    if (t) t.style.display = 'block';
+    setTimeout(function() { wrap.innerHTML = ''; }, 3500);
+  }
+  function agRecLoad() {
+    fetch('/recommendations/cards')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        AG_REC.pending    = (data.pending    || []).filter(function(r){ return r.entity_type === 'ad_group'; });
+        AG_REC.monitoring = (data.monitoring || []).filter(function(r){ return r.entity_type === 'ad_group'; });
+        AG_REC.successful = (data.successful || []).filter(function(r){ return r.entity_type === 'ad_group'; });
+        var hist = (data.declined || []).concat(data.reverted || []).filter(function(r){ return r.entity_type === 'ad_group'; });
+        hist.sort(function(a,b){ return new Date(b.resolved_at||b.accepted_at||0) - new Date(a.resolved_at||a.accepted_at||0); });
+        AG_REC.history = hist;
+        AG_SEL = {};
+        agRecRenderAll();
+      })
+      .catch(function(err) { console.error('agRecLoad error', err); });
+  }
+  window.agRecExp = function(evt, id) {
+    if (evt.target.type === 'checkbox' || evt.target.tagName === 'BUTTON') return;
+    var row = document.getElementById('exp-' + id);
+    if (row) row.classList.toggle('open');
+  };
+  window.agRecCbChange = function(chk, id) {
+    if (chk.checked) AG_SEL[id] = true; else delete AG_SEL[id];
+    updateBulkBar();
+  };
+  window.agToggleAll = function(chk) {
+    var page = AG_PAGE.pending;
+    var start = (page - 1) * AG_PER_PAGE;
+    var slice = AG_REC.pending.slice(start, start + AG_PER_PAGE);
+    slice.forEach(function(r) { if (chk.checked) AG_SEL[r.rec_id] = true; else delete AG_SEL[r.rec_id]; });
+    renderTab('pending');
+    updateBulkBar();
+  };
+  window.agClearSelection = function() {
+    AG_SEL = {};
+    var master = document.getElementById('ag-chk-all');
+    if (master) master.checked = false;
+    renderTab('pending');
+    updateBulkBar();
+  };
+  function updateBulkBar() {
+    var count = Object.keys(AG_SEL).length;
+    var bar = document.getElementById('ag-bulk-bar');
+    var lbl = document.getElementById('ag-bulk-count');
+    if (bar) bar.style.display = count > 0 ? 'flex' : 'none';
+    if (lbl) lbl.textContent = count + ' selected';
+  }
+  window.agRecAccept = function(recId, btn) {
+    btn.disabled = true; btn.textContent = '...';
+    fetch('/recommendations/' + recId + '/accept', { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': getCSRFToken()} })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d.success) {
+          AG_REC.pending = AG_REC.pending.filter(function(r){ return r.rec_id !== recId; });
+          delete AG_SEL[recId];
+          agRecRenderAll();
           agShowToast('Recommendation accepted', 'success');
-        }, 300);
-      }
-    } else {
-      agShowToast(data.message || 'Failed to accept recommendation', 'error');
-      btn.disabled = false;
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Accept';
-    }
-  } catch (error) {
-    console.error('Error accepting recommendation:', error);
-    agShowToast('Error accepting recommendation', 'error');
-    btn.disabled = false;
-    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Accept';
-  }
-}
-
-async function agDeclineRec(recId, btn) {
-  if (!confirm('Decline this recommendation?')) return;
-
-  btn.disabled = true;
-  btn.textContent = 'Processing...';
-
-  try {
-    const response = await fetch(`/recommendations/${recId}/decline`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-    const data = await response.json();
-
-    if (data.success) {
-      const card = btn.closest('.rec-card');
-      if (card) {
-        card.classList.add('removing');
-        setTimeout(() => {
-          agRecommendations.pending = agRecommendations.pending.filter(r => r.rec_id !== recId);
-          agUpdateSummaryCounts();
-          agUpdateTabBadges();
-          agRenderCards('pending');
-          agShowToast('Recommendation declined', 'muted');
-        }, 300);
-      }
-    } else {
-      agShowToast(data.message || 'Failed to decline recommendation', 'error');
-      btn.disabled = false;
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Decline';
-    }
-  } catch (error) {
-    console.error('Error declining recommendation:', error);
-    agShowToast('Error declining recommendation', 'error');
-    btn.disabled = false;
-    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Decline';
-  }
-}
-
-// Show toast notification
-function agShowToast(message, type) {
-  let toastWrap = document.getElementById('act-toast-wrap');
-  if (!toastWrap) {
-    toastWrap = document.createElement('div');
-    toastWrap.id = 'act-toast-wrap';
-    document.body.appendChild(toastWrap);
-  }
-
-  const toast = document.createElement('div');
-  toast.className = `act-toast t-${type}`;
-  toast.textContent = message;
-
-  toastWrap.appendChild(toast);
-
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-}
-
-// Fetch recommendations when page loads
-if (document.getElementById("ag-tab-pending")) {
-  agFetchRecommendations();
-}
-
-// ===========================================================================
-// RUN ENGINE BUTTON HANDLER
-// ===========================================================================
-document.addEventListener('DOMContentLoaded', function() {
-  const runBtn = document.getElementById('ag-run-engine-btn');
-  if (runBtn) {
-    runBtn.addEventListener('click', function() {
-      this.disabled = true;
-      this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Running...';
-
-      fetch('/recommendations/run', {method: 'POST'})
-        .then(response => {
-          if (response.ok) {
-            agShowToast('Recommendations engine started', 'success');
-            setTimeout(() => location.reload(), 2000);
-          } else {
-            agShowToast('Failed to run engine', 'error');
-            this.disabled = false;
-            this.innerHTML = '<i class="bi bi-play-circle"></i> Run Recommendations Now';
-          }
-        })
-        .catch(error => {
-          console.error('Error running engine:', error);
-          agShowToast('Error running engine', 'error');
-          this.disabled = false;
-          this.innerHTML = '<i class="bi bi-play-circle"></i> Run Recommendations Now';
+        } else { agShowToast(d.message || 'Failed', 'error'); btn.disabled=false; btn.textContent='Accept'; }
+      })
+      .catch(function(){ agShowToast('Error', 'error'); btn.disabled=false; btn.textContent='Accept'; });
+  };
+  window.agRecDecline = function(recId, btn) {
+    btn.disabled = true; btn.textContent = '...';
+    fetch('/recommendations/' + recId + '/decline', { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': getCSRFToken()} })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d.success) {
+          AG_REC.pending = AG_REC.pending.filter(function(r){ return r.rec_id !== recId; });
+          delete AG_SEL[recId];
+          agRecRenderAll();
+          agShowToast('Recommendation declined', 'success');
+        } else { agShowToast(d.message || 'Failed', 'error'); btn.disabled=false; btn.textContent='Decline'; }
+      })
+      .catch(function(){ agShowToast('Error', 'error'); btn.disabled=false; btn.textContent='Decline'; });
+  };
+  window.agDoBulk = function(action) {
+    var ids = Object.keys(AG_SEL);
+    if (!ids.length) return;
+    var done = 0;
+    ids.forEach(function(id) {
+      fetch('/recommendations/' + id + '/' + action, { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': getCSRFToken()} })
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if (d.success) AG_REC.pending = AG_REC.pending.filter(function(r){ return r.rec_id !== id; });
+          done++;
+          if (done === ids.length) { AG_SEL = {}; agRecRenderAll(); agShowToast('Done', 'success'); }
         });
     });
-  }
-});
+  };
+  document.addEventListener('DOMContentLoaded', function() {
+    var runBtn = document.getElementById('ag-run-engine-btn');
+    if (runBtn) {
+      runBtn.addEventListener('click', function() {
+        var self = this;
+        self.disabled = true;
+        self.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Running...';
+        fetch('/recommendations/run', { method:'POST', headers:{'X-CSRFToken': getCSRFToken()} })
+          .then(function(r){ return r.json(); })
+          .then(function(d){ agShowToast(d.message || 'Engine started', 'success'); setTimeout(agRecLoad, 2000); })
+          .catch(function(){ agShowToast('Error', 'error'); })
+          .finally(function(){ self.disabled=false; self.innerHTML='<i class="bi bi-play-circle"></i> Run engine'; });
+      });
+    }
+    var lrBtn = document.getElementById('ag-accept-low-risk-btn');
+    if (lrBtn) {
+      lrBtn.addEventListener('click', function() {
+        var lowRisk = AG_REC.pending.filter(function(r){ return r.risk_level === 'low'; });
+        if (!lowRisk.length) { agShowToast('No low-risk recommendations pending', 'info'); return; }
+        lowRisk.forEach(function(r) { AG_SEL[r.rec_id] = true; });
+        window.agDoBulk('accept');
+      });
+    }
+    var recTabBtn = document.getElementById('recommendations-tab-btn');
+    if (recTabBtn) {
+      recTabBtn.addEventListener('shown.bs.tab', agRecLoad);
+    }
+  });
+  window.agRecLoad = agRecLoad;
+})();
 </script>
 {% endblock %}
