@@ -76,22 +76,22 @@
     <span class="rec-bulk-clear" id="pending-clear-sel">Clear selection</span>
   </div>
   <div class="table-wrapper">
-    <table class="table-styles">
+    <table class="table table-sm mb-0" id="rec-pending-table">
       <thead>
         <tr>
-          <th class="rec-col-cb"><input type="checkbox" id="pending-select-all" style="width:14px;height:14px;cursor:pointer;"></th>
-          <th class="rec-col-type">Type</th>
-          <th class="rec-col-name">Name</th>
-          <th class="rec-col-campaigns">Campaign/s name</th>
-          <th class="rec-col-rule">Rule name</th>
-          <th class="rec-col-plain">Plain English</th>
-          <th class="rec-col-ruleflag">Rule/Flag</th>
-          <th class="rec-col-ruletype">Rule type</th>
-          <th class="rec-col-conditions">Conditions</th>
-          <th class="rec-col-action">Action</th>
-          <th class="rec-col-risk">Risk</th>
-          <th class="rec-col-age">Age</th>
-          <th class="rec-col-acts"></th>
+          <th style="width:50px;"><input type="checkbox" id="pending-select-all" style="width:14px;height:14px;cursor:pointer;"></th>
+          <th class="rec-col-type" style="width:90px;">Type</th>
+          <th class="rec-col-name" style="width:140px;">Name</th>
+          <th class="rec-col-campaigns" style="width:140px;">Campaign/s name</th>
+          <th class="rec-col-rule" style="width:160px;">Rule name</th>
+          <th class="rec-col-plain" style="width:220px;">Plain English</th>
+          <th class="rec-col-ruleflag" style="width:80px;">Rule/Flag</th>
+          <th class="rec-col-ruletype" style="width:80px;">Rule type</th>
+          <th class="rec-col-conditions" style="width:180px;">Conditions</th>
+          <th class="rec-col-action" style="width:180px;">Action</th>
+          <th class="rec-col-risk" style="width:70px;">Risk</th>
+          <th class="rec-col-age" style="width:60px;">Age</th>
+          <th class="rec-col-acts" style="width:130px;"></th>
         </tr>
       </thead>
       <tbody id="pending-tbody"></tbody>
@@ -115,22 +115,22 @@
     <input class="form-control form-control-sm" style="width:200px;" placeholder="Search name or rule…" id="monitoring-search">
   </div>
   <div class="table-wrapper">
-    <table class="table-styles">
+    <table class="table table-sm mb-0" id="rec-monitoring-table">
       <thead>
         <tr>
-          <th class="rec-col-cb"></th>
-          <th class="rec-col-date">Accepted</th>
-          <th class="rec-col-progress">Monitoring progress</th>
-          <th class="rec-col-type">Type</th>
-          <th class="rec-col-name">Name</th>
-          <th class="rec-col-campaigns">Campaign/s name</th>
-          <th class="rec-col-rule">Rule name</th>
-          <th class="rec-col-plain">Plain English</th>
-          <th class="rec-col-ruleflag">Rule/Flag</th>
-          <th class="rec-col-ruletype">Rule type</th>
-          <th class="rec-col-conditions">Conditions</th>
-          <th class="rec-col-action">Action taken</th>
-          <th class="rec-col-risk">Risk</th>
+          <th style="width:50px;"></th>
+          <th class="rec-col-date" style="width:90px;">Accepted</th>
+          <th class="rec-col-progress" style="width:140px;">Monitoring progress</th>
+          <th class="rec-col-type" style="width:140px;">Type</th>
+          <th class="rec-col-name" style="width:160px;">Name</th>
+          <th class="rec-col-campaigns" style="width:220px;">Campaign/s name</th>
+          <th class="rec-col-rule" style="width:80px;">Rule name</th>
+          <th class="rec-col-plain" style="width:80px;">Plain English</th>
+          <th class="rec-col-ruleflag" style="width:180px;">Rule/Flag</th>
+          <th class="rec-col-ruletype" style="width:180px;">Rule type</th>
+          <th class="rec-col-conditions" style="width:70px;">Conditions</th>
+          <th class="rec-col-action" style="width:60px;">Action taken</th>
+          <th class="rec-col-risk" style="width:130px;">Risk</th>
         </tr>
       </thead>
       <tbody id="monitoring-tbody"></tbody>
@@ -149,22 +149,22 @@
     <input class="form-control form-control-sm" style="width:200px;" placeholder="Search name or rule…" id="successful-search">
   </div>
   <div class="table-wrapper">
-    <table class="table-styles">
+    <table class="table table-sm mb-0" id="rec-successful-table">
       <thead>
         <tr>
-          <th class="rec-col-cb"></th>
-          <th class="rec-col-date">Accepted</th>
-          <th class="rec-col-date">Completed</th>
-          <th class="rec-col-type">Type</th>
-          <th class="rec-col-name">Name</th>
-          <th class="rec-col-campaigns">Campaign/s name</th>
-          <th class="rec-col-rule">Rule name</th>
-          <th class="rec-col-plain">Plain English</th>
-          <th class="rec-col-ruleflag">Rule/Flag</th>
-          <th class="rec-col-ruletype">Rule type</th>
-          <th class="rec-col-conditions">Conditions</th>
-          <th class="rec-col-action">Action taken</th>
-          <th class="rec-col-risk">Risk</th>
+          <th style="width:50px;"></th>
+          <th class="rec-col-date" style="width:90px;">Accepted</th>
+          <th class="rec-col-date" style="width:140px;">Completed</th>
+          <th class="rec-col-type" style="width:140px;">Type</th>
+          <th class="rec-col-name" style="width:160px;">Name</th>
+          <th class="rec-col-campaigns" style="width:220px;">Campaign/s name</th>
+          <th class="rec-col-rule" style="width:80px;">Rule name</th>
+          <th class="rec-col-plain" style="width:80px;">Plain English</th>
+          <th class="rec-col-ruleflag" style="width:180px;">Rule/Flag</th>
+          <th class="rec-col-ruletype" style="width:180px;">Rule type</th>
+          <th class="rec-col-conditions" style="width:70px;">Conditions</th>
+          <th class="rec-col-action" style="width:60px;">Action taken</th>
+          <th class="rec-col-risk" style="width:130px;">Risk</th>
         </tr>
       </thead>
       <tbody id="successful-tbody"></tbody>
@@ -190,22 +190,22 @@
     <input class="form-control form-control-sm" style="width:200px;" placeholder="Search name or rule…" id="history-search">
   </div>
   <div class="table-wrapper">
-    <table class="table-styles">
+    <table class="table table-sm mb-0" id="rec-history-table">
       <thead>
         <tr>
-          <th class="rec-col-cb"></th>
-          <th class="rec-col-status">Outcome</th>
-          <th class="rec-col-date">Date actioned</th>
-          <th class="rec-col-type">Type</th>
-          <th class="rec-col-name">Name</th>
-          <th class="rec-col-campaigns">Campaign/s name</th>
-          <th class="rec-col-rule">Rule name</th>
-          <th class="rec-col-plain">Plain English</th>
-          <th class="rec-col-ruleflag">Rule/Flag</th>
-          <th class="rec-col-ruletype">Rule type</th>
-          <th class="rec-col-conditions">Conditions</th>
-          <th class="rec-col-action">Action</th>
-          <th class="rec-col-risk">Risk</th>
+          <th style="width:50px;"></th>
+          <th class="rec-col-status" style="width:90px;">Outcome</th>
+          <th class="rec-col-date" style="width:140px;">Date actioned</th>
+          <th class="rec-col-type" style="width:140px;">Type</th>
+          <th class="rec-col-name" style="width:160px;">Name</th>
+          <th class="rec-col-campaigns" style="width:220px;">Campaign/s name</th>
+          <th class="rec-col-rule" style="width:80px;">Rule name</th>
+          <th class="rec-col-plain" style="width:80px;">Plain English</th>
+          <th class="rec-col-ruleflag" style="width:180px;">Rule/Flag</th>
+          <th class="rec-col-ruletype" style="width:180px;">Rule type</th>
+          <th class="rec-col-conditions" style="width:70px;">Conditions</th>
+          <th class="rec-col-action" style="width:60px;">Action</th>
+          <th class="rec-col-risk" style="width:130px;">Risk</th>
         </tr>
       </thead>
       <tbody id="history-tbody"></tbody>
@@ -298,7 +298,8 @@ function actionCell(r) {
   var icon = dir === 'increase' ? '↑ ' : dir === 'decrease' ? '↓ ' : dir === 'pause' ? '⏸ ' : dir === 'enable' ? '▶ ' : '';
   var label = r.action_label || (icon + (dir.charAt(0).toUpperCase() + dir.slice(1)));
   var sub = r.value_label ? (r.value_label + (r.value_suffix ? ' ' + r.value_suffix : '')) : '';
-  return '<div><span class="rec-action-text ' + cls + '">' + esc(label) + '</span>'
+  var hum = (r.risk_level || '').toLowerCase() === 'high' ? '<div class="rec-human-badge"><i class="bi bi-exclamation-triangle-fill"></i> Human confirm</div>' : '';
+  return hum + '<div><span class="rec-action-text ' + cls + '">' + esc(label) + '</span>'
     + (sub ? '<div class="rec-action-sub">' + esc(sub) + '</div>' : '')
     + '</div>';
 }
@@ -430,7 +431,7 @@ function renderPending() {
   pageRows.forEach(function(r) {
     var isSel = pendingSel.has(r.rec_id);
     html += '<tr class="data-row' + (isSel ? ' rec-selected' : '') + '" data-id="' + esc(r.rec_id) + '">'
-      + '<td class="rec-col-cb"><input type="checkbox" class="pending-cb" data-id="' + esc(r.rec_id) + '" ' + (isSel ? 'checked' : '') + ' style="width:14px;height:14px;cursor:pointer;"></td>'
+      + '<td><input type="checkbox" class="pending-cb" data-id="' + esc(r.rec_id) + '" ' + (isSel ? 'checked' : '') + ' style="width:14px;height:14px;cursor:pointer;"></td>'
       + '<td class="rec-col-type">' + typePill(r.entity_type) + '</td>'
       + '<td class="rec-col-name" style="font-weight:500;">' + esc(r.entity_name || r.campaign_name || '—') + '</td>'
       + '<td class="rec-col-campaigns" style="font-size:12px;color:#5f6368;">' + esc(r.campaign_name || '—') + '</td>'
@@ -443,7 +444,6 @@ function renderPending() {
       + '<td class="rec-col-risk">' + riskBadge(r) + '</td>'
       + '<td class="rec-col-age" style="font-size:11px;color:#9aa0a6;">' + esc(r.generated_ago || '—') + '</td>'
       + '<td class="rec-col-acts">'
-      + humanBadge(r)
       + '<div class="rec-row-acts">'
       + '<button class="rec-row-btn rec-row-btn-accept" data-action="accept" data-id="' + esc(r.rec_id) + '">Accept</button>'
       + '<button class="rec-row-btn rec-row-btn-decline" data-action="decline" data-id="' + esc(r.rec_id) + '">Decline</button>'
@@ -485,7 +485,7 @@ function renderMonitoring() {
   var html = '';
   pageRows.forEach(function(r) {
     html += '<tr class="data-row" data-id="' + esc(r.rec_id) + '">'
-      + '<td class="rec-col-cb"></td>'
+      + '<td></td>'
       + '<td class="rec-col-date" style="font-size:12px;color:#5f6368;">' + fmtDate(r.accepted_at) + '</td>'
       + '<td class="rec-col-progress">' + progressBar(r) + '</td>'
       + '<td class="rec-col-type">' + typePill(r.entity_type) + '</td>'
@@ -526,7 +526,7 @@ function renderSuccessful() {
   var html = '';
   pageRows.forEach(function(r) {
     html += '<tr class="data-row" data-id="' + esc(r.rec_id) + '">'
-      + '<td class="rec-col-cb"></td>'
+      + '<td></td>'
       + '<td class="rec-col-date" style="font-size:12px;color:#5f6368;">' + fmtDate(r.accepted_at) + '</td>'
       + '<td class="rec-col-date" style="font-size:12px;color:#5f6368;">' + fmtDate(r.completed_at || r.resolved_at) + '</td>'
       + '<td class="rec-col-type">' + typePill(r.entity_type) + '</td>'
@@ -575,7 +575,7 @@ function renderHistory() {
   pageRows.forEach(function(r) {
     var dateActioned = r.accepted_at || r.updated_at;
     html += '<tr class="data-row" data-id="' + esc(r.rec_id) + '">'
-      + '<td class="rec-col-cb"></td>'
+      + '<td></td>'
       + '<td class="rec-col-status">' + outcomeBadge(r.status) + '</td>'
       + '<td class="rec-col-date" style="font-size:12px;color:#5f6368;">' + fmtDate(dateActioned) + '</td>'
       + '<td class="rec-col-type">' + typePill(r.entity_type) + '</td>'

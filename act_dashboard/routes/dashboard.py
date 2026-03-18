@@ -404,7 +404,7 @@ def home() -> str:
         chart_end_date = date_to
     else:
         # Preset mode (7d, 30d, 90d) - calculate dates
-        from datetime import datetime, timedelta
+        from datetime import timedelta
         end_dt = datetime.now().date()
         start_dt = end_dt - timedelta(days=active_days)
         chart_start_date = start_dt.isoformat()

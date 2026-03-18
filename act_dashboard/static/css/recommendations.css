@@ -345,15 +345,27 @@
    Apply to <th> and <td> elements per column
    ---------------------------------------------------------------------------- */
 
-.rec-col-cb         { width: 36px;   min-width: 36px;   max-width: 36px;   }
+.rec-col-cb         { padding: 8px 6px; }
+
+/* Override text-transform: uppercase from custom.css .table th rule */
+th.rec-col-cb, th.rec-col-type, th.rec-col-name, th.rec-col-campaigns,
+th.rec-col-rule, th.rec-col-plain, th.rec-col-ruleflag, th.rec-col-ruletype,
+th.rec-col-conditions, th.rec-col-action, th.rec-col-risk, th.rec-col-age,
+th.rec-col-date, th.rec-col-progress, th.rec-col-status, th.rec-col-acts {
+    text-transform: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: #5f6368;
+    letter-spacing: 0;
+}
 .rec-col-type       { min-width: 90px;  max-width: 110px;  }
 .rec-col-name       { min-width: 130px; max-width: 200px;  }
 .rec-col-campaigns  { min-width: 130px; max-width: 200px;  }
-.rec-col-rule       { min-width: 140px; max-width: 200px;  }
-.rec-col-plain      { min-width: 200px; max-width: 280px;  }
+.rec-col-rule       { min-width: 140px; max-width: 200px; white-space: normal; word-break: break-word; }
+.rec-col-plain      { min-width: 200px; max-width: 280px;  white-space: normal; word-wrap: break-word; }
 .rec-col-ruleflag   { min-width: 70px;  max-width: 90px;   }
 .rec-col-ruletype   { min-width: 70px;  max-width: 90px;   }
-.rec-col-conditions { min-width: 160px; max-width: 220px;  }
+.rec-col-conditions { min-width: 160px; max-width: 220px;  white-space: normal; word-wrap: break-word; }
 .rec-col-action     { min-width: 160px; max-width: 200px;  }
 .rec-col-risk       { min-width: 70px;  max-width: 90px;   }
 .rec-col-age        { min-width: 50px;  max-width: 70px;   }
@@ -387,3 +399,4 @@ tbody tr.rec-selected:hover td {
 .rec-tab-slim .rec-col-type {
     display: none;
 }
+

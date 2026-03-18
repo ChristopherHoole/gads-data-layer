@@ -64,18 +64,30 @@ def get_action_label(rec: dict) -> str:
     action_magnitude = rec.get('action_magnitude', 0)
     rule_type = rec.get('rule_type', '')
     
+    action_type = rec.get('action_type', '')
+
     # Campaign actions
     if entity_type == 'campaign':
         if action_direction == 'increase':
             if rule_type == 'budget':
                 return f"Increase daily budget by {action_magnitude}%"
             elif rule_type == 'bid':
-                return f"Increase tROAS target by {action_magnitude}%"
+                if 'max_cpc' in action_type:
+                    return f"Increase Max CPC cap by {action_magnitude}%"
+                elif 'tcpa' in action_type or 'target_cpa' in action_type:
+                    return f"Increase tCPA target by {action_magnitude}%"
+                else:
+                    return f"Increase tROAS target by {action_magnitude}%"
         elif action_direction == 'decrease':
             if rule_type == 'budget':
                 return f"Decrease daily budget by {action_magnitude}%"
             elif rule_type == 'bid':
-                return f"Decrease tROAS target by {action_magnitude}%"
+                if 'max_cpc' in action_type:
+                    return f"Lower Max CPC cap by {action_magnitude}%"
+                elif 'tcpa' in action_type or 'target_cpa' in action_type:
+                    return f"Decrease tCPA target by {action_magnitude}%"
+                else:
+                    return f"Decrease tROAS target by {action_magnitude}%"
         elif action_direction == 'pause':
             return "Pause campaign"
         elif action_direction == 'enable':
@@ -104,12 +116,22 @@ def get_action_label(rec: dict) -> str:
             if rule_type == 'budget':
                 return f"Increase shopping budget by {action_magnitude}%"
             elif rule_type == 'bid':
-                return f"Increase shopping tROAS by {action_magnitude}%"
+                if 'max_cpc' in action_type:
+                    return f"Increase Max CPC cap by {action_magnitude}%"
+                elif 'tcpa' in action_type or 'target_cpa' in action_type:
+                    return f"Increase tCPA target by {action_magnitude}%"
+                else:
+                    return f"Increase shopping tROAS by {action_magnitude}%"
         elif action_direction == 'decrease':
             if rule_type == 'budget':
                 return f"Decrease shopping budget by {action_magnitude}%"
             elif rule_type == 'bid':
-                return f"Decrease shopping tROAS by {action_magnitude}%"
+                if 'max_cpc' in action_type:
+                    return f"Lower Max CPC cap by {action_magnitude}%"
+                elif 'tcpa' in action_type or 'target_cpa' in action_type:
+                    return f"Decrease tCPA target by {action_magnitude}%"
+                else:
+                    return f"Decrease shopping tROAS by {action_magnitude}%"
         elif action_direction == 'pause':
             return "Pause shopping campaign"
         elif action_direction == 'enable':
@@ -177,10 +199,28 @@ def _ensure_changes_table(conn):
 
 def _load_monitoring_days(rule_id):
     """
-    Read rules_config.json and return monitoring config for the given rule_id.
+    Return monitoring config for the given rule_id.
+    - DB rules (rule_id starts with "db_campaign_"): query cooldown_days from warehouse.duckdb
+    - JSON rules (e.g. "budget_1"): read from rules_config.json
     Returns dict: {"monitoring_days": int, "monitoring_minutes": int}
     Returns {"monitoring_days": 0, "monitoring_minutes": 0} if rule not found.
     """
+    if rule_id.startswith("db_campaign_"):
+        try:
+            db_id = int(rule_id.split("db_campaign_")[1])
+            conn = duckdb.connect("warehouse.duckdb")
+            try:
+                row = conn.execute("SELECT cooldown_days FROM rules WHERE id = ?", [db_id]).fetchone()
+            finally:
+                conn.close()
+            if row:
+                cooldown_days = int(row[0])
+                print("[RECOMMENDATIONS] DB rule {} monitoring_days={}".format(rule_id, cooldown_days))
+                return {"monitoring_days": cooldown_days, "monitoring_minutes": 0}
+        except Exception as e:
+            print("[RECOMMENDATIONS] Could not load DB rule {}: {}".format(rule_id, e))
+        return {"monitoring_days": 0, "monitoring_minutes": 0}
+
     try:
         path = os.path.normpath(_RULES_CONFIG_PATH)
         with open(path, "r") as f:
@@ -474,18 +514,30 @@ def _enrich_rec(rec):
         rec["monitoring_remaining"]    = 0
         rec["monitoring_progress_pct"] = 0
 
+    # Round raw values to avoid float precision noise (e.g. 3.5999999046325684)
+    if rec.get("current_value") is not None:
+        rec["current_value"]  = round(rec["current_value"],  2)
+    if rec.get("proposed_value") is not None:
+        rec["proposed_value"] = round(rec["proposed_value"], 2)
+
     # Value display
-    rule_type = rec.get("rule_type", "")
+    rule_type  = rec.get("rule_type", "")
+    action_type = rec.get("action_type", "")
+    cur  = rec["current_value"]  or 0
+    prop = rec["proposed_value"] or 0
     if rule_type == "budget":
-        rec["value_label"]  = "£{:.2f} → £{:.2f}".format(
-            rec["current_value"] or 0, rec["proposed_value"] or 0
-        )
+        rec["value_label"]  = "£{:.2f} → £{:.2f}".format(cur, prop)
         rec["value_suffix"] = "daily"
     elif rule_type == "bid":
-        rec["value_label"]  = "{:.2f}x → {:.2f}x tROAS".format(
-            rec["current_value"] or 0, rec["proposed_value"] or 0
-        )
-        rec["value_suffix"] = "target"
+        if "max_cpc" in action_type:
+            rec["value_label"]  = "£{:.2f} → £{:.2f}".format(cur, prop)
+            rec["value_suffix"] = "max CPC"
+        elif "tcpa" in action_type or "target_cpa" in action_type:
+            rec["value_label"]  = "£{:.2f} → £{:.2f}".format(cur, prop)
+            rec["value_suffix"] = "tCPA"
+        else:
+            rec["value_label"]  = "{:.2f}x → {:.2f}x tROAS".format(cur, prop)
+            rec["value_suffix"] = "target"
     else:
         rec["value_label"]  = ""
         rec["value_suffix"] = ""
@@ -801,6 +853,8 @@ _ACTION_TYPE_TO_RULE_TYPE = {
     "decrease_target_cpa":  "bid",
     "increase_max_cpc_cap": "bid",
     "decrease_max_cpc_cap": "bid",
+    "increase_max_cpc":     "bid",
+    "decrease_max_cpc":     "bid",
     "pause":                "status",
     "enable":               "status",
 }
@@ -822,40 +876,53 @@ _METRIC_LABELS = {
     "spend_7d": "Spend (7d)", "spend_14d": "Spend (14d)",
 }
 
-_OP_SYMBOLS = {">=": "≥", "<=": "≤", ">": ">", "<": "<", "==": "=", "=": "=", "!=": "≠"}
+_OP_SYMBOLS = {">=": "≥", "<=": "≤", ">": ">", "<": "<", "==": "=", "=": "=", "!=": "≠", "gt": ">", "lt": "<", "gte": "≥", "lte": "≤", "eq": "="}
 
 _CURRENCY_METRIC_PARTS = {"cost", "cpc", "cpa", "budget", "spend", "value"}
 
 
 def _format_condition_item(cond):
-    """Format a single condition dict into a plain-English string."""
-    metric = cond.get("metric", "")
+    """Format a single condition dict into a plain-English string.
+    
+    Schema: metric + op + value (numeric threshold) + ref (unit type: x_target, absolute, pct)
+    Also supports legacy: metric + operator + condition_value + condition_unit
+    """
+    metric = cond.get("metric", "") or cond.get("condition_metric", "")
     op = cond.get("op") or cond.get("operator", "")
-    ref = cond.get("ref")
+    # value = numeric threshold; ref = unit/reference type
+    value = cond.get("value") if cond.get("value") is not None else cond.get("ref")
+    ref_type = cond.get("ref") if cond.get("value") is not None else cond.get("unit", "")
     unit = cond.get("unit", "") or ""
 
     metric_label = _METRIC_LABELS.get(metric, metric.replace("_", " ").title())
     op_symbol = _OP_SYMBOLS.get(str(op).strip(), str(op))
 
-    if ref is None:
+    if value is None:
         return metric_label
 
-    unit_str = str(unit).lower()
-    if "target" in unit_str or unit_str in ("x_target", "×target"):
-        ref_str = "{}× target".format(ref)
-    elif unit_str in ("pct", "percent", "%"):
-        ref_str = "{}%".format(ref)
-    elif any(p in metric for p in _CURRENCY_METRIC_PARTS):
+    ref_type_str = str(ref_type or unit or "").lower()
+
+    # Determine how to format the value based on ref_type
+    if "target" in ref_type_str or ref_type_str in ("x_target", "×target"):
+        # e.g. value=1.2, ref=x_target -> "1.2× target"
         try:
-            ref_str = "£{:,.2f}".format(float(ref)).rstrip("0").rstrip(".")
+            fval = float(value)
+            ref_str = "{}× target".format(int(fval) if fval == int(fval) else fval)
         except (ValueError, TypeError):
-            ref_str = "£{}".format(ref)
+            ref_str = "× target"
+    elif ref_type_str in ("pct", "percent", "%"):
+        ref_str = "{}%".format(value)
+    elif ref_type_str in ("absolute", "") and any(p in metric for p in _CURRENCY_METRIC_PARTS):
+        try:
+            ref_str = "£{:,.2f}".format(float(value)).rstrip("0").rstrip(".")
+        except (ValueError, TypeError):
+            ref_str = str(value)
     else:
         try:
-            fval = float(ref)
+            fval = float(value)
             ref_str = str(int(fval)) if fval == int(fval) else str(fval)
         except (ValueError, TypeError):
-            ref_str = str(ref)
+            ref_str = str(value)
 
     return "{} {} {}".format(metric_label, op_symbol, ref_str).strip()
 
@@ -937,6 +1004,7 @@ def _enrich_with_rule_data(rec, rule_data_map):
     rec["conditions"]      = _format_conditions(rule_data.get("conditions_raw"))
     rec["risk_level"]      = rule_data.get("risk_level") or rec.get("risk_level", "")
     rec["cooldown_days"]   = rule_data.get("cooldown_days")
+    rec["action_type"]     = rule_data.get("action_type", "")
 
     # Derive display rule_type from action_type + entity_type
     action_type  = rule_data.get("action_type") or ""
@@ -971,6 +1039,23 @@ def recommendations_cards():
     rule_data_map = _build_rule_data_map()
     for rec in (pending_recs + monitoring_recs + successful_recs + reverted_recs + declined_recs):
         _enrich_with_rule_data(rec, rule_data_map)
+
+    # Re-calculate action_label / value_label / value_suffix now that action_type is populated
+    for rec in (pending_recs + monitoring_recs + successful_recs + reverted_recs + declined_recs):
+        rec["action_label"] = get_action_label(rec)
+        if rec.get("rule_type") == "bid":
+            action_type = rec.get("action_type", "")
+            cur  = rec.get("current_value")  or 0
+            prop = rec.get("proposed_value") or 0
+            if "max_cpc" in action_type:
+                rec["value_label"]  = "£{:.2f} → £{:.2f}".format(cur, prop)
+                rec["value_suffix"] = "max CPC"
+            elif "tcpa" in action_type or "target_cpa" in action_type:
+                rec["value_label"]  = "£{:.2f} → £{:.2f}".format(cur, prop)
+                rec["value_suffix"] = "tCPA"
+            else:
+                rec["value_label"]  = "{:.2f}x → {:.2f}x tROAS".format(cur, prop)
+                rec["value_suffix"] = "target"
 
     def _serialise(rec):
         out = {}

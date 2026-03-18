@@ -358,9 +358,9 @@
     "cooldown_days": 14,
     "monitoring_days": 14,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-25T19:00:00",
-    "updated_at": "2026-03-17T16:20:03"
+    "updated_at": "2026-03-17T16:42:42"
   },
   {
     "rule_id": "keyword_2",
@@ -384,9 +384,9 @@
     "cooldown_days": 14,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-25T19:00:00",
-    "updated_at": "2026-03-17T16:20:04"
+    "updated_at": "2026-03-17T16:42:43"
   },
   {
     "rule_id": "keyword_3",
@@ -410,9 +410,9 @@
     "cooldown_days": 14,
     "monitoring_days": 14,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-25T19:00:00",
-    "updated_at": "2026-03-02T19:33:23"
+    "updated_at": "2026-03-17T16:42:44"
   },
   {
     "rule_id": "keyword_4",
@@ -436,9 +436,9 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-25T19:00:00",
-    "updated_at": "2026-02-25T19:00:00"
+    "updated_at": "2026-03-17T16:42:45"
   },
   {
     "rule_id": "keyword_5",
@@ -462,9 +462,9 @@
     "cooldown_days": 14,
     "monitoring_days": 14,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-25T19:00:00",
-    "updated_at": "2026-02-25T19:00:00"
+    "updated_at": "2026-03-17T16:42:46"
   },
   {
     "rule_id": "keyword_6",
@@ -488,9 +488,9 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-25T19:00:00",
-    "updated_at": "2026-02-25T19:00:00"
+    "updated_at": "2026-03-17T16:42:47"
   },
   {
     "rule_id": "ad_group_1",
@@ -514,9 +514,9 @@
     "cooldown_days": 14,
     "monitoring_days": 14,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-03-17T16:19:45"
+    "updated_at": "2026-03-17T16:42:31"
   },
   {
     "rule_id": "ad_group_2",
@@ -540,9 +540,9 @@
     "cooldown_days": 14,
     "monitoring_days": 14,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-03-17T16:19:46"
+    "updated_at": "2026-03-17T16:42:32"
   },
   {
     "rule_id": "ad_group_3",
@@ -566,9 +566,9 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-03-17T16:42:33"
   },
   {
     "rule_id": "ad_group_4",
@@ -592,9 +592,9 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-03-17T16:42:35"
   },
   {
     "rule_id": "ad_1",
@@ -618,9 +618,9 @@
     "cooldown_days": 14,
     "monitoring_days": 14,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-03-17T16:22:41"
+    "updated_at": "2026-03-17T16:42:52"
   },
   {
     "rule_id": "ad_2",
@@ -644,9 +644,9 @@
     "cooldown_days": 14,
     "monitoring_days": 14,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-03-17T16:22:41"
+    "updated_at": "2026-03-17T16:42:53"
   },
   {
     "rule_id": "ad_3",
@@ -670,9 +670,9 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-03-17T16:42:53"
   },
   {
     "rule_id": "ad_4",
@@ -696,9 +696,9 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-03-17T16:42:55"
   },
   {
     "rule_id": "shopping_1",
@@ -774,9 +774,9 @@
     "cooldown_days": 14,
     "monitoring_days": 14,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-03-17T16:43:00"
   },
   {
     "rule_id": "shopping_4",
@@ -800,9 +800,9 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-03-17T16:43:02"
   },
   {
     "rule_id": "shopping_5",
@@ -826,9 +826,9 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-03-17T16:43:03"
   },
   {
     "rule_id": "shopping_6",
@@ -852,9 +852,9 @@
     "cooldown_days": 14,
     "monitoring_days": 14,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-03-17T16:43:04"
   },
   {
     "rule_id": "shopping_7",
@@ -878,9 +878,9 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-03-17T16:43:05"
   },
   {
     "rule_id": "shopping_8",
@@ -904,9 +904,9 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-03-17T16:43:06"
   },
   {
     "rule_id": "shopping_9",
@@ -930,9 +930,9 @@
     "cooldown_days": 14,
     "monitoring_days": 14,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-03-17T16:43:06"
   },
   {
     "rule_id": "shopping_10",
@@ -956,9 +956,9 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-03-17T16:43:08"
   },
   {
     "rule_id": "shopping_11",
@@ -982,9 +982,9 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-03-17T16:43:08"
   },
   {
     "rule_id": "shopping_12",
@@ -1008,9 +1008,9 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-03-17T16:43:10"
   },
   {
     "rule_id": "shopping_13",
@@ -1034,9 +1034,9 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-03-17T16:43:10"
   },
   {
     "rule_id": "shopping_14",
@@ -1060,8 +1060,8 @@
     "cooldown_days": 7,
     "monitoring_days": 7,
     "monitoring_minutes": 0,
-    "enabled": true,
+    "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-02-26T00:00:00"
+    "updated_at": "2026-03-17T16:43:12"
   }
 ]
