@@ -1,6 +1,6 @@
 # PROJECT ROADMAP - Ads Control Tower (A.C.T.)
 
-**Last Updated:** 2026-03-15
+**Last Updated:** 2026-03-18
 **Overall Completion:** ~99.9%
 **Architecture:** 2-Tier (Master Chat → Claude Code)
 **Local:** `C:\Users\User\Desktop\gads-data-layer`
@@ -8,130 +8,110 @@
 
 ---
 
-## ✅ COMPLETED PHASES
+## COMPLETED PHASES
 
 | Phase | Chats | Status |
 |-------|-------|--------|
-| Foundation (Flask, DuckDB, auth, multi-client) | 1–17 | ✅ Complete |
-| Code Cleanup (blueprints, validation, logging) | 18–21 | ✅ Complete |
-| Dashboard 3.0 M1–M9 (date picker → live keyword execution) | 22–30b | ✅ Complete |
-| Marketing Website (Next.js, Vercel, christopherhoole.com) | 31 + Master 4.0 | ✅ Complete |
-| Rules Creation (57 rules/flags across 5 entity types) | 41–46 | ✅ Complete |
-| Multi-Entity Recommendations (1,515 active) | 47–49 | ✅ Complete |
-| Module 4: Dashboard Design Upgrade (Google Ads-style tables) | 57–58 | ✅ Complete |
-| Cold Outreach System — UI (6 pages) | 59–64 | ✅ Complete |
-| Real Data Ingestion Pipeline | 67 | ✅ Complete (blocked on API access) |
-| Live Email Sending (Gmail SMTP) | 68 | ✅ Complete |
-| Outreach Functions + UI Polish | 69–80 | ✅ Complete |
-| UI Cleanup (layout gap, client selector, rules card) | 81–83 | ✅ Complete |
-| Website + CV Polish (CV download, SEO, WhatsApp, LinkedIn) | 84–87 | ✅ Complete |
-| ad_daily Table + Database Indexes | 88 | ✅ Complete |
-| Unit Tests (pytest 80%+, 620 tests) | 89 | ✅ Complete |
-| Celery + Redis Background Job Queue | 90 | ✅ Complete |
-| Rules & Flags UI Overhaul — Chat 91 | 91 | ✅ Complete |
-| Impression Share Pipeline + CAMPAIGN_METRIC_MAP — Chat 92 | 92 | ✅ Complete |
-| Templates Tab — Chat 93 | 93 | ✅ Complete |
+| Foundation (Flask, DuckDB, auth, multi-client) | 1–17 | Complete |
+| Code Cleanup (blueprints, validation, logging) | 18–21 | Complete |
+| Dashboard 3.0 M1–M9 | 22–30b | Complete |
+| Marketing Website | 31 + Master 4.0 | Complete |
+| Rules Creation | 41–46 | Complete |
+| Multi-Entity Recommendations | 47–49 | Complete |
+| Dashboard Design Upgrade | 57–58 | Complete |
+| Cold Outreach System | 59–64 | Complete |
+| Real Data Ingestion Pipeline | 67 | Complete (blocked on API) |
+| Live Email Sending | 68 | Complete |
+| Outreach Functions + UI Polish | 69–80 | Complete |
+| UI Cleanup | 81–83 | Complete |
+| Website + CV Polish | 84–87 | Complete |
+| ad_daily Table + Database Indexes | 88 | Complete |
+| Unit Tests (pytest 80%+, 620 tests) | 89 | Complete |
+| Celery + Redis Background Job Queue | 90 | Complete |
+| Rules & Flags UI Overhaul | 91 | Complete |
+| Impression Share Pipeline + CAMPAIGN_METRIC_MAP | 92 | Complete |
+| Templates Tab | 93 | Complete |
+| Recommendations Engine Testing + Fixes | 97–100 | Complete |
 
 ---
 
-## ✅ CHAT 91 — RULES & FLAGS UI OVERHAUL
+## CHATS 97-100 — RECOMMENDATIONS ENGINE TESTING + FIXES
 
-**Commits:** 86d0eb6, 4bae83d
+**Commits:** 30decda, 61002f3
 
-- `rules_flow_builder.html` — 5-step modal, condition/action dropdowns, sidebar, full metric list
-- `rules_flags_tab.html` — Rules table, Flags table (direction labels, plain English, condition text, badge colours)
-- `rules.css` — all rules styling
-- Schema normalisation: handles both `op`/`ref` and `operator`/`unit` condition schemas
-- Fixed: unescaped apostrophes in JS strings causing SyntaxError
+**Chat 97 — UI Fixes:**
+- Accept goes to Monitoring correctly — _load_monitoring_days reads cooldown_days from DB
+- Action labels + value labels correct — second pass after action_type is populated
+- Rule name column wraps; Human confirm badge stacked above action text
+- Status rules expand row shows "Enabled → Paused"
 
----
+**Chat 99 — Engine Fixes:**
+- CPC/CPA/cost: 4th tuple element (1_000_000 divisor) in metric maps
+- Rules 19 & 20: op=None fixed
+- impression_share_lost_rank: fallback to (1 - search_impression_share) * 100
 
-## ✅ CHAT 92 — IMPRESSION SHARE PIPELINE + METRIC MAP
-
-**Commit:** 060fe2a
-
-- `act_lighthouse/features.py` — added `impression_share_lost_rank` column (7d rolling avg)
-- `scripts/add_impression_share_col.py` — migration script
-- `act_autopilot/recommendations_engine.py` — `CAMPAIGN_METRIC_MAP` expanded from 9 → 38 entries
+**Chat 100 — Date Fix:**
+- Engine loads only most recent valid snapshot date — MAX(snapshot_date) WHERE name IS NOT NULL
 
 ---
 
-## ✅ CHAT 93 — TEMPLATES TAB
+## NEXT PRIORITIES — Master Chat 12 (in progress)
 
-**Commit:** 342c8d8
+**DASHBOARD — ACT**
+1. Test budget rules — enable all 18 budget rules, run engine, verify recs
+2. Test flags — enable all 30 flags, run engine, verify flag behaviour
+3. Fix Keywords search terms — DATE/VARCHAR mismatch in keywords.py line 187
+4. Fix Shopping page query — table alias s not found in shopping.py line 108
+5. Fix trigger summary label — rule 19 shows ROAS not CPA
+6. Rules strategic review — thresholds, cooldowns, conditions for all 24 rules
+7. Radar / monitoring — post-acceptance monitoring, rollback triggers
+8. Real data ingestion — blocked on API Basic Access
+9. Conversion tracking checkup on account 487-268-1731
+10. Smart alerts, automated report generator, Memurai install, unit tests update
+11. Campaign type expansion (PMax, Display, Video, Demand Gen)
+12. Multi-user support, API endpoints, ACT deployment
 
-- `scripts/add_is_template_col.py` — adds `is_template BOOLEAN DEFAULT FALSE` to rules table
-- `act_dashboard/routes/campaigns.py` — save-as-template route, duplicate detection (type + action_type + condition_1_metric)
-- `rules_flags_tab.html` — Templates table (live data), save-as-template bookmark button on every row, Edit template button
-- `rules_flow_builder.html` — Edit template mode, Use template footer button, template name label, Save template button text
-- **DB state:** 24 rules + 30 flags = 54 total rows (cleaned of test duplicates)
-- **Key fixes:** conn must open before duplicate check; json_extract_string not JSON_EXTRACT; state vars set after rfbResetForm()
-
----
-
-## 🎯 NEXT PRIORITIES — Master Chat 12
-
-### DASHBOARD — ACT
-1. Rules strategic review — thresholds, cooldowns, conditions, logic for all 24 rules
-2. Recommendations UI review — scoring, prioritisation, entity-specific behaviour
-3. Radar / monitoring — post-acceptance monitoring, rollback triggers
-4. Real data ingestion — blocked on API Basic Access
-5. Conversion tracking checkup on account 487-268-1731
-6. Smart alerts (ROAS drop, budget pacing)
-7. Automated report generator
-8. Memurai install for Celery
-9. Unit tests update — ~30-40% of rule tests need rewrite after rules review
-10. Performance Max campaign support
-11. Display campaign support
-12. Video/YouTube campaign support
-13. Demand Gen campaign support
-14. Multi-user support
-15. API endpoints
-16. ACT deployment (Railway/Render — security hardening first)
-17. Custom domain (app.christopherhoole.com)
-
-### OUTREACH
+**OUTREACH**
 1. Apollo.io lead import
 2. Automated email reports (weekly/monthly)
 3. Indeed job listing connector
 
-### WEBSITE
+**WEBSITE**
 1. Website design upgrade / Hero upgrade
 2. Mobile performance optimisation
-3. Contact form backend (currently manual)
+3. Contact form backend
 
-### GOOGLE ADS — EXTERNAL (monitor only)
+**GOOGLE ADS — EXTERNAL (monitor only)**
 1. API Basic Access — Case 21767540705
 2. Advertiser verification — Appeal ID 6448619522, account 487-268-1731
 
-### ADMIN
+**ADMIN**
 1. Handoff docs produced at end of each Master Chat session
 
 ---
 
-## 📊 CURRENT SYSTEM STATE
+## CURRENT SYSTEM STATE
 
 **Rules & Flags (Campaign entity):**
 - Rules: 24 (18 Budget, 6 Bid) — all enabled
 - Flags: 30 (16 Performance, 8 Anomaly, 6 Technical) — all enabled
-- Templates: 0 (clean slate — create via bookmark button on any rule/flag)
-- Total rows: 54
+- Templates: 3
+- Total rows: 57
 
-**Recommendations:** 1,515 active (1,256 keywords + 126 shopping + 110 campaigns + 23 ads)
+**Recommendations:** 0 (cleared for testing)
 
 **Tests:** 620 tests, 0 failures, 80% coverage
 
 **Background Jobs:** Celery + Redis (requires Memurai install)
-- outreach_poller 120s | queue_scheduler 300s | radar 60s
 
 **Google Ads:**
 - Account 487-268-1731 — suspended, appeal in review (ID 6448619522)
-- Account 125-489-5944 — active, Campaign 1 running, Manual CPC £3, England
-- API: Explorer Access (upgraded from Test Account March 2026), Basic Access pending (Case 21767540705)
+- Account 125-489-5944 — active
+- API: Explorer Access, Basic Access pending (Case 21767540705)
 
 ---
 
-## 🔧 DEVELOPMENT WORKFLOW
+## DEVELOPMENT WORKFLOW
 
 **Flask:**
 ```powershell
@@ -141,12 +121,15 @@ cd C:\Users\User\Desktop\gads-data-layer
 python act_dashboard/app.py
 ```
 
-**Git (ACT):** `git push origin main`
-**Git (Website):** `git push origin master`
+**Clear recommendations and changes:**
+```powershell
+python -c "import duckdb; conn = duckdb.connect('warehouse.duckdb'); conn.execute('DELETE FROM recommendations'); conn.execute('DELETE FROM changes'); print('Cleared'); conn.close()"
+```
 
+**Git (ACT):** `git push origin main`
 **Claude Code:** Code tab in Claude Desktop App only — NOT PowerShell.
-**Briefs:** Always save as downloadable files to `/docs/` — never inline in chat.
+**Briefs:** Always save as downloadable files to /docs/ — never inline in chat.
 
 ---
 
-**Version:** 7.0 | **Last Updated:** 2026-03-15
+**Version:** 8.0 | **Last Updated:** 2026-03-18

@@ -388,3 +388,44 @@ conn.execute("ATTACH 'warehouse_readonly.duckdb' AS ro (READ_ONLY)")
 **Version:** 6.0 | **Last Updated:** 2026-03-17
 **Total Pitfalls:** 65
 **See Also:** LESSONS_LEARNED.md | MASTER_KNOWLEDGE_BASE.md
+
+---
+
+## RECOMMENDATIONS ENGINE ISSUES (Chats 97-100)
+
+### 66. Accept Goes Straight to Successful — Monitoring Skipped
+**Problem:** Accepted recommendations skip Monitoring and go directly to Successful
+**Cause:** `_load_monitoring_days()` only searched `rules_config.json`. DB rules have IDs like `db_campaign_7` which dont exist in JSON — returns monitoring_days=0 — else branch sets status=successful.
+**Solution:** When rule_id starts with `db_campaign_`, extract integer ID, query `cooldown_days` from DB rules table.
+**Chat:** 97
+
+### 67. Action Label Shows Wrong Rule Type — tROAS Instead of CPC Cap
+**Problem:** "Decrease Max CPC Cap" rule shows "Decrease tROAS target by 10%" in Action column
+**Cause:** `_enrich_rec()` calls `get_action_label()` before `action_type` is set. `action_type` is only added later by `_enrich_with_rule_data()`. `get_action_label()` gets empty string, falls through to tROAS label.
+**Solution:** Add second loop in `recommendations_cards()` AFTER `_enrich_with_rule_data()` that re-runs `get_action_label()` and re-calculates `value_label`/`value_suffix`.
+**Chat:** 97-100
+
+### 68. CPC/CPA Rule Fires on All Campaigns — Micros vs Pounds
+**Problem:** Rule 21 (CPC > £5) fires on all 4 campaigns when only 2 have CPC > £5
+**Cause:** `cpc_w7_mean` in features table stores value in micros (e.g. 5390056 = £5.39). Rule condition `value=5` is in pounds. Engine compares 5390056 > 5 — always true.
+**Solution:** Add 4th tuple element (divisor=1_000_000) to CPC/CPA/cost entries in CAMPAIGN_METRIC_MAP. Apply divisor in `_get_metric_value()`.
+**Chat:** 99
+
+### 69. Engine Loads 360 Rows — Campaign Names Show as IDs
+**Problem:** Engine processes all historical rows; most recent rows have NULL campaign_name
+**Cause:** Synthetic data not updated daily. Features rebuild creates rows for today/yesterday with NULL names. Engine query was `SELECT * ORDER BY snapshot_date DESC` — iterates all rows including NULL-name ones.
+**Solution:** `WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM table WHERE customer_id=? AND name_col IS NOT NULL)`. Two customer_id params needed.
+**Chat:** 100
+
+### 70. Rules 19/20 Never Fire — op=None in DB Conditions
+**Problem:** Rules 19 and 20 never generate recommendations despite being enabled
+**Cause:** Flow builder saved conditions with op=None and ref=None. Engine calls `_evaluate(value, None, threshold)` which returns False.
+**Solution:** Run `scripts/fix_rules_19_20_conditions.py` to set correct op and ref values.
+**Prevention:** When creating rules via flow builder, always verify conditions with check_bid_rules.py after saving.
+**Chat:** 99
+
+---
+
+**Version:** 7.0 | **Last Updated:** 2026-03-18
+**Total Pitfalls:** 70
+**See Also:** LESSONS_LEARNED.md | MASTER_KNOWLEDGE_BASE.md

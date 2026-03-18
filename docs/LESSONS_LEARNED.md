@@ -403,3 +403,40 @@ Pipeline scripts like `build_keyword_features_daily()` are designed for producti
 
 **Total:** 80 lessons
 **Version:** 6.0 | **Updated:** 2026-03-17
+
+---
+
+## RECOMMENDATIONS ENGINE (Chats 97-100)
+
+### 81. _load_monitoring_days Must Query DB Rules Table for DB Rule IDs
+`_load_monitoring_days(rule_id)` originally only searched `rules_config.json`. Rule IDs like `db_campaign_7` dont exist in the JSON — returns 0 days — accepted recs go straight to Successful.
+- **Apply:** When `rule_id` starts with `db_campaign_`, extract integer, query `cooldown_days` from DB rules table.
+- **Chat:** 97
+
+### 82. Enrichment Order Matters — Re-calculate Labels After action_type Is Set
+`_enrich_rec()` sets `action_label` and `value_label` before `_enrich_with_rule_data()` adds `action_type`. Result: wrong labels every time.
+- **Apply:** In `recommendations_cards()`, add a second loop AFTER `_enrich_with_rule_data()` that re-runs `get_action_label()` and re-calculates `value_label`/`value_suffix`.
+- **Chat:** 97-100
+
+### 83. CPC/CPA/Cost Metrics in Features Table Are in Micros
+`cpc_w7_mean`, `cpa_w14_mean`, `cost_micros_w7_sum` store values in micros. Rule conditions are in pounds. Engine compared 5 against 5390056 — always true.
+- **Apply:** Add 4th tuple element (divisor) to metric map: `"cpc_avg_7d": ("cpc_w7_mean", None, None, 1_000_000)`. Apply in `_get_metric_value()`.
+- **Chat:** 99
+
+### 84. Engine Should Load Only Most Recent Valid Snapshot Date
+Engine loaded all 360 rows. Most recent dates had NULL names (no source data). Engine fell back to ID names.
+- **Apply:** `WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM table WHERE customer_id = ? AND name_col IS NOT NULL)`. Pass customer_id twice.
+- **Chat:** 100
+
+### 85. Never Make Assumptions in Diagnosis — Always Test First
+Multiple loops wasted when assumptions were made before running diagnostic scripts.
+- **Apply:** Write diagnostic script, run it, read output before stating a diagnosis.
+- **Chat:** 97-100
+
+### 86. Never Update Cached Doc Versions — Always Request Current File First
+Updating a doc from memory instead of current file creates version conflicts.
+- **Apply:** Always request current file upload before editing any doc.
+- **Chat:** Master Chat 12
+
+**Total:** 86 lessons
+**Version:** 6.0 | **Updated:** 2026-03-18
