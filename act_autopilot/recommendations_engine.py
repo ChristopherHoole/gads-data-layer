@@ -104,20 +104,20 @@ CAMPAIGN_METRIC_MAP = {
     "roas_14d":             ("roas_w14_mean",            None, None),
     "roas_30d":             ("roas_w30_mean",            None, None),
 
-    # ── CPA ───────────────────────────────────────────────────────────────────
-    "cpa_7d":               ("cpa_w7_mean",              None, None),
-    "cpa_14d":              ("cpa_w14_mean",             None, None),
-    "cpa_30d":              ("cpa_w30_mean",             None, None),
+    # ── CPA (micros → divide by 1,000,000 to get £) ──────────────────────────
+    "cpa_7d":               ("cpa_w7_mean",              None, None, 1_000_000),
+    "cpa_14d":              ("cpa_w14_mean",             None, None, 1_000_000),
+    "cpa_30d":              ("cpa_w30_mean",             None, None, 1_000_000),
 
     # ── CTR ───────────────────────────────────────────────────────────────────
     "ctr_7d":               ("ctr_w7_mean",              None, None),
     "ctr_14d":              ("ctr_w14_mean",             None, None),
     "ctr_30d":              ("ctr_w30_mean",             None, None),
 
-    # ── Avg CPC ───────────────────────────────────────────────────────────────
-    "cpc_avg_7d":           ("cpc_w7_mean",              None, None),
-    "cpc_avg_14d":          ("cpc_w14_mean",             None, None),
-    "cpc_avg_30d":          ("cpc_w30_mean",             None, None),
+    # ── Avg CPC (micros → divide by 1,000,000 to get £) ──────────────────────
+    "cpc_avg_7d":           ("cpc_w7_mean",              None, None, 1_000_000),
+    "cpc_avg_14d":          ("cpc_w14_mean",             None, None, 1_000_000),
+    "cpc_avg_30d":          ("cpc_w30_mean",             None, None, 1_000_000),
 
     # ── Clicks ────────────────────────────────────────────────────────────────
     "clicks_7d":            ("clicks_w7_sum",            None, None),
@@ -129,10 +129,10 @@ CAMPAIGN_METRIC_MAP = {
     "conversions_14d":      ("conversions_w14_sum",      None, None),
     "conversions_30d":      ("conversions_w30_sum",      None, None),
 
-    # ── Cost (micros → divided by 1,000,000 in evaluation) ───────────────────
-    "cost_7d":              ("cost_micros_w7_sum",       None, None),
-    "cost_14d":             ("cost_micros_w14_sum",      None, None),
-    "cost_30d":             ("cost_micros_w30_sum",      None, None),
+    # ── Cost (micros → divide by 1,000,000 to get £) ─────────────────────────
+    "cost_7d":              ("cost_micros_w7_sum",       None, None, 1_000_000),
+    "cost_14d":             ("cost_micros_w14_sum",      None, None, 1_000_000),
+    "cost_30d":             ("cost_micros_w30_sum",      None, None, 1_000_000),
 
     # ── Impressions ───────────────────────────────────────────────────────────
     "impressions_7d":       ("impressions_w7_sum",       None, None),
@@ -221,11 +221,11 @@ AD_METRIC_MAP = {
     "roas":        ("roas",        None, None),   # DOUBLE
     "conversions": ("conversions", None, None),   # DOUBLE
     "clicks":      ("clicks",      None, None),   # BIGINT
-    "cost":        ("cost_micros", None, None),   # BIGINT (micros; column renamed from cost)
+    "cost":        ("cost_micros", None, None, 1_000_000),   # BIGINT (micros; column renamed from cost)
 }
 
 SHOPPING_METRIC_MAP = {
-    "cost":                ("cost_micros", None, None),         # BIGINT (needs /1M conversion)
+    "cost":                ("cost_micros", None, None, 1_000_000),  # BIGINT (needs /1M conversion)
     "conversions":         ("conversions", None, None),         # DOUBLE field
     "ctr":                 ("ctr", None, None),                 # DOUBLE field
     "roas":                ("roas", None, None),                # DOUBLE field
@@ -434,13 +434,17 @@ def _evaluate(value, operator, threshold) -> bool:
 def _get_metric_value(features: dict, metric_name: str, metric_map: dict) -> tuple[Any, str]:
     """
     Resolve metric_name to a value using provided metric_map.
-    Returns (value, db_column_used).
+    Returns (value, db_column_used). Applies divisor if entry has 4th element.
     """
     if metric_name not in metric_map:
         return None, metric_name
 
-    db_col, override_op, override_threshold = metric_map[metric_name]
+    entry = metric_map[metric_name]
+    db_col = entry[0]
+    divisor = entry[3] if len(entry) > 3 else 1
     value = features.get(db_col)
+    if value is not None and divisor and divisor != 1:
+        value = float(value) / divisor
     return value, db_col
 
 
@@ -455,8 +459,12 @@ def _evaluate_condition(features: dict, metric: str, operator: str, threshold, m
     if metric not in metric_map:
         return False, "unknown metric"
 
-    db_col, override_op, override_threshold = metric_map[metric]
+    entry = metric_map[metric]
+    db_col, override_op, override_threshold = entry[0], entry[1], entry[2]
+    divisor = entry[3] if len(entry) > 3 else 1
     value = features.get(db_col)
+    if value is not None and divisor != 1:
+        value = float(value) / divisor
 
     # Use proxy operator/threshold if this is a flag metric
     effective_op = override_op if override_op else operator
@@ -716,10 +724,17 @@ def run_recommendations_engine(
             query = f"""
                 SELECT * FROM {table_name}
                 WHERE customer_id = ?
-                ORDER BY snapshot_date DESC
+                  AND snapshot_date = (
+                      SELECT MAX(snapshot_date)
+                      FROM {table_name}
+                      WHERE customer_id = ?
+                        AND {name_col} IS NOT NULL
+                  )
+                ORDER BY {id_col}
             """
-            entity_data = conn.execute(query, [customer_id]).df()
+            entity_data = conn.execute(query, [customer_id, customer_id]).df()
             print(f"[ENGINE] Loaded {len(entity_data)} {entity_type} rows")
+            print(f"[ENGINE] Using snapshot_date: {entity_data['snapshot_date'].iloc[0] if not entity_data.empty else 'N/A'}")
         except Exception as e:
             print(f"[ENGINE] ERROR querying {table_name}: {e}")
             errors.append(str(e))
@@ -783,8 +798,12 @@ def run_recommendations_engine(
                     skipped_no_data += 1
                     continue
 
-                db_col, override_op, override_threshold = metric_map[metric]
+                _entry = metric_map[metric]
+                db_col, override_op, override_threshold = _entry[0], _entry[1], _entry[2]
+                _divisor = _entry[3] if len(_entry) > 3 else 1
                 actual_value = features.get(db_col)
+                if actual_value is not None and _divisor != 1:
+                    actual_value = float(actual_value) / _divisor
 
                 if actual_value is None:
                     skipped_no_data += 1
@@ -814,8 +833,12 @@ def run_recommendations_engine(
                         skipped_no_data += 1
                         continue
 
-                    db_col2, override_op2, override_threshold2 = metric_map[metric2]
+                    _entry2 = metric_map[metric2]
+                    db_col2, override_op2, override_threshold2 = _entry2[0], _entry2[1], _entry2[2]
+                    _divisor2 = _entry2[3] if len(_entry2) > 3 else 1
                     actual2 = features.get(db_col2)
+                    if actual2 is not None and _divisor2 != 1:
+                        actual2 = float(actual2) / _divisor2
 
                     if actual2 is None:
                         skipped_no_data += 1

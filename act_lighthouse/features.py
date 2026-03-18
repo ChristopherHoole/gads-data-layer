@@ -171,7 +171,13 @@ def build_campaign_features_daily(
     campaign_status_expr = _pick_expr(cols, "campaign_status", "VARCHAR")
     channel_type_expr = _pick_expr(cols, "channel_type", "VARCHAR")
     bid_strategy_type_expr = _pick_expr(cols, "bid_strategy_type", "VARCHAR")
-    rank_lost_is_expr = _pick_expr(cols, "search_rank_lost_impression_share", "DOUBLE")
+    if "search_rank_lost_impression_share" in cols:
+        rank_lost_is_expr = "CAST(cd.search_rank_lost_impression_share AS DOUBLE)"
+    elif "search_impression_share" in cols:
+        # Approximate: lost rank IS ≈ 1 - search_impression_share (as percentage 0-100)
+        rank_lost_is_expr = "CAST((1.0 - cd.search_impression_share) * 100.0 AS DOUBLE)"
+    else:
+        rank_lost_is_expr = "CAST(NULL AS DOUBLE)"
 
     windows = [1, 3, 7, 14, 30]
     base_metrics: list[tuple[str, str]] = [
