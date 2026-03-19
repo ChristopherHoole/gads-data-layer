@@ -1,10 +1,10 @@
 # LESSONS LEARNED - ADS CONTROL TOWER (A.C.T)
 
-**Version:** 5.0
+**Version:** 7.0
 **Created:** 2026-02-28
-**Updated:** 2026-03-15
-**Total Lessons:** 76
-**Purpose:** Best practices from 500+ hours across 93 chats
+**Updated:** 2026-03-19
+**Total Lessons:** 92
+**Purpose:** Best practices from 500+ hours across 101 chats
 
 **See Also:** MASTER_KNOWLEDGE_BASE.md, KNOWN_PITFALLS.md
 
@@ -373,12 +373,6 @@ Upgrade from Test to Explorer can happen before full Basic Access is granted.
 
 ---
 
-**Total:** 76 lessons
-**Coverage:** Database, recommendations, website, search, API, components, UI, outreach, email, process, rules, templates, Google API
-**Version:** 5.0 | **Updated:** 2026-03-15
-
----
-
 ## SYNTHETIC DATA & FEATURES PIPELINE (Chat 97)
 
 ### 77. YAML Unquoted Integers Parse as int, Not str
@@ -400,9 +394,6 @@ If a script attaches `warehouse_readonly.duckdb` as `ro` and exits uncleanly (cr
 Pipeline scripts like `build_keyword_features_daily()` are designed for production API flows and can cause WAL corruption in local dev when they crash mid-run. For synthetic/test data, always build features tables directly with a single `CREATE TABLE AS SELECT` SQL query.
 - **Apply:** Use `build_ad_features_direct.py` and `build_keyword_features.py` as the pattern. One SQL query, `DETACH ro` before close, done. Never use the pipeline for local builds.
 - **Chat:** 97
-
-**Total:** 80 lessons
-**Version:** 6.0 | **Updated:** 2026-03-17
 
 ---
 
@@ -438,5 +429,44 @@ Updating a doc from memory instead of current file creates version conflicts.
 - **Apply:** Always request current file upload before editing any doc.
 - **Chat:** Master Chat 12
 
-**Total:** 86 lessons
-**Version:** 6.0 | **Updated:** 2026-03-18
+---
+
+## FLAGS SYSTEM (Master Chat 12 / Chat 101)
+
+### 87. Flag vs_prev_pct Conditions Must Use Decimal Ratios, Not Whole Numbers
+The features table stores `vs_prev_pct` metrics as decimal ratios (e.g. -0.1045 = -10.45% drop). Flag conditions authored in the flow builder were saved as whole-number percentages (e.g. -30). Engine compared -0.1045 < -30 — always false, flags never fired.
+- **Apply:** Always store `vs_prev_pct` thresholds as decimals: -0.30 not -30, 0.50 not 50.
+- **Diagnostic:** Run `check_flag_data.py` to see actual feature values vs thresholds before debugging engine.
+- **Chat:** Master Chat 12
+
+### 88. Functions Inside IIFE Are Not Accessible From Inline onclick Handlers
+Inline `onclick="fnName()"` handlers run in global scope. If `fnName` is declared inside an IIFE `(function() { ... })()`, it is not accessible and the click silently does nothing — no error, just nothing happens.
+- **Apply:** Always expose functions called from inline onclick to global scope: `window.fnName = function(...) {...}`
+- **Symptom:** Clicking a row/button does nothing, no console error.
+- **Chat:** Master Chat 12
+
+### 89. stopPropagation on TD Silently Kills Event Delegation
+If a `<td>` has `onclick="event.stopPropagation()"` and you rely on `document.addEventListener('click', ...)` event delegation for a child element (e.g. a dropdown toggle), the stop fires before the delegation listener ever sees the click. The dropdown never opens, no error.
+- **Apply:** Only add `stopPropagation` when there is a genuine parent handler to suppress. Never add it defensively.
+- **Symptom:** Dropdown works on some rows but not others — the broken rows have stopPropagation on a parent element.
+- **Chat:** Master Chat 12
+
+### 90. Bootstrap Dropdowns in Dynamically Rendered Rows Require Event Delegation
+`new bootstrap.Dropdown(el)` called after `innerHTML` is set does not reliably work for dynamically rendered dropdown toggles. Bootstrap's own initialisation on `data-bs-toggle="dropdown"` only fires on page load.
+- **Apply:** Use `document.addEventListener('click', ...)` event delegation scoped to `document` for all dropdown toggles in dynamically rendered tables. Do not use `bootstrap.Dropdown` reinit loops.
+- **Chat:** Master Chat 12
+
+### 91. Synthetic Data Swings Too Small for Flag Thresholds
+All 30 flags use thresholds designed for real Google Ads accounts (e.g. -30% conversion drop). Synthetic data has much smaller swings (max ~10%). Most flags will never fire on synthetic data regardless of conditions being correct.
+- **Apply:** To test flag UI with synthetic data, temporarily lower one threshold (e.g. flag 33 Conversion Drop from -0.30 to -0.05), test fully, then restore. Never commit a lowered threshold.
+- **Chat:** Master Chat 12
+
+### 92. Always Add Snoozed and History Sections to Entity Page Flag Subtabs
+Entity pages (Campaigns, Ad Groups, Keywords, Ads, Shopping) need Snoozed and History collapsible sections on their Flags subtabs — not just active flags. Without them, users have no visibility of actioned flags on the entity they are viewing.
+- **Apply:** All entity page Flags subtabs must include: Active table + collapsible Snoozed section + collapsible History section.
+- **Chat:** Master Chat 12
+
+---
+
+**Total:** 92 lessons
+**Version:** 7.0 | **Updated:** 2026-03-19

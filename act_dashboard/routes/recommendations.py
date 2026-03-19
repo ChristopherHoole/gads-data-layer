@@ -1073,3 +1073,189 @@ def recommendations_cards():
         "reverted":   [_serialise(r) for r in reverted_recs],
         "declined":   [_serialise(r) for r in declined_recs],
     })
+
+
+# ---------------------------------------------------------------------------
+# [Chat 101] Flags routes
+# ---------------------------------------------------------------------------
+
+def _age_label(dt):
+    """Return human-readable age label e.g. '2m ago', '3d ago'."""
+    if not dt:
+        return "—"
+    try:
+        now = datetime.now()
+        delta = now - dt
+        secs = int(delta.total_seconds())
+        if secs < 3600:
+            return "{}m ago".format(max(1, secs // 60))
+        elif secs < 86400:
+            return "{}h ago".format(secs // 3600)
+        else:
+            return "{}d ago".format(secs // 86400)
+    except Exception:
+        return "—"
+
+
+def _serialise_flag(row_dict):
+    """Serialise a flags row dict to JSON-safe dict with generated_ago field."""
+    out = {}
+    for k, v in row_dict.items():
+        if isinstance(v, datetime):
+            out[k] = v.isoformat()
+        else:
+            out[k] = v
+    out["generated_ago"] = _age_label(row_dict.get("generated_at"))
+    return out
+
+
+@bp.route("/flags/cards")
+@login_required
+def flags_cards():
+    """
+    [Chat 101] Return all flags grouped by status: active / snoozed / history.
+    Before returning, expire any snoozed flags whose snooze_until <= NOW().
+    """
+    config = get_current_config()
+    conn = get_db_connection(config, read_only=False)
+    try:
+        now = datetime.now()
+
+        # Expire snoozed flags whose window has passed
+        conn.execute("""
+            UPDATE flags
+            SET status = 'history', updated_at = ?
+            WHERE customer_id = ?
+              AND status = 'snoozed'
+              AND snooze_until <= ?
+        """, [now, config.customer_id, now])
+
+        cols = [
+            "flag_id", "rule_id", "rule_name", "entity_type", "entity_id",
+            "entity_name", "customer_id", "status", "severity", "trigger_summary",
+            "plain_english", "conditions", "generated_at", "acknowledged_at",
+            "snooze_until", "snooze_days", "updated_at",
+        ]
+        col_sql = ", ".join(cols)
+
+        rows = conn.execute(
+            f"SELECT {col_sql} FROM flags WHERE customer_id = ? ORDER BY generated_at DESC",
+            [config.customer_id]
+        ).fetchall()
+
+        active  = []
+        snoozed = []
+        history = []
+
+        for row in rows:
+            rd = dict(zip(cols, row))
+            serialised = _serialise_flag(rd)
+            status = rd.get("status", "active")
+            if status == "active":
+                active.append(serialised)
+            elif status == "snoozed":
+                snoozed.append(serialised)
+            else:
+                history.append(serialised)
+
+        return jsonify({"active": active, "snoozed": snoozed, "history": history})
+    except Exception as e:
+        print("[FLAGS] flags_cards error: {}".format(e))
+        return jsonify({"active": [], "snoozed": [], "history": [], "error": str(e)}), 500
+    finally:
+        conn.close()
+
+
+@bp.route("/flags/<flag_id>/acknowledge", methods=["POST"])
+@login_required
+def flag_acknowledge(flag_id):
+    """
+    [Chat 101] Acknowledge a flag — moves it to snoozed using rule's cooldown_days.
+    """
+    config = get_current_config()
+    conn = get_db_connection(config, read_only=False)
+    try:
+        row = conn.execute(
+            "SELECT rule_id FROM flags WHERE flag_id = ? AND customer_id = ?",
+            [flag_id, config.customer_id]
+        ).fetchone()
+        if not row:
+            return jsonify({"success": False, "message": "Flag not found."}), 404
+
+        rule_id_str = row[0] or ""
+        cooldown_days = 7  # fallback
+        try:
+            rule_num = int(rule_id_str.split("_")[-1])
+            cd_row = conn.execute(
+                "SELECT cooldown_days FROM rules WHERE id = ?", [rule_num]
+            ).fetchone()
+            if cd_row and cd_row[0]:
+                cooldown_days = int(cd_row[0])
+        except (ValueError, TypeError):
+            pass
+
+        now = datetime.now()
+        snooze_until = now + timedelta(days=cooldown_days)
+
+        conn.execute("""
+            UPDATE flags
+            SET status = 'snoozed',
+                acknowledged_at = ?,
+                snooze_until = ?,
+                snooze_days = 0,
+                updated_at = ?
+            WHERE flag_id = ? AND customer_id = ?
+        """, [now, snooze_until, now, flag_id, config.customer_id])
+
+        return jsonify({"success": True, "new_status": "snoozed"})
+    except Exception as e:
+        print("[FLAGS] acknowledge error: {}".format(e))
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()
+
+
+@bp.route("/flags/<flag_id>/ignore", methods=["POST"])
+@login_required
+def flag_ignore(flag_id):
+    """
+    [Chat 101] Ignore a flag for N days (7/14/30). Moves it to snoozed.
+    Expects JSON body: {"days": 7|14|30}
+    """
+    config = get_current_config()
+    data = request.get_json(silent=True) or {}
+    try:
+        days = int(data.get("days", 7))
+        if days not in (7, 14, 30):
+            days = 7
+    except (TypeError, ValueError):
+        days = 7
+
+    conn = get_db_connection(config, read_only=False)
+    try:
+        row = conn.execute(
+            "SELECT flag_id FROM flags WHERE flag_id = ? AND customer_id = ?",
+            [flag_id, config.customer_id]
+        ).fetchone()
+        if not row:
+            return jsonify({"success": False, "message": "Flag not found."}), 404
+
+        now = datetime.now()
+        snooze_until = now + timedelta(days=days)
+
+        conn.execute("""
+            UPDATE flags
+            SET status = 'snoozed',
+                acknowledged_at = ?,
+                snooze_until = ?,
+                snooze_days = ?,
+                updated_at = ?
+            WHERE flag_id = ? AND customer_id = ?
+        """, [now, snooze_until, days, now, flag_id, config.customer_id])
+
+        return jsonify({"success": True, "new_status": "snoozed", "snooze_days": days})
+    except Exception as e:
+        print("[FLAGS] ignore error: {}".format(e))
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        conn.close()

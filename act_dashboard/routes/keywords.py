@@ -161,7 +161,7 @@ def load_search_terms(
     where_clauses = ["customer_id = ?"]
     params = [customer_id]
     
-    where_clauses.append("snapshot_date BETWEEN ? AND ?")
+    where_clauses.append("snapshot_date BETWEEN CAST(? AS DATE) AND CAST(? AS DATE)")
     params.extend([date_from, date_to])
     
     if campaign_id and campaign_id != 'all':

@@ -400,3 +400,26 @@ tbody tr.rec-selected:hover td {
     display: none;
 }
 
+
+/* ----------------------------------------------------------------------------
+   FLAG SEVERITY BADGES — Chat 101
+   Usage: <span class="flag-sev-badge flag-sev-high">High</span>
+   Dot colour matches rec-risk-* pattern.
+   ---------------------------------------------------------------------------- */
+
+.flag-sev-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.flag-sev-high::before   { content: '●'; font-size: 10px; color: #ea4335; }
+.flag-sev-medium::before { content: '●'; font-size: 10px; color: #fbbc05; }
+.flag-sev-low::before    { content: '●'; font-size: 10px; color: #34a853; }
+
+.flag-sev-high   { color: #c5221f; }
+.flag-sev-medium { color: #b45309; }
+.flag-sev-low    { color: #137333; }
+

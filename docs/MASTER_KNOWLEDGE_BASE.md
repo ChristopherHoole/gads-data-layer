@@ -1,27 +1,28 @@
 # MASTER KNOWLEDGE BASE - ADS CONTROL TOWER (A.C.T)
 
-**Version:** 20.0
+**Version:** 21.0
 **Created:** 2026-02-19
-**Updated:** 2026-03-18
+**Updated:** 2026-03-19
 **Purpose:** Complete project context for Master Chat coordination
 
 ---
 
 ## EXECUTIVE SUMMARY
 
-### Current State (March 18, 2026)
+### Current State (March 19, 2026)
 - **Overall Completion:** ~99.9%
-- **Phase:** Recommendations engine testing — budget rules next, then flags
-- **Active Development:** Master Chat 12
+- **Phase:** Flags system complete — keyword/shopping bug fixes next
+- **Active Development:** Master Chat 13 (starting)
 - **Primary Website:** https://christopherhoole.com (always use this — never christopherhoole.online)
 - **Email:** chris@christopherhoole.com (Google Workspace, live, DKIM/SPF authenticated)
-- **Rules:** 24 campaign rules (18 Budget, 6 Bid) — all enabled
+- **Rules:** 19 campaign rules (13 Budget, 6 Bid) — all enabled
 - **Flags:** 30 campaign flags (16 Performance, 8 Anomaly, 6 Technical) — all enabled
 - **Templates:** 3
-- **Total DB rows:** 57
-- **Recommendations:** 0 (cleared for testing — re-run engine to regenerate)
-- **Tests:** 620 tests, 80% coverage
-- **Background jobs:** Celery + Redis (Chat 90)
+- **flags table:** 0 rows (cleared after testing)
+- **Recommendations:** 0 (cleared for testing)
+- **Changes:** 0 (cleared for testing)
+- **Tests:** 620 tests, 80% coverage (pre-flags — needs update)
+- **Background jobs:** Celery + Redis (requires Memurai install)
 
 ### Tech Stack
 
@@ -85,7 +86,7 @@ Claude Code (Code tab in Claude Desktop App)
 - `recommendations.py` — second pass in `recommendations_cards()` re-calculates `action_label` AND `value_label` AFTER `_enrich_with_rule_data()` populates `action_type`
 - `recommendations.css` — `.rec-col-rule`: `white-space: normal; word-break: break-word`
 - `campaigns.html` + `recommendations.html` — `actionCell()` Human confirm badge stacked above action text
-- `campaigns.html` — status rules expand row shows "Enabled → Paused" not "Current: 4 / Proposed: 4"
+- `campaigns.html` — status rules expand row shows "Enabled → Paused"
 - `_ACTION_TYPE_TO_RULE_TYPE` — added `decrease_max_cpc` and `increase_max_cpc` entries
 - `get_action_label()` — checks `action_type` for max_cpc/tcpa distinction per entity
 
@@ -97,6 +98,41 @@ Claude Code (Code tab in Claude Desktop App)
 
 **Chat 100 — Engine Fix (valid date query):**
 - `recommendations_engine.py` — entity data query uses `MAX(snapshot_date) WHERE name IS NOT NULL` subquery → loads 4 rows not 360
+
+### Chat 101 + Master Chat 12: Flags System ✅
+**Commits:** b8188fe (pre-build checkpoint) + final commit
+
+**What was built:**
+- `flags` DB table in warehouse.duckdb
+- `_run_flag_engine()` in recommendations_engine.py — evaluates `rule_or_flag = 'flag'` rules after main engine, uses same CAMPAIGN_METRIC_MAP and `_evaluate_condition()`, correct MAX(snapshot_date) date query, duplicate prevention (skips if active or within snooze window)
+- `/flags/cards` GET — returns `{active, snoozed, history}`, lazy snooze expiry check on every call
+- `/flags/<id>/acknowledge` POST — sets status=snoozed, snooze_until = NOW() + cooldown_days from rules table
+- `/flags/<id>/ignore` POST — sets status=snoozed, snooze_until = NOW() + days (7/14/30)
+- All 3 flag routes CSRF exempted
+- Flags tab on main Recommendations page — entity filter pills (All/Campaigns/Ad Groups/Keywords/Ads/Shopping), active table, collapsible Snoozed section (Snoozed until column), collapsible History section (Actioned column)
+- Flags subtab on all 5 entity pages (Campaigns, Ad Groups, Keywords, Ads, Shopping) — active table + collapsible Snoozed section + collapsible History section
+- Expand rows on ALL flag tables across all pages — Why triggered / Flag details / Rule details
+- Actions dropdown on ALL flag rows (active, snoozed, history) across all pages
+
+**Bugs found and fixed during testing:**
+- All 15 `vs_prev_pct` flag conditions stored as whole numbers (e.g. -30) not decimals (-0.30) — fixed via `fix_all_flag_conditions.py` (already run — do NOT re-run)
+- 8 flags had `op=None` — fixed with correct operators (lt/gt) in same script
+- Bootstrap dropdowns on dynamically rendered rows — event delegation required, NOT bootstrap.Dropdown reinit
+- Functions inside IIFE inaccessible from inline onclick — exposed via `window.fnName`
+- `stopPropagation()` on snoozed/history TDs silently blocked event delegation dropdowns — removed
+- Snoozed/History sections initially missing from entity page Flags subtabs — added to all 5 pages
+
+**Tested and verified:**
+- ✅ Engine generates flags (tested with Conversion Drop id=33 threshold temporarily lowered to -0.05)
+- ✅ Duplicate prevention — SkippedDuplicate=1 on second run
+- ✅ Expand row on active, snoozed and history rows across all pages
+- ✅ Actions dropdown on all rows across all pages
+- ✅ Acknowledge moves flag to Snoozed with correct snooze_until (today + cooldown_days)
+- ✅ Snoozed section expands with correct columns including Snoozed until date
+- ✅ History section renders correctly
+- ✅ Flask starts cleanly, no console errors
+
+**Flag 33 threshold restored to -0.30 after testing.**
 
 ### Google Ads API Application (March 2026)
 - Access upgraded: Test Account → **Explorer Access** (read production, no writes)
@@ -112,17 +148,19 @@ Claude Code (Code tab in Claude Desktop App)
 
 ### What's Working
 - All 6 dashboard pages with Google Ads-style tables
-- 24 campaign rules + 30 flags (all enabled)
+- 19 campaign rules (13 Budget, 6 Bid) — all enabled
+- 30 campaign flags (16 Performance, 8 Anomaly, 6 Technical) — all enabled
 - Templates sub-tab — save/edit/use template, duplicate detection
 - Recommendations engine — generates correct recs from DB rules
+- Flags engine — generates flags, duplicate prevention, acknowledge/ignore/snooze
 - Accept → Monitoring (correct cooldown from rules table) ✅
 - Decline → History ✅
 - Accept all low risk bulk action ✅
-- Action labels correct for all rule types (budget/bid/status/CPC cap) ✅
+- Action labels correct for all rule types ✅
 - CPC/CPA/cost metrics converted from micros correctly ✅
 - Engine loads only most recent valid snapshot date ✅
-- impression_share_lost_rank populated (approximate fallback) ✅
-- Rules 19 & 20 conditions fixed ✅
+- Flags tab on Recommendations page — Active / Snoozed / History ✅
+- Flags subtab on all 5 entity pages — Active / Snoozed / History ✅
 - Changes audit trail
 - Cold Outreach System — 6 pages, all 10 functions live
 - Marketing website live (christopherhoole.com)
@@ -132,11 +170,10 @@ Claude Code (Code tab in Claude Desktop App)
 ### What's Blocked / Pending
 - Rules 16, 17, 18, 20 don't fire — `campaign_type_lock` can't be enforced (NULL `bid_strategy_type` in synthetic data). Will work on real data.
 - Google Ads API Basic Access (Case 21767540705)
-- Advertiser verification appeal (ID 6448619522)
 - Memurai install (for Celery to run)
 
-### Known Bugs (logged, not yet fixed)
-- Keywords search terms gone — DATE/VARCHAR type mismatch in `keywords.py` line 187
+### Known Bugs (logged — fix in Master Chat 13)
+- Keywords search terms — custom date range causes DATE/VARCHAR mismatch in `keywords.py` line 187. Preset 7d/30d/90d buttons work fine.
 - Shopping page query error — table alias `s` not found in `shopping.py` line 108
 - Trigger summary wrong label — rule 19 shows "ROAS" label instead of "CPA"
 
@@ -158,14 +195,24 @@ Claude Code (Code tab in Claude Desktop App)
 
 ---
 
+## FLAGS ENGINE STATE
+
+**vs_prev_pct flags:** All 15 conditions fixed (decimals not whole numbers). All 8 op=None conditions fixed.
+**Tested:** Conversion Drop (id=33) — fires on PPC Freelancer with threshold lowered to -0.05. Threshold restored to -0.30.
+**Synthetic data limitation:** Max swing is ~10% — none of the flags fire at real-world thresholds on synthetic data. Will test properly with real Google Ads data.
+
+---
+
 ## DB STATE
 
 | Table | Count |
 |-------|-------|
-| Rules (campaign, is_template=FALSE) | 24 |
+| Rules (campaign, is_template=FALSE) | 19 |
 | Flags (campaign, is_template=FALSE) | 30 |
 | Templates (is_template=TRUE) | 3 |
-| **Total rows** | **57** |
+| flags table | 0 (cleared after testing) |
+| Recommendations | 0 (cleared) |
+| Changes | 0 (cleared) |
 
 **Diagnostic scripts (project root):**
 - `full_audit.py` — full breakdown of all rules/flags/templates
@@ -175,6 +222,10 @@ Claude Code (Code tab in Claude Desktop App)
 - `check_bid_rules2.py` — campaign features vs thresholds
 - `check_campaign_names.py` — campaign names in features table
 - `check_engine_date.py` — most recent valid snapshot date
+- `check_flag33.py` — flag 33 conditions vs data
+- `check_flag_data.py` — all vs_prev_pct values in synthetic data
+- `check_absolute_flags.py` — non-percentage flag conditions
+- `fix_all_flag_conditions.py` — fixed flag conditions (already run — do NOT re-run)
 - `cleanup_junk.py` — delete specific IDs
 - `cleanup_all_templates.py` — delete all template rows
 
@@ -190,7 +241,7 @@ Claude Code (Code tab in Claude Desktop App)
 | json_extract returns quoted value | Use json_extract_string not JSON_EXTRACT |
 | Duplicate check silently failing | conn must be open BEFORE the check query |
 | JS state vars wiped | Set _rfbEditId/_rfbIsTemplate AFTER rfbResetForm() |
-| onclick function does nothing | Verify function is actually defined in JS |
+| onclick function does nothing | Expose via window.fnName — IIFE scope issue |
 | Apostrophe breaks JS | Escape as \' in single-quoted strings |
 | Flag condition shows wrong direction | Use direction-aware label objects {pos, neg} |
 | Recommendations limit=200 truncates | Increase to 5000+ |
@@ -206,8 +257,11 @@ Claude Code (Code tab in Claude Desktop App)
 | Accept goes straight to Successful | _load_monitoring_days must query DB rules table for db_campaign_* IDs |
 | Action label shows tROAS for CPC cap | Re-run get_action_label() AFTER _enrich_with_rule_data() sets action_type |
 | Engine loads 360 rows not 4 | Use MAX(snapshot_date) WHERE name IS NOT NULL subquery |
-| Campaign names show as IDs | Synthetic data has NULL names for dates without source data |
-| Rules 19/20 never fire | op=None in DB conditions — run fix_rules_19_20_conditions.py |
+| Flag vs_prev_pct never fires | Thresholds must be decimals (-0.30) not whole numbers (-30) |
+| Flag op=None never fires | Set correct op: lt for drops, gt for spikes |
+| Bootstrap dropdown not opening (dynamic) | Use document event delegation — not bootstrap.Dropdown reinit |
+| Dropdown works on active rows not snoozed | stopPropagation on TD kills delegation — remove it |
+| Flag row click does nothing | Expose toggle function via window.fnName |
 
 **See KNOWN_PITFALLS.md for full detail.**
 
@@ -217,13 +271,20 @@ Claude Code (Code tab in Claude Desktop App)
 
 | File | Purpose |
 |------|---------|
-| `act_dashboard/routes/recommendations.py` | Accept/decline/monitoring, action labels, enrichment |
-| `act_autopilot/recommendations_engine.py` | Engine — metric map, condition evaluation, micros fix, date query |
+| `act_dashboard/routes/recommendations.py` | Accept/decline/monitoring, action labels, flags routes |
+| `act_autopilot/recommendations_engine.py` | Engine + flag engine — metric map, condition evaluation, micros fix, date query |
 | `act_lighthouse/features.py` | Feature engineering — impression_share_lost_rank fallback |
-| `act_dashboard/templates/recommendations.html` | Full recommendations page |
-| `act_dashboard/templates/campaigns.html` | Campaigns page rec tab |
-| `act_dashboard/static/css/recommendations.css` | Column widths, badges, layout |
-| `scripts/fix_rules_19_20_conditions.py` | One-time migration — rules 19/20 conditions (already run) |
+| `act_dashboard/templates/recommendations.html` | Full recommendations page + Flags tab |
+| `act_dashboard/templates/campaigns.html` | Campaigns page rec tab + Flags subtab |
+| `act_dashboard/templates/ad_groups.html` | Ad Groups page + Flags subtab |
+| `act_dashboard/templates/keywords.html` | Keywords page + Flags subtab |
+| `act_dashboard/templates/ads.html` | Ads page + Flags subtab |
+| `act_dashboard/templates/shopping.html` | Shopping page + Flags subtab |
+| `act_dashboard/static/css/recommendations.css` | Column widths, badges, flag severity styles |
+| `act_dashboard/routes/keywords.py` line 187 | Keywords search terms DATE/VARCHAR bug |
+| `act_dashboard/routes/shopping.py` line 108 | Shopping query table alias bug |
+| `scripts/fix_rules_19_20_conditions.py` | One-time migration — rules 19/20 (already run) |
+| `scripts/fix_all_flag_conditions.py` | Fixed flag conditions — already run, do NOT re-run |
 | `scripts/rebuild_campaign_features.py` | Rebuilds campaign_features_daily |
 | `act_dashboard/email_sender.py` | SMTP sending module |
 | `act_dashboard/celery_app.py` | Celery instance + beat schedule |
@@ -231,6 +292,7 @@ Claude Code (Code tab in Claude Desktop App)
 | `act_autopilot/rules_config.json` | Rules UI config layer (non-campaign rules) |
 | `tests/` | pytest test suite — 620 tests, 80% coverage |
 | `docs/CELERY_STARTUP.md` | Celery + Redis startup instructions |
+| `docs/wireframes/flags_wireframe.html` | Approved flags wireframe |
 
 ---
 
@@ -238,12 +300,11 @@ Claude Code (Code tab in Claude Desktop App)
 
 | Field | Value |
 |-------|-------|
-| Primary account | 487-268-1731 (chris@christopherhoole.com) — active |
-| Test account | 125-489-5944 (joicemoura1001@gmail.com) — active |
+| Primary account | 487-268-1731 — active, live campaigns running |
+| Test account | 125-489-5944 — not in use |
 | MCC | 152-796-4125 |
 | Developer token | oDANZ-BXQprTm7_Sg4rjDg |
-| API Case ID | 21767540705 |
-| Appeal ID | 6448619522 |
+| API Case ID | 21767540705 — Basic Access pending |
 | API Access Level | Explorer (upgraded from Test Account, March 2026) |
 
 ---
@@ -252,15 +313,14 @@ Claude Code (Code tab in Claude Desktop App)
 
 | Commit | Description |
 |--------|-------------|
+| final (pending) | Chat 101: Flags system complete — engine, routes, UI, all fixes |
+| b8188fe | Chat 101: Add flags wireframe and brief — pre-build checkpoint |
 | 61002f3 | Chats 99-100: Engine fixes — micros, rules 19/20, impression share, valid date query |
-| 30decda | Chat 97: Recommendations UI fixes — action labels, monitoring, column widths, display polish |
+| 30decda | Chat 97: Recommendations UI fixes |
 | 342c8d8 | Chat 93: Templates tab |
-| 4bae83d | Chat 91: Flags sub-tab UI overhaul |
-| 060fe2a | Chat 92: impression_share_lost_rank pipeline + CAMPAIGN_METRIC_MAP |
-| a932ee7 | Chat 90: Celery + Redis job queue |
 
 ---
 
-**Version:** 20.0 | **Last Updated:** 2026-03-18
+**Version:** 21.0 | **Last Updated:** 2026-03-19
 **Architecture:** 2-Tier (Master Chat → Claude Code)
-**Next Step:** Test budget rules, then flags
+**Next Step:** Master Chat 13 — Keywords search terms fix, Shopping query fix, trigger summary label fix

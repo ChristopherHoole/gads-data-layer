@@ -482,6 +482,11 @@
             History <span class="badge bg-secondary ms-1" id="ag-badge-history">0</span>
           </button>
         </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="ag-flag-tab" data-bs-toggle="tab" data-bs-target="#ag-flag-panel" type="button" role="tab">
+            Flags <span class="badge ms-1" style="background:#ea4335;color:#fff;" id="ag-flag-badge">0</span>
+          </button>
+        </li>
       </ul>
 
       <div class="tab-content" id="agRecTabContent">
@@ -568,6 +573,85 @@
             <tbody id="ag-history-tbody"></tbody>
           </table>
           <div id="ag-history-paginator" class="d-flex gap-1 flex-wrap mt-2"></div>
+        </div>
+
+        <!-- FLAGS (active only — entity page view) -->
+        <div class="tab-pane fade" id="ag-flag-panel" role="tabpanel">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle" id="ag-flag-table">
+              <thead class="table-light">
+                <tr>
+                  <th class="rec-col-name" style="width:180px;">Ad group name</th>
+                  <th class="rec-col-rule" style="width:160px;">Flag name</th>
+                  <th class="rec-col-plain" style="width:220px;">Plain English</th>
+                  <th class="rec-col-risk" style="width:80px;">Severity</th>
+                  <th class="rec-col-age" style="width:60px;">Age</th>
+                  <th class="rec-col-acts" style="width:160px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="ag-flag-tbody">
+                <tr><td colspan="6" class="text-center text-muted py-4">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- SNOOZED FLAGS SECTION -->
+          <div class="d-flex align-items-center gap-2 px-3 py-2 mt-3 mb-1"
+               style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;cursor:pointer;"
+               onclick="agFlagSectionToggle('ag-flag-snooze-body','ag-flag-snooze-chev')">
+            <span id="ag-flag-snooze-chev" style="font-size:12px;">▶</span>
+            <strong style="font-size:13px;">Snoozed</strong>
+            <span class="badge bg-secondary" id="ag-flag-snooze-count">0</span>
+          </div>
+          <div id="ag-flag-snooze-body" style="display:none;">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width:180px;">Ad group name</th>
+                    <th style="width:160px;">Flag name</th>
+                    <th style="width:220px;">Plain English</th>
+                    <th style="width:80px;">Severity</th>
+                    <th style="width:60px;">Age</th>
+                    <th style="width:110px;">Snoozed until</th>
+                    <th style="width:160px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="ag-flag-snooze-tbody">
+                  <tr><td colspan="7" class="text-center text-muted py-3">No snoozed flags.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- HISTORY FLAGS SECTION -->
+          <div class="d-flex align-items-center gap-2 px-3 py-2 mb-1"
+               style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;cursor:pointer;"
+               onclick="agFlagSectionToggle('ag-flag-hist-body','ag-flag-hist-chev')">
+            <span id="ag-flag-hist-chev" style="font-size:12px;">▶</span>
+            <strong style="font-size:13px;">History</strong>
+            <span class="badge bg-secondary" id="ag-flag-hist-count">0</span>
+          </div>
+          <div id="ag-flag-hist-body" style="display:none;">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width:180px;">Ad group name</th>
+                    <th style="width:160px;">Flag name</th>
+                    <th style="width:220px;">Plain English</th>
+                    <th style="width:80px;">Severity</th>
+                    <th style="width:60px;">Age</th>
+                    <th style="width:110px;">Actioned</th>
+                    <th style="width:160px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="ag-flag-hist-tbody">
+                  <tr><td colspan="7" class="text-center text-muted py-3">No history.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
       </div><!-- /tab-content -->
@@ -1096,6 +1180,144 @@ let agRecommendations = {
     }
   });
   window.agRecLoad = agRecLoad;
+
+  // ── Ad Group Flags ─────────────────────────────────────────────────────────
+  var AG_FLAGS = [], AG_FLAGS_SNOOZED = [], AG_FLAGS_HISTORY = [];
+
+  window.agFlagSectionToggle = function(bodyId, chevId) {
+    var body = document.getElementById(bodyId);
+    var chev = document.getElementById(chevId);
+    if (!body) return;
+    var open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'block';
+    if (chev) chev.textContent = open ? '▶' : '▼';
+  };
+
+  function agFmtDate(dt) {
+    if (!dt) return '—';
+    try { return new Date(dt).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}); } catch(e) { return dt; }
+  }
+
+  function agSevBadge(sev) {
+    var s = (sev || '').toLowerCase();
+    var cls = s === 'high' ? 'flag-sev-high' : s === 'medium' ? 'flag-sev-medium' : 'flag-sev-low';
+    var lbl = s ? s.charAt(0).toUpperCase() + s.slice(1) : '—';
+    return '<span class="flag-sev-badge ' + cls + '">' + lbl + '</span>';
+  }
+
+  function agFlagActionsHtml(flag_id) {
+    return '<div class="rec-row-acts">'
+      + '<button class="rec-row-btn rec-row-btn-accept" onclick="agFlagAction(\'' + flag_id + '\',\'acknowledge\',0)">Acknowledge</button>'
+      + '<div class="dropdown d-inline-block">'
+      + '<button class="rec-row-btn rec-row-btn-decline dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Snooze</button>'
+      + '<ul class="dropdown-menu dropdown-menu-end">'
+      + '<li><a class="dropdown-item" href="#" onclick="agFlagAction(\'' + flag_id + '\',\'ignore\',7);return false;">Snooze 7 days</a></li>'
+      + '<li><a class="dropdown-item" href="#" onclick="agFlagAction(\'' + flag_id + '\',\'ignore\',14);return false;">Snooze 14 days</a></li>'
+      + '<li><a class="dropdown-item" href="#" onclick="agFlagAction(\'' + flag_id + '\',\'ignore\',30);return false;">Snooze 30 days</a></li>'
+      + '</ul></div></div>';
+  }
+
+  function agFlagRender() {
+    var tbody = document.getElementById('ag-flag-tbody');
+    if (!tbody) return;
+    document.getElementById('ag-flag-badge').textContent = AG_FLAGS.length;
+    if (!AG_FLAGS.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No active flags for ad groups.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = AG_FLAGS.map(function(f) {
+      return '<tr>'
+        + '<td class="rec-col-name">' + esc(f.entity_name || '—') + '</td>'
+        + '<td class="rec-col-rule">' + esc(f.rule_name || '—') + '</td>'
+        + '<td class="rec-col-plain">' + esc(f.plain_english || '—') + '</td>'
+        + '<td class="rec-col-risk">' + agSevBadge(f.severity) + '</td>'
+        + '<td class="rec-col-age">' + esc(f.generated_ago || '—') + '</td>'
+        + '<td class="rec-col-acts" onclick="event.stopPropagation()">' + agFlagActionsHtml(f.flag_id) + '</td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  function agFlagSnoozedRender() {
+    var tbody = document.getElementById('ag-flag-snooze-tbody');
+    var countEl = document.getElementById('ag-flag-snooze-count');
+    if (!tbody) return;
+    if (countEl) countEl.textContent = AG_FLAGS_SNOOZED.length;
+    if (!AG_FLAGS_SNOOZED.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No snoozed flags.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = AG_FLAGS_SNOOZED.map(function(f) {
+      return '<tr>'
+        + '<td>' + esc(f.entity_name || '—') + '</td>'
+        + '<td>' + esc(f.rule_name || '—') + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;">' + esc(f.plain_english || '—') + '</td>'
+        + '<td>' + agSevBadge(f.severity) + '</td>'
+        + '<td style="font-size:11px;color:#9aa0a6;">' + esc(f.generated_ago || '—') + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;">' + esc(agFmtDate(f.snooze_until)) + '</td>'
+        + '<td onclick="event.stopPropagation()">' + agFlagActionsHtml(f.flag_id) + '</td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  function agFlagHistoryRender() {
+    var tbody = document.getElementById('ag-flag-hist-tbody');
+    var countEl = document.getElementById('ag-flag-hist-count');
+    if (!tbody) return;
+    if (countEl) countEl.textContent = AG_FLAGS_HISTORY.length;
+    if (!AG_FLAGS_HISTORY.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No history.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = AG_FLAGS_HISTORY.map(function(f) {
+      var actioned = agFmtDate(f.acknowledged_at || f.updated_at);
+      return '<tr>'
+        + '<td>' + esc(f.entity_name || '—') + '</td>'
+        + '<td>' + esc(f.rule_name || '—') + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;">' + esc(f.plain_english || '—') + '</td>'
+        + '<td>' + agSevBadge(f.severity) + '</td>'
+        + '<td style="font-size:11px;color:#9aa0a6;">' + esc(f.generated_ago || '—') + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;">' + esc(actioned) + '</td>'
+        + '<td onclick="event.stopPropagation()">' + agFlagActionsHtml(f.flag_id) + '</td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  function agLoadFlags() {
+    fetch('/flags/cards')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        AG_FLAGS         = (d.active   || []).filter(function(f) { return f.entity_type === 'ad_group'; });
+        AG_FLAGS_SNOOZED = (d.snoozed  || []).filter(function(f) { return f.entity_type === 'ad_group'; });
+        AG_FLAGS_HISTORY = (d.history  || []).filter(function(f) { return f.entity_type === 'ad_group'; });
+        agFlagRender();
+        agFlagSnoozedRender();
+        agFlagHistoryRender();
+      })
+      .catch(function() {
+        var tbody = document.getElementById('ag-flag-tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Failed to load flags.</td></tr>';
+      });
+  }
+  window.agLoadFlags = agLoadFlags;
+
+  window.agFlagAction = function(flag_id, action, days) {
+    var url = '/flags/' + flag_id + '/' + action;
+    fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() }, body: JSON.stringify({ days: days }) })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.success) {
+          agShowToast(action === 'acknowledge' ? 'Flag acknowledged.' : 'Flag snoozed for ' + days + ' days.', 'success');
+          agLoadFlags();
+        } else {
+          agShowToast('Error: ' + (d.error || 'unknown'), 'error');
+        }
+      })
+      .catch(function() { agShowToast('Request failed.', 'error'); });
+  };
+
+  var agFlagTabBtn = document.getElementById('ag-flag-tab');
+  if (agFlagTabBtn) agFlagTabBtn.addEventListener('shown.bs.tab', function() { agLoadFlags(); });
+
 })();
 </script>
 {% endblock %}

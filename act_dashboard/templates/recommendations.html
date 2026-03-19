@@ -47,6 +47,11 @@
       History <span class="badge bg-secondary ms-1" id="badge-history">0</span>
     </button>
   </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tab-btn-flags" data-tab="flags" role="tab" type="button">
+      Flags <span class="badge ms-1" style="background:#ea4335;" id="badge-flags">0</span>
+    </button>
+  </li>
 </ul>
 
 <!-- ── PENDING TAB ─────────────────────────────────────────────────────── -->
@@ -216,6 +221,112 @@
     </div>
   </div>
 </div>
+
+<!-- ── FLAGS TAB ─────────────────────────────────────────────────────────── -->
+<div id="panel-flags" class="rec-panel" style="display:none;">
+
+  <!-- Entity filter pills + count label -->
+  <div class="d-flex gap-2 align-items-center flex-wrap mt-3 mb-2">
+    <div class="d-flex gap-1" style="background:#f1f3f4;padding:4px;border-radius:6px;">
+      <button class="btn btn-sm rec-filter-pill active-pill" data-flag-filter="all">All</button>
+      <button class="btn btn-sm rec-filter-pill" data-flag-filter="campaign">Campaigns</button>
+      <button class="btn btn-sm rec-filter-pill" data-flag-filter="ad_group">Ad Groups</button>
+      <button class="btn btn-sm rec-filter-pill" data-flag-filter="keyword">Keywords</button>
+      <button class="btn btn-sm rec-filter-pill" data-flag-filter="ad">Ads</button>
+      <button class="btn btn-sm rec-filter-pill" data-flag-filter="shopping">Shopping</button>
+    </div>
+    <span class="text-muted" style="font-size:13px;" id="flags-active-count-label">Loading…</span>
+  </div>
+
+  <!-- ACTIVE FLAGS TABLE -->
+  <div class="table-wrapper">
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th style="width:90px;">Type</th>
+          <th style="width:150px;">Name</th>
+          <th style="width:150px;">Campaign/s name</th>
+          <th style="width:160px;">Flag name</th>
+          <th style="width:220px;">Plain English</th>
+          <th style="width:80px;">Rule/Flag</th>
+          <th style="width:80px;">Severity</th>
+          <th style="width:60px;">Age</th>
+          <th style="width:140px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="flags-active-tbody">
+        <tr><td colspan="9" class="text-center text-muted py-4">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SNOOZED SECTION (collapsible) -->
+  <div class="d-flex align-items-center gap-2 px-3 py-2 mt-3 mb-1"
+       style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;cursor:pointer;"
+       onclick="flagsToggleSection('flags-snooze-body','flags-snooze-chev')">
+    <span id="flags-snooze-chev" style="font-size:12px;">▶</span>
+    <strong style="font-size:13px;">Snoozed</strong>
+    <span class="badge bg-secondary" id="flags-snooze-count">0</span>
+    <span style="font-size:12px;color:#6c757d;">Flags snoozed — click to expand</span>
+  </div>
+  <div id="flags-snooze-body" style="display:none;margin-bottom:8px;">
+    <div class="table-wrapper">
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th style="width:90px;">Type</th>
+            <th style="width:150px;">Name</th>
+            <th style="width:150px;">Campaign/s name</th>
+            <th style="width:160px;">Flag name</th>
+            <th style="width:220px;">Plain English</th>
+            <th style="width:80px;">Rule/Flag</th>
+            <th style="width:80px;">Severity</th>
+            <th style="width:60px;">Age</th>
+            <th style="width:120px;">Snoozed until</th>
+            <th style="width:140px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="flags-snoozed-tbody">
+          <tr><td colspan="10" class="text-center text-muted py-3">No snoozed flags</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HISTORY SECTION (collapsible) -->
+  <div class="d-flex align-items-center gap-2 px-3 py-2 mb-1"
+       style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;cursor:pointer;"
+       onclick="flagsToggleSection('flags-hist-body','flags-hist-chev')">
+    <span id="flags-hist-chev" style="font-size:12px;">▶</span>
+    <strong style="font-size:13px;">History</strong>
+    <span class="badge bg-secondary" id="flags-hist-count">0</span>
+    <span style="font-size:12px;color:#6c757d;">Previously actioned flags — click to expand</span>
+  </div>
+  <div id="flags-hist-body" style="display:none;margin-bottom:8px;">
+    <div class="table-wrapper">
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th style="width:90px;">Type</th>
+            <th style="width:150px;">Name</th>
+            <th style="width:150px;">Campaign/s name</th>
+            <th style="width:160px;">Flag name</th>
+            <th style="width:220px;">Plain English</th>
+            <th style="width:80px;">Rule/Flag</th>
+            <th style="width:80px;">Severity</th>
+            <th style="width:60px;">Age</th>
+            <th style="width:120px;">Actioned</th>
+            <th style="width:140px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="flags-history-tbody">
+          <tr><td colspan="10" class="text-center text-muted py-3">No history</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /panel-flags -->
 
 <!-- Toast container -->
 <div id="rec-toast-wrap" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
@@ -791,7 +902,7 @@ document.getElementById('run-engine-btn').addEventListener('click', function() {
 });
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
-var TABS = ['pending','monitoring','successful','history'];
+var TABS = ['pending','monitoring','successful','history','flags'];
 document.querySelectorAll('[data-tab]').forEach(function(btn) {
   btn.addEventListener('click', function() {
     var tab = btn.dataset.tab;
@@ -802,6 +913,7 @@ document.querySelectorAll('[data-tab]').forEach(function(btn) {
     });
     var lowRiskBtn = document.getElementById('accept-low-risk-btn');
     lowRiskBtn.style.display = tab === 'pending' ? '' : 'none';
+    if (tab === 'flags') { loadFlags(); }
   });
 });
 
@@ -842,6 +954,220 @@ function loadData() {
     })
     .catch(function() { showToast('Failed to load recommendations', 'error'); });
 }
+
+loadData();
+
+// ── FLAGS ─────────────────────────────────────────────────────────────────────
+var FLAGS_DATA = { active: [], snoozed: [], history: [] };
+var flagsEntityFilter = 'all';
+
+function sevBadge(sev) {
+  var s = (sev || '').toLowerCase();
+  var lbl = s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Medium';
+  return '<span class="flag-sev-badge flag-sev-' + (s || 'medium') + '">' + esc(lbl) + '</span>';
+}
+
+function flagActionsDropdown(flag_id) {
+  return '<div class="dropdown">'
+    + '<button class="act-btn dropdown-toggle" data-bs-toggle="dropdown" style="padding:4px 10px;font-size:12px;border:1px solid #dee2e6;border-radius:4px;background:#fff;cursor:pointer;">Actions</button>'
+    + '<ul class="dropdown-menu dropdown-menu-end" style="font-size:13px;">'
+    + '<li><a class="dropdown-item" href="#" onclick="flagsAction(\'' + esc(flag_id) + '\',\'acknowledge\',0);return false;">Acknowledge</a></li>'
+    + '<li><hr class="dropdown-divider" style="margin:4px 0;"></li>'
+    + '<li><a class="dropdown-item" href="#" onclick="flagsAction(\'' + esc(flag_id) + '\',\'ignore\',7);return false;">Ignore 7 days</a></li>'
+    + '<li><a class="dropdown-item" href="#" onclick="flagsAction(\'' + esc(flag_id) + '\',\'ignore\',14);return false;">Ignore 14 days</a></li>'
+    + '<li><a class="dropdown-item" href="#" onclick="flagsAction(\'' + esc(flag_id) + '\',\'ignore\',30);return false;">Ignore 30 days</a></li>'
+    + '</ul></div>';
+}
+
+function flagExpandRow(f, colspan) {
+  var why = f.trigger_summary || '—';
+  var details = [];
+  if (f.severity) details.push((f.severity.charAt(0).toUpperCase() + f.severity.slice(1)) + ' severity');
+  var detHtml = details.length
+    ? '<ul>' + details.map(function(d){ return '<li>' + esc(d) + '</li>'; }).join('') + '</ul>'
+    : '—';
+  return '<tr class="rec-expand-row" id="flag-exp-' + esc(f.flag_id) + '">'
+    + '<td colspan="' + colspan + '">'
+    + '<div class="rec-expand-grid">'
+    + '<div><div class="rec-expand-label">Why this was triggered</div><div class="rec-expand-val">' + esc(why) + '</div></div>'
+    + '<div><div class="rec-expand-label">Flag details</div><div class="rec-expand-val">' + esc(f.plain_english || '—') + '</div></div>'
+    + '<div><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">' + detHtml + '</div></div>'
+    + '</div></td></tr>';
+}
+
+function flagRowMain(f) {
+  var campName = f.entity_type === 'campaign' ? esc(f.entity_name || '—') : esc(f.entity_name || '—');
+  return '<tr class="data-row" style="cursor:pointer;" onclick="toggleFlagExpand(\'' + esc(f.flag_id) + '\')">'
+    + '<td>' + typePill(f.entity_type) + '</td>'
+    + '<td style="font-weight:500;">' + esc(f.entity_name || '—') + '</td>'
+    + '<td style="font-size:12px;color:#5f6368;">' + esc(f.entity_name || '—') + '</td>'
+    + '<td style="font-weight:500;">' + esc(f.rule_name || '—') + '</td>'
+    + '<td style="font-size:12px;color:#5f6368;">' + esc(f.plain_english || '—') + '</td>'
+    + '<td>' + rfBadge('flag') + '</td>'
+    + '<td>' + sevBadge(f.severity) + '</td>'
+    + '<td style="font-size:11px;color:#9aa0a6;">' + esc(f.generated_ago || '—') + '</td>'
+    + '<td onclick="event.stopPropagation();">' + flagActionsDropdown(f.flag_id) + '</td>'
+    + '</tr>'
+    + flagExpandRow(f, 9);
+}
+
+function flagRowSnoozed(f) {
+  var snoozeDate = f.snooze_until ? fmtDate(f.snooze_until) : '—';
+  return '<tr class="data-row" style="cursor:pointer;" onclick="toggleFlagExpand(\'s-' + esc(f.flag_id) + '\')">'
+    + '<td>' + typePill(f.entity_type) + '</td>'
+    + '<td style="font-weight:500;">' + esc(f.entity_name || '—') + '</td>'
+    + '<td style="font-size:12px;color:#5f6368;">' + esc(f.entity_name || '—') + '</td>'
+    + '<td style="font-weight:500;">' + esc(f.rule_name || '—') + '</td>'
+    + '<td style="font-size:12px;color:#5f6368;">' + esc(f.plain_english || '—') + '</td>'
+    + '<td>' + rfBadge('flag') + '</td>'
+    + '<td>' + sevBadge(f.severity) + '</td>'
+    + '<td style="font-size:11px;color:#9aa0a6;">' + esc(f.generated_ago || '—') + '</td>'
+    + '<td style="font-size:12px;color:#5f6368;">' + esc(snoozeDate) + '</td>'
+    + '<td onclick="event.stopPropagation();">' + flagActionsDropdown(f.flag_id) + '</td>'
+    + '</tr>'
+    + '<tr class="rec-expand-row" id="flag-exp-s-' + esc(f.flag_id) + '"><td colspan="10"><div class="rec-expand-grid">'
+    + '<div><div class="rec-expand-label">Why this was triggered</div><div class="rec-expand-val">' + esc(f.trigger_summary || '—') + '</div></div>'
+    + '<div><div class="rec-expand-label">Flag details</div><div class="rec-expand-val">' + esc(f.plain_english || '—') + '</div></div>'
+    + '<div><div class="rec-expand-label">Severity</div><div class="rec-expand-val">' + esc((f.severity || '').charAt(0).toUpperCase() + (f.severity || '').slice(1)) + '</div></div>'
+    + '</div></td></tr>';
+}
+
+function flagRowHistory(f) {
+  var actionedDate = f.acknowledged_at ? fmtDate(f.acknowledged_at) : fmtDate(f.updated_at);
+  return '<tr class="data-row" style="cursor:pointer;" onclick="toggleFlagExpand(\'h-' + esc(f.flag_id) + '\')">'
+    + '<td>' + typePill(f.entity_type) + '</td>'
+    + '<td style="font-weight:500;">' + esc(f.entity_name || '—') + '</td>'
+    + '<td style="font-size:12px;color:#5f6368;">' + esc(f.entity_name || '—') + '</td>'
+    + '<td style="font-weight:500;">' + esc(f.rule_name || '—') + '</td>'
+    + '<td style="font-size:12px;color:#5f6368;">' + esc(f.plain_english || '—') + '</td>'
+    + '<td>' + rfBadge('flag') + '</td>'
+    + '<td>' + sevBadge(f.severity) + '</td>'
+    + '<td style="font-size:11px;color:#9aa0a6;">' + esc(f.generated_ago || '—') + '</td>'
+    + '<td style="font-size:12px;color:#5f6368;">' + esc(actionedDate) + '</td>'
+    + '<td onclick="event.stopPropagation();">' + flagActionsDropdown(f.flag_id) + '</td>'
+    + '</tr>'
+    + '<tr class="rec-expand-row" id="flag-exp-h-' + esc(f.flag_id) + '"><td colspan="10"><div class="rec-expand-grid">'
+    + '<div><div class="rec-expand-label">Why this was triggered</div><div class="rec-expand-val">' + esc(f.trigger_summary || '—') + '</div></div>'
+    + '<div><div class="rec-expand-label">Flag details</div><div class="rec-expand-val">' + esc(f.plain_english || '—') + '</div></div>'
+    + '<div><div class="rec-expand-label">Severity</div><div class="rec-expand-val">' + esc((f.severity || '').charAt(0).toUpperCase() + (f.severity || '').slice(1)) + '</div></div>'
+    + '</div></td></tr>';
+}
+
+var flagExpandedId = null;
+window.toggleFlagExpand = function(id) {
+  var el = document.getElementById('flag-exp-' + id);
+  if (!el) return;
+  if (flagExpandedId && flagExpandedId !== id) {
+    var prev = document.getElementById('flag-exp-' + flagExpandedId);
+    if (prev) prev.classList.remove('open');
+  }
+  if (flagExpandedId === id) { el.classList.remove('open'); flagExpandedId = null; }
+  else { el.classList.add('open'); flagExpandedId = id; }
+};
+
+function renderFlags() {
+  var active = FLAGS_DATA.active.filter(function(f) {
+    return flagsEntityFilter === 'all' || f.entity_type === flagsEntityFilter;
+  });
+
+  var atb = document.getElementById('flags-active-tbody');
+  if (atb) {
+    atb.innerHTML = active.length
+      ? active.map(flagRowMain).join('')
+      : '<tr><td colspan="9" class="text-center text-muted py-4">No active flags</td></tr>';
+  }
+  var lbl = document.getElementById('flags-active-count-label');
+  if (lbl) lbl.textContent = active.length + ' active flag' + (active.length !== 1 ? 's' : '');
+  var badge = document.getElementById('badge-flags');
+  if (badge) badge.textContent = FLAGS_DATA.active.length;
+
+  var stb = document.getElementById('flags-snoozed-tbody');
+  if (stb) {
+    stb.innerHTML = FLAGS_DATA.snoozed.length
+      ? FLAGS_DATA.snoozed.map(flagRowSnoozed).join('')
+      : '<tr><td colspan="10" class="text-center text-muted py-3">No snoozed flags</td></tr>';
+  }
+  var sc = document.getElementById('flags-snooze-count');
+  if (sc) sc.textContent = FLAGS_DATA.snoozed.length;
+
+  var htb = document.getElementById('flags-history-tbody');
+  if (htb) {
+    htb.innerHTML = FLAGS_DATA.history.length
+      ? FLAGS_DATA.history.map(flagRowHistory).join('')
+      : '<tr><td colspan="10" class="text-center text-muted py-3">No history</td></tr>';
+  }
+  var hc = document.getElementById('flags-hist-count');
+  if (hc) hc.textContent = FLAGS_DATA.history.length;
+}
+
+function loadFlags() {
+  fetch('/flags/cards')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      FLAGS_DATA.active  = d.active  || [];
+      FLAGS_DATA.snoozed = d.snoozed || [];
+      FLAGS_DATA.history = d.history || [];
+      renderFlags();
+    })
+    .catch(function() { showToast('Failed to load flags', 'error'); });
+}
+
+window.flagsToggleSection = function(bodyId, chevId) {
+  var body = document.getElementById(bodyId);
+  var chev = document.getElementById(chevId);
+  if (!body) return;
+  var open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (chev) chev.textContent = open ? '▶' : '▼';
+};
+
+window.flagsAction = function(flag_id, action, days) {
+  var url = action === 'acknowledge'
+    ? '/flags/' + flag_id + '/acknowledge'
+    : '/flags/' + flag_id + '/ignore';
+  var body = action === 'ignore' ? JSON.stringify({ days: days }) : '{}';
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRF() },
+    body: body
+  }).then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        showToast(action === 'acknowledge' ? 'Flag acknowledged' : 'Flag snoozed for ' + days + ' days', 'success');
+        loadFlags();
+      } else {
+        showToast(d.message || 'Action failed', 'error');
+      }
+    })
+    .catch(function() { showToast('Network error', 'error'); });
+};
+
+// Entity filter pills for flags panel
+document.addEventListener('click', function(e) {
+  var pill = e.target.closest('[data-flag-filter]');
+  if (!pill) return;
+  flagsEntityFilter = pill.dataset.flagFilter;
+  document.querySelectorAll('[data-flag-filter]').forEach(function(p) { p.classList.remove('active-pill'); });
+  pill.classList.add('active-pill');
+  renderFlags();
+});
+
+// ── Dropdown event delegation (handles dynamically rendered dropdowns) ────
+document.addEventListener('click', function(e) {
+  var toggle = e.target.closest('.dropdown-toggle');
+  if (!toggle) return;
+  var menu = toggle.nextElementSibling;
+  if (!menu || !menu.classList.contains('dropdown-menu')) return;
+  e.stopPropagation();
+  var isOpen = menu.classList.contains('show');
+  document.querySelectorAll('.dropdown-menu.show').forEach(function(m) { m.classList.remove('show'); });
+  if (!isOpen) menu.classList.add('show');
+});
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.dropdown')) {
+    document.querySelectorAll('.dropdown-menu.show').forEach(function(m) { m.classList.remove('show'); });
+  }
+});
 
 loadData();
 })();

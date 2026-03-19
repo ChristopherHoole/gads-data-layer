@@ -612,6 +612,272 @@ def _build_trigger_summary(rule: dict, features: dict, target_roas: float, metri
 
 
 # ---------------------------------------------------------------------------
+# Flag Engine (Chat 101)
+# ---------------------------------------------------------------------------
+
+def _run_flag_engine(conn, customer_id: str):
+    """
+    Evaluate all enabled flag rules and insert new flags into the `flags` table.
+    Uses same CAMPAIGN_METRIC_MAP, _evaluate_condition(), and MAX(snapshot_date)
+    pattern as the rules engine. Called at end of run_recommendations_engine().
+    """
+    print("\n[FLAGS ENGINE] Starting flag evaluation...")
+
+    # --- Load enabled flag rules from DB ---
+    try:
+        rows = conn.execute("""
+            SELECT id, name, entity_type, conditions, cooldown_days, risk_level, plain_english
+            FROM rules
+            WHERE rule_or_flag = 'flag'
+              AND enabled = TRUE
+              AND is_template = FALSE
+        """).fetchall()
+    except Exception as e:
+        print(f"[FLAGS ENGINE] ERROR querying flag rules: {e}")
+        return
+
+    if not rows:
+        print("[FLAGS ENGINE] No enabled flag rules found.")
+        return
+
+    col_names = ["id", "name", "entity_type", "conditions", "cooldown_days", "risk_level", "plain_english"]
+    flag_rules = []
+    for row in rows:
+        rd = dict(zip(col_names, row))
+        try:
+            conds_raw = rd["conditions"]
+            conditions = json.loads(conds_raw) if isinstance(conds_raw, str) else (conds_raw or [])
+        except Exception as e:
+            print(f"[FLAGS ENGINE] WARNING: Skipping rule {rd['id']} — bad conditions JSON: {e}")
+            continue
+
+        if not conditions:
+            continue
+
+        c1 = conditions[0]
+        op1 = c1.get("op") or _normalise_operator(c1.get("operator", ""))
+        try:
+            val1 = float(c1.get("value", 0))
+        except (TypeError, ValueError):
+            val1 = 0.0
+
+        c2 = conditions[1] if len(conditions) > 1 else None
+        cond2_metric = cond2_op = cond2_val = None
+        if c2:
+            cond2_metric = c2.get("metric")
+            cond2_op = c2.get("op") or _normalise_operator(c2.get("operator", ""))
+            try:
+                cond2_val = float(c2.get("value", 0))
+            except (TypeError, ValueError):
+                cond2_val = 0.0
+
+        flag_rules.append({
+            "rule_id":              f"db_campaign_{rd['id']}",
+            "rule_name":            rd["name"],
+            "entity_type":          rd["entity_type"] or "campaign",
+            "condition_metric":     c1.get("metric"),
+            "condition_operator":   op1,
+            "condition_value":      val1,
+            "condition_unit":       "absolute",
+            "condition_2_metric":   cond2_metric,
+            "condition_2_operator": cond2_op,
+            "condition_2_value":    cond2_val,
+            "cooldown_days":        rd["cooldown_days"] or 7,
+            "severity":             rd["risk_level"] or "medium",
+            "plain_english":        rd["plain_english"] or "",
+            "conditions_json":      rd["conditions"] or "[]",
+        })
+
+    print(f"[FLAGS ENGINE] Loaded {len(flag_rules)} flag rules")
+
+    # --- Group rules by entity type ---
+    rules_by_entity: dict = {}
+    for rule in flag_rules:
+        et = rule["entity_type"]
+        rules_by_entity.setdefault(et, []).append(rule)
+
+    # --- Load existing active/snoozed flags for duplicate prevention ---
+    now = datetime.now()
+    try:
+        existing_rows = conn.execute("""
+            SELECT rule_id, entity_id, status, snooze_until
+            FROM flags
+            WHERE customer_id = ?
+              AND status IN ('active', 'snoozed')
+        """, [customer_id]).fetchall()
+
+        existing_skip = set()  # (rule_id, entity_id) keys to skip
+        for r in existing_rows:
+            rule_id_db, entity_id_db, status_db, snooze_until_db = r
+            key = (rule_id_db, str(entity_id_db) if entity_id_db else "")
+            if status_db == "active":
+                existing_skip.add(key)
+            elif status_db == "snoozed" and snooze_until_db and snooze_until_db > now:
+                existing_skip.add(key)
+    except Exception as e:
+        print(f"[FLAGS ENGINE] WARNING: Could not fetch existing flags: {e}")
+        existing_skip = set()
+
+    # --- Process each entity type ---
+    generated = 0
+    skipped_dup = 0
+    skipped_no_data = 0
+    new_flags = []
+
+    for entity_type, rules in rules_by_entity.items():
+        if entity_type not in ENTITY_TABLES:
+            print(f"[FLAGS ENGINE] Unknown entity type: {entity_type} — skipping")
+            continue
+
+        table_name = ENTITY_TABLES[entity_type]
+        metric_map = _get_metric_map_for_entity(entity_type)
+        id_col, name_col = ENTITY_ID_COLUMNS.get(entity_type, ("id", "name"))
+
+        if not _table_exists(conn, table_name):
+            print(f"[FLAGS ENGINE] Table {table_name} not found — skipping {entity_type}")
+            continue
+
+        # Query latest entity data (Chat 100 pattern)
+        try:
+            query = f"""
+                SELECT * FROM {table_name}
+                WHERE customer_id = ?
+                  AND snapshot_date = (
+                      SELECT MAX(snapshot_date)
+                      FROM {table_name}
+                      WHERE customer_id = ?
+                        AND {name_col} IS NOT NULL
+                  )
+                ORDER BY {id_col}
+            """
+            entity_data = conn.execute(query, [customer_id, customer_id]).df()
+            print(f"[FLAGS ENGINE] Loaded {len(entity_data)} {entity_type} rows")
+        except Exception as e:
+            print(f"[FLAGS ENGINE] ERROR querying {table_name}: {e}")
+            continue
+
+        if entity_data.empty:
+            continue
+
+        for _, entity_row in entity_data.iterrows():
+            features = entity_row.to_dict()
+            entity_id = str(int(features.get(id_col, 0)))
+            entity_name = features.get(name_col) or f"{entity_type}_{entity_id}"
+
+            for rule in rules:
+                rule_id = rule["rule_id"]
+                key = (rule_id, entity_id)
+
+                # Duplicate prevention
+                if key in existing_skip:
+                    skipped_dup += 1
+                    continue
+
+                # Evaluate primary condition
+                metric = rule["condition_metric"]
+                if not metric or metric not in metric_map:
+                    skipped_no_data += 1
+                    continue
+
+                entry = metric_map[metric]
+                db_col = entry[0]
+                override_op = entry[1]
+                override_threshold = entry[2]
+                divisor = entry[3] if len(entry) > 3 else 1
+                actual = features.get(db_col)
+                if actual is not None and divisor != 1:
+                    actual = float(actual) / divisor
+
+                if actual is None:
+                    skipped_no_data += 1
+                    continue
+
+                eff_op = override_op if override_op else rule["condition_operator"]
+                eff_threshold = override_threshold if override_threshold is not None else rule["condition_value"]
+
+                if not _evaluate(actual, eff_op, eff_threshold):
+                    continue
+
+                # Evaluate secondary condition (if present)
+                metric2 = rule["condition_2_metric"]
+                if metric2:
+                    if metric2 not in metric_map:
+                        skipped_no_data += 1
+                        continue
+
+                    entry2 = metric_map[metric2]
+                    db_col2 = entry2[0]
+                    override_op2 = entry2[1]
+                    override_threshold2 = entry2[2]
+                    divisor2 = entry2[3] if len(entry2) > 3 else 1
+                    actual2 = features.get(db_col2)
+                    if actual2 is not None and divisor2 != 1:
+                        actual2 = float(actual2) / divisor2
+
+                    if actual2 is None:
+                        skipped_no_data += 1
+                        continue
+
+                    eff_op2 = override_op2 if override_op2 else rule["condition_2_operator"]
+                    eff_threshold2 = override_threshold2 if override_threshold2 is not None else rule["condition_2_value"]
+
+                    if not _evaluate(actual2, eff_op2, eff_threshold2):
+                        continue
+
+                # Both conditions passed — build trigger summary
+                trigger_summary = _build_trigger_summary(rule, features, 4.0, metric_map)
+                severity = rule["severity"]
+                flag_id = str(uuid.uuid4())
+
+                print(f"[FLAGS ENGINE] Generated: {rule_id} | {entity_type} {entity_id} | severity={severity}")
+
+                new_flags.append({
+                    "flag_id":        flag_id,
+                    "rule_id":        rule_id,
+                    "rule_name":      rule["rule_name"],
+                    "entity_type":    entity_type,
+                    "entity_id":      entity_id,
+                    "entity_name":    entity_name,
+                    "customer_id":    customer_id,
+                    "status":         "active",
+                    "severity":       severity,
+                    "trigger_summary": trigger_summary,
+                    "plain_english":  rule["plain_english"],
+                    "conditions":     rule["conditions_json"],
+                    "generated_at":   now,
+                    "acknowledged_at": None,
+                    "snooze_until":   None,
+                    "snooze_days":    None,
+                    "updated_at":     now,
+                })
+                existing_skip.add(key)
+                generated += 1
+
+    # --- Bulk insert flags ---
+    if new_flags:
+        conn.executemany("""
+            INSERT INTO flags (
+                flag_id, rule_id, rule_name, entity_type, entity_id, entity_name,
+                customer_id, status, severity, trigger_summary, plain_english, conditions,
+                generated_at, acknowledged_at, snooze_until, snooze_days, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, [
+            (
+                f["flag_id"], f["rule_id"], f["rule_name"],
+                f["entity_type"], f["entity_id"], f["entity_name"],
+                f["customer_id"], f["status"], f["severity"],
+                f["trigger_summary"], f["plain_english"], f["conditions"],
+                f["generated_at"], f["acknowledged_at"], f["snooze_until"],
+                f["snooze_days"], f["updated_at"],
+            )
+            for f in new_flags
+        ])
+        print(f"[FLAGS ENGINE] Inserted {len(new_flags)} flags")
+
+    print(f"[FLAGS ENGINE] Done. Generated={generated} | SkippedDuplicate={skipped_dup} | SkippedNoData={skipped_no_data}")
+
+
+# ---------------------------------------------------------------------------
 # Main Engine Function
 # ---------------------------------------------------------------------------
 
@@ -922,6 +1188,9 @@ def run_recommendations_engine(
             for r in new_recs
         ])
         print(f"[ENGINE] Inserted {len(new_recs)} recommendations")
+
+    # --- Run flag engine (Chat 101) -----------------------------------------
+    _run_flag_engine(conn, customer_id)
 
     conn.close()
 

@@ -303,6 +303,7 @@ button:not(:disabled):active {
   <button id="kw-tab-monitoring" onclick="kwSwitchTab('monitoring')" style="padding:8px 16px;border:none;background:none;font-size:13px;color:#6b7280;cursor:pointer;">Monitoring <span id="kw-badge-monitoring" style="background:#e5e7eb;color:#374151;border-radius:9999px;padding:1px 7px;font-size:11px;">0</span></button>
   <button id="kw-tab-successful" onclick="kwSwitchTab('successful')" style="padding:8px 16px;border:none;background:none;font-size:13px;color:#6b7280;cursor:pointer;">Successful <span id="kw-badge-successful" style="background:#e5e7eb;color:#374151;border-radius:9999px;padding:1px 7px;font-size:11px;">0</span></button>
   <button id="kw-tab-history" onclick="kwSwitchTab('history')" style="padding:8px 16px;border:none;background:none;font-size:13px;color:#6b7280;cursor:pointer;">History <span id="kw-badge-history" style="background:#e5e7eb;color:#374151;border-radius:9999px;padding:1px 7px;font-size:11px;">0</span></button>
+  <button id="kw-tab-flags" onclick="kwSwitchTab('flags')" style="padding:8px 16px;border:none;background:none;font-size:13px;color:#6b7280;cursor:pointer;">Flags <span id="kw-badge-flags" style="background:#ea4335;color:#fff;border-radius:9999px;padding:1px 7px;font-size:11px;">0</span></button>
 </div>
 <!-- PENDING -->
 <div id="kw-pane-pending">
@@ -384,9 +385,79 @@ button:not(:disabled):active {
   </table>
   <div id="kw-history-paginator"></div>
 </div>
+<!-- FLAGS (active only — entity page view) -->
+<div id="kw-pane-flags" style="display:none;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead style="background:#f9fafb;">
+      <tr>
+        <th class="rec-col-name" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Keyword</th>
+        <th class="rec-col-rule" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Flag name</th>
+        <th class="rec-col-plain" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Plain English</th>
+        <th class="rec-col-risk" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Severity</th>
+        <th class="rec-col-age" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Age</th>
+        <th class="rec-col-acts" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="kw-flag-tbody">
+      <tr><td colspan="6" style="text-align:center;padding:24px;color:#6b7280;">Loading…</td></tr>
+    </tbody>
+  </table>
+
+  <!-- SNOOZED FLAGS SECTION -->
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;margin-top:12px;background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;cursor:pointer;"
+       onclick="kwFlagSectionToggle('kw-flag-snooze-body','kw-flag-snooze-chev')">
+    <span id="kw-flag-snooze-chev" style="font-size:12px;">▶</span>
+    <strong style="font-size:13px;">Snoozed</strong>
+    <span id="kw-flag-snooze-count" style="background:#6c757d;color:#fff;font-size:11px;padding:2px 6px;border-radius:10px;">0</span>
+  </div>
+  <div id="kw-flag-snooze-body" style="display:none;">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead style="background:#f9fafb;">
+        <tr>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Keyword</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Flag name</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Plain English</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Severity</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Age</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Snoozed until</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="kw-flag-snooze-tbody">
+        <tr><td colspan="7" style="text-align:center;padding:24px;color:#6b7280;">No snoozed flags.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- HISTORY FLAGS SECTION -->
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;margin-top:4px;background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;cursor:pointer;"
+       onclick="kwFlagSectionToggle('kw-flag-hist-body','kw-flag-hist-chev')">
+    <span id="kw-flag-hist-chev" style="font-size:12px;">▶</span>
+    <strong style="font-size:13px;">History</strong>
+    <span id="kw-flag-hist-count" style="background:#6c757d;color:#fff;font-size:11px;padding:2px 6px;border-radius:10px;">0</span>
+  </div>
+  <div id="kw-flag-hist-body" style="display:none;">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead style="background:#f9fafb;">
+        <tr>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Keyword</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Flag name</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Plain English</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Severity</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Age</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Actioned</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="kw-flag-hist-tbody">
+        <tr><td colspan="7" style="text-align:center;padding:24px;color:#6b7280;">No history.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 <script>
 function kwSwitchTab(tab) {
-  ['pending','monitoring','successful','history'].forEach(function(t) {
+  ['pending','monitoring','successful','history','flags'].forEach(function(t) {
     var pane = document.getElementById('kw-pane-' + t);
     var btn  = document.getElementById('kw-tab-' + t);
     if (!pane || !btn) return;
@@ -789,6 +860,136 @@ filterKeywords();
   }};
 
   window.kwRecLoad = recLoad;
+
+  // Patch kwSwitchTab to load flags on first open
+  var _kwFlagsLoaded = false;
+  var _origKwSwitchTab = typeof kwSwitchTab === 'function' ? kwSwitchTab : null;
+  if (_origKwSwitchTab) {
+    kwSwitchTab = function(tab) {{
+      _origKwSwitchTab(tab);
+      if (tab === 'flags' && !_kwFlagsLoaded) {{ _kwFlagsLoaded = true; if (window.kwLoadFlags) window.kwLoadFlags(); }}
+    }};
+  }
 }})();{%- endraw -%}
+// ── Keyword Flags ─────────────────────────────────────────────────────────
+window.kwFlagSectionToggle = function(bodyId, chevId) {
+  var body = document.getElementById(bodyId);
+  var chev = document.getElementById(chevId);
+  if (!body) return;
+  var open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (chev) chev.textContent = open ? '▶' : '▼';
+};
+(function() {
+  var KW_FLAGS = [], KW_FLAGS_SNOOZED = [], KW_FLAGS_HISTORY = [];
+  function kwFmtDate(dt) {
+    if (!dt) return '—';
+    try { return new Date(dt).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}); } catch(e) { return dt; }
+  }
+  function kwEsc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function kwSevBadge(sev) {
+    var s = (sev || '').toLowerCase();
+    var cls = s === 'high' ? 'flag-sev-high' : s === 'medium' ? 'flag-sev-medium' : 'flag-sev-low';
+    return '<span class="flag-sev-badge ' + cls + '">' + (s ? s.charAt(0).toUpperCase() + s.slice(1) : '—') + '</span>';
+  }
+  function kwFlagActionsHtml(flag_id) {
+    return '<div class="rec-row-acts">'
+      + '<button class="rec-row-btn rec-row-btn-accept" onclick="kwFlagAction(\'' + flag_id + '\',\'acknowledge\',0)">Acknowledge</button>'
+      + '<select onchange="if(this.value){kwFlagAction(\'' + flag_id + '\',\'ignore\',parseInt(this.value));this.value=\'\'}" style="font-size:12px;padding:4px 6px;border:1px solid #fca5a5;border-radius:4px;color:#dc2626;cursor:pointer;">'
+      + '<option value="">Snooze…</option>'
+      + '<option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option>'
+      + '</select></div>';
+  }
+  function kwFlagRender() {
+    var tbody = document.getElementById('kw-flag-tbody');
+    if (!tbody) return;
+    var badge = document.getElementById('kw-badge-flags');
+    if (badge) badge.textContent = KW_FLAGS.length;
+    if (!KW_FLAGS.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:#6b7280;">No active flags for keywords.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = KW_FLAGS.map(function(f) {
+      return '<tr style="border-bottom:1px solid #e5e7eb;">'
+        + '<td class="rec-col-name" style="padding:8px;">' + kwEsc(f.entity_name || '—') + '</td>'
+        + '<td class="rec-col-rule" style="padding:8px;">' + kwEsc(f.rule_name || '—') + '</td>'
+        + '<td class="rec-col-plain" style="padding:8px;">' + kwEsc(f.plain_english || '—') + '</td>'
+        + '<td class="rec-col-risk" style="padding:8px;">' + kwSevBadge(f.severity) + '</td>'
+        + '<td class="rec-col-age" style="padding:8px;">' + kwEsc(f.generated_ago || '—') + '</td>'
+        + '<td class="rec-col-acts" style="padding:8px;">' + kwFlagActionsHtml(f.flag_id) + '</td>'
+        + '</tr>';
+    }).join('');
+  }
+  function kwFlagSnoozedRender() {
+    var tbody = document.getElementById('kw-flag-snooze-tbody');
+    var countEl = document.getElementById('kw-flag-snooze-count');
+    if (!tbody) return;
+    if (countEl) countEl.textContent = KW_FLAGS_SNOOZED.length;
+    if (!KW_FLAGS_SNOOZED.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#6b7280;">No snoozed flags.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = KW_FLAGS_SNOOZED.map(function(f) {
+      return '<tr style="border-bottom:1px solid #e5e7eb;">'
+        + '<td style="padding:8px;">' + kwEsc(f.entity_name || '—') + '</td>'
+        + '<td style="padding:8px;">' + kwEsc(f.rule_name || '—') + '</td>'
+        + '<td style="padding:8px;font-size:12px;color:#6b7280;">' + kwEsc(f.plain_english || '—') + '</td>'
+        + '<td style="padding:8px;">' + kwSevBadge(f.severity) + '</td>'
+        + '<td style="padding:8px;font-size:11px;color:#9ca3af;">' + kwEsc(f.generated_ago || '—') + '</td>'
+        + '<td style="padding:8px;font-size:12px;color:#6b7280;">' + kwEsc(kwFmtDate(f.snooze_until)) + '</td>'
+        + '<td style="padding:8px;">' + kwFlagActionsHtml(f.flag_id) + '</td>'
+        + '</tr>';
+    }).join('');
+  }
+  function kwFlagHistoryRender() {
+    var tbody = document.getElementById('kw-flag-hist-tbody');
+    var countEl = document.getElementById('kw-flag-hist-count');
+    if (!tbody) return;
+    if (countEl) countEl.textContent = KW_FLAGS_HISTORY.length;
+    if (!KW_FLAGS_HISTORY.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#6b7280;">No history.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = KW_FLAGS_HISTORY.map(function(f) {
+      return '<tr style="border-bottom:1px solid #e5e7eb;">'
+        + '<td style="padding:8px;">' + kwEsc(f.entity_name || '—') + '</td>'
+        + '<td style="padding:8px;">' + kwEsc(f.rule_name || '—') + '</td>'
+        + '<td style="padding:8px;font-size:12px;color:#6b7280;">' + kwEsc(f.plain_english || '—') + '</td>'
+        + '<td style="padding:8px;">' + kwSevBadge(f.severity) + '</td>'
+        + '<td style="padding:8px;font-size:11px;color:#9ca3af;">' + kwEsc(f.generated_ago || '—') + '</td>'
+        + '<td style="padding:8px;font-size:12px;color:#6b7280;">' + kwEsc(kwFmtDate(f.acknowledged_at || f.updated_at)) + '</td>'
+        + '<td style="padding:8px;">' + kwFlagActionsHtml(f.flag_id) + '</td>'
+        + '</tr>';
+    }).join('');
+  }
+  function kwLoadFlagsInner() {
+    fetch('/flags/cards')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        KW_FLAGS         = (d.active   || []).filter(function(f) { return f.entity_type === 'keyword'; });
+        KW_FLAGS_SNOOZED = (d.snoozed  || []).filter(function(f) { return f.entity_type === 'keyword'; });
+        KW_FLAGS_HISTORY = (d.history  || []).filter(function(f) { return f.entity_type === 'keyword'; });
+        kwFlagRender();
+        kwFlagSnoozedRender();
+        kwFlagHistoryRender();
+      })
+      .catch(function() {
+        var tbody = document.getElementById('kw-flag-tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:#6b7280;">Failed to load flags.</td></tr>';
+      });
+  }
+  window.kwLoadFlags = kwLoadFlagsInner;
+  window.kwFlagAction = function(flag_id, action, days) {
+    var token = typeof getCSRFToken === 'function' ? getCSRFToken() : '';
+    fetch('/flags/' + flag_id + '/' + action, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': token }, body: JSON.stringify({ days: days }) })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        var msg = d.success ? (action === 'acknowledge' ? 'Flag acknowledged.' : 'Flag snoozed for ' + days + ' days.') : ('Error: ' + (d.error || 'unknown'));
+        if (typeof showToast === 'function') showToast(msg, d.success ? 'success' : 'error', 3000);
+        if (d.success) kwLoadFlagsInner();
+      })
+      .catch(function() { if (typeof showToast === 'function') showToast('Request failed.', 'error', 3000); });
+  };
+})();
 </script>
 {% endblock %}

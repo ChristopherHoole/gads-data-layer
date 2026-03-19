@@ -399,6 +399,21 @@ def create_app():
     else:
         print("⚠️  [Chat 95] Route not found (skipping): recommendations.recommendations_run")
 
+    # [Chat 101] Flags routes — CSRF exemptions
+    # GET /flags/cards, POST /flags/<id>/acknowledge, POST /flags/<id>/ignore are JSON APIs
+    # Protected by @login_required decorator instead
+    chat101_routes = [
+        'recommendations.flags_cards',
+        'recommendations.flag_acknowledge',
+        'recommendations.flag_ignore',
+    ]
+    for route_name in chat101_routes:
+        if route_name in app.view_functions:
+            csrf.exempt(app.view_functions[route_name])
+            print(f"✅ [Chat 101] CSRF exempted: {route_name}")
+        else:
+            print(f"⚠️  [Chat 101] Route not found (skipping): {route_name}")
+
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
     def csrf_error(reason):

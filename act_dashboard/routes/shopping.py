@@ -97,7 +97,7 @@ def load_shopping_campaigns(
             NULL                                                              AS click_share,
             NULL                                                              AS optimization_score,
             NULL                                                              AS bid_strategy_type
-        FROM ro.analytics.shopping_campaign_daily
+        FROM ro.analytics.shopping_campaign_daily AS s
         WHERE customer_id = ?
           {_date_clause}
         GROUP BY campaign_id, campaign_name, campaign_status

@@ -1,8 +1,8 @@
 # KNOWN PITFALLS - ADS CONTROL TOWER (A.C.T)
 
-**Version:** 6.0
+**Version:** 8.0
 **Created:** 2026-02-28
-**Updated:** 2026-03-17
+**Updated:** 2026-03-19
 **Purpose:** Troubleshooting guide with solutions and prevention strategies
 
 **See Also:** LESSONS_LEARNED.md (best practices), MASTER_KNOWLEDGE_BASE.md (current state)
@@ -24,9 +24,11 @@
 11. **Email Sending Issues** (4 pitfalls)
 12. **Layout & CSS Issues** (4 pitfalls)
 13. **Rules & Templates Issues** (6 pitfalls)
-14. **Synthetic Data & Features Pipeline Issues** (6 pitfalls) ← NEW
+14. **Synthetic Data & Features Pipeline Issues** (6 pitfalls)
+15. **Recommendations Engine Issues** (5 pitfalls)
+16. **Flags System Issues** (5 pitfalls) ← NEW
 
-**Total:** 65 pitfalls with solutions
+**Total:** 75 pitfalls with solutions
 
 ---
 
@@ -335,12 +337,6 @@ conn.execute("ATTACH 'warehouse_readonly.duckdb' AS ro (READ_ONLY)")
 
 ---
 
-**Version:** 5.0 | **Last Updated:** 2026-03-15
-**Total Pitfalls:** 59
-**See Also:** LESSONS_LEARNED.md | MASTER_KNOWLEDGE_BASE.md
-
----
-
 ## SYNTHETIC DATA & FEATURES PIPELINE ISSUES
 
 ### 60. customer_id YAML Integer Type Mismatch
@@ -385,12 +381,6 @@ conn.execute("ATTACH 'warehouse_readonly.duckdb' AS ro (READ_ONLY)")
 
 ---
 
-**Version:** 6.0 | **Last Updated:** 2026-03-17
-**Total Pitfalls:** 65
-**See Also:** LESSONS_LEARNED.md | MASTER_KNOWLEDGE_BASE.md
-
----
-
 ## RECOMMENDATIONS ENGINE ISSUES (Chats 97-100)
 
 ### 66. Accept Goes Straight to Successful — Monitoring Skipped
@@ -406,7 +396,7 @@ conn.execute("ATTACH 'warehouse_readonly.duckdb' AS ro (READ_ONLY)")
 **Chat:** 97-100
 
 ### 68. CPC/CPA Rule Fires on All Campaigns — Micros vs Pounds
-**Problem:** Rule 21 (CPC > £5) fires on all 4 campaigns when only 2 have CPC > £5
+**Problem:** Rule fires on all campaigns when only some should qualify
 **Cause:** `cpc_w7_mean` in features table stores value in micros (e.g. 5390056 = £5.39). Rule condition `value=5` is in pounds. Engine compares 5390056 > 5 — always true.
 **Solution:** Add 4th tuple element (divisor=1_000_000) to CPC/CPA/cost entries in CAMPAIGN_METRIC_MAP. Apply divisor in `_get_metric_value()`.
 **Chat:** 99
@@ -426,6 +416,43 @@ conn.execute("ATTACH 'warehouse_readonly.duckdb' AS ro (READ_ONLY)")
 
 ---
 
-**Version:** 7.0 | **Last Updated:** 2026-03-18
-**Total Pitfalls:** 70
+## FLAGS SYSTEM ISSUES (Master Chat 12)
+
+### 71. Flag vs_prev_pct Thresholds Stored as Whole Numbers — Engine Never Fires
+**Problem:** All percentage-based flags generate 0 results despite correct conditions
+**Cause:** Flow builder saved thresholds as whole-number percentages (e.g. -30) but features table stores decimal ratios (e.g. -0.1045). Engine compares -0.1045 < -30 — always false.
+**Solution:** Run `fix_all_flag_conditions.py` — divides all vs_prev_pct values by 100 and sets missing op/ref values. Already run — do NOT re-run.
+**Prevention:** Always store vs_prev_pct thresholds as decimals. Check with `check_flag_data.py` before debugging engine.
+**Chat:** Master Chat 12
+
+### 72. Flag Conditions with op=None Never Evaluate — Always False
+**Problem:** Specific flags (e.g. CPA Spike, CTR Drop) never fire even with correct thresholds
+**Cause:** Flow builder saved conditions with `op=None` and `ref=None`. Engine calls `_evaluate(value, None, threshold)` which returns False.
+**Solution:** Set correct op values: Drop flags use `lt`, Spike flags use `gt`. Run `fix_all_flag_conditions.py`.
+**Prevention:** After creating flags via flow builder, always verify conditions with a check script before testing.
+**Chat:** Master Chat 12
+
+### 73. Bootstrap Dropdown Reinit Doesn't Work on Dynamically Rendered Rows
+**Problem:** `new bootstrap.Dropdown(el)` called after innerHTML set — dropdown still doesn't open
+**Cause:** Bootstrap dropdown initialisation via JS reinit is unreliable for dynamically injected HTML.
+**Solution:** Use `document.addEventListener('click', ...)` event delegation on `document` instead. Catches all toggles regardless of when they were rendered.
+**Chat:** Master Chat 12
+
+### 74. stopPropagation on TD Silently Blocks Event Delegation Dropdowns
+**Problem:** Dropdown works on active flag rows but not on snoozed/history rows
+**Cause:** `onclick="event.stopPropagation()"` on the Actions `<td>` in snoozed/history rows fires before the document-level delegation listener sees the click. Dropdown never opens, no error.
+**Solution:** Remove `stopPropagation` from any `<td>` that has no parent `<tr onclick>` to suppress. Only needed on active rows where row-expand must be prevented.
+**Chat:** Master Chat 12
+
+### 75. window.fnName Required for onclick Handlers in Dynamically Rendered HTML
+**Problem:** Clicking a flag row or button does nothing — no console error
+**Cause:** Function declared inside IIFE is not accessible from inline `onclick` which runs in global scope.
+**Solution:** Expose all functions called from inline onclick: `window.toggleFlagExpand = function(id) {...}`
+**Prevention:** Any function called from dynamically rendered HTML must be on `window`.
+**Chat:** Master Chat 12
+
+---
+
+**Version:** 8.0 | **Last Updated:** 2026-03-19
+**Total Pitfalls:** 75
 **See Also:** LESSONS_LEARNED.md | MASTER_KNOWLEDGE_BASE.md

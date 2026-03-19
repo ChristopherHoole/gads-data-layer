@@ -332,6 +332,11 @@
             History <span class="badge bg-secondary ms-1" id="cam-badge-history">0</span>
           </button>
         </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="cam-flag-tab" data-bs-toggle="tab" data-bs-target="#cam-flag-panel" type="button" role="tab">
+            Flags <span class="badge ms-1" style="background:#ea4335;color:#fff;" id="cam-flag-badge">0</span>
+          </button>
+        </li>
       </ul>
 
       <div class="tab-content" id="camRecTabContent">
@@ -448,6 +453,88 @@
             </table>
           </div>
           <div id="cam-history-paginator" class="d-flex justify-content-between align-items-center mt-2" style="font-size:13px;"></div>
+        </div>
+
+        <!-- FLAGS (active only — entity page view) -->
+        <div class="tab-pane fade" id="cam-flag-panel" role="tabpanel">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle" id="cam-flag-table">
+              <thead class="table-light">
+                <tr>
+                  <th class="rec-col-name" style="width:180px;">Campaign name</th>
+                  <th class="rec-col-rule" style="width:160px;">Flag name</th>
+                  <th class="rec-col-plain" style="width:220px;">Plain English</th>
+                  <th class="rec-col-ruleflag" style="width:70px;">Rule/Flag</th>
+                  <th class="rec-col-risk" style="width:80px;">Severity</th>
+                  <th class="rec-col-age" style="width:60px;">Age</th>
+                  <th class="rec-col-acts" style="width:130px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="cam-flag-tbody">
+                <tr><td colspan="7" class="text-center text-muted py-4">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- SNOOZED FLAGS SECTION -->
+          <div class="d-flex align-items-center gap-2 px-3 py-2 mt-3 mb-1"
+               style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;cursor:pointer;"
+               onclick="camFlagSectionToggle('cam-flag-snooze-body','cam-flag-snooze-chev')">
+            <span id="cam-flag-snooze-chev" style="font-size:12px;">▶</span>
+            <strong style="font-size:13px;">Snoozed</strong>
+            <span class="badge bg-secondary" id="cam-flag-snooze-count">0</span>
+          </div>
+          <div id="cam-flag-snooze-body" style="display:none;">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width:180px;">Campaign name</th>
+                    <th style="width:160px;">Flag name</th>
+                    <th style="width:220px;">Plain English</th>
+                    <th style="width:70px;">Rule/Flag</th>
+                    <th style="width:80px;">Severity</th>
+                    <th style="width:60px;">Age</th>
+                    <th style="width:110px;">Snoozed until</th>
+                    <th style="width:130px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="cam-flag-snooze-tbody">
+                  <tr><td colspan="8" class="text-center text-muted py-3">No snoozed flags.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- HISTORY FLAGS SECTION -->
+          <div class="d-flex align-items-center gap-2 px-3 py-2 mb-1"
+               style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;cursor:pointer;"
+               onclick="camFlagSectionToggle('cam-flag-hist-body','cam-flag-hist-chev')">
+            <span id="cam-flag-hist-chev" style="font-size:12px;">▶</span>
+            <strong style="font-size:13px;">History</strong>
+            <span class="badge bg-secondary" id="cam-flag-hist-count">0</span>
+          </div>
+          <div id="cam-flag-hist-body" style="display:none;">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width:180px;">Campaign name</th>
+                    <th style="width:160px;">Flag name</th>
+                    <th style="width:220px;">Plain English</th>
+                    <th style="width:70px;">Rule/Flag</th>
+                    <th style="width:80px;">Severity</th>
+                    <th style="width:60px;">Age</th>
+                    <th style="width:110px;">Actioned</th>
+                    <th style="width:130px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="cam-flag-hist-tbody">
+                  <tr><td colspan="8" class="text-center text-muted py-3">No history.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
       </div><!-- /.tab-content -->
@@ -1007,6 +1094,166 @@ function applyColumns() {
     });
   }
 
+  // ── Campaign Flags ─────────────────────────────────────────────────────────
+  var CAM_FLAGS = [], CAM_FLAGS_SNOOZED = [], CAM_FLAGS_HISTORY = [];
+
+  window.camFlagSectionToggle = function(bodyId, chevId) {
+    var body = document.getElementById(bodyId);
+    var chev = document.getElementById(chevId);
+    if (!body) return;
+    var open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'block';
+    if (chev) chev.textContent = open ? '▶' : '▼';
+  };
+
+  function camFmtDate(dt) {
+    if (!dt) return '—';
+    try { return new Date(dt).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}); } catch(e) { return dt; }
+  }
+
+  function camSevBadge(sev) {
+    var s = (sev || '').toLowerCase();
+    var cls = s === 'high' ? 'flag-sev-high' : s === 'medium' ? 'flag-sev-medium' : 'flag-sev-low';
+    var lbl = s ? s.charAt(0).toUpperCase() + s.slice(1) : '—';
+    return '<span class="flag-sev-badge ' + cls + '">' + lbl + '</span>';
+  }
+
+  function camFlagActionsHtml(flag_id) {
+    return '<div class="dropdown">'
+      + '<button class="act-btn dropdown-toggle" data-bs-toggle="dropdown" style="padding:4px 10px;font-size:12px;border:1px solid #dee2e6;border-radius:4px;background:#fff;cursor:pointer;">Actions</button>'
+      + '<ul class="dropdown-menu dropdown-menu-end" style="font-size:13px;">'
+      + '<li><a class="dropdown-item" href="#" onclick="camFlagAction(\'' + flag_id + '\',\'acknowledge\',0);return false;">Acknowledge</a></li>'
+      + '<li><hr class="dropdown-divider" style="margin:4px 0;"></li>'
+      + '<li><a class="dropdown-item" href="#" onclick="camFlagAction(\'' + flag_id + '\',\'ignore\',7);return false;">Ignore 7 days</a></li>'
+      + '<li><a class="dropdown-item" href="#" onclick="camFlagAction(\'' + flag_id + '\',\'ignore\',14);return false;">Ignore 14 days</a></li>'
+      + '<li><a class="dropdown-item" href="#" onclick="camFlagAction(\'' + flag_id + '\',\'ignore\',30);return false;">Ignore 30 days</a></li>'
+      + '</ul></div>';
+  }
+
+  function makeFlagExpRow(f) {
+    var sevLabel = f.severity ? (f.severity.charAt(0).toUpperCase() + f.severity.slice(1)) + ' severity' : '—';
+    return '<tr class="rec-expand-row" id="cam-flag-exp-' + f.flag_id + '">'
+      + '<td colspan="7"><div class="rec-expand-grid">'
+      + '<div><div class="rec-expand-label">Why this was triggered</div><div class="rec-expand-val">' + esc(f.trigger_summary || '—') + '</div></div>'
+      + '<div><div class="rec-expand-label">Flag details</div><div class="rec-expand-val">' + esc(f.plain_english || '—') + '</div></div>'
+      + '<div><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">' + esc(sevLabel) + '</div></div>'
+      + '</div></td></tr>';
+  }
+
+  window.camFlagExp = function(evt, id) {
+    if (evt.target.closest('button,input,a,select')) return;
+    var el = document.getElementById('cam-flag-exp-' + id);
+    if (!el) return;
+    el.classList.toggle('open');
+  };
+
+  function camFlagRender() {
+    var tbody = document.getElementById('cam-flag-tbody');
+    if (!tbody) return;
+    document.getElementById('cam-flag-badge').textContent = CAM_FLAGS.length;
+    if (!CAM_FLAGS.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No active flags for campaigns.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = CAM_FLAGS.map(function(f) {
+      return '<tr style="cursor:pointer;" onclick="camFlagExp(event, \'' + f.flag_id + '\')">'
+        + '<td class="rec-col-name">' + esc(f.entity_name || '—') + '</td>'
+        + '<td class="rec-col-rule">' + esc(f.rule_name || '—') + '</td>'
+        + '<td class="rec-col-plain">' + esc(f.plain_english || '—') + '</td>'
+        + '<td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-flag">Flag</span></td>'
+        + '<td class="rec-col-risk">' + camSevBadge(f.severity) + '</td>'
+        + '<td class="rec-col-age">' + esc(f.generated_ago || '—') + '</td>'
+        + '<td class="rec-col-acts" onclick="event.stopPropagation()">' + camFlagActionsHtml(f.flag_id) + '</td>'
+        + '</tr>'
+        + makeFlagExpRow(f);
+    }).join('');
+  }
+
+  function camFlagSnoozedRender() {
+    var tbody = document.getElementById('cam-flag-snooze-tbody');
+    var countEl = document.getElementById('cam-flag-snooze-count');
+    if (!tbody) return;
+    if (countEl) countEl.textContent = CAM_FLAGS_SNOOZED.length;
+    if (!CAM_FLAGS_SNOOZED.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">No snoozed flags.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = CAM_FLAGS_SNOOZED.map(function(f) {
+      return '<tr style="cursor:pointer;" onclick="camFlagExp(event, \'' + f.flag_id + '\')">'
+        + '<td>' + esc(f.entity_name || '—') + '</td>'
+        + '<td>' + esc(f.rule_name || '—') + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;">' + esc(f.plain_english || '—') + '</td>'
+        + '<td><span class="rec-rf-badge rec-rf-flag">Flag</span></td>'
+        + '<td>' + camSevBadge(f.severity) + '</td>'
+        + '<td style="font-size:11px;color:#9aa0a6;">' + esc(f.generated_ago || '—') + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;">' + esc(camFmtDate(f.snooze_until)) + '</td>'
+        + '<td>' + camFlagActionsHtml(f.flag_id) + '</td>'
+        + '</tr>'
+        + makeFlagExpRow(f);
+    }).join('');
+  }
+
+  function camFlagHistoryRender() {
+    var tbody = document.getElementById('cam-flag-hist-tbody');
+    var countEl = document.getElementById('cam-flag-hist-count');
+    if (!tbody) return;
+    if (countEl) countEl.textContent = CAM_FLAGS_HISTORY.length;
+    if (!CAM_FLAGS_HISTORY.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">No history.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = CAM_FLAGS_HISTORY.map(function(f) {
+      var actioned = camFmtDate(f.acknowledged_at || f.updated_at);
+      return '<tr style="cursor:pointer;" onclick="camFlagExp(event, \'' + f.flag_id + '\')">'
+        + '<td>' + esc(f.entity_name || '—') + '</td>'
+        + '<td>' + esc(f.rule_name || '—') + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;">' + esc(f.plain_english || '—') + '</td>'
+        + '<td><span class="rec-rf-badge rec-rf-flag">Flag</span></td>'
+        + '<td>' + camSevBadge(f.severity) + '</td>'
+        + '<td style="font-size:11px;color:#9aa0a6;">' + esc(f.generated_ago || '—') + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;">' + esc(actioned) + '</td>'
+        + '<td>' + camFlagActionsHtml(f.flag_id) + '</td>'
+        + '</tr>'
+        + makeFlagExpRow(f);
+    }).join('');
+  }
+
+  function camLoadFlags() {
+    fetch('/flags/cards')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        CAM_FLAGS         = (d.active   || []).filter(function(f) { return f.entity_type === 'campaign'; });
+        CAM_FLAGS_SNOOZED = (d.snoozed  || []).filter(function(f) { return f.entity_type === 'campaign'; });
+        CAM_FLAGS_HISTORY = (d.history  || []).filter(function(f) { return f.entity_type === 'campaign'; });
+        camFlagRender();
+        camFlagSnoozedRender();
+        camFlagHistoryRender();
+      })
+      .catch(function() {
+        var tbody = document.getElementById('cam-flag-tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Failed to load flags.</td></tr>';
+      });
+  }
+  window.camLoadFlags = camLoadFlags;
+
+  window.camFlagAction = function(flag_id, action, days) {
+    var url = '/flags/' + flag_id + '/' + action;
+    fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() }, body: JSON.stringify({ days: days }) })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.success) {
+          camShowToast(action === 'acknowledge' ? 'Flag acknowledged.' : 'Flag snoozed for ' + days + ' days.', 'success');
+          camLoadFlags();
+        } else {
+          camShowToast('Error: ' + (d.error || 'unknown'), 'error');
+        }
+      })
+      .catch(function() { camShowToast('Request failed.', 'error'); });
+  };
+
+  var camFlagTabBtn = document.getElementById('cam-flag-tab');
+  if (camFlagTabBtn) camFlagTabBtn.addEventListener('shown.bs.tab', function() { camLoadFlags(); });
+
   // ── Tab visibility for "Accept all low risk" ──────────────────────────────
   document.querySelectorAll('#camRecTabs button[data-bs-toggle="tab"]').forEach(function(btn) {
     btn.addEventListener('shown.bs.tab', function(e) {
@@ -1020,6 +1267,23 @@ function applyColumns() {
   if (recTabBtn) recTabBtn.addEventListener('shown.bs.tab', function() { camRecLoad(); });
 
 })();
+
+// ── Dropdown event delegation (handles dynamically rendered dropdowns) ────────
+document.addEventListener('click', function(e) {
+  var toggle = e.target.closest('.dropdown-toggle');
+  if (!toggle) return;
+  var menu = toggle.nextElementSibling;
+  if (!menu || !menu.classList.contains('dropdown-menu')) return;
+  e.stopPropagation();
+  var isOpen = menu.classList.contains('show');
+  document.querySelectorAll('.dropdown-menu.show').forEach(function(m) { m.classList.remove('show'); });
+  if (!isOpen) menu.classList.add('show');
+});
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.dropdown')) {
+    document.querySelectorAll('.dropdown-menu.show').forEach(function(m) { m.classList.remove('show'); });
+  }
+});
 
 function toggleBulkEdit() {
   const checkedCount = document.querySelectorAll('.campaign-checkbox:checked').length;
