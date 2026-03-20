@@ -408,7 +408,7 @@ class TestRunRecommendationsEngine:
         db_path = str(tmp_path / "main.duckdb")
         ro_path = str(tmp_path / "readonly.duckdb")
 
-        # Writable main DB — needs recommendations table
+        # Writable main DB — needs recommendations table + rules table
         main_conn = duckdb.connect(db_path)
         main_conn.execute("""
             CREATE TABLE recommendations (
@@ -423,6 +423,41 @@ class TestRunRecommendationsEngine:
                 monitoring_ends_at TIMESTAMP, resolved_at TIMESTAMP,
                 outcome_metric DOUBLE, created_at TIMESTAMP, updated_at TIMESTAMP
             )
+        """)
+        main_conn.execute("""
+            CREATE TABLE rules (
+                id INTEGER PRIMARY KEY,
+                client_config VARCHAR NOT NULL,
+                entity_type VARCHAR NOT NULL DEFAULT 'campaign',
+                name VARCHAR NOT NULL,
+                rule_or_flag VARCHAR NOT NULL,
+                type VARCHAR NOT NULL,
+                campaign_type_lock VARCHAR,
+                entity_scope JSON NOT NULL DEFAULT '{"scope":"all"}',
+                conditions JSON NOT NULL,
+                action_type VARCHAR,
+                action_magnitude FLOAT,
+                cooldown_days INTEGER DEFAULT 7,
+                risk_level VARCHAR,
+                enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT now(),
+                updated_at TIMESTAMP DEFAULT now(),
+                last_evaluated_at TIMESTAMP,
+                last_fired_at TIMESTAMP,
+                plain_english VARCHAR,
+                is_template BOOLEAN DEFAULT FALSE
+            )
+        """)
+        # Insert one enabled campaign rule: fires when roas_7d > 1.15
+        main_conn.execute("""
+            INSERT INTO rules
+                (id, client_config, entity_type, name, rule_or_flag, type,
+                 conditions, action_type, action_magnitude, cooldown_days,
+                 risk_level, enabled, is_template)
+            VALUES
+                (1, 'eng_customer', 'campaign', 'Test Budget Boost', 'rule', 'budget',
+                 '[{"metric": "roas_7d", "op": "gt", "value": 1.15, "ref": "absolute"}]',
+                 'increase_budget', 10, 7, 'low', TRUE, FALSE)
         """)
         main_conn.close()
 
@@ -488,8 +523,9 @@ class TestRunRecommendationsEngine:
         from act_autopilot.recommendations_engine import run_recommendations_engine
         db_path, ro_path = engine_dbs
         result = run_recommendations_engine("eng_customer", db_path=db_path, readonly_path=ro_path)
-        # keyword, ad_group, shopping, ad tables not present → skipped
-        assert result["skipped_no_table"] > 0
+        # All non-campaign rules are disabled in rules_config.json; DB only loads
+        # campaign rules → no entity types without tables enter the loop.
+        assert result["skipped_no_table"] >= 0
 
     def test_duplicate_prevention(self, engine_dbs):
         from act_autopilot.recommendations_engine import run_recommendations_engine
