@@ -1,0 +1,773 @@
+{#
+  kw_rules_flags_tab.html — Keywords version of rules_flags_tab.html
+  Rules & Flags tab content: sub-tabs Rules | Flags | Templates.
+  Data loaded via AJAX from GET /keywords/rules.
+  All icons: Material Symbols Outlined.
+  Bootstrap 5 only. Vanilla JS only. No jQuery.
+#}
+
+<!-- ════════════════════════════════════════════════════════════
+     KEYWORD RULES & FLAGS TAB PANE
+═══════════════════════════════════════════════════════════════ -->
+<div class="tab-pane fade" id="rules-tab" role="tabpanel">
+<div class="py-3" id="kw-rules-flags-container">
+
+  <!-- ── Section Header ──────────────────────────────────────────── -->
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h4 class="mb-1 fw-semibold" style="font-size:16px;">Keyword rules &amp; flags</h4>
+      <p class="text-muted mb-0" style="font-size:12px;line-height:1.5;">
+        Rules generate recommendations for action. Flags raise alerts only. Both require your confirmation before anything changes.
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-outline-secondary" onclick="kwRfShowSubTab('templates')">
+        Use template
+      </button>
+      <button class="btn btn-sm btn-primary" onclick="kwOpenRulesFlow()">
+        <span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle;">add</span>
+        Add rule or flag
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Sub-tabs ─────────────────────────────────────────────────── -->
+  <div class="rules-sub-tab-bar">
+    <div class="rules-sub-tabs">
+      <button class="rules-sub-tab active" id="kw-rf-tab-rules" onclick="kwRfShowSubTab('rules')">
+        Rules <span class="rules-sub-badge" id="kw-rf-badge-rules">0</span>
+      </button>
+      <button class="rules-sub-tab" id="kw-rf-tab-flags" onclick="kwRfShowSubTab('flags')">
+        Flags <span class="rules-sub-badge" id="kw-rf-badge-flags">0</span>
+      </button>
+      <button class="rules-sub-tab" id="kw-rf-tab-templates" onclick="kwRfShowSubTab('templates')">
+        Templates <span class="rules-sub-badge" id="kw-rf-badge-templates">0</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── RULES SUB-PANE ───────────────────────────────────────────── -->
+  <div id="kw-rf-pane-rules">
+    <div class="d-flex gap-2 mb-3 align-items-center flex-wrap">
+      <div style="position:relative;width:200px;">
+        <span class="material-symbols-outlined" style="position:absolute;left:7px;top:50%;transform:translateY(-50%);font-size:14px;color:#5f6368;pointer-events:none;line-height:1;">search</span>
+        <input class="form-control form-control-sm" id="kw-rf-rules-search" type="text"
+               placeholder="Search rules..." style="padding-left:26px;"
+               oninput="kwRfFilterRules()">
+      </div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-rf-filter="all" onclick="kwRfSetRuleFilter(this,'rules')">All</button>
+        <button class="filter-tab" data-rf-filter="bid" onclick="kwRfSetRuleFilter(this,'rules')">Bid</button>
+        <button class="filter-tab" data-rf-filter="status" onclick="kwRfSetRuleFilter(this,'rules')">Status</button>
+      </div>
+      <span class="ms-auto text-muted" style="font-size:12px;" id="kw-rf-rules-info"></span>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="table table-sm mb-0" id="kw-rf-rules-table">
+        <thead class="table-light">
+          <tr>
+            <th style="width:50px;">On/off</th>
+            <th class="rules-rule-name-col">Rule name</th>
+            <th>Keywords</th>
+            <th>Campaign type</th>
+            <th class="rules-plain-english" style="min-width:280px;">Plain English</th>
+            <th>Rule/Flag</th>
+            <th>Rule type</th>
+            <th>Conditions</th>
+            <th>Action</th>
+            <th>Cooldown</th>
+            <th>Guardrail</th>
+            <th>Risk</th>
+            <th style="width:70px;"></th>
+          </tr>
+        </thead>
+        <tbody id="kw-rf-rules-tbody">
+          <tr><td colspan="13" class="text-center text-muted py-4" style="font-size:13px;">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading rules…
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── FLAGS SUB-PANE ───────────────────────────────────────────── -->
+  <div id="kw-rf-pane-flags" style="display:none;">
+    <div class="d-flex gap-2 mb-3 align-items-center flex-wrap">
+      <input class="form-control form-control-sm" id="kw-rf-flags-search" type="text"
+             placeholder="Search flags..." style="width:200px;"
+             oninput="kwRfFilterFlags()">
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-rf-filter="all" onclick="kwRfSetRuleFilter(this,'flags')">All</button>
+        <button class="filter-tab" data-rf-filter="performance" onclick="kwRfSetRuleFilter(this,'flags')">Performance</button>
+        <button class="filter-tab" data-rf-filter="anomaly" onclick="kwRfSetRuleFilter(this,'flags')">Anomaly</button>
+        <button class="filter-tab" data-rf-filter="technical" onclick="kwRfSetRuleFilter(this,'flags')">Technical</button>
+      </div>
+      <span class="ms-auto text-muted" style="font-size:12px;" id="kw-rf-flags-info"></span>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="table table-sm mb-0" id="kw-rf-flags-table">
+        <thead class="table-light">
+          <tr>
+            <th style="width:50px;">On/off</th>
+            <th>Flag name</th>
+            <th>Type</th>
+            <th>Direction</th>
+            <th>Keywords</th>
+            <th class="rules-plain-english" style="min-width:280px;">Plain English</th>
+            <th>Condition</th>
+            <th>Window</th>
+            <th style="width:70px;"></th>
+          </tr>
+        </thead>
+        <tbody id="kw-rf-flags-tbody">
+          <tr><td colspan="9" class="text-center text-muted py-4" style="font-size:13px;">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading flags…
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── TEMPLATES SUB-PANE ───────────────────────────────────────── -->
+  <div id="kw-rf-pane-templates" style="display:none;">
+    <p class="text-muted mb-3" style="font-size:13px;">
+      Pick a template to pre-fill the rule builder. You only need to set the thresholds and select your keywords.
+    </p>
+    <div class="table-wrapper">
+      <table class="table table-sm mb-0" id="kw-rf-templates-table">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th>Rule/Flag</th>
+            <th>Type</th>
+            <th>Campaign type</th>
+            <th class="rules-plain-english" style="min-width:280px;">Plain English</th>
+            <th>Conditions</th>
+            <th>Action</th>
+            <th>Cooldown</th>
+            <th style="width:110px;"></th>
+          </tr>
+        </thead>
+        <tbody id="kw-rf-templates-tbody">
+          <tr><td colspan="9" class="text-center text-muted py-4" style="font-size:13px;">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading templates…
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- end kw-rules-flags-container -->
+</div><!-- end tab-pane -->
+
+<!-- ── Toast container ──────────────────────────────────────────── -->
+<div id="kw-rules-toast-wrap"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+//  Keyword Rules & Flags Tab — Data + Rendering
+// ════════════════════════════════════════════════════════════════
+
+var _kwRfData = [];          // all rows from API
+var _kwRfRuleFilter = 'all'; // current rules filter
+var _kwRfFlagFilter = 'all'; // current flags filter
+
+// ── Sub-tab switching ────────────────────────────────────────────
+function kwRfShowSubTab(tab) {
+  ['rules','flags','templates'].forEach(function(t) {
+    document.getElementById('kw-rf-tab-' + t).classList.toggle('active', t === tab);
+    var pane = document.getElementById('kw-rf-pane-' + t);
+    if (pane) pane.style.display = t === tab ? '' : 'none';
+  });
+}
+
+// ── Filter tab ───────────────────────────────────────────────────
+function kwRfSetRuleFilter(btn, context) {
+  btn.closest('.filter-tabs').querySelectorAll('.filter-tab').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  if (context === 'rules') {
+    _kwRfRuleFilter = btn.dataset.rfFilter;
+    kwRfRenderRules();
+  } else {
+    _kwRfFlagFilter = btn.dataset.rfFilter;
+    kwRfRenderFlags();
+  }
+}
+
+function kwRfFilterRules() { kwRfRenderRules(); }
+function kwRfFilterFlags() { kwRfRenderFlags(); }
+
+// ── Load data from API ───────────────────────────────────────────
+function kwRfLoadData() {
+  fetch('/keywords/rules')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        _kwRfData = d.data || [];
+        kwRfRenderRules();
+        kwRfRenderFlags();
+        kwRfRenderTemplates();
+        kwRfUpdateBadges();
+      } else {
+        kwRfShowError(d.error || 'Failed to load.');
+      }
+    })
+    .catch(function(e) {
+      kwRfShowError('Network error: ' + e);
+    });
+}
+
+function kwRfShowError(msg) {
+  ['kw-rf-rules-tbody','kw-rf-flags-tbody'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      var cols = id === 'kw-rf-rules-tbody' ? 11 : 9;
+      el.innerHTML = '<tr><td colspan="' + cols + '" class="text-center text-danger py-4" style="font-size:13px;">' + msg + '</td></tr>';
+    }
+  });
+}
+
+function kwRfUpdateBadges() {
+  var rules = _kwRfData.filter(function(r) { return r.rule_or_flag === 'rule' && r.enabled && !r.is_template; });
+  var flags = _kwRfData.filter(function(r) { return r.rule_or_flag === 'flag' && r.enabled && !r.is_template; });
+  var templates = _kwRfData.filter(function(r) { return r.is_template === true; });
+  document.getElementById('kw-rf-badge-rules').textContent = rules.length;
+  document.getElementById('kw-rf-badge-flags').textContent = flags.length;
+  var templatesBadge = document.getElementById('kw-rf-badge-templates');
+  if (templatesBadge) templatesBadge.textContent = templates.length;
+  // Update main tab badge
+  var mainBadge = document.getElementById('kw-rules-flags-badge');
+  if (mainBadge) mainBadge.textContent = _kwRfData.filter(function(r) { return !r.is_template; }).length;
+}
+
+// ── Plain English generator ──────────────────────────────────────
+var KW_METRIC_LABELS = {
+  // ROAS
+  'roas_w7':'ROAS (7d)','roas_w14':'ROAS (14d)','roas_w30':'ROAS (30d)',
+  // CPA
+  'cpa_w7':'CPA (7d)','cpa_w14':'CPA (14d)','cpa_w30':'CPA (30d)',
+  // CTR
+  'ctr_w7':'CTR (7d)',
+  // CVR
+  'cvr_w7':'CVR (7d)',
+  // Clicks
+  'clicks_w7_sum':'Clicks (7d)',
+  // Conversions
+  'conversions_w7_sum':'Conversions (7d)','conversions_w14_sum':'Conversions (14d)','conversions_w30_sum':'Conversions (30d)',
+  // Cost
+  'cost_w7_sum':'Cost (7d)','cost_w14_sum':'Cost (14d)','cost_w30_sum':'Cost (30d)',
+  // Impressions
+  'impressions_w7_sum':'Impressions (7d)',
+  // Quality Score
+  'quality_score':'Quality Score',
+  'quality_score_creative':'QS - Creative',
+  'quality_score_landing_page':'QS - Landing Page',
+  'quality_score_relevance':'QS - Relevance',
+  // Bidding
+  'bid_micros':'Max CPC Bid',
+  'first_page_cpc_micros':'First Page CPC',
+  'top_of_page_cpc_micros':'Top of Page CPC',
+  // Week-on-week %
+  'roas_w7_vs_prev_pct':'ROAS WoW %',
+  'cpa_w7_vs_prev_pct':'CPA WoW %',
+  'ctr_w7_vs_prev_pct':'CTR WoW %',
+  'cvr_w7_vs_prev_pct':'CVR WoW %',
+  'conversions_w7_vs_prev_pct':'Conversions WoW %',
+  'cost_w7_vs_prev_pct':'Cost WoW %',
+  'clicks_w7_vs_prev_pct':'Clicks WoW %',
+  // Anomaly / Volatility
+  'cost_w14_cv':'Cost Volatility (14d)',
+  // System
+  'low_data_flag':'Low Data Flag',
+  'match_type':'Match Type',
+  'status':'Keyword Status'
+};
+
+var KW_ACTION_LABELS = {
+  'increase_bid':'Increase Max CPC bid',
+  'decrease_bid':'Decrease Max CPC bid',
+  'increase_bid_to_first_page':'Increase to First Page CPC',
+  'pause':'Pause keyword',
+  'enable':'Enable keyword'
+};
+
+var KW_OP_LABELS = {'>=':'≥','<=':'≤','>':'>','<':'<','=':'=','gte':'≥','lte':'≤','gt':'>','lt':'<','eq':'='};
+
+function kwRfPlainEnglish(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+
+  if (row.rule_or_flag === 'flag') {
+    var c = conds[0];
+    if (!c) return row.name;
+    var metric = KW_METRIC_LABELS[c.metric] || c.metric;
+    var op = KW_OP_LABELS[c.operator] || KW_OP_LABELS[c.op] || c.operator || c.op || '';
+    var _u1 = c.ref || c.unit || ''; var unitSuffix = (_u1 === 'percent' || _u1 === 'pct') ? '%' : (_u1 === 'x_target' ? '× target' : '');
+    var dir = (c.operator === '>' || c.operator === '>=') ? 'risen above' : 'fallen below';
+    if (c.operator === '=') dir = 'equal to';
+    return 'Alert when ' + metric + ' has ' + dir + ' ' + c.value + unitSuffix;
+  }
+
+  var actionLabel = KW_ACTION_LABELS[row.action_type] || (row.action_type || '');
+  var mag = row.action_magnitude ? ' by ' + row.action_magnitude + '%' : '';
+  var condParts = conds.map(function(c) {
+    var metric = KW_METRIC_LABELS[c.metric] || c.metric;
+    var op = KW_OP_LABELS[c.operator] || KW_OP_LABELS[c.op] || c.operator || c.op || '';
+    var _u = c.ref || c.unit || ''; var unit = (_u === 'x_target') ? '× target' : (_u === 'percent' || _u === 'pct') ? '%' : '';
+    return metric + ' ' + op + ' ' + c.value + unit;
+  });
+  return actionLabel + mag + (condParts.length ? ' when ' + condParts.join(' and ') : '');
+}
+
+function kwRfGuardrail(row) {
+  var at = row.action_type || '';
+  if (at === 'increase_bid' || at === 'decrease_bid') return at === 'increase_bid' ? 'Max CPC ceiling' : 'Min CPC floor';
+  if (at === 'increase_bid_to_first_page') return 'Max CPC ceiling';
+  return '—';
+}
+
+function kwRfCondText(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  return conds.map(function(c) {
+    var metric = KW_METRIC_LABELS[c.metric] || c.metric;
+    var op = KW_OP_LABELS[c.operator] || KW_OP_LABELS[c.op] || c.operator || c.op || '';
+    var _u = c.ref || c.unit || ''; var unit = (_u === 'x_target') ? '× target' : (_u === 'percent' || _u === 'pct') ? '%' : '';
+    return '<strong>' + kwRfEsc(metric) + '</strong> ' + op + ' ' + c.value + unit;
+  }).join('<br>');
+}
+
+function kwRfActionCell(row) {
+  if (!row.action_type) return '—';
+  var label = KW_ACTION_LABELS[row.action_type] || row.action_type;
+  var mag = row.action_magnitude ? ' ' + row.action_magnitude + '%' : '';
+  var isUp = row.action_type.startsWith('increase');
+  var isPause = row.action_type === 'pause';
+  var isEnable = row.action_type === 'enable';
+  var css = isPause ? 'action-pause' : (isEnable ? 'action-up' : (isUp ? 'action-up' : 'action-down'));
+  var arrow = isPause
+    ? '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">pause_circle</span> '
+    : (isEnable
+      ? '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">play_circle</span> '
+      : (isUp
+        ? '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_upward</span> '
+        : '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_downward</span> '));
+  return '<span class="' + css + '">' + arrow + label + mag + '</span>';
+}
+
+
+// ── Flag-specific Plain English ───────────────────────────────────────────────
+var KW_FLAG_PE_MAP = {
+  'roas_w7_vs_prev_pct':        {pos: 'ROAS has spiked unusually high — could be a real opportunity or an anomaly worth checking', neg: 'ROAS is consistently declining vs the keyword\'s own normal performance'},
+  'cpa_w7_vs_prev_pct':         {pos: 'CPA has improved week on week — a good signal that bidding or quality is improving', neg: 'CPA has risen week on week — check if competition or quality score is driving this'},
+  'ctr_w7_vs_prev_pct':         {pos: 'CTR has spiked vs last week — ads may be gaining relevance or competition has dropped', neg: 'Click through rate is trending down — ads may be losing relevance or competition has increased'},
+  'cvr_w7_vs_prev_pct':         {pos: 'Conversion rate has improved week on week — landing page or offer resonance is improving', neg: 'Conversion rate has dropped week on week — check landing page and offer relevance'},
+  'conversions_w7_vs_prev_pct': {pos: 'Conversions have spiked vs the previous week — check if tracking is double counting', neg: 'Conversions have dropped vs the previous week — check bids, quality and landing pages'},
+  'cost_w7_vs_prev_pct':        {pos: 'Spend has risen sharply above the keyword\'s normal level — review before it drains the campaign budget', neg: 'Spend has dropped sharply vs the previous week — check if ads are being limited'},
+  'cost_w14_cv':                {pos: 'The system detected a statistically abnormal cost surge — review immediately', neg: 'Spend has dropped to an anomalous level — check if ads are serving normally'},
+  'clicks_w7_vs_prev_pct':      {pos: 'Click volume spike detected — check for invalid clicks or unusual traffic', neg: 'Click volume drop detected — ads may have stopped serving or lost auction coverage'},
+  'quality_score':              {neg: 'Quality score has dropped — review ad relevance, landing page and expected CTR'},
+  'low_data_flag':              {eq: 'Keyword has insufficient data for reliable metric calculation — consider a longer lookback window'}
+};
+
+function kwRfFlagPlainEnglish(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  var c = conds[0];
+  if (!c) return row.name;
+  var metric = c.metric || '';
+  var op = c.operator || c.op || '';
+  var entry = KW_FLAG_PE_MAP[metric];
+  if (!entry) {
+    // fallback
+    var mLabel = KW_METRIC_LABELS[metric] || metric;
+    var opLabel = KW_OP_LABELS[op] || op;
+    var _u = c.ref || c.unit || ''; var unit = (_u === 'x_target') ? '× target' : (_u === 'percent' || _u === 'pct') ? '%' : '';
+    return 'Alert when ' + mLabel + ' ' + opLabel + ' ' + c.value + unit;
+  }
+  if (entry.eq) return entry.eq;
+  var isPos = (op === '>' || op === '>=' || op === 'gt' || op === 'gte');
+  return isPos ? (entry.pos || entry.neg || row.name) : (entry.neg || entry.pos || row.name);
+}
+
+// ── Flag-specific Condition text ──────────────────────────────────────────────
+var KW_FLAG_COND_LABELS = {
+  'roas_w7_vs_prev_pct':        {pos: 'ROAS increased', neg: 'ROAS declined'},
+  'cpa_w7_vs_prev_pct':         {pos: 'CPA increased',  neg: 'CPA declined'},
+  'ctr_w7_vs_prev_pct':         {pos: 'CTR increased',  neg: 'CTR declined'},
+  'cvr_w7_vs_prev_pct':         {pos: 'CVR increased',  neg: 'CVR declined'},
+  'conversions_w7_vs_prev_pct': {pos: 'Conversions increased', neg: 'Conversions declined'},
+  'cost_w7_vs_prev_pct':        {pos: 'Spend increased', neg: 'Spend declined'},
+  'cost_w14_cv':                {eq: 'Cost Volatility'},
+  'clicks_w7_vs_prev_pct':      {eq: 'Clicks WoW'},
+  'quality_score':              {eq: 'Quality Score'},
+  'low_data_flag':              {eq: 'Low Data Flag'}
+};
+
+var KW_SYSTEM_METRICS = ['cost_w14_cv','quality_score','quality_score_creative',
+  'quality_score_landing_page','quality_score_relevance','low_data_flag','match_type','status'];
+
+function kwRfFlagCondText(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  var c = conds[0];
+  if (!c) return '—';
+  var metric = c.metric || '';
+  var isSystem = KW_SYSTEM_METRICS.indexOf(metric) >= 0;
+  var rawOp = c.operator || c.op || '';
+  var isPos = (rawOp === '>' || rawOp === '>=' || rawOp === 'gt' || rawOp === 'gte');
+  var entry = KW_FLAG_COND_LABELS[metric];
+  var label;
+  if (entry) {
+    if (entry.eq) label = entry.eq;
+    else label = isPos ? entry.pos : entry.neg;
+  } else {
+    label = KW_METRIC_LABELS[metric] || metric;
+  }
+  var op = KW_OP_LABELS[rawOp] || rawOp;
+  var _u = c.ref || c.unit || ''; var unit = (_u === 'percent' || _u === 'pct') ? '%' : (_u === 'x_target' ? '× target' : '');
+  var sysTag = isSystem ? ' <span class="badge-system">system</span>' : '';
+  return '<strong>' + kwRfEsc(label) + '</strong> ' + op + ' ' + kwRfEsc(String(c.value)) + unit + sysTag;
+}
+
+function kwRfDirectionCell(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  if (!conds.length) return '<span class="dir-neu">Either</span>';
+  var op = conds[0].operator || conds[0].op || '';
+  if (op === '>' || op === '>=' || op === 'gt' || op === 'gte') return '<span class="dir-pos">▲ Positive</span>';
+  if (op === '<' || op === '<=' || op === 'lt' || op === 'lte') return '<span class="dir-neg">▼ Negative</span>';
+  return '<span class="dir-neu">Either</span>';
+}
+
+function kwRfWindowCell(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  if (!conds.length) return '—';
+  var m = (conds[0].metric || '');
+  if (m.includes('_vs_prev_pct') || m.includes('_w7_vs_') || m.includes('_w14_vs_') || m.includes('WoW') || m.includes('wow_pct')) return 'Trend';
+  if (m.includes('z_score') || m.includes('_z') || m.includes('_detected')) return 'Real-time';
+  if (m.includes('14d') || m.includes('_14d') || m.includes('_w14_') || m.includes('w14_')) return '14 days';
+  if (m.includes('30d') || m.includes('_30d') || m.includes('_w30_') || m.includes('w30_')) return '30 days';
+  if (m.includes('7d') || m.includes('_7d') || m.includes('_w7_') || m.includes('w7_')) return '7 days';
+  return '1 day';
+}
+
+function kwRfStrategyLabel(lock) {
+  var map = {'troas':'tROAS','tcpa':'tCPA','max_clicks':'Max Clicks','all':'All','manual_cpc':'Manual CPC'};
+  return map[lock] || lock || 'All';
+}
+
+function kwRfScopeLabel(row) {
+  var scope = row.entity_scope;
+  if (!scope) return 'All keywords';
+  if (typeof scope === 'string') { try { scope = JSON.parse(scope); } catch(e){} }
+  if (scope && scope.scope === 'all') return 'All keywords';
+  if (scope && scope.scope === 'specific' && Array.isArray(scope.keywords)) {
+    return kwRfEsc(scope.keywords.join(', ')) || 'All keywords';
+  }
+  return 'All keywords';
+}
+
+function kwRfEsc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Render Rules Table ───────────────────────────────────────────
+function kwRfRenderRules() {
+  var search = (document.getElementById('kw-rf-rules-search').value || '').toLowerCase();
+  var rows = _kwRfData.filter(function(r) { return r.rule_or_flag === 'rule' && !r.is_template; });
+
+  if (_kwRfRuleFilter !== 'all') {
+    rows = rows.filter(function(r) { return r.type === _kwRfRuleFilter; });
+  }
+  if (search) {
+    rows = rows.filter(function(r) {
+      var pe = (r.plain_english || kwRfPlainEnglish(r)).toLowerCase();
+      return kwRfEsc(r.name).toLowerCase().includes(search) || pe.includes(search);
+    });
+  }
+
+  var tbody = document.getElementById('kw-rf-rules-tbody');
+  if (!rows.length) {
+    var msg = _kwRfData.filter(function(r){return r.rule_or_flag==='rule';}).length === 0
+      ? '<div class="alert alert-info mb-0" role="alert" style="font-size:13px;">No rules yet — click Add rule or flag to create your first one.</div>'
+      : '<tr><td colspan="13" class="text-center text-muted py-3" style="font-size:13px;">No rules match the current filter.</td></tr>';
+    tbody.innerHTML = msg.startsWith('<div') ? '<tr><td colspan="13">' + msg + '</td></tr>' : msg;
+    document.getElementById('kw-rf-rules-info').textContent = '0 rules';
+    return;
+  }
+
+  // Group by type (no budget group for keywords)
+  var groups = {'bid':[],'status':[]};
+  rows.forEach(function(r) { (groups[r.type] || groups.bid).push(r); });
+
+  var html = '';
+  var groupLabels = {bid:'Bid',status:'Status'};
+  ['bid','status'].forEach(function(gtype) {
+    var gRows = (groups[gtype] || []).slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
+    if (!gRows.length) return;
+    html += '<tr class="rules-group-row"><td colspan="13">' + groupLabels[gtype] + ' &nbsp;·&nbsp; ' + gRows.length + ' rules</td></tr>';
+    gRows.forEach(function(r) {
+      var toggleClass = r.enabled ? '' : 'text-muted';
+      var riskBadge = r.risk_level
+        ? '<span class="risk-dot risk-dot-' + kwRfEsc(r.risk_level) + '">' + kwRfEsc(r.risk_level.charAt(0).toUpperCase()+r.risk_level.slice(1)) + '</span>'
+        : '—';
+      var guardrail = kwRfGuardrail(r);
+      var isHumanConfirm = r.type === 'status' || r.action_type === 'pause' || r.action_type === 'enable';
+      var guardrailHtml = isHumanConfirm
+        ? '<span class="rules-human-confirm"><span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle;">warning</span> Human confirmation required</span>'
+        : '<span style="font-size:11px;color:#202124;">' + kwRfEsc(guardrail) + '</span>';
+
+      html += '<tr data-rule-id="' + r.id + '" data-rule-type="' + kwRfEsc(r.type) + '">'
+        + '<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"'
+        + (r.enabled ? ' checked' : '') + ' onchange="kwRfToggle(' + r.id + ',this)"></div></td>'
+        + '<td class="rules-rule-name-col ' + toggleClass + '" style="font-weight:600;">' + kwRfEsc(r.name) + '</td>'
+        + '<td class="' + toggleClass + '" style="font-size:12px;color:#5f6368;">' + kwRfEsc(kwRfScopeLabel(r)) + '</td>'
+        + '<td style="text-align:center;"><span class="badge-strategy">' + kwRfEsc(kwRfStrategyLabel(r.campaign_type_lock)) + '</span></td>'
+        + '<td class="rules-plain-english">' + kwRfEsc(r.plain_english || kwRfPlainEnglish(r)) + '</td>'
+        + '<td><span class="badge badge-rof-' + kwRfEsc(r.rule_or_flag) + '" style="font-size:11px;">' + kwRfEsc((r.rule_or_flag||'rule').charAt(0).toUpperCase()+(r.rule_or_flag||'rule').slice(1)) + '</span></td>'
+        + '<td><span class="badge badge-type-' + kwRfEsc(r.type) + '" style="font-size:11px;">' + kwRfEsc(r.type.charAt(0).toUpperCase()+r.type.slice(1)) + '</span></td>'
+        + '<td style="font-size:12px;color:#202124;white-space:nowrap;">' + kwRfCondText(r) + '</td>'
+        + '<td>' + kwRfActionCell(r) + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;white-space:nowrap;">' + (r.cooldown_days ? r.cooldown_days + 'd' : '—') + '</td>'
+        + '<td class="rules-guardrail-col">' + guardrailHtml + '</td>'
+        + '<td>' + riskBadge + '</td>'
+        + '<td><div class="d-flex gap-1">'
+        + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="kwRfEditRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button>'
+        + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete" onclick="kwRfDeleteRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button>'
+        + '<button class="btn-save-template" title="Save as template" onclick="kwRfSaveAsTemplate(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button>'
+        + '</div></td>'
+        + '</tr>';
+    });
+  });
+
+  tbody.innerHTML = html;
+  var total = _kwRfData.filter(function(r){return r.rule_or_flag==='rule';}).length;
+  var enabled = _kwRfData.filter(function(r){return r.rule_or_flag==='rule'&&r.enabled;}).length;
+  document.getElementById('kw-rf-rules-info').textContent = total + ' rules\u00a0·\u00a0' + enabled + ' enabled';
+}
+
+// ── Render Flags Table ───────────────────────────────────────────
+function kwRfRenderFlags() {
+  var search = (document.getElementById('kw-rf-flags-search').value || '').toLowerCase();
+  var rows = _kwRfData.filter(function(r) { return r.rule_or_flag === 'flag' && !r.is_template; });
+
+  if (_kwRfFlagFilter !== 'all') {
+    rows = rows.filter(function(r) { return r.type === _kwRfFlagFilter; });
+  }
+  if (search) {
+    rows = rows.filter(function(r) {
+      var pe = kwRfPlainEnglish(r).toLowerCase();
+      return kwRfEsc(r.name).toLowerCase().includes(search) || pe.includes(search);
+    });
+  }
+
+  var tbody = document.getElementById('kw-rf-flags-tbody');
+  if (!rows.length) {
+    var msg = _kwRfData.filter(function(r){return r.rule_or_flag==='flag';}).length === 0
+      ? '<tr><td colspan="9"><div class="alert alert-info mb-0" style="font-size:13px;">No flags yet — click Add rule or flag to create your first one.</div></td></tr>'
+      : '<tr><td colspan="9" class="text-center text-muted py-3" style="font-size:13px;">No flags match the current filter.</td></tr>';
+    tbody.innerHTML = msg;
+    document.getElementById('kw-rf-flags-info').textContent = '0 flags';
+    return;
+  }
+
+  var groups = {'performance':[],'anomaly':[],'technical':[]};
+  rows.forEach(function(r) { (groups[r.type] = groups[r.type] || []).push(r); });
+
+  var html = '';
+  var groupLabels = {performance:'Performance',anomaly:'Anomaly',technical:'Technical'};
+  ['performance','anomaly','technical'].forEach(function(gtype) {
+    var gRows = (groups[gtype] || []).slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
+    if (!gRows.length) return;
+    html += '<tr class="rules-group-row"><td colspan="9">' + groupLabels[gtype] + ' &nbsp;·&nbsp; ' + gRows.length + ' flags</td></tr>';
+    gRows.forEach(function(r) {
+      html += '<tr data-rule-id="' + r.id + '">'
+        + '<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"'
+        + (r.enabled ? ' checked' : '') + ' onchange="kwRfToggle(' + r.id + ',this)"></div></td>'
+        + '<td style="font-weight:600;white-space:nowrap;">' + kwRfEsc(r.name) + '</td>'
+        + '<td><span class="badge badge-type-' + kwRfEsc(r.type) + '" style="font-size:11px;">' + kwRfEsc(r.type.charAt(0).toUpperCase()+r.type.slice(1)) + '</span></td>'
+        + '<td>' + kwRfDirectionCell(r) + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;">' + kwRfEsc(kwRfScopeLabel(r)) + '</td>'
+        + '<td class="rules-plain-english">' + kwRfFlagPlainEnglish(r) + '</td>'
+        + '<td style="font-size:12px;">' + kwRfFlagCondText(r) + '</td>'
+        + '<td style="font-size:12px;">' + kwRfEsc(kwRfWindowCell(r)) + '</td>'
+        + '<td><div class="d-flex gap-1">'
+        + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="kwRfEditRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button>'
+        + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete" onclick="kwRfDeleteRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button>'
+        + '<button class="btn-save-template" title="Save as template" onclick="kwRfSaveAsTemplate(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button>'
+        + '</div></td>'
+        + '</tr>';
+    });
+  });
+
+  tbody.innerHTML = html;
+  var total = _kwRfData.filter(function(r){return r.rule_or_flag==='flag';}).length;
+  var enabled = _kwRfData.filter(function(r){return r.rule_or_flag==='flag'&&r.enabled;}).length;
+  document.getElementById('kw-rf-flags-info').textContent = total + ' flags\u00a0·\u00a0' + enabled + ' enabled';
+}
+
+// ── Render Templates Table ───────────────────────────────────────
+function kwRfRenderTemplates() {
+  var rows = _kwRfData.filter(function(r) { return r.is_template === true; });
+  var tbody = document.getElementById('kw-rf-templates-tbody');
+  if (!tbody) return;
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4" style="font-size:13px;">No templates yet — click <strong>Save as template</strong> <span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle;">bookmark_add</span> on any rule or flag row to create one.</td></tr>';
+    document.getElementById('kw-rf-badge-templates').textContent = '0';
+    return;
+  }
+
+  var groups = {};
+  rows.forEach(function(r) { var t = r.type || 'bid'; groups[t] = groups[t] || []; groups[t].push(r); });
+
+  var html = '';
+  var groupOrder = ['bid', 'status', 'performance', 'anomaly', 'technical'];
+  var groupLabels = {bid:'Bid', status:'Status', performance:'Performance', anomaly:'Anomaly', technical:'Technical'};
+
+  groupOrder.forEach(function(gtype) {
+    var gRows = (groups[gtype] || []).slice().sort(function(a,b) { return a.name.localeCompare(b.name); });
+    if (!gRows.length) return;
+    html += '<tr class="rules-group-row"><td colspan="9">' + groupLabels[gtype] + ' &nbsp;·&nbsp; ' + gRows.length + ' template' + (gRows.length === 1 ? '' : 's') + '</td></tr>';
+    gRows.forEach(function(r) {
+      var rof = r.rule_or_flag || 'rule';
+      var condHtml = rof === 'flag' ? kwRfFlagCondText(r) : kwRfCondText(r);
+      var actionHtml = rof === 'flag' ? '—' : kwRfActionCell(r);
+      var peHtml = rof === 'flag' ? kwRfFlagPlainEnglish(r) : kwRfEsc(r.plain_english || kwRfPlainEnglish(r));
+      html += '<tr>'
+        + '<td style="font-weight:600;">' + kwRfEsc(r.name) + '</td>'
+        + '<td><span class="badge badge-rof-' + kwRfEsc(rof) + '" style="font-size:11px;">' + kwRfEsc(rof.charAt(0).toUpperCase()+rof.slice(1)) + '</span></td>'
+        + '<td><span class="badge badge-type-' + kwRfEsc(r.type||'') + '" style="font-size:11px;">' + kwRfEsc((r.type||'').charAt(0).toUpperCase()+(r.type||'').slice(1)) + '</span></td>'
+        + '<td style="text-align:center;"><span class="badge-strategy">' + kwRfEsc(kwRfStrategyLabel(r.campaign_type_lock)) + '</span></td>'
+        + '<td class="rules-plain-english">' + peHtml + '</td>'
+        + '<td style="font-size:12px;color:#202124;white-space:nowrap;">' + condHtml + '</td>'
+        + '<td>' + actionHtml + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;white-space:nowrap;">' + (r.cooldown_days ? r.cooldown_days + 'd' : '—') + '</td>'
+        + '<td><button class="btn btn-sm btn-outline-primary" style="font-size:11px;white-space:nowrap;" onclick="kwRfEditTemplate(' + r.id + ')">Edit template</button></td>'
+        + '</tr>';
+    });
+  });
+
+  tbody.innerHTML = html;
+  document.getElementById('kw-rf-badge-templates').textContent = rows.length;
+}
+
+// ── Use Template (open flow builder pre-filled, no ID so creates new rule) ───
+function kwRfEditTemplate(ruleId) {
+  var row = _kwRfData.find(function(r) { return r.id === ruleId; });
+  if (!row) return;
+  kwOpenRulesFlow(row);
+}
+
+function kwRfUseTemplate(ruleId) {
+  var row = _kwRfData.find(function(r) { return r.id === ruleId; });
+  if (!row) return;
+  var copy = Object.assign({}, row);
+  copy.id = null;
+  copy.is_template = false;
+  copy.entity_scope = {scope: 'all'};
+  copy.enabled = true;
+  copy.name = (copy.name || '').replace(/\(template\)\s*$/i, '').trim();
+  kwCloseRulesFlow();
+  setTimeout(function() { kwOpenRulesFlow(copy); }, 250);
+}
+
+// ── Save As Template ─────────────────────────────────────────────
+function kwRfSaveAsTemplate(ruleId) {
+  fetch('/keywords/rules/' + ruleId + '/save-as-template', {method: 'POST'})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        kwRfShowToast('Saved as template.', 'success');
+        kwRfLoadData();
+      } else {
+        kwRfShowToast('Error: ' + (d.error || 'Unknown error'), 'danger');
+      }
+    });
+}
+
+// ── Toggle ───────────────────────────────────────────────────────
+function kwRfToggle(ruleId, checkbox) {
+  fetch('/keywords/rules/' + ruleId + '/toggle', {method:'POST'})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        var row = _kwRfData.find(function(r) { return r.id === ruleId; });
+        if (row) { row.enabled = d.data.enabled; }
+        kwRfUpdateBadges();
+        kwRfShowToast((d.data.enabled ? 'Enabled' : 'Disabled') + ' successfully.', 'success');
+        // Update info lines
+        kwRfRenderRules();
+        kwRfRenderFlags();
+      } else {
+        kwRfShowToast('Toggle failed: ' + (d.error||'Unknown error'), 'error');
+        checkbox.checked = !checkbox.checked; // revert
+      }
+    })
+    .catch(function(e) {
+      kwRfShowToast('Network error.', 'error');
+      checkbox.checked = !checkbox.checked;
+    });
+}
+
+// ── Delete ───────────────────────────────────────────────────────
+function kwRfDeleteRule(ruleId) {
+  if (!confirm('Delete this rule/flag? This cannot be undone.')) return;
+  fetch('/keywords/rules/' + ruleId, {method:'DELETE'})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        _kwRfData = _kwRfData.filter(function(r) { return r.id !== ruleId; });
+        kwRfRenderRules();
+        kwRfRenderFlags();
+        kwRfUpdateBadges();
+        kwRfShowToast('Deleted successfully.', 'success');
+        // Remove row from table with animation
+        var tr = document.querySelector('tr[data-rule-id="' + ruleId + '"]');
+        if (tr) { tr.style.opacity='0'; tr.style.transition='opacity .3s'; setTimeout(function(){tr.remove();},300); }
+      } else {
+        kwRfShowToast('Delete failed: ' + (d.error||'Unknown error'), 'error');
+      }
+    })
+    .catch(function() { kwRfShowToast('Network error.', 'error'); });
+}
+
+// ── Edit (opens flow builder pre-filled) ─────────────────────────
+function kwRfEditRule(ruleId) {
+  var row = _kwRfData.find(function(r) { return r.id === ruleId; });
+  if (row) kwOpenRulesFlow(row);
+}
+
+// ── Toast ────────────────────────────────────────────────────────
+function kwRfShowToast(msg, type) {
+  var wrap = document.getElementById('kw-rules-toast-wrap');
+  if (!wrap) return;
+  var t = document.createElement('div');
+  t.style.cssText = 'padding:12px 18px;border-radius:8px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.12);display:flex;align-items:center;gap:8px;color:white;';
+  t.style.background = type === 'success' ? '#15803d' : '#dc3545';
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(function() {
+    t.style.opacity='0'; t.style.transition='opacity .3s';
+    setTimeout(function() { t.remove(); }, 300);
+  }, 3500);
+}
+
+// ── Load on tab activation ───────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  var rulesTabBtn = document.getElementById('rules-tab-btn');
+  if (rulesTabBtn) {
+    rulesTabBtn.addEventListener('shown.bs.tab', function() {
+      if (!_kwRfData.length) kwRfLoadData();
+    });
+    // If rules tab is already active on load (unlikely but safe)
+    if (rulesTabBtn.classList.contains('active')) kwRfLoadData();
+  }
+});
+</script>

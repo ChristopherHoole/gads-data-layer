@@ -27,7 +27,8 @@
 }
 
 /* Chat 107: Ad Group flow builder overlay — same styling as campaigns */
-#ag-rules-flow-overlay {
+#ag-rules-flow-overlay,
+#kw-rules-flow-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -41,7 +42,8 @@
   padding: 20px;
 }
 
-#ag-rules-flow-overlay.show {
+#ag-rules-flow-overlay.show,
+#kw-rules-flow-overlay.show {
   display: flex;
 }
 
@@ -881,7 +883,8 @@
 /* ── Toast ────────────────────────────────────────────────────────────────── */
 
 #rules-toast-wrap,
-#ag-rules-toast-wrap {
+#ag-rules-toast-wrap,
+#kw-rules-toast-wrap {
   position: fixed;
   bottom: 24px;
   right: 24px;
