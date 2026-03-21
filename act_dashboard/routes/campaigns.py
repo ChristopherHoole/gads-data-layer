@@ -864,7 +864,7 @@ def list_rules():
     conn = _get_warehouse()
     try:
         result = conn.execute(
-            "SELECT * FROM rules WHERE client_config = ? ORDER BY type, id",
+            "SELECT * FROM rules WHERE client_config = ? AND entity_type = 'campaign' ORDER BY type, id",
             [client_config]
         )
         cols = [d[0] for d in result.description]

@@ -13,7 +13,9 @@ from act_dashboard.routes.rule_helpers import get_rules_for_page, count_rules_by
 from act_dashboard.routes.rules_api import load_rules
 from datetime import date, datetime, timedelta
 from typing import List, Dict, Any, Tuple, Optional
+from pathlib import Path as _Path
 import duckdb
+import json as _json
 
 bp = Blueprint('ad_groups', __name__)
 
@@ -558,6 +560,15 @@ def ad_groups():
     rule_counts = count_rules_by_category(rules)
     rules_config = load_rules()
 
+    # Chat 107: pre-sanitised ad group list for the flow builder (id + name only)
+    rfb_ad_groups = [
+        {
+            'id':   str(ag.get('ad_group_id', '') or ''),
+            'name': str(ag.get('ad_group_name', '') or ''),
+        }
+        for ag in (ad_groups_paginated or [])
+    ]
+
     return render_template(
         "ad_groups.html",
         client_name=config.client_name,
@@ -586,6 +597,8 @@ def ad_groups():
         active_metrics=get_chart_metrics('ad_groups'),
         # M4: Saved column visibility
         saved_columns=session.get('ad_groups_columns', None),
+        # Chat 107: ad group list for flow builder
+        rfb_ad_groups=rfb_ad_groups,
     )
 
 
@@ -605,3 +618,357 @@ def save_columns():
 
     session['ad_groups_columns'] = visible
     return jsonify({'success': True, 'columns': visible})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Chat 107: Ad Group Rules & Flags CRUD routes
+# Pattern: Copied from campaigns.py (Chat 91), adapted for entity_type='ad_group'
+# ══════════════════════════════════════════════════════════════════════════════
+
+_WAREHOUSE_PATH = _Path(__file__).parent.parent.parent / 'warehouse.duckdb'
+
+
+def _ag_get_warehouse():
+    """Open warehouse.duckdb writable."""
+    return duckdb.connect(str(_WAREHOUSE_PATH))
+
+
+def _ag_client_cfg_name():
+    """Return the client config stem from the session path."""
+    path = session.get("current_client_config")
+    if not path:
+        return None
+    return _Path(path).stem
+
+
+def _ag_serialize_rule(row, cols):
+    """Convert a DB row to a JSON-serialisable dict."""
+    d = dict(zip(cols, row))
+    for field in ('conditions', 'entity_scope'):
+        val = d.get(field)
+        if val and isinstance(val, str):
+            try:
+                d[field] = _json.loads(val)
+            except Exception:
+                pass
+    for k, v in d.items():
+        if isinstance(v, datetime):
+            d[k] = v.isoformat()
+    return d
+
+
+@bp.route("/ad_groups/rules", methods=['GET'])
+@login_required
+def ag_list_rules():
+    """GET /ad_groups/rules — return all ad group rules + flags for client."""
+    client_config = _ag_client_cfg_name()
+    if not client_config:
+        return jsonify({'success': False, 'error': 'No client selected'}), 400
+
+    conn = _ag_get_warehouse()
+    try:
+        result = conn.execute(
+            "SELECT * FROM rules WHERE client_config = ? AND entity_type = 'ad_group' ORDER BY type, id",
+            [client_config]
+        )
+        cols = [d[0] for d in result.description]
+        rows = [_ag_serialize_rule(row, cols) for row in result.fetchall()]
+        return jsonify({'success': True, 'data': rows})
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@bp.route("/ad_groups/rules", methods=['POST'])
+@login_required
+def ag_create_rule():
+    """POST /ad_groups/rules — insert new ad group rule/flag."""
+    client_config = _ag_client_cfg_name()
+    if not client_config:
+        return jsonify({'success': False, 'error': 'No client selected'}), 400
+
+    data = request.get_json(silent=True) or {}
+
+    required = ['name', 'rule_or_flag', 'type']
+    for f in required:
+        if not data.get(f):
+            return jsonify({'success': False, 'error': f'Missing required field: {f}'}), 400
+
+    conditions = data.get('conditions', [])
+    if not isinstance(conditions, list):
+        return jsonify({'success': False, 'error': 'conditions must be an array'}), 400
+
+    entity_scope = data.get('entity_scope', {'scope': 'all'})
+    is_template = bool(data.get('is_template', False))
+
+    conn = _ag_get_warehouse()
+
+    # Duplicate detection (includes entity_type filter)
+    if not is_template:
+        try:
+            c1_metric = conditions[0].get('metric', '') if conditions else ''
+            dup = conn.execute("""
+                SELECT name FROM rules
+                WHERE client_config = ?
+                  AND entity_type = 'ad_group'
+                  AND type = ?
+                  AND action_type = ?
+                  AND is_template = FALSE
+                  AND json_extract_string(conditions, '$[0].metric') = ?
+            """, [client_config, data.get('type'), data.get('action_type'), c1_metric]).fetchone()
+            if dup:
+                return jsonify({'success': False, 'error': f'A similar rule already exists: "{dup[0]}"'}), 409
+        except Exception as e:
+            print(f"[Chat 107] Duplicate check error: {e}")
+
+    try:
+        next_id = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 FROM rules").fetchone()[0]
+
+        conn.execute("""
+            INSERT INTO rules (
+                id, client_config, entity_type, name,
+                rule_or_flag, type, campaign_type_lock,
+                entity_scope, conditions,
+                action_type, action_magnitude,
+                cooldown_days, risk_level, enabled,
+                is_template, created_at, updated_at
+            ) VALUES (
+                ?, ?, 'ad_group', ?,
+                ?, ?, ?,
+                ?, ?,
+                ?, ?,
+                ?, ?, TRUE,
+                ?, NOW(), NOW()
+            )
+        """, [
+            next_id,
+            client_config,
+            data['name'],
+            data['rule_or_flag'],
+            data['type'],
+            data.get('campaign_type_lock'),
+            _json.dumps(entity_scope) if isinstance(entity_scope, (dict, list)) else entity_scope,
+            _json.dumps(conditions),
+            data.get('action_type'),
+            data.get('action_magnitude'),
+            data.get('cooldown_days', 7),
+            data.get('risk_level'),
+            is_template,
+        ])
+        conn.commit()
+
+        result = conn.execute("SELECT * FROM rules WHERE id = ?", [next_id])
+        cols = [d[0] for d in result.description]
+        new_row = _ag_serialize_rule(result.fetchone(), cols)
+        print(f"[Chat 107] Created ad_group rule id={next_id} name='{data['name']}'")
+        return jsonify({'success': True, 'data': new_row})
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@bp.route("/ad_groups/rules/<int:rule_id>", methods=['PUT'])
+@login_required
+def ag_update_rule(rule_id):
+    """PUT /ad_groups/rules/<rule_id> — full replace of mutable columns."""
+    client_config = _ag_client_cfg_name()
+    if not client_config:
+        return jsonify({'success': False, 'error': 'No client selected'}), 400
+
+    data = request.get_json(silent=True) or {}
+
+    conn = _ag_get_warehouse()
+    try:
+        existing = conn.execute(
+            "SELECT id FROM rules WHERE id = ? AND client_config = ?",
+            [rule_id, client_config]
+        ).fetchone()
+        if not existing:
+            return jsonify({'success': False, 'error': 'Rule not found'}), 404
+
+        conditions = data.get('conditions', [])
+        entity_scope = data.get('entity_scope', {'scope': 'all'})
+        is_template = bool(data.get('is_template', False))
+
+        conn.execute("""
+            UPDATE rules SET
+                name = ?,
+                rule_or_flag = ?,
+                type = ?,
+                campaign_type_lock = ?,
+                entity_scope = ?,
+                conditions = ?,
+                action_type = ?,
+                action_magnitude = ?,
+                cooldown_days = ?,
+                risk_level = ?,
+                is_template = ?,
+                updated_at = NOW()
+            WHERE id = ? AND client_config = ?
+        """, [
+            data.get('name'),
+            data.get('rule_or_flag'),
+            data.get('type'),
+            data.get('campaign_type_lock'),
+            _json.dumps(entity_scope) if isinstance(entity_scope, (dict, list)) else entity_scope,
+            _json.dumps(conditions) if isinstance(conditions, list) else conditions,
+            data.get('action_type'),
+            data.get('action_magnitude'),
+            data.get('cooldown_days', 7),
+            data.get('risk_level'),
+            is_template,
+            rule_id,
+            client_config,
+        ])
+        conn.commit()
+
+        result = conn.execute("SELECT * FROM rules WHERE id = ?", [rule_id])
+        cols = [d[0] for d in result.description]
+        updated = _ag_serialize_rule(result.fetchone(), cols)
+        print(f"[Chat 107] Updated ad_group rule id={rule_id}")
+        return jsonify({'success': True, 'data': updated})
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@bp.route("/ad_groups/rules/<int:rule_id>", methods=['DELETE'])
+@login_required
+def ag_delete_rule(rule_id):
+    """DELETE /ad_groups/rules/<rule_id> — delete by id."""
+    client_config = _ag_client_cfg_name()
+    if not client_config:
+        return jsonify({'success': False, 'error': 'No client selected'}), 400
+
+    conn = _ag_get_warehouse()
+    try:
+        existing = conn.execute(
+            "SELECT id FROM rules WHERE id = ? AND client_config = ?",
+            [rule_id, client_config]
+        ).fetchone()
+        if not existing:
+            return jsonify({'success': False, 'error': 'Rule not found'}), 404
+
+        conn.execute(
+            "DELETE FROM rules WHERE id = ? AND client_config = ?",
+            [rule_id, client_config]
+        )
+        conn.commit()
+        print(f"[Chat 107] Deleted ad_group rule id={rule_id}")
+        return jsonify({'success': True, 'data': {'id': rule_id}})
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@bp.route("/ad_groups/rules/<int:rule_id>/toggle", methods=['POST'])
+@login_required
+def ag_toggle_rule(rule_id):
+    """POST /ad_groups/rules/<rule_id>/toggle — flip enabled boolean."""
+    client_config = _ag_client_cfg_name()
+    if not client_config:
+        return jsonify({'success': False, 'error': 'No client selected'}), 400
+
+    conn = _ag_get_warehouse()
+    try:
+        existing = conn.execute(
+            "SELECT id, enabled FROM rules WHERE id = ? AND client_config = ?",
+            [rule_id, client_config]
+        ).fetchone()
+        if not existing:
+            return jsonify({'success': False, 'error': 'Rule not found'}), 404
+
+        new_enabled = not bool(existing[1])
+        conn.execute(
+            "UPDATE rules SET enabled = ?, updated_at = NOW() WHERE id = ? AND client_config = ?",
+            [new_enabled, rule_id, client_config]
+        )
+        conn.commit()
+        print(f"[Chat 107] Toggled ad_group rule id={rule_id} enabled={new_enabled}")
+        return jsonify({'success': True, 'data': {'id': rule_id, 'enabled': new_enabled}})
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@bp.route("/ad_groups/rules/<int:rule_id>/save-as-template", methods=['POST'])
+@login_required
+def ag_save_as_template(rule_id):
+    """POST /ad_groups/rules/<rule_id>/save-as-template — duplicate as template."""
+    client_config = _ag_client_cfg_name()
+    if not client_config:
+        return jsonify({'success': False, 'error': 'No client selected'}), 400
+
+    conn = _ag_get_warehouse()
+    try:
+        result = conn.execute(
+            "SELECT * FROM rules WHERE id = ? AND client_config = ?",
+            [rule_id, client_config]
+        )
+        cols = [d[0] for d in result.description]
+        orig = result.fetchone()
+        if not orig:
+            return jsonify({'success': False, 'error': 'Rule not found'}), 404
+
+        orig_dict = dict(zip(cols, orig))
+
+        orig_name = orig_dict.get('name', '')
+        new_name = orig_name if orig_name.endswith(' (template)') else orig_name + ' (template)'
+
+        next_id = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 FROM rules").fetchone()[0]
+
+        conn.execute("""
+            INSERT INTO rules (
+                id, client_config, entity_type, name,
+                rule_or_flag, type, campaign_type_lock,
+                entity_scope, conditions,
+                action_type, action_magnitude,
+                cooldown_days, risk_level, enabled,
+                is_template, plain_english,
+                created_at, updated_at
+            ) VALUES (
+                ?, ?, 'ad_group', ?,
+                ?, ?, ?,
+                ?, ?,
+                ?, ?,
+                ?, ?, FALSE,
+                TRUE, ?,
+                NOW(), NOW()
+            )
+        """, [
+            next_id,
+            client_config,
+            new_name,
+            orig_dict.get('rule_or_flag'),
+            orig_dict.get('type'),
+            orig_dict.get('campaign_type_lock'),
+            orig_dict.get('entity_scope') if isinstance(orig_dict.get('entity_scope'), str) else _json.dumps(orig_dict.get('entity_scope', {'scope': 'all'})),
+            orig_dict.get('conditions') if isinstance(orig_dict.get('conditions'), str) else _json.dumps(orig_dict.get('conditions', [])),
+            orig_dict.get('action_type'),
+            orig_dict.get('action_magnitude'),
+            orig_dict.get('cooldown_days', 7),
+            orig_dict.get('risk_level'),
+            orig_dict.get('plain_english'),
+        ])
+        conn.commit()
+
+        result = conn.execute("SELECT * FROM rules WHERE id = ?", [next_id])
+        cols = [d[0] for d in result.description]
+        new_row = _ag_serialize_rule(result.fetchone(), cols)
+        print(f"[Chat 107] Saved ad_group rule id={rule_id} as template id={next_id}")
+        return jsonify({'success': True, 'data': new_row})
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()

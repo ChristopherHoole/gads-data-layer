@@ -620,7 +620,7 @@
     "monitoring_minutes": 0,
     "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-03-21T12:14:17"
+    "updated_at": "2026-03-21T14:43:38"
   },
   {
     "rule_id": "ad_2",
@@ -724,7 +724,7 @@
     "monitoring_minutes": 0,
     "enabled": false,
     "created_at": "2026-02-26T00:00:00",
-    "updated_at": "2026-03-21T12:14:37"
+    "updated_at": "2026-03-21T14:43:49"
   },
   {
     "rule_id": "shopping_2",

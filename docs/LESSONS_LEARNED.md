@@ -1,10 +1,10 @@
 # LESSONS LEARNED - ADS CONTROL TOWER (A.C.T)
 
-**Version:** 7.0
+**Version:** 8.0
 **Created:** 2026-02-28
-**Updated:** 2026-03-19
-**Total Lessons:** 92
-**Purpose:** Best practices from 500+ hours across 101 chats
+**Updated:** 2026-03-21
+**Total Lessons:** 97
+**Purpose:** Best practices from 500+ hours across 107 chats
 
 **See Also:** MASTER_KNOWLEDGE_BASE.md, KNOWN_PITFALLS.md
 
@@ -468,5 +468,44 @@ Entity pages (Campaigns, Ad Groups, Keywords, Ads, Shopping) need Snoozed and Hi
 
 ---
 
-**Total:** 92 lessons
-**Version:** 7.0 | **Updated:** 2026-03-19
+## MULTI-ENTITY RULES & FLAGS IMPLEMENTATION (Chat 107)
+
+### 93. ALWAYS Filter by entity_type in ALL Rules Queries
+When expanding rules/flags to new entities, the database `rules` table stores all entities in one table with `entity_type` column. Routes MUST filter by entity type or they will load rules from other entities.
+- **Apply:** Add `WHERE entity_type = 'campaign'` (or `'ad_group'`, etc.) to EVERY rules/flags query in entity-specific routes.
+- **Symptom:** Ad group rules appearing on Campaigns page, or vice versa.
+- **Prevention:** NEVER rely on seeded data to enforce entity separation. Always filter explicitly.
+- **Chat:** 107
+
+### 94. Modal Overlay Must Have display:none by Default
+When copying modal code to new entity pages, the overlay div must have `display:none` in inline style or modal will be visible at bottom of page on load.
+- **Apply:** `<div id="ag-rules-flow-overlay" style="display:none;">`
+- **Symptom:** Modal visible as a box at bottom of page when page loads.
+- **Prevention:** Always verify modal overlay has `display:none` by default. Visibility controlled by adding/removing `.show` class.
+- **Chat:** 107
+
+### 95. Modal CSS Positioning Must Be Complete for Centered Popup
+Modal appearing at bottom of page instead of centered overlay = incomplete CSS positioning rules.
+- **Apply:** Modal overlay div requires ALL of: `position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1050; display: none; align-items: center; justify-content: center;`
+- **Symptom:** Modal appears as box at bottom of page instead of centered popup with dark overlay.
+- **Prevention:** Copy working modal CSS from campaigns (rules.css) and adapt ID prefix. Verify CSS selector matches div ID exactly.
+- **Chat:** 107
+
+### 96. Combine All Toast Container IDs Into One CSS Rule
+When adding entity-specific modals, toast containers get unique IDs (e.g. `#ag-rules-toast-wrap`, `#kw-rules-toast-wrap`). If only base ID (`#rules-toast-wrap`) has `position: fixed` styling, new entity toasts appear at bottom of page content.
+- **Apply:** Combine all toast IDs into one CSS rule: `#rules-toast-wrap, #ag-rules-toast-wrap, #kw-rules-toast-wrap { position: fixed; bottom: 24px; right: 24px; }`
+- **Symptom:** Toast appears at bottom of page instead of sliding in from corner.
+- **Prevention:** When adding new entity modal, add its toast container ID to the combined CSS rule immediately.
+- **Chat:** 107
+
+### 97. Auto-Calculation Functions Must Skip When Editing
+Auto-risk, auto-cooldown, and other auto-calculation functions should ONLY run for new rules, never when editing existing rules. If they run during edit, they overwrite the loaded values.
+- **Apply:** Add edit-mode guard at start of auto-calc functions: `if (_agRfbEditId) return;`
+- **Symptom:** Editing a "Low" risk rule always changes it to "High" on save.
+- **Prevention:** Check `_editId` state variable in ALL auto-calculation functions. Auto-calc is for new rules only.
+- **Chat:** 107
+
+---
+
+**Total:** 97 lessons
+**Version:** 8.0 | **Updated:** 2026-03-21

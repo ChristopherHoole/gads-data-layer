@@ -1,8 +1,8 @@
 # KNOWN PITFALLS - ADS CONTROL TOWER (A.C.T)
 
-**Version:** 8.0
+**Version:** 9.0
 **Created:** 2026-02-28
-**Updated:** 2026-03-19
+**Updated:** 2026-03-21
 **Purpose:** Troubleshooting guide with solutions and prevention strategies
 
 **See Also:** LESSONS_LEARNED.md (best practices), MASTER_KNOWLEDGE_BASE.md (current state)
@@ -26,9 +26,10 @@
 13. **Rules & Templates Issues** (6 pitfalls)
 14. **Synthetic Data & Features Pipeline Issues** (6 pitfalls)
 15. **Recommendations Engine Issues** (5 pitfalls)
-16. **Flags System Issues** (5 pitfalls) ← NEW
+16. **Flags System Issues** (5 pitfalls)
+17. **Multi-Entity Rules & Flags Issues** (5 pitfalls) ← NEW
 
-**Total:** 75 pitfalls with solutions
+**Total:** 80 pitfalls with solutions
 
 ---
 
@@ -453,6 +454,94 @@ conn.execute("ATTACH 'warehouse_readonly.duckdb' AS ro (READ_ONLY)")
 
 ---
 
-**Version:** 8.0 | **Last Updated:** 2026-03-19
-**Total Pitfalls:** 75
+## MULTI-ENTITY RULES & FLAGS ISSUES (Chat 107)
+
+### 76. Wrong Entity Rules Showing on Page — Missing entity_type Filter
+**Problem:** Ad group rules appear on Campaigns page, or vice versa
+**Cause:** Rules query missing `WHERE entity_type = 'campaign'` filter. Database has rows with different entity_type values, route loads them all.
+**Solution:** Add `WHERE entity_type = '{entity}'` to ALL rules/flags queries in entity-specific routes (campaigns.py, ad_groups.py, keywords.py, etc.)
+**Prevention:** ALWAYS filter by entity_type in ALL rules queries. Never rely on seeded data to enforce separation.
+**Example:**
+```python
+# WRONG - loads all rules regardless of entity
+rules = conn.execute("SELECT * FROM rules WHERE enabled = true").fetchall()
+
+# CORRECT - filters by entity type
+rules = conn.execute("""
+    SELECT * FROM rules 
+    WHERE entity_type = 'campaign' AND enabled = true
+""").fetchall()
+```
+**Chat:** 107
+
+### 77. Modal Visible at Bottom of Page on Load
+**Problem:** Rules flow builder modal visible at bottom of page when page loads, instead of hidden
+**Cause:** Modal overlay div missing `display:none` in inline style attribute
+**Solution:** Add `style="display:none;"` to modal overlay div:
+```html
+<div id="ag-rules-flow-overlay" style="display:none;">
+```
+**Prevention:** Always verify modal overlay has `display:none` by default. Modal visibility is controlled by adding/removing `.show` class which sets `display: flex`.
+**Chat:** 107
+
+### 78. Modal Appearing at Bottom Instead of Centered Popup
+**Problem:** Modal appears as a box at bottom of page instead of centered overlay popup
+**Cause:** CSS positioning rules missing or incorrect on modal overlay div
+**Solution:** Verify modal overlay CSS has ALL required positioning properties:
+```css
+#ag-rules-flow-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1050;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;  /* hidden by default */
+    align-items: center;
+    justify-content: center;
+}
+#ag-rules-flow-overlay.show {
+    display: flex;  /* centered popup when shown */
+}
+```
+**Prevention:** Always verify CSS selector matches div ID exactly. Copy working modal CSS from campaigns modal (rules.css) and adapt ID prefix.
+**Chat:** 107
+
+### 79. Toast Appearing at Bottom of Page Instead of Sliding In
+**Problem:** Success/error toast appears at bottom of page content instead of sliding in from corner
+**Cause:** Entity-specific toast container ID (e.g. `#ag-rules-toast-wrap`) has no CSS styling. Only the base toast container (e.g. `#rules-toast-wrap`) has `position: fixed` rules.
+**Solution:** Combine all toast container IDs into one CSS rule:
+```css
+#rules-toast-wrap,
+#ag-rules-toast-wrap,
+#kw-rules-toast-wrap {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1060;
+    max-width: 400px;
+}
+```
+**Prevention:** When adding new entity modal, add its toast container ID to the combined CSS rule. Never create separate toast containers with different positioning.
+**Chat:** 107
+
+### 80. Risk Level Always Changes to "High" When Editing
+**Problem:** Editing any rule always changes risk level to "High", regardless of current value (Low/Medium/High)
+**Cause:** Auto-risk calculation function (`agRfbAutoRisk()`) runs AFTER dropdown is populated, overwriting the value even when editing an existing rule
+**Solution:** Add edit-mode guard to auto-risk function:
+```javascript
+function agRfbAutoRisk() {
+    if (_agRfbEditId) return;  // Skip auto-risk when editing
+    // ... auto-risk logic for new rules only
+}
+```
+**Prevention:** Auto-risk logic should ONLY run for new rules, never when editing. Check `_editId` state variable at start of all auto-calculation functions.
+**Alternative:** Move auto-risk call to BEFORE dropdown population in edit flow, then re-set dropdown value after.
+**Chat:** 107
+
+---
+
+**Version:** 9.0 | **Last Updated:** 2026-03-21
+**Total Pitfalls:** 80
 **See Also:** LESSONS_LEARNED.md | MASTER_KNOWLEDGE_BASE.md

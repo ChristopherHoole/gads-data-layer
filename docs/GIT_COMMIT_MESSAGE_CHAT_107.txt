@@ -1,0 +1,42 @@
+Chat 107: Ad Groups Rules & Flags implementation complete
+
+WHAT WAS BUILT:
+- Ad Groups Rules & Flags tab with full CRUD functionality
+- 12 rules seeded (8 Bid + 4 Status) with entity_type='ad_group'
+- 18 flags seeded (8 Performance + 6 Anomaly + 4 Technical)
+- Components: ag_rules_flags_tab.html, ag_rules_flow_builder.html
+- Routes: 6 CRUD endpoints in ad_groups.py + /api/ad-groups-list
+- Seed script: scripts/seed_ad_group_rules.py
+- CSRF exemptions added to app.py
+
+BUGS FIXED (5 total):
+1. Entity type filter missing - campaigns showing ad group rules
+2. Modal visible on page load - display:none missing
+3. Modal at bottom of page - position:fixed CSS missing
+4. Toast at bottom of page - CSS missing for ag-rules-toast-wrap
+5. Risk level always "High" - auto-risk overwriting dropdown on edit
+
+FILES MODIFIED:
+- act_dashboard/templates/ad_groups.html
+- act_dashboard/routes/ad_groups.py
+- act_dashboard/routes/campaigns.py (added entity_type filter)
+- act_dashboard/app.py (CSRF exemptions)
+- act_dashboard/static/css/rules.css (toast container fix)
+- docs/KNOWN_PITFALLS.md (v9.0 - added 5 new pitfalls, 76-80)
+- docs/LESSONS_LEARNED.md (v8.0 - added 5 new lessons, 93-97)
+
+FILES CREATED:
+- act_dashboard/templates/components/ag_rules_flags_tab.html
+- act_dashboard/templates/components/ag_rules_flow_builder.html
+- scripts/seed_ad_group_rules.py
+
+TESTING:
+✅ Campaigns page shows only campaign rules (18 total)
+✅ Ad Groups page shows only ad group rules (12 total)
+✅ Modal hidden on load
+✅ Modal appears centered as popup
+✅ Toast slides in from bottom-right
+✅ Risk level preserves value when editing
+✅ Zero console errors
+
+NEXT: Brief 3 (Keywords implementation)
