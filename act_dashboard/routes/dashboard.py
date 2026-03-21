@@ -347,7 +347,7 @@ def home() -> str:
         prev_filter = f"AND snapshot_date >= CURRENT_DATE - INTERVAL '{days * 2} days' AND snapshot_date < CURRENT_DATE - INTERVAL '{days} days'"
 
     # Connect to database
-    conn = duckdb.connect(config.db_path, read_only=True)
+    conn = duckdb.connect(config.db_path)
 
     # Query 1: Current period metrics
     # Note: Using f-string for INTERVAL because DuckDB doesn't support ? in INTERVAL
