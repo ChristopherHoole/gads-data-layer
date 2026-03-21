@@ -1,0 +1,761 @@
+{#
+  ad_rules_flags_tab.html — Ads version of rules_flags_tab.html
+  Rules & Flags tab content: sub-tabs Rules | Flags | Templates.
+  Data loaded via AJAX from GET /ads/rules.
+  All icons: Material Symbols Outlined.
+  Bootstrap 5 only. Vanilla JS only. No jQuery.
+#}
+
+<!-- ════════════════════════════════════════════════════════════
+     AD RULES & FLAGS TAB PANE
+═══════════════════════════════════════════════════════════════ -->
+<div class="tab-pane fade" id="rules-tab" role="tabpanel">
+<div class="py-3" id="adR-rules-flags-container">
+
+  <!-- ── Section Header ──────────────────────────────────────────── -->
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h4 class="mb-1 fw-semibold" style="font-size:16px;">Ad rules &amp; flags</h4>
+      <p class="text-muted mb-0" style="font-size:12px;line-height:1.5;">
+        Rules generate recommendations for action. Flags raise alerts only. Both require your confirmation before anything changes.
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-outline-secondary" onclick="adRRfShowSubTab('templates')">
+        Use template
+      </button>
+      <button class="btn btn-sm btn-primary" onclick="adROpenRulesFlow()">
+        <span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle;">add</span>
+        Add rule or flag
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Sub-tabs ─────────────────────────────────────────────────── -->
+  <div class="rules-sub-tab-bar">
+    <div class="rules-sub-tabs">
+      <button class="rules-sub-tab active" id="adR-rf-tab-rules" onclick="adRRfShowSubTab('rules')">
+        Rules <span class="rules-sub-badge" id="adR-rf-badge-rules">0</span>
+      </button>
+      <button class="rules-sub-tab" id="adR-rf-tab-flags" onclick="adRRfShowSubTab('flags')">
+        Flags <span class="rules-sub-badge" id="adR-rf-badge-flags">0</span>
+      </button>
+      <button class="rules-sub-tab" id="adR-rf-tab-templates" onclick="adRRfShowSubTab('templates')">
+        Templates <span class="rules-sub-badge" id="adR-rf-badge-templates">0</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── RULES SUB-PANE ───────────────────────────────────────────── -->
+  <div id="adR-rf-pane-rules">
+    <div class="d-flex gap-2 mb-3 align-items-center flex-wrap">
+      <div style="position:relative;width:200px;">
+        <span class="material-symbols-outlined" style="position:absolute;left:7px;top:50%;transform:translateY(-50%);font-size:14px;color:#5f6368;pointer-events:none;line-height:1;">search</span>
+        <input class="form-control form-control-sm" id="adR-rf-rules-search" type="text"
+               placeholder="Search rules..." style="padding-left:26px;"
+               oninput="adRRfFilterRules()">
+      </div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-rf-filter="all" onclick="adRRfSetRuleFilter(this,'rules')">All</button>
+        <button class="filter-tab" data-rf-filter="status" onclick="adRRfSetRuleFilter(this,'rules')">Status</button>
+      </div>
+      <span class="ms-auto text-muted" style="font-size:12px;" id="adR-rf-rules-info"></span>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="table table-sm mb-0" id="adR-rf-rules-table">
+        <thead class="table-light">
+          <tr>
+            <th style="width:50px;">On/off</th>
+            <th class="rules-rule-name-col">Rule name</th>
+            <th>Ads</th>
+            <th>Campaign type</th>
+            <th class="rules-plain-english" style="min-width:280px;">Plain English</th>
+            <th>Rule/Flag</th>
+            <th>Rule type</th>
+            <th>Conditions</th>
+            <th>Action</th>
+            <th>Cooldown</th>
+            <th>Guardrail</th>
+            <th>Risk</th>
+            <th style="width:70px;"></th>
+          </tr>
+        </thead>
+        <tbody id="adR-rf-rules-tbody">
+          <tr><td colspan="13" class="text-center text-muted py-4" style="font-size:13px;">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading rules…
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── FLAGS SUB-PANE ───────────────────────────────────────────── -->
+  <div id="adR-rf-pane-flags" style="display:none;">
+    <div class="d-flex gap-2 mb-3 align-items-center flex-wrap">
+      <input class="form-control form-control-sm" id="adR-rf-flags-search" type="text"
+             placeholder="Search flags..." style="width:200px;"
+             oninput="adRRfFilterFlags()">
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-rf-filter="all" onclick="adRRfSetRuleFilter(this,'flags')">All</button>
+        <button class="filter-tab" data-rf-filter="performance" onclick="adRRfSetRuleFilter(this,'flags')">Performance</button>
+        <button class="filter-tab" data-rf-filter="anomaly" onclick="adRRfSetRuleFilter(this,'flags')">Anomaly</button>
+        <button class="filter-tab" data-rf-filter="technical" onclick="adRRfSetRuleFilter(this,'flags')">Technical</button>
+      </div>
+      <span class="ms-auto text-muted" style="font-size:12px;" id="adR-rf-flags-info"></span>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="table table-sm mb-0" id="adR-rf-flags-table">
+        <thead class="table-light">
+          <tr>
+            <th style="width:50px;">On/off</th>
+            <th>Flag name</th>
+            <th>Type</th>
+            <th>Direction</th>
+            <th>Ads</th>
+            <th class="rules-plain-english" style="min-width:280px;">Plain English</th>
+            <th>Condition</th>
+            <th>Window</th>
+            <th style="width:70px;"></th>
+          </tr>
+        </thead>
+        <tbody id="adR-rf-flags-tbody">
+          <tr><td colspan="9" class="text-center text-muted py-4" style="font-size:13px;">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading flags…
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── TEMPLATES SUB-PANE ───────────────────────────────────────── -->
+  <div id="adR-rf-pane-templates" style="display:none;">
+    <p class="text-muted mb-3" style="font-size:13px;">
+      Pick a template to pre-fill the rule builder. You only need to set the thresholds and select your ads.
+    </p>
+    <div class="table-wrapper">
+      <table class="table table-sm mb-0" id="adR-rf-templates-table">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th>Rule/Flag</th>
+            <th>Type</th>
+            <th>Campaign type</th>
+            <th class="rules-plain-english" style="min-width:280px;">Plain English</th>
+            <th>Conditions</th>
+            <th>Action</th>
+            <th>Cooldown</th>
+            <th style="width:110px;"></th>
+          </tr>
+        </thead>
+        <tbody id="adR-rf-templates-tbody">
+          <tr><td colspan="9" class="text-center text-muted py-4" style="font-size:13px;">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading templates…
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- end adR-rules-flags-container -->
+</div><!-- end tab-pane -->
+
+<!-- ── Toast container ──────────────────────────────────────────── -->
+<div id="adR-rules-toast-wrap"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+//  Ad Rules & Flags Tab — Data + Rendering
+// ════════════════════════════════════════════════════════════════
+
+var _adRRfData = [];          // all rows from API
+var _adRRfRuleFilter = 'all'; // current rules filter
+var _adRRfFlagFilter = 'all'; // current flags filter
+
+// ── Sub-tab switching ────────────────────────────────────────────
+function adRRfShowSubTab(tab) {
+  ['rules','flags','templates'].forEach(function(t) {
+    document.getElementById('adR-rf-tab-' + t).classList.toggle('active', t === tab);
+    var pane = document.getElementById('adR-rf-pane-' + t);
+    if (pane) pane.style.display = t === tab ? '' : 'none';
+  });
+}
+
+// ── Filter tab ───────────────────────────────────────────────────
+function adRRfSetRuleFilter(btn, context) {
+  btn.closest('.filter-tabs').querySelectorAll('.filter-tab').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  if (context === 'rules') {
+    _adRRfRuleFilter = btn.dataset.rfFilter;
+    adRRfRenderRules();
+  } else {
+    _adRRfFlagFilter = btn.dataset.rfFilter;
+    adRRfRenderFlags();
+  }
+}
+
+function adRRfFilterRules() { adRRfRenderRules(); }
+function adRRfFilterFlags() { adRRfRenderFlags(); }
+
+// ── Load data from API ───────────────────────────────────────────
+function adRRfLoadData() {
+  fetch('/ads/rules')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        _adRRfData = d.data || [];
+        adRRfRenderRules();
+        adRRfRenderFlags();
+        adRRfRenderTemplates();
+        adRRfUpdateBadges();
+      } else {
+        adRRfShowError(d.error || 'Failed to load.');
+      }
+    })
+    .catch(function(e) {
+      adRRfShowError('Network error: ' + e);
+    });
+}
+
+function adRRfShowError(msg) {
+  ['adR-rf-rules-tbody','adR-rf-flags-tbody'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      var cols = id === 'adR-rf-rules-tbody' ? 11 : 9;
+      el.innerHTML = '<tr><td colspan="' + cols + '" class="text-center text-danger py-4" style="font-size:13px;">' + msg + '</td></tr>';
+    }
+  });
+}
+
+function adRRfUpdateBadges() {
+  var rules = _adRRfData.filter(function(r) { return r.rule_or_flag === 'rule' && r.enabled && !r.is_template; });
+  var flags = _adRRfData.filter(function(r) { return r.rule_or_flag === 'flag' && r.enabled && !r.is_template; });
+  var templates = _adRRfData.filter(function(r) { return r.is_template === true; });
+  document.getElementById('adR-rf-badge-rules').textContent = rules.length;
+  document.getElementById('adR-rf-badge-flags').textContent = flags.length;
+  var templatesBadge = document.getElementById('adR-rf-badge-templates');
+  if (templatesBadge) templatesBadge.textContent = templates.length;
+  // Update main tab badge
+  var mainBadge = document.getElementById('adR-rules-flags-badge');
+  if (mainBadge) mainBadge.textContent = _adRRfData.filter(function(r) { return !r.is_template; }).length;
+}
+
+// ── Plain English generator ──────────────────────────────────────
+var ADR_METRIC_LABELS = {
+  // ROAS
+  'roas_w7_mean':'ROAS (7d)','roas_w14_mean':'ROAS (14d)','roas_w30_mean':'ROAS (30d)',
+  // CPA
+  'cpa_w7_mean':'CPA (7d)','cpa_w14_mean':'CPA (14d)','cpa_w30_mean':'CPA (30d)',
+  // CTR
+  'ctr_w7_mean':'CTR (7d)','ctr_w14_mean':'CTR (14d)',
+  // CVR
+  'cvr_w7_mean':'CVR (7d)',
+  // Conversions
+  'conversions_w7_sum':'Conversions (7d)','conversions_w14_sum':'Conversions (14d)','conversions_w30_sum':'Conversions (30d)',
+  // Clicks
+  'clicks_w7_sum':'Clicks (7d)','clicks_w14_sum':'Clicks (14d)',
+  // Impressions
+  'impressions_w7_sum':'Impressions (7d)',
+  // Cost
+  'cost_w7_sum':'Cost (7d)','cost_w14_sum':'Cost (14d)','cost_w30_sum':'Cost (30d)',
+  // Ad Specific
+  'ad_strength':'Ad Strength',
+  'search_impression_share':'Impression Share',
+  'ad_status':'Ad Status',
+  // Week-on-week %
+  'ctr_w7_vs_prev_pct':'CTR WoW %',
+  'clicks_w7_vs_prev_pct':'Clicks WoW %',
+  'conversions_w7_vs_prev_pct':'Conversions WoW %',
+  'cost_w7_vs_prev_pct':'Cost WoW %',
+  'impressions_w7_vs_prev_pct':'Impressions WoW %',
+  'roas_w7_vs_prev_pct':'ROAS WoW %',
+  // Anomaly / Volatility
+  'cost_w14_cv':'Cost Volatility (14d)',
+  // System
+  'low_data_flag':'Low Data Flag'
+};
+
+var ADR_ACTION_LABELS = {
+  'pause':'Pause ad',
+  'enable':'Enable ad'
+};
+
+var ADR_OP_LABELS = {'>=':'≥','<=':'≤','>':'>','<':'<','=':'=','gte':'≥','lte':'≤','gt':'>','lt':'<','eq':'=','in':'in'};
+
+function adRRfPlainEnglish(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+
+  if (row.rule_or_flag === 'flag') {
+    var c = conds[0];
+    if (!c) return row.name;
+    var metric = ADR_METRIC_LABELS[c.metric] || c.metric;
+    var op = ADR_OP_LABELS[c.operator] || ADR_OP_LABELS[c.op] || c.operator || c.op || '';
+    var _u1 = c.ref || c.unit || ''; var unitSuffix = (_u1 === 'percent' || _u1 === 'pct') ? '%' : (_u1 === 'x_target' ? '× target' : '');
+    var dir = (c.operator === '>' || c.operator === '>=') ? 'risen above' : 'fallen below';
+    if (c.operator === '=') dir = 'equal to';
+    return 'Alert when ' + metric + ' has ' + dir + ' ' + c.value + unitSuffix;
+  }
+
+  var actionLabel = ADR_ACTION_LABELS[row.action_type] || (row.action_type || '');
+  var mag = row.action_magnitude ? ' by ' + row.action_magnitude + '%' : '';
+  var condParts = conds.map(function(c) {
+    var metric = ADR_METRIC_LABELS[c.metric] || c.metric;
+    var op = ADR_OP_LABELS[c.operator] || ADR_OP_LABELS[c.op] || c.operator || c.op || '';
+    var _u = c.ref || c.unit || ''; var unit = (_u === 'x_target') ? '× target' : (_u === 'percent' || _u === 'pct') ? '%' : '';
+    return metric + ' ' + op + ' ' + c.value + unit;
+  });
+  return actionLabel + mag + (condParts.length ? ' when ' + condParts.join(' and ') : '');
+}
+
+function adRRfGuardrail(row) {
+  var at = row.action_type || '';
+  if (at === 'pause' || at === 'enable') return '—';
+  return '—';
+}
+
+function adRRfCondText(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  return conds.map(function(c) {
+    var metric = ADR_METRIC_LABELS[c.metric] || c.metric;
+    var op = ADR_OP_LABELS[c.operator] || ADR_OP_LABELS[c.op] || c.operator || c.op || '';
+    var _u = c.ref || c.unit || ''; var unit = (_u === 'x_target') ? '× target' : (_u === 'percent' || _u === 'pct') ? '%' : '';
+    return '<strong>' + adRRfEsc(metric) + '</strong> ' + op + ' ' + c.value + unit;
+  }).join('<br>');
+}
+
+function adRRfActionCell(row) {
+  if (!row.action_type) return '—';
+  var label = ADR_ACTION_LABELS[row.action_type] || row.action_type;
+  var mag = row.action_magnitude ? ' ' + row.action_magnitude + '%' : '';
+  var isPause = row.action_type === 'pause';
+  var isEnable = row.action_type === 'enable';
+  var css = isPause ? 'action-pause' : (isEnable ? 'action-up' : '');
+  var arrow = isPause
+    ? '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">pause_circle</span> '
+    : (isEnable
+      ? '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">play_circle</span> '
+      : '');
+  return '<span class="' + css + '">' + arrow + label + mag + '</span>';
+}
+
+
+// ── Flag-specific Plain English ───────────────────────────────────────────────
+var ADR_FLAG_PE_MAP = {
+  'roas_w7_vs_prev_pct':        {pos: 'ROAS has spiked unusually high — could be a real opportunity or an anomaly worth checking', neg: 'ROAS is consistently declining vs the ad\'s own normal performance'},
+  'cpa_w7_vs_prev_pct':         {pos: 'CPA has improved week on week — a good signal that creative or targeting is improving', neg: 'CPA has risen week on week — check if competition or creative quality is driving this'},
+  'ctr_w7_vs_prev_pct':         {pos: 'CTR has spiked vs last week — ad creative may be gaining relevance or competition has dropped', neg: 'Click through rate is trending down — ad creative may be losing relevance or competition has increased'},
+  'cvr_w7_vs_prev_pct':         {pos: 'Conversion rate has improved week on week — landing page or offer resonance is improving', neg: 'Conversion rate has dropped week on week — check landing page and offer relevance'},
+  'conversions_w7_vs_prev_pct': {pos: 'Conversions have spiked vs the previous week — check if tracking is double counting', neg: 'Conversions have dropped vs the previous week — check creative, targeting and landing pages'},
+  'cost_w7_vs_prev_pct':        {pos: 'Spend has risen sharply above the ad\'s normal level — review before it drains the campaign budget', neg: 'Spend has dropped sharply vs the previous week — check if ads are being limited'},
+  'cost_w14_cv':                {pos: 'The system detected a statistically abnormal cost surge — review immediately', neg: 'Spend has dropped to an anomalous level — check if ads are serving normally'},
+  'clicks_w7_vs_prev_pct':      {pos: 'Click volume spike detected — check for invalid clicks or unusual traffic', neg: 'Click volume drop detected — ads may have stopped serving or lost auction coverage'},
+  'impressions_w7_vs_prev_pct': {pos: 'Impression volume spike detected — check for unusual traffic patterns', neg: 'Impression volume drop detected — ads may have stopped serving or lost auction coverage'},
+  'ad_strength':                {eq: 'Ad strength is below optimal — review headlines, descriptions and assets'},
+  'ad_status':                  {eq: 'Ad has approval issues — check ad status in Google Ads'},
+  'low_data_flag':              {eq: 'Ad has insufficient data for reliable metric calculation — consider a longer lookback window'}
+};
+
+function adRRfFlagPlainEnglish(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  var c = conds[0];
+  if (!c) return row.name;
+  var metric = c.metric || '';
+  var op = c.operator || c.op || '';
+  var entry = ADR_FLAG_PE_MAP[metric];
+  if (!entry) {
+    // fallback
+    var mLabel = ADR_METRIC_LABELS[metric] || metric;
+    var opLabel = ADR_OP_LABELS[op] || op;
+    var _u = c.ref || c.unit || ''; var unit = (_u === 'x_target') ? '× target' : (_u === 'percent' || _u === 'pct') ? '%' : '';
+    return 'Alert when ' + mLabel + ' ' + opLabel + ' ' + c.value + unit;
+  }
+  if (entry.eq) return entry.eq;
+  var isPos = (op === '>' || op === '>=' || op === 'gt' || op === 'gte');
+  return isPos ? (entry.pos || entry.neg || row.name) : (entry.neg || entry.pos || row.name);
+}
+
+// ── Flag-specific Condition text ──────────────────────────────────────────────
+var ADR_FLAG_COND_LABELS = {
+  'roas_w7_vs_prev_pct':        {pos: 'ROAS increased', neg: 'ROAS declined'},
+  'cpa_w7_vs_prev_pct':         {pos: 'CPA increased',  neg: 'CPA declined'},
+  'ctr_w7_vs_prev_pct':         {pos: 'CTR increased',  neg: 'CTR declined'},
+  'cvr_w7_vs_prev_pct':         {pos: 'CVR increased',  neg: 'CVR declined'},
+  'conversions_w7_vs_prev_pct': {pos: 'Conversions increased', neg: 'Conversions declined'},
+  'cost_w7_vs_prev_pct':        {pos: 'Spend increased', neg: 'Spend declined'},
+  'cost_w14_cv':                {eq: 'Cost Volatility'},
+  'clicks_w7_vs_prev_pct':      {eq: 'Clicks WoW'},
+  'impressions_w7_vs_prev_pct': {eq: 'Impressions WoW'},
+  'ad_strength':                {eq: 'Ad Strength'},
+  'ad_status':                  {eq: 'Ad Status'},
+  'low_data_flag':              {eq: 'Low Data Flag'}
+};
+
+var ADR_SYSTEM_METRICS = ['cost_w14_cv','ad_strength','ad_status',
+  'search_impression_share','low_data_flag'];
+
+function adRRfFlagCondText(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  var c = conds[0];
+  if (!c) return '—';
+  var metric = c.metric || '';
+  var isSystem = ADR_SYSTEM_METRICS.indexOf(metric) >= 0;
+  var rawOp = c.operator || c.op || '';
+  var isPos = (rawOp === '>' || rawOp === '>=' || rawOp === 'gt' || rawOp === 'gte');
+  var entry = ADR_FLAG_COND_LABELS[metric];
+  var label;
+  if (entry) {
+    if (entry.eq) label = entry.eq;
+    else label = isPos ? entry.pos : entry.neg;
+  } else {
+    label = ADR_METRIC_LABELS[metric] || metric;
+  }
+  var op = ADR_OP_LABELS[rawOp] || rawOp;
+  var _u = c.ref || c.unit || ''; var unit = (_u === 'percent' || _u === 'pct') ? '%' : (_u === 'x_target' ? '× target' : '');
+  var sysTag = isSystem ? ' <span class="badge-system">system</span>' : '';
+  return '<strong>' + adRRfEsc(label) + '</strong> ' + op + ' ' + adRRfEsc(String(c.value)) + unit + sysTag;
+}
+
+function adRRfDirectionCell(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  if (!conds.length) return '<span class="dir-neu">Either</span>';
+  var op = conds[0].operator || conds[0].op || '';
+  if (op === '>' || op === '>=' || op === 'gt' || op === 'gte') return '<span class="dir-pos">▲ Positive</span>';
+  if (op === '<' || op === '<=' || op === 'lt' || op === 'lte') return '<span class="dir-neg">▼ Negative</span>';
+  return '<span class="dir-neu">Either</span>';
+}
+
+function adRRfWindowCell(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  if (!conds.length) return '—';
+  var m = (conds[0].metric || '');
+  if (m.includes('_vs_prev_pct') || m.includes('_w7_vs_') || m.includes('_w14_vs_') || m.includes('WoW') || m.includes('wow_pct')) return 'Trend';
+  if (m.includes('z_score') || m.includes('_z') || m.includes('_detected')) return 'Real-time';
+  if (m.includes('14d') || m.includes('_14d') || m.includes('_w14_') || m.includes('w14_')) return '14 days';
+  if (m.includes('30d') || m.includes('_30d') || m.includes('_w30_') || m.includes('w30_')) return '30 days';
+  if (m.includes('7d') || m.includes('_7d') || m.includes('_w7_') || m.includes('w7_')) return '7 days';
+  return '1 day';
+}
+
+function adRRfStrategyLabel(lock) {
+  var map = {'troas':'tROAS','tcpa':'tCPA','max_clicks':'Max Clicks','all':'All','manual_cpc':'Manual CPC'};
+  return map[lock] || lock || 'All';
+}
+
+function adRRfScopeLabel(row) {
+  var scope = row.entity_scope;
+  if (!scope) return 'All ads';
+  if (typeof scope === 'string') { try { scope = JSON.parse(scope); } catch(e){} }
+  if (scope && scope.scope === 'all') return 'All ads';
+  if (scope && scope.scope === 'specific' && Array.isArray(scope.ads)) {
+    return adRRfEsc(scope.ads.join(', ')) || 'All ads';
+  }
+  return 'All ads';
+}
+
+function adRRfEsc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Render Rules Table ───────────────────────────────────────────
+function adRRfRenderRules() {
+  var search = (document.getElementById('adR-rf-rules-search').value || '').toLowerCase();
+  var rows = _adRRfData.filter(function(r) { return r.rule_or_flag === 'rule' && !r.is_template; });
+
+  if (_adRRfRuleFilter !== 'all') {
+    rows = rows.filter(function(r) { return r.type === _adRRfRuleFilter; });
+  }
+  if (search) {
+    rows = rows.filter(function(r) {
+      var pe = (r.plain_english || adRRfPlainEnglish(r)).toLowerCase();
+      return adRRfEsc(r.name).toLowerCase().includes(search) || pe.includes(search);
+    });
+  }
+
+  var tbody = document.getElementById('adR-rf-rules-tbody');
+  if (!rows.length) {
+    var msg = _adRRfData.filter(function(r){return r.rule_or_flag==='rule';}).length === 0
+      ? '<div class="alert alert-info mb-0" role="alert" style="font-size:13px;">No rules yet — click Add rule or flag to create your first one.</div>'
+      : '<tr><td colspan="13" class="text-center text-muted py-3" style="font-size:13px;">No rules match the current filter.</td></tr>';
+    tbody.innerHTML = msg.startsWith('<div') ? '<tr><td colspan="13">' + msg + '</td></tr>' : msg;
+    document.getElementById('adR-rf-rules-info').textContent = '0 rules';
+    return;
+  }
+
+  // Group by type (only status for ads)
+  var groups = {'status':[]};
+  rows.forEach(function(r) { (groups[r.type] || groups.status).push(r); });
+
+  var html = '';
+  var groupLabels = {status:'Status'};
+  ['status'].forEach(function(gtype) {
+    var gRows = (groups[gtype] || []).slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
+    if (!gRows.length) return;
+    html += '<tr class="rules-group-row"><td colspan="13">' + groupLabels[gtype] + ' &nbsp;·&nbsp; ' + gRows.length + ' rules</td></tr>';
+    gRows.forEach(function(r) {
+      var toggleClass = r.enabled ? '' : 'text-muted';
+      var riskBadge = r.risk_level
+        ? '<span class="risk-dot risk-dot-' + adRRfEsc(r.risk_level) + '">' + adRRfEsc(r.risk_level.charAt(0).toUpperCase()+r.risk_level.slice(1)) + '</span>'
+        : '—';
+      var guardrail = adRRfGuardrail(r);
+      var isHumanConfirm = r.type === 'status' || r.action_type === 'pause' || r.action_type === 'enable';
+      var guardrailHtml = isHumanConfirm
+        ? '<span class="rules-human-confirm"><span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle;">warning</span> Human confirmation required</span>'
+        : '<span style="font-size:11px;color:#202124;">' + adRRfEsc(guardrail) + '</span>';
+
+      html += '<tr data-rule-id="' + r.id + '" data-rule-type="' + adRRfEsc(r.type) + '">'
+        + '<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"'
+        + (r.enabled ? ' checked' : '') + ' onchange="adRRfToggle(' + r.id + ',this)"></div></td>'
+        + '<td class="rules-rule-name-col ' + toggleClass + '" style="font-weight:600;">' + adRRfEsc(r.name) + '</td>'
+        + '<td class="' + toggleClass + '" style="font-size:12px;color:#5f6368;">' + adRRfEsc(adRRfScopeLabel(r)) + '</td>'
+        + '<td style="text-align:center;"><span class="badge-strategy">' + adRRfEsc(adRRfStrategyLabel(r.campaign_type_lock)) + '</span></td>'
+        + '<td class="rules-plain-english">' + adRRfEsc(r.plain_english || adRRfPlainEnglish(r)) + '</td>'
+        + '<td><span class="badge badge-rof-' + adRRfEsc(r.rule_or_flag) + '" style="font-size:11px;">' + adRRfEsc((r.rule_or_flag||'rule').charAt(0).toUpperCase()+(r.rule_or_flag||'rule').slice(1)) + '</span></td>'
+        + '<td><span class="badge badge-type-' + adRRfEsc(r.type) + '" style="font-size:11px;">' + adRRfEsc(r.type.charAt(0).toUpperCase()+r.type.slice(1)) + '</span></td>'
+        + '<td style="font-size:12px;color:#202124;white-space:nowrap;">' + adRRfCondText(r) + '</td>'
+        + '<td>' + adRRfActionCell(r) + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;white-space:nowrap;">' + (r.cooldown_days ? r.cooldown_days + 'd' : '—') + '</td>'
+        + '<td class="rules-guardrail-col">' + guardrailHtml + '</td>'
+        + '<td>' + riskBadge + '</td>'
+        + '<td><div class="d-flex gap-1">'
+        + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="adRRfEditRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button>'
+        + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete" onclick="adRRfDeleteRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button>'
+        + '<button class="btn-save-template" title="Save as template" onclick="adRRfSaveAsTemplate(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button>'
+        + '</div></td>'
+        + '</tr>';
+    });
+  });
+
+  tbody.innerHTML = html;
+  var total = _adRRfData.filter(function(r){return r.rule_or_flag==='rule';}).length;
+  var enabled = _adRRfData.filter(function(r){return r.rule_or_flag==='rule'&&r.enabled;}).length;
+  document.getElementById('adR-rf-rules-info').textContent = total + ' rules\u00a0·\u00a0' + enabled + ' enabled';
+}
+
+// ── Render Flags Table ───────────────────────────────────────────
+function adRRfRenderFlags() {
+  var search = (document.getElementById('adR-rf-flags-search').value || '').toLowerCase();
+  var rows = _adRRfData.filter(function(r) { return r.rule_or_flag === 'flag' && !r.is_template; });
+
+  if (_adRRfFlagFilter !== 'all') {
+    rows = rows.filter(function(r) { return r.type === _adRRfFlagFilter; });
+  }
+  if (search) {
+    rows = rows.filter(function(r) {
+      var pe = adRRfPlainEnglish(r).toLowerCase();
+      return adRRfEsc(r.name).toLowerCase().includes(search) || pe.includes(search);
+    });
+  }
+
+  var tbody = document.getElementById('adR-rf-flags-tbody');
+  if (!rows.length) {
+    var msg = _adRRfData.filter(function(r){return r.rule_or_flag==='flag';}).length === 0
+      ? '<tr><td colspan="9"><div class="alert alert-info mb-0" style="font-size:13px;">No flags yet — click Add rule or flag to create your first one.</div></td></tr>'
+      : '<tr><td colspan="9" class="text-center text-muted py-3" style="font-size:13px;">No flags match the current filter.</td></tr>';
+    tbody.innerHTML = msg;
+    document.getElementById('adR-rf-flags-info').textContent = '0 flags';
+    return;
+  }
+
+  var groups = {'performance':[],'anomaly':[],'technical':[]};
+  rows.forEach(function(r) { (groups[r.type] = groups[r.type] || []).push(r); });
+
+  var html = '';
+  var groupLabels = {performance:'Performance',anomaly:'Anomaly',technical:'Technical'};
+  ['performance','anomaly','technical'].forEach(function(gtype) {
+    var gRows = (groups[gtype] || []).slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
+    if (!gRows.length) return;
+    html += '<tr class="rules-group-row"><td colspan="9">' + groupLabels[gtype] + ' &nbsp;·&nbsp; ' + gRows.length + ' flags</td></tr>';
+    gRows.forEach(function(r) {
+      html += '<tr data-rule-id="' + r.id + '">'
+        + '<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"'
+        + (r.enabled ? ' checked' : '') + ' onchange="adRRfToggle(' + r.id + ',this)"></div></td>'
+        + '<td style="font-weight:600;white-space:nowrap;">' + adRRfEsc(r.name) + '</td>'
+        + '<td><span class="badge badge-type-' + adRRfEsc(r.type) + '" style="font-size:11px;">' + adRRfEsc(r.type.charAt(0).toUpperCase()+r.type.slice(1)) + '</span></td>'
+        + '<td>' + adRRfDirectionCell(r) + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;">' + adRRfEsc(adRRfScopeLabel(r)) + '</td>'
+        + '<td class="rules-plain-english">' + adRRfFlagPlainEnglish(r) + '</td>'
+        + '<td style="font-size:12px;">' + adRRfFlagCondText(r) + '</td>'
+        + '<td style="font-size:12px;">' + adRRfEsc(adRRfWindowCell(r)) + '</td>'
+        + '<td><div class="d-flex gap-1">'
+        + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="adRRfEditRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button>'
+        + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete" onclick="adRRfDeleteRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button>'
+        + '<button class="btn-save-template" title="Save as template" onclick="adRRfSaveAsTemplate(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button>'
+        + '</div></td>'
+        + '</tr>';
+    });
+  });
+
+  tbody.innerHTML = html;
+  var total = _adRRfData.filter(function(r){return r.rule_or_flag==='flag';}).length;
+  var enabled = _adRRfData.filter(function(r){return r.rule_or_flag==='flag'&&r.enabled;}).length;
+  document.getElementById('adR-rf-flags-info').textContent = total + ' flags\u00a0·\u00a0' + enabled + ' enabled';
+}
+
+// ── Render Templates Table ───────────────────────────────────────
+function adRRfRenderTemplates() {
+  var rows = _adRRfData.filter(function(r) { return r.is_template === true; });
+  var tbody = document.getElementById('adR-rf-templates-tbody');
+  if (!tbody) return;
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4" style="font-size:13px;">No templates yet — click <strong>Save as template</strong> <span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle;">bookmark_add</span> on any rule or flag row to create one.</td></tr>';
+    document.getElementById('adR-rf-badge-templates').textContent = '0';
+    return;
+  }
+
+  var groups = {};
+  rows.forEach(function(r) { var t = r.type || 'status'; groups[t] = groups[t] || []; groups[t].push(r); });
+
+  var html = '';
+  var groupOrder = ['status', 'performance', 'anomaly', 'technical'];
+  var groupLabels = {status:'Status', performance:'Performance', anomaly:'Anomaly', technical:'Technical'};
+
+  groupOrder.forEach(function(gtype) {
+    var gRows = (groups[gtype] || []).slice().sort(function(a,b) { return a.name.localeCompare(b.name); });
+    if (!gRows.length) return;
+    html += '<tr class="rules-group-row"><td colspan="9">' + groupLabels[gtype] + ' &nbsp;·&nbsp; ' + gRows.length + ' template' + (gRows.length === 1 ? '' : 's') + '</td></tr>';
+    gRows.forEach(function(r) {
+      var rof = r.rule_or_flag || 'rule';
+      var condHtml = rof === 'flag' ? adRRfFlagCondText(r) : adRRfCondText(r);
+      var actionHtml = rof === 'flag' ? '—' : adRRfActionCell(r);
+      var peHtml = rof === 'flag' ? adRRfFlagPlainEnglish(r) : adRRfEsc(r.plain_english || adRRfPlainEnglish(r));
+      html += '<tr>'
+        + '<td style="font-weight:600;">' + adRRfEsc(r.name) + '</td>'
+        + '<td><span class="badge badge-rof-' + adRRfEsc(rof) + '" style="font-size:11px;">' + adRRfEsc(rof.charAt(0).toUpperCase()+rof.slice(1)) + '</span></td>'
+        + '<td><span class="badge badge-type-' + adRRfEsc(r.type||'') + '" style="font-size:11px;">' + adRRfEsc((r.type||'').charAt(0).toUpperCase()+(r.type||'').slice(1)) + '</span></td>'
+        + '<td style="text-align:center;"><span class="badge-strategy">' + adRRfEsc(adRRfStrategyLabel(r.campaign_type_lock)) + '</span></td>'
+        + '<td class="rules-plain-english">' + peHtml + '</td>'
+        + '<td style="font-size:12px;color:#202124;white-space:nowrap;">' + condHtml + '</td>'
+        + '<td>' + actionHtml + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;white-space:nowrap;">' + (r.cooldown_days ? r.cooldown_days + 'd' : '—') + '</td>'
+        + '<td><button class="btn btn-sm btn-outline-primary" style="font-size:11px;white-space:nowrap;" onclick="adRRfEditTemplate(' + r.id + ')">Edit template</button></td>'
+        + '</tr>';
+    });
+  });
+
+  tbody.innerHTML = html;
+  document.getElementById('adR-rf-badge-templates').textContent = rows.length;
+}
+
+// ── Use Template (open flow builder pre-filled, no ID so creates new rule) ───
+function adRRfEditTemplate(ruleId) {
+  var row = _adRRfData.find(function(r) { return r.id === ruleId; });
+  if (!row) return;
+  adROpenRulesFlow(row);
+}
+
+function adRRfUseTemplate(ruleId) {
+  var row = _adRRfData.find(function(r) { return r.id === ruleId; });
+  if (!row) return;
+  var copy = Object.assign({}, row);
+  copy.id = null;
+  copy.is_template = false;
+  copy.entity_scope = {scope: 'all'};
+  copy.enabled = true;
+  copy.name = (copy.name || '').replace(/\(template\)\s*$/i, '').trim();
+  adRCloseRulesFlow();
+  setTimeout(function() { adROpenRulesFlow(copy); }, 250);
+}
+
+// ── Save As Template ─────────────────────────────────────────────
+function adRRfSaveAsTemplate(ruleId) {
+  fetch('/ads/rules/' + ruleId + '/save-as-template', {method: 'POST'})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        adRRfShowToast('Saved as template.', 'success');
+        adRRfLoadData();
+      } else {
+        adRRfShowToast('Error: ' + (d.error || 'Unknown error'), 'danger');
+      }
+    });
+}
+
+// ── Toggle ───────────────────────────────────────────────────────
+function adRRfToggle(ruleId, checkbox) {
+  fetch('/ads/rules/' + ruleId + '/toggle', {method:'POST'})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        var row = _adRRfData.find(function(r) { return r.id === ruleId; });
+        if (row) { row.enabled = d.data.enabled; }
+        adRRfUpdateBadges();
+        adRRfShowToast((d.data.enabled ? 'Enabled' : 'Disabled') + ' successfully.', 'success');
+        // Update info lines
+        adRRfRenderRules();
+        adRRfRenderFlags();
+      } else {
+        adRRfShowToast('Toggle failed: ' + (d.error||'Unknown error'), 'error');
+        checkbox.checked = !checkbox.checked; // revert
+      }
+    })
+    .catch(function(e) {
+      adRRfShowToast('Network error.', 'error');
+      checkbox.checked = !checkbox.checked;
+    });
+}
+
+// ── Delete ───────────────────────────────────────────────────────
+function adRRfDeleteRule(ruleId) {
+  if (!confirm('Delete this rule/flag? This cannot be undone.')) return;
+  fetch('/ads/rules/' + ruleId, {method:'DELETE'})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        _adRRfData = _adRRfData.filter(function(r) { return r.id !== ruleId; });
+        adRRfRenderRules();
+        adRRfRenderFlags();
+        adRRfUpdateBadges();
+        adRRfShowToast('Deleted successfully.', 'success');
+        // Remove row from table with animation
+        var tr = document.querySelector('tr[data-rule-id="' + ruleId + '"]');
+        if (tr) { tr.style.opacity='0'; tr.style.transition='opacity .3s'; setTimeout(function(){tr.remove();},300); }
+      } else {
+        adRRfShowToast('Delete failed: ' + (d.error||'Unknown error'), 'error');
+      }
+    })
+    .catch(function() { adRRfShowToast('Network error.', 'error'); });
+}
+
+// ── Edit (opens flow builder pre-filled) ─────────────────────────
+function adRRfEditRule(ruleId) {
+  var row = _adRRfData.find(function(r) { return r.id === ruleId; });
+  if (row) adROpenRulesFlow(row);
+}
+
+// ── Toast ────────────────────────────────────────────────────────
+function adRRfShowToast(msg, type) {
+  var wrap = document.getElementById('adR-rules-toast-wrap');
+  if (!wrap) return;
+  var t = document.createElement('div');
+  t.style.cssText = 'padding:12px 18px;border-radius:8px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.12);display:flex;align-items:center;gap:8px;color:white;';
+  t.style.background = type === 'success' ? '#15803d' : '#dc3545';
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(function() {
+    t.style.opacity='0'; t.style.transition='opacity .3s';
+    setTimeout(function() { t.remove(); }, 300);
+  }, 3500);
+}
+
+// ── Load on tab activation ───────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  var rulesTabBtn = document.getElementById('rules-tab-btn');
+  if (rulesTabBtn) {
+    rulesTabBtn.addEventListener('shown.bs.tab', function() {
+      if (!_adRRfData.length) adRRfLoadData();
+    });
+    // If rules tab is already active on load (unlikely but safe)
+    if (rulesTabBtn.classList.contains('active')) adRRfLoadData();
+  }
+});
+</script>

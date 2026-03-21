@@ -1,0 +1,1081 @@
+{# ──────────────────────────────────────────────────────────────────────────────
+   ad_rules_flow_builder.html  — Ad rules flow builder
+   5-step full-page overlay flow builder for creating / editing rules & flags.
+   Included at bottom of ads.html content block.
+   Defines: adROpenRulesFlow(existingRow), adRCloseRulesFlow()
+   On save: POST /ads/rules → success → refresh rules table + toast.
+──────────────────────────────────────────────────────────────────────────────── #}
+
+<!-- ══ AD RULES FLOW BUILDER OVERLAY ══════════════════════════════════════════ -->
+<div id="adR-rules-flow-overlay" role="dialog" aria-modal="true" aria-label="Rule builder">
+<div class="flow-panel">
+
+  <!-- Header -->
+  <div class="flow-overlay-header">
+    <div>
+      <h4 class="mb-0" id="adR-rfb-title">Add rule or flag</h4>
+      <div class="flow-overlay-sub" id="adR-rfb-subtitle">Step 1 of 5 — Select the ads this rule will apply to</div>
+    </div>
+    <button class="btn btn-sm btn-light border" onclick="adRCloseRulesFlow()" title="Close">✕ Close</button>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="flow-progress-bar">
+    <div class="flow-prog-step" id="adR-rfb-prog-1">
+      <div class="flow-prog-circle">1</div>
+      <span class="flow-prog-label">Ads</span>
+    </div>
+    <div class="flow-prog-line" id="adR-rfb-pline-1"></div>
+    <div class="flow-prog-step" id="adR-rfb-prog-2">
+      <div class="flow-prog-circle">2</div>
+      <span class="flow-prog-label">Rule or flag</span>
+    </div>
+    <div class="flow-prog-line" id="adR-rfb-pline-2"></div>
+    <div class="flow-prog-step" id="adR-rfb-prog-3">
+      <div class="flow-prog-circle">3</div>
+      <span class="flow-prog-label">Type</span>
+    </div>
+    <div class="flow-prog-line" id="adR-rfb-pline-3"></div>
+    <div class="flow-prog-step" id="adR-rfb-prog-4">
+      <div class="flow-prog-circle">4</div>
+      <span class="flow-prog-label">Conditions &amp; action</span>
+    </div>
+    <div class="flow-prog-line" id="adR-rfb-pline-4"></div>
+    <div class="flow-prog-step" id="adR-rfb-prog-5">
+      <div class="flow-prog-circle">5</div>
+      <span class="flow-prog-label">Summary</span>
+    </div>
+  </div>
+
+  <!-- Editing label — shown below progress bar in edit mode -->
+  <div id="adR-rfb-editing-label" style="display:none;padding:8px 28px;font-size:13px;font-weight:600;color:#202124;border-bottom:1px solid #e0e0e0;background:#fafafa;"></div>
+
+  <!-- Body + Sidebar wrapper -->
+  <div class="flow-body-wrap">
+  <div class="flow-body">
+
+    <!-- ── Step 1: Ads ── -->
+    <div id="adR-rfb-sc-1">
+      <div class="mb-4">
+        <div class="flow-section-label mb-2">Select the ads this rule applies to</div>
+        <div class="flow-camp-picker">
+          <input class="flow-camp-search" id="adR-rfb-camp-search" type="text" placeholder="Search ads..."
+                 oninput="adRRfbFilterAds(this.value)" autocomplete="off">
+          <div style="display:flex;gap:8px;padding:6px 12px;border-bottom:1px solid #e0e0e0;background:#fafafa;">
+            <button class="btn btn-sm" type="button" onclick="adRRfbSelectAll()">Select all</button>
+            <button class="btn btn-sm" type="button" onclick="adRRfbClearAll()">Clear</button>
+          </div>
+          <div class="flow-camp-list" id="adR-rfb-camp-list">
+            <!-- Populated by JS from _adRRfbAllAds -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Step 2: Rule or Flag ── -->
+    <div id="adR-rfb-sc-2">
+      <div class="mb-4">
+        <div class="flow-section-label mb-3">What do you want to create?</div>
+        <div class="flow-choice-grid">
+          <div class="flow-choice-card" id="adR-rfb-rof-rule" onclick="adRRfbPickRoF('rule')">
+            <div class="flow-choice-icon">
+              <span class="material-symbols-outlined" style="font-size:28px;vertical-align:middle">bolt</span>
+            </div>
+            <h5>Rule</h5>
+            <p>The system evaluates conditions on a schedule and generates a recommendation for you to act on.<br>You confirm before anything changes in Google Ads.</p>
+          </div>
+          <div class="flow-choice-card" id="adR-rfb-rof-flag" onclick="adRRfbPickRoF('flag')">
+            <div class="flow-choice-icon">
+              <span class="material-symbols-outlined" style="font-size:28px;vertical-align:middle">flag</span>
+            </div>
+            <h5>Flag</h5>
+            <p>The system monitors for a condition and raises an alert in the dashboard.<br>No action is taken — flags are information only.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Step 3: Type ── -->
+    <div id="adR-rfb-sc-3">
+      <div class="mb-4">
+        <div class="flow-section-label mb-3" id="adR-rfb-type-label">Rule type</div>
+        <div class="flow-cat-grid" id="adR-rfb-type-grid">
+          <!-- Populated by adRRfbRenderTypeStep() -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Step 4: Conditions & Action ── -->
+    <div id="adR-rfb-sc-4">
+
+      <div class="mb-4">
+        <div class="flow-section-label mb-2">Condition 1 (required)</div>
+        <div class="flow-cond-box">
+          <div class="flow-cond-row">
+            <select class="flow-cond-select" id="adR-rfb-cond1-metric">
+              <option disabled>── ROAS ──</option>
+              <option value="roas_w7_mean">ROAS (7d)</option>
+              <option value="roas_w14_mean">ROAS (14d)</option>
+              <option value="roas_w30_mean">ROAS (30d)</option>
+              <option disabled>── CPA ──</option>
+              <option value="cpa_w7_mean">CPA (7d)</option>
+              <option value="cpa_w14_mean">CPA (14d)</option>
+              <option value="cpa_w30_mean">CPA (30d)</option>
+              <option disabled>── CTR ──</option>
+              <option value="ctr_w7_mean">CTR (7d)</option>
+              <option value="ctr_w14_mean">CTR (14d)</option>
+              <option disabled>── CVR ──</option>
+              <option value="cvr_w7_mean">CVR (7d)</option>
+              <option disabled>── Conversions ──</option>
+              <option value="conversions_w7_sum">Conversions (7d)</option>
+              <option value="conversions_w14_sum">Conversions (14d)</option>
+              <option value="conversions_w30_sum">Conversions (30d)</option>
+              <option disabled>── Clicks ──</option>
+              <option value="clicks_w7_sum">Clicks (7d)</option>
+              <option value="clicks_w14_sum">Clicks (14d)</option>
+              <option disabled>── Impressions ──</option>
+              <option value="impressions_w7_sum">Impressions (7d)</option>
+              <option disabled>── Cost ──</option>
+              <option value="cost_w7_sum">Cost (7d)</option>
+              <option value="cost_w14_sum">Cost (14d)</option>
+              <option value="cost_w30_sum">Cost (30d)</option>
+              <option disabled>── Ad Specific ──</option>
+              <option value="ad_strength">Ad Strength</option>
+              <option value="search_impression_share">Impression Share</option>
+              <option value="ad_status">Ad Status</option>
+              <option disabled>── Week-on-week % ──</option>
+              <option value="ctr_w7_vs_prev_pct">CTR WoW %</option>
+              <option value="clicks_w7_vs_prev_pct">Clicks WoW %</option>
+              <option value="conversions_w7_vs_prev_pct">Conversions WoW %</option>
+              <option value="cost_w7_vs_prev_pct">Cost WoW %</option>
+              <option value="impressions_w7_vs_prev_pct">Impressions WoW %</option>
+              <option value="roas_w7_vs_prev_pct">ROAS WoW %</option>
+              <option disabled>── Anomaly ──</option>
+              <option value="cost_w14_cv">Cost Volatility (14d)</option>
+              <option disabled>── System ──</option>
+              <option value="low_data_flag">Low Data Flag ⚙</option>
+            </select>
+            <select class="flow-cond-select" id="adR-rfb-cond1-op">
+              <option value="gt">is greater than</option>
+              <option value="lt">is less than</option>
+              <option value="gte">is greater than or equal to</option>
+              <option value="eq">is equal to</option>
+              <option value="lte">is less than or equal to</option>
+              <option value="in">is in</option>
+            </select>
+            <input class="flow-cond-input" id="adR-rfb-cond1-val" type="text" value="1.15">
+            <select class="flow-cond-select" id="adR-rfb-cond1-ref">
+              <option value="absolute">absolute</option>
+              <option value="pct">%</option>
+              <option value="x_target">× target</option>
+            </select>
+          </div>
+          <button class="flow-add-cond-btn" type="button" id="adR-rfb-add-cond-btn" onclick="adRRfbToggleCond2()">+ Add second condition (optional)</button>
+          <div id="adR-rfb-cond-2" class="flow-cond-2">
+            <div class="flow-section-label mt-2 mb-2">Condition 2 (optional)</div>
+            <div class="flow-cond-row">
+              <select class="flow-cond-select" id="adR-rfb-cond2-metric">
+                <option disabled>── ROAS ──</option>
+                <option value="roas_w7_mean">ROAS (7d)</option>
+                <option value="roas_w14_mean">ROAS (14d)</option>
+                <option value="roas_w30_mean">ROAS (30d)</option>
+                <option disabled>── CPA ──</option>
+                <option value="cpa_w7_mean">CPA (7d)</option>
+                <option value="cpa_w14_mean">CPA (14d)</option>
+                <option value="cpa_w30_mean">CPA (30d)</option>
+                <option disabled>── CTR ──</option>
+                <option value="ctr_w7_mean">CTR (7d)</option>
+                <option value="ctr_w14_mean">CTR (14d)</option>
+                <option disabled>── CVR ──</option>
+                <option value="cvr_w7_mean">CVR (7d)</option>
+                <option disabled>── Conversions ──</option>
+                <option value="conversions_w7_sum">Conversions (7d)</option>
+                <option value="conversions_w14_sum">Conversions (14d)</option>
+                <option value="conversions_w30_sum">Conversions (30d)</option>
+                <option disabled>── Clicks ──</option>
+                <option value="clicks_w7_sum">Clicks (7d)</option>
+                <option value="clicks_w14_sum">Clicks (14d)</option>
+                <option disabled>── Impressions ──</option>
+                <option value="impressions_w7_sum">Impressions (7d)</option>
+                <option disabled>── Cost ──</option>
+                <option value="cost_w7_sum">Cost (7d)</option>
+                <option value="cost_w14_sum">Cost (14d)</option>
+                <option value="cost_w30_sum">Cost (30d)</option>
+                <option disabled>── Ad Specific ──</option>
+                <option value="ad_strength">Ad Strength</option>
+                <option value="search_impression_share">Impression Share</option>
+                <option value="ad_status">Ad Status</option>
+                <option disabled>── Week-on-week % ──</option>
+                <option value="ctr_w7_vs_prev_pct">CTR WoW %</option>
+                <option value="clicks_w7_vs_prev_pct">Clicks WoW %</option>
+                <option value="conversions_w7_vs_prev_pct">Conversions WoW %</option>
+                <option value="cost_w7_vs_prev_pct">Cost WoW %</option>
+                <option value="impressions_w7_vs_prev_pct">Impressions WoW %</option>
+                <option value="roas_w7_vs_prev_pct">ROAS WoW %</option>
+                <option disabled>── Anomaly ──</option>
+                <option value="cost_w14_cv">Cost Volatility (14d)</option>
+                <option disabled>── System ──</option>
+                <option value="low_data_flag">Low Data Flag ⚙</option>
+              </select>
+              <select class="flow-cond-select" id="adR-rfb-cond2-op">
+                <option value="gte">is greater than or equal to</option>
+                <option value="gt">is greater than</option>
+                <option value="lt">is less than</option>
+                <option value="lte">is less than or equal to</option>
+                <option value="eq">is equal to</option>
+                <option value="in">is in</option>
+              </select>
+              <input class="flow-cond-input" id="adR-rfb-cond2-val" type="text" value="30">
+              <select class="flow-cond-select" id="adR-rfb-cond2-ref">
+                <option value="absolute">absolute</option>
+                <option value="pct">%</option>
+                <option value="x_target">× target</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action section (rules only — hidden for flags) -->
+      <div id="adR-rfb-action-section">
+        <div class="flow-section-divider"><span>Action</span></div>
+        <div class="mb-4">
+          <div class="flow-section-label mb-2">What should happen when conditions are met?</div>
+          <div class="flow-action-box">
+            <div class="flow-action-row">
+              <select class="flow-cond-select" id="adR-rfb-action-type">
+                <option value="pause">Pause ad</option>
+                <option value="enable">Enable ad</option>
+              </select>
+              <input class="flow-cond-input" id="adR-rfb-action-mag" type="text" value="10" style="width:70px;display:none">
+              <span id="adR-rfb-pct-label" style="font-size:13px;color:#5f6368;display:none;">%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rule settings -->
+      <div id="adR-rfb-rule-settings">
+        <div class="flow-section-label mb-2">Rule settings</div>
+        <div class="flow-cond-box">
+        <div class="flow-settings-grid">
+          <div class="flow-settings-field">
+            <label>Cooldown period</label>
+            <select id="adR-rfb-cooldown">
+              <option value="7">7 days</option>
+              <option value="14">14 days</option>
+              <option value="30">30 days</option>
+            </select>
+          </div>
+          <div class="flow-settings-field">
+            <label>Risk level (auto-calculated)</label>
+            <select id="adR-rfb-risk" disabled>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+        </div><!-- end flow-cond-box -->
+      </div>
+
+      <!-- Warnings — shown above footer buttons -->
+      <div id="adR-rfb-warnings-section">
+        <div class="flow-guardrail-note mt-3">
+          <span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle">warning</span>
+          The system will cap this at the guardrail limit defined in Client Settings.<br>Even if you enter a higher value here, the guardrail takes precedence.
+        </div>
+        <div class="flow-human-note">
+          <span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle">lock</span>
+          All ad-level actions require your confirmation before anything changes in Google Ads.<br>This rule generates a recommendation only.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Step 5: Summary & Save ── -->
+    <div id="adR-rfb-sc-5">
+
+      <div class="mb-4">
+        <div class="flow-section-label mb-2">Rule name</div>
+        <input type="text" class="flow-name-field" id="adR-rfb-name-field" placeholder="Give this rule a clear name">
+        <div class="flow-name-hint">Give this rule a clear name so it's easy to identify in the table</div>
+      </div>
+
+      <div class="mb-3">
+        <div class="flow-section-label mb-2">Review everything before saving</div>
+        <div class="flow-summary-box" id="adR-rfb-summary-box">
+          <!-- Populated by adRRfbBuildSummary() -->
+        </div>
+      </div>
+
+      <div id="adR-rfb-save-error" class="flow-error-msg"></div>
+
+    </div>
+
+  </div><!-- end flow-body -->
+
+  <!-- Option A: Sidebar — your choices so far -->
+  <div class="flow-sidebar" id="adR-rfb-sidebar">
+    <div class="flow-sidebar-title">Your choices</div>
+
+    <div class="flow-sidebar-row" id="adR-sb-row-1">
+      <div class="flow-sidebar-step">Step 1</div>
+      <div class="flow-sidebar-label">Ads</div>
+      <div class="flow-sidebar-value pending" id="adR-sb-val-1">—</div>
+    </div>
+    <div class="flow-sidebar-divider"></div>
+
+    <div class="flow-sidebar-row" id="adR-sb-row-2">
+      <div class="flow-sidebar-step">Step 2</div>
+      <div class="flow-sidebar-label">Rule or flag</div>
+      <div class="flow-sidebar-value pending" id="adR-sb-val-2">—</div>
+    </div>
+    <div class="flow-sidebar-divider"></div>
+
+    <div class="flow-sidebar-row" id="adR-sb-row-3">
+      <div class="flow-sidebar-step">Step 3</div>
+      <div class="flow-sidebar-label">Type</div>
+      <div class="flow-sidebar-value pending" id="adR-sb-val-3">—</div>
+    </div>
+    <div class="flow-sidebar-divider"></div>
+
+    <div class="flow-sidebar-row" id="adR-sb-row-4">
+      <div class="flow-sidebar-step">Step 4</div>
+      <div class="flow-sidebar-label">Conditions &amp; action</div>
+      <div class="flow-sidebar-value pending" id="adR-sb-val-4a">—</div>
+      <div class="flow-sidebar-value pending" id="adR-sb-val-4b" style="display:none;"></div>
+      <div class="flow-sidebar-value pending sb-action-val" id="adR-sb-val-4c" style="display:none;margin-top:4px;padding-top:4px;border-top:1px solid #e8e8e8;"></div>
+      <div class="flow-sidebar-value pending" id="adR-sb-val-4d" style="display:none;"></div>
+    </div>
+    <div class="flow-sidebar-divider"></div>
+
+    <div class="flow-sidebar-row" id="adR-sb-row-5">
+      <div class="flow-sidebar-step">Step 5</div>
+      <div class="flow-sidebar-label">Summary</div>
+      <div class="flow-sidebar-value pending" id="adR-sb-val-5">—</div>
+    </div>
+
+  </div><!-- end flow-sidebar -->
+
+  </div><!-- end flow-body-wrap -->
+
+  <!-- Footer -->
+  <div class="flow-footer">
+    <button class="btn" id="adR-rfb-btn-back" type="button" onclick="adRRfbPrevStep()">← Back</button>
+    <div class="flow-step-indicator" id="adR-rfb-step-ind">Step 1 of 5</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-outline-secondary" id="adR-rfb-btn-use-template" type="button" style="display:none;font-size:13px;" onclick="adRRfbClickUseTemplate()">Use template →</button>
+      <button class="btn btn-primary" id="adR-rfb-btn-next" type="button" onclick="adRRfbNextStep()">Next →</button>
+    </div>
+  </div>
+
+</div><!-- end flow-panel -->
+</div><!-- end adR-rules-flow-overlay -->
+
+
+<script>
+// ── CSRF fallback (Chat 109) — ensures getCSRFToken is available regardless of script load order
+if (typeof getCSRFToken === 'undefined') {
+  function getCSRFToken() {
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.content : '';
+  }
+}
+
+// ── AD Flow builder state ────────────────────────────────────────────────────
+var _adRRfbStep        = 1;
+var _adRRfbEditId      = null;   // rule id when editing
+var _adRRfbHasPreload  = false;  // true when opened with pre-filled data (edit or template)
+var _adRRfbIsTemplate  = false;  // true when editing a template row
+var _adRRfbRoF         = 'rule'; // 'rule' or 'flag'
+var _adRRfbType        = 'status';
+var _adRRfbCond2Open   = false;
+
+// Ad list — pre-sanitised in the route as rfb_ads (plain string dicts)
+var _adRRfbAllAds = {{ rfb_ads | tojson if rfb_ads is defined else '[]' }};
+
+var ADR_RFB_TYPE_FOR_ROF = {
+  rule:  [{v:'status',label:'Status',icon:'pause_circle',desc:'Pause or enable ad'}],
+  flag:  [{v:'performance',label:'Performance',icon:'trending_down',desc:'Monitor key performance metrics'},
+          {v:'anomaly',    label:'Anomaly',     icon:'warning',     desc:'Detect abnormal behaviour in real time'},
+          {v:'technical',  label:'Technical',   icon:'build',       desc:'Detect technical/tracking issues'}]
+};
+
+var ADR_RFB_STEP_TITLES = ['','Select ads','Rule or flag?','Choose type','Set conditions & action','Review & save'];
+var ADR_RFB_STEP_SUBS   = [
+  '',
+  'Step 1 of 5 — Select the ads this rule will apply to',
+  'Step 2 of 5 — Choose whether to create a rule or a flag',
+  'Step 3 of 5 — Choose the type',
+  'Step 4 of 5 — Define conditions and the action to take',
+  'Step 5 of 5 — Name the rule and review everything before saving'
+];
+
+// ── Open / close ──────────────────────────────────────────────────────────────
+function adROpenRulesFlow(existingRow) {
+  _adRRfbRoF       = 'rule';
+  _adRRfbType      = 'status';
+  _adRRfbCond2Open = false;
+
+  if (existingRow) {
+    _adRRfbRoF  = existingRow.rule_or_flag || existingRow.rof || 'rule';
+    _adRRfbType = existingRow.type || 'status';
+  }
+
+  adRRfbResetForm();
+
+  // Set these AFTER adRRfbResetForm() so they are not wiped
+  _adRRfbEditId     = existingRow ? (existingRow.id || null) : null;
+  _adRRfbHasPreload = existingRow ? true : false;
+  _adRRfbIsTemplate = existingRow ? (existingRow.is_template === true) : false;
+
+  if (existingRow) {
+    adRRfbPopulateFromRow(existingRow);
+  }
+
+  _adRRfbStep = 1;
+  adRRfbRenderStep();
+
+  var overlay = document.getElementById('adR-rules-flow-overlay');
+  overlay.style.display = 'flex';
+  setTimeout(function(){ overlay.classList.add('show'); }, 10);
+}
+
+function adRCloseRulesFlow() {
+  var overlay = document.getElementById('adR-rules-flow-overlay');
+  overlay.classList.remove('show');
+  setTimeout(function(){ overlay.style.display = 'none'; }, 220);
+}
+
+// ── Form reset / populate ─────────────────────────────────────────────────────
+function adRRfbResetForm() {
+  document.getElementById('adR-rfb-camp-search').value = '';
+  document.getElementById('adR-rfb-cond-2').style.display = 'none';
+  document.getElementById('adR-rfb-add-cond-btn').textContent = '+ Add second condition (optional)';
+  document.getElementById('adR-rfb-save-error').style.display = 'none';
+  document.getElementById('adR-rfb-save-error').textContent   = '';
+  document.getElementById('adR-rfb-name-field').value = '';
+  document.getElementById('adR-rfb-cond1-val').value  = '1.15';
+  document.getElementById('adR-rfb-cond2-val').value  = '30';
+  document.getElementById('adR-rfb-action-mag').value = '10';
+  document.getElementById('adR-rfb-cooldown').value   = '7';
+  _adRRfbSelectedIds    = [];
+  _adRRfbCond2Open      = false;
+  _adRRfbSavedActionType = null;
+  _adRRfbHasPreload     = false;
+  _adRRfbIsTemplate     = false;
+  adRRfbRenderAdList('');
+}
+
+function adRRfbPopulateFromRow(row) {
+  document.getElementById('adR-rfb-name-field').value = row.name || '';
+  document.getElementById('adR-rfb-cooldown').value   = String(row.cooldown_days || 7);
+
+  // Risk
+  var riskSel = document.getElementById('adR-rfb-risk');
+  if (row.risk_level) riskSel.value = row.risk_level;
+
+  // Entity scope → pre-select ads
+  try {
+    var scope = typeof row.entity_scope === 'string' ? JSON.parse(row.entity_scope) : row.entity_scope;
+    if (scope && scope.scope === 'specific' && Array.isArray(scope.ads)) {
+      _adRRfbSelectedIds = scope.ads.map(String);
+    } else {
+      _adRRfbSelectedIds = [];
+    }
+  } catch(e) { _adRRfbSelectedIds = []; }
+
+  // Conditions
+  try {
+    var conds = typeof row.conditions === 'string' ? JSON.parse(row.conditions) : row.conditions;
+    if (Array.isArray(conds) && conds.length > 0) {
+      adRRfbSetCondRow(1, conds[0]);
+      if (conds.length > 1) {
+        adRRfbSetCondRow(2, conds[1]);
+        adRRfbToggleCond2();
+      }
+    }
+  } catch(e) {}
+
+  // Action
+  _adRRfbSavedActionType = row.action_type || null;
+  if (row.action_type) {
+    var at = document.getElementById('adR-rfb-action-type');
+    if (at) { for (var i=0; i<at.options.length; i++) { if (at.options[i].value === row.action_type) { at.selectedIndex = i; break; } } }
+  }
+  if (row.action_magnitude != null) {
+    document.getElementById('adR-rfb-action-mag').value = row.action_magnitude;
+  }
+}
+
+var _adRRfbSelectedIds    = [];
+var _adRRfbSavedActionType = null;
+
+function adRRfbNormOp(op) {
+  var map = {'>': 'gt', '<': 'lt', '>=': 'gte', '<=': 'lte', '=': 'eq'};
+  return map[op] || op;
+}
+function adRRfbNormUnit(unit) {
+  var map = {'percent': 'pct', 'x_target': 'x_target', 'absolute': 'absolute'};
+  return map[unit] || unit;
+}
+
+function adRRfbSetCondRow(n, cond) {
+  var pfx = 'adR-rfb-cond' + n + '-';
+  var mSel = document.getElementById(pfx + 'metric');
+  var oSel = document.getElementById(pfx + 'op');
+  var vIn  = document.getElementById(pfx + 'val');
+  var rSel = document.getElementById(pfx + 'ref');
+  if (!mSel) return;
+  var normOp  = cond.op  || adRRfbNormOp(cond.operator || '');
+  var normRef = cond.ref || adRRfbNormUnit(cond.unit || '');
+  if (cond.metric)    { for (var i=0;i<mSel.options.length;i++) { if (mSel.options[i].value===cond.metric) { mSel.selectedIndex=i; break; } } }
+  if (normOp)         { for (var i=0;i<oSel.options.length;i++) { if (oSel.options[i].value===normOp)      { oSel.selectedIndex=i; break; } } }
+  if (cond.value != null) vIn.value = cond.value;
+  if (normRef && rSel){ for (var i=0;i<rSel.options.length;i++) { if (rSel.options[i].value===normRef)     { rSel.selectedIndex=i; break; } } }
+}
+
+// ── Ad list rendering ───────────────────────────────────────────────────
+function adRRfbRenderAdList(filter) {
+  var list = document.getElementById('adR-rfb-camp-list');
+  if (!list) return;
+  filter = (filter || '').toLowerCase();
+  var html = '';
+  _adRRfbAllAds.forEach(function(ad) {
+    if (filter && ad.name.toLowerCase().indexOf(filter) < 0) return;
+    var sel = _adRRfbSelectedIds.indexOf(ad.id) >= 0;
+    html += '<div class="flow-camp-item' + (sel?' selected':'') + '"' +
+            ' data-id="' + adRRfbEsc(ad.id) + '"' +
+            ' onclick="adRRfbToggleAd(this)">' +
+            '<input type="checkbox"' + (sel?' checked':'') +
+            ' style="width:14px;height:14px;accent-color:#1a73e8;flex-shrink:0;cursor:pointer">' +
+            '<span style="flex:1;font-size:13px">' + adRRfbEsc(ad.name) + '</span>' +
+            '</div>';
+  });
+  if (!html) html = '<div style="padding:12px;font-size:13px;color:#5f6368">No ads found</div>';
+  list.innerHTML = html;
+}
+
+function adRRfbFilterAds(v) {
+  adRRfbRenderAdList(v);
+}
+
+function adRRfbToggleAd(el) {
+  var id = el.getAttribute('data-id');
+  var idx = _adRRfbSelectedIds.indexOf(id);
+  if (idx >= 0) {
+    _adRRfbSelectedIds.splice(idx, 1);
+    el.classList.remove('selected');
+    el.querySelector('input').checked = false;
+  } else {
+    _adRRfbSelectedIds.push(id);
+    el.classList.add('selected');
+    el.querySelector('input').checked = true;
+  }
+  adRRfbRenderAdList(document.getElementById('adR-rfb-camp-search').value);
+}
+
+function adRRfbSelectAll() {
+  _adRRfbSelectedIds = [];
+  _adRRfbAllAds.forEach(function(ad) {
+    _adRRfbSelectedIds.push(ad.id);
+  });
+  adRRfbRenderAdList(document.getElementById('adR-rfb-camp-search').value);
+}
+
+function adRRfbClearAll() {
+  _adRRfbSelectedIds = [];
+  adRRfbRenderAdList(document.getElementById('adR-rfb-camp-search').value);
+}
+
+// ── RoF + Type selection ──────────────────────────────────────────────────────
+function adRRfbPickRoF(v) {
+  _adRRfbRoF = v;
+  document.getElementById('adR-rfb-rof-rule').classList.toggle('selected', v === 'rule');
+  document.getElementById('adR-rfb-rof-flag').classList.toggle('selected', v === 'flag');
+  // Default type for each
+  _adRRfbType = v === 'rule' ? 'status' : 'performance';
+}
+
+function adRRfbRenderTypeStep() {
+  var label = document.getElementById('adR-rfb-type-label');
+  var grid  = document.getElementById('adR-rfb-type-grid');
+  label.textContent = _adRRfbRoF === 'rule' ? 'Rule type' : 'Flag type';
+  var cards = ADR_RFB_TYPE_FOR_ROF[_adRRfbRoF] || ADR_RFB_TYPE_FOR_ROF.rule;
+  grid.innerHTML = cards.map(function(t) {
+    var sel = _adRRfbType === t.v;
+    return '<div class="flow-cat-card' + (sel?' selected':'') + '" onclick="adRRfbPickType(this,\'' + t.v + '\')">' +
+      '<div class="flow-cat-icon"><span class="material-symbols-outlined" style="font-size:26px;vertical-align:middle">' + t.icon + '</span></div>' +
+      '<h5>' + t.label + '</h5><p>' + t.desc + '</p></div>';
+  }).join('');
+}
+
+function adRRfbPickType(el, v) {
+  _adRRfbType = v;
+  document.querySelectorAll('#adR-rfb-type-grid .flow-cat-card').forEach(function(c){ c.classList.remove('selected'); });
+  el.classList.add('selected');
+  adRRfbUpdateActionTypeOptions();
+}
+
+// ── Step 4 dynamic adjustments ────────────────────────────────────────────────
+var ADR_RFB_ACTION_OPTIONS = {
+  status: [
+    {v:'pause',  l:'Pause ad'},
+    {v:'enable', l:'Enable ad'}
+  ]
+};
+
+function adRRfbUpdateActionTypeOptions() {
+  var sel  = document.getElementById('adR-rfb-action-type');
+  var mag  = document.getElementById('adR-rfb-action-mag');
+  var pct  = document.getElementById('adR-rfb-pct-label');
+  if (!sel) return;
+  var opts = ADR_RFB_ACTION_OPTIONS[_adRRfbType] || ADR_RFB_ACTION_OPTIONS.status;
+  sel.innerHTML = opts.map(function(o){ return '<option value="' + o.v + '">' + o.l + '</option>'; }).join('');
+  if (_adRRfbSavedActionType) {
+    for (var i=0;i<sel.options.length;i++) { if (sel.options[i].value===_adRRfbSavedActionType) { sel.selectedIndex=i; break; } }
+  }
+  // Always status for ads — hide magnitude
+  mag.style.display = 'none';
+  pct.style.display = 'none';
+}
+
+function adRRfbShowStep4ForRoF() {
+  var actionSec    = document.getElementById('adR-rfb-action-section');
+  var ruleSettings = document.getElementById('adR-rfb-rule-settings');
+  var warningsSec  = document.getElementById('adR-rfb-warnings-section');
+  if (_adRRfbRoF === 'flag') {
+    actionSec.style.display    = 'none';
+    ruleSettings.style.display = 'none';
+    if (warningsSec) warningsSec.style.display = 'none';
+  } else {
+    actionSec.style.display    = '';
+    ruleSettings.style.display = '';
+    if (warningsSec) warningsSec.style.display = '';
+    adRRfbUpdateActionTypeOptions();
+  }
+}
+
+function adRRfbAutoName() {
+  var nameField = document.getElementById('adR-rfb-name-field');
+  if (nameField.value.trim()) return; // don't overwrite user's choice
+  var typeLabels = {status:'Status',performance:'Performance',anomaly:'Anomaly',technical:'Technical'};
+  var metric1 = document.getElementById('adR-rfb-cond1-metric').options[document.getElementById('adR-rfb-cond1-metric').selectedIndex].text.replace(' ⚙','');
+  var action  = '';
+  if (_adRRfbRoF === 'rule') {
+    var at = document.getElementById('adR-rfb-action-type');
+    action = at ? at.options[at.selectedIndex].text : '';
+    action = action.replace(' by','').replace(' target','');
+  }
+  if (_adRRfbRoF === 'rule') {
+    nameField.value = action + ' — ' + metric1;
+  } else {
+    nameField.value = 'Flag: ' + metric1 + ' (' + (typeLabels[_adRRfbType] || _adRRfbType) + ')';
+  }
+}
+
+// ── Condition 2 toggle ────────────────────────────────────────────────────────
+function adRRfbToggleCond2() {
+  _adRRfbCond2Open = !_adRRfbCond2Open;
+  var el = document.getElementById('adR-rfb-cond-2');
+  var btn = document.getElementById('adR-rfb-add-cond-btn');
+  el.style.display = _adRRfbCond2Open ? 'block' : 'none';
+  btn.textContent = _adRRfbCond2Open ? '− Remove second condition' : '+ Add second condition (optional)';
+}
+
+// ── Step navigation ───────────────────────────────────────────────────────────
+function adRRfbNextStep() {
+  if (!adRRfbValidateStep(_adRRfbStep)) return;
+  if (_adRRfbStep < 5) {
+    _adRRfbStep++;
+    adRRfbRenderStep();
+  } else {
+    adRRfbSave();
+  }
+}
+
+function adRRfbPrevStep() {
+  if (_adRRfbStep > 1) { _adRRfbStep--; adRRfbRenderStep(); }
+}
+
+function adRRfbValidateStep(step) {
+  if (step === 1) {
+    // Empty selection = "All ads" — valid. No strategy lock for ads.
+  }
+  if (step === 5) {
+    var name = document.getElementById('adR-rfb-name-field').value.trim();
+    if (!name) {
+      document.getElementById('adR-rfb-save-error').textContent = 'Please enter a name for this rule.';
+      document.getElementById('adR-rfb-save-error').style.display = 'block';
+      return false;
+    }
+    document.getElementById('adR-rfb-save-error').style.display = 'none';
+  }
+  return true;
+}
+
+
+// ── Sidebar: update "your choices" panel ──────────────────────────────────────
+function adRRfbUpdateSidebar() {
+  var ADR_RFB_TYPE_LABELS = {status:'Status', performance:'Performance', anomaly:'Anomaly', technical:'Technical'};
+
+  function setVal(id, text, done) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'flow-sidebar-value' + (done ? '' : ' pending');
+  }
+
+  // Step 1 — ads
+  if (_adRRfbStep > 1 || _adRRfbEditId || _adRRfbHasPreload) {
+    var adLabel = _adRRfbSelectedIds.length === 0
+      ? 'All ads'
+      : (_adRRfbSelectedIds.length === 1 ? '1 ad' : _adRRfbSelectedIds.length + ' ads');
+    setVal('adR-sb-val-1', adLabel, true);
+  }
+
+  // Step 2 — rule or flag
+  if (_adRRfbStep > 2 || _adRRfbEditId || _adRRfbHasPreload) {
+    setVal('adR-sb-val-2', _adRRfbRoF === 'rule' ? 'Rule' : 'Flag', true);
+  }
+
+  // Step 3 — type
+  if (_adRRfbStep > 3 || _adRRfbEditId || _adRRfbHasPreload) {
+    var typeLabel = ADR_RFB_TYPE_LABELS[_adRRfbType] || _adRRfbType;
+    setVal('adR-sb-val-3', typeLabel, true);
+  }
+
+  // Step 4 — conditions + action + cooldown
+  if (_adRRfbStep > 4 || (_adRRfbStep === 4) || _adRRfbEditId || _adRRfbHasPreload) {
+    var OP_SYMBOLS = {gt:'>',lt:'<',gte:'≥',lte:'≤',eq:'='};
+    var REF_LABELS = {x_target:'× target', pct:'%', absolute:''};
+
+    function fmtCond(mEl, oEl, vEl, rEl) {
+      if (!mEl) return '—';
+      var metric = mEl.options[mEl.selectedIndex].text.replace(' ⚙','');
+      var op     = OP_SYMBOLS[oEl ? oEl.value : ''] || (oEl ? oEl.value : '');
+      var val    = vEl ? vEl.value.trim() : '';
+      var ref    = REF_LABELS[rEl ? rEl.value : ''] !== undefined ? REF_LABELS[rEl.value] : '';
+      return metric + ' ' + op + ' ' + val + (ref ? ref : '');
+    }
+
+    function fmtLine(prefix, text, el, extraClass) {
+      if (!el) return;
+      el.innerHTML = '<span style="display:inline-block;width:18px;color:#202124;font-size:10px;flex-shrink:0;">' + prefix + '</span>' + text;
+      el.className = 'flow-sidebar-value sb-line' + (extraClass ? ' ' + extraClass : '');
+      el.style.display = text ? '' : 'none';
+    }
+
+    // C1
+    var c1 = fmtCond(
+      document.getElementById('adR-rfb-cond1-metric'),
+      document.getElementById('adR-rfb-cond1-op'),
+      document.getElementById('adR-rfb-cond1-val'),
+      document.getElementById('adR-rfb-cond1-ref')
+    );
+    fmtLine('C1', c1, document.getElementById('adR-sb-val-4a'));
+
+    // C2
+    var el4b = document.getElementById('adR-sb-val-4b');
+    if (_adRRfbCond2Open) {
+      var c2 = fmtCond(
+        document.getElementById('adR-rfb-cond2-metric'),
+        document.getElementById('adR-rfb-cond2-op'),
+        document.getElementById('adR-rfb-cond2-val'),
+        document.getElementById('adR-rfb-cond2-ref')
+      );
+      fmtLine('C2', c2, el4b);
+    } else if (el4b) { el4b.style.display = 'none'; }
+
+    // Action
+    var el4c = document.getElementById('adR-sb-val-4c');
+    if (_adRRfbRoF === 'rule') {
+      var atEl  = document.getElementById('adR-rfb-action-type');
+      var aStr  = atEl ? atEl.options[atEl.selectedIndex].text : 'Pause ad';
+      fmtLine('→', aStr, el4c, 'sb-action-val');
+    } else if (el4c) { el4c.style.display = 'none'; }
+
+    // Cooldown
+    var el4d = document.getElementById('adR-sb-val-4d');
+    if (_adRRfbRoF === 'rule') {
+      var cdEl = document.getElementById('adR-rfb-cooldown');
+      fmtLine('⏱', cdEl ? cdEl.value + 'd cooldown' : '', el4d);
+    } else if (el4d) { el4d.style.display = 'none'; }
+  }
+
+  // Step 5 — name
+  if (_adRRfbStep === 5 || _adRRfbEditId || _adRRfbHasPreload) {
+    var nameEl = document.getElementById('adR-rfb-name-field');
+    var nameVal = nameEl && nameEl.value.trim() ? nameEl.value.trim() : 'In progress…';
+    setVal('adR-sb-val-5', nameVal, nameEl && nameEl.value.trim().length > 0);
+  }
+
+  // Highlight the current step row
+  for (var i = 1; i <= 5; i++) {
+    var row = document.getElementById('adR-sb-row-' + i);
+    if (row) row.classList.toggle('active', i === _adRRfbStep);
+  }
+}
+
+function adRRfbClickUseTemplate() {
+  // Called from "Use template" button in footer — triggers adRRfUseTemplate in parent
+  if (typeof adRRfUseTemplate === 'function' && _adRRfbEditId) {
+    adRRfUseTemplate(_adRRfbEditId);
+  }
+}
+
+function adRRfbRenderStep() {
+  // Title / subtitle
+  document.getElementById('adR-rfb-title').textContent    = _adRRfbIsTemplate ? 'Edit template' : (_adRRfbEditId ? 'Edit rule or flag' : ADR_RFB_STEP_TITLES[_adRRfbStep]);
+  document.getElementById('adR-rfb-subtitle').textContent = ADR_RFB_STEP_SUBS[_adRRfbStep];
+  var editLbl = document.getElementById('adR-rfb-editing-label');
+  if (editLbl) {
+    var nameEl = document.getElementById('adR-rfb-name-field');
+    var editName = nameEl && nameEl.value.trim() ? nameEl.value.trim() : '';
+    if (_adRRfbIsTemplate && editName) { editLbl.textContent = 'Template: ' + editName; editLbl.style.display = ''; }
+    else if (_adRRfbEditId && editName) { editLbl.textContent = 'Editing: ' + editName; editLbl.style.display = ''; }
+    else { editLbl.style.display = 'none'; }
+  }
+  document.getElementById('adR-rfb-step-ind').textContent = 'Step ' + _adRRfbStep + ' of 5';
+
+  // Back / next buttons
+  document.getElementById('adR-rfb-btn-back').style.visibility = _adRRfbStep === 1 ? 'hidden' : 'visible';
+  document.getElementById('adR-rfb-btn-next').textContent = _adRRfbStep === 5 ? (_adRRfbIsTemplate ? '✓ Save template' : '✓ Save') : 'Next →';
+  var useTemplateBtn = document.getElementById('adR-rfb-btn-use-template');
+  if (useTemplateBtn) useTemplateBtn.style.display = _adRRfbIsTemplate ? '' : 'none';
+
+  // Progress circles — use 'active' and 'done' to match CSS (.flow-prog-step.active / .done)
+  for (var i = 1; i <= 5; i++) {
+    var prog = document.getElementById('adR-rfb-prog-' + i);
+    prog.classList.remove('active', 'done');
+    if (i < _adRRfbStep) prog.classList.add('done');
+    else if (i === _adRRfbStep) prog.classList.add('active');
+    if (i < 5) {
+      var pl = document.getElementById('adR-rfb-pline-' + i);
+      if (pl) pl.classList.toggle('done', i < _adRRfbStep);
+    }
+  }
+
+  // Step content — show/hide via inline style (IDs adR-rfb-sc-1 through adR-rfb-sc-5)
+  for (var j = 1; j <= 5; j++) {
+    var sc = document.getElementById('adR-rfb-sc-' + j);
+    if (sc) sc.style.display = j === _adRRfbStep ? 'block' : 'none';
+  }
+
+  // Step-specific setup
+  if (_adRRfbStep === 2) {
+    document.getElementById('adR-rfb-rof-rule').classList.toggle('selected', _adRRfbRoF === 'rule');
+    document.getElementById('adR-rfb-rof-flag').classList.toggle('selected', _adRRfbRoF === 'flag');
+  }
+  if (_adRRfbStep === 3) {
+    adRRfbRenderTypeStep();
+  }
+  if (_adRRfbStep === 4) {
+    adRRfbShowStep4ForRoF();
+  }
+  if (_adRRfbStep === 5) {
+    adRRfbAutoName();
+    adRRfbAutoRisk();
+    adRRfbBuildSummary();
+  }
+  adRRfbUpdateSidebar();
+}
+
+function adRRfbAutoRisk() {
+  // Skip auto-risk when editing — preserve the saved risk level
+  if (_adRRfbEditId) return;
+  var riskSel = document.getElementById('adR-rfb-risk');
+  if (!riskSel) return;
+  var risk = 'low';
+  if (_adRRfbRoF === 'flag') risk = 'low';
+  else if (_adRRfbType === 'status') risk = 'high';
+  riskSel.value = risk;
+}
+
+// ── Summary ───────────────────────────────────────────────────────────────────
+function adRRfbBuildSummary() {
+  var box = document.getElementById('adR-rfb-summary-box');
+
+  var adNames = _adRRfbSelectedIds.length === 0 ? 'All ads' :
+    _adRRfbSelectedIds.map(function(id) {
+      var ad = _adRRfbAllAds.filter(function(x){ return x.id===id; })[0];
+      return ad ? ad.name : id;
+    }).join(', ');
+
+  var typeLabel = {status:'Status rule',
+                   performance:'Performance flag',anomaly:'Anomaly flag',technical:'Technical flag'}[_adRRfbType] || _adRRfbType;
+
+  var m1Sel = document.getElementById('adR-rfb-cond1-metric');
+  var m1    = m1Sel.options[m1Sel.selectedIndex].text.replace(' ⚙','');
+  var o1Sel = document.getElementById('adR-rfb-cond1-op');
+  var o1    = o1Sel.options[o1Sel.selectedIndex].text;
+  var v1    = document.getElementById('adR-rfb-cond1-val').value;
+  var r1Sel = document.getElementById('adR-rfb-cond1-ref');
+  var r1    = r1Sel.options[r1Sel.selectedIndex].text;
+  var cond1Str = m1 + ' ' + o1 + ' ' + v1 + (r1 !== 'absolute' ? ' ' + r1 : '');
+
+  var cond2Str = '';
+  if (_adRRfbCond2Open) {
+    var m2Sel = document.getElementById('adR-rfb-cond2-metric');
+    var m2    = m2Sel.options[m2Sel.selectedIndex].text;
+    var o2Sel = document.getElementById('adR-rfb-cond2-op');
+    var o2    = o2Sel.options[o2Sel.selectedIndex].text;
+    var v2    = document.getElementById('adR-rfb-cond2-val').value;
+    var r2Sel = document.getElementById('adR-rfb-cond2-ref');
+    var r2    = r2Sel.options[r2Sel.selectedIndex].text;
+    cond2Str  = m2 + ' ' + o2 + ' ' + v2 + (r2 !== 'absolute' ? ' ' + r2 : '');
+  }
+
+  var actionStr = '—';
+  var cooldownStr = '—';
+  var riskStr = '—';
+  if (_adRRfbRoF === 'rule') {
+    var statusSel = document.getElementById('adR-rfb-action-type');
+    actionStr = statusSel ? statusSel.options[statusSel.selectedIndex].text : 'Pause ad';
+    cooldownStr = document.getElementById('adR-rfb-cooldown').value + ' days';
+    var riskSel = document.getElementById('adR-rfb-risk');
+    riskStr = riskSel.options[riskSel.selectedIndex].text || riskSel.value;
+    riskStr = riskStr.charAt(0).toUpperCase() + riskStr.slice(1);
+  }
+
+  var line = function(icon, label, value) {
+    return '<div class="flow-summary-line">' +
+      '<span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle;margin-right:5px">' + icon + '</span>' +
+      '<strong>' + label + ':</strong>&nbsp;' + adRRfbEsc(value) + '</div>';
+  };
+
+  var html = '<h5>' + (_adRRfbRoF === 'rule' ? 'Rule' : 'Flag') + ' summary</h5>' +
+    line('push_pin',  'Ads',          adNames) +
+    line('bolt',      'Type',         typeLabel) +
+    line('list_alt',  'Condition 1',  cond1Str);
+  if (cond2Str) html += line('list_alt', 'Condition 2', cond2Str);
+  if (_adRRfbRoF === 'rule') {
+    html += line('ads_click', 'Action',   actionStr) +
+            line('shield',    'Guardrail', 'Capped by Client Settings') +
+            line('lock',      'Confirmation', 'Required before execution') +
+            line('timer',     'Cooldown', cooldownStr) +
+            line('bar_chart', 'Risk',     riskStr);
+  }
+
+  box.innerHTML = html;
+}
+
+// ── Save ──────────────────────────────────────────────────────────────────────
+function adRRfbSave() {
+  var btnNext = document.getElementById('adR-rfb-btn-next');
+  btnNext.disabled = true;
+  btnNext.textContent = 'Saving…';
+
+  // Build conditions array
+  var m1Sel = document.getElementById('adR-rfb-cond1-metric');
+  var o1Sel = document.getElementById('adR-rfb-cond1-op');
+  var r1Sel = document.getElementById('adR-rfb-cond1-ref');
+  var conds = [{
+    metric: m1Sel.value,
+    op:     o1Sel.value,
+    value:  document.getElementById('adR-rfb-cond1-val').value,
+    ref:    r1Sel.value
+  }];
+  if (_adRRfbCond2Open) {
+    var m2Sel = document.getElementById('adR-rfb-cond2-metric');
+    var o2Sel = document.getElementById('adR-rfb-cond2-op');
+    var r2Sel = document.getElementById('adR-rfb-cond2-ref');
+    conds.push({
+      metric: m2Sel.value,
+      op:     o2Sel.value,
+      value:  document.getElementById('adR-rfb-cond2-val').value,
+      ref:    r2Sel.value
+    });
+  }
+
+  // Entity scope
+  var entityScope;
+  if (_adRRfbSelectedIds.length === 0) {
+    entityScope = {scope: 'all'};
+  } else {
+    entityScope = {scope: 'specific', ads: _adRRfbSelectedIds};
+  }
+
+  // Action
+  var actionType = null, actionMag = null;
+  if (_adRRfbRoF === 'rule') {
+    var atSel = document.getElementById('adR-rfb-action-type');
+    actionType = atSel.value;
+    // Ads only have status rules — no magnitude
+  }
+
+  // Risk / cooldown
+  var riskLevel   = null;
+  var cooldownDays = 7;
+  if (_adRRfbRoF === 'rule') {
+    var riskSel = document.getElementById('adR-rfb-risk');
+    riskLevel   = riskSel.value;
+    cooldownDays = parseInt(document.getElementById('adR-rfb-cooldown').value, 10) || 7;
+  }
+
+  var payload = {
+    name:             document.getElementById('adR-rfb-name-field').value.trim(),
+    rule_or_flag:     _adRRfbRoF,
+    type:             _adRRfbType,
+    entity_scope:     entityScope,
+    conditions:       conds,
+    action_type:      actionType,
+    action_magnitude: actionMag,
+    cooldown_days:    cooldownDays,
+    risk_level:       riskLevel,
+    entity_type:      'ad',
+    enabled:          true,
+    is_template:      _adRRfbIsTemplate
+  };
+
+  var url    = _adRRfbEditId ? '/ads/rules/' + _adRRfbEditId : '/ads/rules';
+  var method = _adRRfbEditId ? 'PUT' : 'POST';
+
+  fetch(url, {
+    method:  method,
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken()},
+    body:    JSON.stringify(payload)
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    btnNext.disabled = false;
+    btnNext.textContent = _adRRfbIsTemplate ? '✓ Save template' : '✓ Save';
+    if (data.success) {
+      adRCloseRulesFlow();
+      if (typeof adRRfLoadData === 'function') adRRfLoadData();
+      adRRfbShowToast((_adRRfbEditId ? 'Updated' : 'Created') + ' successfully.', 'success');
+    } else {
+      var errEl = document.getElementById('adR-rfb-save-error');
+      errEl.textContent = data.error || 'Save failed. Please try again.';
+      errEl.style.display = 'block';
+    }
+  })
+  .catch(function(err) {
+    btnNext.disabled = false;
+    btnNext.textContent = _adRRfbIsTemplate ? '✓ Save template' : '✓ Save';
+    var errEl = document.getElementById('adR-rfb-save-error');
+    errEl.textContent = 'Network error. Please try again.';
+    errEl.style.display = 'block';
+  });
+}
+
+// ── Toast (shared with rules_flags_tab if not already defined) ────────────────
+if (typeof adRRfbShowToast === 'undefined') {
+  function adRRfbShowToast(msg, type) {
+    if (typeof adRRfShowToast === 'function') { adRRfShowToast(msg, type); return; }
+    var t = document.createElement('div');
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 18px;border-radius:6px;font-size:13px;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.15)';
+    t.style.background = type === 'success' ? '#137333' : type === 'warning' ? '#b45309' : '#dc3545';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 3500);
+  }
+}
+
+// ── Utility ───────────────────────────────────────────────────────────────────
+function adRRfbEsc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
