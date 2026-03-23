@@ -1262,3 +1262,178 @@ def shopping_campaign_save_as_template(rule_id):
         return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         conn.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Chat 112: Product Rules CRUD (entity_type='product')
+# ══════════════════════════════════════════════════════════════════════════════
+
+@bp.route("/shopping/product_rules", methods=['GET'])
+@login_required
+def product_list_rules():
+    client_config = _shop_client_cfg_name()
+    if not client_config:
+        return jsonify({'success': False, 'error': 'No client selected'}), 400
+    conn = _shop_get_warehouse()
+    try:
+        result = conn.execute(
+            "SELECT * FROM rules WHERE client_config = ? AND entity_type = 'product' ORDER BY type, id",
+            [client_config]
+        )
+        cols = [d[0] for d in result.description]
+        rows = [_shop_serialize_rule(row, cols) for row in result.fetchall()]
+        return jsonify({'success': True, 'data': rows})
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@bp.route("/shopping/product_rules", methods=['POST'])
+@login_required
+def product_create_rule():
+    client_config = _shop_client_cfg_name()
+    if not client_config:
+        return jsonify({'success': False, 'error': 'No client selected'}), 400
+    data = request.get_json(silent=True) or {}
+    conditions = data.get('conditions', [])
+    entity_scope = data.get('entity_scope', {'scope': 'all'})
+    is_template = bool(data.get('is_template', False))
+    conn = _shop_get_warehouse()
+    try:
+        next_id = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 FROM rules").fetchone()[0]
+        conn.execute("""
+            INSERT INTO rules (id, client_config, entity_type, name, rule_or_flag, type, campaign_type_lock,
+                entity_scope, conditions, action_type, action_magnitude,
+                cooldown_days, risk_level, enabled, is_template, created_at, updated_at
+            ) VALUES (?, ?, 'product', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, ?, NOW(), NOW())
+        """, [
+            next_id, client_config, data.get('name', ''),
+            data.get('rule_or_flag', 'rule'), data.get('type', ''), data.get('campaign_type_lock'),
+            _json.dumps(entity_scope) if isinstance(entity_scope, (dict, list)) else entity_scope,
+            _json.dumps(conditions), data.get('action_type'), data.get('action_magnitude'),
+            data.get('cooldown_days', 7), data.get('risk_level'), is_template,
+        ])
+        conn.commit()
+        result = conn.execute("SELECT * FROM rules WHERE id = ?", [next_id])
+        cols = [d[0] for d in result.description]
+        return jsonify({'success': True, 'data': _shop_serialize_rule(result.fetchone(), cols)})
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@bp.route("/shopping/product_rules/<int:rule_id>", methods=['PUT'])
+@login_required
+def product_update_rule(rule_id):
+    client_config = _shop_client_cfg_name()
+    if not client_config:
+        return jsonify({'success': False, 'error': 'No client selected'}), 400
+    data = request.get_json(silent=True) or {}
+    conn = _shop_get_warehouse()
+    try:
+        conditions = data.get('conditions', [])
+        entity_scope = data.get('entity_scope', {'scope': 'all'})
+        is_template = bool(data.get('is_template', False))
+        conn.execute("""
+            UPDATE rules SET name=?, rule_or_flag=?, type=?, entity_scope=?, conditions=?,
+                action_type=?, action_magnitude=?, cooldown_days=?, risk_level=?, is_template=?, updated_at=NOW()
+            WHERE id = ? AND client_config = ?
+        """, [
+            data.get('name'), data.get('rule_or_flag'), data.get('type'),
+            _json.dumps(entity_scope) if isinstance(entity_scope, (dict, list)) else entity_scope,
+            _json.dumps(conditions) if isinstance(conditions, list) else conditions,
+            data.get('action_type'), data.get('action_magnitude'),
+            data.get('cooldown_days', 7), data.get('risk_level'), is_template, rule_id, client_config,
+        ])
+        conn.commit()
+        result = conn.execute("SELECT * FROM rules WHERE id = ?", [rule_id])
+        cols = [d[0] for d in result.description]
+        return jsonify({'success': True, 'data': _shop_serialize_rule(result.fetchone(), cols)})
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@bp.route("/shopping/product_rules/<int:rule_id>", methods=['DELETE'])
+@login_required
+def product_delete_rule(rule_id):
+    client_config = _shop_client_cfg_name()
+    if not client_config:
+        return jsonify({'success': False, 'error': 'No client selected'}), 400
+    conn = _shop_get_warehouse()
+    try:
+        conn.execute("DELETE FROM rules WHERE id = ? AND client_config = ?", [rule_id, client_config])
+        conn.commit()
+        return jsonify({'success': True, 'data': {'id': rule_id}})
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@bp.route("/shopping/product_rules/<int:rule_id>/toggle", methods=['POST'])
+@login_required
+def product_toggle_rule(rule_id):
+    client_config = _shop_client_cfg_name()
+    if not client_config:
+        return jsonify({'success': False, 'error': 'No client selected'}), 400
+    conn = _shop_get_warehouse()
+    try:
+        existing = conn.execute("SELECT id, enabled FROM rules WHERE id = ? AND client_config = ?", [rule_id, client_config]).fetchone()
+        if not existing:
+            return jsonify({'success': False, 'error': 'Rule not found'}), 404
+        new_enabled = not bool(existing[1])
+        conn.execute("UPDATE rules SET enabled=?, updated_at=NOW() WHERE id=? AND client_config=?", [new_enabled, rule_id, client_config])
+        conn.commit()
+        return jsonify({'success': True, 'data': {'id': rule_id, 'enabled': new_enabled}})
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@bp.route("/shopping/product_rules/<int:rule_id>/save-as-template", methods=['POST'])
+@login_required
+def product_save_as_template(rule_id):
+    client_config = _shop_client_cfg_name()
+    if not client_config:
+        return jsonify({'success': False, 'error': 'No client selected'}), 400
+    conn = _shop_get_warehouse()
+    try:
+        result = conn.execute("SELECT * FROM rules WHERE id = ? AND client_config = ?", [rule_id, client_config])
+        cols = [d[0] for d in result.description]
+        orig = result.fetchone()
+        if not orig:
+            return jsonify({'success': False, 'error': 'Rule not found'}), 404
+        od = dict(zip(cols, orig))
+        next_id = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 FROM rules").fetchone()[0]
+        conn.execute("""
+            INSERT INTO rules (id, client_config, entity_type, name, rule_or_flag, type,
+                entity_scope, conditions, action_type, action_magnitude,
+                cooldown_days, risk_level, enabled, is_template, plain_english, created_at, updated_at
+            ) VALUES (?, ?, 'product', ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, TRUE, ?, NOW(), NOW())
+        """, [
+            next_id, client_config, od.get('name', '') + ' (template)',
+            od.get('rule_or_flag'), od.get('type'),
+            od.get('entity_scope') if isinstance(od.get('entity_scope'), str) else _json.dumps(od.get('entity_scope', {})),
+            od.get('conditions') if isinstance(od.get('conditions'), str) else _json.dumps(od.get('conditions', [])),
+            od.get('action_type'), od.get('action_magnitude'),
+            od.get('cooldown_days', 7), od.get('risk_level'), od.get('plain_english'),
+        ])
+        conn.commit()
+        result = conn.execute("SELECT * FROM rules WHERE id = ?", [next_id])
+        cols = [d[0] for d in result.description]
+        return jsonify({'success': True, 'data': _shop_serialize_rule(result.fetchone(), cols)})
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()

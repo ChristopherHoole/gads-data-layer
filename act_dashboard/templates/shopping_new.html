@@ -926,10 +926,27 @@
     </div>
     <!-- End Feed Quality Tab -->
 
-    <!-- RULES TAB (Chat 111: migrated from cards to table) -->
+    <!-- RULES TAB (Chat 111 + 112: Campaign/Product toggle) -->
     <div class="tab-pane fade {% if active_tab == 'rules' %}show active{% endif %}"
          id="rules-tab" role="tabpanel">
-      {% include 'components/shopping_campaign_rules_flow_builder.html' %}
+
+      <!-- Campaign/Product Toggle -->
+      <div class="btn-group mb-3" role="group">
+        <button type="button" class="btn btn-sm btn-primary active" id="btnCampaignRules"
+                onclick="window.showCampaignRules()">Campaign Rules</button>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnProductRules"
+                onclick="window.showProductRules()">Product Rules</button>
+      </div>
+
+      <!-- Campaign rules section -->
+      <div id="shopping-campaign-rules-section">
+        {% include 'components/shopping_campaign_rules_flow_builder.html' %}
+      </div>
+
+      <!-- Product rules section (hidden by default) -->
+      <div id="shopping-product-rules-section" style="display:none;">
+        {% include 'components/product_rules_flow_builder.html' %}
+      </div>
     </div>
 
     <!-- RECOMMENDATIONS TAB -->
@@ -1465,7 +1482,7 @@ function applyShopColumns() {
     if (pages <= 1) { el.innerHTML = ''; return; }
     var btns = '';
     for (var i = 1; i <= pages; i++) {
-      btns += '<button class="btn btn-xs ' + (i === pg ? 'btn-primary' : 'btn-outline-secondary') + ' py-0 px-2" style="font-size:11px;" onclick="shopRecRenderAll('' + tab + '',' + i + ')">' + i + '</button> ';
+      btns += '<button class="btn btn-xs ' + (i === pg ? 'btn-primary' : 'btn-outline-secondary') + ' py-0 px-2" style="font-size:11px;" onclick="shopRecRenderAll(\'' + tab + '\',' + i + ')">' + i + '</button> ';
     }
     el.innerHTML = '<span style="color:#6b7280;">Page ' + pg + ' of ' + pages + '</span><div class="d-flex gap-1">' + btns + '</div>';
   }
@@ -1641,6 +1658,22 @@ function applyShopColumns() {
   });
 
 })();
+
+// ── Chat 112: Campaign/Product Rules Toggle ──────────────────────────────────
+window.showCampaignRules = function() {
+  document.getElementById('shopping-campaign-rules-section').style.display = 'block';
+  document.getElementById('shopping-product-rules-section').style.display = 'none';
+  document.getElementById('btnCampaignRules').className = 'btn btn-sm btn-primary active';
+  document.getElementById('btnProductRules').className = 'btn btn-sm btn-outline-primary';
+};
+
+window.showProductRules = function() {
+  document.getElementById('shopping-campaign-rules-section').style.display = 'none';
+  document.getElementById('shopping-product-rules-section').style.display = 'block';
+  document.getElementById('btnProductRules').className = 'btn btn-sm btn-primary active';
+  document.getElementById('btnCampaignRules').className = 'btn btn-sm btn-outline-primary';
+  if (typeof loadProductRules === 'function') loadProductRules();
+};
 </script>
 
 {% endblock %}

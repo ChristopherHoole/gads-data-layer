@@ -709,7 +709,10 @@
 .badge-type-status      { background: #fff3e0; color: #b45309; }
 .badge-type-performance { background: #f3e8fd; color: #7b2fa8; }
 .badge-type-anomaly     { background: #ffc107; color: #212529; }
-.badge-type-technical   { background: #6c757d; color: #fff; }
+.badge-type-technical    { background: #6c757d; color: #fff; }
+.badge-type-feed_quality { background: #fd7e14; color: #fff; }
+.badge-type-lifecycle    { background: #20c997; color: #fff; }
+.badge-type-stock        { background: #dc3545; color: #fff; }
 
 /* ── Risk — dot + label (replaces filled pills) ───────────────────────────── */
 
