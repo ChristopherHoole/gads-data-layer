@@ -1,0 +1,1797 @@
+{#
+  product_rules_flow_builder.html — Product rules & flags tab + flow builder
+  Combined component: sub-tabs (Rules | Flags | Templates) + 5-step overlay flow builder.
+  Data loaded via AJAX from GET /shopping/product_rules.
+  All icons: Material Symbols Outlined.
+  Bootstrap 5 only. Vanilla JS only. No jQuery.
+  Prefix: prd for all IDs, JS functions, JS variables, constants.
+#}
+
+<!-- ════════════════════════════════════════════════════════════
+     PRODUCT RULES & FLAGS TAB CONTENT
+═══════════════════════════════════════════════════════════════ -->
+<div class="py-3" id="prd-rules-flags-container">
+
+  <!-- ── Section Header ──────────────────────────────────────────── -->
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h4 class="mb-1 fw-semibold" style="font-size:16px;">Product rules &amp; flags</h4>
+      <p class="text-muted mb-0" style="font-size:12px;line-height:1.5;">
+        Rules generate recommendations for action. Flags raise alerts only. Both require your confirmation before anything changes.
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-outline-secondary" onclick="prdRfShowSubTab('templates')">
+        Use template
+      </button>
+      <button class="btn btn-sm btn-primary" onclick="prdOpenRulesFlow()">
+        <span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle;">add</span>
+        Add rule or flag
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Sub-tabs ─────────────────────────────────────────────────── -->
+  <div class="rules-sub-tab-bar">
+    <div class="rules-sub-tabs">
+      <button class="rules-sub-tab active" id="prd-rf-tab-rules" onclick="prdRfShowSubTab('rules')">
+        Rules <span class="rules-sub-badge" id="prd-rf-badge-rules">0</span>
+      </button>
+      <button class="rules-sub-tab" id="prd-rf-tab-flags" onclick="prdRfShowSubTab('flags')">
+        Flags <span class="rules-sub-badge" id="prd-rf-badge-flags">0</span>
+      </button>
+      <button class="rules-sub-tab" id="prd-rf-tab-templates" onclick="prdRfShowSubTab('templates')">
+        Templates <span class="rules-sub-badge" id="prd-rf-badge-templates">0</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── RULES SUB-PANE ───────────────────────────────────────────── -->
+  <div id="prd-rf-pane-rules">
+    <div class="d-flex gap-2 mb-3 align-items-center flex-wrap">
+      <div style="position:relative;width:200px;">
+        <span class="material-symbols-outlined" style="position:absolute;left:7px;top:50%;transform:translateY(-50%);font-size:14px;color:#5f6368;pointer-events:none;line-height:1;">search</span>
+        <input class="form-control form-control-sm" id="prd-rf-rules-search" type="text"
+               placeholder="Search rules..." style="padding-left:26px;"
+               oninput="prdRfFilterRules()">
+      </div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-rf-filter="all" onclick="prdRfSetRuleFilter(this,'rules')">All</button>
+        <button class="filter-tab" data-rf-filter="feed_quality" onclick="prdRfSetRuleFilter(this,'rules')">Feed Quality</button>
+        <button class="filter-tab" data-rf-filter="performance" onclick="prdRfSetRuleFilter(this,'rules')">Performance</button>
+        <button class="filter-tab" data-rf-filter="lifecycle" onclick="prdRfSetRuleFilter(this,'rules')">Lifecycle</button>
+        <button class="filter-tab" data-rf-filter="stock" onclick="prdRfSetRuleFilter(this,'rules')">Stock</button>
+      </div>
+      <span class="ms-auto text-muted" style="font-size:12px;" id="prd-rf-rules-info"></span>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="table table-sm mb-0" id="prd-rf-rules-table">
+        <thead class="table-light">
+          <tr>
+            <th style="width:50px;">On/off</th>
+            <th class="rules-rule-name-col">Rule name</th>
+            <th>Products</th>
+            <th class="rules-plain-english" style="min-width:280px;">Plain English</th>
+            <th>Rule/Flag</th>
+            <th>Rule type</th>
+            <th>Conditions</th>
+            <th>Action</th>
+            <th>Cooldown</th>
+            <th>Guardrail</th>
+            <th>Risk</th>
+            <th style="width:70px;"></th>
+          </tr>
+        </thead>
+        <tbody id="prd-rf-rules-tbody">
+          <tr><td colspan="12" class="text-center text-muted py-4" style="font-size:13px;">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading rules…
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── FLAGS SUB-PANE ───────────────────────────────────────────── -->
+  <div id="prd-rf-pane-flags" style="display:none;">
+    <div class="d-flex gap-2 mb-3 align-items-center flex-wrap">
+      <input class="form-control form-control-sm" id="prd-rf-flags-search" type="text"
+             placeholder="Search flags..." style="width:200px;"
+             oninput="prdRfFilterFlags()">
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-rf-filter="all" onclick="prdRfSetRuleFilter(this,'flags')">All</button>
+        <button class="filter-tab" data-rf-filter="feed_quality" onclick="prdRfSetRuleFilter(this,'flags')">Feed Quality</button>
+        <button class="filter-tab" data-rf-filter="performance" onclick="prdRfSetRuleFilter(this,'flags')">Performance</button>
+        <button class="filter-tab" data-rf-filter="lifecycle" onclick="prdRfSetRuleFilter(this,'flags')">Lifecycle</button>
+        <button class="filter-tab" data-rf-filter="stock" onclick="prdRfSetRuleFilter(this,'flags')">Stock</button>
+      </div>
+      <span class="ms-auto text-muted" style="font-size:12px;" id="prd-rf-flags-info"></span>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="table table-sm mb-0" id="prd-rf-flags-table">
+        <thead class="table-light">
+          <tr>
+            <th style="width:50px;">On/off</th>
+            <th>Flag name</th>
+            <th>Type</th>
+            <th>Direction</th>
+            <th>Products</th>
+            <th class="rules-plain-english" style="min-width:280px;">Plain English</th>
+            <th>Condition</th>
+            <th>Window</th>
+            <th style="width:70px;"></th>
+          </tr>
+        </thead>
+        <tbody id="prd-rf-flags-tbody">
+          <tr><td colspan="9" class="text-center text-muted py-4" style="font-size:13px;">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading flags…
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── TEMPLATES SUB-PANE ───────────────────────────────────────── -->
+  <div id="prd-rf-pane-templates" style="display:none;">
+    <p class="text-muted mb-3" style="font-size:13px;">
+      Pick a template to pre-fill the rule builder. You only need to set the thresholds and select your products.
+    </p>
+    <div class="table-wrapper">
+      <table class="table table-sm mb-0" id="prd-rf-templates-table">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th>Rule/Flag</th>
+            <th>Type</th>
+            <th class="rules-plain-english" style="min-width:280px;">Plain English</th>
+            <th>Conditions</th>
+            <th>Action</th>
+            <th>Cooldown</th>
+            <th style="width:110px;"></th>
+          </tr>
+        </thead>
+        <tbody id="prd-rf-templates-tbody">
+          <tr><td colspan="8" class="text-center text-muted py-4" style="font-size:13px;">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading templates…
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- end prd-rules-flags-container -->
+
+<!-- ── Toast container ──────────────────────────────────────────── -->
+<div id="prd-rules-toast-wrap"></div>
+
+
+<!-- ══ PRODUCT RULES FLOW BUILDER OVERLAY ══════════════════════════════════════════ -->
+<div id="prd-rules-flow-overlay" role="dialog" aria-modal="true" aria-label="Rule builder">
+<div class="flow-panel">
+
+  <!-- Header -->
+  <div class="flow-overlay-header">
+    <div>
+      <h4 class="mb-0" id="prd-rfb-title">Add rule or flag</h4>
+      <div class="flow-overlay-sub" id="prd-rfb-subtitle">Step 1 of 5 — Select the products this rule will apply to</div>
+    </div>
+    <button class="btn btn-sm btn-light border" onclick="prdCloseRulesFlow()" title="Close">✕ Close</button>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="flow-progress-bar">
+    <div class="flow-prog-step" id="prd-rfb-prog-1">
+      <div class="flow-prog-circle">1</div>
+      <span class="flow-prog-label">Products</span>
+    </div>
+    <div class="flow-prog-line" id="prd-rfb-pline-1"></div>
+    <div class="flow-prog-step" id="prd-rfb-prog-2">
+      <div class="flow-prog-circle">2</div>
+      <span class="flow-prog-label">Rule or flag</span>
+    </div>
+    <div class="flow-prog-line" id="prd-rfb-pline-2"></div>
+    <div class="flow-prog-step" id="prd-rfb-prog-3">
+      <div class="flow-prog-circle">3</div>
+      <span class="flow-prog-label">Type</span>
+    </div>
+    <div class="flow-prog-line" id="prd-rfb-pline-3"></div>
+    <div class="flow-prog-step" id="prd-rfb-prog-4">
+      <div class="flow-prog-circle">4</div>
+      <span class="flow-prog-label">Conditions &amp; action</span>
+    </div>
+    <div class="flow-prog-line" id="prd-rfb-pline-4"></div>
+    <div class="flow-prog-step" id="prd-rfb-prog-5">
+      <div class="flow-prog-circle">5</div>
+      <span class="flow-prog-label">Summary</span>
+    </div>
+  </div>
+
+  <!-- Editing label — shown below progress bar in edit mode -->
+  <div id="prd-rfb-editing-label" style="display:none;padding:8px 28px;font-size:13px;font-weight:600;color:#202124;border-bottom:1px solid #e0e0e0;background:#fafafa;"></div>
+
+  <!-- Body + Sidebar wrapper -->
+  <div class="flow-body-wrap">
+  <div class="flow-body">
+
+    <!-- ── Step 1: Products ── -->
+    <div id="prd-rfb-sc-1">
+      <div class="mb-4">
+        <div class="flow-section-label mb-2">Select the products this rule applies to</div>
+        <div class="flow-camp-picker">
+          <input class="flow-camp-search" id="prd-rfb-camp-search" type="text" placeholder="Search products..."
+                 oninput="prdRfbFilterProducts(this.value)" autocomplete="off">
+          <div style="display:flex;gap:8px;padding:6px 12px;border-bottom:1px solid #e0e0e0;background:#fafafa;">
+            <button class="btn btn-sm" type="button" onclick="prdRfbSelectAll()">Select all</button>
+            <button class="btn btn-sm" type="button" onclick="prdRfbClearAll()">Clear</button>
+          </div>
+          <div class="flow-camp-list" id="prd-rfb-camp-list">
+            <!-- Populated by JS from _prdRfbAllProducts -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Step 2: Rule or Flag ── -->
+    <div id="prd-rfb-sc-2">
+      <div class="mb-4">
+        <div class="flow-section-label mb-3">What do you want to create?</div>
+        <div class="flow-choice-grid">
+          <div class="flow-choice-card" id="prd-rfb-rof-rule" onclick="prdRfbPickRoF('rule')">
+            <div class="flow-choice-icon">
+              <span class="material-symbols-outlined" style="font-size:28px;vertical-align:middle">bolt</span>
+            </div>
+            <h5>Rule</h5>
+            <p>The system evaluates conditions on a schedule and generates a recommendation for you to act on.<br>You confirm before anything changes in Google Ads.</p>
+          </div>
+          <div class="flow-choice-card" id="prd-rfb-rof-flag" onclick="prdRfbPickRoF('flag')">
+            <div class="flow-choice-icon">
+              <span class="material-symbols-outlined" style="font-size:28px;vertical-align:middle">flag</span>
+            </div>
+            <h5>Flag</h5>
+            <p>The system monitors for a condition and raises an alert in the dashboard.<br>No action is taken — flags are information only.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Step 3: Type ── -->
+    <div id="prd-rfb-sc-3">
+      <div class="mb-4">
+        <div class="flow-section-label mb-3" id="prd-rfb-type-label">Rule type</div>
+        <div class="flow-cat-grid" id="prd-rfb-type-grid">
+          <!-- Populated by prdRfbRenderTypeStep() -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Step 4: Conditions & Action ── -->
+    <div id="prd-rfb-sc-4">
+
+      <div class="mb-4">
+        <div class="flow-section-label mb-2">Condition 1 (required)</div>
+        <div class="flow-cond-box">
+          <div class="flow-cond-row">
+            <select class="flow-cond-select" id="prd-rfb-cond1-metric">
+              <option disabled>── Performance (7d) ──</option>
+              <option value="roas_w7">ROAS (7d)</option>
+              <option value="cpa_w7">CPA (7d)</option>
+              <option value="ctr_w7">CTR (7d)</option>
+              <option value="cvr_w7">CVR (7d)</option>
+              <option disabled>── Performance (14d) ──</option>
+              <option value="roas_w14">ROAS (14d)</option>
+              <option value="cpa_w14">CPA (14d)</option>
+              <option value="ctr_w14">CTR (14d)</option>
+              <option value="cvr_w14">CVR (14d)</option>
+              <option disabled>── Performance (30d) ──</option>
+              <option value="roas_w30">ROAS (30d)</option>
+              <option value="cpa_w30">CPA (30d)</option>
+              <option value="ctr_w30">CTR (30d)</option>
+              <option value="cvr_w30">CVR (30d)</option>
+              <option disabled>── Volume (7d) ──</option>
+              <option value="clicks_w7_sum">Clicks (7d)</option>
+              <option value="conversions_w7_sum">Conversions (7d)</option>
+              <option value="cost_micros_w7_sum">Cost (7d)</option>
+              <option value="conversions_value_w7_sum">Conv. Value (7d)</option>
+              <option disabled>── Volume (14d) ──</option>
+              <option value="clicks_w14_sum">Clicks (14d)</option>
+              <option value="conversions_w14_sum">Conversions (14d)</option>
+              <option value="cost_micros_w14_sum">Cost (14d)</option>
+              <option value="conversions_value_w14_sum">Conv. Value (14d)</option>
+              <option disabled>── Volume (30d) ──</option>
+              <option value="clicks_w30_sum">Clicks (30d)</option>
+              <option value="conversions_w30_sum">Conversions (30d)</option>
+              <option value="cost_micros_w30_sum">Cost (30d)</option>
+              <option value="conversions_value_w30_sum">Conv. Value (30d)</option>
+              <option disabled>── Feed Quality ──</option>
+              <option value="stock_out_flag">Stock Out</option>
+              <option value="has_price_mismatch">Price Mismatch</option>
+              <option value="has_disapproval">Disapproval</option>
+              <option value="feed_quality_score">Feed Quality Score</option>
+              <option value="stock_out_days_w30">Stock Out Days (30d)</option>
+              <option disabled>── Lifecycle ──</option>
+              <option value="new_product_flag">New Product</option>
+              <option value="days_live">Days Live</option>
+              <option value="low_data_flag">Low Data</option>
+              <option disabled>── Product ──</option>
+              <option value="availability">Availability</option>
+              <option value="product_brand">Brand</option>
+              <option value="product_category">Category</option>
+            </select>
+            <select class="flow-cond-select" id="prd-rfb-cond1-op">
+              <option value="gt">is greater than</option>
+              <option value="lt">is less than</option>
+              <option value="gte">is greater than or equal to</option>
+              <option value="eq">is equal to</option>
+              <option value="lte">is less than or equal to</option>
+              <option value="in">is in</option>
+            </select>
+            <input class="flow-cond-input" id="prd-rfb-cond1-val" type="text" value="1.15">
+            <select class="flow-cond-select" id="prd-rfb-cond1-ref">
+              <option value="absolute">absolute</option>
+              <option value="pct">%</option>
+              <option value="x_target">× target</option>
+            </select>
+          </div>
+          <button class="flow-add-cond-btn" type="button" id="prd-rfb-add-cond-btn" onclick="prdRfbToggleCond2()">+ Add second condition (optional)</button>
+          <div id="prd-rfb-cond-2" class="flow-cond-2">
+            <div class="flow-section-label mt-2 mb-2">Condition 2 (optional)</div>
+            <div class="flow-cond-row">
+              <select class="flow-cond-select" id="prd-rfb-cond2-metric">
+                <option disabled>── Performance (7d) ──</option>
+                <option value="roas_w7">ROAS (7d)</option>
+                <option value="cpa_w7">CPA (7d)</option>
+                <option value="ctr_w7">CTR (7d)</option>
+                <option value="cvr_w7">CVR (7d)</option>
+                <option disabled>── Performance (14d) ──</option>
+                <option value="roas_w14">ROAS (14d)</option>
+                <option value="cpa_w14">CPA (14d)</option>
+                <option value="ctr_w14">CTR (14d)</option>
+                <option value="cvr_w14">CVR (14d)</option>
+                <option disabled>── Performance (30d) ──</option>
+                <option value="roas_w30">ROAS (30d)</option>
+                <option value="cpa_w30">CPA (30d)</option>
+                <option value="ctr_w30">CTR (30d)</option>
+                <option value="cvr_w30">CVR (30d)</option>
+                <option disabled>── Volume (7d) ──</option>
+                <option value="clicks_w7_sum">Clicks (7d)</option>
+                <option value="conversions_w7_sum">Conversions (7d)</option>
+                <option value="cost_micros_w7_sum">Cost (7d)</option>
+                <option value="conversions_value_w7_sum">Conv. Value (7d)</option>
+                <option disabled>── Volume (14d) ──</option>
+                <option value="clicks_w14_sum">Clicks (14d)</option>
+                <option value="conversions_w14_sum">Conversions (14d)</option>
+                <option value="cost_micros_w14_sum">Cost (14d)</option>
+                <option value="conversions_value_w14_sum">Conv. Value (14d)</option>
+                <option disabled>── Volume (30d) ──</option>
+                <option value="clicks_w30_sum">Clicks (30d)</option>
+                <option value="conversions_w30_sum">Conversions (30d)</option>
+                <option value="cost_micros_w30_sum">Cost (30d)</option>
+                <option value="conversions_value_w30_sum">Conv. Value (30d)</option>
+                <option disabled>── Feed Quality ──</option>
+                <option value="stock_out_flag">Stock Out</option>
+                <option value="has_price_mismatch">Price Mismatch</option>
+                <option value="has_disapproval">Disapproval</option>
+                <option value="feed_quality_score">Feed Quality Score</option>
+                <option value="stock_out_days_w30">Stock Out Days (30d)</option>
+                <option disabled>── Lifecycle ──</option>
+                <option value="new_product_flag">New Product</option>
+                <option value="days_live">Days Live</option>
+                <option value="low_data_flag">Low Data</option>
+                <option disabled>── Product ──</option>
+                <option value="availability">Availability</option>
+                <option value="product_brand">Brand</option>
+                <option value="product_category">Category</option>
+              </select>
+              <select class="flow-cond-select" id="prd-rfb-cond2-op">
+                <option value="gte">is greater than or equal to</option>
+                <option value="gt">is greater than</option>
+                <option value="lt">is less than</option>
+                <option value="lte">is less than or equal to</option>
+                <option value="eq">is equal to</option>
+                <option value="in">is in</option>
+              </select>
+              <input class="flow-cond-input" id="prd-rfb-cond2-val" type="text" value="30">
+              <select class="flow-cond-select" id="prd-rfb-cond2-ref">
+                <option value="absolute">absolute</option>
+                <option value="pct">%</option>
+                <option value="x_target">× target</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action section (rules only — hidden for flags) -->
+      <div id="prd-rfb-action-section">
+        <div class="flow-section-divider"><span>Action</span></div>
+        <div class="mb-4">
+          <div class="flow-section-label mb-2">What should happen when conditions are met?</div>
+          <div class="flow-action-box">
+            <div class="flow-action-row">
+              <select class="flow-cond-select" id="prd-rfb-action-type">
+                <option value="pause">Pause product</option>
+                <option value="enable">Enable product</option>
+                <option value="increase_bid">Increase bid by</option>
+                <option value="decrease_bid">Decrease bid by</option>
+              </select>
+              <input class="flow-cond-input" id="prd-rfb-action-mag" type="text" value="10" style="width:70px;display:none">
+              <span id="prd-rfb-pct-label" style="font-size:13px;color:#5f6368;display:none;">%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rule settings -->
+      <div id="prd-rfb-rule-settings">
+        <div class="flow-section-label mb-2">Rule settings</div>
+        <div class="flow-cond-box">
+        <div class="flow-settings-grid">
+          <div class="flow-settings-field">
+            <label>Cooldown period</label>
+            <select id="prd-rfb-cooldown">
+              <option value="7">7 days</option>
+              <option value="14">14 days</option>
+              <option value="30">30 days</option>
+            </select>
+          </div>
+          <div class="flow-settings-field">
+            <label>Risk level (auto-calculated)</label>
+            <select id="prd-rfb-risk" disabled>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+        </div><!-- end flow-cond-box -->
+      </div>
+
+      <!-- Warnings — shown above footer buttons -->
+      <div id="prd-rfb-warnings-section">
+        <div class="flow-guardrail-note mt-3">
+          <span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle">warning</span>
+          The system will cap this at the guardrail limit defined in Client Settings.<br>Even if you enter a higher value here, the guardrail takes precedence.
+        </div>
+        <div class="flow-human-note">
+          <span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle">lock</span>
+          All product-level actions require your confirmation before anything changes in Google Ads.<br>This rule generates a recommendation only.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Step 5: Summary & Save ── -->
+    <div id="prd-rfb-sc-5">
+
+      <div class="mb-4">
+        <div class="flow-section-label mb-2">Rule name</div>
+        <input type="text" class="flow-name-field" id="prd-rfb-name-field" placeholder="Give this rule a clear name">
+        <div class="flow-name-hint">Give this rule a clear name so it's easy to identify in the table</div>
+      </div>
+
+      <div class="mb-3">
+        <div class="flow-section-label mb-2">Review everything before saving</div>
+        <div class="flow-summary-box" id="prd-rfb-summary-box">
+          <!-- Populated by prdRfbBuildSummary() -->
+        </div>
+      </div>
+
+      <div id="prd-rfb-save-error" class="flow-error-msg"></div>
+
+    </div>
+
+  </div><!-- end flow-body -->
+
+  <!-- Sidebar — your choices so far -->
+  <div class="flow-sidebar" id="prd-rfb-sidebar">
+    <div class="flow-sidebar-title">Your choices</div>
+
+    <div class="flow-sidebar-row" id="prd-sb-row-1">
+      <div class="flow-sidebar-step">Step 1</div>
+      <div class="flow-sidebar-label">Products</div>
+      <div class="flow-sidebar-value pending" id="prd-sb-val-1">—</div>
+    </div>
+    <div class="flow-sidebar-divider"></div>
+
+    <div class="flow-sidebar-row" id="prd-sb-row-2">
+      <div class="flow-sidebar-step">Step 2</div>
+      <div class="flow-sidebar-label">Rule or flag</div>
+      <div class="flow-sidebar-value pending" id="prd-sb-val-2">—</div>
+    </div>
+    <div class="flow-sidebar-divider"></div>
+
+    <div class="flow-sidebar-row" id="prd-sb-row-3">
+      <div class="flow-sidebar-step">Step 3</div>
+      <div class="flow-sidebar-label">Type</div>
+      <div class="flow-sidebar-value pending" id="prd-sb-val-3">—</div>
+    </div>
+    <div class="flow-sidebar-divider"></div>
+
+    <div class="flow-sidebar-row" id="prd-sb-row-4">
+      <div class="flow-sidebar-step">Step 4</div>
+      <div class="flow-sidebar-label">Conditions &amp; action</div>
+      <div class="flow-sidebar-value pending" id="prd-sb-val-4a">—</div>
+      <div class="flow-sidebar-value pending" id="prd-sb-val-4b" style="display:none;"></div>
+      <div class="flow-sidebar-value pending sb-action-val" id="prd-sb-val-4c" style="display:none;margin-top:4px;padding-top:4px;border-top:1px solid #e8e8e8;"></div>
+      <div class="flow-sidebar-value pending" id="prd-sb-val-4d" style="display:none;"></div>
+    </div>
+    <div class="flow-sidebar-divider"></div>
+
+    <div class="flow-sidebar-row" id="prd-sb-row-5">
+      <div class="flow-sidebar-step">Step 5</div>
+      <div class="flow-sidebar-label">Summary</div>
+      <div class="flow-sidebar-value pending" id="prd-sb-val-5">—</div>
+    </div>
+
+  </div><!-- end flow-sidebar -->
+
+  </div><!-- end flow-body-wrap -->
+
+  <!-- Footer -->
+  <div class="flow-footer">
+    <button class="btn" id="prd-rfb-btn-back" type="button" onclick="prdRfbPrevStep()">← Back</button>
+    <div class="flow-step-indicator" id="prd-rfb-step-ind">Step 1 of 5</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-outline-secondary" id="prd-rfb-btn-use-template" type="button" style="display:none;font-size:13px;" onclick="prdRfbClickUseTemplate()">Use template →</button>
+      <button class="btn btn-primary" id="prd-rfb-btn-next" type="button" onclick="prdRfbNextStep()">Next →</button>
+    </div>
+  </div>
+
+</div><!-- end flow-panel -->
+</div><!-- end prd-rules-flow-overlay -->
+
+
+<script>
+// ── CSRF fallback — ensures getCSRFToken is available regardless of script load order
+if (typeof getCSRFToken === 'undefined') {
+  function getCSRFToken() {
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.content : '';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  Product Rules & Flags Tab — Data + Rendering
+// ════════════════════════════════════════════════════════════════
+
+var _prdRfData = [];          // all rows from API
+var _prdRfRuleFilter = 'all'; // current rules filter
+var _prdRfFlagFilter = 'all'; // current flags filter
+
+// ── Sub-tab switching ────────────────────────────────────────────
+function prdRfShowSubTab(tab) {
+  ['rules','flags','templates'].forEach(function(t) {
+    document.getElementById('prd-rf-tab-' + t).classList.toggle('active', t === tab);
+    var pane = document.getElementById('prd-rf-pane-' + t);
+    if (pane) pane.style.display = t === tab ? '' : 'none';
+  });
+}
+
+// ── Filter tab ───────────────────────────────────────────────────
+function prdRfSetRuleFilter(btn, context) {
+  btn.closest('.filter-tabs').querySelectorAll('.filter-tab').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  if (context === 'rules') {
+    _prdRfRuleFilter = btn.dataset.rfFilter;
+    prdRfRenderRules();
+  } else {
+    _prdRfFlagFilter = btn.dataset.rfFilter;
+    prdRfRenderFlags();
+  }
+}
+
+function prdRfFilterRules() { prdRfRenderRules(); }
+function prdRfFilterFlags() { prdRfRenderFlags(); }
+
+// ── Load data from API ───────────────────────────────────────────
+function prdRfLoadData() {
+  fetch('/shopping/product_rules')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        _prdRfData = d.data || [];
+        prdRfRenderRules();
+        prdRfRenderFlags();
+        prdRfRenderTemplates();
+        prdRfUpdateBadges();
+      } else {
+        prdRfShowError(d.error || 'Failed to load.');
+      }
+    })
+    .catch(function(e) {
+      prdRfShowError('Network error: ' + e);
+    });
+}
+
+// ── Lazy load function exposed globally ──────────────────────────
+function loadProductRules() {
+  prdRfLoadData();
+}
+
+function prdRfShowError(msg) {
+  ['prd-rf-rules-tbody','prd-rf-flags-tbody'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      var cols = id === 'prd-rf-rules-tbody' ? 12 : 9;
+      el.innerHTML = '<tr><td colspan="' + cols + '" class="text-center text-danger py-4" style="font-size:13px;">' + msg + '</td></tr>';
+    }
+  });
+}
+
+function prdRfUpdateBadges() {
+  var rules = _prdRfData.filter(function(r) { return r.rule_or_flag === 'rule' && r.enabled && !r.is_template; });
+  var flags = _prdRfData.filter(function(r) { return r.rule_or_flag === 'flag' && r.enabled && !r.is_template; });
+  var templates = _prdRfData.filter(function(r) { return r.is_template === true; });
+  document.getElementById('prd-rf-badge-rules').textContent = rules.length;
+  document.getElementById('prd-rf-badge-flags').textContent = flags.length;
+  var templatesBadge = document.getElementById('prd-rf-badge-templates');
+  if (templatesBadge) templatesBadge.textContent = templates.length;
+  // Update main tab badge if exists
+  var mainBadge = document.getElementById('prd-rules-flags-badge');
+  if (mainBadge) mainBadge.textContent = _prdRfData.filter(function(r) { return !r.is_template; }).length;
+}
+
+// ── Plain English generator ──────────────────────────────────────
+var PRD_METRIC_LABELS = {
+  // Performance (7d)
+  'roas_w7':'ROAS (7d)','cpa_w7':'CPA (7d)','ctr_w7':'CTR (7d)','cvr_w7':'CVR (7d)',
+  // Performance (14d)
+  'roas_w14':'ROAS (14d)','cpa_w14':'CPA (14d)','ctr_w14':'CTR (14d)','cvr_w14':'CVR (14d)',
+  // Performance (30d)
+  'roas_w30':'ROAS (30d)','cpa_w30':'CPA (30d)','ctr_w30':'CTR (30d)','cvr_w30':'CVR (30d)',
+  // Volume (7d)
+  'clicks_w7_sum':'Clicks (7d)','conversions_w7_sum':'Conversions (7d)',
+  'cost_micros_w7_sum':'Cost (7d)','conversions_value_w7_sum':'Conv. Value (7d)',
+  // Volume (14d)
+  'clicks_w14_sum':'Clicks (14d)','conversions_w14_sum':'Conversions (14d)',
+  'cost_micros_w14_sum':'Cost (14d)','conversions_value_w14_sum':'Conv. Value (14d)',
+  // Volume (30d)
+  'clicks_w30_sum':'Clicks (30d)','conversions_w30_sum':'Conversions (30d)',
+  'cost_micros_w30_sum':'Cost (30d)','conversions_value_w30_sum':'Conv. Value (30d)',
+  // Feed Quality
+  'stock_out_flag':'Stock Out','has_price_mismatch':'Price Mismatch','has_disapproval':'Disapproval',
+  'feed_quality_score':'Feed Quality Score','stock_out_days_w30':'Stock Out Days (30d)',
+  // Lifecycle
+  'new_product_flag':'New Product','days_live':'Days Live','low_data_flag':'Low Data',
+  // Product
+  'availability':'Availability','product_brand':'Brand','product_category':'Category'
+};
+
+var PRD_ACTION_LABELS = {
+  'pause':'Pause product',
+  'enable':'Enable product',
+  'increase_bid':'Increase bid',
+  'decrease_bid':'Decrease bid',
+  'flag':'Flag'
+};
+
+var PRD_OP_LABELS = {'>=':'≥','<=':'≤','>':'>','<':'<','=':'=','gte':'≥','lte':'≤','gt':'>','lt':'<','eq':'=','in':'in'};
+
+function prdRfPlainEnglish(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+
+  if (row.rule_or_flag === 'flag') {
+    var c = conds[0];
+    if (!c) return row.name;
+    var metric = PRD_METRIC_LABELS[c.metric] || c.metric;
+    var op = PRD_OP_LABELS[c.operator] || PRD_OP_LABELS[c.op] || c.operator || c.op || '';
+    var _u1 = c.ref || c.unit || ''; var unitSuffix = (_u1 === 'percent' || _u1 === 'pct') ? '%' : (_u1 === 'x_target' ? '× target' : '');
+    var dir = (c.operator === '>' || c.operator === '>=') ? 'risen above' : 'fallen below';
+    if (c.operator === '=' || c.op === 'eq') dir = 'equal to';
+    return 'Alert when ' + metric + ' has ' + dir + ' ' + c.value + unitSuffix;
+  }
+
+  var actionLabel = PRD_ACTION_LABELS[row.action_type] || (row.action_type || '');
+  var mag = row.action_magnitude ? ' by ' + row.action_magnitude + '%' : '';
+  var condParts = conds.map(function(c) {
+    var metric = PRD_METRIC_LABELS[c.metric] || c.metric;
+    var op = PRD_OP_LABELS[c.operator] || PRD_OP_LABELS[c.op] || c.operator || c.op || '';
+    var _u = c.ref || c.unit || ''; var unit = (_u === 'x_target') ? '× target' : (_u === 'percent' || _u === 'pct') ? '%' : '';
+    return metric + ' ' + op + ' ' + c.value + unit;
+  });
+  return actionLabel + mag + (condParts.length ? ' when ' + condParts.join(' and ') : '');
+}
+
+function prdRfGuardrail(row) {
+  var at = row.action_type || '';
+  if (at === 'pause' || at === 'enable') return '—';
+  return '—';
+}
+
+function prdRfCondText(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  return conds.map(function(c) {
+    var metric = PRD_METRIC_LABELS[c.metric] || c.metric;
+    var op = PRD_OP_LABELS[c.operator] || PRD_OP_LABELS[c.op] || c.operator || c.op || '';
+    var _u = c.ref || c.unit || ''; var unit = (_u === 'x_target') ? '× target' : (_u === 'percent' || _u === 'pct') ? '%' : '';
+    return '<strong>' + prdRfEsc(metric) + '</strong> ' + op + ' ' + c.value + unit;
+  }).join('<br>');
+}
+
+function prdRfActionCell(row) {
+  if (!row.action_type) return '—';
+  var label = PRD_ACTION_LABELS[row.action_type] || row.action_type;
+  var mag = row.action_magnitude ? ' ' + row.action_magnitude + '%' : '';
+  var isPause = row.action_type === 'pause';
+  var isEnable = row.action_type === 'enable';
+  var isIncrease = row.action_type === 'increase_bid';
+  var isDecrease = row.action_type === 'decrease_bid';
+  var css = isPause ? 'action-pause' : (isEnable ? 'action-up' : (isIncrease ? 'action-up' : (isDecrease ? 'action-down' : '')));
+  var arrow = isPause
+    ? '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">pause_circle</span> '
+    : (isEnable
+      ? '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">play_circle</span> '
+      : (isIncrease
+        ? '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">trending_up</span> '
+        : (isDecrease
+          ? '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">trending_down</span> '
+          : '')));
+  return '<span class="' + css + '">' + arrow + label + mag + '</span>';
+}
+
+
+// ── Flag-specific helpers ───────────────────────────────────────────────
+function prdRfFlagPlainEnglish(row) {
+  if (row.plain_english) return row.plain_english;
+  return prdRfPlainEnglish(row);
+}
+
+function prdRfFlagCondText(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  return conds.map(function(c) {
+    var metric = PRD_METRIC_LABELS[c.metric] || c.metric;
+    var rawOp = c.operator || c.op || '';
+    var op = PRD_OP_LABELS[rawOp] || rawOp;
+    var _u = c.ref || c.unit || ''; var unit = (_u === 'percent' || _u === 'pct') ? '%' : (_u === 'x_target' ? '× target' : '');
+    return '<strong>' + prdRfEsc(metric) + '</strong> ' + op + ' ' + prdRfEsc(String(c.value)) + unit;
+  }).join('<br>');
+}
+
+function prdRfDirectionCell(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  if (!conds.length) return '<span class="dir-neu">Either</span>';
+  var op = conds[0].operator || conds[0].op || '';
+  if (op === '>' || op === '>=' || op === 'gt' || op === 'gte') return '<span class="dir-pos">▲ Positive</span>';
+  if (op === '<' || op === '<=' || op === 'lt' || op === 'lte') return '<span class="dir-neg">▼ Negative</span>';
+  return '<span class="dir-neu">Either</span>';
+}
+
+function prdRfWindowCell(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  if (!conds.length) return '—';
+  var m = (conds[0].metric || '');
+  if (m.includes('_w30') || m.includes('w30')) return '30 days';
+  if (m.includes('_w14') || m.includes('w14')) return '14 days';
+  if (m.includes('_w7') || m.includes('w7')) return '7 days';
+  return '1 day';
+}
+
+function prdRfScopeLabel(row) {
+  var scope = row.entity_scope;
+  if (!scope) return 'All products';
+  if (typeof scope === 'string') { try { scope = JSON.parse(scope); } catch(e){} }
+  if (scope && scope.scope === 'all') return 'All products';
+  if (scope && scope.scope === 'specific' && Array.isArray(scope.products)) {
+    return prdRfEsc(scope.products.join(', ')) || 'All products';
+  }
+  return 'All products';
+}
+
+function prdRfEsc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Render Rules Table ───────────────────────────────────────────
+function prdRfRenderRules() {
+  var search = (document.getElementById('prd-rf-rules-search').value || '').toLowerCase();
+  var rows = _prdRfData.filter(function(r) { return r.rule_or_flag === 'rule' && !r.is_template; });
+
+  if (_prdRfRuleFilter !== 'all') {
+    rows = rows.filter(function(r) { return r.type === _prdRfRuleFilter; });
+  }
+  if (search) {
+    rows = rows.filter(function(r) {
+      var pe = (r.plain_english || prdRfPlainEnglish(r)).toLowerCase();
+      return prdRfEsc(r.name).toLowerCase().includes(search) || pe.includes(search);
+    });
+  }
+
+  var tbody = document.getElementById('prd-rf-rules-tbody');
+  if (!rows.length) {
+    var msg = _prdRfData.filter(function(r){return r.rule_or_flag==='rule';}).length === 0
+      ? '<div class="alert alert-info mb-0" role="alert" style="font-size:13px;">No rules yet — click Add rule or flag to create your first one.</div>'
+      : '<tr><td colspan="12" class="text-center text-muted py-3" style="font-size:13px;">No rules match the current filter.</td></tr>';
+    tbody.innerHTML = msg.startsWith('<div') ? '<tr><td colspan="12">' + msg + '</td></tr>' : msg;
+    document.getElementById('prd-rf-rules-info').textContent = '0 rules';
+    return;
+  }
+
+  // Group by type
+  var groups = {'feed_quality':[],'performance':[],'lifecycle':[],'stock':[]};
+  rows.forEach(function(r) { (groups[r.type] = groups[r.type] || []).push(r); });
+
+  var html = '';
+  var groupLabels = {feed_quality:'Feed Quality',performance:'Performance',lifecycle:'Lifecycle',stock:'Stock'};
+  ['feed_quality','performance','lifecycle','stock'].forEach(function(gtype) {
+    var gRows = (groups[gtype] || []).slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
+    if (!gRows.length) return;
+    html += '<tr class="rules-group-row"><td colspan="12">' + groupLabels[gtype] + ' &nbsp;·&nbsp; ' + gRows.length + ' rules</td></tr>';
+    gRows.forEach(function(r) {
+      var toggleClass = r.enabled ? '' : 'text-muted';
+      var riskBadge = r.risk_level
+        ? '<span class="risk-dot risk-dot-' + prdRfEsc(r.risk_level) + '">' + prdRfEsc(r.risk_level.charAt(0).toUpperCase()+r.risk_level.slice(1)) + '</span>'
+        : '—';
+      var isHumanConfirm = r.action_type === 'pause' || r.action_type === 'enable';
+      var guardrailHtml = isHumanConfirm
+        ? '<span class="rules-human-confirm"><span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle;">warning</span> Human confirmation required</span>'
+        : '<span style="font-size:11px;color:#202124;">—</span>';
+
+      html += '<tr data-rule-id="' + r.id + '" data-rule-type="' + prdRfEsc(r.type) + '">'
+        + '<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"'
+        + (r.enabled ? ' checked' : '') + ' onchange="prdRfToggle(' + r.id + ',this)"></div></td>'
+        + '<td class="rules-rule-name-col ' + toggleClass + '" style="font-weight:600;">' + prdRfEsc(r.name) + '</td>'
+        + '<td class="' + toggleClass + '" style="font-size:12px;color:#5f6368;">' + prdRfEsc(prdRfScopeLabel(r)) + '</td>'
+        + '<td class="rules-plain-english">' + prdRfEsc(r.plain_english || prdRfPlainEnglish(r)) + '</td>'
+        + '<td><span class="badge badge-rof-' + prdRfEsc(r.rule_or_flag) + '" style="font-size:11px;">' + prdRfEsc((r.rule_or_flag||'rule').charAt(0).toUpperCase()+(r.rule_or_flag||'rule').slice(1)) + '</span></td>'
+        + '<td><span class="badge badge-type-' + prdRfEsc(r.type) + '" style="font-size:11px;">' + prdRfEsc(groupLabels[r.type] || r.type) + '</span></td>'
+        + '<td style="font-size:12px;color:#202124;white-space:nowrap;">' + prdRfCondText(r) + '</td>'
+        + '<td>' + prdRfActionCell(r) + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;white-space:nowrap;">' + (r.cooldown_days ? r.cooldown_days + 'd' : '—') + '</td>'
+        + '<td class="rules-guardrail-col">' + guardrailHtml + '</td>'
+        + '<td>' + riskBadge + '</td>'
+        + '<td><div class="d-flex gap-1">'
+        + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="prdRfEditRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button>'
+        + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete" onclick="prdRfDeleteRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button>'
+        + '<button class="btn-save-template" title="Save as template" onclick="prdRfSaveAsTemplate(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button>'
+        + '</div></td>'
+        + '</tr>';
+    });
+  });
+
+  tbody.innerHTML = html;
+  var total = _prdRfData.filter(function(r){return r.rule_or_flag==='rule';}).length;
+  var enabled = _prdRfData.filter(function(r){return r.rule_or_flag==='rule'&&r.enabled;}).length;
+  document.getElementById('prd-rf-rules-info').textContent = total + ' rules\u00a0·\u00a0' + enabled + ' enabled';
+}
+
+// ── Render Flags Table ───────────────────────────────────────────
+function prdRfRenderFlags() {
+  var search = (document.getElementById('prd-rf-flags-search').value || '').toLowerCase();
+  var rows = _prdRfData.filter(function(r) { return r.rule_or_flag === 'flag' && !r.is_template; });
+
+  if (_prdRfFlagFilter !== 'all') {
+    rows = rows.filter(function(r) { return r.type === _prdRfFlagFilter; });
+  }
+  if (search) {
+    rows = rows.filter(function(r) {
+      var pe = prdRfPlainEnglish(r).toLowerCase();
+      return prdRfEsc(r.name).toLowerCase().includes(search) || pe.includes(search);
+    });
+  }
+
+  var tbody = document.getElementById('prd-rf-flags-tbody');
+  if (!rows.length) {
+    var msg = _prdRfData.filter(function(r){return r.rule_or_flag==='flag';}).length === 0
+      ? '<tr><td colspan="9"><div class="alert alert-info mb-0" style="font-size:13px;">No flags yet — click Add rule or flag to create your first one.</div></td></tr>'
+      : '<tr><td colspan="9" class="text-center text-muted py-3" style="font-size:13px;">No flags match the current filter.</td></tr>';
+    tbody.innerHTML = msg;
+    document.getElementById('prd-rf-flags-info').textContent = '0 flags';
+    return;
+  }
+
+  var groups = {'feed_quality':[],'performance':[],'lifecycle':[],'stock':[]};
+  rows.forEach(function(r) { (groups[r.type] = groups[r.type] || []).push(r); });
+
+  var html = '';
+  var groupLabels = {feed_quality:'Feed Quality',performance:'Performance',lifecycle:'Lifecycle',stock:'Stock'};
+  ['feed_quality','performance','lifecycle','stock'].forEach(function(gtype) {
+    var gRows = (groups[gtype] || []).slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
+    if (!gRows.length) return;
+    html += '<tr class="rules-group-row"><td colspan="9">' + groupLabels[gtype] + ' &nbsp;·&nbsp; ' + gRows.length + ' flags</td></tr>';
+    gRows.forEach(function(r) {
+      html += '<tr data-rule-id="' + r.id + '">'
+        + '<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"'
+        + (r.enabled ? ' checked' : '') + ' onchange="prdRfToggle(' + r.id + ',this)"></div></td>'
+        + '<td style="font-weight:600;white-space:nowrap;">' + prdRfEsc(r.name) + '</td>'
+        + '<td><span class="badge badge-type-' + prdRfEsc(r.type) + '" style="font-size:11px;">' + prdRfEsc(groupLabels[r.type] || r.type) + '</span></td>'
+        + '<td>' + prdRfDirectionCell(r) + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;">' + prdRfEsc(prdRfScopeLabel(r)) + '</td>'
+        + '<td class="rules-plain-english">' + prdRfEsc(r.plain_english || prdRfFlagPlainEnglish(r)) + '</td>'
+        + '<td style="font-size:12px;">' + prdRfFlagCondText(r) + '</td>'
+        + '<td style="font-size:12px;">' + prdRfEsc(prdRfWindowCell(r)) + '</td>'
+        + '<td><div class="d-flex gap-1">'
+        + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="prdRfEditRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button>'
+        + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete" onclick="prdRfDeleteRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button>'
+        + '<button class="btn-save-template" title="Save as template" onclick="prdRfSaveAsTemplate(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button>'
+        + '</div></td>'
+        + '</tr>';
+    });
+  });
+
+  tbody.innerHTML = html;
+  var total = _prdRfData.filter(function(r){return r.rule_or_flag==='flag';}).length;
+  var enabled = _prdRfData.filter(function(r){return r.rule_or_flag==='flag'&&r.enabled;}).length;
+  document.getElementById('prd-rf-flags-info').textContent = total + ' flags\u00a0·\u00a0' + enabled + ' enabled';
+}
+
+// ── Render Templates Table ───────────────────────────────────────
+function prdRfRenderTemplates() {
+  var rows = _prdRfData.filter(function(r) { return r.is_template === true; });
+  var tbody = document.getElementById('prd-rf-templates-tbody');
+  if (!tbody) return;
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4" style="font-size:13px;">No templates yet — click <strong>Save as template</strong> <span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle;">bookmark_add</span> on any rule or flag row to create one.</td></tr>';
+    document.getElementById('prd-rf-badge-templates').textContent = '0';
+    return;
+  }
+
+  var groups = {};
+  rows.forEach(function(r) { var t = r.type || 'performance'; groups[t] = groups[t] || []; groups[t].push(r); });
+
+  var html = '';
+  var groupOrder = ['feed_quality', 'performance', 'lifecycle', 'stock'];
+  var groupLabels = {feed_quality:'Feed Quality', performance:'Performance', lifecycle:'Lifecycle', stock:'Stock'};
+
+  groupOrder.forEach(function(gtype) {
+    var gRows = (groups[gtype] || []).slice().sort(function(a,b) { return a.name.localeCompare(b.name); });
+    if (!gRows.length) return;
+    html += '<tr class="rules-group-row"><td colspan="8">' + groupLabels[gtype] + ' &nbsp;·&nbsp; ' + gRows.length + ' template' + (gRows.length === 1 ? '' : 's') + '</td></tr>';
+    gRows.forEach(function(r) {
+      var rof = r.rule_or_flag || 'rule';
+      var condHtml = rof === 'flag' ? prdRfFlagCondText(r) : prdRfCondText(r);
+      var actionHtml = rof === 'flag' ? '—' : prdRfActionCell(r);
+      var peHtml = prdRfEsc(r.plain_english || prdRfPlainEnglish(r));
+      html += '<tr>'
+        + '<td style="font-weight:600;">' + prdRfEsc(r.name) + '</td>'
+        + '<td><span class="badge badge-rof-' + prdRfEsc(rof) + '" style="font-size:11px;">' + prdRfEsc(rof.charAt(0).toUpperCase()+rof.slice(1)) + '</span></td>'
+        + '<td><span class="badge badge-type-' + prdRfEsc(r.type||'') + '" style="font-size:11px;">' + prdRfEsc(groupLabels[r.type] || r.type || '') + '</span></td>'
+        + '<td class="rules-plain-english">' + peHtml + '</td>'
+        + '<td style="font-size:12px;color:#202124;white-space:nowrap;">' + condHtml + '</td>'
+        + '<td>' + actionHtml + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;white-space:nowrap;">' + (r.cooldown_days ? r.cooldown_days + 'd' : '—') + '</td>'
+        + '<td><button class="btn btn-sm btn-outline-primary" style="font-size:11px;white-space:nowrap;" onclick="prdRfEditTemplate(' + r.id + ')">Edit template</button></td>'
+        + '</tr>';
+    });
+  });
+
+  tbody.innerHTML = html;
+  document.getElementById('prd-rf-badge-templates').textContent = rows.length;
+}
+
+// ── Use Template (open flow builder pre-filled, no ID so creates new rule) ───
+function prdRfEditTemplate(ruleId) {
+  var row = _prdRfData.find(function(r) { return r.id === ruleId; });
+  if (!row) return;
+  prdOpenRulesFlow(row);
+}
+
+function prdRfUseTemplate(ruleId) {
+  var row = _prdRfData.find(function(r) { return r.id === ruleId; });
+  if (!row) return;
+  var copy = Object.assign({}, row);
+  copy.id = null;
+  copy.is_template = false;
+  copy.entity_scope = {scope: 'all'};
+  copy.enabled = true;
+  copy.name = (copy.name || '').replace(/\(template\)\s*$/i, '').trim();
+  prdCloseRulesFlow();
+  setTimeout(function() { prdOpenRulesFlow(copy); }, 250);
+}
+
+// ── Save As Template ─────────────────────────────────────────────
+function prdRfSaveAsTemplate(ruleId) {
+  fetch('/shopping/product_rules/' + ruleId + '/save-as-template', {method: 'POST'})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        prdRfShowToast('Saved as template.', 'success');
+        prdRfLoadData();
+      } else {
+        prdRfShowToast('Error: ' + (d.error || 'Unknown error'), 'danger');
+      }
+    });
+}
+
+// ── Toggle ───────────────────────────────────────────────────────
+function prdRfToggle(ruleId, checkbox) {
+  fetch('/shopping/product_rules/' + ruleId + '/toggle', {method:'POST'})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        var row = _prdRfData.find(function(r) { return r.id === ruleId; });
+        if (row) { row.enabled = d.data.enabled; }
+        prdRfUpdateBadges();
+        prdRfShowToast((d.data.enabled ? 'Enabled' : 'Disabled') + ' successfully.', 'success');
+        prdRfRenderRules();
+        prdRfRenderFlags();
+      } else {
+        prdRfShowToast('Toggle failed: ' + (d.error||'Unknown error'), 'error');
+        checkbox.checked = !checkbox.checked;
+      }
+    })
+    .catch(function(e) {
+      prdRfShowToast('Network error.', 'error');
+      checkbox.checked = !checkbox.checked;
+    });
+}
+
+// ── Delete ───────────────────────────────────────────────────────
+function prdRfDeleteRule(ruleId) {
+  if (!confirm('Delete this rule/flag? This cannot be undone.')) return;
+  fetch('/shopping/product_rules/' + ruleId, {method:'DELETE'})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        _prdRfData = _prdRfData.filter(function(r) { return r.id !== ruleId; });
+        prdRfRenderRules();
+        prdRfRenderFlags();
+        prdRfUpdateBadges();
+        prdRfShowToast('Deleted successfully.', 'success');
+        var tr = document.querySelector('tr[data-rule-id="' + ruleId + '"]');
+        if (tr) { tr.style.opacity='0'; tr.style.transition='opacity .3s'; setTimeout(function(){tr.remove();},300); }
+      } else {
+        prdRfShowToast('Delete failed: ' + (d.error||'Unknown error'), 'error');
+      }
+    })
+    .catch(function() { prdRfShowToast('Network error.', 'error'); });
+}
+
+// ── Edit (opens flow builder pre-filled) ─────────────────────────
+function prdRfEditRule(ruleId) {
+  var row = _prdRfData.find(function(r) { return r.id === ruleId; });
+  if (row) prdOpenRulesFlow(row);
+}
+
+// ── Toast ────────────────────────────────────────────────────────
+function prdRfShowToast(msg, type) {
+  var wrap = document.getElementById('prd-rules-toast-wrap');
+  if (!wrap) return;
+  var t = document.createElement('div');
+  t.style.cssText = 'padding:12px 18px;border-radius:8px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.12);display:flex;align-items:center;gap:8px;color:white;';
+  t.style.background = type === 'success' ? '#15803d' : '#dc3545';
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(function() {
+    t.style.opacity='0'; t.style.transition='opacity .3s';
+    setTimeout(function() { t.remove(); }, 300);
+  }, 3500);
+}
+
+
+// ════════════════════════════════════════════════════════════════
+//  Product Rules Flow Builder — 5-step overlay
+// ════════════════════════════════════════════════════════════════
+
+var _prdRfbStep        = 1;
+var _prdRfbEditId      = null;   // rule id when editing
+var _prdRfbHasPreload  = false;  // true when opened with pre-filled data (edit or template)
+var _prdRfbIsTemplate  = false;  // true when editing a template row
+var _prdRfbRoF         = 'rule'; // 'rule' or 'flag'
+var _prdRfbType        = 'performance';
+var _prdRfbCond2Open   = false;
+
+// Product list — pre-sanitised in the route as rfb_products (plain string dicts)
+var _prdRfbAllProducts = {{ rfb_products | tojson if rfb_products is defined else '[]' }};
+
+var PRD_RFB_TYPE_FOR_ROF = {
+  rule: [
+    {v:'feed_quality', label:'Feed Quality', icon:'inventory_2', desc:'Monitor feed issues like stock, pricing, disapprovals'},
+    {v:'performance', label:'Performance', icon:'trending_up', desc:'Pause/enable based on ROAS, CPA, CTR'},
+    {v:'lifecycle', label:'Lifecycle', icon:'schedule', desc:'Manage new product launches and aging products'},
+    {v:'stock', label:'Stock', icon:'local_shipping', desc:'Control spend on out-of-stock products'}
+  ],
+  flag: [
+    {v:'feed_quality', label:'Feed Quality', icon:'inventory_2', desc:'Alert on feed quality issues'},
+    {v:'performance', label:'Performance', icon:'trending_up', desc:'Alert on performance changes'},
+    {v:'lifecycle', label:'Lifecycle', icon:'schedule', desc:'Alert on product lifecycle events'},
+    {v:'stock', label:'Stock', icon:'local_shipping', desc:'Alert on stock issues'}
+  ]
+};
+
+var PRD_RFB_STEP_TITLES = ['','Select products','Rule or flag?','Choose type','Set conditions & action','Review & save'];
+var PRD_RFB_STEP_SUBS   = [
+  '',
+  'Step 1 of 5 — Select the products this rule will apply to',
+  'Step 2 of 5 — Choose whether to create a rule or a flag',
+  'Step 3 of 5 — Choose the type',
+  'Step 4 of 5 — Define conditions and the action to take',
+  'Step 5 of 5 — Name the rule and review everything before saving'
+];
+
+// ── Open / close ──────────────────────────────────────────────────────────────
+function prdOpenRulesFlow(existingRow) {
+  _prdRfbRoF       = 'rule';
+  _prdRfbType      = 'performance';
+  _prdRfbCond2Open = false;
+
+  if (existingRow) {
+    _prdRfbRoF  = existingRow.rule_or_flag || existingRow.rof || 'rule';
+    _prdRfbType = existingRow.type || 'performance';
+  }
+
+  prdRfbResetForm();
+
+  // Set these AFTER prdRfbResetForm() so they are not wiped
+  _prdRfbEditId     = existingRow ? (existingRow.id || null) : null;
+  _prdRfbHasPreload = existingRow ? true : false;
+  _prdRfbIsTemplate = existingRow ? (existingRow.is_template === true) : false;
+
+  if (existingRow) {
+    prdRfbPopulateFromRow(existingRow);
+  }
+
+  _prdRfbStep = 1;
+  prdRfbRenderStep();
+
+  var overlay = document.getElementById('prd-rules-flow-overlay');
+  overlay.style.display = 'flex';
+  setTimeout(function(){ overlay.classList.add('show'); }, 10);
+}
+
+function prdCloseRulesFlow() {
+  var overlay = document.getElementById('prd-rules-flow-overlay');
+  overlay.classList.remove('show');
+  setTimeout(function(){ overlay.style.display = 'none'; }, 220);
+}
+
+// ── Form reset / populate ─────────────────────────────────────────────────────
+function prdRfbResetForm() {
+  document.getElementById('prd-rfb-camp-search').value = '';
+  document.getElementById('prd-rfb-cond-2').style.display = 'none';
+  document.getElementById('prd-rfb-add-cond-btn').textContent = '+ Add second condition (optional)';
+  document.getElementById('prd-rfb-save-error').style.display = 'none';
+  document.getElementById('prd-rfb-save-error').textContent   = '';
+  document.getElementById('prd-rfb-name-field').value = '';
+  document.getElementById('prd-rfb-cond1-val').value  = '1.15';
+  document.getElementById('prd-rfb-cond2-val').value  = '30';
+  document.getElementById('prd-rfb-action-mag').value = '10';
+  document.getElementById('prd-rfb-cooldown').value   = '7';
+  _prdRfbSelectedIds    = [];
+  _prdRfbCond2Open      = false;
+  _prdRfbSavedActionType = null;
+  _prdRfbHasPreload     = false;
+  _prdRfbIsTemplate     = false;
+  prdRfbRenderProductList('');
+}
+
+function prdRfbPopulateFromRow(row) {
+  document.getElementById('prd-rfb-name-field').value = row.name || '';
+  document.getElementById('prd-rfb-cooldown').value   = String(row.cooldown_days || 7);
+
+  // Risk
+  var riskSel = document.getElementById('prd-rfb-risk');
+  if (row.risk_level) riskSel.value = row.risk_level;
+
+  // Entity scope → pre-select products
+  try {
+    var scope = typeof row.entity_scope === 'string' ? JSON.parse(row.entity_scope) : row.entity_scope;
+    if (scope && scope.scope === 'specific' && Array.isArray(scope.products)) {
+      _prdRfbSelectedIds = scope.products.map(String);
+    } else {
+      _prdRfbSelectedIds = [];
+    }
+  } catch(e) { _prdRfbSelectedIds = []; }
+
+  // Conditions
+  try {
+    var conds = typeof row.conditions === 'string' ? JSON.parse(row.conditions) : row.conditions;
+    if (Array.isArray(conds) && conds.length > 0) {
+      prdRfbSetCondRow(1, conds[0]);
+      if (conds.length > 1) {
+        prdRfbSetCondRow(2, conds[1]);
+        prdRfbToggleCond2();
+      }
+    }
+  } catch(e) {}
+
+  // Action
+  _prdRfbSavedActionType = row.action_type || null;
+  if (row.action_type) {
+    var at = document.getElementById('prd-rfb-action-type');
+    if (at) { for (var i=0; i<at.options.length; i++) { if (at.options[i].value === row.action_type) { at.selectedIndex = i; break; } } }
+  }
+  if (row.action_magnitude != null) {
+    document.getElementById('prd-rfb-action-mag').value = row.action_magnitude;
+  }
+}
+
+var _prdRfbSelectedIds    = [];
+var _prdRfbSavedActionType = null;
+
+function prdRfbNormOp(op) {
+  var map = {'>': 'gt', '<': 'lt', '>=': 'gte', '<=': 'lte', '=': 'eq'};
+  return map[op] || op;
+}
+function prdRfbNormUnit(unit) {
+  var map = {'percent': 'pct', 'x_target': 'x_target', 'absolute': 'absolute'};
+  return map[unit] || unit;
+}
+
+function prdRfbSetCondRow(n, cond) {
+  var pfx = 'prd-rfb-cond' + n + '-';
+  var mSel = document.getElementById(pfx + 'metric');
+  var oSel = document.getElementById(pfx + 'op');
+  var vIn  = document.getElementById(pfx + 'val');
+  var rSel = document.getElementById(pfx + 'ref');
+  if (!mSel) return;
+  var normOp  = cond.op  || prdRfbNormOp(cond.operator || '');
+  var normRef = cond.ref || prdRfbNormUnit(cond.unit || '');
+  if (cond.metric)    { for (var i=0;i<mSel.options.length;i++) { if (mSel.options[i].value===cond.metric) { mSel.selectedIndex=i; break; } } }
+  if (normOp)         { for (var i=0;i<oSel.options.length;i++) { if (oSel.options[i].value===normOp)      { oSel.selectedIndex=i; break; } } }
+  if (cond.value != null) vIn.value = cond.value;
+  if (normRef && rSel){ for (var i=0;i<rSel.options.length;i++) { if (rSel.options[i].value===normRef)     { rSel.selectedIndex=i; break; } } }
+}
+
+// ── Product list rendering ───────────────────────────────────────────────
+function prdRfbRenderProductList(filter) {
+  var list = document.getElementById('prd-rfb-camp-list');
+  if (!list) return;
+  filter = (filter || '').toLowerCase();
+  var html = '';
+  _prdRfbAllProducts.forEach(function(p) {
+    var name = p.name || p.title || p.id || '';
+    if (filter && name.toLowerCase().indexOf(filter) < 0) return;
+    var sel = _prdRfbSelectedIds.indexOf(String(p.id)) >= 0;
+    html += '<div class="flow-camp-item' + (sel?' selected':'') + '"' +
+            ' data-id="' + prdRfbEsc(p.id) + '"' +
+            ' onclick="prdRfbToggleProduct(this)">' +
+            '<input type="checkbox"' + (sel?' checked':'') +
+            ' style="width:14px;height:14px;accent-color:#1a73e8;flex-shrink:0;cursor:pointer">' +
+            '<span style="flex:1;font-size:13px">' + prdRfbEsc(name) + '</span>' +
+            '</div>';
+  });
+  if (!html) html = '<div style="padding:12px;font-size:13px;color:#5f6368">No products found</div>';
+  list.innerHTML = html;
+}
+
+function prdRfbFilterProducts(v) {
+  prdRfbRenderProductList(v);
+}
+
+function prdRfbToggleProduct(el) {
+  var id = el.getAttribute('data-id');
+  var idx = _prdRfbSelectedIds.indexOf(id);
+  if (idx >= 0) {
+    _prdRfbSelectedIds.splice(idx, 1);
+    el.classList.remove('selected');
+    el.querySelector('input').checked = false;
+  } else {
+    _prdRfbSelectedIds.push(id);
+    el.classList.add('selected');
+    el.querySelector('input').checked = true;
+  }
+  prdRfbRenderProductList(document.getElementById('prd-rfb-camp-search').value);
+}
+
+function prdRfbSelectAll() {
+  _prdRfbSelectedIds = [];
+  _prdRfbAllProducts.forEach(function(p) {
+    _prdRfbSelectedIds.push(String(p.id));
+  });
+  prdRfbRenderProductList(document.getElementById('prd-rfb-camp-search').value);
+}
+
+function prdRfbClearAll() {
+  _prdRfbSelectedIds = [];
+  prdRfbRenderProductList(document.getElementById('prd-rfb-camp-search').value);
+}
+
+// ── RoF + Type selection ──────────────────────────────────────────────────────
+function prdRfbPickRoF(v) {
+  _prdRfbRoF = v;
+  document.getElementById('prd-rfb-rof-rule').classList.toggle('selected', v === 'rule');
+  document.getElementById('prd-rfb-rof-flag').classList.toggle('selected', v === 'flag');
+  // Default type for each
+  _prdRfbType = 'performance';
+}
+
+function prdRfbRenderTypeStep() {
+  var label = document.getElementById('prd-rfb-type-label');
+  var grid  = document.getElementById('prd-rfb-type-grid');
+  label.textContent = _prdRfbRoF === 'rule' ? 'Rule type' : 'Flag type';
+  var cards = PRD_RFB_TYPE_FOR_ROF[_prdRfbRoF] || PRD_RFB_TYPE_FOR_ROF.rule;
+  grid.innerHTML = cards.map(function(t) {
+    var sel = _prdRfbType === t.v;
+    return '<div class="flow-cat-card' + (sel?' selected':'') + '" onclick="prdRfbPickType(this,\'' + t.v + '\')">' +
+      '<div class="flow-cat-icon"><span class="material-symbols-outlined" style="font-size:26px;vertical-align:middle">' + t.icon + '</span></div>' +
+      '<h5>' + t.label + '</h5><p>' + t.desc + '</p></div>';
+  }).join('');
+}
+
+function prdRfbPickType(el, v) {
+  _prdRfbType = v;
+  document.querySelectorAll('#prd-rfb-type-grid .flow-cat-card').forEach(function(c){ c.classList.remove('selected'); });
+  el.classList.add('selected');
+  prdRfbUpdateActionTypeOptions();
+}
+
+// ── Step 4 dynamic adjustments ────────────────────────────────────────────────
+var PRD_RFB_ACTION_OPTIONS = {
+  feed_quality: [{v:'pause', l:'Pause product'}],
+  performance: [
+    {v:'pause', l:'Pause product'},
+    {v:'enable', l:'Enable product'},
+    {v:'increase_bid', l:'Increase bid by'},
+    {v:'decrease_bid', l:'Decrease bid by'}
+  ],
+  lifecycle: [{v:'pause', l:'Pause product'}, {v:'enable', l:'Enable product'}],
+  stock: [{v:'pause', l:'Pause product'}]
+};
+
+function prdRfbUpdateActionTypeOptions() {
+  var sel  = document.getElementById('prd-rfb-action-type');
+  var mag  = document.getElementById('prd-rfb-action-mag');
+  var pct  = document.getElementById('prd-rfb-pct-label');
+  if (!sel) return;
+  var opts = PRD_RFB_ACTION_OPTIONS[_prdRfbType] || PRD_RFB_ACTION_OPTIONS.performance;
+  sel.innerHTML = opts.map(function(o){ return '<option value="' + o.v + '">' + o.l + '</option>'; }).join('');
+  if (_prdRfbSavedActionType) {
+    for (var i=0;i<sel.options.length;i++) { if (sel.options[i].value===_prdRfbSavedActionType) { sel.selectedIndex=i; break; } }
+  }
+  // Show magnitude for bid adjustments
+  var showMag = (sel.value === 'increase_bid' || sel.value === 'decrease_bid');
+  mag.style.display = showMag ? '' : 'none';
+  pct.style.display = showMag ? '' : 'none';
+
+  // Listen for changes
+  sel.onchange = function() {
+    var show = (sel.value === 'increase_bid' || sel.value === 'decrease_bid');
+    mag.style.display = show ? '' : 'none';
+    pct.style.display = show ? '' : 'none';
+  };
+}
+
+function prdRfbShowStep4ForRoF() {
+  var actionSec    = document.getElementById('prd-rfb-action-section');
+  var ruleSettings = document.getElementById('prd-rfb-rule-settings');
+  var warningsSec  = document.getElementById('prd-rfb-warnings-section');
+  if (_prdRfbRoF === 'flag') {
+    actionSec.style.display    = 'none';
+    ruleSettings.style.display = 'none';
+    if (warningsSec) warningsSec.style.display = 'none';
+  } else {
+    actionSec.style.display    = '';
+    ruleSettings.style.display = '';
+    if (warningsSec) warningsSec.style.display = '';
+    prdRfbUpdateActionTypeOptions();
+  }
+}
+
+function prdRfbAutoName() {
+  var nameField = document.getElementById('prd-rfb-name-field');
+  if (nameField.value.trim()) return; // don't overwrite user's choice
+  var typeLabels = {feed_quality:'Feed Quality',performance:'Performance',lifecycle:'Lifecycle',stock:'Stock'};
+  var metric1 = document.getElementById('prd-rfb-cond1-metric').options[document.getElementById('prd-rfb-cond1-metric').selectedIndex].text;
+  var action  = '';
+  if (_prdRfbRoF === 'rule') {
+    var at = document.getElementById('prd-rfb-action-type');
+    action = at ? at.options[at.selectedIndex].text : '';
+    action = action.replace(' by','').replace(' target','');
+  }
+  if (_prdRfbRoF === 'rule') {
+    nameField.value = action + ' — ' + metric1;
+  } else {
+    nameField.value = 'Flag: ' + metric1 + ' (' + (typeLabels[_prdRfbType] || _prdRfbType) + ')';
+  }
+}
+
+// ── Condition 2 toggle ────────────────────────────────────────────────────────
+function prdRfbToggleCond2() {
+  _prdRfbCond2Open = !_prdRfbCond2Open;
+  var el = document.getElementById('prd-rfb-cond-2');
+  var btn = document.getElementById('prd-rfb-add-cond-btn');
+  el.style.display = _prdRfbCond2Open ? 'block' : 'none';
+  btn.textContent = _prdRfbCond2Open ? '− Remove second condition' : '+ Add second condition (optional)';
+}
+
+// ── Step navigation ───────────────────────────────────────────────────────────
+function prdRfbNextStep() {
+  if (!prdRfbValidateStep(_prdRfbStep)) return;
+  if (_prdRfbStep < 5) {
+    _prdRfbStep++;
+    prdRfbRenderStep();
+  } else {
+    prdRfbSave();
+  }
+}
+
+function prdRfbPrevStep() {
+  if (_prdRfbStep > 1) { _prdRfbStep--; prdRfbRenderStep(); }
+}
+
+function prdRfbValidateStep(step) {
+  if (step === 1) {
+    // Empty selection = "All products" — valid.
+  }
+  if (step === 5) {
+    var name = document.getElementById('prd-rfb-name-field').value.trim();
+    if (!name) {
+      document.getElementById('prd-rfb-save-error').textContent = 'Please enter a name for this rule.';
+      document.getElementById('prd-rfb-save-error').style.display = 'block';
+      return false;
+    }
+    document.getElementById('prd-rfb-save-error').style.display = 'none';
+  }
+  return true;
+}
+
+
+// ── Sidebar: update "your choices" panel ──────────────────────────────────────
+function prdRfbUpdateSidebar() {
+  var PRD_RFB_TYPE_LABELS = {feed_quality:'Feed Quality', performance:'Performance', lifecycle:'Lifecycle', stock:'Stock'};
+
+  function setVal(id, text, done) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'flow-sidebar-value' + (done ? '' : ' pending');
+  }
+
+  // Step 1 — products
+  if (_prdRfbStep > 1 || _prdRfbEditId || _prdRfbHasPreload) {
+    var pLabel = _prdRfbSelectedIds.length === 0
+      ? 'All products'
+      : (_prdRfbSelectedIds.length === 1 ? '1 product' : _prdRfbSelectedIds.length + ' products');
+    setVal('prd-sb-val-1', pLabel, true);
+  }
+
+  // Step 2 — rule or flag
+  if (_prdRfbStep > 2 || _prdRfbEditId || _prdRfbHasPreload) {
+    setVal('prd-sb-val-2', _prdRfbRoF === 'rule' ? 'Rule' : 'Flag', true);
+  }
+
+  // Step 3 — type
+  if (_prdRfbStep > 3 || _prdRfbEditId || _prdRfbHasPreload) {
+    var typeLabel = PRD_RFB_TYPE_LABELS[_prdRfbType] || _prdRfbType;
+    setVal('prd-sb-val-3', typeLabel, true);
+  }
+
+  // Step 4 — conditions + action + cooldown
+  if (_prdRfbStep > 4 || (_prdRfbStep === 4) || _prdRfbEditId || _prdRfbHasPreload) {
+    var OP_SYMBOLS = {gt:'>',lt:'<',gte:'≥',lte:'≤',eq:'='};
+    var REF_LABELS = {x_target:'× target', pct:'%', absolute:''};
+
+    function fmtCond(mEl, oEl, vEl, rEl) {
+      if (!mEl) return '—';
+      var metric = mEl.options[mEl.selectedIndex].text;
+      var op     = OP_SYMBOLS[oEl ? oEl.value : ''] || (oEl ? oEl.value : '');
+      var val    = vEl ? vEl.value.trim() : '';
+      var ref    = REF_LABELS[rEl ? rEl.value : ''] !== undefined ? REF_LABELS[rEl.value] : '';
+      return metric + ' ' + op + ' ' + val + (ref ? ref : '');
+    }
+
+    function fmtLine(prefix, text, el, extraClass) {
+      if (!el) return;
+      el.innerHTML = '<span style="display:inline-block;width:18px;color:#202124;font-size:10px;flex-shrink:0;">' + prefix + '</span>' + text;
+      el.className = 'flow-sidebar-value sb-line' + (extraClass ? ' ' + extraClass : '');
+      el.style.display = text ? '' : 'none';
+    }
+
+    // C1
+    var c1 = fmtCond(
+      document.getElementById('prd-rfb-cond1-metric'),
+      document.getElementById('prd-rfb-cond1-op'),
+      document.getElementById('prd-rfb-cond1-val'),
+      document.getElementById('prd-rfb-cond1-ref')
+    );
+    fmtLine('C1', c1, document.getElementById('prd-sb-val-4a'));
+
+    // C2
+    var el4b = document.getElementById('prd-sb-val-4b');
+    if (_prdRfbCond2Open) {
+      var c2 = fmtCond(
+        document.getElementById('prd-rfb-cond2-metric'),
+        document.getElementById('prd-rfb-cond2-op'),
+        document.getElementById('prd-rfb-cond2-val'),
+        document.getElementById('prd-rfb-cond2-ref')
+      );
+      fmtLine('C2', c2, el4b);
+    } else if (el4b) { el4b.style.display = 'none'; }
+
+    // Action
+    var el4c = document.getElementById('prd-sb-val-4c');
+    if (_prdRfbRoF === 'rule') {
+      var atEl  = document.getElementById('prd-rfb-action-type');
+      var aStr  = atEl ? atEl.options[atEl.selectedIndex].text : 'Pause product';
+      fmtLine('→', aStr, el4c, 'sb-action-val');
+    } else if (el4c) { el4c.style.display = 'none'; }
+
+    // Cooldown
+    var el4d = document.getElementById('prd-sb-val-4d');
+    if (_prdRfbRoF === 'rule') {
+      var cdEl = document.getElementById('prd-rfb-cooldown');
+      fmtLine('⏱', cdEl ? cdEl.value + 'd cooldown' : '', el4d);
+    } else if (el4d) { el4d.style.display = 'none'; }
+  }
+
+  // Step 5 — name
+  if (_prdRfbStep === 5 || _prdRfbEditId || _prdRfbHasPreload) {
+    var nameEl = document.getElementById('prd-rfb-name-field');
+    var nameVal = nameEl && nameEl.value.trim() ? nameEl.value.trim() : 'In progress…';
+    setVal('prd-sb-val-5', nameVal, nameEl && nameEl.value.trim().length > 0);
+  }
+
+  // Highlight the current step row
+  for (var i = 1; i <= 5; i++) {
+    var row = document.getElementById('prd-sb-row-' + i);
+    if (row) row.classList.toggle('active', i === _prdRfbStep);
+  }
+}
+
+function prdRfbClickUseTemplate() {
+  if (typeof prdRfUseTemplate === 'function' && _prdRfbEditId) {
+    prdRfUseTemplate(_prdRfbEditId);
+  }
+}
+
+function prdRfbRenderStep() {
+  // Title / subtitle
+  document.getElementById('prd-rfb-title').textContent    = _prdRfbIsTemplate ? 'Edit template' : (_prdRfbEditId ? 'Edit rule or flag' : PRD_RFB_STEP_TITLES[_prdRfbStep]);
+  document.getElementById('prd-rfb-subtitle').textContent = PRD_RFB_STEP_SUBS[_prdRfbStep];
+  var editLbl = document.getElementById('prd-rfb-editing-label');
+  if (editLbl) {
+    var nameEl = document.getElementById('prd-rfb-name-field');
+    var editName = nameEl && nameEl.value.trim() ? nameEl.value.trim() : '';
+    if (_prdRfbIsTemplate && editName) { editLbl.textContent = 'Template: ' + editName; editLbl.style.display = ''; }
+    else if (_prdRfbEditId && editName) { editLbl.textContent = 'Editing: ' + editName; editLbl.style.display = ''; }
+    else { editLbl.style.display = 'none'; }
+  }
+  document.getElementById('prd-rfb-step-ind').textContent = 'Step ' + _prdRfbStep + ' of 5';
+
+  // Back / next buttons
+  document.getElementById('prd-rfb-btn-back').style.visibility = _prdRfbStep === 1 ? 'hidden' : 'visible';
+  document.getElementById('prd-rfb-btn-next').textContent = _prdRfbStep === 5 ? (_prdRfbIsTemplate ? '✓ Save template' : '✓ Save') : 'Next →';
+  var useTemplateBtn = document.getElementById('prd-rfb-btn-use-template');
+  if (useTemplateBtn) useTemplateBtn.style.display = _prdRfbIsTemplate ? '' : 'none';
+
+  // Progress circles
+  for (var i = 1; i <= 5; i++) {
+    var prog = document.getElementById('prd-rfb-prog-' + i);
+    prog.classList.remove('active', 'done');
+    if (i < _prdRfbStep) prog.classList.add('done');
+    else if (i === _prdRfbStep) prog.classList.add('active');
+    if (i < 5) {
+      var pl = document.getElementById('prd-rfb-pline-' + i);
+      if (pl) pl.classList.toggle('done', i < _prdRfbStep);
+    }
+  }
+
+  // Step content — show/hide
+  for (var j = 1; j <= 5; j++) {
+    var sc = document.getElementById('prd-rfb-sc-' + j);
+    if (sc) sc.style.display = j === _prdRfbStep ? 'block' : 'none';
+  }
+
+  // Step-specific setup
+  if (_prdRfbStep === 2) {
+    document.getElementById('prd-rfb-rof-rule').classList.toggle('selected', _prdRfbRoF === 'rule');
+    document.getElementById('prd-rfb-rof-flag').classList.toggle('selected', _prdRfbRoF === 'flag');
+  }
+  if (_prdRfbStep === 3) {
+    prdRfbRenderTypeStep();
+  }
+  if (_prdRfbStep === 4) {
+    prdRfbShowStep4ForRoF();
+  }
+  if (_prdRfbStep === 5) {
+    prdRfbAutoName();
+    prdRfbAutoRisk();
+    prdRfbBuildSummary();
+  }
+  prdRfbUpdateSidebar();
+}
+
+function prdRfbAutoRisk() {
+  // Skip auto-risk when editing — preserve the saved risk level
+  if (_prdRfbEditId) return;
+  var riskSel = document.getElementById('prd-rfb-risk');
+  if (!riskSel) return;
+  var risk = 'low';
+  if (_prdRfbRoF === 'flag') risk = 'low';
+  else if (_prdRfbType === 'stock') risk = 'high';
+  else if (_prdRfbType === 'feed_quality') risk = 'medium';
+  else if (_prdRfbType === 'performance') risk = 'medium';
+  else if (_prdRfbType === 'lifecycle') risk = 'medium';
+  riskSel.value = risk;
+}
+
+// ── Summary ───────────────────────────────────────────────────────────────────
+function prdRfbBuildSummary() {
+  var box = document.getElementById('prd-rfb-summary-box');
+
+  var productNames = _prdRfbSelectedIds.length === 0 ? 'All products' :
+    _prdRfbSelectedIds.map(function(id) {
+      var p = _prdRfbAllProducts.filter(function(x){ return String(x.id)===id; })[0];
+      return p ? (p.name || p.title || p.id) : id;
+    }).join(', ');
+
+  var typeLabels = {feed_quality:'Feed Quality',performance:'Performance',lifecycle:'Lifecycle',stock:'Stock'};
+  var typeLabel = typeLabels[_prdRfbType] || _prdRfbType;
+  typeLabel = (_prdRfbRoF === 'rule' ? typeLabel + ' rule' : typeLabel + ' flag');
+
+  var m1Sel = document.getElementById('prd-rfb-cond1-metric');
+  var m1    = m1Sel.options[m1Sel.selectedIndex].text;
+  var o1Sel = document.getElementById('prd-rfb-cond1-op');
+  var o1    = o1Sel.options[o1Sel.selectedIndex].text;
+  var v1    = document.getElementById('prd-rfb-cond1-val').value;
+  var r1Sel = document.getElementById('prd-rfb-cond1-ref');
+  var r1    = r1Sel.options[r1Sel.selectedIndex].text;
+  var cond1Str = m1 + ' ' + o1 + ' ' + v1 + (r1 !== 'absolute' ? ' ' + r1 : '');
+
+  var cond2Str = '';
+  if (_prdRfbCond2Open) {
+    var m2Sel = document.getElementById('prd-rfb-cond2-metric');
+    var m2    = m2Sel.options[m2Sel.selectedIndex].text;
+    var o2Sel = document.getElementById('prd-rfb-cond2-op');
+    var o2    = o2Sel.options[o2Sel.selectedIndex].text;
+    var v2    = document.getElementById('prd-rfb-cond2-val').value;
+    var r2Sel = document.getElementById('prd-rfb-cond2-ref');
+    var r2    = r2Sel.options[r2Sel.selectedIndex].text;
+    cond2Str  = m2 + ' ' + o2 + ' ' + v2 + (r2 !== 'absolute' ? ' ' + r2 : '');
+  }
+
+  var actionStr = '—';
+  var cooldownStr = '—';
+  var riskStr = '—';
+  if (_prdRfbRoF === 'rule') {
+    var statusSel = document.getElementById('prd-rfb-action-type');
+    actionStr = statusSel ? statusSel.options[statusSel.selectedIndex].text : 'Pause product';
+    var magEl = document.getElementById('prd-rfb-action-mag');
+    if (magEl && magEl.style.display !== 'none' && magEl.value) actionStr += ' ' + magEl.value + '%';
+    cooldownStr = document.getElementById('prd-rfb-cooldown').value + ' days';
+    var riskSel = document.getElementById('prd-rfb-risk');
+    riskStr = riskSel.options[riskSel.selectedIndex].text || riskSel.value;
+    riskStr = riskStr.charAt(0).toUpperCase() + riskStr.slice(1);
+  }
+
+  var line = function(icon, label, value) {
+    return '<div class="flow-summary-line">' +
+      '<span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle;margin-right:5px">' + icon + '</span>' +
+      '<strong>' + label + ':</strong>&nbsp;' + prdRfbEsc(value) + '</div>';
+  };
+
+  var html = '<h5>' + (_prdRfbRoF === 'rule' ? 'Rule' : 'Flag') + ' summary</h5>' +
+    line('push_pin',  'Products',     productNames) +
+    line('bolt',      'Type',         typeLabel) +
+    line('list_alt',  'Condition 1',  cond1Str);
+  if (cond2Str) html += line('list_alt', 'Condition 2', cond2Str);
+  if (_prdRfbRoF === 'rule') {
+    html += line('ads_click', 'Action',   actionStr) +
+            line('shield',    'Guardrail', 'Capped by Client Settings') +
+            line('lock',      'Confirmation', 'Required before execution') +
+            line('timer',     'Cooldown', cooldownStr) +
+            line('bar_chart', 'Risk',     riskStr);
+  }
+
+  box.innerHTML = html;
+}
+
+// ── Save ──────────────────────────────────────────────────────────────────────
+function prdRfbSave() {
+  var btnNext = document.getElementById('prd-rfb-btn-next');
+  btnNext.disabled = true;
+  btnNext.textContent = 'Saving…';
+
+  // Build conditions array
+  var m1Sel = document.getElementById('prd-rfb-cond1-metric');
+  var o1Sel = document.getElementById('prd-rfb-cond1-op');
+  var r1Sel = document.getElementById('prd-rfb-cond1-ref');
+  var conds = [{
+    metric: m1Sel.value,
+    op:     o1Sel.value,
+    value:  document.getElementById('prd-rfb-cond1-val').value,
+    ref:    r1Sel.value
+  }];
+  if (_prdRfbCond2Open) {
+    var m2Sel = document.getElementById('prd-rfb-cond2-metric');
+    var o2Sel = document.getElementById('prd-rfb-cond2-op');
+    var r2Sel = document.getElementById('prd-rfb-cond2-ref');
+    conds.push({
+      metric: m2Sel.value,
+      op:     o2Sel.value,
+      value:  document.getElementById('prd-rfb-cond2-val').value,
+      ref:    r2Sel.value
+    });
+  }
+
+  // Entity scope
+  var entityScope;
+  if (_prdRfbSelectedIds.length === 0) {
+    entityScope = {scope: 'all'};
+  } else {
+    entityScope = {scope: 'specific', products: _prdRfbSelectedIds};
+  }
+
+  // Action
+  var actionType = null, actionMag = null;
+  if (_prdRfbRoF === 'rule') {
+    var atSel = document.getElementById('prd-rfb-action-type');
+    actionType = atSel.value;
+    if (actionType === 'increase_bid' || actionType === 'decrease_bid') {
+      actionMag = parseFloat(document.getElementById('prd-rfb-action-mag').value) || null;
+    }
+  }
+
+  // Risk / cooldown
+  var riskLevel   = null;
+  var cooldownDays = 7;
+  if (_prdRfbRoF === 'rule') {
+    var riskSel = document.getElementById('prd-rfb-risk');
+    riskLevel   = riskSel.value;
+    cooldownDays = parseInt(document.getElementById('prd-rfb-cooldown').value, 10) || 7;
+  }
+
+  var payload = {
+    name:             document.getElementById('prd-rfb-name-field').value.trim(),
+    rule_or_flag:     _prdRfbRoF,
+    type:             _prdRfbType,
+    entity_scope:     entityScope,
+    conditions:       conds,
+    action_type:      actionType,
+    action_magnitude: actionMag,
+    cooldown_days:    cooldownDays,
+    risk_level:       riskLevel,
+    entity_type:      'product',
+    enabled:          true,
+    is_template:      _prdRfbIsTemplate
+  };
+
+  var url    = _prdRfbEditId ? '/shopping/product_rules/' + _prdRfbEditId : '/shopping/product_rules';
+  var method = _prdRfbEditId ? 'PUT' : 'POST';
+
+  fetch(url, {
+    method:  method,
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken()},
+    body:    JSON.stringify(payload)
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    btnNext.disabled = false;
+    btnNext.textContent = _prdRfbIsTemplate ? '✓ Save template' : '✓ Save';
+    if (data.success) {
+      prdCloseRulesFlow();
+      if (typeof prdRfLoadData === 'function') prdRfLoadData();
+      prdRfbShowToast((_prdRfbEditId ? 'Updated' : 'Created') + ' successfully.', 'success');
+    } else {
+      var errEl = document.getElementById('prd-rfb-save-error');
+      errEl.textContent = data.error || 'Save failed. Please try again.';
+      errEl.style.display = 'block';
+    }
+  })
+  .catch(function(err) {
+    btnNext.disabled = false;
+    btnNext.textContent = _prdRfbIsTemplate ? '✓ Save template' : '✓ Save';
+    var errEl = document.getElementById('prd-rfb-save-error');
+    errEl.textContent = 'Network error. Please try again.';
+    errEl.style.display = 'block';
+  });
+}
+
+// ── Toast (shared with tab if not already defined) ────────────────
+if (typeof prdRfbShowToast === 'undefined') {
+  function prdRfbShowToast(msg, type) {
+    if (typeof prdRfShowToast === 'function') { prdRfShowToast(msg, type); return; }
+    var t = document.createElement('div');
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 18px;border-radius:6px;font-size:13px;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.15)';
+    t.style.background = type === 'success' ? '#137333' : type === 'warning' ? '#b45309' : '#dc3545';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 3500);
+  }
+}
+
+// ── Utility ───────────────────────────────────────────────────────────────────
+function prdRfbEsc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>

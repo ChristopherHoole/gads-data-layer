@@ -6,6 +6,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/table-styles.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rules.css') }}">
 <style>
   :root {
     --border: #e5e9f0;
@@ -925,10 +926,10 @@
     </div>
     <!-- End Feed Quality Tab -->
 
-    <!-- RULES TAB -->
-    <div class="tab-pane fade {% if active_tab == 'rules' %}show active{% endif %}" 
+    <!-- RULES TAB (Chat 111: migrated from cards to table) -->
+    <div class="tab-pane fade {% if active_tab == 'rules' %}show active{% endif %}"
          id="rules-tab" role="tabpanel">
-      {% include 'components/shopping_rules_tab.html' %}
+      {% include 'components/shopping_campaign_rules_flow_builder.html' %}
     </div>
 
     <!-- RECOMMENDATIONS TAB -->

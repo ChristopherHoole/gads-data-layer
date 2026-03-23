@@ -1,0 +1,1865 @@
+{#
+  shopping_campaign_rules_flow_builder.html — Shopping campaign rules & flags
+  COMBINED component: sub-tabs (Rules | Flags | Templates) + 5-step flow builder modal.
+  Data loaded via AJAX from GET /shopping/campaign_rules.
+  All icons: Material Symbols Outlined.
+  Bootstrap 5 only. Vanilla JS only. No jQuery.
+  Defines: shCamOpenRulesFlow(existingRow), shCamCloseRulesFlow(), loadShoppingCampaignRules()
+  On save: POST /shopping/campaign_rules -> success -> refresh rules table + toast.
+#}
+
+<!-- ════════════════════════════════════════════════════════════
+     SHOPPING CAMPAIGN RULES & FLAGS TAB PANE
+═══════════════════════════════════════════════════════════════ -->
+<div id="shopping-campaign-rules-tab">
+<div class="py-3" id="shCam-rules-flags-container">
+
+  <!-- ── Section Header ──────────────────────────────────────────── -->
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h4 class="mb-1 fw-semibold" style="font-size:16px;">Shopping campaign rules &amp; flags</h4>
+      <p class="text-muted mb-0" style="font-size:12px;line-height:1.5;">
+        Rules generate recommendations for action. Flags raise alerts only. Both require your confirmation before anything changes.
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-outline-secondary" onclick="shCamRfShowSubTab('templates')">
+        Use template
+      </button>
+      <button class="btn btn-sm btn-primary" onclick="shCamOpenRulesFlow()">
+        <span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle;">add</span>
+        Add rule or flag
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Sub-tabs ─────────────────────────────────────────────────── -->
+  <div class="rules-sub-tab-bar">
+    <div class="rules-sub-tabs">
+      <button class="rules-sub-tab active" id="shCam-rf-tab-rules" onclick="shCamRfShowSubTab('rules')">
+        Rules <span class="rules-sub-badge" id="shCam-rf-badge-rules">0</span>
+      </button>
+      <button class="rules-sub-tab" id="shCam-rf-tab-flags" onclick="shCamRfShowSubTab('flags')">
+        Flags <span class="rules-sub-badge" id="shCam-rf-badge-flags">0</span>
+      </button>
+      <button class="rules-sub-tab" id="shCam-rf-tab-templates" onclick="shCamRfShowSubTab('templates')">
+        Templates <span class="rules-sub-badge" id="shCam-rf-badge-templates">0</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── RULES SUB-PANE ───────────────────────────────────────────── -->
+  <div id="shCam-rf-pane-rules">
+    <div class="d-flex gap-2 mb-3 align-items-center flex-wrap">
+      <div style="position:relative;width:200px;">
+        <span class="material-symbols-outlined" style="position:absolute;left:7px;top:50%;transform:translateY(-50%);font-size:14px;color:#5f6368;pointer-events:none;line-height:1;">search</span>
+        <input class="form-control form-control-sm" id="shCam-rf-rules-search" type="text"
+               placeholder="Search rules..." style="padding-left:26px;"
+               oninput="shCamRfFilterRules()">
+      </div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-rf-filter="all" onclick="shCamRfSetRuleFilter(this,'rules')">All</button>
+        <button class="filter-tab" data-rf-filter="budget" onclick="shCamRfSetRuleFilter(this,'rules')">Budget</button>
+        <button class="filter-tab" data-rf-filter="bid" onclick="shCamRfSetRuleFilter(this,'rules')">Bid</button>
+        <button class="filter-tab" data-rf-filter="status" onclick="shCamRfSetRuleFilter(this,'rules')">Status</button>
+      </div>
+      <span class="ms-auto text-muted" style="font-size:12px;" id="shCam-rf-rules-info"></span>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="table table-sm mb-0" id="shCam-rf-rules-table">
+        <thead class="table-light">
+          <tr>
+            <th style="width:50px;">On/off</th>
+            <th class="rules-rule-name-col">Rule name</th>
+            <th>Campaigns</th>
+            <th class="rules-plain-english" style="min-width:280px;">Plain English</th>
+            <th>Rule/Flag</th>
+            <th>Rule type</th>
+            <th>Conditions</th>
+            <th>Action</th>
+            <th>Cooldown</th>
+            <th>Guardrail</th>
+            <th>Risk</th>
+            <th style="width:70px;"></th>
+          </tr>
+        </thead>
+        <tbody id="shCam-rf-rules-tbody">
+          <tr><td colspan="12" class="text-center text-muted py-4" style="font-size:13px;">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading rules…
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── FLAGS SUB-PANE ───────────────────────────────────────────── -->
+  <div id="shCam-rf-pane-flags" style="display:none;">
+    <div class="d-flex gap-2 mb-3 align-items-center flex-wrap">
+      <input class="form-control form-control-sm" id="shCam-rf-flags-search" type="text"
+             placeholder="Search flags..." style="width:200px;"
+             oninput="shCamRfFilterFlags()">
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-rf-filter="all" onclick="shCamRfSetRuleFilter(this,'flags')">All</button>
+        <button class="filter-tab" data-rf-filter="performance" onclick="shCamRfSetRuleFilter(this,'flags')">Performance</button>
+        <button class="filter-tab" data-rf-filter="anomaly" onclick="shCamRfSetRuleFilter(this,'flags')">Anomaly</button>
+        <button class="filter-tab" data-rf-filter="technical" onclick="shCamRfSetRuleFilter(this,'flags')">Technical</button>
+      </div>
+      <span class="ms-auto text-muted" style="font-size:12px;" id="shCam-rf-flags-info"></span>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="table table-sm mb-0" id="shCam-rf-flags-table">
+        <thead class="table-light">
+          <tr>
+            <th style="width:50px;">On/off</th>
+            <th>Flag name</th>
+            <th>Type</th>
+            <th>Direction</th>
+            <th>Campaigns</th>
+            <th class="rules-plain-english" style="min-width:280px;">Plain English</th>
+            <th>Condition</th>
+            <th>Window</th>
+            <th style="width:70px;"></th>
+          </tr>
+        </thead>
+        <tbody id="shCam-rf-flags-tbody">
+          <tr><td colspan="9" class="text-center text-muted py-4" style="font-size:13px;">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading flags…
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── TEMPLATES SUB-PANE ───────────────────────────────────────── -->
+  <div id="shCam-rf-pane-templates" style="display:none;">
+    <p class="text-muted mb-3" style="font-size:13px;">
+      Pick a template to pre-fill the rule builder. You only need to set the thresholds and select your campaigns.
+    </p>
+    <div class="table-wrapper">
+      <table class="table table-sm mb-0" id="shCam-rf-templates-table">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th>Rule/Flag</th>
+            <th>Type</th>
+            <th class="rules-plain-english" style="min-width:280px;">Plain English</th>
+            <th>Conditions</th>
+            <th>Action</th>
+            <th>Cooldown</th>
+            <th style="width:110px;"></th>
+          </tr>
+        </thead>
+        <tbody id="shCam-rf-templates-tbody">
+          <tr><td colspan="8" class="text-center text-muted py-4" style="font-size:13px;">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading templates…
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- end shCam-rules-flags-container -->
+</div><!-- end tab-pane -->
+
+<!-- ── Toast container ──────────────────────────────────────────── -->
+<div id="shCam-rules-toast-wrap"></div>
+
+
+<!-- ══ SHOPPING CAMPAIGN RULES FLOW BUILDER OVERLAY ═════════════════════════ -->
+<div id="shCam-rules-flow-overlay" role="dialog" aria-modal="true" aria-label="Rule builder">
+<div class="flow-panel">
+
+  <!-- Header -->
+  <div class="flow-overlay-header">
+    <div>
+      <h4 class="mb-0" id="shCam-rfb-title">Add rule or flag</h4>
+      <div class="flow-overlay-sub" id="shCam-rfb-subtitle">Step 1 of 5 — Select the campaigns this rule will apply to</div>
+    </div>
+    <button class="btn btn-sm btn-light border" onclick="shCamCloseRulesFlow()" title="Close">&#10005; Close</button>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="flow-progress-bar">
+    <div class="flow-prog-step" id="shCam-rfb-prog-1">
+      <div class="flow-prog-circle">1</div>
+      <span class="flow-prog-label">Campaigns</span>
+    </div>
+    <div class="flow-prog-line" id="shCam-rfb-pline-1"></div>
+    <div class="flow-prog-step" id="shCam-rfb-prog-2">
+      <div class="flow-prog-circle">2</div>
+      <span class="flow-prog-label">Rule or flag</span>
+    </div>
+    <div class="flow-prog-line" id="shCam-rfb-pline-2"></div>
+    <div class="flow-prog-step" id="shCam-rfb-prog-3">
+      <div class="flow-prog-circle">3</div>
+      <span class="flow-prog-label">Type</span>
+    </div>
+    <div class="flow-prog-line" id="shCam-rfb-pline-3"></div>
+    <div class="flow-prog-step" id="shCam-rfb-prog-4">
+      <div class="flow-prog-circle">4</div>
+      <span class="flow-prog-label">Conditions &amp; action</span>
+    </div>
+    <div class="flow-prog-line" id="shCam-rfb-pline-4"></div>
+    <div class="flow-prog-step" id="shCam-rfb-prog-5">
+      <div class="flow-prog-circle">5</div>
+      <span class="flow-prog-label">Summary</span>
+    </div>
+  </div>
+
+  <!-- Editing label — shown below progress bar in edit mode -->
+  <div id="shCam-rfb-editing-label" style="display:none;padding:8px 28px;font-size:13px;font-weight:600;color:#202124;border-bottom:1px solid #e0e0e0;background:#fafafa;"></div>
+
+  <!-- Body + Sidebar wrapper -->
+  <div class="flow-body-wrap">
+  <div class="flow-body">
+
+    <!-- ── Step 1: Campaigns ── -->
+    <div id="shCam-rfb-sc-1">
+      <div class="mb-4">
+        <div class="flow-section-label mb-2">Select the campaigns this rule applies to</div>
+        <div class="flow-camp-picker">
+          <input class="flow-camp-search" id="shCam-rfb-camp-search" type="text" placeholder="Search campaigns..."
+                 oninput="shCamRfbFilterCampaigns(this.value)" autocomplete="off">
+          <div style="display:flex;gap:8px;padding:6px 12px;border-bottom:1px solid #e0e0e0;background:#fafafa;">
+            <button class="btn btn-sm" type="button" onclick="shCamRfbSelectAll()">Select all</button>
+            <button class="btn btn-sm" type="button" onclick="shCamRfbClearAll()">Clear</button>
+          </div>
+          <div class="flow-camp-list" id="shCam-rfb-camp-list">
+            <!-- Populated by JS from _shCamRfbAllCampaigns -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Step 2: Rule or Flag ── -->
+    <div id="shCam-rfb-sc-2">
+      <div class="mb-4">
+        <div class="flow-section-label mb-3">What do you want to create?</div>
+        <div class="flow-choice-grid">
+          <div class="flow-choice-card" id="shCam-rfb-rof-rule" onclick="shCamRfbPickRoF('rule')">
+            <div class="flow-choice-icon">
+              <span class="material-symbols-outlined" style="font-size:28px;vertical-align:middle">bolt</span>
+            </div>
+            <h5>Rule</h5>
+            <p>The system evaluates conditions on a schedule and generates a recommendation for you to act on.<br>You confirm before anything changes in Google Ads.</p>
+          </div>
+          <div class="flow-choice-card" id="shCam-rfb-rof-flag" onclick="shCamRfbPickRoF('flag')">
+            <div class="flow-choice-icon">
+              <span class="material-symbols-outlined" style="font-size:28px;vertical-align:middle">flag</span>
+            </div>
+            <h5>Flag</h5>
+            <p>The system monitors for a condition and raises an alert in the dashboard.<br>No action is taken — flags are information only.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Step 3: Type ── -->
+    <div id="shCam-rfb-sc-3">
+      <div class="mb-4">
+        <div class="flow-section-label mb-3" id="shCam-rfb-type-label">Rule type</div>
+        <div class="flow-cat-grid" id="shCam-rfb-type-grid">
+          <!-- Populated by shCamRfbRenderTypeStep() -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Step 4: Conditions & Action ── -->
+    <div id="shCam-rfb-sc-4">
+
+      <div class="mb-4">
+        <div class="flow-section-label mb-2">Condition 1 (required)</div>
+        <div class="flow-cond-box">
+          <div class="flow-cond-row">
+            <select class="flow-cond-select" id="shCam-rfb-cond1-metric">
+              <option disabled>── ROAS ──</option>
+              <option value="roas_7d">ROAS (7d)</option>
+              <option value="roas_14d">ROAS (14d)</option>
+              <option value="roas_30d">ROAS (30d)</option>
+              <option disabled>── CPA ──</option>
+              <option value="cpa_7d">CPA (7d)</option>
+              <option value="cpa_14d">CPA (14d)</option>
+              <option value="cpa_30d">CPA (30d)</option>
+              <option disabled>── CTR ──</option>
+              <option value="ctr_7d">CTR (7d)</option>
+              <option value="ctr_14d">CTR (14d)</option>
+              <option value="ctr_30d">CTR (30d)</option>
+              <option disabled>── Conversions ──</option>
+              <option value="conversions_7d">Conversions (7d)</option>
+              <option value="conversions_14d">Conversions (14d)</option>
+              <option value="conversions_30d">Conversions (30d)</option>
+              <option disabled>── Cost ──</option>
+              <option value="cost_7d">Cost (7d)</option>
+              <option value="cost_14d">Cost (14d)</option>
+              <option value="cost_30d">Cost (30d)</option>
+              <option disabled>── Impressions ──</option>
+              <option value="impressions_7d">Impressions (7d)</option>
+              <option value="impressions_14d">Impressions (14d)</option>
+              <option value="impressions_30d">Impressions (30d)</option>
+              <option disabled>── Clicks ──</option>
+              <option value="clicks_7d">Clicks (7d)</option>
+              <option value="clicks_14d">Clicks (14d)</option>
+              <option value="clicks_30d">Clicks (30d)</option>
+              <option disabled>── Impression Share ──</option>
+              <option value="search_impression_share">Search IS</option>
+              <option value="impression_share_lost_rank">IS Lost to Rank</option>
+              <option disabled>── Other ──</option>
+              <option value="optimization_score">Optimization Score</option>
+              <option value="feed_error_count">Feed Errors</option>
+              <option value="out_of_stock_product_count">Out of Stock Products</option>
+            </select>
+            <select class="flow-cond-select" id="shCam-rfb-cond1-op">
+              <option value="gt">is greater than</option>
+              <option value="lt">is less than</option>
+              <option value="gte">is greater than or equal to</option>
+              <option value="eq">is equal to</option>
+              <option value="lte">is less than or equal to</option>
+              <option value="in">is in</option>
+            </select>
+            <input class="flow-cond-input" id="shCam-rfb-cond1-val" type="text" value="1.15">
+            <select class="flow-cond-select" id="shCam-rfb-cond1-ref">
+              <option value="absolute">absolute</option>
+              <option value="pct">%</option>
+              <option value="x_target">× target</option>
+            </select>
+          </div>
+          <button class="flow-add-cond-btn" type="button" id="shCam-rfb-add-cond-btn" onclick="shCamRfbToggleCond2()">+ Add second condition (optional)</button>
+          <div id="shCam-rfb-cond-2" class="flow-cond-2">
+            <div class="flow-section-label mt-2 mb-2">Condition 2 (optional)</div>
+            <div class="flow-cond-row">
+              <select class="flow-cond-select" id="shCam-rfb-cond2-metric">
+                <option disabled>── ROAS ──</option>
+                <option value="roas_7d">ROAS (7d)</option>
+                <option value="roas_14d">ROAS (14d)</option>
+                <option value="roas_30d">ROAS (30d)</option>
+                <option disabled>── CPA ──</option>
+                <option value="cpa_7d">CPA (7d)</option>
+                <option value="cpa_14d">CPA (14d)</option>
+                <option value="cpa_30d">CPA (30d)</option>
+                <option disabled>── CTR ──</option>
+                <option value="ctr_7d">CTR (7d)</option>
+                <option value="ctr_14d">CTR (14d)</option>
+                <option value="ctr_30d">CTR (30d)</option>
+                <option disabled>── Conversions ──</option>
+                <option value="conversions_7d">Conversions (7d)</option>
+                <option value="conversions_14d">Conversions (14d)</option>
+                <option value="conversions_30d">Conversions (30d)</option>
+                <option disabled>── Cost ──</option>
+                <option value="cost_7d">Cost (7d)</option>
+                <option value="cost_14d">Cost (14d)</option>
+                <option value="cost_30d">Cost (30d)</option>
+                <option disabled>── Impressions ──</option>
+                <option value="impressions_7d">Impressions (7d)</option>
+                <option value="impressions_14d">Impressions (14d)</option>
+                <option value="impressions_30d">Impressions (30d)</option>
+                <option disabled>── Clicks ──</option>
+                <option value="clicks_7d">Clicks (7d)</option>
+                <option value="clicks_14d">Clicks (14d)</option>
+                <option value="clicks_30d">Clicks (30d)</option>
+                <option disabled>── Impression Share ──</option>
+                <option value="search_impression_share">Search IS</option>
+                <option value="impression_share_lost_rank">IS Lost to Rank</option>
+                <option disabled>── Other ──</option>
+                <option value="optimization_score">Optimization Score</option>
+                <option value="feed_error_count">Feed Errors</option>
+                <option value="out_of_stock_product_count">Out of Stock Products</option>
+              </select>
+              <select class="flow-cond-select" id="shCam-rfb-cond2-op">
+                <option value="gte">is greater than or equal to</option>
+                <option value="gt">is greater than</option>
+                <option value="lt">is less than</option>
+                <option value="lte">is less than or equal to</option>
+                <option value="eq">is equal to</option>
+                <option value="in">is in</option>
+              </select>
+              <input class="flow-cond-input" id="shCam-rfb-cond2-val" type="text" value="30">
+              <select class="flow-cond-select" id="shCam-rfb-cond2-ref">
+                <option value="absolute">absolute</option>
+                <option value="pct">%</option>
+                <option value="x_target">× target</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action section (rules only — hidden for flags) -->
+      <div id="shCam-rfb-action-section">
+        <div class="flow-section-divider"><span>Action</span></div>
+        <div class="mb-4">
+          <div class="flow-section-label mb-2">What should happen when conditions are met?</div>
+          <div class="flow-action-box">
+            <div class="flow-action-row">
+              <select class="flow-cond-select" id="shCam-rfb-action-type">
+                <option value="increase_budget">Increase budget by</option>
+                <option value="decrease_budget">Decrease budget by</option>
+              </select>
+              <input class="flow-cond-input" id="shCam-rfb-action-mag" type="text" value="10" style="width:70px;">
+              <span id="shCam-rfb-pct-label" style="font-size:13px;color:#5f6368;">%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rule settings -->
+      <div id="shCam-rfb-rule-settings">
+        <div class="flow-section-label mb-2">Rule settings</div>
+        <div class="flow-cond-box">
+        <div class="flow-settings-grid">
+          <div class="flow-settings-field">
+            <label>Cooldown period</label>
+            <select id="shCam-rfb-cooldown">
+              <option value="7">7 days</option>
+              <option value="14">14 days</option>
+              <option value="30">30 days</option>
+            </select>
+          </div>
+          <div class="flow-settings-field">
+            <label>Risk level (auto-calculated)</label>
+            <select id="shCam-rfb-risk" disabled>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+        </div><!-- end flow-cond-box -->
+      </div>
+
+      <!-- Warnings — shown above footer buttons -->
+      <div id="shCam-rfb-warnings-section">
+        <div class="flow-guardrail-note mt-3">
+          <span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle">warning</span>
+          The system will cap this at the guardrail limit defined in Client Settings.<br>Even if you enter a higher value here, the guardrail takes precedence.
+        </div>
+        <div class="flow-human-note">
+          <span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle">lock</span>
+          All campaign-level actions require your confirmation before anything changes in Google Ads.<br>This rule generates a recommendation only.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Step 5: Summary & Save ── -->
+    <div id="shCam-rfb-sc-5">
+
+      <div class="mb-4">
+        <div class="flow-section-label mb-2">Rule name</div>
+        <input type="text" class="flow-name-field" id="shCam-rfb-name-field" placeholder="Give this rule a clear name">
+        <div class="flow-name-hint">Give this rule a clear name so it's easy to identify in the table</div>
+      </div>
+
+      <div class="mb-3">
+        <div class="flow-section-label mb-2">Review everything before saving</div>
+        <div class="flow-summary-box" id="shCam-rfb-summary-box">
+          <!-- Populated by shCamRfbBuildSummary() -->
+        </div>
+      </div>
+
+      <div id="shCam-rfb-save-error" class="flow-error-msg"></div>
+
+    </div>
+
+  </div><!-- end flow-body -->
+
+  <!-- Sidebar — your choices so far -->
+  <div class="flow-sidebar" id="shCam-rfb-sidebar">
+    <div class="flow-sidebar-title">Your choices</div>
+
+    <div class="flow-sidebar-row" id="shCam-sb-row-1">
+      <div class="flow-sidebar-step">Step 1</div>
+      <div class="flow-sidebar-label">Campaigns</div>
+      <div class="flow-sidebar-value pending" id="shCam-sb-val-1">—</div>
+    </div>
+    <div class="flow-sidebar-divider"></div>
+
+    <div class="flow-sidebar-row" id="shCam-sb-row-2">
+      <div class="flow-sidebar-step">Step 2</div>
+      <div class="flow-sidebar-label">Rule or flag</div>
+      <div class="flow-sidebar-value pending" id="shCam-sb-val-2">—</div>
+    </div>
+    <div class="flow-sidebar-divider"></div>
+
+    <div class="flow-sidebar-row" id="shCam-sb-row-3">
+      <div class="flow-sidebar-step">Step 3</div>
+      <div class="flow-sidebar-label">Type</div>
+      <div class="flow-sidebar-value pending" id="shCam-sb-val-3">—</div>
+    </div>
+    <div class="flow-sidebar-divider"></div>
+
+    <div class="flow-sidebar-row" id="shCam-sb-row-4">
+      <div class="flow-sidebar-step">Step 4</div>
+      <div class="flow-sidebar-label">Conditions &amp; action</div>
+      <div class="flow-sidebar-value pending" id="shCam-sb-val-4a">—</div>
+      <div class="flow-sidebar-value pending" id="shCam-sb-val-4b" style="display:none;"></div>
+      <div class="flow-sidebar-value pending sb-action-val" id="shCam-sb-val-4c" style="display:none;margin-top:4px;padding-top:4px;border-top:1px solid #e8e8e8;"></div>
+      <div class="flow-sidebar-value pending" id="shCam-sb-val-4d" style="display:none;"></div>
+    </div>
+    <div class="flow-sidebar-divider"></div>
+
+    <div class="flow-sidebar-row" id="shCam-sb-row-5">
+      <div class="flow-sidebar-step">Step 5</div>
+      <div class="flow-sidebar-label">Summary</div>
+      <div class="flow-sidebar-value pending" id="shCam-sb-val-5">—</div>
+    </div>
+
+  </div><!-- end flow-sidebar -->
+
+  </div><!-- end flow-body-wrap -->
+
+  <!-- Footer -->
+  <div class="flow-footer">
+    <button class="btn" id="shCam-rfb-btn-back" type="button" onclick="shCamRfbPrevStep()">&#8592; Back</button>
+    <div class="flow-step-indicator" id="shCam-rfb-step-ind">Step 1 of 5</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-outline-secondary" id="shCam-rfb-btn-use-template" type="button" style="display:none;font-size:13px;" onclick="shCamRfbClickUseTemplate()">Use template &#8594;</button>
+      <button class="btn btn-primary" id="shCam-rfb-btn-next" type="button" onclick="shCamRfbNextStep()">Next &#8594;</button>
+    </div>
+  </div>
+
+</div><!-- end flow-panel -->
+</div><!-- end shCam-rules-flow-overlay -->
+
+
+<script>
+// ── CSRF fallback — ensures getCSRFToken is available regardless of script load order
+if (typeof getCSRFToken === 'undefined') {
+  function getCSRFToken() {
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.content : '';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  Shopping Campaign Rules & Flags — Data + Rendering
+// ════════════════════════════════════════════════════════════════
+
+var _shCamRfData = [];          // all rows from API
+var _shCamRfRuleFilter = 'all'; // current rules filter
+var _shCamRfFlagFilter = 'all'; // current flags filter
+
+// ── Sub-tab switching ────────────────────────────────────────────
+function shCamRfShowSubTab(tab) {
+  ['rules','flags','templates'].forEach(function(t) {
+    document.getElementById('shCam-rf-tab-' + t).classList.toggle('active', t === tab);
+    var pane = document.getElementById('shCam-rf-pane-' + t);
+    if (pane) pane.style.display = t === tab ? '' : 'none';
+  });
+}
+
+// ── Filter tab ───────────────────────────────────────────────────
+function shCamRfSetRuleFilter(btn, context) {
+  btn.closest('.filter-tabs').querySelectorAll('.filter-tab').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  if (context === 'rules') {
+    _shCamRfRuleFilter = btn.dataset.rfFilter;
+    shCamRfRenderRules();
+  } else {
+    _shCamRfFlagFilter = btn.dataset.rfFilter;
+    shCamRfRenderFlags();
+  }
+}
+
+function shCamRfFilterRules() { shCamRfRenderRules(); }
+function shCamRfFilterFlags() { shCamRfRenderFlags(); }
+
+// ── Load data from API ───────────────────────────────────────────
+function shCamRfLoadData() {
+  fetch('/shopping/campaign_rules')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        _shCamRfData = d.data || [];
+        shCamRfRenderRules();
+        shCamRfRenderFlags();
+        shCamRfRenderTemplates();
+        shCamRfUpdateBadges();
+      } else {
+        shCamRfShowError(d.error || 'Failed to load.');
+      }
+    })
+    .catch(function(e) {
+      shCamRfShowError('Network error: ' + e);
+    });
+}
+
+// Expose as loadShoppingCampaignRules
+function loadShoppingCampaignRules() {
+  shCamRfLoadData();
+}
+
+function shCamRfShowError(msg) {
+  ['shCam-rf-rules-tbody','shCam-rf-flags-tbody'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      var cols = id === 'shCam-rf-rules-tbody' ? 12 : 9;
+      el.innerHTML = '<tr><td colspan="' + cols + '" class="text-center text-danger py-4" style="font-size:13px;">' + msg + '</td></tr>';
+    }
+  });
+}
+
+function shCamRfUpdateBadges() {
+  var rules = _shCamRfData.filter(function(r) { return r.rule_or_flag === 'rule' && r.enabled && !r.is_template; });
+  var flags = _shCamRfData.filter(function(r) { return r.rule_or_flag === 'flag' && r.enabled && !r.is_template; });
+  var templates = _shCamRfData.filter(function(r) { return r.is_template === true; });
+  document.getElementById('shCam-rf-badge-rules').textContent = rules.length;
+  document.getElementById('shCam-rf-badge-flags').textContent = flags.length;
+  var templatesBadge = document.getElementById('shCam-rf-badge-templates');
+  if (templatesBadge) templatesBadge.textContent = templates.length;
+  // Update main tab badge
+  var mainBadge = document.getElementById('shCam-rules-flags-badge');
+  if (mainBadge) mainBadge.textContent = _shCamRfData.filter(function(r) { return !r.is_template; }).length;
+}
+
+// ── Labels ──────────────────────────────────────────────────────
+var SHCAM_METRIC_LABELS = {
+  // ROAS
+  'roas_7d':'ROAS (7d)','roas_14d':'ROAS (14d)','roas_30d':'ROAS (30d)',
+  // CPA
+  'cpa_7d':'CPA (7d)','cpa_14d':'CPA (14d)','cpa_30d':'CPA (30d)',
+  // CTR
+  'ctr_7d':'CTR (7d)','ctr_14d':'CTR (14d)','ctr_30d':'CTR (30d)',
+  // Conversions
+  'conversions_7d':'Conversions (7d)','conversions_14d':'Conversions (14d)','conversions_30d':'Conversions (30d)',
+  // Cost
+  'cost_7d':'Cost (7d)','cost_14d':'Cost (14d)','cost_30d':'Cost (30d)',
+  // Impressions
+  'impressions_7d':'Impressions (7d)','impressions_14d':'Impressions (14d)','impressions_30d':'Impressions (30d)',
+  // Clicks
+  'clicks_7d':'Clicks (7d)','clicks_14d':'Clicks (14d)','clicks_30d':'Clicks (30d)',
+  // Impression Share
+  'search_impression_share':'Search IS','impression_share_lost_rank':'IS Lost to Rank',
+  // Other
+  'optimization_score':'Optimization Score','feed_error_count':'Feed Errors','out_of_stock_product_count':'Out of Stock Products'
+};
+
+var SHCAM_ACTION_LABELS = {
+  'increase_budget':'Increase budget',
+  'decrease_budget':'Decrease budget',
+  'increase_troas':'Increase tROAS target',
+  'decrease_troas':'Decrease tROAS target',
+  'increase_max_cpc':'Increase Max CPC cap',
+  'decrease_max_cpc':'Decrease Max CPC cap',
+  'pause':'Pause campaign',
+  'enable':'Enable campaign'
+};
+
+var SHCAM_OP_LABELS = {'>=':'\u2265','<=':'\u2264','>':'>','<':'<','=':'=','gte':'\u2265','lte':'\u2264','gt':'>','lt':'<','eq':'=','in':'in'};
+
+// ── Plain English generator ──────────────────────────────────────
+function shCamRfPlainEnglish(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+
+  if (row.rule_or_flag === 'flag') {
+    var c = conds[0];
+    if (!c) return row.name;
+    var metric = SHCAM_METRIC_LABELS[c.metric] || c.metric;
+    var op = SHCAM_OP_LABELS[c.operator] || SHCAM_OP_LABELS[c.op] || c.operator || c.op || '';
+    var _u1 = c.ref || c.unit || ''; var unitSuffix = (_u1 === 'percent' || _u1 === 'pct') ? '%' : (_u1 === 'x_target' ? '\u00d7 target' : '');
+    var dir = (c.operator === '>' || c.operator === '>=') ? 'risen above' : 'fallen below';
+    if (c.operator === '=') dir = 'equal to';
+    return 'Alert when ' + metric + ' has ' + dir + ' ' + c.value + unitSuffix;
+  }
+
+  var actionLabel = SHCAM_ACTION_LABELS[row.action_type] || (row.action_type || '');
+  var mag = row.action_magnitude ? ' by ' + row.action_magnitude + '%' : '';
+  var condParts = conds.map(function(c) {
+    var metric = SHCAM_METRIC_LABELS[c.metric] || c.metric;
+    var op = SHCAM_OP_LABELS[c.operator] || SHCAM_OP_LABELS[c.op] || c.operator || c.op || '';
+    var _u = c.ref || c.unit || ''; var unit = (_u === 'x_target') ? '\u00d7 target' : (_u === 'percent' || _u === 'pct') ? '%' : '';
+    return metric + ' ' + op + ' ' + c.value + unit;
+  });
+  return actionLabel + mag + (condParts.length ? ' when ' + condParts.join(' and ') : '');
+}
+
+function shCamRfGuardrail(row) {
+  var at = row.action_type || '';
+  if (at === 'pause' || at === 'enable') return '\u2014';
+  if (at.indexOf('increase') >= 0 || at.indexOf('decrease') >= 0) {
+    return 'Capped by Client Settings';
+  }
+  return '\u2014';
+}
+
+function shCamRfCondText(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  return conds.map(function(c) {
+    var metric = SHCAM_METRIC_LABELS[c.metric] || c.metric;
+    var op = SHCAM_OP_LABELS[c.operator] || SHCAM_OP_LABELS[c.op] || c.operator || c.op || '';
+    var _u = c.ref || c.unit || ''; var unit = (_u === 'x_target') ? '\u00d7 target' : (_u === 'percent' || _u === 'pct') ? '%' : '';
+    return '<strong>' + shCamRfEsc(metric) + '</strong> ' + op + ' ' + c.value + unit;
+  }).join('<br>');
+}
+
+function shCamRfActionCell(row) {
+  if (!row.action_type) return '\u2014';
+  var label = SHCAM_ACTION_LABELS[row.action_type] || row.action_type;
+  var mag = row.action_magnitude ? ' ' + row.action_magnitude + '%' : '';
+  var isPause = row.action_type === 'pause';
+  var isEnable = row.action_type === 'enable';
+  var isIncrease = row.action_type.indexOf('increase') >= 0;
+  var isDecrease = row.action_type.indexOf('decrease') >= 0;
+  var css = isPause ? 'action-pause' : (isEnable ? 'action-up' : (isIncrease ? 'action-up' : (isDecrease ? 'action-down' : '')));
+  var arrow = isPause
+    ? '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">pause_circle</span> '
+    : (isEnable
+      ? '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">play_circle</span> '
+      : (isIncrease
+        ? '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">trending_up</span> '
+        : (isDecrease
+          ? '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">trending_down</span> '
+          : '')));
+  return '<span class="' + css + '">' + arrow + label + mag + '</span>';
+}
+
+
+// ── Flag-specific Plain English ───────────────────────────────────────────────
+var SHCAM_FLAG_PE_MAP = {
+  'roas_7d':                       {pos: 'ROAS has risen above the threshold — check if this is sustainable', neg: 'ROAS has dropped below the threshold — review campaign performance'},
+  'roas_14d':                      {pos: 'ROAS (14d) has risen above the threshold', neg: 'ROAS (14d) has dropped below the threshold'},
+  'roas_30d':                      {pos: 'ROAS (30d) has risen above the threshold', neg: 'ROAS (30d) has dropped below the threshold'},
+  'cpa_7d':                        {pos: 'CPA has risen above the threshold — costs per acquisition increasing', neg: 'CPA has improved below the threshold'},
+  'cpa_14d':                       {pos: 'CPA (14d) has risen — review targeting and bids', neg: 'CPA (14d) has improved'},
+  'cpa_30d':                       {pos: 'CPA (30d) has risen — review targeting and bids', neg: 'CPA (30d) has improved'},
+  'ctr_7d':                        {pos: 'CTR has spiked — ad creative or feed quality may be improving', neg: 'CTR is trending down — review titles, images and feed quality'},
+  'ctr_14d':                       {pos: 'CTR (14d) has increased', neg: 'CTR (14d) has decreased'},
+  'ctr_30d':                       {pos: 'CTR (30d) has increased', neg: 'CTR (30d) has decreased'},
+  'conversions_7d':                {pos: 'Conversions have spiked — verify tracking is accurate', neg: 'Conversions have dropped — check creative, feed and landing pages'},
+  'cost_7d':                       {pos: 'Spend has risen above the threshold — review before it drains the budget', neg: 'Spend has dropped below the threshold'},
+  'impressions_7d':                {pos: 'Impression volume spike detected — check for unusual traffic', neg: 'Impression volume drop — campaigns may have stopped serving'},
+  'clicks_7d':                     {pos: 'Click volume spike detected — check for invalid clicks', neg: 'Click volume drop — campaigns may have stopped serving'},
+  'search_impression_share':       {eq: 'Search impression share is below target — review bids and budget'},
+  'impression_share_lost_rank':    {eq: 'Impression share lost to rank is above threshold — review bid competitiveness'},
+  'optimization_score':            {eq: 'Optimization score is below target — review Google recommendations'},
+  'feed_error_count':              {eq: 'Feed errors detected — check Merchant Center for product issues'},
+  'out_of_stock_product_count':    {eq: 'Out of stock products detected — review inventory levels'}
+};
+
+function shCamRfFlagPlainEnglish(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  var c = conds[0];
+  if (!c) return row.name;
+  var metric = c.metric || '';
+  var op = c.operator || c.op || '';
+  var entry = SHCAM_FLAG_PE_MAP[metric];
+  if (!entry) {
+    // fallback
+    var mLabel = SHCAM_METRIC_LABELS[metric] || metric;
+    var opLabel = SHCAM_OP_LABELS[op] || op;
+    var _u = c.ref || c.unit || ''; var unit = (_u === 'x_target') ? '\u00d7 target' : (_u === 'percent' || _u === 'pct') ? '%' : '';
+    return 'Alert when ' + mLabel + ' ' + opLabel + ' ' + c.value + unit;
+  }
+  if (entry.eq) return entry.eq;
+  var isPos = (op === '>' || op === '>=' || op === 'gt' || op === 'gte');
+  return isPos ? (entry.pos || entry.neg || row.name) : (entry.neg || entry.pos || row.name);
+}
+
+// ── Flag-specific Condition text ──────────────────────────────────────────────
+var SHCAM_FLAG_COND_LABELS = {
+  'roas_7d':                       {pos: 'ROAS increased', neg: 'ROAS declined'},
+  'roas_14d':                      {pos: 'ROAS (14d) increased', neg: 'ROAS (14d) declined'},
+  'roas_30d':                      {pos: 'ROAS (30d) increased', neg: 'ROAS (30d) declined'},
+  'cpa_7d':                        {pos: 'CPA increased',  neg: 'CPA declined'},
+  'cpa_14d':                       {pos: 'CPA (14d) increased', neg: 'CPA (14d) declined'},
+  'cpa_30d':                       {pos: 'CPA (30d) increased', neg: 'CPA (30d) declined'},
+  'ctr_7d':                        {pos: 'CTR increased',  neg: 'CTR declined'},
+  'ctr_14d':                       {pos: 'CTR (14d) increased', neg: 'CTR (14d) declined'},
+  'ctr_30d':                       {pos: 'CTR (30d) increased', neg: 'CTR (30d) declined'},
+  'conversions_7d':                {pos: 'Conversions increased', neg: 'Conversions declined'},
+  'cost_7d':                       {pos: 'Spend increased', neg: 'Spend declined'},
+  'impressions_7d':                {eq: 'Impressions'},
+  'clicks_7d':                     {eq: 'Clicks'},
+  'search_impression_share':       {eq: 'Search IS'},
+  'impression_share_lost_rank':    {eq: 'IS Lost to Rank'},
+  'optimization_score':            {eq: 'Optimization Score'},
+  'feed_error_count':              {eq: 'Feed Errors'},
+  'out_of_stock_product_count':    {eq: 'Out of Stock Products'}
+};
+
+var SHCAM_SYSTEM_METRICS = ['search_impression_share','impression_share_lost_rank',
+  'optimization_score','feed_error_count','out_of_stock_product_count'];
+
+function shCamRfFlagCondText(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  var c = conds[0];
+  if (!c) return '\u2014';
+  var metric = c.metric || '';
+  var isSystem = SHCAM_SYSTEM_METRICS.indexOf(metric) >= 0;
+  var rawOp = c.operator || c.op || '';
+  var isPos = (rawOp === '>' || rawOp === '>=' || rawOp === 'gt' || rawOp === 'gte');
+  var entry = SHCAM_FLAG_COND_LABELS[metric];
+  var label;
+  if (entry) {
+    if (entry.eq) label = entry.eq;
+    else label = isPos ? entry.pos : entry.neg;
+  } else {
+    label = SHCAM_METRIC_LABELS[metric] || metric;
+  }
+  var op = SHCAM_OP_LABELS[rawOp] || rawOp;
+  var _u = c.ref || c.unit || ''; var unit = (_u === 'percent' || _u === 'pct') ? '%' : (_u === 'x_target' ? '\u00d7 target' : '');
+  var sysTag = isSystem ? ' <span class="badge-system">system</span>' : '';
+  return '<strong>' + shCamRfEsc(label) + '</strong> ' + op + ' ' + shCamRfEsc(String(c.value)) + unit + sysTag;
+}
+
+function shCamRfDirectionCell(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  if (!conds.length) return '<span class="dir-neu">Either</span>';
+  var op = conds[0].operator || conds[0].op || '';
+  if (op === '>' || op === '>=' || op === 'gt' || op === 'gte') return '<span class="dir-pos">\u25b2 Positive</span>';
+  if (op === '<' || op === '<=' || op === 'lt' || op === 'lte') return '<span class="dir-neg">\u25bc Negative</span>';
+  return '<span class="dir-neu">Either</span>';
+}
+
+function shCamRfWindowCell(row) {
+  var conds = Array.isArray(row.conditions) ? row.conditions : [];
+  try { if (!conds.length && row.conditions) conds = JSON.parse(row.conditions); } catch(e){}
+  if (!conds.length) return '\u2014';
+  var m = (conds[0].metric || '');
+  if (m.includes('_vs_prev_pct') || m.includes('WoW') || m.includes('wow_pct')) return 'Trend';
+  if (m.includes('z_score') || m.includes('_z') || m.includes('_detected')) return 'Real-time';
+  if (m.includes('14d') || m.includes('_14d')) return '14 days';
+  if (m.includes('30d') || m.includes('_30d')) return '30 days';
+  if (m.includes('7d') || m.includes('_7d')) return '7 days';
+  return '1 day';
+}
+
+function shCamRfScopeLabel(row) {
+  var scope = row.entity_scope;
+  if (!scope) return 'All campaigns';
+  if (typeof scope === 'string') { try { scope = JSON.parse(scope); } catch(e){} }
+  if (scope && scope.scope === 'all') return 'All campaigns';
+  if (scope && scope.scope === 'specific' && Array.isArray(scope.campaigns)) {
+    return shCamRfEsc(scope.campaigns.join(', ')) || 'All campaigns';
+  }
+  return 'All campaigns';
+}
+
+function shCamRfEsc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Render Rules Table ───────────────────────────────────────────
+function shCamRfRenderRules() {
+  var search = (document.getElementById('shCam-rf-rules-search').value || '').toLowerCase();
+  var rows = _shCamRfData.filter(function(r) { return r.rule_or_flag === 'rule' && !r.is_template; });
+
+  if (_shCamRfRuleFilter !== 'all') {
+    rows = rows.filter(function(r) { return r.type === _shCamRfRuleFilter; });
+  }
+  if (search) {
+    rows = rows.filter(function(r) {
+      var pe = (r.plain_english || shCamRfPlainEnglish(r)).toLowerCase();
+      return shCamRfEsc(r.name).toLowerCase().includes(search) || pe.includes(search);
+    });
+  }
+
+  var tbody = document.getElementById('shCam-rf-rules-tbody');
+  if (!rows.length) {
+    var msg = _shCamRfData.filter(function(r){return r.rule_or_flag==='rule';}).length === 0
+      ? '<div class="alert alert-info mb-0" role="alert" style="font-size:13px;">No rules yet \u2014 click Add rule or flag to create your first one.</div>'
+      : '<tr><td colspan="12" class="text-center text-muted py-3" style="font-size:13px;">No rules match the current filter.</td></tr>';
+    tbody.innerHTML = msg.startsWith('<div') ? '<tr><td colspan="12">' + msg + '</td></tr>' : msg;
+    document.getElementById('shCam-rf-rules-info').textContent = '0 rules';
+    return;
+  }
+
+  // Group by type
+  var groups = {'budget':[],'bid':[],'status':[]};
+  rows.forEach(function(r) { (groups[r.type] || groups.budget).push(r); });
+
+  var html = '';
+  var groupLabels = {budget:'Budget',bid:'Bid',status:'Status'};
+  ['budget','bid','status'].forEach(function(gtype) {
+    var gRows = (groups[gtype] || []).slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
+    if (!gRows.length) return;
+    html += '<tr class="rules-group-row"><td colspan="12">' + groupLabels[gtype] + ' &nbsp;\u00b7&nbsp; ' + gRows.length + ' rules</td></tr>';
+    gRows.forEach(function(r) {
+      var toggleClass = r.enabled ? '' : 'text-muted';
+      var riskBadge = r.risk_level
+        ? '<span class="risk-dot risk-dot-' + shCamRfEsc(r.risk_level) + '">' + shCamRfEsc(r.risk_level.charAt(0).toUpperCase()+r.risk_level.slice(1)) + '</span>'
+        : '\u2014';
+      var guardrail = shCamRfGuardrail(r);
+      var isHumanConfirm = r.type === 'status' || r.action_type === 'pause' || r.action_type === 'enable';
+      var guardrailHtml = isHumanConfirm
+        ? '<span class="rules-human-confirm"><span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle;">warning</span> Human confirmation required</span>'
+        : '<span style="font-size:11px;color:#202124;">' + shCamRfEsc(guardrail) + '</span>';
+
+      html += '<tr data-rule-id="' + r.id + '" data-rule-type="' + shCamRfEsc(r.type) + '">'
+        + '<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"'
+        + (r.enabled ? ' checked' : '') + ' onchange="shCamRfToggle(' + r.id + ',this)"></div></td>'
+        + '<td class="rules-rule-name-col ' + toggleClass + '" style="font-weight:600;">' + shCamRfEsc(r.name) + '</td>'
+        + '<td class="' + toggleClass + '" style="font-size:12px;color:#5f6368;">' + shCamRfEsc(shCamRfScopeLabel(r)) + '</td>'
+        + '<td class="rules-plain-english">' + shCamRfEsc(r.plain_english || shCamRfPlainEnglish(r)) + '</td>'
+        + '<td><span class="badge badge-rof-' + shCamRfEsc(r.rule_or_flag) + '" style="font-size:11px;">' + shCamRfEsc((r.rule_or_flag||'rule').charAt(0).toUpperCase()+(r.rule_or_flag||'rule').slice(1)) + '</span></td>'
+        + '<td><span class="badge badge-type-' + shCamRfEsc(r.type) + '" style="font-size:11px;">' + shCamRfEsc(r.type.charAt(0).toUpperCase()+r.type.slice(1)) + '</span></td>'
+        + '<td style="font-size:12px;color:#202124;white-space:nowrap;">' + shCamRfCondText(r) + '</td>'
+        + '<td>' + shCamRfActionCell(r) + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;white-space:nowrap;">' + (r.cooldown_days ? r.cooldown_days + 'd' : '\u2014') + '</td>'
+        + '<td class="rules-guardrail-col">' + guardrailHtml + '</td>'
+        + '<td>' + riskBadge + '</td>'
+        + '<td><div class="d-flex gap-1">'
+        + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="shCamRfEditRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button>'
+        + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete" onclick="shCamRfDeleteRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button>'
+        + '<button class="btn-save-template" title="Save as template" onclick="shCamRfSaveAsTemplate(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button>'
+        + '</div></td>'
+        + '</tr>';
+    });
+  });
+
+  tbody.innerHTML = html;
+  var total = _shCamRfData.filter(function(r){return r.rule_or_flag==='rule';}).length;
+  var enabled = _shCamRfData.filter(function(r){return r.rule_or_flag==='rule'&&r.enabled;}).length;
+  document.getElementById('shCam-rf-rules-info').textContent = total + ' rules\u00a0\u00b7\u00a0' + enabled + ' enabled';
+}
+
+// ── Render Flags Table ───────────────────────────────────────────
+function shCamRfRenderFlags() {
+  var search = (document.getElementById('shCam-rf-flags-search').value || '').toLowerCase();
+  var rows = _shCamRfData.filter(function(r) { return r.rule_or_flag === 'flag' && !r.is_template; });
+
+  if (_shCamRfFlagFilter !== 'all') {
+    rows = rows.filter(function(r) { return r.type === _shCamRfFlagFilter; });
+  }
+  if (search) {
+    rows = rows.filter(function(r) {
+      var pe = shCamRfPlainEnglish(r).toLowerCase();
+      return shCamRfEsc(r.name).toLowerCase().includes(search) || pe.includes(search);
+    });
+  }
+
+  var tbody = document.getElementById('shCam-rf-flags-tbody');
+  if (!rows.length) {
+    var msg = _shCamRfData.filter(function(r){return r.rule_or_flag==='flag';}).length === 0
+      ? '<tr><td colspan="9"><div class="alert alert-info mb-0" style="font-size:13px;">No flags yet \u2014 click Add rule or flag to create your first one.</div></td></tr>'
+      : '<tr><td colspan="9" class="text-center text-muted py-3" style="font-size:13px;">No flags match the current filter.</td></tr>';
+    tbody.innerHTML = msg;
+    document.getElementById('shCam-rf-flags-info').textContent = '0 flags';
+    return;
+  }
+
+  var groups = {'performance':[],'anomaly':[],'technical':[]};
+  rows.forEach(function(r) { (groups[r.type] = groups[r.type] || []).push(r); });
+
+  var html = '';
+  var groupLabels = {performance:'Performance',anomaly:'Anomaly',technical:'Technical'};
+  ['performance','anomaly','technical'].forEach(function(gtype) {
+    var gRows = (groups[gtype] || []).slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
+    if (!gRows.length) return;
+    html += '<tr class="rules-group-row"><td colspan="9">' + groupLabels[gtype] + ' &nbsp;\u00b7&nbsp; ' + gRows.length + ' flags</td></tr>';
+    gRows.forEach(function(r) {
+      html += '<tr data-rule-id="' + r.id + '">'
+        + '<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"'
+        + (r.enabled ? ' checked' : '') + ' onchange="shCamRfToggle(' + r.id + ',this)"></div></td>'
+        + '<td style="font-weight:600;white-space:nowrap;">' + shCamRfEsc(r.name) + '</td>'
+        + '<td><span class="badge badge-type-' + shCamRfEsc(r.type) + '" style="font-size:11px;">' + shCamRfEsc(r.type.charAt(0).toUpperCase()+r.type.slice(1)) + '</span></td>'
+        + '<td>' + shCamRfDirectionCell(r) + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;">' + shCamRfEsc(shCamRfScopeLabel(r)) + '</td>'
+        + '<td class="rules-plain-english">' + shCamRfFlagPlainEnglish(r) + '</td>'
+        + '<td style="font-size:12px;">' + shCamRfFlagCondText(r) + '</td>'
+        + '<td style="font-size:12px;">' + shCamRfEsc(shCamRfWindowCell(r)) + '</td>'
+        + '<td><div class="d-flex gap-1">'
+        + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="shCamRfEditRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button>'
+        + '<button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete" onclick="shCamRfDeleteRule(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button>'
+        + '<button class="btn-save-template" title="Save as template" onclick="shCamRfSaveAsTemplate(' + r.id + ')"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button>'
+        + '</div></td>'
+        + '</tr>';
+    });
+  });
+
+  tbody.innerHTML = html;
+  var total = _shCamRfData.filter(function(r){return r.rule_or_flag==='flag';}).length;
+  var enabled = _shCamRfData.filter(function(r){return r.rule_or_flag==='flag'&&r.enabled;}).length;
+  document.getElementById('shCam-rf-flags-info').textContent = total + ' flags\u00a0\u00b7\u00a0' + enabled + ' enabled';
+}
+
+// ── Render Templates Table ───────────────────────────────────────
+function shCamRfRenderTemplates() {
+  var rows = _shCamRfData.filter(function(r) { return r.is_template === true; });
+  var tbody = document.getElementById('shCam-rf-templates-tbody');
+  if (!tbody) return;
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4" style="font-size:13px;">No templates yet \u2014 click <strong>Save as template</strong> <span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle;">bookmark_add</span> on any rule or flag row to create one.</td></tr>';
+    document.getElementById('shCam-rf-badge-templates').textContent = '0';
+    return;
+  }
+
+  var groups = {};
+  rows.forEach(function(r) { var t = r.type || 'budget'; groups[t] = groups[t] || []; groups[t].push(r); });
+
+  var html = '';
+  var groupOrder = ['budget', 'bid', 'status', 'performance', 'anomaly', 'technical'];
+  var groupLabels = {budget:'Budget', bid:'Bid', status:'Status', performance:'Performance', anomaly:'Anomaly', technical:'Technical'};
+
+  groupOrder.forEach(function(gtype) {
+    var gRows = (groups[gtype] || []).slice().sort(function(a,b) { return a.name.localeCompare(b.name); });
+    if (!gRows.length) return;
+    html += '<tr class="rules-group-row"><td colspan="8">' + groupLabels[gtype] + ' &nbsp;\u00b7&nbsp; ' + gRows.length + ' template' + (gRows.length === 1 ? '' : 's') + '</td></tr>';
+    gRows.forEach(function(r) {
+      var rof = r.rule_or_flag || 'rule';
+      var condHtml = rof === 'flag' ? shCamRfFlagCondText(r) : shCamRfCondText(r);
+      var actionHtml = rof === 'flag' ? '\u2014' : shCamRfActionCell(r);
+      var peHtml = rof === 'flag' ? shCamRfFlagPlainEnglish(r) : shCamRfEsc(r.plain_english || shCamRfPlainEnglish(r));
+      html += '<tr>'
+        + '<td style="font-weight:600;">' + shCamRfEsc(r.name) + '</td>'
+        + '<td><span class="badge badge-rof-' + shCamRfEsc(rof) + '" style="font-size:11px;">' + shCamRfEsc(rof.charAt(0).toUpperCase()+rof.slice(1)) + '</span></td>'
+        + '<td><span class="badge badge-type-' + shCamRfEsc(r.type||'') + '" style="font-size:11px;">' + shCamRfEsc((r.type||'').charAt(0).toUpperCase()+(r.type||'').slice(1)) + '</span></td>'
+        + '<td class="rules-plain-english">' + peHtml + '</td>'
+        + '<td style="font-size:12px;color:#202124;white-space:nowrap;">' + condHtml + '</td>'
+        + '<td>' + actionHtml + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;white-space:nowrap;">' + (r.cooldown_days ? r.cooldown_days + 'd' : '\u2014') + '</td>'
+        + '<td><button class="btn btn-sm btn-outline-primary" style="font-size:11px;white-space:nowrap;" onclick="shCamRfEditTemplate(' + r.id + ')">Edit template</button></td>'
+        + '</tr>';
+    });
+  });
+
+  tbody.innerHTML = html;
+  document.getElementById('shCam-rf-badge-templates').textContent = rows.length;
+}
+
+// ── Use Template (open flow builder pre-filled, no ID so creates new rule) ───
+function shCamRfEditTemplate(ruleId) {
+  var row = _shCamRfData.find(function(r) { return r.id === ruleId; });
+  if (!row) return;
+  shCamOpenRulesFlow(row);
+}
+
+function shCamRfUseTemplate(ruleId) {
+  var row = _shCamRfData.find(function(r) { return r.id === ruleId; });
+  if (!row) return;
+  var copy = Object.assign({}, row);
+  copy.id = null;
+  copy.is_template = false;
+  copy.entity_scope = {scope: 'all'};
+  copy.enabled = true;
+  copy.name = (copy.name || '').replace(/\(template\)\s*$/i, '').trim();
+  shCamCloseRulesFlow();
+  setTimeout(function() { shCamOpenRulesFlow(copy); }, 250);
+}
+
+// ── Save As Template ─────────────────────────────────────────────
+function shCamRfSaveAsTemplate(ruleId) {
+  fetch('/shopping/campaign_rules/' + ruleId + '/save-as-template', {method: 'POST'})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        shCamRfShowToast('Saved as template.', 'success');
+        shCamRfLoadData();
+      } else {
+        shCamRfShowToast('Error: ' + (d.error || 'Unknown error'), 'danger');
+      }
+    });
+}
+
+// ── Toggle ───────────────────────────────────────────────────────
+function shCamRfToggle(ruleId, checkbox) {
+  fetch('/shopping/campaign_rules/' + ruleId + '/toggle', {method:'POST'})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        var row = _shCamRfData.find(function(r) { return r.id === ruleId; });
+        if (row) { row.enabled = d.data.enabled; }
+        shCamRfUpdateBadges();
+        shCamRfShowToast((d.data.enabled ? 'Enabled' : 'Disabled') + ' successfully.', 'success');
+        shCamRfRenderRules();
+        shCamRfRenderFlags();
+      } else {
+        shCamRfShowToast('Toggle failed: ' + (d.error||'Unknown error'), 'error');
+        checkbox.checked = !checkbox.checked;
+      }
+    })
+    .catch(function(e) {
+      shCamRfShowToast('Network error.', 'error');
+      checkbox.checked = !checkbox.checked;
+    });
+}
+
+// ── Delete ───────────────────────────────────────────────────────
+function shCamRfDeleteRule(ruleId) {
+  if (!confirm('Delete this rule/flag? This cannot be undone.')) return;
+  fetch('/shopping/campaign_rules/' + ruleId, {method:'DELETE'})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        _shCamRfData = _shCamRfData.filter(function(r) { return r.id !== ruleId; });
+        shCamRfRenderRules();
+        shCamRfRenderFlags();
+        shCamRfUpdateBadges();
+        shCamRfShowToast('Deleted successfully.', 'success');
+        var tr = document.querySelector('tr[data-rule-id="' + ruleId + '"]');
+        if (tr) { tr.style.opacity='0'; tr.style.transition='opacity .3s'; setTimeout(function(){tr.remove();},300); }
+      } else {
+        shCamRfShowToast('Delete failed: ' + (d.error||'Unknown error'), 'error');
+      }
+    })
+    .catch(function() { shCamRfShowToast('Network error.', 'error'); });
+}
+
+// ── Edit (opens flow builder pre-filled) ─────────────────────────
+function shCamRfEditRule(ruleId) {
+  var row = _shCamRfData.find(function(r) { return r.id === ruleId; });
+  if (row) shCamOpenRulesFlow(row);
+}
+
+// ── Toast ────────────────────────────────────────────────────────
+function shCamRfShowToast(msg, type) {
+  var wrap = document.getElementById('shCam-rules-toast-wrap');
+  if (!wrap) return;
+  var t = document.createElement('div');
+  t.style.cssText = 'padding:12px 18px;border-radius:8px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.12);display:flex;align-items:center;gap:8px;color:white;';
+  t.style.background = type === 'success' ? '#15803d' : '#dc3545';
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(function() {
+    t.style.opacity='0'; t.style.transition='opacity .3s';
+    setTimeout(function() { t.remove(); }, 300);
+  }, 3500);
+}
+
+
+// ════════════════════════════════════════════════════════════════
+//  Shopping Campaign Rules Flow Builder — State + Logic
+// ════════════════════════════════════════════════════════════════
+
+var _shCamRfbStep        = 1;
+var _shCamRfbEditId      = null;   // rule id when editing
+var _shCamRfbHasPreload  = false;  // true when opened with pre-filled data (edit or template)
+var _shCamRfbIsTemplate  = false;  // true when editing a template row
+var _shCamRfbRoF         = 'rule'; // 'rule' or 'flag'
+var _shCamRfbType        = 'budget';
+var _shCamRfbCond2Open   = false;
+
+// Campaign list — pre-sanitised in the route as rfb_shopping_campaigns
+var _shCamRfbAllCampaigns = {{ rfb_shopping_campaigns | tojson if rfb_shopping_campaigns is defined else '[]' }};
+
+var SHCAM_RFB_TYPE_FOR_ROF = {
+  rule: [
+    {v:'budget', label:'Budget', icon:'payments', desc:'Increase or decrease campaign budget'},
+    {v:'bid', label:'Bid', icon:'my_location', desc:'Adjust tROAS or Max CPC targets'},
+    {v:'status', label:'Status', icon:'pause_circle', desc:'Pause or enable shopping campaign'}
+  ],
+  flag: [
+    {v:'performance', label:'Performance', icon:'trending_down', desc:'Monitor key performance metrics'},
+    {v:'anomaly', label:'Anomaly', icon:'warning', desc:'Detect abnormal behaviour'},
+    {v:'technical', label:'Technical', icon:'build', desc:'Detect technical/feed issues'}
+  ]
+};
+
+var SHCAM_RFB_STEP_TITLES = ['','Select campaigns','Rule or flag?','Choose type','Set conditions & action','Review & save'];
+var SHCAM_RFB_STEP_SUBS   = [
+  '',
+  'Step 1 of 5 \u2014 Select the campaigns this rule will apply to',
+  'Step 2 of 5 \u2014 Choose whether to create a rule or a flag',
+  'Step 3 of 5 \u2014 Choose the type',
+  'Step 4 of 5 \u2014 Define conditions and the action to take',
+  'Step 5 of 5 \u2014 Name the rule and review everything before saving'
+];
+
+// ── Open / close ──────────────────────────────────────────────────────────────
+function shCamOpenRulesFlow(existingRow) {
+  _shCamRfbRoF       = 'rule';
+  _shCamRfbType      = 'budget';
+  _shCamRfbCond2Open = false;
+
+  if (existingRow) {
+    _shCamRfbRoF  = existingRow.rule_or_flag || existingRow.rof || 'rule';
+    _shCamRfbType = existingRow.type || 'budget';
+  }
+
+  shCamRfbResetForm();
+
+  // Set these AFTER shCamRfbResetForm() so they are not wiped
+  _shCamRfbEditId     = existingRow ? (existingRow.id || null) : null;
+  _shCamRfbHasPreload = existingRow ? true : false;
+  _shCamRfbIsTemplate = existingRow ? (existingRow.is_template === true) : false;
+
+  if (existingRow) {
+    shCamRfbPopulateFromRow(existingRow);
+  }
+
+  _shCamRfbStep = 1;
+  shCamRfbRenderStep();
+
+  var overlay = document.getElementById('shCam-rules-flow-overlay');
+  overlay.style.display = 'flex';
+  setTimeout(function(){ overlay.classList.add('show'); }, 10);
+}
+
+function shCamCloseRulesFlow() {
+  var overlay = document.getElementById('shCam-rules-flow-overlay');
+  overlay.classList.remove('show');
+  setTimeout(function(){ overlay.style.display = 'none'; }, 220);
+}
+
+// ── Form reset / populate ─────────────────────────────────────────────────────
+function shCamRfbResetForm() {
+  document.getElementById('shCam-rfb-camp-search').value = '';
+  document.getElementById('shCam-rfb-cond-2').style.display = 'none';
+  document.getElementById('shCam-rfb-add-cond-btn').textContent = '+ Add second condition (optional)';
+  document.getElementById('shCam-rfb-save-error').style.display = 'none';
+  document.getElementById('shCam-rfb-save-error').textContent   = '';
+  document.getElementById('shCam-rfb-name-field').value = '';
+  document.getElementById('shCam-rfb-cond1-val').value  = '1.15';
+  document.getElementById('shCam-rfb-cond2-val').value  = '30';
+  document.getElementById('shCam-rfb-action-mag').value = '10';
+  document.getElementById('shCam-rfb-cooldown').value   = '7';
+  _shCamRfbSelectedIds    = [];
+  _shCamRfbCond2Open      = false;
+  _shCamRfbSavedActionType = null;
+  _shCamRfbHasPreload     = false;
+  _shCamRfbIsTemplate     = false;
+  shCamRfbRenderCampaignList('');
+}
+
+function shCamRfbPopulateFromRow(row) {
+  document.getElementById('shCam-rfb-name-field').value = row.name || '';
+  document.getElementById('shCam-rfb-cooldown').value   = String(row.cooldown_days || 7);
+
+  // Risk
+  var riskSel = document.getElementById('shCam-rfb-risk');
+  if (row.risk_level) riskSel.value = row.risk_level;
+
+  // Entity scope -> pre-select campaigns
+  try {
+    var scope = typeof row.entity_scope === 'string' ? JSON.parse(row.entity_scope) : row.entity_scope;
+    if (scope && scope.scope === 'specific' && Array.isArray(scope.campaigns)) {
+      _shCamRfbSelectedIds = scope.campaigns.map(String);
+    } else {
+      _shCamRfbSelectedIds = [];
+    }
+  } catch(e) { _shCamRfbSelectedIds = []; }
+
+  // Conditions
+  try {
+    var conds = typeof row.conditions === 'string' ? JSON.parse(row.conditions) : row.conditions;
+    if (Array.isArray(conds) && conds.length > 0) {
+      shCamRfbSetCondRow(1, conds[0]);
+      if (conds.length > 1) {
+        shCamRfbSetCondRow(2, conds[1]);
+        shCamRfbToggleCond2();
+      }
+    }
+  } catch(e) {}
+
+  // Action
+  _shCamRfbSavedActionType = row.action_type || null;
+  if (row.action_type) {
+    var at = document.getElementById('shCam-rfb-action-type');
+    if (at) { for (var i=0; i<at.options.length; i++) { if (at.options[i].value === row.action_type) { at.selectedIndex = i; break; } } }
+  }
+  if (row.action_magnitude != null) {
+    document.getElementById('shCam-rfb-action-mag').value = row.action_magnitude;
+  }
+}
+
+var _shCamRfbSelectedIds    = [];
+var _shCamRfbSavedActionType = null;
+
+function shCamRfbNormOp(op) {
+  var map = {'>': 'gt', '<': 'lt', '>=': 'gte', '<=': 'lte', '=': 'eq'};
+  return map[op] || op;
+}
+function shCamRfbNormUnit(unit) {
+  var map = {'percent': 'pct', 'x_target': 'x_target', 'absolute': 'absolute'};
+  return map[unit] || unit;
+}
+
+function shCamRfbSetCondRow(n, cond) {
+  var pfx = 'shCam-rfb-cond' + n + '-';
+  var mSel = document.getElementById(pfx + 'metric');
+  var oSel = document.getElementById(pfx + 'op');
+  var vIn  = document.getElementById(pfx + 'val');
+  var rSel = document.getElementById(pfx + 'ref');
+  if (!mSel) return;
+  var normOp  = cond.op  || shCamRfbNormOp(cond.operator || '');
+  var normRef = cond.ref || shCamRfbNormUnit(cond.unit || '');
+  if (cond.metric)    { for (var i=0;i<mSel.options.length;i++) { if (mSel.options[i].value===cond.metric) { mSel.selectedIndex=i; break; } } }
+  if (normOp)         { for (var i=0;i<oSel.options.length;i++) { if (oSel.options[i].value===normOp)      { oSel.selectedIndex=i; break; } } }
+  if (cond.value != null) vIn.value = cond.value;
+  if (normRef && rSel){ for (var i=0;i<rSel.options.length;i++) { if (rSel.options[i].value===normRef)     { rSel.selectedIndex=i; break; } } }
+}
+
+// ── Campaign list rendering ───────────────────────────────────────────────────
+function shCamRfbRenderCampaignList(filter) {
+  var list = document.getElementById('shCam-rfb-camp-list');
+  if (!list) return;
+  filter = (filter || '').toLowerCase();
+  var html = '';
+  _shCamRfbAllCampaigns.forEach(function(camp) {
+    if (filter && camp.name.toLowerCase().indexOf(filter) < 0) return;
+    var sel = _shCamRfbSelectedIds.indexOf(camp.id) >= 0;
+    html += '<div class="flow-camp-item' + (sel?' selected':'') + '"' +
+            ' data-id="' + shCamRfbEsc(camp.id) + '"' +
+            ' onclick="shCamRfbToggleCampaign(this)">' +
+            '<input type="checkbox"' + (sel?' checked':'') +
+            ' style="width:14px;height:14px;accent-color:#1a73e8;flex-shrink:0;cursor:pointer">' +
+            '<span style="flex:1;font-size:13px">' + shCamRfbEsc(camp.name) + '</span>' +
+            '</div>';
+  });
+  if (!html) html = '<div style="padding:12px;font-size:13px;color:#5f6368">No campaigns found</div>';
+  list.innerHTML = html;
+}
+
+function shCamRfbFilterCampaigns(v) {
+  shCamRfbRenderCampaignList(v);
+}
+
+function shCamRfbToggleCampaign(el) {
+  var id = el.getAttribute('data-id');
+  var idx = _shCamRfbSelectedIds.indexOf(id);
+  if (idx >= 0) {
+    _shCamRfbSelectedIds.splice(idx, 1);
+    el.classList.remove('selected');
+    el.querySelector('input').checked = false;
+  } else {
+    _shCamRfbSelectedIds.push(id);
+    el.classList.add('selected');
+    el.querySelector('input').checked = true;
+  }
+  shCamRfbRenderCampaignList(document.getElementById('shCam-rfb-camp-search').value);
+}
+
+function shCamRfbSelectAll() {
+  _shCamRfbSelectedIds = [];
+  _shCamRfbAllCampaigns.forEach(function(camp) {
+    _shCamRfbSelectedIds.push(camp.id);
+  });
+  shCamRfbRenderCampaignList(document.getElementById('shCam-rfb-camp-search').value);
+}
+
+function shCamRfbClearAll() {
+  _shCamRfbSelectedIds = [];
+  shCamRfbRenderCampaignList(document.getElementById('shCam-rfb-camp-search').value);
+}
+
+// ── RoF + Type selection ──────────────────────────────────────────────────────
+function shCamRfbPickRoF(v) {
+  _shCamRfbRoF = v;
+  document.getElementById('shCam-rfb-rof-rule').classList.toggle('selected', v === 'rule');
+  document.getElementById('shCam-rfb-rof-flag').classList.toggle('selected', v === 'flag');
+  // Default type for each
+  _shCamRfbType = v === 'rule' ? 'budget' : 'performance';
+}
+
+function shCamRfbRenderTypeStep() {
+  var label = document.getElementById('shCam-rfb-type-label');
+  var grid  = document.getElementById('shCam-rfb-type-grid');
+  label.textContent = _shCamRfbRoF === 'rule' ? 'Rule type' : 'Flag type';
+  var cards = SHCAM_RFB_TYPE_FOR_ROF[_shCamRfbRoF] || SHCAM_RFB_TYPE_FOR_ROF.rule;
+  grid.innerHTML = cards.map(function(t) {
+    var sel = _shCamRfbType === t.v;
+    return '<div class="flow-cat-card' + (sel?' selected':'') + '" onclick="shCamRfbPickType(this,\'' + t.v + '\')">' +
+      '<div class="flow-cat-icon"><span class="material-symbols-outlined" style="font-size:26px;vertical-align:middle">' + t.icon + '</span></div>' +
+      '<h5>' + t.label + '</h5><p>' + t.desc + '</p></div>';
+  }).join('');
+}
+
+function shCamRfbPickType(el, v) {
+  _shCamRfbType = v;
+  document.querySelectorAll('#shCam-rfb-type-grid .flow-cat-card').forEach(function(c){ c.classList.remove('selected'); });
+  el.classList.add('selected');
+  shCamRfbUpdateActionTypeOptions();
+}
+
+// ── Step 4 dynamic adjustments ────────────────────────────────────────────────
+var SHCAM_RFB_ACTION_OPTIONS = {
+  budget: [
+    {v:'increase_budget', l:'Increase budget by'},
+    {v:'decrease_budget', l:'Decrease budget by'}
+  ],
+  bid: [
+    {v:'increase_troas', l:'Increase tROAS target by'},
+    {v:'decrease_troas', l:'Decrease tROAS target by'},
+    {v:'increase_max_cpc', l:'Increase Max CPC cap by'},
+    {v:'decrease_max_cpc', l:'Decrease Max CPC cap by'}
+  ],
+  status: [
+    {v:'pause', l:'Pause campaign'},
+    {v:'enable', l:'Enable campaign'}
+  ]
+};
+
+function shCamRfbUpdateActionTypeOptions() {
+  var sel  = document.getElementById('shCam-rfb-action-type');
+  var mag  = document.getElementById('shCam-rfb-action-mag');
+  var pct  = document.getElementById('shCam-rfb-pct-label');
+  if (!sel) return;
+  var opts = SHCAM_RFB_ACTION_OPTIONS[_shCamRfbType] || SHCAM_RFB_ACTION_OPTIONS.budget;
+  sel.innerHTML = opts.map(function(o){ return '<option value="' + o.v + '">' + o.l + '</option>'; }).join('');
+  if (_shCamRfbSavedActionType) {
+    for (var i=0;i<sel.options.length;i++) { if (sel.options[i].value===_shCamRfbSavedActionType) { sel.selectedIndex=i; break; } }
+  }
+  // Show/hide magnitude based on type
+  if (_shCamRfbType === 'status') {
+    mag.style.display = 'none';
+    pct.style.display = 'none';
+  } else {
+    mag.style.display = '';
+    pct.style.display = '';
+  }
+}
+
+function shCamRfbShowStep4ForRoF() {
+  var actionSec    = document.getElementById('shCam-rfb-action-section');
+  var ruleSettings = document.getElementById('shCam-rfb-rule-settings');
+  var warningsSec  = document.getElementById('shCam-rfb-warnings-section');
+  if (_shCamRfbRoF === 'flag') {
+    actionSec.style.display    = 'none';
+    ruleSettings.style.display = 'none';
+    if (warningsSec) warningsSec.style.display = 'none';
+  } else {
+    actionSec.style.display    = '';
+    ruleSettings.style.display = '';
+    if (warningsSec) warningsSec.style.display = '';
+    shCamRfbUpdateActionTypeOptions();
+  }
+}
+
+function shCamRfbAutoName() {
+  var nameField = document.getElementById('shCam-rfb-name-field');
+  if (nameField.value.trim()) return; // don't overwrite user's choice
+  var typeLabels = {budget:'Budget',bid:'Bid',status:'Status',performance:'Performance',anomaly:'Anomaly',technical:'Technical'};
+  var metric1 = document.getElementById('shCam-rfb-cond1-metric').options[document.getElementById('shCam-rfb-cond1-metric').selectedIndex].text;
+  var action  = '';
+  if (_shCamRfbRoF === 'rule') {
+    var at = document.getElementById('shCam-rfb-action-type');
+    action = at ? at.options[at.selectedIndex].text : '';
+    action = action.replace(' by','').replace(' target','');
+  }
+  if (_shCamRfbRoF === 'rule') {
+    nameField.value = action + ' \u2014 ' + metric1;
+  } else {
+    nameField.value = 'Flag: ' + metric1 + ' (' + (typeLabels[_shCamRfbType] || _shCamRfbType) + ')';
+  }
+}
+
+// ── Condition 2 toggle ────────────────────────────────────────────────────────
+function shCamRfbToggleCond2() {
+  _shCamRfbCond2Open = !_shCamRfbCond2Open;
+  var el = document.getElementById('shCam-rfb-cond-2');
+  var btn = document.getElementById('shCam-rfb-add-cond-btn');
+  el.style.display = _shCamRfbCond2Open ? 'block' : 'none';
+  btn.textContent = _shCamRfbCond2Open ? '\u2212 Remove second condition' : '+ Add second condition (optional)';
+}
+
+// ── Step navigation ───────────────────────────────────────────────────────────
+function shCamRfbNextStep() {
+  if (!shCamRfbValidateStep(_shCamRfbStep)) return;
+  if (_shCamRfbStep < 5) {
+    _shCamRfbStep++;
+    shCamRfbRenderStep();
+  } else {
+    shCamRfbSave();
+  }
+}
+
+function shCamRfbPrevStep() {
+  if (_shCamRfbStep > 1) { _shCamRfbStep--; shCamRfbRenderStep(); }
+}
+
+function shCamRfbValidateStep(step) {
+  if (step === 1) {
+    // Empty selection = "All campaigns" — valid.
+  }
+  if (step === 5) {
+    var name = document.getElementById('shCam-rfb-name-field').value.trim();
+    if (!name) {
+      document.getElementById('shCam-rfb-save-error').textContent = 'Please enter a name for this rule.';
+      document.getElementById('shCam-rfb-save-error').style.display = 'block';
+      return false;
+    }
+    document.getElementById('shCam-rfb-save-error').style.display = 'none';
+  }
+  return true;
+}
+
+
+// ── Sidebar: update "your choices" panel ──────────────────────────────────────
+function shCamRfbUpdateSidebar() {
+  var SHCAM_RFB_TYPE_LABELS = {budget:'Budget', bid:'Bid', status:'Status', performance:'Performance', anomaly:'Anomaly', technical:'Technical'};
+
+  function setVal(id, text, done) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'flow-sidebar-value' + (done ? '' : ' pending');
+  }
+
+  // Step 1 — campaigns
+  if (_shCamRfbStep > 1 || _shCamRfbEditId || _shCamRfbHasPreload) {
+    var campLabel = _shCamRfbSelectedIds.length === 0
+      ? 'All campaigns'
+      : (_shCamRfbSelectedIds.length === 1 ? '1 campaign' : _shCamRfbSelectedIds.length + ' campaigns');
+    setVal('shCam-sb-val-1', campLabel, true);
+  }
+
+  // Step 2 — rule or flag
+  if (_shCamRfbStep > 2 || _shCamRfbEditId || _shCamRfbHasPreload) {
+    setVal('shCam-sb-val-2', _shCamRfbRoF === 'rule' ? 'Rule' : 'Flag', true);
+  }
+
+  // Step 3 — type
+  if (_shCamRfbStep > 3 || _shCamRfbEditId || _shCamRfbHasPreload) {
+    var typeLabel = SHCAM_RFB_TYPE_LABELS[_shCamRfbType] || _shCamRfbType;
+    setVal('shCam-sb-val-3', typeLabel, true);
+  }
+
+  // Step 4 — conditions + action + cooldown
+  if (_shCamRfbStep > 4 || (_shCamRfbStep === 4) || _shCamRfbEditId || _shCamRfbHasPreload) {
+    var OP_SYMBOLS = {gt:'>',lt:'<',gte:'\u2265',lte:'\u2264',eq:'='};
+    var REF_LABELS = {x_target:'\u00d7 target', pct:'%', absolute:''};
+
+    function fmtCond(mEl, oEl, vEl, rEl) {
+      if (!mEl) return '\u2014';
+      var metric = mEl.options[mEl.selectedIndex].text;
+      var op     = OP_SYMBOLS[oEl ? oEl.value : ''] || (oEl ? oEl.value : '');
+      var val    = vEl ? vEl.value.trim() : '';
+      var ref    = REF_LABELS[rEl ? rEl.value : ''] !== undefined ? REF_LABELS[rEl.value] : '';
+      return metric + ' ' + op + ' ' + val + (ref ? ref : '');
+    }
+
+    function fmtLine(prefix, text, el, extraClass) {
+      if (!el) return;
+      el.innerHTML = '<span style="display:inline-block;width:18px;color:#202124;font-size:10px;flex-shrink:0;">' + prefix + '</span>' + text;
+      el.className = 'flow-sidebar-value sb-line' + (extraClass ? ' ' + extraClass : '');
+      el.style.display = text ? '' : 'none';
+    }
+
+    // C1
+    var c1 = fmtCond(
+      document.getElementById('shCam-rfb-cond1-metric'),
+      document.getElementById('shCam-rfb-cond1-op'),
+      document.getElementById('shCam-rfb-cond1-val'),
+      document.getElementById('shCam-rfb-cond1-ref')
+    );
+    fmtLine('C1', c1, document.getElementById('shCam-sb-val-4a'));
+
+    // C2
+    var el4b = document.getElementById('shCam-sb-val-4b');
+    if (_shCamRfbCond2Open) {
+      var c2 = fmtCond(
+        document.getElementById('shCam-rfb-cond2-metric'),
+        document.getElementById('shCam-rfb-cond2-op'),
+        document.getElementById('shCam-rfb-cond2-val'),
+        document.getElementById('shCam-rfb-cond2-ref')
+      );
+      fmtLine('C2', c2, el4b);
+    } else if (el4b) { el4b.style.display = 'none'; }
+
+    // Action
+    var el4c = document.getElementById('shCam-sb-val-4c');
+    if (_shCamRfbRoF === 'rule') {
+      var atEl  = document.getElementById('shCam-rfb-action-type');
+      var aStr  = atEl ? atEl.options[atEl.selectedIndex].text : '';
+      var magEl = document.getElementById('shCam-rfb-action-mag');
+      if (_shCamRfbType !== 'status' && magEl && magEl.value) {
+        aStr += ' ' + magEl.value + '%';
+      }
+      fmtLine('\u2192', aStr, el4c, 'sb-action-val');
+    } else if (el4c) { el4c.style.display = 'none'; }
+
+    // Cooldown
+    var el4d = document.getElementById('shCam-sb-val-4d');
+    if (_shCamRfbRoF === 'rule') {
+      var cdEl = document.getElementById('shCam-rfb-cooldown');
+      fmtLine('\u23f1', cdEl ? cdEl.value + 'd cooldown' : '', el4d);
+    } else if (el4d) { el4d.style.display = 'none'; }
+  }
+
+  // Step 5 — name
+  if (_shCamRfbStep === 5 || _shCamRfbEditId || _shCamRfbHasPreload) {
+    var nameEl = document.getElementById('shCam-rfb-name-field');
+    var nameVal = nameEl && nameEl.value.trim() ? nameEl.value.trim() : 'In progress\u2026';
+    setVal('shCam-sb-val-5', nameVal, nameEl && nameEl.value.trim().length > 0);
+  }
+
+  // Highlight the current step row
+  for (var i = 1; i <= 5; i++) {
+    var row = document.getElementById('shCam-sb-row-' + i);
+    if (row) row.classList.toggle('active', i === _shCamRfbStep);
+  }
+}
+
+function shCamRfbClickUseTemplate() {
+  if (typeof shCamRfUseTemplate === 'function' && _shCamRfbEditId) {
+    shCamRfUseTemplate(_shCamRfbEditId);
+  }
+}
+
+function shCamRfbRenderStep() {
+  // Title / subtitle
+  document.getElementById('shCam-rfb-title').textContent    = _shCamRfbIsTemplate ? 'Edit template' : (_shCamRfbEditId ? 'Edit rule or flag' : SHCAM_RFB_STEP_TITLES[_shCamRfbStep]);
+  document.getElementById('shCam-rfb-subtitle').textContent = SHCAM_RFB_STEP_SUBS[_shCamRfbStep];
+  var editLbl = document.getElementById('shCam-rfb-editing-label');
+  if (editLbl) {
+    var nameEl = document.getElementById('shCam-rfb-name-field');
+    var editName = nameEl && nameEl.value.trim() ? nameEl.value.trim() : '';
+    if (_shCamRfbIsTemplate && editName) { editLbl.textContent = 'Template: ' + editName; editLbl.style.display = ''; }
+    else if (_shCamRfbEditId && editName) { editLbl.textContent = 'Editing: ' + editName; editLbl.style.display = ''; }
+    else { editLbl.style.display = 'none'; }
+  }
+  document.getElementById('shCam-rfb-step-ind').textContent = 'Step ' + _shCamRfbStep + ' of 5';
+
+  // Back / next buttons
+  document.getElementById('shCam-rfb-btn-back').style.visibility = _shCamRfbStep === 1 ? 'hidden' : 'visible';
+  document.getElementById('shCam-rfb-btn-next').textContent = _shCamRfbStep === 5 ? (_shCamRfbIsTemplate ? '\u2713 Save template' : '\u2713 Save') : 'Next \u2192';
+  var useTemplateBtn = document.getElementById('shCam-rfb-btn-use-template');
+  if (useTemplateBtn) useTemplateBtn.style.display = _shCamRfbIsTemplate ? '' : 'none';
+
+  // Progress circles
+  for (var i = 1; i <= 5; i++) {
+    var prog = document.getElementById('shCam-rfb-prog-' + i);
+    prog.classList.remove('active', 'done');
+    if (i < _shCamRfbStep) prog.classList.add('done');
+    else if (i === _shCamRfbStep) prog.classList.add('active');
+    if (i < 5) {
+      var pl = document.getElementById('shCam-rfb-pline-' + i);
+      if (pl) pl.classList.toggle('done', i < _shCamRfbStep);
+    }
+  }
+
+  // Step content — show/hide
+  for (var j = 1; j <= 5; j++) {
+    var sc = document.getElementById('shCam-rfb-sc-' + j);
+    if (sc) sc.style.display = j === _shCamRfbStep ? 'block' : 'none';
+  }
+
+  // Step-specific setup
+  if (_shCamRfbStep === 2) {
+    document.getElementById('shCam-rfb-rof-rule').classList.toggle('selected', _shCamRfbRoF === 'rule');
+    document.getElementById('shCam-rfb-rof-flag').classList.toggle('selected', _shCamRfbRoF === 'flag');
+  }
+  if (_shCamRfbStep === 3) {
+    shCamRfbRenderTypeStep();
+  }
+  if (_shCamRfbStep === 4) {
+    shCamRfbShowStep4ForRoF();
+  }
+  if (_shCamRfbStep === 5) {
+    shCamRfbAutoName();
+    shCamRfbAutoRisk();
+    shCamRfbBuildSummary();
+  }
+  shCamRfbUpdateSidebar();
+}
+
+function shCamRfbAutoRisk() {
+  // Skip auto-risk when editing — preserve the saved risk level
+  if (_shCamRfbEditId) return;
+  var riskSel = document.getElementById('shCam-rfb-risk');
+  if (!riskSel) return;
+  var risk = 'low';
+  if (_shCamRfbRoF === 'flag') risk = 'low';
+  else if (_shCamRfbType === 'status') risk = 'high';
+  else if (_shCamRfbType === 'budget') risk = 'medium';
+  else if (_shCamRfbType === 'bid') risk = 'medium';
+  riskSel.value = risk;
+}
+
+// ── Summary ───────────────────────────────────────────────────────────────────
+function shCamRfbBuildSummary() {
+  var box = document.getElementById('shCam-rfb-summary-box');
+
+  var campNames = _shCamRfbSelectedIds.length === 0 ? 'All campaigns' :
+    _shCamRfbSelectedIds.map(function(id) {
+      var camp = _shCamRfbAllCampaigns.filter(function(x){ return x.id===id; })[0];
+      return camp ? camp.name : id;
+    }).join(', ');
+
+  var typeLabel = {budget:'Budget rule',bid:'Bid rule',status:'Status rule',
+                   performance:'Performance flag',anomaly:'Anomaly flag',technical:'Technical flag'}[_shCamRfbType] || _shCamRfbType;
+
+  var m1Sel = document.getElementById('shCam-rfb-cond1-metric');
+  var m1    = m1Sel.options[m1Sel.selectedIndex].text;
+  var o1Sel = document.getElementById('shCam-rfb-cond1-op');
+  var o1    = o1Sel.options[o1Sel.selectedIndex].text;
+  var v1    = document.getElementById('shCam-rfb-cond1-val').value;
+  var r1Sel = document.getElementById('shCam-rfb-cond1-ref');
+  var r1    = r1Sel.options[r1Sel.selectedIndex].text;
+  var cond1Str = m1 + ' ' + o1 + ' ' + v1 + (r1 !== 'absolute' ? ' ' + r1 : '');
+
+  var cond2Str = '';
+  if (_shCamRfbCond2Open) {
+    var m2Sel = document.getElementById('shCam-rfb-cond2-metric');
+    var m2    = m2Sel.options[m2Sel.selectedIndex].text;
+    var o2Sel = document.getElementById('shCam-rfb-cond2-op');
+    var o2    = o2Sel.options[o2Sel.selectedIndex].text;
+    var v2    = document.getElementById('shCam-rfb-cond2-val').value;
+    var r2Sel = document.getElementById('shCam-rfb-cond2-ref');
+    var r2    = r2Sel.options[r2Sel.selectedIndex].text;
+    cond2Str  = m2 + ' ' + o2 + ' ' + v2 + (r2 !== 'absolute' ? ' ' + r2 : '');
+  }
+
+  var actionStr = '\u2014';
+  var cooldownStr = '\u2014';
+  var riskStr = '\u2014';
+  if (_shCamRfbRoF === 'rule') {
+    var statusSel = document.getElementById('shCam-rfb-action-type');
+    actionStr = statusSel ? statusSel.options[statusSel.selectedIndex].text : '';
+    if (_shCamRfbType !== 'status') {
+      var magVal = document.getElementById('shCam-rfb-action-mag').value;
+      if (magVal) actionStr += ' ' + magVal + '%';
+    }
+    cooldownStr = document.getElementById('shCam-rfb-cooldown').value + ' days';
+    var riskSel = document.getElementById('shCam-rfb-risk');
+    riskStr = riskSel.options[riskSel.selectedIndex].text || riskSel.value;
+    riskStr = riskStr.charAt(0).toUpperCase() + riskStr.slice(1);
+  }
+
+  var line = function(icon, label, value) {
+    return '<div class="flow-summary-line">' +
+      '<span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle;margin-right:5px">' + icon + '</span>' +
+      '<strong>' + label + ':</strong>&nbsp;' + shCamRfbEsc(value) + '</div>';
+  };
+
+  var html = '<h5>' + (_shCamRfbRoF === 'rule' ? 'Rule' : 'Flag') + ' summary</h5>' +
+    line('push_pin',  'Campaigns',    campNames) +
+    line('bolt',      'Type',         typeLabel) +
+    line('list_alt',  'Condition 1',  cond1Str);
+  if (cond2Str) html += line('list_alt', 'Condition 2', cond2Str);
+  if (_shCamRfbRoF === 'rule') {
+    html += line('ads_click', 'Action',       actionStr) +
+            line('shield',    'Guardrail',    'Capped by Client Settings') +
+            line('lock',      'Confirmation', 'Required before execution') +
+            line('timer',     'Cooldown',     cooldownStr) +
+            line('bar_chart', 'Risk',         riskStr);
+  }
+
+  box.innerHTML = html;
+}
+
+// ── Save ──────────────────────────────────────────────────────────────────────
+function shCamRfbSave() {
+  var btnNext = document.getElementById('shCam-rfb-btn-next');
+  btnNext.disabled = true;
+  btnNext.textContent = 'Saving\u2026';
+
+  // Build conditions array
+  var m1Sel = document.getElementById('shCam-rfb-cond1-metric');
+  var o1Sel = document.getElementById('shCam-rfb-cond1-op');
+  var r1Sel = document.getElementById('shCam-rfb-cond1-ref');
+  var conds = [{
+    metric: m1Sel.value,
+    op:     o1Sel.value,
+    value:  document.getElementById('shCam-rfb-cond1-val').value,
+    ref:    r1Sel.value
+  }];
+  if (_shCamRfbCond2Open) {
+    var m2Sel = document.getElementById('shCam-rfb-cond2-metric');
+    var o2Sel = document.getElementById('shCam-rfb-cond2-op');
+    var r2Sel = document.getElementById('shCam-rfb-cond2-ref');
+    conds.push({
+      metric: m2Sel.value,
+      op:     o2Sel.value,
+      value:  document.getElementById('shCam-rfb-cond2-val').value,
+      ref:    r2Sel.value
+    });
+  }
+
+  // Entity scope
+  var entityScope;
+  if (_shCamRfbSelectedIds.length === 0) {
+    entityScope = {scope: 'all'};
+  } else {
+    entityScope = {scope: 'specific', campaigns: _shCamRfbSelectedIds};
+  }
+
+  // Action
+  var actionType = null, actionMag = null;
+  if (_shCamRfbRoF === 'rule') {
+    var atSel = document.getElementById('shCam-rfb-action-type');
+    actionType = atSel.value;
+    if (_shCamRfbType !== 'status') {
+      var magVal = document.getElementById('shCam-rfb-action-mag').value;
+      if (magVal) actionMag = parseFloat(magVal);
+    }
+  }
+
+  // Risk / cooldown
+  var riskLevel   = null;
+  var cooldownDays = 7;
+  if (_shCamRfbRoF === 'rule') {
+    var riskSel = document.getElementById('shCam-rfb-risk');
+    riskLevel   = riskSel.value;
+    cooldownDays = parseInt(document.getElementById('shCam-rfb-cooldown').value, 10) || 7;
+  }
+
+  var payload = {
+    name:             document.getElementById('shCam-rfb-name-field').value.trim(),
+    rule_or_flag:     _shCamRfbRoF,
+    type:             _shCamRfbType,
+    entity_scope:     entityScope,
+    conditions:       conds,
+    action_type:      actionType,
+    action_magnitude: actionMag,
+    cooldown_days:    cooldownDays,
+    risk_level:       riskLevel,
+    entity_type:      'shopping',
+    enabled:          true,
+    is_template:      _shCamRfbIsTemplate
+  };
+
+  var url    = _shCamRfbEditId ? '/shopping/campaign_rules/' + _shCamRfbEditId : '/shopping/campaign_rules';
+  var method = _shCamRfbEditId ? 'PUT' : 'POST';
+
+  fetch(url, {
+    method:  method,
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken()},
+    body:    JSON.stringify(payload)
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    btnNext.disabled = false;
+    btnNext.textContent = _shCamRfbIsTemplate ? '\u2713 Save template' : '\u2713 Save';
+    if (data.success) {
+      shCamCloseRulesFlow();
+      if (typeof shCamRfLoadData === 'function') shCamRfLoadData();
+      shCamRfbShowToast((_shCamRfbEditId ? 'Updated' : 'Created') + ' successfully.', 'success');
+    } else {
+      var errEl = document.getElementById('shCam-rfb-save-error');
+      errEl.textContent = data.error || 'Save failed. Please try again.';
+      errEl.style.display = 'block';
+    }
+  })
+  .catch(function(err) {
+    btnNext.disabled = false;
+    btnNext.textContent = _shCamRfbIsTemplate ? '\u2713 Save template' : '\u2713 Save';
+    var errEl = document.getElementById('shCam-rfb-save-error');
+    errEl.textContent = 'Network error. Please try again.';
+    errEl.style.display = 'block';
+  });
+}
+
+// ── Toast (shared with tab if not already defined) ────────────────
+if (typeof shCamRfbShowToast === 'undefined') {
+  function shCamRfbShowToast(msg, type) {
+    if (typeof shCamRfShowToast === 'function') { shCamRfShowToast(msg, type); return; }
+    var t = document.createElement('div');
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 18px;border-radius:6px;font-size:13px;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.15)';
+    t.style.background = type === 'success' ? '#137333' : type === 'warning' ? '#b45309' : '#dc3545';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 3500);
+  }
+}
+
+// ── Utility ───────────────────────────────────────────────────────────────────
+function shCamRfbEsc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Auto-load on DOMContentLoaded ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  shCamRfLoadData();
+});
+</script>

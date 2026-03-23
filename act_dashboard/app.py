@@ -430,6 +430,22 @@ def create_app():
         else:
             print(f"⚠️  [Chat 107] Route not found (skipping): {route_name}")
 
+    # [Chat 111] Shopping Campaign Rules routes — CSRF exemptions
+    chat111_routes = [
+        'shopping.shopping_campaign_list_rules',
+        'shopping.shopping_campaign_create_rule',
+        'shopping.shopping_campaign_update_rule',
+        'shopping.shopping_campaign_delete_rule',
+        'shopping.shopping_campaign_toggle_rule',
+        'shopping.shopping_campaign_save_as_template',
+    ]
+    for route_name in chat111_routes:
+        if route_name in app.view_functions:
+            csrf.exempt(app.view_functions[route_name])
+            print(f"✅ [Chat 111] CSRF exempted: {route_name}")
+        else:
+            print(f"⚠️  [Chat 111] Route not found (skipping): {route_name}")
+
     # [Chat 109] Ad Rules & Flags routes — CSRF exemptions
     chat109_routes = [
         'ads.ad_list_rules',

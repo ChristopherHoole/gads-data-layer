@@ -29,7 +29,9 @@
 /* Chat 107: Ad Group flow builder overlay — same styling as campaigns */
 #ag-rules-flow-overlay,
 #kw-rules-flow-overlay,
-#adR-rules-flow-overlay {
+#adR-rules-flow-overlay,
+#prd-rules-flow-overlay,
+#shCam-rules-flow-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -45,7 +47,9 @@
 
 #ag-rules-flow-overlay.show,
 #kw-rules-flow-overlay.show,
-#adR-rules-flow-overlay.show {
+#adR-rules-flow-overlay.show,
+#prd-rules-flow-overlay.show,
+#shCam-rules-flow-overlay.show {
   display: flex;
 }
 
@@ -887,7 +891,9 @@
 #rules-toast-wrap,
 #ag-rules-toast-wrap,
 #kw-rules-toast-wrap,
-#adR-rules-toast-wrap {
+#adR-rules-toast-wrap,
+#prd-rules-toast-wrap,
+#shCam-rules-toast-wrap {
   position: fixed;
   bottom: 24px;
   right: 24px;
