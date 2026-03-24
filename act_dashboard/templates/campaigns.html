@@ -334,7 +334,7 @@
         </li>
         <li class="nav-item" role="presentation">
           <button class="nav-link" id="cam-flag-tab" data-bs-toggle="tab" data-bs-target="#cam-flag-panel" type="button" role="tab">
-            Flags <span class="badge ms-1" style="background:#ea4335;color:#fff;" id="cam-flag-badge">0</span>
+            Flags <span class="badge bg-secondary ms-1" id="cam-flag-badge">0</span>
           </button>
         </li>
       </ul>
@@ -349,9 +349,9 @@
             <button class="btn btn-sm btn-outline-danger" onclick="camDoBulk('decline')">Decline selected</button>
             <span class="rec-bulk-clear" onclick="camClearSelection()">Clear selection</span>
           </div>
-          <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle rec-tab-slim" id="cam-pending-table">
-              <thead class="table-light">
+          <div class="rec-table-wrapper">
+            <table class="table table-sm align-middle rec-tab-slim" id="cam-pending-table">
+              <thead>
                 <tr>
                   <th style="width:50px;"><input type="checkbox" id="cam-cb-all-pending" onchange="camToggleAll(this)"></th>
                   <th class="rec-col-name" style="width:160px;">Campaign name</th>
@@ -376,9 +376,9 @@
 
         <!-- MONITORING -->
         <div class="tab-pane fade" id="cam-rec-monitoring" role="tabpanel">
-          <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle rec-tab-slim" id="cam-monitoring-table">
-              <thead class="table-light">
+          <div class="rec-table-wrapper">
+            <table class="table table-sm align-middle rec-tab-slim" id="cam-monitoring-table">
+              <thead>
                 <tr>
                   <th style="width:50px;"></th>
                   <th class="rec-col-date" style="width:160px;">Accepted</th>
@@ -403,9 +403,9 @@
 
         <!-- SUCCESSFUL -->
         <div class="tab-pane fade" id="cam-rec-successful" role="tabpanel">
-          <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle rec-tab-slim" id="cam-successful-table">
-              <thead class="table-light">
+          <div class="rec-table-wrapper">
+            <table class="table table-sm align-middle rec-tab-slim" id="cam-successful-table">
+              <thead>
                 <tr>
                   <th style="width:50px;"></th>
                   <th class="rec-col-date" style="width:160px;">Accepted</th>
@@ -430,9 +430,9 @@
 
         <!-- HISTORY (declined + reverted) -->
         <div class="tab-pane fade" id="cam-rec-history" role="tabpanel">
-          <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle rec-tab-slim" id="cam-history-table">
-              <thead class="table-light">
+          <div class="rec-table-wrapper">
+            <table class="table table-sm align-middle rec-tab-slim" id="cam-history-table">
+              <thead>
                 <tr>
                   <th style="width:50px;"></th>
                   <th class="rec-col-status" style="width:160px;">Outcome</th>
@@ -458,8 +458,8 @@
         <!-- FLAGS (active only — entity page view) -->
         <div class="tab-pane fade" id="cam-flag-panel" role="tabpanel">
           <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle" id="cam-flag-table">
-              <thead class="table-light">
+            <table class="table table-sm align-middle" id="cam-flag-table">
+              <thead>
                 <tr>
                   <th class="rec-col-name" style="width:180px;">Campaign name</th>
                   <th class="rec-col-rule" style="width:160px;">Flag name</th>
@@ -485,9 +485,9 @@
             <span class="badge bg-secondary" id="cam-flag-snooze-count">0</span>
           </div>
           <div id="cam-flag-snooze-body" style="display:none;">
-            <div class="table-responsive">
-              <table class="table table-sm table-hover align-middle">
-                <thead class="table-light">
+            <div class="rec-table-wrapper">
+              <table class="table table-sm align-middle">
+                <thead>
                   <tr>
                     <th style="width:180px;">Campaign name</th>
                     <th style="width:160px;">Flag name</th>
@@ -515,9 +515,9 @@
             <span class="badge bg-secondary" id="cam-flag-hist-count">0</span>
           </div>
           <div id="cam-flag-hist-body" style="display:none;">
-            <div class="table-responsive">
-              <table class="table table-sm table-hover align-middle">
-                <thead class="table-light">
+            <div class="rec-table-wrapper">
+              <table class="table table-sm align-middle">
+                <thead>
                   <tr>
                     <th style="width:180px;">Campaign name</th>
                     <th style="width:160px;">Flag name</th>
@@ -841,7 +841,11 @@ function applyColumns() {
     const proposedHtml = r.rule_type === 'status'
       ? 'Enabled → Paused'
       : 'Current: ' + cur + '<br>Proposed: ' + prop;
-    return '<tr class="rec-expand-row"><td colspan="' + cols + '"><div class="rec-expand-grid"><div><div class="rec-expand-label">Why triggered</div><div class="rec-expand-val">' + why + '</div></div><div><div class="rec-expand-label">Proposed change</div><div class="rec-expand-val">' + proposedHtml + '</div></div><div><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">' + det + '</div></div></div></td></tr>';
+    return '<tr class="rec-expand-row"><td colspan="' + cols + '"><div class="rec-expand-inner"><div class="rec-expand-grid">'
+      + '<div class="rec-expand-card"><div class="rec-expand-label">Why triggered</div><div class="rec-expand-val">' + why + '</div></div>'
+      + '<div class="rec-expand-card"><div class="rec-expand-label">Proposed change</div><div class="rec-expand-val">' + proposedHtml + '</div></div>'
+      + '<div class="rec-expand-card"><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">' + det + '</div></div>'
+      + '</div></div></td></tr>';
   }
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -1133,11 +1137,11 @@ function applyColumns() {
   function makeFlagExpRow(f) {
     var sevLabel = f.severity ? (f.severity.charAt(0).toUpperCase() + f.severity.slice(1)) + ' severity' : '—';
     return '<tr class="rec-expand-row" id="cam-flag-exp-' + f.flag_id + '">'
-      + '<td colspan="7"><div class="rec-expand-grid">'
-      + '<div><div class="rec-expand-label">Why this was triggered</div><div class="rec-expand-val">' + esc(f.trigger_summary || '—') + '</div></div>'
-      + '<div><div class="rec-expand-label">Flag details</div><div class="rec-expand-val">' + esc(f.plain_english || '—') + '</div></div>'
-      + '<div><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">' + esc(sevLabel) + '</div></div>'
-      + '</div></td></tr>';
+      + '<td colspan="7"><div class="rec-expand-inner"><div class="rec-expand-grid">'
+      + '<div class="rec-expand-card"><div class="rec-expand-label">Why this was triggered</div><div class="rec-expand-val">' + esc(f.trigger_summary || '—') + '</div></div>'
+      + '<div class="rec-expand-card"><div class="rec-expand-label">Flag details</div><div class="rec-expand-val">' + esc(f.plain_english || '—') + '</div></div>'
+      + '<div class="rec-expand-card"><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">' + esc(sevLabel) + '</div></div>'
+      + '</div></div></td></tr>';
   }
 
   window.camFlagExp = function(evt, id) {

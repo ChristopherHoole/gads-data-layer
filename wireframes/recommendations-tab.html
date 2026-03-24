@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recommendations Tab Wireframe — Ads Control Tower</title>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Google Material Symbols -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+    <style>
+    /* ═══════════════════════════════════════════════════════════════════════════
+       DASHBOARD SHELL — exact match to production
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    * { box-sizing: border-box; }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        margin: 0;
+        background: #f8f9fa;
+        color: #202124;
+        font-size: 14px;
+    }
+
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 40;
+    }
+
+    /* ── Sidebar Navigation ─────────────────────────────────────────────────── */
+    .nav-sidebar {
+        width: 110px; background: #ffffff; border-right: 1px solid #dadce0;
+        display: flex; flex-direction: column; position: fixed;
+        left: 0; top: 0; height: 100vh; z-index: 1000;
+    }
+    .nav-brand { padding: 16px 12px; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid #dadce0; }
+    .nav-brand-logo { width: 48px; height: 48px; margin-bottom: 8px; }
+    .nav-brand-text { font-size: 14px; font-weight: 600; color: #202124; text-align: center; line-height: 1.3; }
+    .nav-items { flex: 1; padding: 8px 0; overflow-y: auto; }
+    .nav-item-link {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 12px 8px; margin: 4px 8px; text-decoration: none; color: #5f6368;
+        border-radius: 8px; transition: all 150ms ease; cursor: pointer; min-height: 80px;
+    }
+    .nav-item-link:hover { background: #f1f3f4; color: #202124; }
+    .nav-item-link.active { background: #e8f0fe; color: #1a73e8; }
+    .nav-item-icon { font-size: 32px; margin-bottom: 4px; }
+    .nav-item-text { font-size: 14px; font-weight: 500; text-align: center; line-height: 1.2; }
+
+    /* ── Main Wrapper ───────────────────────────────────────────────────────── */
+    .main-wrapper { margin-left: 110px; }
+    .top-bar {
+        background: #fff; border-bottom: 1px solid #dadce0; padding: 8px 24px;
+        display: flex; justify-content: flex-end; align-items: center; gap: 12px;
+        height: 48px; font-size: 13px; color: #5f6368;
+    }
+    .content-area { padding: 24px 32px; }
+    .page-title { font-size: 24px; font-weight: 400; color: #202124; margin: 0 0 16px 0; }
+
+    /* ── Top Tabs ───────────────────────────────────────────────────────────── */
+    .top-tabs { display: flex; gap: 8px; border-bottom: 2px solid #e0e0e0; margin-bottom: 24px; padding-bottom: 0; }
+    .top-tab {
+        padding: 10px 18px; font-size: 14px; font-weight: 500; color: #5f6368;
+        cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px;
+        text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .top-tab:hover { color: #202124; }
+    .top-tab.active { color: #1a73e8; border-bottom-color: #1a73e8; }
+    .top-tab .badge { font-size: 11px; padding: 2px 7px; border-radius: 10px; }
+
+    /* ── Recommendations Header ─────────────────────────────────────────────── */
+    .rec-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+    .rec-header h5 { font-size: 18px; font-weight: 600; margin: 0 0 4px 0; }
+    .rec-header p { font-size: 13px; color: #5f6368; margin: 0; }
+    .rec-header-actions { display: flex; gap: 8px; align-items: center; }
+
+    /* ── Sub Tabs ───────────────────────────────────────────────────────────── */
+    .rec-sub-tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid #e0e0e0; }
+    .rec-sub-tab {
+        padding: 8px 16px; font-size: 13px; font-weight: 500; color: #5f6368;
+        cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+        display: inline-flex; align-items: center; gap: 6px; background: none; border-top: none; border-left: none; border-right: none;
+    }
+    .rec-sub-tab:hover { color: #202124; }
+    .rec-sub-tab.active { color: #1a73e8; border-bottom-color: #1a73e8; }
+    .rec-sub-tab .badge { font-size: 10px; padding: 2px 6px; border-radius: 8px; }
+
+    /* ── Recommendations CSS (matching production) ──────────────────────────── */
+    .rec-type-pill { display: inline-flex; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .rec-type-campaign { background: #dbeafe; color: #1d4ed8; }
+
+    .rec-rf-badge { display: inline-flex; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+    .rec-rf-rule { background: #dbeafe; color: #1d4ed8; }
+    .rec-rf-flag { background: #fef9c3; color: #a16207; }
+
+    .rec-rt-badge { display: inline-flex; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+    .rec-rt-budget { background: #dbeafe; color: #1d4ed8; }
+    .rec-rt-bid { background: #e0e7ff; color: #4338ca; }
+    .rec-rt-status { background: #fce7f3; color: #9d174d; }
+
+    .rec-action-text { font-size: 14px; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+    .rec-action-increase { color: #137333; }
+    .rec-action-decrease { color: #c5221f; }
+    .rec-action-pause { color: #b45309; }
+    .rec-action-sub { font-size: 12px; color: #5f6368; margin-top: 4px; font-weight: 400; }
+
+    .rec-risk-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; }
+    .rec-risk-low::before { content: '\25CF'; font-size: 10px; color: #34a853; }
+    .rec-risk-medium::before { content: '\25CF'; font-size: 10px; color: #fbbc05; }
+    .rec-risk-high::before { content: '\25CF'; font-size: 10px; color: #ea4335; }
+    .rec-risk-low { color: #137333; }
+    .rec-risk-medium { color: #b45309; }
+    .rec-risk-high { color: #c5221f; }
+
+    .rec-conditions-cell { font-size: 12px; color: #374151; line-height: 1.8; }
+    .rec-conditions-cell span { display: block; }
+
+    .rec-human-badge {
+        display: inline-flex; align-items: center; gap: 3px; padding: 3px 8px;
+        border: 1px solid #fbbc05; border-radius: 4px; font-size: 11px; color: #a16207;
+        background: #fef9c3; font-weight: 600; white-space: nowrap; margin-bottom: 6px;
+    }
+
+    .rec-outcome-badge { display: inline-flex; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .rec-outcome-successful { background: #e6f4ea; color: #137333; }
+    .rec-outcome-declined { background: #fce8e6; color: #c5221f; }
+    .rec-outcome-reverted { background: #fff3e0; color: #e65100; }
+    .rec-outcome-monitoring { background: #f3e8ff; color: #7c3aed; }
+
+    .rec-progress-wrap { min-width: 150px; }
+    .rec-progress-bg { height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; width: 100%; margin-bottom: 4px; }
+    .rec-progress-fill { height: 6px; border-radius: 3px; background: #7c3aed; transition: width 0.3s ease; }
+    .rec-progress-label { font-size: 11px; color: #5f6368; }
+
+    /* Table wrapper — matching Rules & Flags wireframe */
+    .rec-table-wrapper { overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; }
+    .rec-table-wrapper .table { margin-bottom: 0; border-collapse: collapse; }
+    .rec-table-wrapper .table thead th {
+        font-size: 12px; font-weight: 600; color: #5f6368; padding: 10px 10px;
+        border-bottom: 2px solid #dee2e6; background: #f8f9fa; text-transform: none; letter-spacing: 0;
+        white-space: nowrap;
+    }
+    .rec-table-wrapper .table tbody td { padding: 8px 10px; border-bottom: 1px solid #e0e0e0; vertical-align: middle; font-size: 13px; }
+    .rec-table-wrapper .table tbody tr:last-child td { border-bottom: none; }
+    .rec-table-wrapper .table tbody tr:hover td { background: #f8f9fa; }
+
+    .rec-expand-row { display: none; }
+    .rec-expand-row.open { display: table-row; }
+    .rec-expand-row td { background: #fafbfc; padding: 0 !important; border-bottom: 1px solid #e0e0e0; }
+    .rec-expand-inner { padding: 16px 20px; }
+    .rec-expand-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; }
+    .rec-expand-card { padding: 12px 16px; border-right: 1px solid #e8e8e8; }
+    .rec-expand-card:last-child { border-right: none; }
+    .rec-expand-label { font-size: 11px; font-weight: 600; color: #5f6368; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+    .rec-expand-val { font-size: 13px; color: #202124; line-height: 1.7; }
+
+    .rec-row-acts { display: flex; gap: 4px; flex-wrap: wrap; }
+    .rec-row-btn { padding: 5px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid; white-space: nowrap; transition: all 0.15s; }
+    .rec-row-btn-accept { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+    .rec-row-btn-accept:hover { background: #1557b0; border-color: #1557b0; }
+    .rec-row-btn-decline { background: #fff; color: #dc2626; border-color: #fca5a5; }
+    .rec-row-btn-decline:hover { background: #fef2f2; }
+
+    .rec-bulk-bar {
+        display: flex; align-items: center; gap: 10px; padding: 9px 14px;
+        background: #e8f0fe; border: 1px solid #bfdbfe; border-radius: 6px;
+        margin-bottom: 12px; font-size: 13px; color: #1a73e8; font-weight: 500;
+    }
+    .rec-bulk-clear { margin-left: auto; font-size: 12px; cursor: pointer; color: #1a73e8; font-weight: 400; }
+
+    /* Column widths */
+    th.rec-col-cb, th.rec-col-name, th.rec-col-rule, th.rec-col-plain,
+    th.rec-col-ruleflag, th.rec-col-ruletype, th.rec-col-conditions,
+    th.rec-col-action, th.rec-col-risk, th.rec-col-age, th.rec-col-date,
+    th.rec-col-progress, th.rec-col-status, th.rec-col-acts {
+        text-transform: none; font-size: 12px; font-weight: 600; color: #5f6368; letter-spacing: 0;
+    }
+    .rec-col-name { min-width: 130px; max-width: 200px; }
+    .rec-col-rule { min-width: 140px; max-width: 200px; white-space: normal; word-break: break-word; }
+    .rec-col-plain { min-width: 200px; max-width: 280px; white-space: normal; word-wrap: break-word; }
+    .rec-col-ruleflag { min-width: 70px; max-width: 90px; }
+    .rec-col-ruletype { min-width: 70px; max-width: 90px; }
+    .rec-col-conditions { min-width: 160px; max-width: 220px; white-space: normal; word-wrap: break-word; }
+    .rec-col-action { min-width: 160px; max-width: 200px; }
+    .rec-col-risk { min-width: 70px; max-width: 90px; }
+    .rec-col-age { min-width: 50px; max-width: 70px; }
+    .rec-col-date { min-width: 100px; max-width: 130px; }
+    .rec-col-progress { min-width: 150px; max-width: 200px; }
+    .rec-col-status { min-width: 90px; max-width: 120px; }
+    .rec-col-acts { min-width: 130px; max-width: 160px; }
+
+    .flag-sev-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; }
+    .flag-sev-high::before { content: '\25CF'; font-size: 10px; color: #ea4335; }
+    .flag-sev-medium::before { content: '\25CF'; font-size: 10px; color: #fbbc05; }
+    .flag-sev-low::before { content: '\25CF'; font-size: 10px; color: #34a853; }
+    .flag-sev-high { color: #c5221f; }
+    .flag-sev-medium { color: #b45309; }
+    .flag-sev-low { color: #137333; }
+
+    /* Clickable rows */
+    tbody tr[data-rec-id] { cursor: pointer; }
+    tbody tr[data-rec-id]:hover td { background: #f8f9fa; }
+
+    /* Section toggles */
+    .flag-section-header { display: flex; align-items: center; gap: 8px; padding: 10px 0; cursor: pointer; font-size: 14px; font-weight: 600; color: #202124; }
+    .flag-section-header .badge { font-size: 11px; }
+
+    /* Table font sizes */
+    .rec-tab-slim td { font-size: 13px; }
+
+    /* Dropdown button for flags */
+    .act-btn { padding: 4px 10px; font-size: 12px; font-weight: 500; background: #fff; border: 1px solid #dadce0; border-radius: 4px; color: #5f6368; cursor: pointer; }
+    .act-btn:hover { background: #f1f3f4; }
+    </style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══════════════════════════════════════════════════════════════ -->
+<nav class="nav-sidebar">
+    <div class="nav-brand">
+        <img src="https://lh3.googleusercontent.com/COxitqgJr1sJnIDe8-jiKhxDx1FrYbtRHKJ9z_hELisAlapwE9LUPh6fcXIfb5vwpbMl4xl9H9TRFPc5NOO8Sb3VSgIBrfRYvW6cUA" class="nav-brand-logo" alt="Logo">
+        <div class="nav-brand-text">Ads<br>Control<br>Tower</div>
+    </div>
+    <div class="nav-items">
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">home</span><span class="nav-item-text">Dashboard</span></a>
+        <a class="nav-item-link active" href="#"><span class="material-symbols-outlined nav-item-icon">campaign</span><span class="nav-item-text">Campaigns</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">ad_group</span><span class="nav-item-text">Ad Groups</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">search</span><span class="nav-item-text">Keywords</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">description</span><span class="nav-item-text">Ads</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">shopping_cart</span><span class="nav-item-text">Shopping</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">lightbulb</span><span class="nav-item-text">Recommend.</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">history</span><span class="nav-item-text">Changes</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">settings</span><span class="nav-item-text">Settings</span></a>
+    </div>
+</nav>
+
+<!-- ═══ MAIN CONTENT ══════════════════════════════════════════════════════════ -->
+<div class="main-wrapper">
+    <div class="top-bar">
+        <span>Christopher Hoole</span> &middot;
+        <span>User</span>
+    </div>
+
+    <div class="content-area">
+        <h1 class="page-title">Campaigns</h1>
+
+        <!-- Top tabs -->
+        <div class="top-tabs">
+            <a class="top-tab" href="#">
+                <span class="material-symbols-outlined" style="font-size:18px">table_chart</span>
+                Campaigns (4)
+            </a>
+            <a class="top-tab" href="#">
+                <span class="material-symbols-outlined" style="font-size:18px">bolt</span>
+                Rules & Flags <span class="badge bg-primary">48</span>
+            </a>
+            <a class="top-tab active" href="#">
+                <span class="material-symbols-outlined" style="font-size:18px">lightbulb</span>
+                Recommendations <span class="badge" style="background:#ea4335;color:#fff">Chat 27</span>
+            </a>
+        </div>
+
+        <!-- Recommendations Header -->
+        <div class="rec-header">
+            <div>
+                <h5>Campaign Recommendations</h5>
+                <p>Rules and flags triggered for campaigns in this account. <a href="#">View full recommendations page &rarr;</a></p>
+            </div>
+            <div class="rec-header-actions">
+                <button class="btn btn-sm btn-outline-secondary" onclick="alert('Accept all low risk')">Accept all low risk</button>
+                <button class="btn btn-sm btn-primary" onclick="alert('Run engine')">
+                    <span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">play_arrow</span>
+                    Run Recommendations Now
+                </button>
+            </div>
+        </div>
+
+        <!-- Sub Tabs -->
+        <div class="rec-sub-tabs" id="recSubTabs">
+            <button class="rec-sub-tab active" data-tab="pending">Pending <span class="badge bg-secondary">5</span></button>
+            <button class="rec-sub-tab" data-tab="monitoring">Monitoring <span class="badge bg-secondary">2</span></button>
+            <button class="rec-sub-tab" data-tab="successful">Successful <span class="badge bg-secondary">3</span></button>
+            <button class="rec-sub-tab" data-tab="history">History <span class="badge bg-secondary">4</span></button>
+            <button class="rec-sub-tab" data-tab="flags">Flags <span class="badge bg-secondary">3</span></button>
+        </div>
+
+        <!-- ═══ PENDING TAB ═══════════════════════════════════════════════════ -->
+        <div class="rec-pane" id="pane-pending">
+            <!-- Bulk bar (hidden by default) -->
+            <div class="rec-bulk-bar" id="bulkBar" style="display:none;">
+                <span id="bulkCount">0 selected</span>
+                <button class="btn btn-sm btn-primary" style="font-size:12px">Accept selected</button>
+                <button class="btn btn-sm btn-outline-danger" style="font-size:12px">Decline selected</button>
+                <span class="rec-bulk-clear" onclick="clearSelection()">Clear selection</span>
+            </div>
+
+            <div class="rec-table-wrapper">
+            <table class="table table-sm align-middle rec-tab-slim">
+                <thead>
+                    <tr>
+                        <th style="width:40px"><input type="checkbox" id="cbAll" onchange="toggleAll(this)"></th>
+                        <th class="rec-col-name">Campaign name</th>
+                        <th class="rec-col-rule">Rule name</th>
+                        <th class="rec-col-plain">Plain English</th>
+                        <th class="rec-col-ruleflag">Rule/Flag</th>
+                        <th class="rec-col-ruletype">Rule type</th>
+                        <th class="rec-col-conditions">Conditions</th>
+                        <th class="rec-col-action">Action</th>
+                        <th class="rec-col-risk">Risk</th>
+                        <th class="rec-col-age">Age</th>
+                        <th class="rec-col-acts">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="pendingTbody">
+                    <!-- Row 1 -->
+                    <tr data-rec-id="1" onclick="toggleExpand(event,'exp-1')">
+                        <td onclick="event.stopPropagation()"><input type="checkbox" class="rec-cb" onchange="cbChange()"></td>
+                        <td class="rec-col-name">Google Ads Consultant</td>
+                        <td class="rec-col-rule">Decrease Budget &ndash; Weak CPA</td>
+                        <td class="rec-col-plain">Pull back spend when CPA is above target and there are enough conversions to be certain</td>
+                        <td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-rule">Rule</span></td>
+                        <td class="rec-col-ruletype"><span class="rec-rt-badge rec-rt-budget">Budget</span></td>
+                        <td class="rec-col-conditions"><div class="rec-conditions-cell"><span>CPA (7d) &gt; 1.2&times; target</span><span>Conversions (7d) &gt; 10</span></div></td>
+                        <td class="rec-col-action">
+                            <div class="rec-action-text rec-action-decrease">&darr; Decrease budget 10%</div>
+                            <div class="rec-action-sub">&pound;50.00 &rarr; &pound;45.00 daily</div>
+                        </td>
+                        <td class="rec-col-risk"><span class="rec-risk-badge rec-risk-low">Low</span></td>
+                        <td class="rec-col-age">2m</td>
+                        <td class="rec-col-acts">
+                            <div class="rec-row-acts">
+                                <button class="rec-row-btn rec-row-btn-accept" onclick="event.stopPropagation();alert('Accepted')">Accept</button>
+                                <button class="rec-row-btn rec-row-btn-decline" onclick="event.stopPropagation();alert('Declined')">Decline</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="rec-expand-row" id="exp-1"><td colspan="11"><div class="rec-expand-inner"><div class="rec-expand-grid"><div class="rec-expand-card"><div class="rec-expand-label">Why triggered</div><div class="rec-expand-val">CPA (7d) 1.35&times; &ge; 1.2&times; target (target &pound;42.00)<br>Conversions (7d) 15 &ge; 10</div></div><div class="rec-expand-card"><div class="rec-expand-label">Proposed change</div><div class="rec-expand-val">&pound;50.00 &rarr; &pound;45.00 daily budget</div></div><div class="rec-expand-card"><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">Decrease Budget &ndash; Weak CPA<br>Cooldown: 7 days</div></div></div></div></td></tr>
+
+                    <!-- Row 2 -->
+                    <tr data-rec-id="2" onclick="toggleExpand(event,'exp-2')">
+                        <td onclick="event.stopPropagation()"><input type="checkbox" class="rec-cb" onchange="cbChange()"></td>
+                        <td class="rec-col-name">Google Ads Specialist</td>
+                        <td class="rec-col-rule">Increase Budget &ndash; Strong ROAS</td>
+                        <td class="rec-col-plain">Spend more when ROAS is comfortably beating target with enough clicks to be confident</td>
+                        <td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-rule">Rule</span></td>
+                        <td class="rec-col-ruletype"><span class="rec-rt-badge rec-rt-budget">Budget</span></td>
+                        <td class="rec-col-conditions"><div class="rec-conditions-cell"><span>ROAS (7d) &gt; 1.5&times; target</span><span>Clicks (7d) &gt; 50</span></div></td>
+                        <td class="rec-col-action">
+                            <div class="rec-action-text rec-action-increase">&uarr; Increase budget 10%</div>
+                            <div class="rec-action-sub">&pound;50.00 &rarr; &pound;55.00 daily</div>
+                        </td>
+                        <td class="rec-col-risk"><span class="rec-risk-badge rec-risk-low">Low</span></td>
+                        <td class="rec-col-age">2m</td>
+                        <td class="rec-col-acts">
+                            <div class="rec-row-acts">
+                                <button class="rec-row-btn rec-row-btn-accept" onclick="event.stopPropagation()">Accept</button>
+                                <button class="rec-row-btn rec-row-btn-decline" onclick="event.stopPropagation()">Decline</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="rec-expand-row" id="exp-2"><td colspan="11"><div class="rec-expand-inner"><div class="rec-expand-grid"><div class="rec-expand-card"><div class="rec-expand-label">Why triggered</div><div class="rec-expand-val">ROAS (7d) 3.2&times; &ge; 1.5&times; target (target 4.0&times; &times; 0.5)<br>Clicks (7d) 158 &ge; 50</div></div><div class="rec-expand-card"><div class="rec-expand-label">Proposed change</div><div class="rec-expand-val">&pound;50.00 &rarr; &pound;55.00 daily budget</div></div><div class="rec-expand-card"><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">Increase Budget &ndash; Strong ROAS<br>Cooldown: 7 days</div></div></div></div></td></tr>
+
+                    <!-- Row 3 -->
+                    <tr data-rec-id="3" onclick="toggleExpand(event,'exp-3')">
+                        <td onclick="event.stopPropagation()"><input type="checkbox" class="rec-cb" onchange="cbChange()"></td>
+                        <td class="rec-col-name">PPC Freelancer</td>
+                        <td class="rec-col-rule">Tighten tCPA Target &ndash; Strong CPA</td>
+                        <td class="rec-col-plain">Lower the CPA target to force more conservative bidding when leads are costing too much</td>
+                        <td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-rule">Rule</span></td>
+                        <td class="rec-col-ruletype"><span class="rec-rt-badge rec-rt-bid">Bid</span></td>
+                        <td class="rec-col-conditions"><div class="rec-conditions-cell"><span>CPA (14d) &lt; 0.8&times; target</span></div></td>
+                        <td class="rec-col-action">
+                            <div class="rec-action-text rec-action-decrease">&darr; Lower tCPA target 5%</div>
+                            <div class="rec-action-sub">&pound;45.00 &rarr; &pound;42.75</div>
+                        </td>
+                        <td class="rec-col-risk"><span class="rec-risk-badge rec-risk-medium">Medium</span></td>
+                        <td class="rec-col-age">5m</td>
+                        <td class="rec-col-acts">
+                            <div class="rec-row-acts">
+                                <button class="rec-row-btn rec-row-btn-accept" onclick="event.stopPropagation()">Accept</button>
+                                <button class="rec-row-btn rec-row-btn-decline" onclick="event.stopPropagation()">Decline</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="rec-expand-row" id="exp-3"><td colspan="11"><div class="rec-expand-inner"><div class="rec-expand-grid"><div class="rec-expand-card"><div class="rec-expand-label">Why triggered</div><div class="rec-expand-val">CPA (14d) &pound;36.00 &le; 0.8&times; target (&pound;45.00)</div></div><div class="rec-expand-card"><div class="rec-expand-label">Proposed change</div><div class="rec-expand-val">&pound;45.00 &rarr; &pound;42.75 tCPA target</div></div><div class="rec-expand-card"><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">Tighten tCPA Target &ndash; Strong CPA<br>Cooldown: 14 days</div></div></div></div></td></tr>
+
+                    <!-- Row 4 - High risk with human confirm -->
+                    <tr data-rec-id="4" onclick="toggleExpand(event,'exp-4')">
+                        <td onclick="event.stopPropagation()"><input type="checkbox" class="rec-cb" onchange="cbChange()"></td>
+                        <td class="rec-col-name">PPC Management Services</td>
+                        <td class="rec-col-rule">Pause &ndash; High CPA</td>
+                        <td class="rec-col-plain">Recommend pausing if CPA is more than double target for two weeks and conversions confirm it is not noise</td>
+                        <td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-rule">Rule</span></td>
+                        <td class="rec-col-ruletype"><span class="rec-rt-badge rec-rt-status">Status</span></td>
+                        <td class="rec-col-conditions"><div class="rec-conditions-cell"><span>CPA (14d) &gt; 2&times; target</span><span>Cost (14d) &ge; 200</span></div></td>
+                        <td class="rec-col-action">
+                            <div class="rec-human-badge"><i class="bi bi-exclamation-triangle-fill"></i> Human confirm required</div>
+                            <div class="rec-action-text rec-action-pause">&#9208; Pause campaign</div>
+                        </td>
+                        <td class="rec-col-risk"><span class="rec-risk-badge rec-risk-high">High</span></td>
+                        <td class="rec-col-age">5m</td>
+                        <td class="rec-col-acts">
+                            <div class="rec-row-acts">
+                                <button class="rec-row-btn rec-row-btn-accept" onclick="event.stopPropagation()">Accept</button>
+                                <button class="rec-row-btn rec-row-btn-decline" onclick="event.stopPropagation()">Decline</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="rec-expand-row" id="exp-4"><td colspan="11"><div class="rec-expand-inner"><div class="rec-expand-grid"><div class="rec-expand-card"><div class="rec-expand-label">Why triggered</div><div class="rec-expand-val">CPA (14d) &pound;112.00 &ge; 2&times; target (&pound;45.00)<br>Cost (14d) &pound;340.00 &ge; &pound;200</div></div><div class="rec-expand-card"><div class="rec-expand-label">Proposed change</div><div class="rec-expand-val">Pause campaign (currently enabled)</div></div><div class="rec-expand-card"><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">Pause &ndash; High CPA<br>Cooldown: 30 days</div></div></div></div></td></tr>
+
+                    <!-- Row 5 -->
+                    <tr data-rec-id="5" onclick="toggleExpand(event,'exp-5')">
+                        <td onclick="event.stopPropagation()"><input type="checkbox" class="rec-cb" onchange="cbChange()"></td>
+                        <td class="rec-col-name">Google Ads Consultant</td>
+                        <td class="rec-col-rule">Increase Budget &ndash; Strong CTR</td>
+                        <td class="rec-col-plain">Spend more when CTR is strong and clicks are flowing &ndash; the traffic quality justifies it</td>
+                        <td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-rule">Rule</span></td>
+                        <td class="rec-col-ruletype"><span class="rec-rt-badge rec-rt-budget">Budget</span></td>
+                        <td class="rec-col-conditions"><div class="rec-conditions-cell"><span>CTR (7d) &ge; 0.5&times; target</span><span>Clicks (7d) &ge; 30</span></div></td>
+                        <td class="rec-col-action">
+                            <div class="rec-action-text rec-action-increase">&uarr; Increase budget 10%</div>
+                            <div class="rec-action-sub">&pound;50.00 &rarr; &pound;55.00 daily</div>
+                        </td>
+                        <td class="rec-col-risk"><span class="rec-risk-badge rec-risk-low">Low</span></td>
+                        <td class="rec-col-age">2m</td>
+                        <td class="rec-col-acts">
+                            <div class="rec-row-acts">
+                                <button class="rec-row-btn rec-row-btn-accept" onclick="event.stopPropagation()">Accept</button>
+                                <button class="rec-row-btn rec-row-btn-decline" onclick="event.stopPropagation()">Decline</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="rec-expand-row" id="exp-5"><td colspan="11"><div class="rec-expand-inner"><div class="rec-expand-grid"><div class="rec-expand-card"><div class="rec-expand-label">Why triggered</div><div class="rec-expand-val">CTR (7d) 5.1% &ge; 0.5&times; target<br>Clicks (7d) 196 &ge; 30</div></div><div class="rec-expand-card"><div class="rec-expand-label">Proposed change</div><div class="rec-expand-val">&pound;50.00 &rarr; &pound;55.00 daily budget</div></div><div class="rec-expand-card"><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">Increase Budget &ndash; Strong CTR<br>Cooldown: 7 days</div></div></div></div></td></tr>
+                </tbody>
+            </table>
+            </div><!-- end rec-table-wrapper -->
+        </div>
+
+        <!-- ═══ MONITORING TAB ════════════════════════════════════════════════ -->
+        <div class="rec-pane" id="pane-monitoring" style="display:none">
+            <div class="rec-table-wrapper">
+            <table class="table table-sm align-middle rec-tab-slim">
+                <thead>
+                    <tr>
+                        <th style="width:40px"></th>
+                        <th class="rec-col-date">Accepted</th>
+                        <th class="rec-col-progress">Monitoring progress</th>
+                        <th class="rec-col-name">Campaign name</th>
+                        <th class="rec-col-rule">Rule name</th>
+                        <th class="rec-col-plain">Plain English</th>
+                        <th class="rec-col-ruleflag">Rule/Flag</th>
+                        <th class="rec-col-ruletype">Rule type</th>
+                        <th class="rec-col-conditions">Conditions</th>
+                        <th class="rec-col-action">Action taken</th>
+                        <th class="rec-col-risk">Risk</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr data-rec-id="m1" onclick="toggleExpand(event,'exp-m1')">
+                        <td></td>
+                        <td class="rec-col-date">24 Mar 2026</td>
+                        <td class="rec-col-progress">
+                            <div class="rec-progress-wrap">
+                                <div class="rec-progress-bg"><div class="rec-progress-fill" style="width:29%"></div></div>
+                                <div class="rec-progress-label">Day 2 of 7 &middot; ends 31 Mar 2026</div>
+                            </div>
+                        </td>
+                        <td class="rec-col-name">Google Ads Specialist</td>
+                        <td class="rec-col-rule">Decrease Budget &ndash; Weak ROAS</td>
+                        <td class="rec-col-plain">Pull back spend when ROAS is below target</td>
+                        <td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-rule">Rule</span></td>
+                        <td class="rec-col-ruletype"><span class="rec-rt-badge rec-rt-budget">Budget</span></td>
+                        <td class="rec-col-conditions"><div class="rec-conditions-cell"><span>ROAS (7d) &lt; 0.8&times; target</span></div></td>
+                        <td class="rec-col-action"><div class="rec-action-text rec-action-decrease">&darr; Decreased budget 10%</div></td>
+                        <td class="rec-col-risk"><span class="rec-risk-badge rec-risk-low">Low</span></td>
+                    </tr>
+                    <tr class="rec-expand-row" id="exp-m1"><td colspan="11"><div class="rec-expand-inner"><div class="rec-expand-grid"><div class="rec-expand-card"><div class="rec-expand-label">Why triggered</div><div class="rec-expand-val">ROAS (7d) 0.61&times; &lt; 0.8&times; target</div></div><div class="rec-expand-card"><div class="rec-expand-label">Change applied</div><div class="rec-expand-val">&pound;50.00 &rarr; &pound;45.00 daily budget</div></div><div class="rec-expand-card"><div class="rec-expand-label">Monitoring ends</div><div class="rec-expand-val">31 Mar 2026 (5 days remaining)</div></div></div></div></td></tr>
+
+                    <tr data-rec-id="m2" onclick="toggleExpand(event,'exp-m2')">
+                        <td></td>
+                        <td class="rec-col-date">23 Mar 2026</td>
+                        <td class="rec-col-progress">
+                            <div class="rec-progress-wrap">
+                                <div class="rec-progress-bg"><div class="rec-progress-fill" style="width:50%"></div></div>
+                                <div class="rec-progress-label">Day 7 of 14 &middot; ends 6 Apr 2026</div>
+                            </div>
+                        </td>
+                        <td class="rec-col-name">PPC Freelancer</td>
+                        <td class="rec-col-rule">Loosen tCPA Target &ndash; Volume Constrained</td>
+                        <td class="rec-col-plain">Raise the CPA target to free up volume when the system is too constrained</td>
+                        <td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-rule">Rule</span></td>
+                        <td class="rec-col-ruletype"><span class="rec-rt-badge rec-rt-bid">Bid</span></td>
+                        <td class="rec-col-conditions"><div class="rec-conditions-cell"><span>CPA (14d) &lt; target</span><span>IS lost to rank &gt; 20%</span></div></td>
+                        <td class="rec-col-action"><div class="rec-action-text rec-action-increase">&uarr; Raised tCPA target 5%</div></td>
+                        <td class="rec-col-risk"><span class="rec-risk-badge rec-risk-medium">Medium</span></td>
+                    </tr>
+                    <tr class="rec-expand-row" id="exp-m2"><td colspan="11"><div class="rec-expand-inner"><div class="rec-expand-grid"><div class="rec-expand-card"><div class="rec-expand-label">Why triggered</div><div class="rec-expand-val">CPA (14d) &pound;38.00 &lt; target (&pound;45.00)<br>IS lost to rank 28% &gt; 20%</div></div><div class="rec-expand-card"><div class="rec-expand-label">Change applied</div><div class="rec-expand-val">&pound;45.00 &rarr; &pound;47.25 tCPA target</div></div><div class="rec-expand-card"><div class="rec-expand-label">Monitoring ends</div><div class="rec-expand-val">6 Apr 2026 (7 days remaining)</div></div></div></div></td></tr>
+                </tbody>
+            </table>
+            </div><!-- end rec-table-wrapper -->
+        </div>
+
+        <!-- ═══ SUCCESSFUL TAB ════════════════════════════════════════════════ -->
+        <div class="rec-pane" id="pane-successful" style="display:none">
+            <div class="rec-table-wrapper">
+            <table class="table table-sm align-middle rec-tab-slim">
+                <thead>
+                    <tr>
+                        <th style="width:40px"></th>
+                        <th class="rec-col-date">Accepted</th>
+                        <th class="rec-col-date">Completed</th>
+                        <th class="rec-col-name">Campaign name</th>
+                        <th class="rec-col-rule">Rule name</th>
+                        <th class="rec-col-plain">Plain English</th>
+                        <th class="rec-col-ruleflag">Rule/Flag</th>
+                        <th class="rec-col-ruletype">Rule type</th>
+                        <th class="rec-col-conditions">Conditions</th>
+                        <th class="rec-col-action">Action taken</th>
+                        <th class="rec-col-risk">Risk</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td></td>
+                        <td class="rec-col-date">18 Mar 2026</td>
+                        <td class="rec-col-date">25 Mar 2026</td>
+                        <td class="rec-col-name">Google Ads Consultant</td>
+                        <td class="rec-col-rule">Increase Budget &ndash; Strong CPA</td>
+                        <td class="rec-col-plain">Spend more when CPA is well under target</td>
+                        <td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-rule">Rule</span></td>
+                        <td class="rec-col-ruletype"><span class="rec-rt-badge rec-rt-budget">Budget</span></td>
+                        <td class="rec-col-conditions"><div class="rec-conditions-cell"><span>CPA (7d) &lt; 0.7&times; target</span></div></td>
+                        <td class="rec-col-action"><div class="rec-action-text rec-action-increase">&uarr; Increased budget 10%</div></td>
+                        <td class="rec-col-risk"><span class="rec-risk-badge rec-risk-low">Low</span></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td class="rec-col-date">15 Mar 2026</td>
+                        <td class="rec-col-date">22 Mar 2026</td>
+                        <td class="rec-col-name">PPC Contractor Services</td>
+                        <td class="rec-col-rule">Decrease Budget &ndash; Weak CTR</td>
+                        <td class="rec-col-plain">Pull back spend when CTR is weak</td>
+                        <td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-rule">Rule</span></td>
+                        <td class="rec-col-ruletype"><span class="rec-rt-badge rec-rt-budget">Budget</span></td>
+                        <td class="rec-col-conditions"><div class="rec-conditions-cell"><span>CTR (7d) &lt; 0.5&times; target</span></div></td>
+                        <td class="rec-col-action"><div class="rec-action-text rec-action-decrease">&darr; Decreased budget 10%</div></td>
+                        <td class="rec-col-risk"><span class="rec-risk-badge rec-risk-low">Low</span></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td class="rec-col-date">10 Mar 2026</td>
+                        <td class="rec-col-date">17 Mar 2026</td>
+                        <td class="rec-col-name">Google Ads Specialist UK</td>
+                        <td class="rec-col-rule">Tighten tROAS Target &ndash; Strong Performance</td>
+                        <td class="rec-col-plain">Make the system work harder when ROAS is beating target</td>
+                        <td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-rule">Rule</span></td>
+                        <td class="rec-col-ruletype"><span class="rec-rt-badge rec-rt-bid">Bid</span></td>
+                        <td class="rec-col-conditions"><div class="rec-conditions-cell"><span>ROAS (14d) &gt; 1.5&times; target</span></div></td>
+                        <td class="rec-col-action"><div class="rec-action-text rec-action-increase">&uarr; Raised tROAS 5%</div></td>
+                        <td class="rec-col-risk"><span class="rec-risk-badge rec-risk-medium">Medium</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            </div><!-- end rec-table-wrapper -->
+        </div>
+
+        <!-- ═══ HISTORY TAB ═══════════════════════════════════════════════════ -->
+        <div class="rec-pane" id="pane-history" style="display:none">
+            <div class="rec-table-wrapper">
+            <table class="table table-sm align-middle rec-tab-slim">
+                <thead>
+                    <tr>
+                        <th style="width:40px"></th>
+                        <th class="rec-col-status">Outcome</th>
+                        <th class="rec-col-date">Date actioned</th>
+                        <th class="rec-col-name">Campaign name</th>
+                        <th class="rec-col-rule">Rule name</th>
+                        <th class="rec-col-plain">Plain English</th>
+                        <th class="rec-col-ruleflag">Rule/Flag</th>
+                        <th class="rec-col-ruletype">Rule type</th>
+                        <th class="rec-col-conditions">Conditions</th>
+                        <th class="rec-col-action">Action</th>
+                        <th class="rec-col-risk">Risk</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td></td>
+                        <td class="rec-col-status"><span class="rec-outcome-badge rec-outcome-declined">Declined</span></td>
+                        <td class="rec-col-date">24 Mar 2026</td>
+                        <td class="rec-col-name">Google Ads Consultant</td>
+                        <td class="rec-col-rule">Pause &ndash; Poor ROAS</td>
+                        <td class="rec-col-plain">Recommend pausing if ROAS has been critically low</td>
+                        <td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-rule">Rule</span></td>
+                        <td class="rec-col-ruletype"><span class="rec-rt-badge rec-rt-status">Status</span></td>
+                        <td class="rec-col-conditions"><div class="rec-conditions-cell"><span>ROAS (14d) &lt; 0.5&times; target</span><span>Cost (14d) &ge; 200</span></div></td>
+                        <td class="rec-col-action"><div class="rec-action-text rec-action-pause">&#9208; Pause campaign</div></td>
+                        <td class="rec-col-risk"><span class="rec-risk-badge rec-risk-high">High</span></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td class="rec-col-status"><span class="rec-outcome-badge rec-outcome-declined">Declined</span></td>
+                        <td class="rec-col-date">22 Mar 2026</td>
+                        <td class="rec-col-name">PPC Freelancer</td>
+                        <td class="rec-col-rule">Emergency Budget Cut &ndash; Critical CPA</td>
+                        <td class="rec-col-plain">Cut budget hard if CPA has risen to a point where every conversion is unprofitable</td>
+                        <td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-rule">Rule</span></td>
+                        <td class="rec-col-ruletype"><span class="rec-rt-badge rec-rt-budget">Budget</span></td>
+                        <td class="rec-col-conditions"><div class="rec-conditions-cell"><span>CPA (7d) &gt; 2&times; target</span></div></td>
+                        <td class="rec-col-action"><div class="rec-action-text rec-action-decrease">&darr; Decrease budget 25%</div></td>
+                        <td class="rec-col-risk"><span class="rec-risk-badge rec-risk-medium">Medium</span></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td class="rec-col-status"><span class="rec-outcome-badge rec-outcome-reverted">Reverted</span></td>
+                        <td class="rec-col-date">20 Mar 2026</td>
+                        <td class="rec-col-name">Google Ads Specialist</td>
+                        <td class="rec-col-rule">Increase Budget &ndash; Strong CPA</td>
+                        <td class="rec-col-plain">Spend more when CPA is well under target</td>
+                        <td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-rule">Rule</span></td>
+                        <td class="rec-col-ruletype"><span class="rec-rt-badge rec-rt-budget">Budget</span></td>
+                        <td class="rec-col-conditions"><div class="rec-conditions-cell"><span>CPA (7d) &lt; 0.7&times; target</span></div></td>
+                        <td class="rec-col-action"><div class="rec-action-text rec-action-increase">&uarr; Increase budget 10%</div></td>
+                        <td class="rec-col-risk"><span class="rec-risk-badge rec-risk-low">Low</span></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td class="rec-col-status"><span class="rec-outcome-badge rec-outcome-declined">Declined</span></td>
+                        <td class="rec-col-date">18 Mar 2026</td>
+                        <td class="rec-col-name">PPC Management Services</td>
+                        <td class="rec-col-rule">Decrease Budget &ndash; Weak ROAS</td>
+                        <td class="rec-col-plain">Pull back spend when ROAS is below target</td>
+                        <td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-rule">Rule</span></td>
+                        <td class="rec-col-ruletype"><span class="rec-rt-badge rec-rt-budget">Budget</span></td>
+                        <td class="rec-col-conditions"><div class="rec-conditions-cell"><span>ROAS (7d) &lt; 0.8&times; target</span></div></td>
+                        <td class="rec-col-action"><div class="rec-action-text rec-action-decrease">&darr; Decrease budget 10%</div></td>
+                        <td class="rec-col-risk"><span class="rec-risk-badge rec-risk-low">Low</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            </div><!-- end rec-table-wrapper -->
+        </div>
+
+        <!-- ═══ FLAGS TAB ═════════════════════════════════════════════════════ -->
+        <div class="rec-pane" id="pane-flags" style="display:none">
+
+            <!-- Active flags -->
+            <h6 style="font-size:14px;font-weight:600;margin-bottom:12px;">Active Flags</h6>
+            <div class="rec-table-wrapper">
+            <table class="table table-sm align-middle rec-tab-slim">
+                <thead>
+                    <tr>
+                        <th class="rec-col-name">Campaign name</th>
+                        <th class="rec-col-rule">Flag name</th>
+                        <th class="rec-col-plain">Plain English</th>
+                        <th class="rec-col-ruleflag">Rule/Flag</th>
+                        <th class="rec-col-risk">Severity</th>
+                        <th class="rec-col-age">Age</th>
+                        <th class="rec-col-acts">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr data-rec-id="f1" onclick="toggleExpand(event,'exp-f1')">
+                        <td class="rec-col-name">Google Ads Consultant</td>
+                        <td class="rec-col-rule">Flag: ROAS WoW Drop</td>
+                        <td class="rec-col-plain">ROAS has dropped significantly week-over-week</td>
+                        <td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-flag">Flag</span></td>
+                        <td class="rec-col-risk"><span class="flag-sev-badge flag-sev-medium">Medium</span></td>
+                        <td class="rec-col-age">1h</td>
+                        <td class="rec-col-acts">
+                            <div class="dropdown">
+                                <button class="act-btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="#" onclick="alert('Acknowledged')">Acknowledge</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#">Ignore 7 days</a></li>
+                                    <li><a class="dropdown-item" href="#">Ignore 14 days</a></li>
+                                    <li><a class="dropdown-item" href="#">Ignore 30 days</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="rec-expand-row" id="exp-f1"><td colspan="7"><div class="rec-expand-inner"><div class="rec-expand-grid"><div class="rec-expand-card"><div class="rec-expand-label">Why this was triggered</div><div class="rec-expand-val">ROAS WoW% dropped -32% (threshold: -20%)</div></div><div class="rec-expand-card"><div class="rec-expand-label">Flag details</div><div class="rec-expand-val">Monitors week-over-week ROAS changes</div></div><div class="rec-expand-card"><div class="rec-expand-label">Severity</div><div class="rec-expand-val">Medium severity</div></div></div></div></td></tr>
+
+                    <tr data-rec-id="f2" onclick="toggleExpand(event,'exp-f2')">
+                        <td class="rec-col-name">PPC Management Services</td>
+                        <td class="rec-col-rule">Flag: Cost Anomaly Spike</td>
+                        <td class="rec-col-plain">Abnormal cost spike detected in the last 7 days</td>
+                        <td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-flag">Flag</span></td>
+                        <td class="rec-col-risk"><span class="flag-sev-badge flag-sev-high">High</span></td>
+                        <td class="rec-col-age">3h</td>
+                        <td class="rec-col-acts">
+                            <div class="dropdown">
+                                <button class="act-btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="#">Acknowledge</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#">Ignore 7 days</a></li>
+                                    <li><a class="dropdown-item" href="#">Ignore 14 days</a></li>
+                                    <li><a class="dropdown-item" href="#">Ignore 30 days</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="rec-expand-row" id="exp-f2"><td colspan="7"><div class="rec-expand-inner"><div class="rec-expand-grid"><div class="rec-expand-card"><div class="rec-expand-label">Why this was triggered</div><div class="rec-expand-val">Cost Anomaly z-score 2.8 (threshold: &gt; 2.0)</div></div><div class="rec-expand-card"><div class="rec-expand-label">Flag details</div><div class="rec-expand-val">Detects abnormal spending patterns</div></div><div class="rec-expand-card"><div class="rec-expand-label">Severity</div><div class="rec-expand-val">High severity</div></div></div></div></td></tr>
+
+                    <tr data-rec-id="f3" onclick="toggleExpand(event,'exp-f3')">
+                        <td class="rec-col-name">PPC Freelancer</td>
+                        <td class="rec-col-rule">Flag: Low Conversion Volume</td>
+                        <td class="rec-col-plain">Conversion volume has dropped below minimum threshold</td>
+                        <td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-flag">Flag</span></td>
+                        <td class="rec-col-risk"><span class="flag-sev-badge flag-sev-low">Low</span></td>
+                        <td class="rec-col-age">5h</td>
+                        <td class="rec-col-acts">
+                            <div class="dropdown">
+                                <button class="act-btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="#">Acknowledge</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#">Ignore 7 days</a></li>
+                                    <li><a class="dropdown-item" href="#">Ignore 14 days</a></li>
+                                    <li><a class="dropdown-item" href="#">Ignore 30 days</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="rec-expand-row" id="exp-f3"><td colspan="7"><div class="rec-expand-inner"><div class="rec-expand-grid"><div class="rec-expand-card"><div class="rec-expand-label">Why this was triggered</div><div class="rec-expand-val">Conversions (7d) = 3 (threshold: &lt; 5)</div></div><div class="rec-expand-card"><div class="rec-expand-label">Flag details</div><div class="rec-expand-val">Not enough conversions for reliable optimisation</div></div><div class="rec-expand-card"><div class="rec-expand-label">Severity</div><div class="rec-expand-val">Low severity</div></div></div></div></td></tr>
+                </tbody>
+            </table>
+            </div><!-- end rec-table-wrapper -->
+
+            <!-- Snoozed flags -->
+            <div class="flag-section-header" onclick="toggleSection('snoozed')" style="margin-top:16px;">
+                <span id="snoozed-chev">&#9654;</span>
+                Snoozed <span class="badge bg-secondary">2</span>
+            </div>
+            <div id="snoozed-body" style="display:none">
+                <div class="rec-table-wrapper">
+                <table class="table table-sm align-middle rec-tab-slim">
+                    <thead>
+                        <tr>
+                            <th class="rec-col-name">Campaign name</th>
+                            <th class="rec-col-rule">Flag name</th>
+                            <th class="rec-col-plain">Plain English</th>
+                            <th class="rec-col-ruleflag">Rule/Flag</th>
+                            <th class="rec-col-risk">Severity</th>
+                            <th class="rec-col-age">Age</th>
+                            <th style="min-width:110px">Snoozed until</th>
+                            <th class="rec-col-acts">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Google Ads Specialist</td>
+                            <td>Flag: CTR Decline</td>
+                            <td>CTR has been declining steadily over 14 days</td>
+                            <td><span class="rec-rf-badge rec-rf-flag">Flag</span></td>
+                            <td><span class="flag-sev-badge flag-sev-low">Low</span></td>
+                            <td>2d</td>
+                            <td>31 Mar 2026</td>
+                            <td><button class="act-btn" onclick="alert('Unsnooze')">Unsnooze</button></td>
+                        </tr>
+                        <tr>
+                            <td>PPC Contractor Services</td>
+                            <td>Flag: Impression Share Drop</td>
+                            <td>Impression share lost to budget has increased</td>
+                            <td><span class="rec-rf-badge rec-rf-flag">Flag</span></td>
+                            <td><span class="flag-sev-badge flag-sev-medium">Medium</span></td>
+                            <td>3d</td>
+                            <td>7 Apr 2026</td>
+                            <td><button class="act-btn" onclick="alert('Unsnooze')">Unsnooze</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+                </div><!-- end rec-table-wrapper -->
+            </div>
+
+            <!-- History flags -->
+            <div class="flag-section-header" onclick="toggleSection('flaghist')">
+                <span id="flaghist-chev">&#9654;</span>
+                History <span class="badge bg-secondary">1</span>
+            </div>
+            <div id="flaghist-body" style="display:none">
+                <div class="rec-table-wrapper">
+                <table class="table table-sm align-middle rec-tab-slim">
+                    <thead>
+                        <tr>
+                            <th class="rec-col-name">Campaign name</th>
+                            <th class="rec-col-rule">Flag name</th>
+                            <th class="rec-col-plain">Plain English</th>
+                            <th class="rec-col-ruleflag">Rule/Flag</th>
+                            <th class="rec-col-risk">Severity</th>
+                            <th class="rec-col-age">Age</th>
+                            <th style="min-width:110px">Actioned</th>
+                            <th class="rec-col-acts">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Google Ads Campaign Management</td>
+                            <td>Flag: Spend Pace Warning</td>
+                            <td>Campaign spend is pacing ahead of daily budget</td>
+                            <td><span class="rec-rf-badge rec-rf-flag">Flag</span></td>
+                            <td><span class="flag-sev-badge flag-sev-low">Low</span></td>
+                            <td>5d</td>
+                            <td>19 Mar 2026</td>
+                            <td><span style="font-size:12px;color:#5f6368">Acknowledged</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+                </div><!-- end rec-table-wrapper -->
+            </div>
+        </div>
+
+    </div><!-- end content-area -->
+</div><!-- end main-wrapper -->
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// ── Sub-tab switching ────────────────────────────────────────────────────────
+document.querySelectorAll('.rec-sub-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.rec-sub-tab').forEach(function(t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        document.querySelectorAll('.rec-pane').forEach(function(p) { p.style.display = 'none'; });
+        document.getElementById('pane-' + tab.getAttribute('data-tab')).style.display = '';
+    });
+});
+
+// ── Expand/collapse rows ─────────────────────────────────────────────────────
+function toggleExpand(evt, expId) {
+    if (evt.target.tagName === 'BUTTON' || evt.target.tagName === 'INPUT') return;
+    var row = document.getElementById(expId);
+    if (row) row.classList.toggle('open');
+}
+
+// ── Checkbox bulk selection ──────────────────────────────────────────────────
+function toggleAll(el) {
+    document.querySelectorAll('#pendingTbody .rec-cb').forEach(function(cb) { cb.checked = el.checked; });
+    cbChange();
+}
+
+function cbChange() {
+    var checked = document.querySelectorAll('#pendingTbody .rec-cb:checked').length;
+    var bar = document.getElementById('bulkBar');
+    if (checked > 0) {
+        bar.style.display = 'flex';
+        document.getElementById('bulkCount').textContent = checked + ' selected';
+    } else {
+        bar.style.display = 'none';
+    }
+}
+
+function clearSelection() {
+    document.querySelectorAll('#pendingTbody .rec-cb').forEach(function(cb) { cb.checked = false; });
+    document.getElementById('cbAll').checked = false;
+    cbChange();
+}
+
+// ── Flag section toggles ────────────────────────────────────────────────────
+function toggleSection(name) {
+    var body = document.getElementById(name + '-body');
+    var chev = document.getElementById(name + '-chev');
+    if (body.style.display === 'none') {
+        body.style.display = '';
+        chev.innerHTML = '&#9660;';
+    } else {
+        body.style.display = 'none';
+        chev.innerHTML = '&#9654;';
+    }
+}
+</script>
+
+</body>
+</html>

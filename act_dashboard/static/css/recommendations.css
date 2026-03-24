@@ -219,8 +219,50 @@
 
 
 /* ----------------------------------------------------------------------------
+   TABLE WRAPPER — Chat 113
+   Bordered container matching Rules & Flags table design
+   Usage: <div class="rec-table-wrapper"><table ...>...</table></div>
+   ---------------------------------------------------------------------------- */
+
+.rec-table-wrapper {
+    overflow-x: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.rec-table-wrapper .table {
+    margin-bottom: 0;
+}
+
+.rec-table-wrapper .table thead th {
+    font-size: 12px;
+    font-weight: 600;
+    color: #5f6368;
+    padding: 10px 10px;
+    border-bottom: 2px solid #dee2e6;
+    background: #f8f9fa;
+    text-transform: none;
+    letter-spacing: 0;
+    white-space: nowrap;
+}
+
+.rec-table-wrapper .table tbody td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #e0e0e0;
+    vertical-align: middle;
+    font-size: 13px;
+}
+
+.rec-table-wrapper .table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+
+/* ----------------------------------------------------------------------------
    EXPAND ROW
    Expandable detail row — click any data row to toggle
+   Card-based 3-column layout with vertical dividers
    ---------------------------------------------------------------------------- */
 
 .rec-expand-row {
@@ -232,15 +274,28 @@
 }
 
 .rec-expand-row td {
-    background: #f8f9fa;
-    padding: 16px 20px;
+    background: #fafbfc;
+    padding: 0 !important;
     border-bottom: 1px solid #e0e0e0;
+}
+
+.rec-expand-inner {
+    padding: 16px 20px;
 }
 
 .rec-expand-grid {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    gap: 24px;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+}
+
+.rec-expand-card {
+    padding: 12px 16px;
+    border-right: 1px solid #e8e8e8;
+}
+
+.rec-expand-card:last-child {
+    border-right: none;
 }
 
 .rec-expand-label {
