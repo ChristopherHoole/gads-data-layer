@@ -99,16 +99,20 @@ def get_action_label(rec: dict) -> str:
     
     # Keyword actions
     elif entity_type == 'keyword':
-        if action_direction == 'pause':
-            return "Pause"
-        elif action_direction == 'enable':
+        # Also check action_type directly for keywords
+        action_type_raw = rec.get('action_type', '')
+        if action_direction == 'pause' or action_type_raw == 'pause':
+            return "Pause keyword"
+        elif action_direction == 'enable' or action_type_raw == 'enable':
             return "Enable keyword"
-        elif action_direction == 'increase':
+        elif action_direction == 'increase' or 'increase' in action_type_raw:
             return f"Increase keyword bid by {action_magnitude}%"
-        elif action_direction == 'decrease':
+        elif action_direction == 'decrease' or 'decrease' in action_type_raw:
             return f"Decrease keyword bid by {action_magnitude}%"
         elif action_direction == 'flag':
             return "Flag keyword for review"
+        elif action_type_raw:
+            return action_type_raw.replace('_', ' ').title()
     
     # Shopping actions
     elif entity_type == 'shopping':
@@ -1045,11 +1049,15 @@ def recommendations_cards():
         rec["action_label"] = get_action_label(rec)
         if rec.get("rule_type") == "bid":
             action_type = rec.get("action_type", "")
+            entity_type = rec.get("entity_type", "")
             cur  = rec.get("current_value")  or 0
             prop = rec.get("proposed_value") or 0
-            if "max_cpc" in action_type:
+            if "max_cpc" in action_type or (entity_type == "keyword" and "bid" in action_type):
                 rec["value_label"]  = "£{:.2f} → £{:.2f}".format(cur, prop)
                 rec["value_suffix"] = "max CPC"
+            elif entity_type == "ad_group" and "cpc_bid" in action_type:
+                rec["value_label"]  = "£{:.2f} → £{:.2f}".format(cur, prop)
+                rec["value_suffix"] = "CPC bid"
             elif "tcpa" in action_type or "target_cpa" in action_type:
                 rec["value_label"]  = "£{:.2f} → £{:.2f}".format(cur, prop)
                 rec["value_suffix"] = "tCPA"
