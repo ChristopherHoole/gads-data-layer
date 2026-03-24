@@ -89,8 +89,6 @@ ACTION_MAP = {
     "increase_product_bid":"increase",
     "decrease_product_bid":"decrease",
     # Generic
-    "pause":               "pause",
-    "enable":              "hold",
     "flag":                "flag",
     "hold":                "hold",
 }
