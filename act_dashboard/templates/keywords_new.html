@@ -5,33 +5,8 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/table-styles.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/rules.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/recommendations.css') }}">
 <style>
-  :root {
-    --border: #e5e9f0;
-    --muted:  #8a93a2;
-    --budget-c: #1d4ed8;
-    --bid-c:    #15803d;
-    --status-c: #991b1b;
-  }
-
-  /* SUMMARY STRIP */
-  .summary-strip { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 24px; }
-  .summary-card  { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; }
-  .s-icon  { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .s-num   { font-size: 24px; font-weight: 700; line-height: 1; }
-  .s-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
-
-  /* PAGE TABS */
-  .page-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
-  .page-tab  { padding: 10px 20px; font-size: 13.5px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; display: flex; align-items: center; gap: 6px; white-space: nowrap; background: transparent; border-top: none; border-left: none; border-right: none; }
-  .page-tab:hover { color: #344054; }
-  .page-tab.active { color: #0d6efd; border-bottom-color: #0d6efd; }
-  .tab-badge        { background: #e9ecef; color: #495057; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
-  .tab-badge-orange { background: #fff3cd; color: #7c3700; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
-  .tab-badge-green  { background: #dcfce7; color: #15803d; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
-  .tab-badge-grey   { background: #f3f4f6; color: #6b7280; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
-  .tab-badge-red    { background: #fee2e2; color: #991b1b; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
-
   /* QS badge styles for table */
   .qs-badge { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; font-size:12px; font-weight:600; }
   .qs-high { background:#dcfce7; color:#15803d; }
@@ -39,126 +14,6 @@
   .qs-low  { background:#fee2e2; color:#991b1b; }
   .qs-none { background:#f3f4f6; color:#9ca3af; }
 
-  /* REC HEADER */
-  .rec-header         { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 16px; }
-  .rec-header-left h5 { font-size: 16px; font-weight: 600; margin: 0 0 4px; color: #1a1d23; }
-  .rec-header-left p  { margin: 0; color: var(--muted); font-size: 13px; }
-
-  /* CARD GRID */
-  .rec-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-bottom: 28px; }
-
-  /* REC CARD */
-  .rec-card { background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; transition: box-shadow .15s, border-color .15s, opacity .3s, transform .3s; }
-  .rec-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.07); border-color: #d0d7e0; }
-  .rec-card.card-monitoring { border-color: #bfdbfe; }
-  .rec-card.card-success    { border-color: #bbf7d0; }
-  .rec-card.card-declined   { opacity: 0.55; }
-  .rec-card.card-reverted   { border-color: #fecaca; }
-  .rec-card.removing        { opacity: 0; transform: scale(0.96); pointer-events: none; }
-
-  /* Top bars */
-  .rec-top       { height: 4px; flex-shrink: 0; }
-  .rt-budget     { background: #1d4ed8; }
-  .rt-bid        { background: #15803d; }
-  .rt-status     { background: #dc3545; }
-  .rt-monitoring { background: linear-gradient(90deg,#0d6efd,#7c3aed); }
-  .rt-successful { background: #15803d; }
-  .rt-declined   { background: #9ca3af; }
-  .rt-reverted   { background: #dc3545; }
-
-  .rec-body { padding: 16px 18px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
-
-  /* Card header */
-  .rec-card-header   { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-  .rec-rule-tag      { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
-  .rrt-budget        { color: var(--budget-c); }
-  .rrt-bid           { color: var(--bid-c); }
-  .rrt-status        { color: var(--status-c); }
-  .rrt-monitoring    { color: #6d28d9; }
-  .rrt-declined      { color: #6b7280; }
-  .rrt-reverted      { color: #991b1b; }
-  .rec-campaign-name { font-size: 14px; font-weight: 600; color: #1a1d23; }
-
-  /* Status pills */
-  .status-pill   { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
-  .sp-pending    { background: #dbeafe; color: #1d4ed8; }
-  .sp-monitoring { background: #ede9fe; color: #6d28d9; }
-  .sp-successful { background: #dcfce7; color: #15803d; }
-  .sp-declined   { background: #f3f4f6; color: #6b7280; }
-  .sp-reverted   { background: #fee2e2; color: #991b1b; }
-
-  /* Change block */
-  .change-block     { border-radius: 8px; padding: 11px 14px; display: flex; align-items: center; gap: 12px; border: 1px solid; }
-  .cb-budget        { background: linear-gradient(135deg,#eff6ff,#dbeafe); border-color: #bfdbfe; }
-  .cb-bid           { background: linear-gradient(135deg,#f0fdf4,#dcfce7); border-color: #bbf7d0; }
-  .cb-status        { background: linear-gradient(135deg,#fff7ed,#ffedd5); border-color: #fed7aa; }
-  .cb-grey          { background: #f9fafb; border-color: #e5e7eb; }
-  .change-icon-wrap { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .ciw-budget       { background: #dbeafe; }
-  .ciw-bid          { background: #dcfce7; }
-  .ciw-status       { background: #ffedd5; }
-  .ciw-grey         { background: #f3f4f6; }
-  .change-main      { font-size: 13px; font-weight: 600; color: #1a1d23; }
-  .change-sub       { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .change-sub strong { color: #1a1d23; }
-
-  /* Trigger block */
-  .trigger-block { background: #f8f9fa; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 12.5px; color: #344054; line-height: 1.7; }
-  .trigger-label { font-size: 11px; font-weight: 600; color: #6b7280; margin-bottom: 4px; letter-spacing: .02em; }
-
-  /* Monitoring block */
-  .monitoring-block { background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 8px; padding: 12px 14px; }
-  .mon-top          { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .mon-label        { font-size: 12px; font-weight: 600; color: #5b21b6; display: flex; align-items: center; gap: 6px; }
-  .mon-days         { font-size: 12px; color: #6d28d9; font-weight: 700; }
-  .mon-bar-wrap     { height: 6px; background: #ede9fe; border-radius: 3px; margin-bottom: 10px; overflow: hidden; }
-  .mon-bar          { height: 6px; background: linear-gradient(90deg,#6d28d9,#0d6efd); border-radius: 3px; }
-  .mon-outcomes     { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .mon-outcome-pill { border-radius: 6px; padding: 7px 10px; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; }
-  .mop-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
-  .mop-revert  { background: #fff1f2; border: 1px solid #fecaca; color: #991b1b; }
-
-  /* Outcome block */
-  .outcome-block  { border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; border: 1px solid; }
-  .ob-success     { background: #f0fdf4; border-color: #bbf7d0; }
-  .ob-declined    { background: #f9fafb; border-color: #e5e7eb; }
-  .ob-reverted    { background: #fff1f2; border-color: #fecaca; }
-  .outcome-title  { font-size: 13px; font-weight: 600; }
-  .ot-success     { color: #15803d; }
-  .ot-declined    { color: #6b7280; }
-  .ot-reverted    { color: #991b1b; }
-  .outcome-sub    { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .revert-reason  { font-size: 12px; color: #991b1b; margin-top: 4px; font-style: italic; }
-
-  /* Footer */
-  .rec-footer         { border-top: 1px solid var(--border); padding-top: 10px; margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
-  .rec-footer-meta    { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-  .rec-footer-actions { display: flex; gap: 6px; align-items: center; }
-  .conf-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
-  .cb-high { background: #d1fae5; color: #065f46; }
-  .cb-med  { background: #fef3c7; color: #92400e; }
-  .cb-low  { background: #fee2e2; color: #991b1b; }
-  .rec-age      { font-size: 12px; color: var(--muted); }
-  .readonly-label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; font-style: italic; margin-left: auto; }
-
-  /* Action buttons */
-  .btn-accept  { background: #15803d; border: none; color: white; border-radius: 6px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; flex: 1; justify-content: center; }
-  .btn-accept:hover  { background: #166534; }
-  .btn-decline { background: white; border: 1px solid #fca5a5; color: #dc3545; border-radius: 6px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; flex: 1; justify-content: center; }
-  .btn-decline:hover { background: #fff1f2; }
-  .btn-modify  { background: white; border: 1px solid var(--border); color: #374151; border-radius: 6px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; flex: 1; justify-content: center; }
-  .btn-modify:hover  { background: #f8f9fa; }
-
-  /* Empty state */
-  .empty-state   { text-align: center; padding: 48px 24px; color: var(--muted); }
-  .empty-state p { font-size: 14px; margin: 8px 0 0; }
-
-  /* Toast */
-  #act-toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
-  .act-toast { padding: 12px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,.12); display: flex; align-items: center; gap: 8px; }
-  .act-toast.t-success { background: #15803d; color: white; }
-  .act-toast.t-error   { background: #dc3545; color: white; }
-  .act-toast.t-muted   { background: #374151; color: white; }
 </style>
 {% endblock %}
 
@@ -184,8 +39,9 @@
       </button>
     </li>
     <li class="nav-item">
-      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#recommendations-tab" type="button">
-        <i class="bi bi-star-fill text-primary"></i> Recommendations (<span id="rec-tab-count">0</span>)
+      <button class="nav-link" id="kw-recommendations-tab-btn" data-bs-toggle="tab" data-bs-target="#recommendations-tab" type="button">
+        <span class="material-symbols-outlined me-1" style="font-size:14px;vertical-align:text-bottom">info</span>
+        Recommendations (<span id="rec-tab-count">0</span>)
       </button>
     </li>
   </ul>
@@ -712,140 +568,240 @@
 
     <!-- RECOMMENDATIONS TAB -->
     <div class="tab-pane fade" id="recommendations-tab" role="tabpanel">
-      
-      {# ── SUMMARY STRIP ──────────────────────────────────────────────────────────── #}
-      <div class="summary-strip">
-        <div class="summary-card">
-          <div class="s-icon" style="background:#dbeafe;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          </div>
-          <div>
-            <div class="s-num" style="color:#0d6efd;" id="kw-summary-pending">0</div>
-            <div class="s-label">Pending</div>
-          </div>
-        </div>
-        <div class="summary-card">
-          <div class="s-icon" style="background:#ede9fe;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
-          <div>
-            <div class="s-num" style="color:#6d28d9;" id="kw-summary-monitoring">0</div>
-            <div class="s-label">Monitoring</div>
-          </div>
-        </div>
-        <div class="summary-card">
-          <div class="s-icon" style="background:#dcfce7;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <div>
-            <div class="s-num" style="color:#15803d;" id="kw-summary-successful">0</div>
-            <div class="s-label">Successful</div>
-          </div>
-        </div>
-        <div class="summary-card">
-          <div class="s-icon" style="background:#fee2e2;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
-          </div>
-          <div>
-            <div class="s-num" style="color:#dc3545;" id="kw-summary-reverted">0</div>
-            <div class="s-label">Reverted</div>
-          </div>
-        </div>
-        <div class="summary-card">
-          <div class="s-icon" style="background:#f3f4f6;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </div>
-          <div>
-            <div class="s-num" style="color:#6b7280;" id="kw-summary-declined">0</div>
-            <div class="s-label">Declined</div>
-          </div>
-        </div>
-      </div>
 
-      {# ── STATUS TAB BAR ─────────────────────────────────────────────────────────── #}
-      <div class="page-tabs">
-        <button class="page-tab active" id="kw-btn-tab-pending" onclick="kwSwitchTab('pending')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Pending <span class="tab-badge" id="kw-tab-badge-pending">0</span>
-        </button>
-        <button class="page-tab" id="kw-btn-tab-monitoring" onclick="kwSwitchTab('monitoring')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Monitoring <span class="tab-badge-orange" id="kw-tab-badge-monitoring">0</span>
-        </button>
-        <button class="page-tab" id="kw-btn-tab-successful" onclick="kwSwitchTab('successful')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          Successful <span class="tab-badge-green" id="kw-tab-badge-successful">0</span>
-        </button>
-        <button class="page-tab" id="kw-btn-tab-reverted" onclick="kwSwitchTab('reverted')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>
-          Reverted <span class="tab-badge-red" id="kw-tab-badge-reverted">0</span>
-        </button>
-        <button class="page-tab" id="kw-btn-tab-declined" onclick="kwSwitchTab('declined')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          Declined <span class="tab-badge-grey" id="kw-tab-badge-declined">0</span>
-        </button>
-      </div>
-
-      {# ── TAB CONTENT AREAS ──────────────────────────────────────────────────────── #}
-      <div id="kw-tab-pending">
-        <div id="kw-cards-pending" class="rec-grid-2"></div>
-        <div id="kw-empty-pending" class="empty-state" style="display:none;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <p>No pending recommendations</p>
+      <!-- Header -->
+      <div class="d-flex align-items-start justify-content-between gap-3 mb-4">
+        <div>
+          <h5 style="font-size:16px;font-weight:600;margin:0 0 4px;color:#1a1d23;">Keyword Recommendations</h5>
+          <p style="margin:0;color:#6b7280;font-size:13px;">Rules and flags triggered for keywords in this account. <a href="/recommendations" style="color:#0d6efd;text-decoration:none;">View full recommendations page &rarr;</a></p>
         </div>
-        <div id="kw-loadmore-pending" style="text-align:center; margin-top:24px; display:none;">
-          <button onclick="kwLoadMore('pending')" class="btn btn-outline-primary">
-            Load More <span id="kw-loadmore-count-pending"></span>
+        <div class="d-flex gap-2 flex-wrap">
+          <button id="kw-accept-low-risk-btn" class="btn btn-sm btn-outline-success" style="font-size:13px;">Accept all low risk</button>
+          <button id="kw-run-engine-btn" class="btn btn-sm btn-outline-secondary" style="font-size:13px;display:flex;align-items:center;gap:5px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg>
+            Run Recommendations Now
           </button>
         </div>
       </div>
 
-      <div id="kw-tab-monitoring" style="display:none;">
-        <div id="kw-cards-monitoring" class="rec-grid-2"></div>
-        <div id="kw-empty-monitoring" class="empty-state" style="display:none;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
-          </svg>
-          <p>No monitoring recommendations</p>
-        </div>
-      </div>
+      <!-- Sub-tabs -->
+      <ul class="nav nav-tabs mb-3" id="kwRecTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="kw-rec-pending-tab" data-bs-toggle="tab" data-bs-target="#kw-rec-pending" type="button" role="tab">
+            Pending <span class="badge bg-secondary ms-1" id="kw-badge-pending">0</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="kw-rec-monitoring-tab" data-bs-toggle="tab" data-bs-target="#kw-rec-monitoring" type="button" role="tab">
+            Monitoring <span class="badge bg-secondary ms-1" id="kw-badge-monitoring">0</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="kw-rec-successful-tab" data-bs-toggle="tab" data-bs-target="#kw-rec-successful" type="button" role="tab">
+            Successful <span class="badge bg-secondary ms-1" id="kw-badge-successful">0</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="kw-rec-history-tab" data-bs-toggle="tab" data-bs-target="#kw-rec-history" type="button" role="tab">
+            History <span class="badge bg-secondary ms-1" id="kw-badge-history">0</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="kw-flag-tab" data-bs-toggle="tab" data-bs-target="#kw-flag-panel" type="button" role="tab">
+            Flags <span class="badge bg-secondary ms-1" id="kw-flag-badge">0</span>
+          </button>
+        </li>
+      </ul>
 
-      <div id="kw-tab-successful" style="display:none;">
-        <div id="kw-cards-successful" class="rec-grid-2"></div>
-        <div id="kw-empty-successful" class="empty-state" style="display:none;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-          <p>No successful recommendations</p>
-        </div>
-      </div>
+      <div class="tab-content" id="kwRecTabContent">
 
-      <div id="kw-tab-reverted" style="display:none;">
-        <div id="kw-cards-reverted" class="rec-grid-2"></div>
-        <div id="kw-empty-reverted" class="empty-state" style="display:none;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <polyline points="1 4 1 10 7 10"/>
-            <path d="M3.51 15a9 9 0 1 0 .49-3.57"/>
-          </svg>
-          <p>No reverted recommendations</p>
+        <!-- PENDING -->
+        <div class="tab-pane fade show active" id="kw-rec-pending" role="tabpanel">
+          <div id="kw-bulk-bar" class="rec-bulk-bar" style="display:none;">
+            <span id="kw-bulk-count">0 selected</span>
+            <button class="btn btn-sm btn-primary ms-2" onclick="kwDoBulk('accept')">Accept selected</button>
+            <button class="btn btn-sm btn-outline-danger ms-1" onclick="kwDoBulk('decline')">Decline selected</button>
+            <span class="rec-bulk-clear" onclick="kwClearSelection()">Clear</span>
+          </div>
+          <div class="rec-table-wrapper">
+          <table class="table table-sm align-middle rec-tab-slim">
+            <thead>
+              <tr>
+                <th style="width:40px;"><input type="checkbox" id="kw-chk-all" onchange="kwToggleAll(this)"></th>
+                <th class="rec-col-name">Keyword</th>
+                <th class="rec-col-rule">Rule name</th>
+                <th class="rec-col-plain">Plain English</th>
+                <th class="rec-col-ruleflag">Rule/Flag</th>
+                <th class="rec-col-ruletype">Rule type</th>
+                <th class="rec-col-conditions">Conditions</th>
+                <th class="rec-col-action">Action</th>
+                <th class="rec-col-risk">Risk</th>
+                <th class="rec-col-age">Age</th>
+                <th class="rec-col-acts">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="kw-pending-tbody"></tbody>
+          </table>
+          </div>
+          <div id="kw-pending-paginator" class="d-flex gap-1 flex-wrap mt-2"></div>
         </div>
-      </div>
 
-      <div id="kw-tab-declined" style="display:none;">
-        <div id="kw-cards-declined" class="rec-grid-2"></div>
-        <div id="kw-empty-declined" class="empty-state" style="display:none;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-          <p>No declined recommendations</p>
+        <!-- MONITORING -->
+        <div class="tab-pane fade" id="kw-rec-monitoring" role="tabpanel">
+          <div class="rec-table-wrapper">
+          <table class="table table-sm align-middle rec-tab-slim">
+            <thead>
+              <tr>
+                <th style="width:40px;"></th>
+                <th class="rec-col-date">Accepted</th>
+                <th class="rec-col-progress">Monitoring progress</th>
+                <th class="rec-col-name">Keyword</th>
+                <th class="rec-col-rule">Rule name</th>
+                <th class="rec-col-plain">Plain English</th>
+                <th class="rec-col-ruleflag">Rule/Flag</th>
+                <th class="rec-col-ruletype">Rule type</th>
+                <th class="rec-col-conditions">Conditions</th>
+                <th class="rec-col-action">Action taken</th>
+                <th class="rec-col-risk">Risk</th>
+              </tr>
+            </thead>
+            <tbody id="kw-monitoring-tbody"></tbody>
+          </table>
+          </div>
+          <div id="kw-monitoring-paginator" class="d-flex gap-1 flex-wrap mt-2"></div>
         </div>
-      </div>
+
+        <!-- SUCCESSFUL -->
+        <div class="tab-pane fade" id="kw-rec-successful" role="tabpanel">
+          <div class="rec-table-wrapper">
+          <table class="table table-sm align-middle rec-tab-slim">
+            <thead>
+              <tr>
+                <th style="width:40px;"></th>
+                <th class="rec-col-date">Accepted</th>
+                <th class="rec-col-date">Completed</th>
+                <th class="rec-col-name">Keyword</th>
+                <th class="rec-col-rule">Rule name</th>
+                <th class="rec-col-plain">Plain English</th>
+                <th class="rec-col-ruleflag">Rule/Flag</th>
+                <th class="rec-col-ruletype">Rule type</th>
+                <th class="rec-col-conditions">Conditions</th>
+                <th class="rec-col-action">Action taken</th>
+                <th class="rec-col-risk">Risk</th>
+              </tr>
+            </thead>
+            <tbody id="kw-successful-tbody"></tbody>
+          </table>
+          </div>
+          <div id="kw-successful-paginator" class="d-flex gap-1 flex-wrap mt-2"></div>
+        </div>
+
+        <!-- HISTORY -->
+        <div class="tab-pane fade" id="kw-rec-history" role="tabpanel">
+          <div class="rec-table-wrapper">
+          <table class="table table-sm align-middle rec-tab-slim">
+            <thead>
+              <tr>
+                <th style="width:40px;"></th>
+                <th class="rec-col-status">Outcome</th>
+                <th class="rec-col-date">Date actioned</th>
+                <th class="rec-col-name">Keyword</th>
+                <th class="rec-col-rule">Rule name</th>
+                <th class="rec-col-plain">Plain English</th>
+                <th class="rec-col-ruleflag">Rule/Flag</th>
+                <th class="rec-col-ruletype">Rule type</th>
+                <th class="rec-col-conditions">Conditions</th>
+                <th class="rec-col-action">Action</th>
+                <th class="rec-col-risk">Risk</th>
+              </tr>
+            </thead>
+            <tbody id="kw-history-tbody"></tbody>
+          </table>
+          </div>
+          <div id="kw-history-paginator" class="d-flex gap-1 flex-wrap mt-2"></div>
+        </div>
+
+        <!-- FLAGS -->
+        <div class="tab-pane fade" id="kw-flag-panel" role="tabpanel">
+          <div class="rec-table-wrapper">
+            <table class="table table-sm align-middle" id="kw-flag-table">
+              <thead>
+                <tr>
+                  <th class="rec-col-name">Keyword</th>
+                  <th class="rec-col-rule">Flag name</th>
+                  <th class="rec-col-plain">Plain English</th>
+                  <th class="rec-col-ruleflag">Rule/Flag</th>
+                  <th class="rec-col-risk">Severity</th>
+                  <th class="rec-col-age">Age</th>
+                  <th class="rec-col-acts">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="kw-flag-tbody">
+                <tr><td colspan="7" class="text-center text-muted py-4">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- SNOOZED FLAGS -->
+          <div class="d-flex align-items-center gap-2 px-3 py-2 mt-3 mb-1"
+               style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;cursor:pointer;"
+               onclick="kwFlagSectionToggle('kw-flag-snooze-body','kw-flag-snooze-chev')">
+            <span id="kw-flag-snooze-chev" style="font-size:12px;">▶</span>
+            <strong style="font-size:13px;">Snoozed</strong>
+            <span class="badge bg-secondary" id="kw-flag-snooze-count">0</span>
+          </div>
+          <div id="kw-flag-snooze-body" style="display:none;">
+            <div class="rec-table-wrapper">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th class="rec-col-name">Keyword</th>
+                    <th class="rec-col-rule">Flag name</th>
+                    <th class="rec-col-plain">Plain English</th>
+                    <th class="rec-col-risk">Severity</th>
+                    <th class="rec-col-age">Age</th>
+                    <th style="min-width:110px;">Snoozed until</th>
+                    <th class="rec-col-acts">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="kw-flag-snooze-tbody">
+                  <tr><td colspan="7" class="text-center text-muted py-3">No snoozed flags.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- HISTORY FLAGS -->
+          <div class="d-flex align-items-center gap-2 px-3 py-2 mb-1"
+               style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;cursor:pointer;"
+               onclick="kwFlagSectionToggle('kw-flag-hist-body','kw-flag-hist-chev')">
+            <span id="kw-flag-hist-chev" style="font-size:12px;">▶</span>
+            <strong style="font-size:13px;">History</strong>
+            <span class="badge bg-secondary" id="kw-flag-hist-count">0</span>
+          </div>
+          <div id="kw-flag-hist-body" style="display:none;">
+            <div class="rec-table-wrapper">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th class="rec-col-name">Keyword</th>
+                    <th class="rec-col-rule">Flag name</th>
+                    <th class="rec-col-plain">Plain English</th>
+                    <th class="rec-col-risk">Severity</th>
+                    <th class="rec-col-age">Age</th>
+                    <th style="min-width:110px;">Actioned</th>
+                    <th class="rec-col-acts">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="kw-flag-hist-tbody">
+                  <tr><td colspan="7" class="text-center text-muted py-3">No history.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /kwRecTabContent -->
 
     </div>
 
@@ -1607,512 +1563,88 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 // ===========================================================================
-// RECOMMENDATIONS TAB - STATUS TAB SWITCHING
+// KEYWORD RECOMMENDATIONS — TABLE-BASED (Chat 113)
 // ===========================================================================
-const KW_TABS = ['pending', 'monitoring', 'successful', 'reverted', 'declined'];
+(function() {
 
-function kwSwitchTab(name) {
-  KW_TABS.forEach(t => {
-    const tabEl = document.getElementById('kw-tab-' + t);
-    const btnEl = document.getElementById('kw-btn-tab-' + t);
-    if (tabEl) tabEl.style.display = (t === name) ? '' : 'none';
-    if (btnEl) btnEl.classList.toggle('active', t === name);
-  });
-}
+function esc(s){if(s==null)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function rfBadge(v){var t=(v||'').toLowerCase();return t==='rule'?'<span class="rec-rf-badge rec-rf-rule">Rule</span>':t==='flag'?'<span class="rec-rf-badge rec-rf-flag">Flag</span>':esc(v||'\u2014');}
+function rtBadge(v){if(!v)return '';return '<span class="rec-rt-badge">'+esc(v)+'</span>';}
+function condCell(conds){if(!conds)return '\u2014';if(typeof conds==='string'){try{conds=JSON.parse(conds);}catch(e){return esc(conds);}}if(!Array.isArray(conds))return esc(String(conds));var lines=conds.map(function(c){if(typeof c==='string')return c;var m=c.metric||'';var o=c.op||c.operator||'';var v=c.value!=null?c.value:'';var r=c.ref||c.unit||'';return m+' '+o+' '+v+(r&&r!=='absolute'?' '+r:'');});return '<div class="rec-conditions-cell">'+lines.map(function(c){return '<span>'+esc(c)+'</span>';}).join('')+'</div>';}
+function actionCell(r){var dir=r.action_direction||'';var cls=dir==='increase'?'rec-action-increase':dir==='decrease'?'rec-action-decrease':dir==='pause'?'rec-action-pause':'rec-action-hold';var arrow=dir==='increase'?'\u2191':dir==='decrease'?'\u2193':dir==='pause'?'\u23f8':'\u2192';var sub=r.value_label?'<div class="rec-action-sub">'+esc(r.value_label)+'</div>':'';var hum=r.risk_level==='high'?'<div class="rec-human-badge"><i class="bi bi-exclamation-triangle-fill"></i> Human confirm</div>':'';return hum+'<div><span class="rec-action-text '+cls+'">'+arrow+' '+esc(r.action_label||'\u2014')+'</span>'+sub+'</div>';}
+function riskBadge(v){if(!v)return '';var cls=v==='low'?'rec-risk-low':v==='medium'?'rec-risk-medium':'rec-risk-high';return '<span class="rec-risk-badge '+cls+'">'+esc(v.charAt(0).toUpperCase()+v.slice(1))+'</span>';}
+function outcomeBadge(status){var map={successful:'rec-outcome-successful',declined:'rec-outcome-declined',reverted:'rec-outcome-reverted',monitoring:'rec-outcome-monitoring'};var label={successful:'Successful',declined:'Declined',reverted:'Reverted',monitoring:'Monitoring'};var cls=map[status]||'';return '<span class="rec-outcome-badge '+cls+'">'+(label[status]||esc(status))+'</span>';}
+function fmtDate(s){if(!s)return '';var d=new Date(s);return isNaN(d)?esc(s):d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+function ageLabel(s){if(!s)return '';var diff=Math.floor((Date.now()-new Date(s))/86400000);return diff===0?'Today':diff+'d';}
+function progressBar(r){if(!r.accepted_at||!r.monitoring_ends_at)return '';var start=new Date(r.accepted_at).getTime();var end=new Date(r.monitoring_ends_at).getTime();var now=Date.now();var pct=Math.min(100,Math.max(0,Math.round((now-start)/(end-start)*100)));var days=Math.ceil((end-now)/86400000);var endStr=new Date(r.monitoring_ends_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});return '<div class="rec-progress-wrap"><div class="rec-progress-bg"><div class="rec-progress-fill" style="width:'+pct+'%"></div></div><div class="rec-progress-label">'+(days>0?days+'d remaining':'Ending')+' \u00b7 ends '+endStr+'</div></div>';}
+function makeExpRow(r,colspan){var why=esc(r.trigger_summary||'\u2014');var cur=r.current_value!=null?esc(String(r.current_value)):'\u2014';var prop=r.proposed_value!=null?esc(String(r.proposed_value))+(r.value_suffix?' '+esc(r.value_suffix):''):'\u2014';var det=[(r.rule_name||r.rule_id)?'Rule: '+esc(r.rule_name||r.rule_id):'',r.cooldown_days?'Cooldown: '+r.cooldown_days+' days':''].filter(Boolean).join('<br>')||'\u2014';var proposedHtml=r.rule_type==='status'?'Enabled \u2192 Paused':'Current: '+cur+'<br>Proposed: '+prop;return '<tr class="rec-expand-row" id="exp-'+esc(r.rec_id)+'"><td colspan="'+colspan+'"><div class="rec-expand-inner"><div class="rec-expand-grid"><div class="rec-expand-card"><div class="rec-expand-label">Why triggered</div><div class="rec-expand-val">'+why+'</div></div><div class="rec-expand-card"><div class="rec-expand-label">Proposed change</div><div class="rec-expand-val">'+proposedHtml+'</div></div><div class="rec-expand-card"><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">'+det+'</div></div></div></div></td></tr>';}
 
-// Initialize to pending tab on load
-if (document.getElementById('kw-tab-pending')) {
-  kwSwitchTab('pending');
-}
+var KW_REC={pending:[],monitoring:[],successful:[],history:[]};
+var KW_SEL={};
+var KW_PAGE={pending:1,monitoring:1,successful:1,history:1};
+var KW_PER_PAGE=20;
 
-// ===========================================================================
-// RECOMMENDATIONS TAB - DATA FETCHING
-// ===========================================================================
-let kwRecommendations = {
-  pending: [],
-  monitoring: [],
-  successful: [],
-  reverted: [],
-  declined: []
-};
+// Row builders
+function pendingRow(r){var id=r.rec_id;var checked=KW_SEL[id]?'checked':'';return '<tr data-rec-id="'+id+'" class="'+(KW_SEL[id]?'rec-selected':'')+'" onclick="kwRecExp(event,\''+esc(id)+'\')" style="cursor:pointer"><td onclick="event.stopPropagation()"><input type="checkbox" class="kw-rec-cb" value="'+id+'" '+checked+' onchange="kwRecCbChange(this,\''+esc(id)+'\')" ></td><td class="rec-col-name">'+esc(r.entity_name||r.campaign_name||'\u2014')+'</td><td class="rec-col-rule">'+esc(r.rule_name||(r.rule_id?r.rule_id.replace(/_/g,' '):'\u2014'))+'</td><td class="rec-col-plain">'+esc(r.plain_english||'\u2014')+'</td><td class="rec-col-ruleflag">'+rfBadge(r.rule_or_flag)+'</td><td class="rec-col-ruletype">'+rtBadge(r.rule_type_display)+'</td><td class="rec-col-conditions">'+condCell(r.conditions)+'</td><td class="rec-col-action">'+actionCell(r)+'</td><td class="rec-col-risk">'+riskBadge(r.risk_level)+'</td><td class="rec-col-age">'+ageLabel(r.generated_at)+'</td><td class="rec-col-acts" onclick="event.stopPropagation()"><div class="rec-row-acts"><button class="rec-row-btn rec-row-btn-accept" onclick="kwRecAccept(\''+esc(id)+'\',this)">Accept</button><button class="rec-row-btn rec-row-btn-decline" onclick="kwRecDecline(\''+esc(id)+'\',this)">Decline</button></div></td></tr>'+makeExpRow(r,11);}
+function monitoringRow(r){var id=r.rec_id;return '<tr data-rec-id="'+id+'" onclick="kwRecExp(event,\''+esc(id)+'\')" style="cursor:pointer"><td></td><td class="rec-col-date">'+fmtDate(r.accepted_at)+'</td><td class="rec-col-progress">'+progressBar(r)+'</td><td class="rec-col-name">'+esc(r.entity_name||r.campaign_name||'\u2014')+'</td><td class="rec-col-rule">'+esc(r.rule_name||(r.rule_id?r.rule_id.replace(/_/g,' '):'\u2014'))+'</td><td class="rec-col-plain">'+esc(r.plain_english||'\u2014')+'</td><td class="rec-col-ruleflag">'+rfBadge(r.rule_or_flag)+'</td><td class="rec-col-ruletype">'+rtBadge(r.rule_type_display)+'</td><td class="rec-col-conditions">'+condCell(r.conditions)+'</td><td class="rec-col-action">'+actionCell(r)+'</td><td class="rec-col-risk">'+riskBadge(r.risk_level)+'</td></tr>'+makeExpRow(r,11);}
+function successfulRow(r){var id=r.rec_id;return '<tr data-rec-id="'+id+'" onclick="kwRecExp(event,\''+esc(id)+'\')" style="cursor:pointer"><td></td><td class="rec-col-date">'+fmtDate(r.accepted_at)+'</td><td class="rec-col-date">'+fmtDate(r.completed_at||r.resolved_at)+'</td><td class="rec-col-name">'+esc(r.entity_name||r.campaign_name||'\u2014')+'</td><td class="rec-col-rule">'+esc(r.rule_name||(r.rule_id?r.rule_id.replace(/_/g,' '):'\u2014'))+'</td><td class="rec-col-plain">'+esc(r.plain_english||'\u2014')+'</td><td class="rec-col-ruleflag">'+rfBadge(r.rule_or_flag)+'</td><td class="rec-col-ruletype">'+rtBadge(r.rule_type_display)+'</td><td class="rec-col-conditions">'+condCell(r.conditions)+'</td><td class="rec-col-action">'+actionCell(r)+'</td><td class="rec-col-risk">'+riskBadge(r.risk_level)+'</td></tr>'+makeExpRow(r,11);}
+function historyRow(r){var id=r.rec_id;var date=fmtDate(r.completed_at||r.resolved_at||r.updated_at);return '<tr data-rec-id="'+id+'" onclick="kwRecExp(event,\''+esc(id)+'\')" style="cursor:pointer"><td></td><td class="rec-col-status">'+outcomeBadge(r.status)+'</td><td class="rec-col-date">'+date+'</td><td class="rec-col-name">'+esc(r.entity_name||r.campaign_name||'\u2014')+'</td><td class="rec-col-rule">'+esc(r.rule_name||(r.rule_id?r.rule_id.replace(/_/g,' '):'\u2014'))+'</td><td class="rec-col-plain">'+esc(r.plain_english||'\u2014')+'</td><td class="rec-col-ruleflag">'+rfBadge(r.rule_or_flag)+'</td><td class="rec-col-ruletype">'+rtBadge(r.rule_type_display)+'</td><td class="rec-col-conditions">'+condCell(r.conditions)+'</td><td class="rec-col-action">'+actionCell(r)+'</td><td class="rec-col-risk">'+riskBadge(r.risk_level)+'</td></tr>'+makeExpRow(r,11);}
 
-// Fetch recommendations from server
-async function kwFetchRecommendations() {
-  try {
-    const response = await fetch('/recommendations/cards');
-    const data = await response.json();
-    
-    if (!data) {
-      console.log('No data returned from server');
-      return;
-    }
-    
-    // API returns data already grouped by status
-    // Filter each status array for keyword entity type only
-    kwRecommendations.pending = (data.pending || []).filter(r => r.entity_type === 'keyword');
-    kwRecommendations.monitoring = (data.monitoring || []).filter(r => r.entity_type === 'keyword');
-    kwRecommendations.successful = (data.successful || []).filter(r => r.entity_type === 'keyword');
-    kwRecommendations.reverted = (data.reverted || []).filter(r => r.entity_type === 'keyword');
-    kwRecommendations.declined = (data.declined || []).filter(r => r.entity_type === 'keyword');
-    
-    // Calculate totals for logging
-    const totalKeywords = kwRecommendations.pending.length + 
-                         kwRecommendations.monitoring.length + 
-                         kwRecommendations.successful.length + 
-                         kwRecommendations.reverted.length + 
-                         kwRecommendations.declined.length;
-    
-    console.log(`Total keyword recommendations: ${totalKeywords}`);
-    console.log(`  Pending: ${kwRecommendations.pending.length}`);
-    console.log(`  Monitoring: ${kwRecommendations.monitoring.length}`);
-    console.log(`  Successful: ${kwRecommendations.successful.length}`);
-    console.log(`  Reverted: ${kwRecommendations.reverted.length}`);
-    console.log(`  Declined: ${kwRecommendations.declined.length}`);
-    
-    // Update summary counts
-    kwUpdateSummaryCounts();
-    
-    // Update tab badge counts
-    kwUpdateTabBadges();
-    
-    // Render all cards
-    kwRenderAllCards();
-    
-    console.log('Recommendations fetched and counts updated');
-    
-  } catch (error) {
-    console.error('Error fetching recommendations:', error);
-  }
-}
+function renderTab(tab){var items=KW_REC[tab];var page=KW_PAGE[tab];var start=(page-1)*KW_PER_PAGE;var slice=items.slice(start,start+KW_PER_PAGE);var tbody=document.getElementById('kw-'+tab+'-tbody');var pag=document.getElementById('kw-'+tab+'-paginator');if(!tbody)return;if(!items.length){tbody.innerHTML='<tr><td colspan="11" class="text-center text-muted py-4">No '+tab+' recommendations for keywords.</td></tr>';if(pag)pag.innerHTML='';return;}var html='';slice.forEach(function(r){html+=(tab==='pending'?pendingRow(r):tab==='monitoring'?monitoringRow(r):tab==='successful'?successfulRow(r):historyRow(r));});tbody.innerHTML=html;buildPag(pag,items.length,page,function(p){KW_PAGE[tab]=p;renderTab(tab);});}
+function buildPag(el,total,current,cb){if(!el)return;var pages=Math.ceil(total/KW_PER_PAGE);if(pages<=1){el.innerHTML='';return;}var html='';for(var i=1;i<=pages;i++){html+='<button class="btn btn-sm '+(i===current?'btn-primary':'btn-outline-secondary')+'" data-p="'+i+'">'+i+'</button>';}el.innerHTML=html;el.querySelectorAll('button').forEach(function(btn){btn.addEventListener('click',function(){cb(parseInt(this.dataset.p));});});}
+function kwRecRenderAll(){['pending','monitoring','successful','history'].forEach(renderTab);['pending','monitoring','successful','history'].forEach(function(k){var el=document.getElementById('kw-badge-'+k);if(el)el.textContent=KW_REC[k].length;});var total=KW_REC.pending.length+KW_REC.monitoring.length+KW_REC.successful.length+KW_REC.history.length;var mainCount=document.getElementById('rec-tab-count');if(mainCount)mainCount.textContent=total;}
 
-// Update summary strip counts
-function kwUpdateSummaryCounts() {
-  const counts = {
-    pending: kwRecommendations.pending.length,
-    monitoring: kwRecommendations.monitoring.length,
-    successful: kwRecommendations.successful.length,
-    reverted: kwRecommendations.reverted.length,
-    declined: kwRecommendations.declined.length
-  };
-  
-  document.getElementById('kw-summary-pending').textContent = counts.pending;
-  document.getElementById('kw-summary-monitoring').textContent = counts.monitoring;
-  document.getElementById('kw-summary-successful').textContent = counts.successful;
-  document.getElementById('kw-summary-reverted').textContent = counts.reverted;
-  document.getElementById('kw-summary-declined').textContent = counts.declined;
-  
-  // Update main tab count
-  const totalCount = counts.pending + counts.monitoring + counts.successful + counts.reverted + counts.declined;
-  const mainTabCount = document.getElementById('rec-tab-count');
-  if (mainTabCount) {
-    mainTabCount.textContent = totalCount;
-  }
-}
+function kwShowToast(msg,type){var wrap=document.getElementById('act-toast-wrap');if(!wrap){wrap=document.createElement('div');wrap.id='act-toast-wrap';document.body.appendChild(wrap);}var cls=type==='success'?'t-success':type==='error'?'t-error':'t-muted';wrap.innerHTML='<div class="act-toast '+cls+'">'+esc(msg)+'</div>';var t=wrap.querySelector('.act-toast');if(t)t.style.display='block';setTimeout(function(){wrap.innerHTML='';},3500);}
 
-// Update tab badge counts
-function kwUpdateTabBadges() {
-  document.getElementById('kw-tab-badge-pending').textContent = kwRecommendations.pending.length;
-  document.getElementById('kw-tab-badge-monitoring').textContent = kwRecommendations.monitoring.length;
-  document.getElementById('kw-tab-badge-successful').textContent = kwRecommendations.successful.length;
-  document.getElementById('kw-tab-badge-reverted').textContent = kwRecommendations.reverted.length;
-  document.getElementById('kw-tab-badge-declined').textContent = kwRecommendations.declined.length;
-}
+function kwRecLoad(){fetch('/recommendations/cards').then(function(r){return r.json();}).then(function(data){KW_REC.pending=(data.pending||[]).filter(function(r){return r.entity_type==='keyword';});KW_REC.monitoring=(data.monitoring||[]).filter(function(r){return r.entity_type==='keyword';});KW_REC.successful=(data.successful||[]).filter(function(r){return r.entity_type==='keyword';});var hist=(data.declined||[]).concat(data.reverted||[]).filter(function(r){return r.entity_type==='keyword';});hist.sort(function(a,b){return new Date(b.resolved_at||b.accepted_at||0)-new Date(a.resolved_at||a.accepted_at||0);});KW_REC.history=hist;KW_SEL={};kwRecRenderAll();}).catch(function(err){console.error('kwRecLoad error',err);});}
 
-// Load recommendations when Recommendations tab is clicked
-document.addEventListener('DOMContentLoaded', function() {
-  const recTab = document.querySelector('[data-bs-target="#recommendations-tab"]');
-  if (recTab) {
-    recTab.addEventListener('shown.bs.tab', function() {
-      // Only fetch once
-      if (kwRecommendations.pending.length === 0 && 
-          kwRecommendations.monitoring.length === 0 && 
-          kwRecommendations.successful.length === 0) {
-        kwFetchRecommendations();
-      }
-    });
-  }
+window.kwRecExp=function(evt,id){if(evt.target.type==='checkbox'||evt.target.tagName==='BUTTON')return;var row=document.getElementById('exp-'+id);if(row)row.classList.toggle('open');};
+window.kwRecCbChange=function(chk,id){if(chk.checked)KW_SEL[id]=true;else delete KW_SEL[id];updateBulkBar();};
+window.kwToggleAll=function(chk){var page=KW_PAGE.pending;var start=(page-1)*KW_PER_PAGE;var slice=KW_REC.pending.slice(start,start+KW_PER_PAGE);slice.forEach(function(r){if(chk.checked)KW_SEL[r.rec_id]=true;else delete KW_SEL[r.rec_id];});renderTab('pending');updateBulkBar();};
+window.kwClearSelection=function(){KW_SEL={};var master=document.getElementById('kw-chk-all');if(master)master.checked=false;renderTab('pending');updateBulkBar();};
+function updateBulkBar(){var count=Object.keys(KW_SEL).length;var bar=document.getElementById('kw-bulk-bar');var lbl=document.getElementById('kw-bulk-count');if(bar)bar.style.display=count>0?'flex':'none';if(lbl)lbl.textContent=count+' selected';}
+
+window.kwRecAccept=function(recId,btn){btn.disabled=true;btn.textContent='...';fetch('/recommendations/'+recId+'/accept',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCSRFToken()}}).then(function(r){return r.json();}).then(function(d){if(d.success){KW_REC.pending=KW_REC.pending.filter(function(r){return r.rec_id!==recId;});delete KW_SEL[recId];kwRecRenderAll();kwShowToast('Recommendation accepted','success');}else{kwShowToast(d.message||'Failed','error');btn.disabled=false;btn.textContent='Accept';}}).catch(function(){kwShowToast('Error','error');btn.disabled=false;btn.textContent='Accept';});};
+window.kwRecDecline=function(recId,btn){btn.disabled=true;btn.textContent='...';fetch('/recommendations/'+recId+'/decline',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCSRFToken()}}).then(function(r){return r.json();}).then(function(d){if(d.success){KW_REC.pending=KW_REC.pending.filter(function(r){return r.rec_id!==recId;});delete KW_SEL[recId];kwRecRenderAll();kwShowToast('Recommendation declined','success');}else{kwShowToast(d.message||'Failed','error');btn.disabled=false;btn.textContent='Decline';}}).catch(function(){kwShowToast('Error','error');btn.disabled=false;btn.textContent='Decline';});};
+window.kwDoBulk=function(action){var ids=Object.keys(KW_SEL);if(!ids.length)return;var done=0;ids.forEach(function(id){fetch('/recommendations/'+id+'/'+action,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCSRFToken()}}).then(function(r){return r.json();}).then(function(d){if(d.success)KW_REC.pending=KW_REC.pending.filter(function(r){return r.rec_id!==id;});done++;if(done===ids.length){KW_SEL={};kwRecRenderAll();kwShowToast('Done','success');}});});};
+
+// ── Engine + Low Risk buttons ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',function(){
+  var runBtn=document.getElementById('kw-run-engine-btn');
+  if(runBtn){runBtn.addEventListener('click',function(){var self=this;self.disabled=true;self.innerHTML='<span class="spinner-border spinner-border-sm"></span> Running...';fetch('/recommendations/run',{method:'POST',headers:{'X-CSRFToken':getCSRFToken()}}).then(function(r){return r.json();}).then(function(d){kwShowToast(d.message||'Engine started','success');setTimeout(kwRecLoad,2000);}).catch(function(){kwShowToast('Error','error');}).finally(function(){self.disabled=false;self.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg> Run Recommendations Now';});});}
+  var lrBtn=document.getElementById('kw-accept-low-risk-btn');
+  if(lrBtn){lrBtn.addEventListener('click',function(){var lowRisk=KW_REC.pending.filter(function(r){return r.risk_level==='low';});if(!lowRisk.length){kwShowToast('No low-risk recommendations pending','info');return;}lowRisk.forEach(function(r){KW_SEL[r.rec_id]=true;});window.kwDoBulk('accept');});}
+  var recTabBtn=document.getElementById('kw-recommendations-tab-btn');
+  if(recTabBtn){recTabBtn.addEventListener('shown.bs.tab',kwRecLoad);}
 });
+window.kwRecLoad=kwRecLoad;
 
-// ===========================================================================
-// RECOMMENDATIONS TAB - CARD RENDERING
-// ===========================================================================
-let kwDisplayCounts = {
-  pending: 0,
-  monitoring: 0,
-  successful: 0,
-  reverted: 0,
-  declined: 0
-};
+// ── Keyword Flags ─────────────────────────────────────────────────────────
+var KW_FLAGS=[],KW_FLAGS_SNOOZED=[],KW_FLAGS_HISTORY=[];
 
-const KW_CARDS_PER_LOAD = 50;
+window.kwFlagSectionToggle=function(bodyId,chevId){var body=document.getElementById(bodyId);var chev=document.getElementById(chevId);if(!body)return;var open=body.style.display!=='none';body.style.display=open?'none':'block';if(chev)chev.textContent=open?'▶':'▼';};
 
-// Render all cards after fetching
-function kwRenderAllCards() {
-  kwRenderCards('pending');
-  kwRenderCards('monitoring');
-  kwRenderCards('successful');
-  kwRenderCards('reverted');
-  kwRenderCards('declined');
-}
+function kwFmtDate(dt){if(!dt)return '\u2014';try{return new Date(dt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return dt;}}
+function kwSevBadge(sev){var s=(sev||'').toLowerCase();var cls=s==='high'?'flag-sev-high':s==='medium'?'flag-sev-medium':'flag-sev-low';var lbl=s?s.charAt(0).toUpperCase()+s.slice(1):'\u2014';return '<span class="flag-sev-badge '+cls+'">'+lbl+'</span>';}
+function kwFlagActionsHtml(flag_id){return '<div class="rec-row-acts"><button class="rec-row-btn rec-row-btn-accept" onclick="kwFlagAction(\''+flag_id+'\',\'acknowledge\',0)">Acknowledge</button><div class="dropdown d-inline-block"><button class="rec-row-btn rec-row-btn-decline dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Snooze</button><ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item" href="#" onclick="kwFlagAction(\''+flag_id+'\',\'ignore\',7);return false;">Snooze 7 days</a></li><li><a class="dropdown-item" href="#" onclick="kwFlagAction(\''+flag_id+'\',\'ignore\',14);return false;">Snooze 14 days</a></li><li><a class="dropdown-item" href="#" onclick="kwFlagAction(\''+flag_id+'\',\'ignore\',30);return false;">Snooze 30 days</a></li></ul></div></div>';}
 
-// Render cards for a specific status
-function kwRenderCards(status) {
-  const recs = kwRecommendations[status];
-  const container = document.getElementById('kw-cards-' + status);
-  const emptyState = document.getElementById('kw-empty-' + status);
-  
-  if (!container) return;
-  
-  // Show/hide empty state
-  if (recs.length === 0) {
-    container.style.display = 'none';
-    if (emptyState) emptyState.style.display = 'block';
-    return;
-  }
-  
-  container.style.display = 'grid';
-  if (emptyState) emptyState.style.display = 'none';
-  
-  // Initial render: show first 50 cards
-  if (kwDisplayCounts[status] === 0) {
-    kwDisplayCounts[status] = Math.min(KW_CARDS_PER_LOAD, recs.length);
-  }
-  
-  // Clear and render
-  container.innerHTML = '';
-  for (let i = 0; i < kwDisplayCounts[status]; i++) {
-    container.innerHTML += kwBuildCard(recs[i], status);
-  }
-  
-  // Show/hide Load More button (only for pending)
-  if (status === 'pending') {
-    const loadMoreBtn = document.getElementById('kw-loadmore-pending');
-    const loadMoreCount = document.getElementById('kw-loadmore-count-pending');
-    if (loadMoreBtn && loadMoreCount) {
-      const remaining = recs.length - kwDisplayCounts[status];
-      if (remaining > 0) {
-        loadMoreBtn.style.display = 'block';
-        loadMoreCount.textContent = `(${remaining} more)`;
-      } else {
-        loadMoreBtn.style.display = 'none';
-      }
-    }
-  }
-}
+function kwMakeFlagExpRow(f){var sevLabel=f.severity?(f.severity.charAt(0).toUpperCase()+f.severity.slice(1))+' severity':'\u2014';return '<tr class="rec-expand-row" id="kw-flag-exp-'+f.flag_id+'"><td colspan="7"><div class="rec-expand-inner"><div class="rec-expand-grid"><div class="rec-expand-card"><div class="rec-expand-label">Why this was triggered</div><div class="rec-expand-val">'+esc(f.trigger_summary||'\u2014')+'</div></div><div class="rec-expand-card"><div class="rec-expand-label">Flag details</div><div class="rec-expand-val">'+esc(f.plain_english||'\u2014')+'</div></div><div class="rec-expand-card"><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">'+esc(sevLabel)+'</div></div></div></div></td></tr>';}
+window.kwFlagExp=function(evt,id){if(evt.target.closest('button,input,a,select'))return;var el=document.getElementById('kw-flag-exp-'+id);if(!el)return;el.classList.toggle('open');};
 
-// Load more cards (only for pending)
-function kwLoadMore(status) {
-  const recs = kwRecommendations[status];
-  const newCount = Math.min(kwDisplayCounts[status] + KW_CARDS_PER_LOAD, recs.length);
-  kwDisplayCounts[status] = newCount;
-  kwRenderCards(status);
-}
+function kwFlagRender(){var tbody=document.getElementById('kw-flag-tbody');if(!tbody)return;document.getElementById('kw-flag-badge').textContent=KW_FLAGS.length;if(!KW_FLAGS.length){tbody.innerHTML='<tr><td colspan="7" class="text-center text-muted py-4">No active flags for keywords.</td></tr>';return;}tbody.innerHTML=KW_FLAGS.map(function(f){return '<tr style="cursor:pointer;" onclick="kwFlagExp(event, \''+f.flag_id+'\')">'+'<td class="rec-col-name">'+esc(f.entity_name||'\u2014')+'</td>'+'<td class="rec-col-rule">'+esc(f.rule_name||'\u2014')+'</td>'+'<td class="rec-col-plain">'+esc(f.plain_english||'\u2014')+'</td>'+'<td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-flag">Flag</span></td>'+'<td class="rec-col-risk">'+kwSevBadge(f.severity)+'</td>'+'<td class="rec-col-age">'+esc(f.generated_ago||'\u2014')+'</td>'+'<td class="rec-col-acts" onclick="event.stopPropagation()">'+kwFlagActionsHtml(f.flag_id)+'</td>'+'</tr>'+kwMakeFlagExpRow(f);}).join('');}
 
-// Build HTML for a single recommendation card
-function kwBuildCard(rec, status) {
-  const isMonitoring = status === 'monitoring';
-  const isSuccessful = status === 'successful';
-  const isDeclined = status === 'declined';
-  const isReverted = status === 'reverted';
-  const isPending = status === 'pending';
-  
-  // Top bar color
-  let topBarClass = 'rt-budget';
-  if (rec.rule_type === 'bid_target') topBarClass = 'rt-bid';
-  else if (rec.rule_type === 'status') topBarClass = 'rt-status';
-  if (isMonitoring) topBarClass = 'rt-monitoring';
-  if (isSuccessful) topBarClass = 'rt-successful';
-  if (isDeclined) topBarClass = 'rt-declined';
-  if (isReverted) topBarClass = 'rt-reverted';
-  
-  // Card class
-  let cardClass = 'rec-card';
-  if (isMonitoring) cardClass += ' card-monitoring';
-  if (isSuccessful) cardClass += ' card-success';
-  if (isDeclined) cardClass += ' card-declined';
-  if (isReverted) cardClass += ' card-reverted';
-  
-  // Rule type tag
-  let ruleClass = 'rrt-budget';
-  if (rec.rule_type === 'bid_target') ruleClass = 'rrt-bid';
-  else if (rec.rule_type === 'status') ruleClass = 'rrt-status';
-  if (isMonitoring) ruleClass = 'rrt-monitoring';
-  if (isDeclined) ruleClass = 'rrt-declined';
-  if (isReverted) ruleClass = 'rrt-reverted';
-  
-  // Status pill
-  let statusPill = '';
-  if (isPending) statusPill = '<span class="status-pill sp-pending">Pending</span>';
-  if (isMonitoring) statusPill = '<span class="status-pill sp-monitoring">Monitoring</span>';
-  if (isSuccessful) statusPill = '<span class="status-pill sp-successful">Successful</span>';
-  if (isDeclined) statusPill = '<span class="status-pill sp-declined">Declined</span>';
-  if (isReverted) statusPill = '<span class="status-pill sp-reverted">Reverted</span>';
-  
-  // Build card HTML
-  let html = `<div class="${cardClass}" data-rec-id="${rec.rec_id}">`;
-  html += `<div class="rec-top ${topBarClass}"></div>`;
-  html += '<div class="rec-body">';
-  
-  // Header
-  html += '<div class="rec-card-header">';
-  html += '<div>';
-  html += `<div class="rec-rule-tag ${ruleClass}">${rec.rule_type_display || rec.rule_type}</div>`;
-  html += `<div class="rec-campaign-name">${rec.entity_name || 'Keyword'}</div>`;
-  if (rec.campaign_name) {
-    html += `<div style="font-size:12px;color:#6b7280;margin-top:2px;">Campaign: ${rec.campaign_name}</div>`;
-  }
-  html += '</div>';
-  html += statusPill;
-  html += '</div>';
-  
-  // Change block
-  html += kwBuildChangeBlock(rec);
-  
-  // Trigger
-  if (rec.trigger_summary && isPending) {
-    html += `<div class="trigger-block"><div class="trigger-label">TRIGGER</div>${rec.trigger_summary}</div>`;
-  }
-  
-  // Monitoring block
-  if (isMonitoring) {
-    html += kwBuildMonitoringBlock(rec);
-  }
-  
-  // Outcome block
-  if (isSuccessful || isDeclined || isReverted) {
-    html += kwBuildOutcomeBlock(rec, status);
-  }
-  
-  // Footer
-  html += kwBuildCardFooter(rec, status);
-  
-  html += '</div></div>';
-  return html;
-}
+function kwFlagSnoozedRender(){var tbody=document.getElementById('kw-flag-snooze-tbody');var countEl=document.getElementById('kw-flag-snooze-count');if(!tbody)return;if(countEl)countEl.textContent=KW_FLAGS_SNOOZED.length;if(!KW_FLAGS_SNOOZED.length){tbody.innerHTML='<tr><td colspan="7" class="text-center text-muted py-3">No snoozed flags.</td></tr>';return;}tbody.innerHTML=KW_FLAGS_SNOOZED.map(function(f){return '<tr><td>'+esc(f.entity_name||'\u2014')+'</td><td>'+esc(f.rule_name||'\u2014')+'</td><td style="font-size:12px;color:#5f6368;">'+esc(f.plain_english||'\u2014')+'</td><td>'+kwSevBadge(f.severity)+'</td><td style="font-size:11px;color:#9aa0a6;">'+esc(f.generated_ago||'\u2014')+'</td><td style="font-size:12px;color:#5f6368;">'+esc(kwFmtDate(f.snooze_until))+'</td><td onclick="event.stopPropagation()">'+kwFlagActionsHtml(f.flag_id)+'</td></tr>';}).join('');}
 
-// Build change block
-function kwBuildChangeBlock(rec) {
-  let changeClass = 'cb-budget';
-  let iconClass = 'ciw-budget';
-  if (rec.rule_type === 'bid_target') { changeClass = 'cb-bid'; iconClass = 'ciw-bid'; }
-  else if (rec.rule_type === 'status') { changeClass = 'cb-status'; iconClass = 'ciw-status'; }
-  
-  let icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>';
-  
-  let html = `<div class="change-block ${changeClass}">`;
-  html += `<div class="change-icon-wrap ${iconClass}">${icon}</div>`;
-  html += '<div style="flex:1;">';
-  html += `<div class="change-main">${rec.action_label || rec.action_direction || 'Change'}</div>`;
-  html += `<div class="change-sub">`;
-  if (rec.current_value !== undefined && rec.proposed_value !== undefined) {
-    html += `<strong>${rec.current_value}</strong> → <strong>${rec.proposed_value}</strong>`;
-  } else {
-    html += rec.action_magnitude || '';
-  }
-  html += '</div></div></div>';
-  return html;
-}
+function kwFlagHistoryRender(){var tbody=document.getElementById('kw-flag-hist-tbody');var countEl=document.getElementById('kw-flag-hist-count');if(!tbody)return;if(countEl)countEl.textContent=KW_FLAGS_HISTORY.length;if(!KW_FLAGS_HISTORY.length){tbody.innerHTML='<tr><td colspan="7" class="text-center text-muted py-3">No history.</td></tr>';return;}tbody.innerHTML=KW_FLAGS_HISTORY.map(function(f){var actioned=kwFmtDate(f.acknowledged_at||f.updated_at);return '<tr><td>'+esc(f.entity_name||'\u2014')+'</td><td>'+esc(f.rule_name||'\u2014')+'</td><td style="font-size:12px;color:#5f6368;">'+esc(f.plain_english||'\u2014')+'</td><td>'+kwSevBadge(f.severity)+'</td><td style="font-size:11px;color:#9aa0a6;">'+esc(f.generated_ago||'\u2014')+'</td><td style="font-size:12px;color:#5f6368;">'+esc(actioned)+'</td><td onclick="event.stopPropagation()">'+kwFlagActionsHtml(f.flag_id)+'</td></tr>';}).join('');}
 
-// Build monitoring block
-function kwBuildMonitoringBlock(rec) {
-  const daysElapsed = rec.monitoring_elapsed_days || 0;
-  const totalDays = rec.monitoring_total_days || 7;
-  const pct = Math.min(100, (daysElapsed / totalDays) * 100);
-  
-  let html = '<div class="monitoring-block">';
-  html += '<div class="mon-top">';
-  html += '<div class="mon-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> MONITORING</div>';
-  html += `<div class="mon-days">Day ${daysElapsed} of ${totalDays}</div>`;
-  html += '</div>';
-  html += `<div class="mon-bar-wrap"><div class="mon-bar" style="width:${pct}%"></div></div>`;
-  html += '<div class="mon-outcomes">';
-  html += '<div class="mon-outcome-pill mop-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Keep if improves</div>';
-  html += '<div class="mon-outcome-pill mop-revert"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg> Revert if declines</div>';
-  html += '</div></div>';
-  return html;
-}
+function kwLoadFlags(){fetch('/flags/cards').then(function(r){return r.json();}).then(function(d){KW_FLAGS=(d.active||[]).filter(function(f){return f.entity_type==='keyword';});KW_FLAGS_SNOOZED=(d.snoozed||[]).filter(function(f){return f.entity_type==='keyword';});KW_FLAGS_HISTORY=(d.history||[]).filter(function(f){return f.entity_type==='keyword';});kwFlagRender();kwFlagSnoozedRender();kwFlagHistoryRender();}).catch(function(){var tbody=document.getElementById('kw-flag-tbody');if(tbody)tbody.innerHTML='<tr><td colspan="7" class="text-center text-muted py-4">Failed to load flags.</td></tr>';});}
+window.kwLoadFlags=kwLoadFlags;
 
-// Build outcome block
-function kwBuildOutcomeBlock(rec, status) {
-  let blockClass = 'ob-success';
-  let titleClass = 'ot-success';
-  let icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
-  let title = 'Change Successful';
-  
-  if (status === 'declined') {
-    blockClass = 'ob-declined';
-    titleClass = 'ot-declined';
-    icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-    title = 'Recommendation Declined';
-  } else if (status === 'reverted') {
-    blockClass = 'ob-reverted';
-    titleClass = 'ot-reverted';
-    icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.57"/></svg>';
-    title = 'Change Reverted';
-  }
-  
-  let html = `<div class="outcome-block ${blockClass}">`;
-  html += icon;
-  html += '<div style="flex:1;">';
-  html += `<div class="outcome-title ${titleClass}">${title}</div>`;
-  if (rec.outcome_metric && rec.proposed_value) {
-    html += `<div class="outcome-sub">${rec.outcome_metric}: ${rec.proposed_value}</div>`;
-  }
-  if (status === 'reverted' && rec.revert_reason) {
-    html += `<div class="revert-reason">${rec.revert_reason}</div>`;
-  }
-  html += '</div></div>';
-  return html;
-}
+window.kwFlagAction=function(flag_id,action,days){var url='/flags/'+flag_id+'/'+action;fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCSRFToken()},body:JSON.stringify({days:days})}).then(function(r){return r.json();}).then(function(d){if(d.success){kwShowToast(action==='acknowledge'?'Flag acknowledged.':'Flag snoozed for '+days+' days.','success');kwLoadFlags();}else{kwShowToast('Error: '+(d.error||'unknown'),'error');}}).catch(function(){kwShowToast('Request failed.','error');});};
 
-// Build card footer
-function kwBuildCardFooter(rec, status) {
-  const isPending = status === 'pending';
-  const isMonitoring = status === 'monitoring';
-  
-  let html = '<div class="rec-footer">';
-  html += '<div class="rec-footer-meta">';
-  
-  // Confidence badge (pending only)
-  if (isPending && rec.confidence) {
-    let confClass = 'cb-high';
-    if (rec.confidence === 'medium') confClass = 'cb-med';
-    else if (rec.confidence === 'low') confClass = 'cb-low';
-    html += `<span class="conf-badge ${confClass}">${rec.confidence} confidence</span>`;
-  }
-  
-  // Age
-  if (rec.generated_at) {
-    html += `<span class="rec-age">${rec.generated_at}</span>`;
-  }
-  
-  html += '</div>';
-  
-  // Actions
-  if (isPending) {
-    html += '<div class="rec-footer-actions">';
-    html += `<button class="btn-accept" onclick="kwAcceptRec('${rec.rec_id}', this)">`;
-    html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Accept';
-    html += '</button>';
-    html += `<button class="btn-decline" onclick="kwDeclineRec('${rec.rec_id}', this)">`;
-    html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Decline';
-    html += '</button></div>';
-  } else if (isMonitoring) {
-    html += '<div class="readonly-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Monitoring in progress</div>';
-  } else {
-    html += '<div class="readonly-label">Read-only</div>';
-  }
-  
-  html += '</div>';
-  return html;
-}
+var kwFlagTabBtn=document.getElementById('kw-flag-tab');
+if(kwFlagTabBtn)kwFlagTabBtn.addEventListener('shown.bs.tab',function(){kwLoadFlags();});
 
-// ===========================================================================
-// RECOMMENDATIONS TAB - ACCEPT/DECLINE HANDLERS
-// ===========================================================================
-async function kwAcceptRec(recId, btn) {
-  if (!confirm('Accept this recommendation?')) return;
-  
-  btn.disabled = true;
-  btn.textContent = 'Processing...';
-  
-  try {
-    const response = await fetch(`/recommendations/${recId}/accept`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      // Remove card with animation
-      const card = btn.closest('.rec-card');
-      if (card) {
-        card.classList.add('removing');
-        setTimeout(() => {
-          // Remove from data and re-render
-          kwRecommendations.pending = kwRecommendations.pending.filter(r => r.rec_id !== recId);
-          kwUpdateSummaryCounts();
-          kwUpdateTabBadges();
-          kwRenderCards('pending');
-          kwShowToast('Recommendation accepted', 'success');
-        }, 300);
-      }
-    } else {
-      kwShowToast(data.message || 'Failed to accept recommendation', 'error');
-      btn.disabled = false;
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Accept';
-    }
-  } catch (error) {
-    console.error('Error accepting recommendation:', error);
-    kwShowToast('Error accepting recommendation', 'error');
-    btn.disabled = false;
-    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Accept';
-  }
-}
-
-async function kwDeclineRec(recId, btn) {
-  if (!confirm('Decline this recommendation?')) return;
-  
-  btn.disabled = true;
-  btn.textContent = 'Processing...';
-  
-  try {
-    const response = await fetch(`/recommendations/${recId}/decline`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      // Remove card with animation
-      const card = btn.closest('.rec-card');
-      if (card) {
-        card.classList.add('removing');
-        setTimeout(() => {
-          // Remove from data and re-render
-          kwRecommendations.pending = kwRecommendations.pending.filter(r => r.rec_id !== recId);
-          kwUpdateSummaryCounts();
-          kwUpdateTabBadges();
-          kwRenderCards('pending');
-          kwShowToast('Recommendation declined', 'muted');
-        }, 300);
-      }
-    } else {
-      kwShowToast(data.message || 'Failed to decline recommendation', 'error');
-      btn.disabled = false;
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Decline';
-    }
-  } catch (error) {
-    console.error('Error declining recommendation:', error);
-    kwShowToast('Error declining recommendation', 'error');
-    btn.disabled = false;
-    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Decline';
-  }
-}
-
-// Show toast notification
-function kwShowToast(message, type) {
-  // Check if toast container exists, create if not
-  let toastWrap = document.getElementById('act-toast-wrap');
-  if (!toastWrap) {
-    toastWrap = document.createElement('div');
-    toastWrap.id = 'act-toast-wrap';
-    document.body.appendChild(toastWrap);
-  }
-  
-  const toast = document.createElement('div');
-  toast.className = `act-toast t-${type}`;
-  toast.textContent = message;
-  
-  toastWrap.appendChild(toast);
-  
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-}
-
+})();
 </script>
 {% endblock %}
