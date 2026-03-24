@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slide-In Long-Scroll Wireframe — Ads Control Tower</title>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Google Material Symbols -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+    <style>
+    * { box-sizing: border-box; }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        margin: 0; background: #f8f9fa; color: #202124; font-size: 14px;
+    }
+
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 40;
+    }
+
+    /* ── Sidebar Navigation ─────────────────────────────────────────────────── */
+    .nav-sidebar {
+        width: 110px; background: #ffffff; border-right: 1px solid #dadce0;
+        display: flex; flex-direction: column; position: fixed;
+        left: 0; top: 0; height: 100vh; z-index: 1000;
+    }
+    .nav-brand { padding: 16px 12px; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid #dadce0; }
+    .nav-brand-logo { width: 48px; height: 48px; margin-bottom: 8px; }
+    .nav-brand-text { font-size: 14px; font-weight: 600; color: #202124; text-align: center; line-height: 1.3; }
+    .nav-items { flex: 1; padding: 8px 0; overflow-y: auto; }
+    .nav-item-link {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 12px 8px; margin: 4px 8px; text-decoration: none; color: #5f6368;
+        border-radius: 8px; transition: all 150ms ease; cursor: pointer; min-height: 80px;
+    }
+    .nav-item-link:hover { background: #f1f3f4; color: #202124; }
+    .nav-item-link.active { background: #e8f0fe; color: #1a73e8; }
+    .nav-item-icon { font-size: 32px; margin-bottom: 4px; }
+    .nav-item-text { font-size: 14px; font-weight: 500; text-align: center; line-height: 1.2; }
+    .nav-item-text.small { font-size: 11px; }
+
+    /* ── Main Wrapper & Navbar ───────────────────────────────────────────────── */
+    .main-wrapper { margin-left: 110px; }
+    .top-navbar {
+        height: 48px; background: #fff; border-bottom: 1px solid #e0e0e0;
+        display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+    }
+    .top-navbar-left { display: flex; align-items: center; gap: 20px; }
+    .top-navbar-client { font-size: 14px; font-weight: 600; color: #202124; }
+    .top-navbar-date { font-size: 12px; color: #5f6368; display: flex; align-items: center; gap: 4px; }
+    .date-toggle { display: inline-flex; border: 1px solid #dadce0; border-radius: 4px; overflow: hidden; }
+    .date-toggle-btn { padding: 3px 10px; font-size: 11px; font-weight: 500; border: none; background: #fff; color: #5f6368; cursor: pointer; font-family: inherit; }
+    .date-toggle-btn.active { background: #1a73e8; color: #fff; }
+    .main-content { padding: 24px; }
+
+    /* ── Tabs ────────────────────────────────────────────────────────────────── */
+    .nav-tabs .nav-link { font-size: 13px; font-weight: 500; color: #5f6368; border: none; padding: 8px 16px; display: inline-flex; align-items: center; gap: 5px; }
+    .nav-tabs .nav-link.active { color: #1a73e8; border-bottom: 2px solid #1a73e8; background: none; }
+
+    /* ── Section Header ─────────────────────────────────────────────────────── */
+    .section-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .section-header h4 { font-size: 16px; font-weight: 600; margin: 0 0 4px 0; }
+    .section-header p { font-size: 12px; color: #5f6368; margin: 0; line-height: 1.5; }
+
+    /* ── Sub-tabs & Filter ──────────────────────────────────────────────────── */
+    .rules-sub-tab-bar { display: flex; align-items: center; justify-content: flex-start; margin-bottom: 14px; }
+    .rules-sub-tabs { display: flex; gap: 2px; background: #f1f3f4; border: 1px solid #dadce0; border-radius: 6px; padding: 3px; }
+    .rules-sub-tab { padding: 6px 16px; font-size: 12px; cursor: pointer; border-radius: 4px; color: #202124; display: flex; align-items: center; gap: 5px; font-weight: 500; white-space: nowrap; border: none; background: none; font-family: inherit; transition: all 0.15s; }
+    .rules-sub-tab.active { background: #fff; color: #202124; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); }
+    .rules-sub-badge { background: #e0e0e0; border-radius: 10px; padding: 1px 6px; font-size: 10px; color: #5f6368; }
+    .rules-sub-tab.active .rules-sub-badge { background: #e8f0fe; color: #1a73e8; }
+
+    /* ── Rules Table (minimal for background) ───────────────────────────────── */
+    .table-wrapper { overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 8px; }
+    .rules-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .rules-table thead th { text-transform: none; font-size: 12px; font-weight: 600; white-space: nowrap; color: #202124; padding: 10px; border-bottom: 2px solid #dee2e6; background: #f8f9fa; }
+    .rules-table tbody td { padding: 8px 10px; border-bottom: 1px solid #e0e0e0; vertical-align: middle; background: #fff; }
+    .rules-table tbody tr:hover td { background: #f8f9fa; }
+    .rules-group-row td { background: #f8f9fa !important; font-weight: 700; font-size: 13px; color: #202124; padding: 8px 10px; border-bottom: 1px solid #e0e0e0; border-top: 2px solid #dadce0; }
+    .badge-type-budget { background: #e8f0fe; color: #1558d6; font-size: 11px; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+    .badge-type-bid { background: #e6f4ea; color: #137333; font-size: 11px; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+    .badge-rof-rule { background: #e8f0fe; color: #1558d6; font-size: 11px; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+    .risk-dot { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; }
+    .risk-dot::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
+    .risk-dot-low { color: #137333; } .risk-dot-low::before { background: #34a853; }
+    .risk-dot-medium { color: #5f6368; } .risk-dot-medium::before { background: #fbbc04; }
+    .badge-strategy { background: #f1f3f4; color: #3c4043; border: 1px solid #dadce0; font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+    .action-down { color: #c5221f; font-weight: 600; font-size: 12px; }
+    .action-up { color: #137333; font-weight: 600; font-size: 12px; }
+
+    /* ── Buttons ─────────────────────────────────────────────────────────────── */
+    .btn-primary-act { background: #1a73e8; color: #fff; border: 1px solid #1a73e8; border-radius: 4px; padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 4px; }
+    .btn-primary-act:hover { background: #1557b0; border-color: #1557b0; }
+    .btn-secondary-act { background: #fff; color: #202124; border: 1px solid #dadce0; border-radius: 4px; padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; }
+    .btn-secondary-act:hover { background: #f8f9fa; border-color: #c1c4c8; }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       SLIDE-IN PANEL — LONG SCROLL VERSION
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    .slide-in-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(32, 33, 36, 0.45); z-index: 1049;
+        display: none;
+    }
+    .slide-in-overlay.open { display: block; }
+
+    .slide-in-panel {
+        position: fixed; top: 0; right: 0; width: 720px; height: 100vh;
+        background: #fff; z-index: 1050; box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+        display: flex; flex-direction: column;
+        transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .slide-in-panel.open { transform: translateX(0); }
+
+    /* ── Panel Header ───────────────────────────────────────────────────────── */
+    .si-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 16px 24px; border-bottom: 1px solid #e0e0e0; background: #fff; flex-shrink: 0;
+    }
+    .si-header h4 { font-size: 16px; font-weight: 600; color: #202124; margin: 0; }
+    .si-header-sub { font-size: 12px; color: #5f6368; margin-top: 2px; }
+
+    /* ── Panel Body: Form + Sidebar ─────────────────────────────────────────── */
+    .si-body-wrap {
+        display: flex; flex: 1; overflow: hidden;
+    }
+
+    .si-form {
+        flex: 1; overflow-y: auto; padding: 24px; min-width: 0;
+    }
+
+    /* ── Form Sections ──────────────────────────────────────────────────────── */
+    .si-section {
+        margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #f0f0f0;
+    }
+    .si-section:last-child { border-bottom: none; margin-bottom: 0; }
+
+    .si-section-num {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 22px; height: 22px; border-radius: 50%; background: #1a73e8; color: #fff;
+        font-size: 11px; font-weight: 700; margin-right: 8px; flex-shrink: 0;
+    }
+    .si-section-title {
+        font-size: 13px; font-weight: 600; color: #202124; display: flex; align-items: center;
+        margin-bottom: 12px;
+    }
+    .si-section-label {
+        font-size: 11px; font-weight: 700; color: #5f6368; letter-spacing: 0.04em; margin-bottom: 8px;
+    }
+
+    /* ── Campaign Picker ────────────────────────────────────────────────────── */
+    .si-camp-picker { border: 1px solid #dadce0; border-radius: 6px; overflow: hidden; }
+    .si-camp-search {
+        width: 100%; padding: 8px 12px 8px 32px; border: none; border-bottom: 1px solid #e0e0e0;
+        font-size: 13px; color: #202124; font-family: inherit;
+        background: #f8f9fa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center;
+    }
+    .si-camp-search:focus { outline: none; background-color: #fff; }
+    .si-camp-list { max-height: 180px; overflow-y: auto; }
+    .si-camp-item { display: flex; align-items: center; gap: 10px; padding: 8px 14px; cursor: pointer; font-size: 13px; color: #202124; transition: background 0.1s; }
+    .si-camp-item:hover { background: #f8f9fa; }
+    .si-camp-item.selected { background: #e8f0fe; }
+    .si-camp-item input[type="checkbox"] { accent-color: #1a73e8; width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
+
+    /* ── Choice Cards (compact) ─────────────────────────────────────────────── */
+    .si-choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .si-choice-card {
+        border: 2px solid #dadce0; border-radius: 8px; padding: 14px;
+        cursor: pointer; transition: all 0.15s; text-align: left;
+    }
+    .si-choice-card:hover { border-color: #93c5fd; }
+    .si-choice-card.selected { border-color: #1a73e8; background: #e8f0fe; }
+    .si-choice-card h5 { font-size: 14px; font-weight: 600; margin: 4px 0 2px; color: #202124; }
+    .si-choice-card.selected h5 { color: #1a73e8; }
+    .si-choice-card p { font-size: 11px; color: #5f6368; line-height: 1.4; margin: 0; }
+
+    /* ── Category Cards (compact) ───────────────────────────────────────────── */
+    .si-cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .si-cat-card {
+        border: 2px solid #dadce0; border-radius: 8px; padding: 12px;
+        cursor: pointer; transition: all 0.15s; text-align: left;
+    }
+    .si-cat-card:hover { border-color: #93c5fd; }
+    .si-cat-card.selected { border-color: #1a73e8; background: #e8f0fe; }
+    .si-cat-card h5 { font-size: 13px; font-weight: 600; margin: 4px 0 2px; color: #202124; }
+    .si-cat-card.selected h5 { color: #1a73e8; }
+    .si-cat-card p { font-size: 10px; color: #5f6368; line-height: 1.3; margin: 0; }
+
+    /* ── Condition/Action Inputs ─────────────────────────────────────────────── */
+    .si-cond-box { border: 1px solid #dadce0; border-radius: 6px; padding: 14px; background: #f8f9fa; }
+    .si-cond-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .si-cond-select, .si-cond-input {
+        padding: 7px 10px; border-radius: 4px; border: 1px solid #dadce0;
+        font-size: 12px; background: #fff; color: #202124; font-family: inherit;
+    }
+    .si-cond-select:focus, .si-cond-input:focus { outline: none; border-color: #1a73e8; }
+    .si-cond-input { width: 80px; }
+
+    .si-add-cond-btn {
+        background: none; border: none; font-size: 12px; color: #1a73e8;
+        cursor: pointer; font-weight: 500; padding: 4px 0; margin-top: 8px;
+        display: inline-flex; align-items: center; gap: 4px; font-family: inherit;
+    }
+    .si-add-cond-btn:hover { color: #1557b0; }
+    .si-remove-cond-btn { color: #c5221f; }
+    .si-remove-cond-btn:hover { color: #a50e0e; }
+
+    .si-cond-2 { margin-top: 12px; display: none; }
+    .si-cond-2.show { display: block; }
+
+    /* ── Section Divider ────────────────────────────────────────────────────── */
+    .si-divider {
+        display: flex; align-items: center; gap: 10px; margin: 16px 0;
+    }
+    .si-divider span { font-size: 12px; font-weight: 700; color: #5f6368; white-space: nowrap; }
+    .si-divider::before, .si-divider::after { content: ''; flex: 1; height: 1px; background: #e0e0e0; }
+
+    /* ── Settings Grid ──────────────────────────────────────────────────────── */
+    .si-settings-box { border: 1px solid #dadce0; border-radius: 6px; padding: 14px; background: #f8f9fa; }
+    .si-settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .si-settings-field { display: flex; flex-direction: column; gap: 5px; }
+    .si-settings-field label { font-size: 11px; font-weight: 700; color: #5f6368; }
+    .si-settings-field select { padding: 7px 10px; border-radius: 4px; border: 1px solid #dadce0; font-size: 13px; background: #fff; font-family: inherit; color: #202124; }
+
+    /* ── Callout Notes ──────────────────────────────────────────────────────── */
+    .si-note-warn {
+        background: #fff8e1; border: 1px solid #ffe082; border-radius: 4px;
+        padding: 8px 12px; font-size: 12px; color: #b45309; margin-top: 10px;
+        display: flex; align-items: flex-start; gap: 6px;
+    }
+    .si-note-danger {
+        background: #fce8e6; border: 1px solid #f5c6c2; border-radius: 4px;
+        padding: 8px 12px; font-size: 12px; color: #a50e0e; margin-top: 8px;
+        display: flex; align-items: flex-start; gap: 6px;
+    }
+
+    /* ── Rule Name Input ────────────────────────────────────────────────────── */
+    .si-name-field {
+        width: 100%; padding: 9px 12px; border-radius: 4px;
+        border: 1px solid #dadce0; font-size: 14px; font-family: inherit;
+        color: #202124; font-weight: 500;
+    }
+    .si-name-field:focus { outline: none; border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15); }
+    .si-name-hint { font-size: 11px; color: #5f6368; margin-top: 4px; }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       LIVE SUMMARY SIDEBAR
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    .si-sidebar {
+        width: 210px; flex-shrink: 0; border-left: 1px solid #e0e0e0;
+        background: #fafafa; display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    .si-sidebar-inner {
+        flex: 1; overflow-y: auto; padding: 16px 14px;
+    }
+
+    .si-sidebar-title {
+        font-size: 10px; font-weight: 700; color: #9aa0a6;
+        letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 12px;
+    }
+
+    .si-summary-box {
+        background: #fff; border: 1px solid #e0e0e0; border-radius: 6px;
+        padding: 12px; margin-bottom: 12px;
+    }
+
+    .si-summary-label {
+        font-size: 9px; font-weight: 700; color: #9aa0a6; letter-spacing: 0.04em;
+        text-transform: uppercase; margin-bottom: 4px;
+    }
+
+    .si-summary-value {
+        font-size: 12px; font-weight: 600; color: #202124; line-height: 1.4; word-break: break-word;
+    }
+
+    .si-summary-value.empty {
+        color: #bdbdbd; font-weight: 400; font-style: italic;
+    }
+
+    .si-summary-divider { height: 1px; background: #e8e8e8; margin: 8px 0; }
+
+    /* ── Live Summary — Sentence Block ──────────────────────────────────────── */
+    .si-live-sentence {
+        background: #e6f4ea; border: 1px solid #ceead6; border-radius: 6px;
+        padding: 12px; margin-top: 8px;
+    }
+    .si-live-sentence p {
+        font-size: 12px; color: #137333; line-height: 1.6; margin: 0;
+    }
+    .si-live-sentence strong { font-weight: 700; }
+
+    .si-live-empty {
+        background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px;
+        padding: 12px; margin-top: 8px; text-align: center;
+    }
+    .si-live-empty p {
+        font-size: 11px; color: #9aa0a6; margin: 0; font-style: italic;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       STICKY SAVE FOOTER
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    .si-footer {
+        padding: 12px 24px; border-top: 1px solid #e0e0e0; background: #f8f9fa;
+        display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+    }
+
+    .si-footer-left { font-size: 12px; color: #5f6368; }
+
+    /* ── Toast ──────────────────────────────────────────────────────────────── */
+    .toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    .toast-msg { padding: 10px 18px; border-radius: 6px; font-size: 13px; font-weight: 500; color: #fff; pointer-events: auto; animation: toastIn 0.3s ease; }
+    .toast-msg.success { background: #137333; }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Responsive ──────────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+        .slide-in-panel { width: 100%; }
+        .si-sidebar { display: none; }
+        .nav-sidebar { display: none; }
+        .main-wrapper { margin-left: 0; }
+    }
+    </style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR NAVIGATION ═══ -->
+<nav class="nav-sidebar">
+    <div class="nav-brand">
+        <svg class="nav-brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="41" fill="none" stroke="#4285F4" stroke-width="10"/>
+            <circle cx="50" cy="50" r="29" fill="none" stroke="#EA4335" stroke-width="10"/>
+            <circle cx="50" cy="50" r="17" fill="none" stroke="#FBBC05" stroke-width="10"/>
+            <circle cx="50" cy="50" r="10" fill="#34A853"/>
+        </svg>
+        <div class="nav-brand-text">Ads<br>Control<br>Tower</div>
+    </div>
+    <div class="nav-items">
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">home</span><span class="nav-item-text">Dashboard</span></a>
+        <a class="nav-item-link active" href="#"><span class="material-symbols-outlined nav-item-icon">campaign</span><span class="nav-item-text">Campaigns</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">folder</span><span class="nav-item-text">Ad Groups</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">search</span><span class="nav-item-text">Keywords</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">article</span><span class="nav-item-text">Ads</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">shopping_cart</span><span class="nav-item-text">Shopping</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">lightbulb</span><span class="nav-item-text small">Recommendations</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">history</span><span class="nav-item-text">Changes</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">send</span><span class="nav-item-text">Outreach</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">settings</span><span class="nav-item-text">Settings</span></a>
+    </div>
+</nav>
+
+<!-- ═══ MAIN WRAPPER ═══ -->
+<div class="main-wrapper">
+    <div class="top-navbar">
+        <div class="top-navbar-left">
+            <span class="top-navbar-client">Christopher Hoole</span>
+            <span class="top-navbar-date"><span class="material-symbols-outlined" style="font-size:16px">calendar_today</span> Last 30 days</span>
+            <div class="date-toggle"><button class="date-toggle-btn">7d</button><button class="date-toggle-btn active">30d</button></div>
+        </div>
+        <div style="font-size:12px;color:#5f6368;">User &nbsp;|&nbsp; Logout</div>
+    </div>
+
+    <main class="main-content">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="mb-0" style="font-size:20px;font-weight:600;">Campaigns</h2>
+        </div>
+
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item"><button class="nav-link">Campaigns (4)</button></li>
+            <li class="nav-item"><button class="nav-link active"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:text-bottom">bolt</span> Rules &amp; Flags <span class="badge bg-secondary ms-1" style="font-size:10px;">48</span></button></li>
+            <li class="nav-item"><button class="nav-link">Recommendations</button></li>
+        </ul>
+
+        <div id="rules-tab-content">
+            <div class="section-header">
+                <div>
+                    <h4>Campaign rules &amp; flags</h4>
+                    <p>Rules generate recommendations for action. Flags raise alerts only. Both require your confirmation before anything changes.</p>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn btn-sm btn-outline-secondary">Use template</button>
+                    <button class="btn-primary-act" onclick="openSlideIn()">
+                        <span class="material-symbols-outlined" style="font-size:15px;">add</span> Add rule or flag
+                    </button>
+                </div>
+            </div>
+
+            <div class="rules-sub-tab-bar">
+                <div class="rules-sub-tabs">
+                    <button class="rules-sub-tab active">Rules <span class="rules-sub-badge">0</span></button>
+                    <button class="rules-sub-tab">Flags <span class="rules-sub-badge">0</span></button>
+                    <button class="rules-sub-tab">Templates <span class="rules-sub-badge">0</span></button>
+                </div>
+            </div>
+
+            <!-- Abbreviated rules table for context -->
+            <div class="table-wrapper">
+            <table class="rules-table">
+                <thead><tr><th>On/off</th><th>Rule name</th><th>Campaigns</th><th>Campaign type</th><th>Plain English</th><th>Rule/Flag</th><th>Rule type</th><th>Conditions</th><th>Action</th><th>Cooldown</th><th>Risk</th><th></th></tr></thead>
+                <tbody>
+                    <tr class="rules-group-row"><td colspan="12">Budget &middot; 9 rules</td></tr>
+                    <tr>
+                        <td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch"></div></td>
+                        <td style="font-weight:600;">Decrease Budget &ndash; Weak CPA</td>
+                        <td style="font-size:12px;color:#5f6368;">All campaigns</td>
+                        <td><span class="badge-strategy">All</span></td>
+                        <td style="font-size:12px;color:#6c757d;">Pull back spend when CPA is above target</td>
+                        <td><span class="badge-rof-rule">Rule</span></td>
+                        <td><span class="badge-type-budget">Budget</span></td>
+                        <td style="font-size:12px;"><strong>CPA (7d)</strong> &gt; 1.2&times; target</td>
+                        <td><span class="action-down">&darr; Decrease budget 10%</span></td>
+                        <td style="font-size:12px;">7d</td>
+                        <td><span class="risk-dot risk-dot-low">Low</span></td>
+                        <td><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button></td>
+                    </tr>
+                    <tr>
+                        <td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch"></div></td>
+                        <td style="font-weight:600;">Increase Budget &ndash; Strong ROAS</td>
+                        <td style="font-size:12px;color:#5f6368;">All campaigns</td>
+                        <td><span class="badge-strategy">tROAS</span></td>
+                        <td style="font-size:12px;color:#6c757d;">Spend more when ROAS is beating target</td>
+                        <td><span class="badge-rof-rule">Rule</span></td>
+                        <td><span class="badge-type-budget">Budget</span></td>
+                        <td style="font-size:12px;"><strong>ROAS (7d)</strong> &ge; 1.15&times; target</td>
+                        <td><span class="action-up">&uarr; Increase budget 10%</span></td>
+                        <td style="font-size:12px;">7d</td>
+                        <td><span class="risk-dot risk-dot-low">Low</span></td>
+                        <td><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button></td>
+                    </tr>
+                    <tr class="rules-group-row"><td colspan="12">Bid &middot; 6 rules</td></tr>
+                    <tr>
+                        <td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch"></div></td>
+                        <td style="font-weight:600;">Tighten tROAS Target &ndash; Strong Performance</td>
+                        <td style="font-size:12px;color:#5f6368;">All campaigns</td>
+                        <td><span class="badge-strategy">tROAS</span></td>
+                        <td style="font-size:12px;color:#6c757d;">Work harder when ROAS beats target</td>
+                        <td><span class="badge-rof-rule">Rule</span></td>
+                        <td><span class="badge-type-bid">Bid</span></td>
+                        <td style="font-size:12px;"><strong>ROAS (14d)</strong> &ge; 1.2&times; target</td>
+                        <td><span class="action-up">&uarr; Increase tROAS 5%</span></td>
+                        <td style="font-size:12px;">14d</td>
+                        <td><span class="risk-dot risk-dot-medium">Medium</span></td>
+                        <td><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button></td>
+                    </tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SLIDE-IN OVERLAY + PANEL (LONG-SCROLL)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<div class="slide-in-overlay" id="slideOverlay" onclick="if(event.target===this) closeSlideIn()"></div>
+
+<div class="slide-in-panel" id="slidePanel" onclick="event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="si-header">
+        <div>
+            <h4 id="si-title">Add rule or flag</h4>
+            <div class="si-header-sub">Complete the fields below to create a new rule</div>
+        </div>
+        <button class="btn btn-sm btn-light border" onclick="closeSlideIn()" title="Close">&#x2715; Close</button>
+    </div>
+
+    <!-- Body: Form + Sidebar -->
+    <div class="si-body-wrap">
+
+        <!-- ── Scrollable Form ──────────────────────────────────────────── -->
+        <div class="si-form" id="siForm">
+
+            <!-- Section 1: Campaigns -->
+            <div class="si-section">
+                <div class="si-section-title"><span class="si-section-num">1</span> Select campaigns</div>
+                <div class="si-camp-picker">
+                    <input class="si-camp-search" type="text" placeholder="Search campaigns..." autocomplete="off">
+                    <div style="display:flex;gap:8px;padding:6px 12px;border-bottom:1px solid #e0e0e0;background:#fafafa;">
+                        <button class="btn btn-sm" type="button" onclick="selectAllCamps()">Select all</button>
+                        <button class="btn btn-sm" type="button" onclick="clearAllCamps()">Clear</button>
+                    </div>
+                    <div class="si-camp-list" id="siCampList">
+                        <label class="si-camp-item selected"><input type="checkbox" checked onchange="updateSummary()"> CH | Brand — Exact <span class="badge-strategy">tROAS</span></label>
+                        <label class="si-camp-item selected"><input type="checkbox" checked onchange="updateSummary()"> CH | Brand — Broad <span class="badge-strategy">tROAS</span></label>
+                        <label class="si-camp-item"><input type="checkbox" onchange="updateSummary()"> CH | Non-Brand — Exact <span class="badge-strategy">tROAS</span></label>
+                        <label class="si-camp-item"><input type="checkbox" onchange="updateSummary()"> CH | Non-Brand — Broad <span class="badge-strategy">tROAS</span></label>
+                        <label class="si-camp-item"><input type="checkbox" onchange="updateSummary()"> CH | DSA — Auto <span class="badge-strategy">Max Conv.</span></label>
+                        <label class="si-camp-item"><input type="checkbox" onchange="updateSummary()"> CH | Performance Max <span class="badge-strategy">tROAS</span></label>
+                        <label class="si-camp-item"><input type="checkbox" onchange="updateSummary()"> CH | Competitor — Exact <span class="badge-strategy">tCPA</span></label>
+                        <label class="si-camp-item"><input type="checkbox" onchange="updateSummary()"> CH | Retargeting — Display <span class="badge-strategy">tCPA</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Rule or Flag -->
+            <div class="si-section">
+                <div class="si-section-title"><span class="si-section-num">2</span> Rule or flag</div>
+                <div class="si-choice-grid">
+                    <div class="si-choice-card selected" onclick="pickRoF(this,'rule')">
+                        <span class="material-symbols-outlined" style="font-size:24px">bolt</span>
+                        <h5>Rule</h5>
+                        <p>Evaluates conditions and generates a recommendation for you to act on.</p>
+                    </div>
+                    <div class="si-choice-card" onclick="pickRoF(this,'flag')">
+                        <span class="material-symbols-outlined" style="font-size:24px">flag</span>
+                        <h5>Flag</h5>
+                        <p>Monitors for a condition and raises an alert. No action taken.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Type -->
+            <div class="si-section">
+                <div class="si-section-title"><span class="si-section-num">3</span> Type</div>
+                <div class="si-cat-grid">
+                    <div class="si-cat-card selected" onclick="pickType(this,'budget')">
+                        <span class="material-symbols-outlined" style="font-size:20px;color:#1558d6">account_balance_wallet</span>
+                        <h5>Budget</h5><p>Adjust budgets based on performance</p>
+                    </div>
+                    <div class="si-cat-card" onclick="pickType(this,'bid')">
+                        <span class="material-symbols-outlined" style="font-size:20px;color:#137333">trending_up</span>
+                        <h5>Bid</h5><p>Modify bid strategy targets</p>
+                    </div>
+                    <div class="si-cat-card" onclick="pickType(this,'status')">
+                        <span class="material-symbols-outlined" style="font-size:20px;color:#b45309">pause_circle</span>
+                        <h5>Status</h5><p>Pause or enable campaigns</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: Conditions & Action -->
+            <div class="si-section">
+                <div class="si-section-title"><span class="si-section-num">4</span> Conditions &amp; action</div>
+
+                <div class="si-section-label">Condition 1 (required)</div>
+                <div class="si-cond-box">
+                    <div class="si-cond-row">
+                        <select class="si-cond-select" id="siMetric1" onchange="updateSummary()">
+                            <optgroup label="CPA"><option selected>CPA (7d)</option><option>CPA (14d)</option></optgroup>
+                            <optgroup label="ROAS"><option>ROAS (7d)</option><option>ROAS (14d)</option></optgroup>
+                            <optgroup label="CTR"><option>CTR (7d)</option></optgroup>
+                            <optgroup label="Cost"><option>Cost (7d)</option></optgroup>
+                            <optgroup label="Conversions"><option>Conversions (7d)</option></optgroup>
+                        </select>
+                        <select class="si-cond-select" id="siOp1" onchange="updateSummary()">
+                            <option value="gt">is greater than</option>
+                            <option value="lt">is less than</option>
+                            <option value="gte">is at least</option>
+                            <option value="lte">is at most</option>
+                        </select>
+                        <input class="si-cond-input" id="siVal1" type="text" value="1.2" oninput="updateSummary()">
+                    </div>
+                    <div class="si-cond-row" style="margin-top:8px;">
+                        <select class="si-cond-select" id="siRef1" onchange="updateSummary()">
+                            <option value="x_target" selected>&times; target</option>
+                            <option value="absolute">absolute</option>
+                            <option value="pct">%</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="si-add-cond-btn" id="siAddCond2" onclick="toggleCond2()">+ Add second condition</button>
+
+                <div class="si-cond-2" id="siCond2">
+                    <button class="si-add-cond-btn si-remove-cond-btn" onclick="toggleCond2()" style="margin-top:0;margin-bottom:8px;">&ndash; Remove second condition</button>
+                    <div class="si-section-label">Condition 2 (optional)</div>
+                    <div class="si-cond-box">
+                        <div class="si-cond-row">
+                            <select class="si-cond-select" id="siMetric2" onchange="updateSummary()">
+                                <optgroup label="Conversions"><option selected>Conversions (7d)</option></optgroup>
+                                <optgroup label="ROAS"><option>ROAS (7d)</option></optgroup>
+                                <optgroup label="Cost"><option>Cost (7d)</option></optgroup>
+                            </select>
+                            <select class="si-cond-select" id="siOp2" onchange="updateSummary()">
+                                <option value="gt" selected>is greater than</option>
+                                <option value="lt">is less than</option>
+                            </select>
+                            <input class="si-cond-input" id="siVal2" type="text" value="10" oninput="updateSummary()">
+                        </div>
+                        <div class="si-cond-row" style="margin-top:8px;">
+                            <select class="si-cond-select" id="siRef2" onchange="updateSummary()">
+                                <option value="absolute" selected>absolute</option>
+                                <option value="x_target">&times; target</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="si-divider"><span>Action</span></div>
+
+                <div class="si-section-label">What should happen when conditions are met?</div>
+                <div class="si-cond-box">
+                    <div class="si-cond-row">
+                        <select class="si-cond-select" id="siAction" style="min-width:180px" onchange="updateSummary()">
+                            <option selected>Decrease budget by</option>
+                            <option>Increase budget by</option>
+                        </select>
+                        <input class="si-cond-input" id="siMagnitude" type="text" value="10" oninput="updateSummary()">
+                        <span style="font-size:12px;color:#5f6368;">%</span>
+                    </div>
+                </div>
+
+                <div class="si-divider"><span>Rule settings</span></div>
+
+                <div class="si-settings-box">
+                    <div class="si-settings-grid">
+                        <div class="si-settings-field">
+                            <label>Cooldown period</label>
+                            <select id="siCooldown" onchange="updateSummary()"><option selected>7 days</option><option>14 days</option><option>30 days</option></select>
+                        </div>
+                        <div class="si-settings-field">
+                            <label>Risk level (auto-calculated)</label>
+                            <select id="siRisk" disabled><option selected>Low</option><option>Medium</option><option>High</option></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="si-note-warn">
+                    <span class="material-symbols-outlined" style="font-size:16px;flex-shrink:0;">warning</span>
+                    The system will cap this at the guardrail limit defined in Client Settings. Even if you enter a higher value here, the guardrail takes precedence.
+                </div>
+                <div class="si-note-danger">
+                    <span class="material-symbols-outlined" style="font-size:16px;flex-shrink:0;">person</span>
+                    All campaign-level actions require your confirmation before anything changes in Google Ads. This rule generates a recommendation only.
+                </div>
+            </div>
+
+            <!-- Section 5: Name -->
+            <div class="si-section" style="border-bottom:none;">
+                <div class="si-section-title"><span class="si-section-num">5</span> Rule name</div>
+                <input class="si-name-field" id="siRuleName" type="text" value="Decrease Budget &ndash; Weak CPA" placeholder="Enter rule name..." oninput="updateSummary()">
+                <div class="si-name-hint">Give this rule a clear name so it is easy to identify in the table</div>
+            </div>
+
+        </div>
+
+        <!-- ── Live Summary Sidebar ─────────────────────────────────────── -->
+        <div class="si-sidebar">
+            <div class="si-sidebar-inner">
+                <div class="si-sidebar-title">Live summary</div>
+
+                <div class="si-summary-box">
+                    <div class="si-summary-label">Campaigns</div>
+                    <div class="si-summary-value" id="sumCampaigns">2 selected</div>
+                </div>
+
+                <div class="si-summary-box">
+                    <div class="si-summary-label">Type</div>
+                    <div class="si-summary-value" id="sumType">Rule &middot; Budget</div>
+                </div>
+
+                <div class="si-summary-box">
+                    <div class="si-summary-label">Conditions</div>
+                    <div class="si-summary-value" id="sumConditions">CPA (7d) &gt; 1.2&times; target</div>
+                </div>
+
+                <div class="si-summary-box">
+                    <div class="si-summary-label">Action</div>
+                    <div class="si-summary-value" id="sumAction">Decrease budget by 10%</div>
+                </div>
+
+                <div class="si-summary-box">
+                    <div class="si-summary-label">Settings</div>
+                    <div class="si-summary-value" id="sumSettings">Cooldown: 7d &middot; Risk: Low</div>
+                </div>
+
+                <div class="si-summary-box">
+                    <div class="si-summary-label">Name</div>
+                    <div class="si-summary-value" id="sumName">Decrease Budget &ndash; Weak CPA</div>
+                </div>
+
+                <!-- Live sentence -->
+                <div class="si-live-sentence" id="sumSentence">
+                    <p id="sumSentenceText">
+                        <strong>When</strong> CPA (7d) &gt; 1.2&times; target<br>
+                        <strong>Then</strong> decrease budget by 10%<br>
+                        <strong>Applies to</strong> 2 campaigns<br>
+                        <strong>Cooldown</strong> 7d &middot; <strong>Risk</strong> Low
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Sticky Save Footer -->
+    <div class="si-footer">
+        <div class="si-footer-left">
+            <button class="btn-secondary-act" onclick="closeSlideIn()">Cancel</button>
+        </div>
+        <button class="btn-primary-act" onclick="saveRule()" style="padding:10px 24px;font-size:14px;">
+            <span class="material-symbols-outlined" style="font-size:18px;">save</span> Save rule
+        </button>
+    </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     JAVASCRIPT — Live summary updates
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<script>
+var _rof = 'rule';
+var _type = 'budget';
+var _cond2Open = false;
+
+var OP_MAP = { gt: '>', lt: '<', gte: '\u2265', lte: '\u2264' };
+var REF_MAP = { x_target: '\u00d7 target', absolute: '', pct: '%' };
+
+function openSlideIn() {
+    var overlay = document.getElementById('slideOverlay');
+    var panel = document.getElementById('slidePanel');
+    overlay.classList.add('open');
+    // Force reflow so display:block renders before transform transition
+    void panel.offsetHeight;
+    panel.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('siForm').scrollTop = 0;
+    updateSummary();
+}
+
+function closeSlideIn() {
+    document.getElementById('slidePanel').classList.remove('open');
+    // Wait for slide-out animation then hide overlay
+    setTimeout(function() {
+        document.getElementById('slideOverlay').classList.remove('open');
+    }, 300);
+    document.body.style.overflow = '';
+}
+
+function saveRule() {
+    closeSlideIn();
+    showToast('Rule saved successfully', 'success');
+}
+
+// ── Card selections ─────────────────────────────────────────────────────────
+
+function pickRoF(el, val) {
+    _rof = val;
+    document.querySelectorAll('.si-choice-card').forEach(function(c) { c.classList.remove('selected'); });
+    el.classList.add('selected');
+    updateSummary();
+}
+
+function pickType(el, val) {
+    _type = val;
+    document.querySelectorAll('.si-cat-card').forEach(function(c) { c.classList.remove('selected'); });
+    el.classList.add('selected');
+    updateSummary();
+}
+
+// ── Condition 2 toggle ──────────────────────────────────────────────────────
+
+function toggleCond2() {
+    var c2 = document.getElementById('siCond2');
+    var addBtn = document.getElementById('siAddCond2');
+    _cond2Open = !_cond2Open;
+    c2.classList.toggle('show', _cond2Open);
+    addBtn.style.display = _cond2Open ? 'none' : '';
+    updateSummary();
+}
+
+// ── Campaign helpers ────────────────────────────────────────────────────────
+
+function selectAllCamps() {
+    document.querySelectorAll('#siCampList input[type="checkbox"]').forEach(function(cb) {
+        cb.checked = true; cb.closest('.si-camp-item').classList.add('selected');
+    });
+    updateSummary();
+}
+
+function clearAllCamps() {
+    document.querySelectorAll('#siCampList input[type="checkbox"]').forEach(function(cb) {
+        cb.checked = false; cb.closest('.si-camp-item').classList.remove('selected');
+    });
+    updateSummary();
+}
+
+// ── Checkbox change handler ─────────────────────────────────────────────────
+
+document.querySelectorAll('#siCampList input[type="checkbox"]').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+        this.closest('.si-camp-item').classList.toggle('selected', this.checked);
+        updateSummary();
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LIVE SUMMARY — updates every time any field changes
+// ═══════════════════════════════════════════════════════════════════════════
+
+function updateSummary() {
+    // Campaigns
+    var campCount = document.querySelectorAll('#siCampList input[type="checkbox"]:checked').length;
+    var sumCamp = document.getElementById('sumCampaigns');
+    sumCamp.textContent = campCount ? campCount + ' selected' : '\u2014';
+    sumCamp.classList.toggle('empty', !campCount);
+
+    // Type
+    var typeLabel = _rof.charAt(0).toUpperCase() + _rof.slice(1) + ' \u00b7 ' + _type.charAt(0).toUpperCase() + _type.slice(1);
+    document.getElementById('sumType').innerHTML = typeLabel;
+
+    // Condition 1
+    var m1 = document.getElementById('siMetric1').value;
+    var o1 = OP_MAP[document.getElementById('siOp1').value] || '>';
+    var v1 = document.getElementById('siVal1').value || '?';
+    var r1 = REF_MAP[document.getElementById('siRef1').value] || '';
+    var condText = m1 + ' ' + o1 + ' ' + v1 + (r1 ? ' ' + r1 : '');
+
+    // Condition 2
+    if (_cond2Open) {
+        var m2 = document.getElementById('siMetric2').value;
+        var o2 = OP_MAP[document.getElementById('siOp2').value] || '>';
+        var v2 = document.getElementById('siVal2').value || '?';
+        var r2 = REF_MAP[document.getElementById('siRef2').value] || '';
+        condText += '<br>AND ' + m2 + ' ' + o2 + ' ' + v2 + (r2 ? ' ' + r2 : '');
+    }
+    document.getElementById('sumConditions').innerHTML = condText;
+
+    // Action
+    var actionSelect = document.getElementById('siAction').value;
+    var mag = document.getElementById('siMagnitude').value || '?';
+    document.getElementById('sumAction').textContent = actionSelect + ' ' + mag + '%';
+
+    // Settings
+    var cooldown = document.getElementById('siCooldown').value;
+    var risk = document.getElementById('siRisk').value;
+    document.getElementById('sumSettings').textContent = 'Cooldown: ' + cooldown.replace(' days', 'd') + ' \u00b7 Risk: ' + risk;
+
+    // Name
+    var name = document.getElementById('siRuleName').value || '\u2014';
+    var sumName = document.getElementById('sumName');
+    sumName.textContent = name;
+    sumName.classList.toggle('empty', !document.getElementById('siRuleName').value);
+
+    // Live sentence
+    var sentence = '<strong>When</strong> ' + m1 + ' ' + o1 + ' ' + v1 + (r1 ? ' ' + r1 : '');
+    if (_cond2Open) {
+        sentence += ' <strong>AND</strong> ' + m2 + ' ' + o2 + ' ' + v2 + (r2 ? ' ' + r2 : '');
+    }
+    sentence += '<br><strong>Then</strong> ' + actionSelect.toLowerCase() + ' ' + mag + '%';
+    sentence += '<br><strong>Applies to</strong> ' + (campCount ? campCount + ' campaign' + (campCount > 1 ? 's' : '') : 'none');
+    sentence += '<br><strong>Cooldown</strong> ' + cooldown.replace(' days', 'd') + ' \u00b7 <strong>Risk</strong> ' + risk;
+    document.getElementById('sumSentenceText').innerHTML = sentence;
+}
+
+// ── Toast ───────────────────────────────────────────────────────────────────
+
+function showToast(msg, type) {
+    var wrap = document.getElementById('toastWrap');
+    var toast = document.createElement('div');
+    toast.className = 'toast-msg ' + type;
+    toast.textContent = msg;
+    wrap.appendChild(toast);
+    setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(function() { wrap.removeChild(toast); }, 300); }, 3500);
+}
+
+// ── Escape to close ─────────────────────────────────────────────────────────
+
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeSlideIn(); });
+
+// Init summary on load
+updateSummary();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
