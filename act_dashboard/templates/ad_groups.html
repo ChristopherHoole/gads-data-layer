@@ -447,14 +447,16 @@
     <div class="tab-pane fade" id="recommendations-tab" role="tabpanel">
 
       <!-- Header -->
-      <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="mb-0">Ad Group Recommendations</h5>
-        <div class="d-flex gap-2">
-          <button class="btn btn-sm btn-outline-secondary" id="ag-accept-low-risk-btn">
-            <i class="bi bi-check2-all"></i> Accept low risk
-          </button>
-          <button class="btn btn-sm btn-primary" id="ag-run-engine-btn">
-            <i class="bi bi-play-circle"></i> Run engine
+      <div class="d-flex align-items-start justify-content-between gap-3 mb-4">
+        <div>
+          <h5 style="font-size:16px;font-weight:600;margin:0 0 4px;color:#1a1d23;">Ad Group Recommendations</h5>
+          <p style="margin:0;color:#6b7280;font-size:13px;">Rules and flags triggered for ad groups in this account. <a href="/recommendations" style="color:#0d6efd;text-decoration:none;">View full recommendations page &rarr;</a></p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <button id="ag-accept-low-risk-btn" class="btn btn-sm btn-outline-success" style="font-size:13px;">Accept all low risk</button>
+          <button id="ag-run-engine-btn" class="btn btn-sm btn-outline-secondary" style="font-size:13px;display:flex;align-items:center;gap:5px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg>
+            Run Recommendations Now
           </button>
         </div>
       </div>
@@ -483,7 +485,7 @@
         </li>
         <li class="nav-item" role="presentation">
           <button class="nav-link" id="ag-flag-tab" data-bs-toggle="tab" data-bs-target="#ag-flag-panel" type="button" role="tab">
-            Flags <span class="badge ms-1" style="background:#ea4335;color:#fff;" id="ag-flag-badge">0</span>
+            Flags <span class="badge bg-secondary ms-1" id="ag-flag-badge">0</span>
           </button>
         </li>
       </ul>
@@ -498,13 +500,15 @@
             <button class="btn btn-sm btn-outline-danger ms-1" onclick="agDoBulk('decline')">Decline selected</button>
             <span class="rec-bulk-clear" onclick="agClearSelection()">Clear</span>
           </div>
-          <table class="table table-sm table-hover align-middle rec-tab-slim">
+          <div class="rec-table-wrapper">
+          <table class="table table-sm align-middle rec-tab-slim">
             <thead>
               <tr>
-                <th class="rec-col-cb"><input type="checkbox" id="ag-chk-all" onchange="agToggleAll(this)"></th>
-                <th class="rec-col-name">Ad group</th>
-                <th class="rec-col-rule">Rule</th>
-                <th class="rec-col-ruleflag">R/F</th>
+                <th style="width:40px;"><input type="checkbox" id="ag-chk-all" onchange="agToggleAll(this)"></th>
+                <th class="rec-col-name">Ad group name</th>
+                <th class="rec-col-rule">Rule name</th>
+                <th class="rec-col-plain">Plain English</th>
+                <th class="rec-col-ruleflag">Rule/Flag</th>
                 <th class="rec-col-ruletype">Rule type</th>
                 <th class="rec-col-conditions">Conditions</th>
                 <th class="rec-col-action">Action</th>
@@ -515,81 +519,102 @@
             </thead>
             <tbody id="ag-pending-tbody"></tbody>
           </table>
+          </div>
           <div id="ag-pending-paginator" class="d-flex gap-1 flex-wrap mt-2"></div>
         </div>
 
         <!-- MONITORING -->
         <div class="tab-pane fade" id="ag-rec-monitoring" role="tabpanel">
-          <table class="table table-sm table-hover align-middle rec-tab-slim">
+          <div class="rec-table-wrapper">
+          <table class="table table-sm align-middle rec-tab-slim">
             <thead>
               <tr>
-                <th class="rec-col-name">Ad group</th>
-                <th class="rec-col-rule">Rule</th>
-                <th class="rec-col-ruleflag">R/F</th>
+                <th style="width:40px;"></th>
+                <th class="rec-col-date">Accepted</th>
+                <th class="rec-col-progress">Monitoring progress</th>
+                <th class="rec-col-name">Ad group name</th>
+                <th class="rec-col-rule">Rule name</th>
+                <th class="rec-col-plain">Plain English</th>
+                <th class="rec-col-ruleflag">Rule/Flag</th>
+                <th class="rec-col-ruletype">Rule type</th>
+                <th class="rec-col-conditions">Conditions</th>
                 <th class="rec-col-action">Action taken</th>
                 <th class="rec-col-risk">Risk</th>
-                <th class="rec-col-date">Accepted</th>
-                <th class="rec-col-progress">Progress</th>
               </tr>
             </thead>
             <tbody id="ag-monitoring-tbody"></tbody>
           </table>
+          </div>
           <div id="ag-monitoring-paginator" class="d-flex gap-1 flex-wrap mt-2"></div>
         </div>
 
         <!-- SUCCESSFUL -->
         <div class="tab-pane fade" id="ag-rec-successful" role="tabpanel">
-          <table class="table table-sm table-hover align-middle rec-tab-slim">
+          <div class="rec-table-wrapper">
+          <table class="table table-sm align-middle rec-tab-slim">
             <thead>
               <tr>
-                <th class="rec-col-name">Ad group</th>
-                <th class="rec-col-rule">Rule</th>
-                <th class="rec-col-ruleflag">R/F</th>
+                <th style="width:40px;"></th>
+                <th class="rec-col-date">Accepted</th>
+                <th class="rec-col-date">Completed</th>
+                <th class="rec-col-name">Ad group name</th>
+                <th class="rec-col-rule">Rule name</th>
+                <th class="rec-col-plain">Plain English</th>
+                <th class="rec-col-ruleflag">Rule/Flag</th>
+                <th class="rec-col-ruletype">Rule type</th>
+                <th class="rec-col-conditions">Conditions</th>
                 <th class="rec-col-action">Action taken</th>
                 <th class="rec-col-risk">Risk</th>
-                <th class="rec-col-date">Completed</th>
               </tr>
             </thead>
             <tbody id="ag-successful-tbody"></tbody>
           </table>
+          </div>
           <div id="ag-successful-paginator" class="d-flex gap-1 flex-wrap mt-2"></div>
         </div>
 
         <!-- HISTORY (declined + reverted) -->
         <div class="tab-pane fade" id="ag-rec-history" role="tabpanel">
-          <table class="table table-sm table-hover align-middle rec-tab-slim">
+          <div class="rec-table-wrapper">
+          <table class="table table-sm align-middle rec-tab-slim">
             <thead>
               <tr>
-                <th class="rec-col-name">Ad group</th>
-                <th class="rec-col-rule">Rule</th>
-                <th class="rec-col-ruleflag">R/F</th>
+                <th style="width:40px;"></th>
+                <th class="rec-col-status">Outcome</th>
+                <th class="rec-col-date">Date actioned</th>
+                <th class="rec-col-name">Ad group name</th>
+                <th class="rec-col-rule">Rule name</th>
+                <th class="rec-col-plain">Plain English</th>
+                <th class="rec-col-ruleflag">Rule/Flag</th>
+                <th class="rec-col-ruletype">Rule type</th>
+                <th class="rec-col-conditions">Conditions</th>
                 <th class="rec-col-action">Action</th>
                 <th class="rec-col-risk">Risk</th>
-                <th class="rec-col-date">Date</th>
-                <th class="rec-col-status">Outcome</th>
               </tr>
             </thead>
             <tbody id="ag-history-tbody"></tbody>
           </table>
+          </div>
           <div id="ag-history-paginator" class="d-flex gap-1 flex-wrap mt-2"></div>
         </div>
 
         <!-- FLAGS (active only — entity page view) -->
         <div class="tab-pane fade" id="ag-flag-panel" role="tabpanel">
-          <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle" id="ag-flag-table">
-              <thead class="table-light">
+          <div class="rec-table-wrapper">
+            <table class="table table-sm align-middle" id="ag-flag-table">
+              <thead>
                 <tr>
-                  <th class="rec-col-name" style="width:180px;">Ad group name</th>
-                  <th class="rec-col-rule" style="width:160px;">Flag name</th>
-                  <th class="rec-col-plain" style="width:220px;">Plain English</th>
-                  <th class="rec-col-risk" style="width:80px;">Severity</th>
-                  <th class="rec-col-age" style="width:60px;">Age</th>
-                  <th class="rec-col-acts" style="width:160px;">Actions</th>
+                  <th class="rec-col-name">Ad group name</th>
+                  <th class="rec-col-rule">Flag name</th>
+                  <th class="rec-col-plain">Plain English</th>
+                  <th class="rec-col-ruleflag">Rule/Flag</th>
+                  <th class="rec-col-risk">Severity</th>
+                  <th class="rec-col-age">Age</th>
+                  <th class="rec-col-acts">Actions</th>
                 </tr>
               </thead>
               <tbody id="ag-flag-tbody">
-                <tr><td colspan="6" class="text-center text-muted py-4">Loading…</td></tr>
+                <tr><td colspan="7" class="text-center text-muted py-4">Loading…</td></tr>
               </tbody>
             </table>
           </div>
@@ -603,17 +628,17 @@
             <span class="badge bg-secondary" id="ag-flag-snooze-count">0</span>
           </div>
           <div id="ag-flag-snooze-body" style="display:none;">
-            <div class="table-responsive">
-              <table class="table table-sm table-hover align-middle">
-                <thead class="table-light">
+            <div class="rec-table-wrapper">
+              <table class="table table-sm align-middle">
+                <thead>
                   <tr>
-                    <th style="width:180px;">Ad group name</th>
-                    <th style="width:160px;">Flag name</th>
-                    <th style="width:220px;">Plain English</th>
-                    <th style="width:80px;">Severity</th>
-                    <th style="width:60px;">Age</th>
-                    <th style="width:110px;">Snoozed until</th>
-                    <th style="width:160px;">Actions</th>
+                    <th class="rec-col-name">Ad group name</th>
+                    <th class="rec-col-rule">Flag name</th>
+                    <th class="rec-col-plain">Plain English</th>
+                    <th class="rec-col-risk">Severity</th>
+                    <th class="rec-col-age">Age</th>
+                    <th style="min-width:110px;">Snoozed until</th>
+                    <th class="rec-col-acts">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="ag-flag-snooze-tbody">
@@ -632,17 +657,17 @@
             <span class="badge bg-secondary" id="ag-flag-hist-count">0</span>
           </div>
           <div id="ag-flag-hist-body" style="display:none;">
-            <div class="table-responsive">
-              <table class="table table-sm table-hover align-middle">
-                <thead class="table-light">
+            <div class="rec-table-wrapper">
+              <table class="table table-sm align-middle">
+                <thead>
                   <tr>
-                    <th style="width:180px;">Ad group name</th>
-                    <th style="width:160px;">Flag name</th>
-                    <th style="width:220px;">Plain English</th>
-                    <th style="width:80px;">Severity</th>
-                    <th style="width:60px;">Age</th>
-                    <th style="width:110px;">Actioned</th>
-                    <th style="width:160px;">Actions</th>
+                    <th class="rec-col-name">Ad group name</th>
+                    <th class="rec-col-rule">Flag name</th>
+                    <th class="rec-col-plain">Plain English</th>
+                    <th class="rec-col-risk">Severity</th>
+                    <th class="rec-col-age">Age</th>
+                    <th style="min-width:110px;">Actioned</th>
+                    <th class="rec-col-acts">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="ag-flag-hist-tbody">
@@ -901,14 +926,11 @@ let agRecommendations = {
   }
   function actionCell(r) {
     var dir = r.action_direction || '';
-    var cls = dir === 'increase' ? 'rec-action-increase' : dir === 'decrease' ? 'rec-action-decrease' : dir === 'pause' ? 'rec-action-pause' : 'rec-action-flag';
-    var arrow = dir === 'increase' ? '\u2191 ' : dir === 'decrease' ? '\u2193 ' : '';
-    var plain = r.plain_english || (arrow + (r.action_magnitude ? r.action_magnitude + '%' : dir));
-    var html = '<span class="rec-action-text ' + cls + '">' + esc(plain) + '</span>';
-    if (r.current_value != null && r.proposed_value != null) {
-      html += '<div class="rec-action-sub">' + esc(String(r.current_value)) + ' \u2192 ' + esc(String(r.proposed_value)) + '</div>';
-    }
-    return html;
+    var cls = dir === 'increase' ? 'rec-action-increase' : dir === 'decrease' ? 'rec-action-decrease' : dir === 'pause' ? 'rec-action-pause' : 'rec-action-hold';
+    var arrow = dir === 'increase' ? '\u2191' : dir === 'decrease' ? '\u2193' : dir === 'pause' ? '\u23f8' : '\u2192';
+    var sub = r.value_label ? '<div class="rec-action-sub">' + esc(r.value_label) + '</div>' : '';
+    var hum = r.risk_level === 'high' ? '<div class="rec-human-badge"><i class="bi bi-exclamation-triangle-fill"></i> Human confirm</div>' : '';
+    return hum + '<div><span class="rec-action-text ' + cls + '">' + arrow + ' ' + esc(r.action_label || '\u2014') + '</span>' + sub + '</div>';
   }
   function riskBadge(v) {
     if (!v) return '';
@@ -943,77 +965,91 @@ let agRecommendations = {
            '<div class="rec-progress-label">' + (days > 0 ? days + 'd remaining' : 'Ending') + ' \u00b7 ends ' + endStr + '</div></div>';
   }
   function makeExpRow(r, colspan) {
-    var why = esc(r.trigger_summary || r.plain_english || '\u2014');
-    var change = (r.current_value != null && r.proposed_value != null)
-      ? esc(String(r.current_value)) + ' \u2192 ' + esc(String(r.proposed_value))
-      : (r.action_magnitude ? esc(String(r.action_magnitude)) + '%' : '\u2014');
-    var cooldown = r.cooldown_days ? esc(String(r.cooldown_days)) + ' days' : '\u2014';
-    return '<tr class="rec-expand-row" id="exp-' + esc(r.rec_id) + '">' +
-      '<td colspan="' + colspan + '">' +
-        '<div class="rec-expand-grid">' +
-          '<div><div class="rec-expand-label">Why triggered</div><div class="rec-expand-val">' + why + '</div></div>' +
-          '<div><div class="rec-expand-label">Proposed change</div><div class="rec-expand-val">' + change + '</div></div>' +
-          '<div><div class="rec-expand-label">Rule details</div><div class="rec-expand-val"><ul>' +
-            '<li>Cooldown: ' + cooldown + '</li>' +
-            '<li>Rule: ' + esc(r.rule_id||'\u2014') + '</li>' +
-          '</ul></div></div>' +
-        '</div>' +
-      '</td></tr>';
+    var why = esc(r.trigger_summary || '\u2014');
+    var cur = r.current_value != null ? esc(String(r.current_value)) : '\u2014';
+    var prop = r.proposed_value != null ? esc(String(r.proposed_value)) + (r.value_suffix ? ' ' + esc(r.value_suffix) : '') : '\u2014';
+    var det = [(r.rule_name || r.rule_id) ? 'Rule: ' + esc(r.rule_name || r.rule_id) : '', r.cooldown_days ? 'Cooldown: ' + r.cooldown_days + ' days' : ''].filter(Boolean).join('<br>') || '\u2014';
+    var proposedHtml = r.rule_type === 'status'
+      ? 'Enabled \u2192 Paused'
+      : 'Current: ' + cur + '<br>Proposed: ' + prop;
+    return '<tr class="rec-expand-row" id="exp-' + esc(r.rec_id) + '"><td colspan="' + colspan + '"><div class="rec-expand-inner"><div class="rec-expand-grid">'
+      + '<div class="rec-expand-card"><div class="rec-expand-label">Why triggered</div><div class="rec-expand-val">' + why + '</div></div>'
+      + '<div class="rec-expand-card"><div class="rec-expand-label">Proposed change</div><div class="rec-expand-val">' + proposedHtml + '</div></div>'
+      + '<div class="rec-expand-card"><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">' + det + '</div></div>'
+      + '</div></div></td></tr>';
   }
   var AG_REC = { pending:[], monitoring:[], successful:[], history:[] };
   var AG_SEL = {};
   var AG_PAGE = { pending:1, monitoring:1, successful:1, history:1 };
   var AG_PER_PAGE = 20;
   function pendingRow(r) {
-    var checked = AG_SEL[r.rec_id] ? 'checked' : '';
-    var high = (r.risk_level === 'high') ? '<div class="rec-human-badge"><i class="bi bi-exclamation-triangle-fill"></i> Human confirm</div>' : '';
-    return '<tr class="' + (AG_SEL[r.rec_id] ? 'rec-selected' : '') + '" onclick="agRecExp(event,\'' + esc(r.rec_id) + '\')" style="cursor:pointer">' +
-      '<td class="rec-col-cb" onclick="event.stopPropagation()"><input type="checkbox" ' + checked + ' onchange="agRecCbChange(this,\'' + esc(r.rec_id) + '\')" ></td>' +
-      '<td class="rec-col-name">' + esc(r.entity_name||'') + '</td>' +
-      '<td class="rec-col-rule">' + esc(r.rule_name||r.rule_id||'') + '</td>' +
+    var id = r.rec_id;
+    var checked = AG_SEL[id] ? 'checked' : '';
+    return '<tr data-rec-id="' + id + '" class="' + (AG_SEL[id] ? 'rec-selected' : '') + '" onclick="agRecExp(event,\'' + esc(id) + '\')" style="cursor:pointer">' +
+      '<td onclick="event.stopPropagation()"><input type="checkbox" class="ag-rec-cb" value="' + id + '" ' + checked + ' onchange="agRecCbChange(this,\'' + esc(id) + '\')" ></td>' +
+      '<td class="rec-col-name">' + esc(r.entity_name || r.campaign_name || '\u2014') + '</td>' +
+      '<td class="rec-col-rule">' + esc(r.rule_name || (r.rule_id ? r.rule_id.replace(/_/g,' ') : '\u2014')) + '</td>' +
+      '<td class="rec-col-plain">' + esc(r.plain_english || '\u2014') + '</td>' +
       '<td class="rec-col-ruleflag">' + rfBadge(r.rule_or_flag) + '</td>' +
       '<td class="rec-col-ruletype">' + rtBadge(r.rule_type_display) + '</td>' +
       '<td class="rec-col-conditions">' + condCell(r.conditions) + '</td>' +
-      '<td class="rec-col-action">' + high + actionCell(r) + '</td>' +
+      '<td class="rec-col-action">' + actionCell(r) + '</td>' +
       '<td class="rec-col-risk">' + riskBadge(r.risk_level) + '</td>' +
       '<td class="rec-col-age">' + ageLabel(r.generated_at) + '</td>' +
-      '<td class="rec-col-acts"><div class="rec-row-acts">' +
-        '<button class="rec-row-btn rec-row-btn-accept" onclick="event.stopPropagation();agRecAccept(\'' + esc(r.rec_id) + '\',this)">Accept</button>' +
-        '<button class="rec-row-btn rec-row-btn-decline" onclick="event.stopPropagation();agRecDecline(\'' + esc(r.rec_id) + '\',this)">Decline</button>' +
+      '<td class="rec-col-acts" onclick="event.stopPropagation()"><div class="rec-row-acts">' +
+        '<button class="rec-row-btn rec-row-btn-accept" onclick="agRecAccept(\'' + esc(id) + '\',this)">Accept</button>' +
+        '<button class="rec-row-btn rec-row-btn-decline" onclick="agRecDecline(\'' + esc(id) + '\',this)">Decline</button>' +
       '</div></td>' +
-    '</tr>' + makeExpRow(r, 10);
+    '</tr>' + makeExpRow(r, 11);
   }
   function monitoringRow(r) {
-    return '<tr onclick="agRecExp(event,\'' + esc(r.rec_id) + '\')" style="cursor:pointer">' +
-      '<td class="rec-col-name">' + esc(r.entity_name||'') + '</td>' +
-      '<td class="rec-col-rule">' + esc(r.rule_name||r.rule_id||'') + '</td>' +
-      '<td class="rec-col-ruleflag">' + rfBadge(r.rule_or_flag) + '</td>' +
-      '<td class="rec-col-action">' + actionCell(r) + '</td>' +
-      '<td class="rec-col-risk">' + riskBadge(r.risk_level) + '</td>' +
+    var id = r.rec_id;
+    return '<tr data-rec-id="' + id + '" onclick="agRecExp(event,\'' + esc(id) + '\')" style="cursor:pointer">' +
+      '<td></td>' +
       '<td class="rec-col-date">' + fmtDate(r.accepted_at) + '</td>' +
       '<td class="rec-col-progress">' + progressBar(r) + '</td>' +
-    '</tr>' + makeExpRow(r, 7);
+      '<td class="rec-col-name">' + esc(r.entity_name || r.campaign_name || '\u2014') + '</td>' +
+      '<td class="rec-col-rule">' + esc(r.rule_name || (r.rule_id ? r.rule_id.replace(/_/g,' ') : '\u2014')) + '</td>' +
+      '<td class="rec-col-plain">' + esc(r.plain_english || '\u2014') + '</td>' +
+      '<td class="rec-col-ruleflag">' + rfBadge(r.rule_or_flag) + '</td>' +
+      '<td class="rec-col-ruletype">' + rtBadge(r.rule_type_display) + '</td>' +
+      '<td class="rec-col-conditions">' + condCell(r.conditions) + '</td>' +
+      '<td class="rec-col-action">' + actionCell(r) + '</td>' +
+      '<td class="rec-col-risk">' + riskBadge(r.risk_level) + '</td>' +
+    '</tr>' + makeExpRow(r, 11);
   }
   function successfulRow(r) {
-    return '<tr onclick="agRecExp(event,\'' + esc(r.rec_id) + '\')" style="cursor:pointer">' +
-      '<td class="rec-col-name">' + esc(r.entity_name||'') + '</td>' +
-      '<td class="rec-col-rule">' + esc(r.rule_name||r.rule_id||'') + '</td>' +
+    var id = r.rec_id;
+    return '<tr data-rec-id="' + id + '" onclick="agRecExp(event,\'' + esc(id) + '\')" style="cursor:pointer">' +
+      '<td></td>' +
+      '<td class="rec-col-date">' + fmtDate(r.accepted_at) + '</td>' +
+      '<td class="rec-col-date">' + fmtDate(r.completed_at || r.resolved_at) + '</td>' +
+      '<td class="rec-col-name">' + esc(r.entity_name || r.campaign_name || '\u2014') + '</td>' +
+      '<td class="rec-col-rule">' + esc(r.rule_name || (r.rule_id ? r.rule_id.replace(/_/g,' ') : '\u2014')) + '</td>' +
+      '<td class="rec-col-plain">' + esc(r.plain_english || '\u2014') + '</td>' +
       '<td class="rec-col-ruleflag">' + rfBadge(r.rule_or_flag) + '</td>' +
+      '<td class="rec-col-ruletype">' + rtBadge(r.rule_type_display) + '</td>' +
+      '<td class="rec-col-conditions">' + condCell(r.conditions) + '</td>' +
       '<td class="rec-col-action">' + actionCell(r) + '</td>' +
       '<td class="rec-col-risk">' + riskBadge(r.risk_level) + '</td>' +
-      '<td class="rec-col-date">' + fmtDate(r.completed_at || r.resolved_at) + '</td>' +
-    '</tr>' + makeExpRow(r, 6);
+    '</tr>' + makeExpRow(r, 11);
   }
   function historyRow(r) {
-    return '<tr onclick="agRecExp(event,\'' + esc(r.rec_id) + '\')" style="cursor:pointer">' +
-      '<td class="rec-col-name">' + esc(r.entity_name||'') + '</td>' +
-      '<td class="rec-col-rule">' + esc(r.rule_name||r.rule_id||'') + '</td>' +
+    var id = r.rec_id;
+    var date = fmtDate(r.completed_at || r.resolved_at || r.updated_at);
+    return '<tr data-rec-id="' + id + '" onclick="agRecExp(event,\'' + esc(id) + '\')" style="cursor:pointer">' +
+      '<td></td>' +
+      '<td class="rec-col-status">' + outcomeBadge(r.status) + '</td>' +
+      '<td class="rec-col-date">' + date + '</td>' +
+      '<td class="rec-col-name">' + esc(r.entity_name || r.campaign_name || '\u2014') + '</td>' +
+      '<td class="rec-col-rule">' + esc(r.rule_name || (r.rule_id ? r.rule_id.replace(/_/g,' ') : '\u2014')) + '</td>' +
+      '<td class="rec-col-plain">' + esc(r.plain_english || '\u2014') + '</td>' +
       '<td class="rec-col-ruleflag">' + rfBadge(r.rule_or_flag) + '</td>' +
+      '<td class="rec-col-ruletype">' + rtBadge(r.rule_type_display) + '</td>' +
+      '<td class="rec-col-conditions">' + condCell(r.conditions) + '</td>' +
       '<td class="rec-col-action">' + actionCell(r) + '</td>' +
       '<td class="rec-col-risk">' + riskBadge(r.risk_level) + '</td>' +
-      '<td class="rec-col-date">' + fmtDate(r.resolved_at || r.accepted_at) + '</td>' +
-      '<td class="rec-col-status">' + outcomeBadge(r.status) + '</td>' +
-    '</tr>' + makeExpRow(r, 7);
+    '</tr>' + makeExpRow(r, 11);
   }
   function renderTab(tab) {
     var items = AG_REC[tab];
@@ -1057,7 +1093,7 @@ let agRecommendations = {
   }
   function agShowToast(msg, type) {
     var wrap = document.getElementById('act-toast-wrap');
-    if (!wrap) return;
+    if (!wrap) { wrap = document.createElement('div'); wrap.id = 'act-toast-wrap'; document.body.appendChild(wrap); }
     var cls = type === 'success' ? 't-success' : type === 'error' ? 't-error' : 't-muted';
     wrap.innerHTML = '<div class="act-toast ' + cls + '">' + esc(msg) + '</div>';
     var t = wrap.querySelector('.act-toast');
@@ -1163,7 +1199,7 @@ let agRecommendations = {
           .then(function(r){ return r.json(); })
           .then(function(d){ agShowToast(d.message || 'Engine started', 'success'); setTimeout(agRecLoad, 2000); })
           .catch(function(){ agShowToast('Error', 'error'); })
-          .finally(function(){ self.disabled=false; self.innerHTML='<i class="bi bi-play-circle"></i> Run engine'; });
+          .finally(function(){ self.disabled=false; self.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg> Run Recommendations Now'; });
       });
     }
     var lrBtn = document.getElementById('ag-accept-low-risk-btn');
@@ -1218,23 +1254,42 @@ let agRecommendations = {
       + '</ul></div></div>';
   }
 
+  function agMakeFlagExpRow(f) {
+    var sevLabel = f.severity ? (f.severity.charAt(0).toUpperCase() + f.severity.slice(1)) + ' severity' : '\u2014';
+    return '<tr class="rec-expand-row" id="ag-flag-exp-' + f.flag_id + '">'
+      + '<td colspan="7"><div class="rec-expand-inner"><div class="rec-expand-grid">'
+      + '<div class="rec-expand-card"><div class="rec-expand-label">Why this was triggered</div><div class="rec-expand-val">' + esc(f.trigger_summary || '\u2014') + '</div></div>'
+      + '<div class="rec-expand-card"><div class="rec-expand-label">Flag details</div><div class="rec-expand-val">' + esc(f.plain_english || '\u2014') + '</div></div>'
+      + '<div class="rec-expand-card"><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">' + esc(sevLabel) + '</div></div>'
+      + '</div></div></td></tr>';
+  }
+
+  window.agFlagExp = function(evt, id) {
+    if (evt.target.closest('button,input,a,select')) return;
+    var el = document.getElementById('ag-flag-exp-' + id);
+    if (!el) return;
+    el.classList.toggle('open');
+  };
+
   function agFlagRender() {
     var tbody = document.getElementById('ag-flag-tbody');
     if (!tbody) return;
     document.getElementById('ag-flag-badge').textContent = AG_FLAGS.length;
     if (!AG_FLAGS.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No active flags for ad groups.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No active flags for ad groups.</td></tr>';
       return;
     }
     tbody.innerHTML = AG_FLAGS.map(function(f) {
-      return '<tr>'
-        + '<td class="rec-col-name">' + esc(f.entity_name || '—') + '</td>'
-        + '<td class="rec-col-rule">' + esc(f.rule_name || '—') + '</td>'
-        + '<td class="rec-col-plain">' + esc(f.plain_english || '—') + '</td>'
+      return '<tr style="cursor:pointer;" onclick="agFlagExp(event, \'' + f.flag_id + '\')">'
+        + '<td class="rec-col-name">' + esc(f.entity_name || '\u2014') + '</td>'
+        + '<td class="rec-col-rule">' + esc(f.rule_name || '\u2014') + '</td>'
+        + '<td class="rec-col-plain">' + esc(f.plain_english || '\u2014') + '</td>'
+        + '<td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-flag">Flag</span></td>'
         + '<td class="rec-col-risk">' + agSevBadge(f.severity) + '</td>'
-        + '<td class="rec-col-age">' + esc(f.generated_ago || '—') + '</td>'
+        + '<td class="rec-col-age">' + esc(f.generated_ago || '\u2014') + '</td>'
         + '<td class="rec-col-acts" onclick="event.stopPropagation()">' + agFlagActionsHtml(f.flag_id) + '</td>'
-        + '</tr>';
+        + '</tr>'
+        + agMakeFlagExpRow(f);
     }).join('');
   }
 

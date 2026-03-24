@@ -56,6 +56,7 @@ OP_MAP = {">": "gt", ">=": "gte", "<": "lt", "<=": "lte", "=": "eq", "==": "eq"}
 # action_type → action_direction mapping (DB → engine)
 # ---------------------------------------------------------------------------
 ACTION_MAP = {
+    # Campaign actions
     "increase_budget":     "increase",
     "decrease_budget":     "decrease",
     "increase_troas":      "increase",
@@ -64,7 +65,30 @@ ACTION_MAP = {
     "decrease_target_cpa": "decrease",
     "increase_max_cpc":    "increase",
     "decrease_max_cpc":    "decrease",
+    # Ad group actions
+    "increase_cpc_bid":    "increase",
+    "decrease_cpc_bid":    "decrease",
+    "increase_tcpa_target":"increase",
+    "decrease_tcpa_target":"decrease",
+    "pause_ad_group":      "pause",
+    "enable_ad_group":     "hold",
+    # Keyword actions
+    "increase_bid":        "increase",
+    "decrease_bid":        "decrease",
+    "increase_bid_to_first_page": "increase",
+    # Ad actions
+    "pause_ad":            "pause",
+    "enable_ad":           "hold",
+    # Shopping actions
+    "increase_shopping_budget": "increase",
+    "decrease_shopping_budget": "decrease",
+    "pause_shopping":      "pause",
+    "enable_shopping":     "hold",
+    "increase_product_bid":"increase",
+    "decrease_product_bid":"decrease",
+    # Generic
     "pause":               "pause",
+    "enable":              "hold",
     "flag":                "flag",
     "hold":                "hold",
 }
@@ -195,12 +219,67 @@ KEYWORD_METRIC_MAP = {
 # ---------------------------------------------------------------------------
 
 AD_GROUP_METRIC_MAP = {
-    "cost":             ("cost", None, None),           # DOUBLE field
-    "conversions":      ("conversions", None, None),    # DOUBLE field
-    "ctr":              ("ctr", None, None),            # DOUBLE field
-    "roas":             ("roas", None, None),           # DOUBLE field
-    "impressions":      ("impressions", None, None),    # BIGINT field
-    "clicks":           ("clicks", None, None),         # BIGINT field
+    # ── Basic columns (direct) ─────────────────────────────────────────────
+    "cost":             ("cost", None, None),
+    "conversions":      ("conversions", None, None),
+    "ctr":              ("ctr", None, None),
+    "roas":             ("roas", None, None),
+    "cpa":              ("cpa", None, None),
+    "cpc":              ("cpc", None, None),
+    "impressions":      ("impressions", None, None),
+    "clicks":           ("clicks", None, None),
+    "search_impression_share":           ("search_impression_share", None, None),
+    "search_top_impression_share":       ("search_top_impression_share", None, None),
+    "impression_share_lost_rank":        ("search_impression_share", None, None),  # proxy
+    "impression_share_lost_budget":      ("search_impression_share", None, None),  # proxy
+    "optimization_score":                ("optimization_score", None, None),
+
+    # ── Windowed aliases (UI sends these — map to raw daily columns) ───────
+    # The ad_group_daily table has only raw daily data, not windowed averages.
+    # These mappings let rules created via the UI (which use windowed names)
+    # evaluate against the most recent daily snapshot.
+    "roas_w7_mean":     ("roas", None, None),
+    "roas_w14_mean":    ("roas", None, None),
+    "roas_w30_mean":    ("roas", None, None),
+    "cpa_w7_mean":      ("cpa", None, None),
+    "cpa_w14_mean":     ("cpa", None, None),
+    "cpa_w30_mean":     ("cpa", None, None),
+    "ctr_w7_mean":      ("ctr", None, None),
+    "ctr_w14_mean":     ("ctr", None, None),
+    "ctr_w30_mean":     ("ctr", None, None),
+    "cpc_w7_mean":      ("cpc", None, None),
+    "cpc_w14_mean":     ("cpc", None, None),
+    "cpc_w30_mean":     ("cpc", None, None),
+    "clicks_w7_sum":    ("clicks", None, None),
+    "clicks_w14_sum":   ("clicks", None, None),
+    "clicks_w30_sum":   ("clicks", None, None),
+    "conversions_w7_sum":  ("conversions", None, None),
+    "conversions_w14_sum": ("conversions", None, None),
+    "conversions_w30_sum": ("conversions", None, None),
+    "cost_w7_sum":      ("cost", None, None),
+    "cost_w14_sum":     ("cost", None, None),
+    "cost_w30_sum":     ("cost", None, None),
+    "impressions_w7_sum":  ("impressions", None, None),
+    "impressions_w14_sum": ("impressions", None, None),
+    "impressions_w30_sum": ("impressions", None, None),
+
+    # ── Week-on-week % change (proxied to raw — no WoW in ad_group_daily) ──
+    "roas_wow_pct":        ("roas", None, None),
+    "cpa_wow_pct":         ("cpa", None, None),
+    "ctr_wow_pct":         ("ctr", None, None),
+    "cvr_wow_pct":         ("ctr", None, None),  # proxy
+    "conversions_wow_pct": ("conversions", None, None),
+    "cost_wow_pct":        ("cost", None, None),
+
+    # ── Anomaly / volatility (proxied) ─────────────────────────────────────
+    "cost_z":           ("cost", None, None),  # proxy
+    "clicks_z":         ("clicks", None, None),  # proxy
+    "conversions_z":    ("conversions", None, None),  # proxy
+    "cost_cv":          ("cost", None, None),  # proxy
+    "clicks_cv":        ("clicks", None, None),  # proxy
+
+    # ── System ─────────────────────────────────────────────────────────────
+    "low_data_flag":    ("clicks", "lte", 5.0),
 }
 
 # ---------------------------------------------------------------------------
@@ -274,18 +353,22 @@ def _detect_entity_type(rule_id: str) -> str:
     """
     Detect entity type from rule_id.
     Examples: "campaign_1" -> "campaign", "keyword_3" -> "keyword",
-              "ad_group_1" -> "ad_group", "ad_1" -> "ad"
+              "ad_group_1" -> "ad_group", "ad_1" -> "ad",
+              "db_campaign_7" -> "campaign", "db_ad_group_59" -> "ad_group"
 
     Note: "ad_group" must be checked before "ad" since both share the "ad" prefix.
     """
     if "_" not in rule_id:
         return "campaign"  # fallback
 
-    # "ad_group" rules start with "ad_group_" — check before generic split
-    if rule_id.startswith("ad_group_"):
+    # Strip "db_" prefix from DB-loaded rules for cleaner detection
+    clean_id = rule_id[3:] if rule_id.startswith("db_") else rule_id
+
+    # "ad_group" rules — check before generic split
+    if clean_id.startswith("ad_group_"):
         return "ad_group"
 
-    entity_type = rule_id.split("_")[0]
+    entity_type = clean_id.split("_")[0]
 
     # Validate known types
     if entity_type in ("campaign", "keyword", "ad", "shopping"):
@@ -312,9 +395,9 @@ def _normalise_operator(op_str: str) -> str:
     return OP_MAP.get(op_str or "", op_str or "gte")
 
 
-def _load_db_campaign_rules(conn) -> list:
+def _load_db_rules(conn, entity_type: str = "campaign") -> list:
     """
-    Load enabled campaign rules from the DB rules table.
+    Load enabled rules from the DB rules table for a given entity type.
     Returns a list of rule dicts normalised to the engine's internal format.
     Handles both condition schemas (op/ref and operator/unit).
     """
@@ -325,13 +408,13 @@ def _load_db_campaign_rules(conn) -> list:
                    conditions, action_type, action_magnitude,
                    cooldown_days, risk_level
             FROM rules
-            WHERE entity_type = 'campaign'
+            WHERE entity_type = ?
               AND rule_or_flag = 'rule'
               AND is_template = FALSE
               AND enabled = TRUE
-        """).fetchall()
+        """, [entity_type]).fetchall()
     except Exception as e:
-        print(f"[ENGINE] ERROR querying DB campaign rules: {e}")
+        print(f"[ENGINE] ERROR querying DB {entity_type} rules: {e}")
         return rules
 
     col_names = [
@@ -382,7 +465,7 @@ def _load_db_campaign_rules(conn) -> list:
             magnitude = 0.0
 
         rules.append({
-            "rule_id":              f"db_campaign_{rd['id']}",
+            "rule_id":              f"db_{entity_type}_{rd['id']}",
             "rule_type":            rd["type"] or "budget",
             "condition_metric":     c1.get("metric"),
             "condition_operator":   op1,
@@ -398,7 +481,7 @@ def _load_db_campaign_rules(conn) -> list:
             "campaign_type_lock":   rd["campaign_type_lock"] or "all",
         })
 
-    print(f"[ENGINE] Loaded {len(rules)} campaign rules from DB")
+    print(f"[ENGINE] Loaded {len(rules)} {entity_type} rules from DB")
     return rules
 
 
@@ -915,11 +998,14 @@ def run_recommendations_engine(
     conn.execute(f"ATTACH '{readonly_path}' AS ro (READ_ONLY)")
     print("[ENGINE] Connected to warehouse + attached readonly")
 
-    # --- Load campaign rules from DB ----------------------------------------
-    db_campaign_rules = _load_db_campaign_rules(conn)
+    # --- Load rules from DB for ALL entity types -----------------------------
+    db_rules_all = []
+    for etype in ENTITY_TABLES.keys():
+        db_rules = _load_db_rules(conn, etype)
+        db_rules_all.extend(db_rules)
 
     # --- Group all rules by entity type -------------------------------------
-    all_rules = json_non_campaign + db_campaign_rules
+    all_rules = json_non_campaign + db_rules_all
     rules_by_entity = {}
     for rule in all_rules:
         entity_type = _detect_entity_type(rule["rule_id"])

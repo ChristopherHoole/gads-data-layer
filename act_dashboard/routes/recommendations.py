@@ -200,14 +200,14 @@ def _ensure_changes_table(conn):
 def _load_monitoring_days(rule_id):
     """
     Return monitoring config for the given rule_id.
-    - DB rules (rule_id starts with "db_campaign_"): query cooldown_days from warehouse.duckdb
+    - DB rules (rule_id starts with "db_"): query cooldown_days from warehouse.duckdb
     - JSON rules (e.g. "budget_1"): read from rules_config.json
     Returns dict: {"monitoring_days": int, "monitoring_minutes": int}
     Returns {"monitoring_days": 0, "monitoring_minutes": 0} if rule not found.
     """
-    if rule_id.startswith("db_campaign_"):
+    if rule_id.startswith("db_"):
         try:
-            db_id = int(rule_id.split("db_campaign_")[1])
+            db_id = int(rule_id.rsplit("_", 1)[-1])
             conn = duckdb.connect("warehouse.duckdb")
             try:
                 row = conn.execute("SELECT cooldown_days FROM rules WHERE id = ?", [db_id]).fetchone()
@@ -259,17 +259,17 @@ def _build_rule_name_map():
     except Exception as e:
         print("[RECOMMENDATIONS] Could not load rules_config.json for name map: {}".format(e))
 
-    # Load DB rules (campaign entity)
+    # Load DB rules (all entity types)
     try:
         import duckdb as _duckdb
         conn = _duckdb.connect("warehouse.duckdb")
         rows = conn.execute(
-            "SELECT id, name FROM rules WHERE entity_type = 'campaign' "
-            "AND rule_or_flag = 'rule' AND is_template = FALSE"
+            "SELECT id, name, entity_type FROM rules WHERE rule_or_flag = 'rule' AND is_template = FALSE"
         ).fetchall()
         conn.close()
         for row in rows:
-            db_key = "db_campaign_{}".format(row[0])
+            etype = row[2] or "campaign"
+            db_key = "db_{}_{}".format(etype, row[0])
             name_map[db_key] = row[1]
     except Exception as e:
         print("[RECOMMENDATIONS] Could not load DB rule names: {}".format(e))
@@ -986,13 +986,13 @@ def _enrich_with_rule_data(rec, rule_data_map):
     risk_level, cooldown_days, completed_at to rec in-place.
     Chat 96: enriches /recommendations/cards payload for new table UI.
     """
-    # Extract DB rule integer ID from "db_campaign_N" format
+    # Extract DB rule integer ID from "db_<entity>_N" format (db_campaign_N, db_ad_group_N, etc.)
     rule_id_str = str(rec.get("rule_id", ""))
     rule_db_id = None
-    if rule_id_str.startswith("db_campaign_"):
+    if rule_id_str.startswith("db_"):
         try:
-            rule_db_id = str(int(rule_id_str[len("db_campaign_"):]))
-        except ValueError:
+            rule_db_id = str(int(rule_id_str.rsplit("_", 1)[-1]))
+        except (ValueError, IndexError):
             pass
     elif rule_id_str.isdigit():
         rule_db_id = rule_id_str
