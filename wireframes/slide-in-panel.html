@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slide-In Panel Wireframe — Ads Control Tower</title>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Google Material Symbols -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+    <style>
+    /* ═══════════════════════════════════════════════════════════════════════════
+       DASHBOARD SHELL — exact match to production
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    * { box-sizing: border-box; }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        margin: 0;
+        background: #f8f9fa;
+        color: #202124;
+        font-size: 14px;
+    }
+
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 40;
+    }
+
+    /* ── Sidebar Navigation ─────────────────────────────────────────────────── */
+
+    .nav-sidebar {
+        width: 110px;
+        background: #ffffff;
+        border-right: 1px solid #dadce0;
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        z-index: 1000;
+    }
+
+    .nav-brand {
+        padding: 16px 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border-bottom: 1px solid #dadce0;
+    }
+
+    .nav-brand-logo { width: 48px; height: 48px; margin-bottom: 8px; }
+
+    .nav-brand-text {
+        font-size: 14px; font-weight: 600; color: #202124;
+        text-align: center; line-height: 1.3;
+    }
+
+    .nav-items { flex: 1; padding: 8px 0; overflow-y: auto; }
+
+    .nav-item-link {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 12px 8px; margin: 4px 8px; text-decoration: none; color: #5f6368;
+        border-radius: 8px; transition: all 150ms ease; cursor: pointer; min-height: 80px;
+    }
+    .nav-item-link:hover { background: #f1f3f4; color: #202124; }
+    .nav-item-link.active { background: #e8f0fe; color: #1a73e8; }
+
+    .nav-item-icon { font-size: 32px; margin-bottom: 4px; }
+    .nav-item-text { font-size: 14px; font-weight: 500; text-align: center; line-height: 1.2; }
+    .nav-item-text.small { font-size: 11px; }
+
+    /* ── Main Wrapper ───────────────────────────────────────────────────────── */
+
+    .main-wrapper { margin-left: 110px; }
+
+    /* ── Top Navbar ─────────────────────────────────────────────────────────── */
+
+    .top-navbar {
+        height: 48px; background: #fff; border-bottom: 1px solid #e0e0e0;
+        display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+    }
+    .top-navbar-left { display: flex; align-items: center; gap: 20px; }
+    .top-navbar-client { font-size: 14px; font-weight: 600; color: #202124; }
+    .top-navbar-date { font-size: 12px; color: #5f6368; display: flex; align-items: center; gap: 4px; }
+
+    .date-toggle { display: inline-flex; border: 1px solid #dadce0; border-radius: 4px; overflow: hidden; }
+    .date-toggle-btn {
+        padding: 3px 10px; font-size: 11px; font-weight: 500; border: none; background: #fff;
+        color: #5f6368; cursor: pointer; font-family: inherit;
+    }
+    .date-toggle-btn.active { background: #1a73e8; color: #fff; }
+
+    /* ── Main Content ───────────────────────────────────────────────────────── */
+    .main-content { padding: 24px; }
+
+    /* ── Tab Navigation ─────────────────────────────────────────────────────── */
+    .nav-tabs .nav-link {
+        font-size: 13px; font-weight: 500; color: #5f6368; border: none;
+        padding: 8px 16px; display: inline-flex; align-items: center; gap: 5px;
+    }
+    .nav-tabs .nav-link.active { color: #1a73e8; border-bottom: 2px solid #1a73e8; background: none; }
+    .nav-tabs .nav-link .badge { font-size: 10px; }
+
+    /* ── Section Header ─────────────────────────────────────────────────────── */
+    .section-header {
+        display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;
+    }
+    .section-header h4 { font-size: 16px; font-weight: 600; margin: 0 0 4px 0; }
+    .section-header p { font-size: 12px; color: #5f6368; margin: 0; line-height: 1.5; }
+
+    /* ── Sub-tab bar ────────────────────────────────────────────────────────── */
+    .rules-sub-tab-bar { display: flex; align-items: center; justify-content: flex-start; margin-bottom: 14px; }
+    .rules-sub-tabs {
+        display: flex; gap: 2px; background: #f1f3f4; border: 1px solid #dadce0;
+        border-radius: 6px; padding: 3px;
+    }
+    .rules-sub-tab {
+        padding: 6px 16px; font-size: 12px; cursor: pointer; border-radius: 4px;
+        color: #202124; display: flex; align-items: center; gap: 5px; font-weight: 500;
+        white-space: nowrap; border: none; background: none; font-family: inherit; transition: all 0.15s;
+    }
+    .rules-sub-tab:hover { background: rgba(0,0,0,0.05); }
+    .rules-sub-tab.active { background: #fff; color: #202124; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); }
+    .rules-sub-badge { background: #e0e0e0; border-radius: 10px; padding: 1px 6px; font-size: 10px; color: #5f6368; }
+    .rules-sub-tab.active .rules-sub-badge { background: #e8f0fe; color: #1a73e8; }
+
+    /* ── Filter tabs (All/Budget/Bid/Status) — pill style matching sub-tabs ── */
+    .filter-tabs { display: flex; gap: 4px; background: #f1f3f4; padding: 4px; border-radius: 6px; }
+    .filter-tab {
+        padding: 6px 16px; font-size: 13px; background: transparent; border: none;
+        border-radius: 4px; color: #5f6368; cursor: pointer; font-family: inherit;
+        font-weight: 500; transition: all 0.15s;
+    }
+    .filter-tab:hover { background: rgba(0,0,0,0.05); }
+    .filter-tab.active { background: #fff; color: #202124; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
+    /* ── Rules Table ────────────────────────────────────────────────────────── */
+    .table-wrapper { overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 8px; }
+
+    .rules-table {
+        width: 100%; border-collapse: collapse; font-size: 13px;
+    }
+    .rules-table thead th {
+        text-transform: none; font-size: 12px; font-weight: 600; white-space: nowrap;
+        color: #202124; padding: 10px; border-bottom: 2px solid #dee2e6; background: #f8f9fa;
+    }
+    .rules-table tbody td {
+        padding: 8px 10px; border-bottom: 1px solid #e0e0e0; vertical-align: middle;
+        background: #fff;
+    }
+    .rules-table tbody tr:hover td { background: #f8f9fa; }
+
+    .rules-group-row td {
+        background: #f8f9fa !important; font-weight: 700; font-size: 13px; color: #202124;
+        padding: 8px 10px; border-bottom: 1px solid #e0e0e0; border-top: 2px solid #dadce0;
+    }
+
+    .rules-rule-name-col {
+        min-width: 150px; max-width: 350px; white-space: normal; word-break: break-word; line-height: 1.4;
+    }
+
+    .rules-plain-english {
+        font-size: 12px; color: #6c757d; min-width: 280px; max-width: 460px;
+        white-space: normal; line-height: 1.5;
+    }
+
+    .rules-guardrail-col {
+        max-width: 80px; white-space: normal; word-break: break-word; font-size: 11px; line-height: 1.4;
+    }
+
+    /* ── Badges ─────────────────────────────────────────────────────────────── */
+    .badge-type-budget { background: #e8f0fe; color: #1558d6; font-size: 11px; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+    .badge-type-bid { background: #e6f4ea; color: #137333; font-size: 11px; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+    .badge-type-status { background: #fff3e0; color: #b45309; font-size: 11px; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+
+    .badge-rof-rule { background: #e8f0fe; color: #1558d6; font-size: 11px; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+    .badge-rof-flag { background: #f3e8fd; color: #7b2fa8; font-size: 11px; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+
+    .risk-dot { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+    .risk-dot::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .risk-dot-low { color: #137333; } .risk-dot-low::before { background: #34a853; }
+    .risk-dot-medium { color: #5f6368; } .risk-dot-medium::before { background: #fbbc04; }
+    .risk-dot-high { color: #c5221f; } .risk-dot-high::before { background: #ea4335; }
+
+    .badge-strategy {
+        background: #f1f3f4; color: #3c4043; border: 1px solid #dadce0;
+        font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 600; white-space: nowrap;
+    }
+
+    .action-up { color: #137333; font-weight: 600; font-size: 12px; white-space: nowrap; }
+    .action-down { color: #c5221f; font-weight: 600; font-size: 12px; white-space: nowrap; }
+    .action-pause { color: #c5221f; font-weight: 600; font-size: 12px; white-space: nowrap; }
+
+    .rules-human-confirm {
+        font-size: 11px; color: #c5221f; font-weight: 600; white-space: nowrap;
+    }
+
+    .btn-save-template {
+        color: #5f6368; background: none; border: none; padding: 4px; cursor: pointer;
+    }
+    .btn-save-template:hover { color: #1558d6; }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       SLIDE-IN PANEL — NEW COMPONENT
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    .slide-in-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(32, 33, 36, 0.45); z-index: 1050;
+        opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .slide-in-overlay.open { opacity: 1; visibility: visible; }
+
+    .slide-in-panel {
+        position: fixed; top: 0; right: 0; width: 720px; height: 100vh;
+        background: #fff; z-index: 1051; box-shadow: -8px 0 40px rgba(0, 0, 0, 0.2);
+        display: flex; flex-direction: column;
+        transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .slide-in-panel.open { transform: translateX(0); }
+
+    .flow-overlay-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 16px 28px; border-bottom: 1px solid #e0e0e0; background: #fff; flex-shrink: 0;
+    }
+    .flow-overlay-header h4 { font-size: 16px; font-weight: 600; color: #202124; margin: 0; }
+    .flow-overlay-sub { font-size: 12px; color: #5f6368; margin-top: 2px; }
+
+    .flow-progress-bar {
+        display: flex; align-items: center; padding: 14px 28px;
+        border-bottom: 1px solid #f0f0f0; background: #fafafa; flex-shrink: 0; gap: 0;
+    }
+    .flow-prog-step { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 70px; }
+    .flow-prog-circle {
+        width: 32px; height: 32px; border-radius: 50%; border: 2px solid #dadce0;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 12px; font-weight: 700; color: #9aa0a6; background: #fff; transition: all 0.2s;
+    }
+    .flow-prog-step.active .flow-prog-circle { border-color: #1a73e8; color: #1a73e8; background: #e8f0fe; }
+    .flow-prog-step.done .flow-prog-circle { border-color: #137333; background: #137333; color: #fff; }
+    .flow-prog-label { font-size: 11px; color: #9aa0a6; white-space: nowrap; font-weight: 500; }
+    .flow-prog-step.active .flow-prog-label { color: #1a73e8; font-weight: 600; }
+    .flow-prog-step.done .flow-prog-label { color: #137333; }
+    .flow-prog-line { flex: 1; height: 2px; background: #e0e0e0; margin: 0 4px; margin-bottom: 16px; transition: background 0.2s; }
+    .flow-prog-line.done { background: #137333; }
+
+    .flow-body-wrap { display: flex; flex: 1; overflow: hidden; }
+    .flow-body { flex: 1; padding: 28px; overflow-y: auto; min-width: 0; }
+    .flow-step { display: none; animation: flowStepIn 0.15s ease; }
+    .flow-step.active { display: block; }
+    @keyframes flowStepIn { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+    .flow-section-label { font-size: 11px; font-weight: 700; color: #5f6368; letter-spacing: 0.04em; margin-bottom: 10px; }
+
+    .flow-camp-picker { border: 1px solid #dadce0; border-radius: 6px; overflow: hidden; }
+    .flow-camp-search {
+        width: 100%; padding: 8px 12px 8px 32px; border: none; border-bottom: 1px solid #e0e0e0;
+        font-size: 13px; color: #202124; font-family: inherit;
+        background: #f8f9fa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center;
+    }
+    .flow-camp-search:focus { outline: none; background-color: #fff; }
+    .flow-camp-list { max-height: 220px; overflow-y: auto; }
+    .flow-camp-item { display: flex; align-items: center; gap: 10px; padding: 9px 14px; cursor: pointer; font-size: 13px; color: #202124; transition: background 0.1s; }
+    .flow-camp-item:hover { background: #f8f9fa; }
+    .flow-camp-item.selected { background: #e8f0fe; }
+    .flow-camp-item input[type="checkbox"] { accent-color: #1a73e8; width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
+    .flow-strategy-lock { display: flex; align-items: center; gap: 8px; background: #e6f4ea; border: 1px solid #ceead6; border-radius: 6px; padding: 8px 12px; font-size: 12px; color: #137333; margin-top: 10px; }
+
+    .flow-choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .flow-choice-card { border: 2px solid #dadce0; border-radius: 8px; padding: 20px; cursor: pointer; transition: all 0.15s; text-align: left; }
+    .flow-choice-card:hover { border-color: #93c5fd; }
+    .flow-choice-card.selected { border-color: #1a73e8; background: #e8f0fe; }
+    .flow-choice-card h5 { font-size: 15px; font-weight: 600; margin: 8px 0 4px; color: #202124; }
+    .flow-choice-card.selected h5 { color: #1a73e8; }
+    .flow-choice-card p { font-size: 12px; color: #5f6368; line-height: 1.5; margin: 0; }
+
+    .flow-cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .flow-cat-card { border: 2px solid #dadce0; border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.15s; text-align: left; }
+    .flow-cat-card:hover { border-color: #93c5fd; }
+    .flow-cat-card.selected { border-color: #1a73e8; background: #e8f0fe; }
+    .flow-cat-card h5 { font-size: 14px; font-weight: 600; margin: 6px 0 3px; color: #202124; }
+    .flow-cat-card.selected h5 { color: #1a73e8; }
+    .flow-cat-card p { font-size: 11px; color: #5f6368; line-height: 1.4; margin: 0; }
+
+    .flow-cond-box { border: 1px solid #dadce0; border-radius: 6px; padding: 14px; background: #f8f9fa; }
+    .flow-cond-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .flow-cond-select, .flow-cond-input { padding: 7px 10px; border-radius: 4px; border: 1px solid #dadce0; font-size: 12px; background: #fff; color: #202124; font-family: inherit; }
+    .flow-cond-select:focus, .flow-cond-input:focus { outline: none; border-color: #1a73e8; }
+    .flow-cond-input { width: 80px; }
+    .flow-add-cond-btn { background: none; border: none; font-size: 12px; color: #1a73e8; cursor: pointer; font-weight: 500; padding: 4px 0; margin-top: 8px; display: inline-flex; align-items: center; gap: 4px; font-family: inherit; }
+    .flow-add-cond-btn:hover { color: #1557b0; }
+    .flow-cond-2 { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #dadce0; display: none; }
+    .flow-cond-2.show { display: block; }
+
+    .flow-action-box { border: 1px solid #dadce0; border-radius: 6px; padding: 14px; background: #f8f9fa; }
+    .flow-action-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .flow-guardrail-note { background: #fff8e1; border: 1px solid #ffe082; border-radius: 4px; padding: 8px 12px; font-size: 12px; color: #b45309; margin-top: 10px; display: flex; align-items: center; gap: 6px; }
+    .flow-human-note { background: #fce8e6; border: 1px solid #f5c6c2; border-radius: 4px; padding: 8px 12px; font-size: 12px; color: #a50e0e; margin-top: 8px; display: flex; align-items: center; gap: 6px; }
+
+    .flow-settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .flow-settings-field { display: flex; flex-direction: column; gap: 5px; }
+    .flow-settings-field label { font-size: 11px; font-weight: 700; color: #5f6368; }
+    .flow-settings-field select, .flow-settings-field input[type="text"] { padding: 7px 10px; border-radius: 4px; border: 1px solid #dadce0; font-size: 13px; background: #fff; font-family: inherit; color: #202124; }
+
+    .flow-section-divider { display: flex; align-items: center; gap: 10px; margin: 20px 0; }
+    .flow-section-divider span { font-size: 12px; font-weight: 700; color: #5f6368; white-space: nowrap; }
+    .flow-section-divider::before, .flow-section-divider::after { content: ''; flex: 1; height: 1px; background: #e0e0e0; }
+
+    .flow-summary-box { background: #e6f4ea; border: 1px solid #ceead6; border-radius: 6px; padding: 16px 20px; }
+    .flow-summary-box h5 { font-size: 13px; font-weight: 600; color: #137333; margin-bottom: 10px; }
+    .flow-summary-line { font-size: 13px; color: #137333; line-height: 2.0; }
+    .flow-name-field { width: 100%; padding: 9px 12px; border-radius: 4px; border: 1px solid #dadce0; font-size: 14px; font-family: inherit; color: #202124; font-weight: 500; }
+    .flow-name-field:focus { outline: none; border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15); }
+    .flow-name-hint { font-size: 11px; color: #5f6368; margin-top: 5px; }
+
+    .flow-footer { padding: 14px 28px; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; flex-shrink: 0; }
+    .flow-step-indicator { font-size: 12px; color: #5f6368; }
+
+    .flow-sidebar { width: 180px; flex-shrink: 0; border-left: 1px solid #e0e0e0; padding: 20px 14px; background: #fafafa; overflow-y: auto; }
+    .flow-sidebar-title { font-size: 10px; font-weight: 700; color: #9aa0a6; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px; }
+    .flow-sidebar-row { margin-bottom: 10px; padding: 6px 8px; border-radius: 5px; transition: background 0.15s; }
+    .flow-sidebar-row.active { background: #e8f0fe; }
+    .flow-sidebar-step { font-size: 9px; color: #9aa0a6; font-weight: 600; letter-spacing: 0.03em; margin-bottom: 1px; }
+    .flow-sidebar-row.active .flow-sidebar-step { color: #1a73e8; }
+    .flow-sidebar-label { font-size: 10px; color: #5f6368; margin-bottom: 2px; }
+    .flow-sidebar-value { font-size: 12px; font-weight: 600; color: #202124; word-break: break-word; line-height: 1.4; }
+    .flow-sidebar-value.pending { color: #bdbdbd; font-weight: 400; font-style: italic; }
+    .flow-sidebar-divider { height: 1px; background: #e8e8e8; margin: 6px 0; }
+
+    /* ── Toast ──────────────────────────────────────────────────────────────── */
+    .toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    .toast-msg { padding: 10px 18px; border-radius: 6px; font-size: 13px; font-weight: 500; color: #fff; pointer-events: auto; animation: toastIn 0.3s ease; }
+    .toast-msg.success { background: #137333; }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Buttons ─────────────────────────────────────────────────────────────── */
+    .btn-primary-act { background: #1a73e8; color: #fff; border: 1px solid #1a73e8; border-radius: 4px; padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 4px; }
+    .btn-primary-act:hover { background: #1557b0; border-color: #1557b0; }
+    .btn-secondary-act { background: #fff; color: #202124; border: 1px solid #dadce0; border-radius: 4px; padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; }
+    .btn-secondary-act:hover { background: #f8f9fa; border-color: #c1c4c8; }
+
+    /* ── Responsive ──────────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+        .slide-in-panel { width: 100%; }
+        .flow-sidebar { display: none; }
+        .nav-sidebar { display: none; }
+        .main-wrapper { margin-left: 0; }
+    }
+    @media (max-width: 576px) {
+        .flow-body { padding: 16px; }
+        .flow-overlay-header { padding: 12px 16px; }
+        .flow-footer { padding: 12px 16px; }
+        .flow-cat-grid { grid-template-columns: 1fr 1fr; }
+        .flow-choice-grid { grid-template-columns: 1fr; }
+    }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SIDEBAR NAVIGATION
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<nav class="nav-sidebar">
+    <div class="nav-brand">
+        <svg class="nav-brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="41" fill="none" stroke="#4285F4" stroke-width="10"/>
+            <circle cx="50" cy="50" r="29" fill="none" stroke="#EA4335" stroke-width="10"/>
+            <circle cx="50" cy="50" r="17" fill="none" stroke="#FBBC05" stroke-width="10"/>
+            <circle cx="50" cy="50" r="10" fill="#34A853"/>
+        </svg>
+        <div class="nav-brand-text">Ads<br>Control<br>Tower</div>
+    </div>
+    <div class="nav-items">
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">home</span><span class="nav-item-text">Dashboard</span></a>
+        <a class="nav-item-link active" href="#"><span class="material-symbols-outlined nav-item-icon">campaign</span><span class="nav-item-text">Campaigns</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">folder</span><span class="nav-item-text">Ad Groups</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">search</span><span class="nav-item-text">Keywords</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">article</span><span class="nav-item-text">Ads</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">shopping_cart</span><span class="nav-item-text">Shopping</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">lightbulb</span><span class="nav-item-text small">Recommendations</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">history</span><span class="nav-item-text">Changes</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">send</span><span class="nav-item-text">Outreach</span></a>
+        <a class="nav-item-link" href="#"><span class="material-symbols-outlined nav-item-icon">settings</span><span class="nav-item-text">Settings</span></a>
+    </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MAIN WRAPPER
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="main-wrapper">
+
+    <!-- Top Navbar -->
+    <div class="top-navbar">
+        <div class="top-navbar-left">
+            <span class="top-navbar-client">Christopher Hoole</span>
+            <span class="top-navbar-date">
+                <span class="material-symbols-outlined" style="font-size:16px">calendar_today</span>
+                Last 30 days
+            </span>
+            <div class="date-toggle">
+                <button class="date-toggle-btn">7d</button>
+                <button class="date-toggle-btn active">30d</button>
+            </div>
+        </div>
+        <div style="font-size:12px;color:#5f6368;display:flex;align-items:center;gap:12px;">
+            <span>User</span>
+            <span style="color:#dadce0;">|</span>
+            <span style="cursor:pointer;">Logout</span>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="mb-0" style="font-size:20px;font-weight:600;">Campaigns</h2>
+        </div>
+
+        <!-- Tab Navigation -->
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item"><button class="nav-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/></svg>
+                Campaigns (4)
+            </button></li>
+            <li class="nav-item"><button class="nav-link active">
+                <span class="material-symbols-outlined" style="font-size:14px;vertical-align:text-bottom">bolt</span>
+                Rules &amp; Flags <span class="badge bg-secondary ms-1" style="font-size:10px;">48</span>
+            </button></li>
+            <li class="nav-item"><button class="nav-link">
+                Recommendations <span class="badge bg-secondary ms-1" style="font-size:10px;">Chat 27</span>
+            </button></li>
+        </ul>
+
+        <!-- Rules & Flags Tab Content -->
+        <div id="rules-tab-content">
+
+            <!-- Section Header -->
+            <div class="section-header">
+                <div>
+                    <h4>Campaign rules &amp; flags</h4>
+                    <p>Rules generate recommendations for action. Flags raise alerts only. Both require your confirmation before anything changes.</p>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn btn-sm btn-outline-secondary">Use template</button>
+                    <button class="btn-primary-act" onclick="openSlideIn()">
+                        <span class="material-symbols-outlined" style="font-size:15px;">add</span>
+                        Add rule or flag
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sub-tab bar -->
+            <div class="rules-sub-tab-bar">
+                <div class="rules-sub-tabs">
+                    <button class="rules-sub-tab active">Rules <span class="rules-sub-badge">0</span></button>
+                    <button class="rules-sub-tab">Flags <span class="rules-sub-badge">0</span></button>
+                    <button class="rules-sub-tab">Templates <span class="rules-sub-badge">0</span></button>
+                </div>
+            </div>
+
+            <!-- Search + Filter bar -->
+            <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;">
+                <div style="position:relative;width:200px;">
+                    <span class="material-symbols-outlined" style="position:absolute;left:7px;top:50%;transform:translateY(-50%);font-size:14px;color:#5f6368;pointer-events:none;">search</span>
+                    <input class="form-control form-control-sm" type="text" placeholder="Search rules..." style="padding-left:26px;">
+                </div>
+                <div class="filter-tabs">
+                    <button class="filter-tab active">All</button>
+                    <button class="filter-tab">Budget</button>
+                    <button class="filter-tab">Bid</button>
+                    <button class="filter-tab">Status</button>
+                </div>
+                <span style="margin-left:auto;font-size:12px;color:#5f6368;">19 rules &middot; 0 enabled</span>
+            </div>
+
+            <!-- Rules Table — All 19 real campaign rules -->
+            <div class="table-wrapper">
+            <table class="rules-table">
+                <thead>
+                    <tr>
+                        <th style="width:50px;">On/off</th>
+                        <th class="rules-rule-name-col">Rule name</th>
+                        <th>Campaigns</th>
+                        <th>Campaign type</th>
+                        <th class="rules-plain-english" style="min-width:280px;">Plain English</th>
+                        <th>Rule/Flag</th>
+                        <th>Rule type</th>
+                        <th>Conditions</th>
+                        <th>Action</th>
+                        <th>Cooldown</th>
+                        <th>Guardrail</th>
+                        <th>Risk</th>
+                        <th style="width:70px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+
+<!-- ═══ BUDGET · 9 rules ═══ -->
+<tr class="rules-group-row"><td colspan="13">Budget &nbsp;&middot;&nbsp; 9 rules</td></tr>
+
+<tr>
+<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"></div></td>
+<td class="rules-rule-name-col text-muted" style="font-weight:600;">Decrease Budget &ndash; Weak CPA</td>
+<td style="font-size:12px;color:#5f6368;">All campaigns</td>
+<td style="text-align:center;"><span class="badge-strategy">All</span></td>
+<td class="rules-plain-english">Pull back spend when CPA is above target and there are enough conversions to be certain</td>
+<td><span class="badge-rof-rule">Rule</span></td>
+<td><span class="badge-type-budget">Budget</span></td>
+<td style="font-size:12px;color:#202124;white-space:nowrap;"><strong>CPA (7d)</strong> &gt; 1.2&times; target<br><strong>Conversions (7d)</strong> &gt; 10</td>
+<td><span class="action-down"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_downward</span> Decrease budget 10%</span></td>
+<td style="font-size:12px;color:#5f6368;white-space:nowrap;">7d</td>
+<td class="rules-guardrail-col"><span style="font-size:11px;color:#202124;">Max budget decrease</span></td>
+<td><span class="risk-dot risk-dot-low">Low</span></td>
+<td><div class="d-flex gap-1"><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button><button class="btn-save-template" title="Save as template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button></div></td>
+</tr>
+
+<tr>
+<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"></div></td>
+<td class="rules-rule-name-col text-muted" style="font-weight:600;">Decrease Budget &ndash; Weak CTR</td>
+<td style="font-size:12px;color:#5f6368;">All campaigns</td>
+<td style="text-align:center;"><span class="badge-strategy">Max Clicks</span></td>
+<td class="rules-plain-english">Pull back spend when CTR is weak and click volume is too low to be worth the cost</td>
+<td><span class="badge-rof-rule">Rule</span></td>
+<td><span class="badge-type-budget">Budget</span></td>
+<td style="font-size:12px;color:#202124;white-space:nowrap;"><strong>CTR (7d)</strong> &lt; 2%<br><strong>Clicks (7d)</strong> &ge; 50</td>
+<td><span class="action-down"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_downward</span> Decrease budget 10%</span></td>
+<td style="font-size:12px;color:#5f6368;white-space:nowrap;">7d</td>
+<td class="rules-guardrail-col"><span style="font-size:11px;color:#202124;">Max budget decrease</span></td>
+<td><span class="risk-dot risk-dot-low">Low</span></td>
+<td><div class="d-flex gap-1"><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button><button class="btn-save-template" title="Save as template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button></div></td>
+</tr>
+
+<tr>
+<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"></div></td>
+<td class="rules-rule-name-col text-muted" style="font-weight:600;">Decrease Budget &ndash; Weak ROAS</td>
+<td style="font-size:12px;color:#5f6368;">All campaigns</td>
+<td style="text-align:center;"><span class="badge-strategy">tROAS</span></td>
+<td class="rules-plain-english">Pull back spend when ROAS is below target and there is enough data to be sure it is a real problem</td>
+<td><span class="badge-rof-rule">Rule</span></td>
+<td><span class="badge-type-budget">Budget</span></td>
+<td style="font-size:12px;color:#202124;white-space:nowrap;"><strong>ROAS (7d)</strong> &lt; 0.85&times; target<br><strong>Clicks (7d)</strong> &ge; 30</td>
+<td><span class="action-down"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_downward</span> Decrease budget 10%</span></td>
+<td style="font-size:12px;color:#5f6368;white-space:nowrap;">7d</td>
+<td class="rules-guardrail-col"><span style="font-size:11px;color:#202124;">Max budget decrease</span></td>
+<td><span class="risk-dot risk-dot-low">Low</span></td>
+<td><div class="d-flex gap-1"><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button><button class="btn-save-template" title="Save as template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button></div></td>
+</tr>
+
+<tr>
+<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"></div></td>
+<td class="rules-rule-name-col text-muted" style="font-weight:600;">Emergency Budget Cut &ndash; Critical CPA</td>
+<td style="font-size:12px;color:#5f6368;">All campaigns</td>
+<td style="text-align:center;"><span class="badge-strategy">tCPA</span></td>
+<td class="rules-plain-english">Cut budget hard if CPA has risen to a point where every conversion is unprofitable</td>
+<td><span class="badge-rof-rule">Rule</span></td>
+<td><span class="badge-type-budget">Budget</span></td>
+<td style="font-size:12px;color:#202124;white-space:nowrap;"><strong>CPA (7d)</strong> &gt; 2&times; target<br><strong>Cost (7d)</strong> &ge; 100</td>
+<td><span class="action-down"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_downward</span> Decrease budget 25%</span></td>
+<td style="font-size:12px;color:#5f6368;white-space:nowrap;">14d</td>
+<td class="rules-guardrail-col"><span style="font-size:11px;color:#202124;">Max budget decrease</span></td>
+<td><span class="risk-dot risk-dot-medium">Medium</span></td>
+<td><div class="d-flex gap-1"><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button><button class="btn-save-template" title="Save as template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button></div></td>
+</tr>
+
+<tr>
+<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"></div></td>
+<td class="rules-rule-name-col text-muted" style="font-weight:600;">Emergency Budget Cut &ndash; Critical ROAS</td>
+<td style="font-size:12px;color:#5f6368;">All campaigns</td>
+<td style="text-align:center;"><span class="badge-strategy">tROAS</span></td>
+<td class="rules-plain-english">Cut budget hard if ROAS has collapsed to a point where every pound spent is a loss</td>
+<td><span class="badge-rof-rule">Rule</span></td>
+<td><span class="badge-type-budget">Budget</span></td>
+<td style="font-size:12px;color:#202124;white-space:nowrap;"><strong>ROAS (7d)</strong> &lt; 0.5&times; target<br><strong>Cost (7d)</strong> &ge; 100</td>
+<td><span class="action-down"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_downward</span> Decrease budget 25%</span></td>
+<td style="font-size:12px;color:#5f6368;white-space:nowrap;">14d</td>
+<td class="rules-guardrail-col"><span style="font-size:11px;color:#202124;">Max budget decrease</span></td>
+<td><span class="risk-dot risk-dot-medium">Medium</span></td>
+<td><div class="d-flex gap-1"><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button><button class="btn-save-template" title="Save as template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button></div></td>
+</tr>
+
+<tr>
+<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"></div></td>
+<td class="rules-rule-name-col text-muted" style="font-weight:600;">Emergency Budget Cut &ndash; Very Low CTR</td>
+<td style="font-size:12px;color:#5f6368;">All campaigns</td>
+<td style="text-align:center;"><span class="badge-strategy">Max Clicks</span></td>
+<td class="rules-plain-english">Cut budget if CTR has dropped to a level that suggests something is fundamentally wrong</td>
+<td><span class="badge-rof-rule">Rule</span></td>
+<td><span class="badge-type-budget">Budget</span></td>
+<td style="font-size:12px;color:#202124;white-space:nowrap;"><strong>CTR (7d)</strong> &lt; 1%<br><strong>Cost (7d)</strong> &ge; 100</td>
+<td><span class="action-down"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_downward</span> Decrease budget 25%</span></td>
+<td style="font-size:12px;color:#5f6368;white-space:nowrap;">14d</td>
+<td class="rules-guardrail-col"><span style="font-size:11px;color:#202124;">Max budget decrease</span></td>
+<td><span class="risk-dot risk-dot-medium">Medium</span></td>
+<td><div class="d-flex gap-1"><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button><button class="btn-save-template" title="Save as template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button></div></td>
+</tr>
+
+<tr>
+<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"></div></td>
+<td class="rules-rule-name-col text-muted" style="font-weight:600;">Increase Budget &ndash; Strong CPA</td>
+<td style="font-size:12px;color:#5f6368;">All campaigns</td>
+<td style="text-align:center;"><span class="badge-strategy">tCPA</span></td>
+<td class="rules-plain-english">Spend more when CPA is well under target and conversions confirm the signal is real</td>
+<td><span class="badge-rof-rule">Rule</span></td>
+<td><span class="badge-type-budget">Budget</span></td>
+<td style="font-size:12px;color:#202124;white-space:nowrap;"><strong>CPA (7d)</strong> &le; 0.9&times; target<br><strong>Conversions (7d)</strong> &ge; 10</td>
+<td><span class="action-up"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_upward</span> Increase budget 10%</span></td>
+<td style="font-size:12px;color:#5f6368;white-space:nowrap;">7d</td>
+<td class="rules-guardrail-col"><span style="font-size:11px;color:#202124;">Max budget increase</span></td>
+<td><span class="risk-dot risk-dot-low">Low</span></td>
+<td><div class="d-flex gap-1"><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button><button class="btn-save-template" title="Save as template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button></div></td>
+</tr>
+
+<tr>
+<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"></div></td>
+<td class="rules-rule-name-col text-muted" style="font-weight:600;">Increase Budget &ndash; Strong CTR</td>
+<td style="font-size:12px;color:#5f6368;">All campaigns</td>
+<td style="text-align:center;"><span class="badge-strategy">Max Clicks</span></td>
+<td class="rules-plain-english">Spend more when CTR is strong and clicks are flowing - the traffic quality justifies it</td>
+<td><span class="badge-rof-rule">Rule</span></td>
+<td><span class="badge-type-budget">Budget</span></td>
+<td style="font-size:12px;color:#202124;white-space:nowrap;"><strong>CTR (7d)</strong> &ge; 4%<br><strong>Clicks (7d)</strong> &ge; 50</td>
+<td><span class="action-up"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_upward</span> Increase budget 10%</span></td>
+<td style="font-size:12px;color:#5f6368;white-space:nowrap;">7d</td>
+<td class="rules-guardrail-col"><span style="font-size:11px;color:#202124;">Max budget increase</span></td>
+<td><span class="risk-dot risk-dot-low">Low</span></td>
+<td><div class="d-flex gap-1"><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button><button class="btn-save-template" title="Save as template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button></div></td>
+</tr>
+
+<tr>
+<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"></div></td>
+<td class="rules-rule-name-col text-muted" style="font-weight:600;">Increase Budget &ndash; Strong ROAS</td>
+<td style="font-size:12px;color:#5f6368;">All campaigns</td>
+<td style="text-align:center;"><span class="badge-strategy">tROAS</span></td>
+<td class="rules-plain-english">Spend more when ROAS is comfortably beating target with enough clicks to be confident</td>
+<td><span class="badge-rof-rule">Rule</span></td>
+<td><span class="badge-type-budget">Budget</span></td>
+<td style="font-size:12px;color:#202124;white-space:nowrap;"><strong>ROAS (7d)</strong> &ge; 1.15&times; target<br><strong>Clicks (7d)</strong> &ge; 30</td>
+<td><span class="action-up"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_upward</span> Increase budget 10%</span></td>
+<td style="font-size:12px;color:#5f6368;white-space:nowrap;">7d</td>
+<td class="rules-guardrail-col"><span style="font-size:11px;color:#202124;">Max budget increase</span></td>
+<td><span class="risk-dot risk-dot-low">Low</span></td>
+<td><div class="d-flex gap-1"><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button><button class="btn-save-template" title="Save as template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button></div></td>
+</tr>
+
+<!-- ═══ BID · 6 rules ═══ -->
+<tr class="rules-group-row"><td colspan="13">Bid &nbsp;&middot;&nbsp; 6 rules</td></tr>
+
+<tr>
+<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"></div></td>
+<td class="rules-rule-name-col text-muted" style="font-weight:600;">Decrease Max CPC Cap &ndash; High CPC Low CTR</td>
+<td style="font-size:12px;color:#5f6368;">All campaigns</td>
+<td style="text-align:center;"><span class="badge-strategy">All</span></td>
+<td class="rules-plain-english">Lower the CPC cap when clicks are expensive but CTR is too weak to justify the cost</td>
+<td><span class="badge-rof-rule">Rule</span></td>
+<td><span class="badge-type-bid">Bid</span></td>
+<td style="font-size:12px;color:#202124;white-space:nowrap;"><strong>Avg CPC (7d)</strong> &gt; 5<br><strong>CTR (7d)</strong> &lt; 2%</td>
+<td><span class="action-down"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_downward</span> Lower Max CPC cap 10%</span></td>
+<td style="font-size:12px;color:#5f6368;white-space:nowrap;">7d</td>
+<td class="rules-guardrail-col"><span style="font-size:11px;color:#202124;">Max CPC ceiling</span></td>
+<td><span class="risk-dot risk-dot-medium">Medium</span></td>
+<td><div class="d-flex gap-1"><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button><button class="btn-save-template" title="Save as template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button></div></td>
+</tr>
+
+<tr>
+<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"></div></td>
+<td class="rules-rule-name-col text-muted" style="font-weight:600;">Increase Max CPC Cap &ndash; Low Impression Share</td>
+<td style="font-size:12px;color:#5f6368;">All campaigns</td>
+<td style="text-align:center;"><span class="badge-strategy">Max Clicks</span></td>
+<td class="rules-plain-english">Raise the CPC cap when it is being hit and impression share is suffering as a result</td>
+<td><span class="badge-rof-rule">Rule</span></td>
+<td><span class="badge-type-bid">Bid</span></td>
+<td style="font-size:12px;color:#202124;white-space:nowrap;"><strong>IS lost to rank</strong> &gt; 30%<br><strong>Clicks (7d)</strong> &ge; 30</td>
+<td><span class="action-up"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_upward</span> Raise Max CPC cap 10%</span></td>
+<td style="font-size:12px;color:#5f6368;white-space:nowrap;">7d</td>
+<td class="rules-guardrail-col"><span style="font-size:11px;color:#202124;">Max CPC ceiling</span></td>
+<td><span class="risk-dot risk-dot-medium">Medium</span></td>
+<td><div class="d-flex gap-1"><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button><button class="btn-save-template" title="Save as template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button></div></td>
+</tr>
+
+<tr>
+<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"></div></td>
+<td class="rules-rule-name-col text-muted" style="font-weight:600;">Loosen tCPA Target &ndash; Volume Constrained</td>
+<td style="font-size:12px;color:#5f6368;">All campaigns</td>
+<td style="text-align:center;"><span class="badge-strategy">tCPA</span></td>
+<td class="rules-plain-english">Raise the CPA target to free up volume when the system is too constrained to spend</td>
+<td><span class="badge-rof-rule">Rule</span></td>
+<td><span class="badge-type-bid">Bid</span></td>
+<td style="font-size:12px;color:#202124;white-space:nowrap;"><strong>CPA (14d)</strong> &ge; 1.05&times; target<br><strong>IS lost to rank</strong> &gt; 20%</td>
+<td><span class="action-up"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_upward</span> Raise tCPA target 5%</span></td>
+<td style="font-size:12px;color:#5f6368;white-space:nowrap;">14d</td>
+<td class="rules-guardrail-col"><span style="font-size:11px;color:#202124;">&mdash;</span></td>
+<td><span class="risk-dot risk-dot-medium">Medium</span></td>
+<td><div class="d-flex gap-1"><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button><button class="btn-save-template" title="Save as template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button></div></td>
+</tr>
+
+<tr>
+<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"></div></td>
+<td class="rules-rule-name-col text-muted" style="font-weight:600;">Loosen tROAS Target &ndash; Constrained Volume</td>
+<td style="font-size:12px;color:#5f6368;">All campaigns</td>
+<td style="text-align:center;"><span class="badge-strategy">tROAS</span></td>
+<td class="rules-plain-english">Give the system more room when ROAS has been missing target - trade efficiency for volume</td>
+<td><span class="badge-rof-rule">Rule</span></td>
+<td><span class="badge-type-bid">Bid</span></td>
+<td style="font-size:12px;color:#202124;white-space:nowrap;"><strong>ROAS (14d)</strong> &ge; 1.05&times; target<br><strong>IS lost to rank</strong> &gt; 20%</td>
+<td><span class="action-down"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_downward</span> Lower tROAS target 5%</span></td>
+<td style="font-size:12px;color:#5f6368;white-space:nowrap;">14d</td>
+<td class="rules-guardrail-col"><span style="font-size:11px;color:#202124;">Min tROAS floor</span></td>
+<td><span class="risk-dot risk-dot-medium">Medium</span></td>
+<td><div class="d-flex gap-1"><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button><button class="btn-save-template" title="Save as template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button></div></td>
+</tr>
+
+<tr>
+<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"></div></td>
+<td class="rules-rule-name-col text-muted" style="font-weight:600;">Tighten tCPA Target &ndash; Strong CPA</td>
+<td style="font-size:12px;color:#5f6368;">All campaigns</td>
+<td style="text-align:center;"><span class="badge-strategy">tCPA</span></td>
+<td class="rules-plain-english">Lower the CPA target to force more conservative bidding when leads are costing too much</td>
+<td><span class="badge-rof-rule">Rule</span></td>
+<td><span class="badge-type-bid">Bid</span></td>
+<td style="font-size:12px;color:#202124;white-space:nowrap;"><strong>CPA (14d)</strong> &le; 0.85&times; target<br><strong>Conversions (14d)</strong> &ge; 15</td>
+<td><span class="action-down"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_downward</span> Lower tCPA target 5%</span></td>
+<td style="font-size:12px;color:#5f6368;white-space:nowrap;">14d</td>
+<td class="rules-guardrail-col"><span style="font-size:11px;color:#202124;">&mdash;</span></td>
+<td><span class="risk-dot risk-dot-medium">Medium</span></td>
+<td><div class="d-flex gap-1"><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button><button class="btn-save-template" title="Save as template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button></div></td>
+</tr>
+
+<tr>
+<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"></div></td>
+<td class="rules-rule-name-col text-muted" style="font-weight:600;">Tighten tROAS Target &ndash; Strong Performance</td>
+<td style="font-size:12px;color:#5f6368;">All campaigns</td>
+<td style="text-align:center;"><span class="badge-strategy">tROAS</span></td>
+<td class="rules-plain-english">Make the system work harder when ROAS has been beating target for a sustained period</td>
+<td><span class="badge-rof-rule">Rule</span></td>
+<td><span class="badge-type-bid">Bid</span></td>
+<td style="font-size:12px;color:#202124;white-space:nowrap;"><strong>ROAS (14d)</strong> &ge; 1.2&times; target<br><strong>Conversions (14d)</strong> &ge; 15</td>
+<td><span class="action-up"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">arrow_upward</span> Increase tROAS 5%</span></td>
+<td style="font-size:12px;color:#5f6368;white-space:nowrap;">14d</td>
+<td class="rules-guardrail-col"><span style="font-size:11px;color:#202124;">Min tROAS floor</span></td>
+<td><span class="risk-dot risk-dot-medium">Medium</span></td>
+<td><div class="d-flex gap-1"><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button><button class="btn-save-template" title="Save as template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button></div></td>
+</tr>
+
+<!-- ═══ STATUS · 3 rules ═══ -->
+<tr class="rules-group-row"><td colspan="13">Status &nbsp;&middot;&nbsp; 3 rules</td></tr>
+
+<tr>
+<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"></div></td>
+<td class="rules-rule-name-col text-muted" style="font-weight:600;">Pause &ndash; High CPA</td>
+<td style="font-size:12px;color:#5f6368;">All campaigns</td>
+<td style="text-align:center;"><span class="badge-strategy">All</span></td>
+<td class="rules-plain-english">Recommend pausing if CPA is more than double target for two weeks and conversions confirm it is not noise</td>
+<td><span class="badge-rof-rule">Rule</span></td>
+<td><span class="badge-type-status">Status</span></td>
+<td style="font-size:12px;color:#202124;white-space:nowrap;"><strong>CPA (14d)</strong> &gt; 2&times; target<br><strong>Cost (14d)</strong> &ge; 200</td>
+<td><span class="action-pause"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">pause_circle</span> Pause campaign</span></td>
+<td style="font-size:12px;color:#5f6368;white-space:nowrap;">30d</td>
+<td class="rules-guardrail-col"><span class="rules-human-confirm"><span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle;">warning</span> Human confirmation required</span></td>
+<td><span class="risk-dot risk-dot-high">High</span></td>
+<td><div class="d-flex gap-1"><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button><button class="btn-save-template" title="Save as template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button></div></td>
+</tr>
+
+<tr>
+<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"></div></td>
+<td class="rules-rule-name-col text-muted" style="font-weight:600;">Pause &ndash; High CPC</td>
+<td style="font-size:12px;color:#5f6368;">All campaigns</td>
+<td style="text-align:center;"><span class="badge-strategy">All</span></td>
+<td class="rules-plain-english">Recommend pausing if CPC is more than double the threshold and click volume is too low to justify the cost</td>
+<td><span class="badge-rof-rule">Rule</span></td>
+<td><span class="badge-type-status">Status</span></td>
+<td style="font-size:12px;color:#202124;white-space:nowrap;"><strong>Avg CPC (14d)</strong> &gt; 5<br><strong>Cost (14d)</strong> &ge; 200</td>
+<td><span class="action-pause"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">pause_circle</span> Pause campaign</span></td>
+<td style="font-size:12px;color:#5f6368;white-space:nowrap;">30d</td>
+<td class="rules-guardrail-col"><span class="rules-human-confirm"><span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle;">warning</span> Human confirmation required</span></td>
+<td><span class="risk-dot risk-dot-high">High</span></td>
+<td><div class="d-flex gap-1"><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button><button class="btn-save-template" title="Save as template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button></div></td>
+</tr>
+
+<tr>
+<td><div class="form-check form-switch mb-0 d-flex justify-content-center"><input class="form-check-input" type="checkbox" role="switch" style="cursor:pointer;"></div></td>
+<td class="rules-rule-name-col text-muted" style="font-weight:600;">Pause &ndash; Poor ROAS</td>
+<td style="font-size:12px;color:#5f6368;">All campaigns</td>
+<td style="text-align:center;"><span class="badge-strategy">All</span></td>
+<td class="rules-plain-english">Recommend pausing if ROAS has been critically low for two weeks and spend is high enough to be a real concern</td>
+<td><span class="badge-rof-rule">Rule</span></td>
+<td><span class="badge-type-status">Status</span></td>
+<td style="font-size:12px;color:#202124;white-space:nowrap;"><strong>ROAS (14d)</strong> &lt; 0.5&times; target<br><strong>Cost (14d)</strong> &ge; 200</td>
+<td><span class="action-pause"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">pause_circle</span> Pause campaign</span></td>
+<td style="font-size:12px;color:#5f6368;white-space:nowrap;">30d</td>
+<td class="rules-guardrail-col"><span class="rules-human-confirm"><span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle;">warning</span> Human confirmation required</span></td>
+<td><span class="risk-dot risk-dot-high">High</span></td>
+<td><div class="d-flex gap-1"><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Edit" onclick="openSlideIn()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span></button><button class="btn btn-sm p-1" style="color:#5f6368;background:none;border:none;" title="Delete"><span class="material-symbols-outlined" style="font-size:16px;">delete</span></button><button class="btn-save-template" title="Save as template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button></div></td>
+</tr>
+
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SLIDE-IN OVERLAY + PANEL
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="slide-in-overlay" id="slideOverlay" onclick="closeSlideIn()"></div>
+
+<div class="slide-in-panel" id="slidePanel">
+    <div class="flow-overlay-header">
+        <div>
+            <h4 class="mb-0" id="si-title">Add rule or flag</h4>
+            <div class="flow-overlay-sub" id="si-subtitle">Step 1 of 5 — Select the campaigns this rule will apply to</div>
+        </div>
+        <button class="btn btn-sm btn-light border" onclick="closeSlideIn()" title="Close">&#x2715; Close</button>
+    </div>
+
+    <div class="flow-progress-bar">
+        <div class="flow-prog-step active" id="si-prog-1"><div class="flow-prog-circle">1</div><span class="flow-prog-label">Campaigns</span></div>
+        <div class="flow-prog-line" id="si-pline-1"></div>
+        <div class="flow-prog-step" id="si-prog-2"><div class="flow-prog-circle">2</div><span class="flow-prog-label">Rule or flag</span></div>
+        <div class="flow-prog-line" id="si-pline-2"></div>
+        <div class="flow-prog-step" id="si-prog-3"><div class="flow-prog-circle">3</div><span class="flow-prog-label">Type</span></div>
+        <div class="flow-prog-line" id="si-pline-3"></div>
+        <div class="flow-prog-step" id="si-prog-4"><div class="flow-prog-circle">4</div><span class="flow-prog-label">Conditions &amp; action</span></div>
+        <div class="flow-prog-line" id="si-pline-4"></div>
+        <div class="flow-prog-step" id="si-prog-5"><div class="flow-prog-circle">5</div><span class="flow-prog-label">Summary</span></div>
+    </div>
+
+    <div class="flow-body-wrap">
+        <div class="flow-body">
+            <!-- Step 1 -->
+            <div class="flow-step active" id="si-step-1">
+                <div class="flow-section-label mb-2">Select the campaigns this rule applies to</div>
+                <div class="flow-camp-picker">
+                    <input class="flow-camp-search" type="text" placeholder="Search campaigns..." autocomplete="off">
+                    <div style="display:flex;gap:8px;padding:6px 12px;border-bottom:1px solid #e0e0e0;background:#fafafa;">
+                        <button class="btn btn-sm" type="button" onclick="selectAllCamps()">Select all</button>
+                        <button class="btn btn-sm" type="button" onclick="clearAllCamps()">Clear</button>
+                    </div>
+                    <div class="flow-camp-list" id="si-camp-list">
+                        <label class="flow-camp-item selected"><input type="checkbox" checked> CH | Brand — Exact <span class="badge-strategy">tROAS</span></label>
+                        <label class="flow-camp-item selected"><input type="checkbox" checked> CH | Brand — Broad <span class="badge-strategy">tROAS</span></label>
+                        <label class="flow-camp-item"><input type="checkbox"> CH | Non-Brand — Exact <span class="badge-strategy">tROAS</span></label>
+                        <label class="flow-camp-item"><input type="checkbox"> CH | Non-Brand — Broad <span class="badge-strategy">tROAS</span></label>
+                        <label class="flow-camp-item"><input type="checkbox"> CH | DSA — Auto <span class="badge-strategy">Max Conv.</span></label>
+                        <label class="flow-camp-item"><input type="checkbox"> CH | Performance Max <span class="badge-strategy">tROAS</span></label>
+                        <label class="flow-camp-item"><input type="checkbox"> CH | Competitor — Exact <span class="badge-strategy">tCPA</span></label>
+                        <label class="flow-camp-item"><input type="checkbox"> CH | Retargeting — Display <span class="badge-strategy">tCPA</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="flow-step" id="si-step-2">
+                <div class="flow-section-label mb-3">What do you want to create?</div>
+                <div class="flow-choice-grid">
+                    <div class="flow-choice-card selected" onclick="pickRoF(this,'rule')">
+                        <div class="flow-choice-icon"><span class="material-symbols-outlined" style="font-size:28px">bolt</span></div>
+                        <h5>Rule</h5>
+                        <p>The system evaluates conditions on a schedule and generates a recommendation for you to act on. You confirm before anything changes.</p>
+                    </div>
+                    <div class="flow-choice-card" onclick="pickRoF(this,'flag')">
+                        <div class="flow-choice-icon"><span class="material-symbols-outlined" style="font-size:28px">flag</span></div>
+                        <h5>Flag</h5>
+                        <p>The system monitors for a condition and raises an alert. No action is taken — flags are information only.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="flow-step" id="si-step-3">
+                <div class="flow-section-label mb-3">Rule type</div>
+                <div class="flow-cat-grid">
+                    <div class="flow-cat-card selected" onclick="pickType(this,'budget')">
+                        <span class="material-symbols-outlined" style="font-size:24px;color:#1558d6">account_balance_wallet</span>
+                        <h5>Budget</h5><p>Adjust daily or campaign budgets based on performance</p>
+                    </div>
+                    <div class="flow-cat-card" onclick="pickType(this,'bid')">
+                        <span class="material-symbols-outlined" style="font-size:24px;color:#137333">trending_up</span>
+                        <h5>Bid</h5><p>Modify bid strategy targets (tROAS, tCPA)</p>
+                    </div>
+                    <div class="flow-cat-card" onclick="pickType(this,'status')">
+                        <span class="material-symbols-outlined" style="font-size:24px;color:#b45309">pause_circle</span>
+                        <h5>Status</h5><p>Pause or enable campaigns based on conditions</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="flow-step" id="si-step-4">
+                <div class="flow-section-label mb-2">Condition 1 (required)</div>
+                <div class="flow-cond-box">
+                    <div class="flow-cond-row">
+                        <select class="flow-cond-select"><optgroup label="ROAS"><option>ROAS</option><option>ROAS (7d)</option><option>ROAS (14d)</option></optgroup><optgroup label="CPA"><option selected>CPA (7d)</option><option>CPA (14d)</option></optgroup><optgroup label="Cost"><option>Cost (7d)</option></optgroup><optgroup label="Conversions"><option>Conversions (7d)</option></optgroup></select>
+                        <select class="flow-cond-select"><option value="gt">is greater than</option><option value="lt">is less than</option><option value="gte">is at least</option><option value="lte">is at most</option><option value="eq">equals</option></select>
+                        <input class="flow-cond-input" type="text" value="1.2" placeholder="Value">
+                    </div>
+                    <div class="flow-cond-row" style="margin-top:8px;">
+                        <select class="flow-cond-select"><option value="x_target" selected>&times; target</option><option value="absolute">absolute</option><option value="pct">%</option></select>
+                    </div>
+                </div>
+
+                <button class="flow-add-cond-btn" id="si-add-cond2-btn" onclick="toggleCond2()">+ Add second condition</button>
+
+                <div class="flow-cond-2" id="si-cond2">
+                    <button class="flow-add-cond-btn" onclick="toggleCond2()" style="color:#c5221f;margin-top:0;margin-bottom:8px;">&ndash; Remove second condition</button>
+                    <div class="flow-section-label mb-2">Condition 2 (optional)</div>
+                    <div class="flow-cond-box">
+                        <div class="flow-cond-row">
+                            <select class="flow-cond-select"><optgroup label="Conversions"><option selected>Conversions (7d)</option></optgroup><optgroup label="ROAS"><option>ROAS (7d)</option></optgroup><optgroup label="Cost"><option>Cost (7d)</option></optgroup></select>
+                            <select class="flow-cond-select"><option value="gt" selected>is greater than</option><option value="lt">is less than</option></select>
+                            <input class="flow-cond-input" type="text" value="10" placeholder="Value">
+                        </div>
+                        <div class="flow-cond-row" style="margin-top:8px;">
+                            <select class="flow-cond-select"><option value="absolute" selected>absolute</option><option value="x_target">&times; target</option></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flow-section-divider"><span>Action</span></div>
+
+                <div class="flow-section-label mb-2">What should happen when conditions are met?</div>
+                <div class="flow-action-box">
+                    <div class="flow-action-row">
+                        <select class="flow-cond-select" style="min-width:180px"><option selected>Decrease budget by</option><option>Increase budget by</option></select>
+                        <input class="flow-cond-input" type="text" value="10" placeholder="%">
+                        <span style="font-size:12px;color:#5f6368;">%</span>
+                    </div>
+                </div>
+
+                <div class="flow-section-divider"><span>Rule settings</span></div>
+
+                <div class="flow-cond-box">
+                    <div class="flow-settings-grid" style="margin-top:0;">
+                        <div class="flow-settings-field"><label>Cooldown period</label><select><option selected>7 days</option><option>14 days</option><option>30 days</option></select></div>
+                        <div class="flow-settings-field"><label>Risk level (auto-calculated)</label><select disabled><option selected>Low</option><option>Medium</option><option>High</option></select></div>
+                    </div>
+                </div>
+
+                <div class="flow-guardrail-note" style="margin-top:14px;">
+                    <span class="material-symbols-outlined" style="font-size:16px">warning</span>
+                    The system will cap this at the guardrail limit defined in Client Settings. Even if you enter a higher value here, the guardrail takes precedence.
+                </div>
+                <div class="flow-human-note">
+                    <span class="material-symbols-outlined" style="font-size:16px">person</span>
+                    All campaign-level actions require your confirmation before anything changes in Google Ads. This rule generates a recommendation only.
+                </div>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="flow-step" id="si-step-5">
+                <div class="flow-section-label mb-2">Rule name</div>
+                <input class="flow-name-field" type="text" value="Decrease Budget &ndash; Weak CPA" placeholder="Enter rule name...">
+                <div class="flow-name-hint">A short descriptive name for this rule</div>
+                <div style="margin-top:20px;">
+                    <div class="flow-summary-box">
+                        <h5>Summary</h5>
+                        <div class="flow-summary-line">
+                            <strong>When</strong> CPA (7d) &gt; 1.2&times; target <strong>AND</strong> Conversions (7d) &gt; 10<br>
+                            <strong>Then</strong> decrease budget by 10%<br>
+                            <strong>Applies to</strong> All campaigns (tCPA lock)<br>
+                            <strong>Cooldown</strong> 7 days &bull; <strong>Risk</strong> Low
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flow-sidebar">
+            <div class="flow-sidebar-title">Your choices</div>
+            <div class="flow-sidebar-row active" id="si-sb-1"><div class="flow-sidebar-step">STEP 1</div><div class="flow-sidebar-label">Campaigns</div><div class="flow-sidebar-value" id="si-sb-val-1">2 selected</div></div>
+            <div class="flow-sidebar-divider"></div>
+            <div class="flow-sidebar-row" id="si-sb-2"><div class="flow-sidebar-step">STEP 2</div><div class="flow-sidebar-label">Type</div><div class="flow-sidebar-value pending" id="si-sb-val-2">Not set</div></div>
+            <div class="flow-sidebar-divider"></div>
+            <div class="flow-sidebar-row" id="si-sb-3"><div class="flow-sidebar-step">STEP 3</div><div class="flow-sidebar-label">Category</div><div class="flow-sidebar-value pending" id="si-sb-val-3">Not set</div></div>
+            <div class="flow-sidebar-divider"></div>
+            <div class="flow-sidebar-row" id="si-sb-4"><div class="flow-sidebar-step">STEP 4</div><div class="flow-sidebar-label">Conditions</div><div class="flow-sidebar-value pending" id="si-sb-val-4">Not set</div></div>
+            <div class="flow-sidebar-divider"></div>
+            <div class="flow-sidebar-row" id="si-sb-5"><div class="flow-sidebar-step">STEP 5</div><div class="flow-sidebar-label">Name</div><div class="flow-sidebar-value pending" id="si-sb-val-5">Not set</div></div>
+        </div>
+    </div>
+
+    <div class="flow-footer">
+        <button class="btn-secondary-act" id="si-back-btn" onclick="prevStep()" style="visibility:hidden">&#8592; Back</button>
+        <span class="flow-step-indicator" id="si-step-ind">Step 1 of 5</span>
+        <button class="btn-primary-act" id="si-next-btn" onclick="nextStep()">Next &#8594;</button>
+    </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<script>
+var _step = 1, _rof = 'rule', _type = 'budget';
+
+function openSlideIn() {
+    _step = 1; renderStep();
+    document.getElementById('slideOverlay').classList.add('open');
+    document.getElementById('slidePanel').classList.add('open');
+    document.getElementById('si-title').textContent = 'Add rule or flag';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSlideIn() {
+    document.getElementById('slideOverlay').classList.remove('open');
+    document.getElementById('slidePanel').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+function nextStep() {
+    if (_step < 5) { _step++; renderStep(); }
+    else { closeSlideIn(); showToast('Rule saved successfully', 'success'); }
+}
+
+function prevStep() { if (_step > 1) { _step--; renderStep(); } }
+
+function renderStep() {
+    for (var i = 1; i <= 5; i++) {
+        var el = document.getElementById('si-step-' + i);
+        if (el) el.classList.toggle('active', i === _step);
+    }
+    for (var i = 1; i <= 5; i++) {
+        var prog = document.getElementById('si-prog-' + i);
+        prog.classList.remove('active', 'done');
+        if (i < _step) prog.classList.add('done');
+        else if (i === _step) prog.classList.add('active');
+    }
+    for (var i = 1; i <= 4; i++) {
+        document.getElementById('si-pline-' + i).classList.toggle('done', i < _step);
+    }
+    var subtitles = [
+        'Step 1 of 5 \u2014 Select the campaigns this rule will apply to',
+        'Step 2 of 5 \u2014 Choose rule or flag',
+        'Step 3 of 5 \u2014 Select the type',
+        'Step 4 of 5 \u2014 Define conditions and action',
+        'Step 5 of 5 \u2014 Review and save'
+    ];
+    document.getElementById('si-subtitle').textContent = subtitles[_step - 1];
+    document.getElementById('si-step-ind').textContent = 'Step ' + _step + ' of 5';
+    document.getElementById('si-back-btn').style.visibility = _step > 1 ? 'visible' : 'hidden';
+    document.getElementById('si-next-btn').textContent = _step === 5 ? 'Save rule' : 'Next \u2192';
+    updateSidebar();
+}
+
+function updateSidebar() {
+    for (var i = 1; i <= 5; i++) document.getElementById('si-sb-' + i).classList.toggle('active', i === _step);
+    if (_step >= 2) { document.getElementById('si-sb-val-2').textContent = _rof === 'rule' ? 'Rule' : 'Flag'; document.getElementById('si-sb-val-2').classList.remove('pending'); }
+    if (_step >= 3) { document.getElementById('si-sb-val-3').textContent = _type.charAt(0).toUpperCase() + _type.slice(1); document.getElementById('si-sb-val-3').classList.remove('pending'); }
+    if (_step >= 4) { document.getElementById('si-sb-val-4').innerHTML = 'C1: CPA (7d) > 1.2\u00d7 target<br>C2: Conversions (7d) > 10<br><br>\u2014 Decrease budget 10%<br>\u23f1 7d cooldown'; document.getElementById('si-sb-val-4').classList.remove('pending'); }
+    if (_step >= 5) { document.getElementById('si-sb-val-5').textContent = 'Decrease Budget \u2013 Weak CPA'; document.getElementById('si-sb-val-5').classList.remove('pending'); }
+}
+
+function pickRoF(el, val) { _rof = val; document.querySelectorAll('.flow-choice-card').forEach(function(c) { c.classList.remove('selected'); }); el.classList.add('selected'); }
+function pickType(el, val) { _type = val; document.querySelectorAll('.flow-cat-card').forEach(function(c) { c.classList.remove('selected'); }); el.classList.add('selected'); }
+function toggleCond2() {
+    var c2 = document.getElementById('si-cond2');
+    var addBtn = document.getElementById('si-add-cond2-btn');
+    var isShown = c2.classList.toggle('show');
+    addBtn.style.display = isShown ? 'none' : '';
+}
+
+function selectAllCamps() { document.querySelectorAll('#si-camp-list input[type="checkbox"]').forEach(function(cb) { cb.checked = true; cb.closest('.flow-camp-item').classList.add('selected'); }); document.getElementById('si-sb-val-1').textContent = '8 selected'; }
+function clearAllCamps() { document.querySelectorAll('#si-camp-list input[type="checkbox"]').forEach(function(cb) { cb.checked = false; cb.closest('.flow-camp-item').classList.remove('selected'); }); document.getElementById('si-sb-val-1').textContent = '0 selected'; }
+
+function showToast(msg, type) {
+    var wrap = document.getElementById('toastWrap');
+    var toast = document.createElement('div'); toast.className = 'toast-msg ' + type; toast.textContent = msg;
+    wrap.appendChild(toast);
+    setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(function() { wrap.removeChild(toast); }, 300); }, 3500);
+}
+
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeSlideIn(); });
+
+document.querySelectorAll('#si-camp-list input[type="checkbox"]').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+        this.closest('.flow-camp-item').classList.toggle('selected', this.checked);
+        var count = document.querySelectorAll('#si-camp-list input[type="checkbox"]:checked').length;
+        document.getElementById('si-sb-val-1').textContent = count + ' selected';
+        document.getElementById('si-sb-val-1').classList.toggle('pending', count === 0);
+    });
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

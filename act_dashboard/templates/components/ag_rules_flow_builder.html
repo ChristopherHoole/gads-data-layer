@@ -1,1121 +1,558 @@
 {# ──────────────────────────────────────────────────────────────────────────────
-   ag_rules_flow_builder.html  — Ad Group rules flow builder
-   5-step full-page overlay flow builder for creating / editing rules & flags.
+   ag_rules_flow_builder.html — Long-scroll slide-in with live summary
+   Single scrollable form for Ad Group rules & flags.
    Included at bottom of ad_groups.html content block.
    Defines: agOpenRulesFlow(existingRow), agCloseRulesFlow()
    On save: POST /ad_groups/rules → success → refresh rules table + toast.
-──────────────────────────────────────────────────────────────────────────────── #}
+────────────────────────────────────────────────────────────────────────────── #}
 
-<!-- ══ AG RULES FLOW BUILDER OVERLAY ══════════════════════════════════════════ -->
-<div id="ag-rules-flow-overlay" role="dialog" aria-modal="true" aria-label="Rule builder">
-<div class="flow-panel">
+<!-- ══ AG RULES FLOW BUILDER — SLIDE-IN PANEL ════════════════════════════════ -->
+<div id="ag-rules-flow-overlay" class="flow-slide-overlay" role="dialog" aria-modal="true" aria-label="Rule builder" onclick="if(event.target===this) agCloseRulesFlow()">
+<div class="flow-panel flow-slide-panel" onclick="event.stopPropagation()">
 
   <!-- Header -->
   <div class="flow-overlay-header">
     <div>
       <h4 class="mb-0" id="ag-rfb-title">Add rule or flag</h4>
-      <div class="flow-overlay-sub" id="ag-rfb-subtitle">Step 1 of 5 — Select the ad groups this rule will apply to</div>
+      <div class="flow-overlay-sub" id="ag-rfb-subtitle">Complete the fields below to create a new rule</div>
     </div>
     <button class="btn btn-sm btn-light border" onclick="agCloseRulesFlow()" title="Close">✕ Close</button>
   </div>
 
-  <!-- Progress bar -->
-  <div class="flow-progress-bar">
-    <div class="flow-prog-step" id="ag-rfb-prog-1">
-      <div class="flow-prog-circle">1</div>
-      <span class="flow-prog-label">Ad groups</span>
-    </div>
-    <div class="flow-prog-line" id="ag-rfb-pline-1"></div>
-    <div class="flow-prog-step" id="ag-rfb-prog-2">
-      <div class="flow-prog-circle">2</div>
-      <span class="flow-prog-label">Rule or flag</span>
-    </div>
-    <div class="flow-prog-line" id="ag-rfb-pline-2"></div>
-    <div class="flow-prog-step" id="ag-rfb-prog-3">
-      <div class="flow-prog-circle">3</div>
-      <span class="flow-prog-label">Type</span>
-    </div>
-    <div class="flow-prog-line" id="ag-rfb-pline-3"></div>
-    <div class="flow-prog-step" id="ag-rfb-prog-4">
-      <div class="flow-prog-circle">4</div>
-      <span class="flow-prog-label">Conditions &amp; action</span>
-    </div>
-    <div class="flow-prog-line" id="ag-rfb-pline-4"></div>
-    <div class="flow-prog-step" id="ag-rfb-prog-5">
-      <div class="flow-prog-circle">5</div>
-      <span class="flow-prog-label">Summary</span>
-    </div>
-  </div>
-
-  <!-- Editing label — shown below progress bar in edit mode -->
-  <div id="ag-rfb-editing-label" style="display:none;padding:8px 28px;font-size:13px;font-weight:600;color:#202124;border-bottom:1px solid #e0e0e0;background:#fafafa;"></div>
-
-  <!-- Body + Sidebar wrapper -->
+  <!-- Body: Scrollable form + Live summary sidebar -->
   <div class="flow-body-wrap">
-  <div class="flow-body">
 
-    <!-- ── Step 1: Ad Groups ── -->
-    <div id="ag-rfb-sc-1">
-      <div class="mb-4">
-        <div class="flow-section-label mb-2">Select the ad groups this rule applies to</div>
-        <div class="flow-camp-picker">
-          <input class="flow-camp-search" id="ag-rfb-camp-search" type="text" placeholder="Search ad groups..."
-                 oninput="agRfbFilterAdGroups(this.value)" autocomplete="off">
-          <div style="display:flex;gap:8px;padding:6px 12px;border-bottom:1px solid #e0e0e0;background:#fafafa;">
-            <button class="btn btn-sm" type="button" onclick="agRfbSelectAll()">Select all</button>
-            <button class="btn btn-sm" type="button" onclick="agRfbClearAll()">Clear</button>
-          </div>
-          <div class="flow-camp-list" id="ag-rfb-camp-list">
-            <!-- Populated by JS from _agRfbAllAdGroups -->
-          </div>
+  <div class="flow-body" id="ag-rfb-form-scroll">
+
+    <!-- Section 1: Ad Groups -->
+    <div class="rfb-section">
+      <div class="rfb-section-title"><span class="rfb-section-num">1</span> Select ad groups</div>
+      <div class="flow-camp-picker">
+        <input class="flow-camp-search" id="ag-rfb-camp-search" type="text" placeholder="Search ad groups..."
+               oninput="agRfbFilterAdGroups(this.value)" autocomplete="off">
+        <div style="display:flex;gap:8px;padding:6px 12px;border-bottom:1px solid #e0e0e0;background:#fafafa;">
+          <button class="btn btn-sm" type="button" onclick="agRfbSelectAll()">Select all</button>
+          <button class="btn btn-sm" type="button" onclick="agRfbClearAll()">Clear</button>
+        </div>
+        <div class="flow-camp-list" id="ag-rfb-camp-list"></div>
+      </div>
+    </div>
+
+    <!-- Section 2: Rule or Flag -->
+    <div class="rfb-section">
+      <div class="rfb-section-title"><span class="rfb-section-num">2</span> Rule or flag</div>
+      <div class="flow-choice-grid">
+        <div class="flow-choice-card rfb-compact-card" id="ag-rfb-rof-rule" onclick="agRfbPickRoF('rule')">
+          <div class="rfb-compact-header"><span class="material-symbols-outlined rfb-compact-icon">bolt</span><h5>Rule</h5></div>
+          <p>Evaluates conditions and generates a recommendation for you to act on.</p>
+        </div>
+        <div class="flow-choice-card rfb-compact-card" id="ag-rfb-rof-flag" onclick="agRfbPickRoF('flag')">
+          <div class="rfb-compact-header"><span class="material-symbols-outlined rfb-compact-icon">flag</span><h5>Flag</h5></div>
+          <p>Monitors for a condition and raises an alert. No action taken.</p>
         </div>
       </div>
     </div>
 
-    <!-- ── Step 2: Rule or Flag ── -->
-    <div id="ag-rfb-sc-2">
-      <div class="mb-4">
-        <div class="flow-section-label mb-3">What do you want to create?</div>
-        <div class="flow-choice-grid">
-          <div class="flow-choice-card" id="ag-rfb-rof-rule" onclick="agRfbPickRoF('rule')">
-            <div class="flow-choice-icon">
-              <span class="material-symbols-outlined" style="font-size:28px;vertical-align:middle">bolt</span>
-            </div>
-            <h5>Rule</h5>
-            <p>The system evaluates conditions on a schedule and generates a recommendation for you to act on.<br>You confirm before anything changes in Google Ads.</p>
-          </div>
-          <div class="flow-choice-card" id="ag-rfb-rof-flag" onclick="agRfbPickRoF('flag')">
-            <div class="flow-choice-icon">
-              <span class="material-symbols-outlined" style="font-size:28px;vertical-align:middle">flag</span>
-            </div>
-            <h5>Flag</h5>
-            <p>The system monitors for a condition and raises an alert in the dashboard.<br>No action is taken — flags are information only.</p>
-          </div>
-        </div>
-      </div>
+    <!-- Section 3: Type -->
+    <div class="rfb-section">
+      <div class="rfb-section-title"><span class="rfb-section-num">3</span> <span id="ag-rfb-type-label">Type</span></div>
+      <div class="flow-cat-grid" id="ag-rfb-type-grid"></div>
     </div>
 
-    <!-- ── Step 3: Type ── -->
-    <div id="ag-rfb-sc-3">
-      <div class="mb-4">
-        <div class="flow-section-label mb-3" id="ag-rfb-type-label">Rule type</div>
-        <div class="flow-cat-grid" id="ag-rfb-type-grid">
-          <!-- Populated by agRfbRenderTypeStep() -->
+    <!-- Section 4: Conditions & Action -->
+    <div class="rfb-section">
+      <div class="rfb-section-title"><span class="rfb-section-num">4</span> Conditions &amp; action</div>
+
+      <div class="flow-section-label mb-2">Condition 1 (required)</div>
+      <div class="flow-cond-box">
+        <div class="flow-cond-row">
+          <select class="flow-cond-select" id="ag-rfb-cond1-metric" onchange="agRfbLiveSummary()">
+            <option disabled>── ROAS ──</option>
+            <option value="roas_w7_mean">ROAS (7d)</option>
+            <option value="roas_w14_mean">ROAS (14d)</option>
+            <option value="roas_w30_mean">ROAS (30d)</option>
+            <option disabled>── CPA ──</option>
+            <option value="cpa_w7_mean">CPA (7d)</option>
+            <option value="cpa_w14_mean">CPA (14d)</option>
+            <option value="cpa_w30_mean">CPA (30d)</option>
+            <option disabled>── CTR ──</option>
+            <option value="ctr_w7_mean">CTR (7d)</option>
+            <option value="ctr_w14_mean">CTR (14d)</option>
+            <option value="ctr_w30_mean">CTR (30d)</option>
+            <option disabled>── Avg CPC ──</option>
+            <option value="cpc_w7_mean">Avg CPC (7d)</option>
+            <option value="cpc_w14_mean">Avg CPC (14d)</option>
+            <option value="cpc_w30_mean">Avg CPC (30d)</option>
+            <option disabled>── Clicks ──</option>
+            <option value="clicks_w7_sum">Clicks (7d)</option>
+            <option value="clicks_w14_sum">Clicks (14d)</option>
+            <option value="clicks_w30_sum">Clicks (30d)</option>
+            <option disabled>── Conversions ──</option>
+            <option value="conversions_w7_sum">Conversions (7d)</option>
+            <option value="conversions_w14_sum">Conversions (14d)</option>
+            <option value="conversions_w30_sum">Conversions (30d)</option>
+            <option disabled>── Cost ──</option>
+            <option value="cost_w7_sum">Cost (7d)</option>
+            <option value="cost_w14_sum">Cost (14d)</option>
+            <option value="cost_w30_sum">Cost (30d)</option>
+            <option disabled>── Impressions ──</option>
+            <option value="impressions_w7_sum">Impressions (7d)</option>
+            <option value="impressions_w14_sum">Impressions (14d)</option>
+            <option value="impressions_w30_sum">Impressions (30d)</option>
+            <option disabled>── Impression Share ──</option>
+            <option value="search_impression_share">Search IS</option>
+            <option value="impression_share_lost_rank">IS Lost to Rank</option>
+            <option value="impression_share_lost_budget">IS Lost to Budget</option>
+            <option disabled>── Other ──</option>
+            <option value="optimization_score">Optimization Score</option>
+            <option disabled>── Week-on-week % ──</option>
+            <option value="roas_wow_pct">ROAS WoW %</option>
+            <option value="cpa_wow_pct">CPA WoW %</option>
+            <option value="ctr_wow_pct">CTR WoW %</option>
+            <option value="cvr_wow_pct">CVR WoW %</option>
+            <option value="conversions_wow_pct">Conversions WoW %</option>
+            <option value="cost_wow_pct">Spend WoW %</option>
+            <option disabled>── Anomaly ──</option>
+            <option value="cost_z">Cost Anomaly</option>
+            <option value="clicks_z">Click Anomaly</option>
+            <option value="conversions_z">Conversion Anomaly</option>
+            <option disabled>── Volatility ──</option>
+            <option value="cost_cv">Cost Volatility</option>
+            <option value="clicks_cv">Click Volatility</option>
+            <option disabled>── System ──</option>
+            <option value="low_data_flag">Low Data Flag ⚙</option>
+          </select>
+          <select class="flow-cond-select" id="ag-rfb-cond1-op" onchange="agRfbLiveSummary()">
+            <option value="gt">is greater than</option>
+            <option value="lt">is less than</option>
+            <option value="gte">is at least</option>
+            <option value="eq">equals</option>
+            <option value="lte">is at most</option>
+          </select>
+        </div>
+        <div class="flow-cond-row" style="margin-top:8px;">
+          <input class="flow-cond-input" id="ag-rfb-cond1-val" type="text" value="1.15" oninput="agRfbLiveSummary()">
+          <select class="flow-cond-select" id="ag-rfb-cond1-ref" onchange="agRfbLiveSummary()">
+            <option value="x_target">× target</option>
+            <option value="absolute">absolute</option>
+            <option value="pct">%</option>
+          </select>
         </div>
       </div>
-    </div>
 
-    <!-- ── Step 4: Conditions & Action ── -->
-    <div id="ag-rfb-sc-4">
+      <button class="flow-add-cond-btn" type="button" id="ag-rfb-add-cond-btn" onclick="agRfbToggleCond2()">+ Add second condition (optional)</button>
 
-      <div class="mb-4">
-        <div class="flow-section-label mb-2">Condition 1 (required)</div>
+      <div id="ag-rfb-cond-2" style="display:none;margin-top:12px;">
+        <button class="flow-add-cond-btn" type="button" style="color:#c5221f;margin-bottom:8px;" onclick="agRfbToggleCond2()">− Remove second condition</button>
+        <div class="flow-section-label mb-2">Condition 2 (optional)</div>
         <div class="flow-cond-box">
           <div class="flow-cond-row">
-            <select class="flow-cond-select" id="ag-rfb-cond1-metric">
+            <select class="flow-cond-select" id="ag-rfb-cond2-metric" onchange="agRfbLiveSummary()">
               <option disabled>── ROAS ──</option>
               <option value="roas_w7_mean">ROAS (7d)</option>
               <option value="roas_w14_mean">ROAS (14d)</option>
-              <option value="roas_w30_mean">ROAS (30d)</option>
               <option disabled>── CPA ──</option>
               <option value="cpa_w7_mean">CPA (7d)</option>
               <option value="cpa_w14_mean">CPA (14d)</option>
-              <option value="cpa_w30_mean">CPA (30d)</option>
-              <option disabled>── CTR ──</option>
-              <option value="ctr_w7_mean">CTR (7d)</option>
-              <option value="ctr_w14_mean">CTR (14d)</option>
-              <option value="ctr_w30_mean">CTR (30d)</option>
-              <option disabled>── Avg CPC ──</option>
-              <option value="cpc_w7_mean">Avg CPC (7d)</option>
-              <option value="cpc_w14_mean">Avg CPC (14d)</option>
-              <option value="cpc_w30_mean">Avg CPC (30d)</option>
               <option disabled>── Clicks ──</option>
               <option value="clicks_w7_sum">Clicks (7d)</option>
               <option value="clicks_w14_sum">Clicks (14d)</option>
-              <option value="clicks_w30_sum">Clicks (30d)</option>
               <option disabled>── Conversions ──</option>
               <option value="conversions_w7_sum">Conversions (7d)</option>
               <option value="conversions_w14_sum">Conversions (14d)</option>
-              <option value="conversions_w30_sum">Conversions (30d)</option>
               <option disabled>── Cost ──</option>
               <option value="cost_w7_sum">Cost (7d)</option>
               <option value="cost_w14_sum">Cost (14d)</option>
-              <option value="cost_w30_sum">Cost (30d)</option>
               <option disabled>── Impressions ──</option>
               <option value="impressions_w7_sum">Impressions (7d)</option>
-              <option value="impressions_w14_sum">Impressions (14d)</option>
-              <option value="impressions_w30_sum">Impressions (30d)</option>
-              <option disabled>── Impression Share ──</option>
-              <option value="search_impression_share">Search IS</option>
+              <option disabled>── IS ──</option>
               <option value="impression_share_lost_rank">IS Lost to Rank</option>
               <option value="impression_share_lost_budget">IS Lost to Budget</option>
-              <option disabled>── Other ──</option>
-              <option value="optimization_score">Optimization Score</option>
-              <option disabled>── Week-on-week % ──</option>
-              <option value="roas_wow_pct">ROAS WoW %</option>
-              <option value="cpa_wow_pct">CPA WoW %</option>
-              <option value="ctr_wow_pct">CTR WoW %</option>
-              <option value="cvr_wow_pct">CVR WoW %</option>
-              <option value="conversions_wow_pct">Conversions WoW %</option>
-              <option value="cost_wow_pct">Spend WoW %</option>
-              <option disabled>── Anomaly ──</option>
-              <option value="cost_z">Cost Anomaly</option>
-              <option value="clicks_z">Click Anomaly</option>
-              <option value="conversions_z">Conversion Anomaly</option>
-              <option disabled>── Volatility ──</option>
-              <option value="cost_cv">Cost Volatility</option>
-              <option value="clicks_cv">Click Volatility</option>
-              <option disabled>── System ──</option>
-              <option value="low_data_flag">Low Data Flag ⚙</option>
             </select>
-            <select class="flow-cond-select" id="ag-rfb-cond1-op">
+            <select class="flow-cond-select" id="ag-rfb-cond2-op" onchange="agRfbLiveSummary()">
+              <option value="gte">is at least</option>
               <option value="gt">is greater than</option>
               <option value="lt">is less than</option>
-              <option value="gte">is greater than or equal to</option>
-              <option value="eq">is equal to</option>
-              <option value="lte">is less than or equal to</option>
-            </select>
-            <input class="flow-cond-input" id="ag-rfb-cond1-val" type="text" value="1.15">
-            <select class="flow-cond-select" id="ag-rfb-cond1-ref">
-              <option value="x_target">× target</option>
-              <option value="absolute">absolute</option>
-              <option value="pct">%</option>
+              <option value="lte">is at most</option>
             </select>
           </div>
-          <button class="flow-add-cond-btn" type="button" id="ag-rfb-add-cond-btn" onclick="agRfbToggleCond2()">+ Add second condition (optional)</button>
-          <div id="ag-rfb-cond-2" class="flow-cond-2">
-            <div class="flow-section-label mt-2 mb-2">Condition 2 (optional)</div>
-            <div class="flow-cond-row">
-              <select class="flow-cond-select" id="ag-rfb-cond2-metric">
-                <option disabled>── ROAS ──</option>
-                <option value="roas_w7_mean">ROAS (7d)</option>
-                <option value="roas_w14_mean">ROAS (14d)</option>
-                <option value="roas_w30_mean">ROAS (30d)</option>
-                <option disabled>── CPA ──</option>
-                <option value="cpa_w7_mean">CPA (7d)</option>
-                <option value="cpa_w14_mean">CPA (14d)</option>
-                <option value="cpa_w30_mean">CPA (30d)</option>
-                <option disabled>── CTR ──</option>
-                <option value="ctr_w7_mean">CTR (7d)</option>
-                <option value="ctr_w14_mean">CTR (14d)</option>
-                <option value="ctr_w30_mean">CTR (30d)</option>
-                <option disabled>── Avg CPC ──</option>
-                <option value="cpc_w7_mean">Avg CPC (7d)</option>
-                <option value="cpc_w14_mean">Avg CPC (14d)</option>
-                <option value="cpc_w30_mean">Avg CPC (30d)</option>
-                <option disabled>── Clicks ──</option>
-                <option value="clicks_w7_sum">Clicks (7d)</option>
-                <option value="clicks_w14_sum">Clicks (14d)</option>
-                <option value="clicks_w30_sum">Clicks (30d)</option>
-                <option disabled>── Conversions ──</option>
-                <option value="conversions_w7_sum">Conversions (7d)</option>
-                <option value="conversions_w14_sum">Conversions (14d)</option>
-                <option value="conversions_w30_sum">Conversions (30d)</option>
-                <option disabled>── Cost ──</option>
-                <option value="cost_w7_sum">Cost (7d)</option>
-                <option value="cost_w14_sum">Cost (14d)</option>
-                <option value="cost_w30_sum">Cost (30d)</option>
-                <option disabled>── Impressions ──</option>
-                <option value="impressions_w7_sum">Impressions (7d)</option>
-                <option value="impressions_w14_sum">Impressions (14d)</option>
-                <option value="impressions_w30_sum">Impressions (30d)</option>
-                <option disabled>── Impression Share ──</option>
-                <option value="search_impression_share">Search IS</option>
-                <option value="impression_share_lost_rank">IS Lost to Rank</option>
-                <option value="impression_share_lost_budget">IS Lost to Budget</option>
-                <option disabled>── Other ──</option>
-                <option value="optimization_score">Optimization Score</option>
-                <option disabled>── Week-on-week % ──</option>
-                <option value="roas_wow_pct">ROAS WoW %</option>
-                <option value="cpa_wow_pct">CPA WoW %</option>
-                <option value="ctr_wow_pct">CTR WoW %</option>
-                <option value="cvr_wow_pct">CVR WoW %</option>
-                <option value="conversions_wow_pct">Conversions WoW %</option>
-                <option value="cost_wow_pct">Spend WoW %</option>
-                <option disabled>── Anomaly ──</option>
-                <option value="cost_z">Cost Anomaly</option>
-                <option value="clicks_z">Click Anomaly</option>
-                <option value="conversions_z">Conversion Anomaly</option>
-                <option disabled>── Volatility ──</option>
-                <option value="cost_cv">Cost Volatility</option>
-                <option value="clicks_cv">Click Volatility</option>
-                <option disabled>── System ──</option>
-                <option value="low_data_flag">Low Data Flag ⚙</option>
-              </select>
-              <select class="flow-cond-select" id="ag-rfb-cond2-op">
-                <option value="gte">is greater than or equal to</option>
-                <option value="gt">is greater than</option>
-                <option value="lt">is less than</option>
-                <option value="lte">is less than or equal to</option>
-              </select>
-              <input class="flow-cond-input" id="ag-rfb-cond2-val" type="text" value="30">
-              <select class="flow-cond-select" id="ag-rfb-cond2-ref">
-                <option value="absolute">absolute</option>
-                <option value="pct">%</option>
-                <option value="x_target">× target</option>
-              </select>
-            </div>
+          <div class="flow-cond-row" style="margin-top:8px;">
+            <input class="flow-cond-input" id="ag-rfb-cond2-val" type="text" value="30" oninput="agRfbLiveSummary()">
+            <select class="flow-cond-select" id="ag-rfb-cond2-ref" onchange="agRfbLiveSummary()">
+              <option value="absolute">absolute</option>
+              <option value="pct">%</option>
+              <option value="x_target">× target</option>
+            </select>
           </div>
         </div>
       </div>
 
-      <!-- Action section (rules only — hidden for flags) -->
+      <!-- Action (rules only) -->
       <div id="ag-rfb-action-section">
         <div class="flow-section-divider"><span>Action</span></div>
-        <div class="mb-4">
-          <div class="flow-section-label mb-2">What should happen when conditions are met?</div>
-          <div class="flow-action-box">
-            <div class="flow-action-row">
-              <select class="flow-cond-select" id="ag-rfb-action-type">
-                <option value="increase_cpc_bid">Increase CPC bid by</option>
-                <option value="decrease_cpc_bid">Decrease CPC bid by</option>
-                <option value="increase_tcpa_target">Increase tCPA target by</option>
-                <option value="decrease_tcpa_target">Decrease tCPA target by</option>
-                <option value="pause_ad_group">Pause ad group</option>
-                <option value="enable_ad_group">Enable ad group</option>
-              </select>
-              <input class="flow-cond-input" id="ag-rfb-action-mag" type="text" value="10" style="width:70px">
-              <span id="ag-rfb-pct-label" style="font-size:13px;color:#5f6368;">%</span>
-            </div>
+        <div class="flow-section-label mb-2">What should happen when conditions are met?</div>
+        <div class="flow-cond-box">
+          <div class="flow-action-row">
+            <select class="flow-cond-select" id="ag-rfb-action-type" onchange="agRfbLiveSummary()">
+              <option value="increase_cpc_bid">Increase CPC bid by</option>
+              <option value="decrease_cpc_bid">Decrease CPC bid by</option>
+            </select>
+            <input class="flow-cond-input" id="ag-rfb-action-mag" type="text" value="10" style="width:70px" oninput="agRfbLiveSummary()">
+            <span id="ag-rfb-pct-label" style="font-size:13px;color:#5f6368;">%</span>
           </div>
         </div>
       </div>
 
       <!-- Rule settings -->
       <div id="ag-rfb-rule-settings">
-        <div class="flow-section-label mb-2">Rule settings</div>
+        <div class="flow-section-divider"><span>Rule settings</span></div>
         <div class="flow-cond-box">
-        <div class="flow-settings-grid">
-          <div class="flow-settings-field">
-            <label>Cooldown period</label>
-            <select id="ag-rfb-cooldown">
-              <option value="7">7 days</option>
-              <option value="14">14 days</option>
-              <option value="30">30 days</option>
-            </select>
-          </div>
-          <div class="flow-settings-field">
-            <label>Risk level (auto-calculated)</label>
-            <select id="ag-rfb-risk" disabled>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
+          <div class="flow-settings-grid">
+            <div class="flow-settings-field">
+              <label>Cooldown period</label>
+              <select id="ag-rfb-cooldown" onchange="agRfbLiveSummary()">
+                <option value="7">7 days</option>
+                <option value="14">14 days</option>
+                <option value="30">30 days</option>
+              </select>
+            </div>
+            <div class="flow-settings-field">
+              <label>Risk level (auto-calculated)</label>
+              <select id="ag-rfb-risk" disabled>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
           </div>
         </div>
-        </div><!-- end flow-cond-box -->
       </div>
 
-      <!-- Warnings — shown above footer buttons -->
+      <!-- Warnings -->
       <div id="ag-rfb-warnings-section">
         <div class="flow-guardrail-note mt-3">
-          <span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle">warning</span>
-          The system will cap this at the guardrail limit defined in Client Settings.<br>Even if you enter a higher value here, the guardrail takes precedence.
+          <span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle;flex-shrink:0">warning</span>
+          The system will cap this at the guardrail limit defined in Client Settings. Even if you enter a higher value here, the guardrail takes precedence.
         </div>
         <div class="flow-human-note">
-          <span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle">lock</span>
-          All ad group-level actions require your confirmation before anything changes in Google Ads.<br>This rule generates a recommendation only.
+          <span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle;flex-shrink:0">lock</span>
+          All ad group-level actions require your confirmation before anything changes in Google Ads. This rule generates a recommendation only.
         </div>
       </div>
-
     </div>
 
-    <!-- ── Step 5: Summary & Save ── -->
-    <div id="ag-rfb-sc-5">
-
-      <div class="mb-4">
-        <div class="flow-section-label mb-2">Rule name</div>
-        <input type="text" class="flow-name-field" id="ag-rfb-name-field" placeholder="Give this rule a clear name">
-        <div class="flow-name-hint">Give this rule a clear name so it's easy to identify in the table</div>
-      </div>
-
-      <div class="mb-3">
-        <div class="flow-section-label mb-2">Review everything before saving</div>
-        <div class="flow-summary-box" id="ag-rfb-summary-box">
-          <!-- Populated by agRfbBuildSummary() -->
-        </div>
-      </div>
-
-      <div id="ag-rfb-save-error" class="flow-error-msg"></div>
-
+    <!-- Section 5: Rule name -->
+    <div class="rfb-section" style="border-bottom:none;">
+      <div class="rfb-section-title"><span class="rfb-section-num">5</span> Rule name</div>
+      <input type="text" class="flow-name-field" id="ag-rfb-name-field" placeholder="Give this rule a clear name" oninput="agRfbLiveSummary()">
+      <div class="flow-name-hint">Give this rule a clear name so it's easy to identify in the table</div>
+      <div id="ag-rfb-save-error" class="flow-error-msg" style="display:none;"></div>
     </div>
 
   </div><!-- end flow-body -->
 
-  <!-- Option A: Sidebar — your choices so far -->
+  <!-- Live Summary Sidebar -->
   <div class="flow-sidebar" id="ag-rfb-sidebar">
-    <div class="flow-sidebar-title">Your choices</div>
-
-    <div class="flow-sidebar-row" id="ag-sb-row-1">
-      <div class="flow-sidebar-step">Step 1</div>
-      <div class="flow-sidebar-label">Ad groups</div>
-      <div class="flow-sidebar-value pending" id="ag-sb-val-1">—</div>
-    </div>
-    <div class="flow-sidebar-divider"></div>
-
-    <div class="flow-sidebar-row" id="ag-sb-row-2">
-      <div class="flow-sidebar-step">Step 2</div>
-      <div class="flow-sidebar-label">Rule or flag</div>
-      <div class="flow-sidebar-value pending" id="ag-sb-val-2">—</div>
-    </div>
-    <div class="flow-sidebar-divider"></div>
-
-    <div class="flow-sidebar-row" id="ag-sb-row-3">
-      <div class="flow-sidebar-step">Step 3</div>
-      <div class="flow-sidebar-label">Type</div>
-      <div class="flow-sidebar-value pending" id="ag-sb-val-3">—</div>
-    </div>
-    <div class="flow-sidebar-divider"></div>
-
-    <div class="flow-sidebar-row" id="ag-sb-row-4">
-      <div class="flow-sidebar-step">Step 4</div>
-      <div class="flow-sidebar-label">Conditions &amp; action</div>
-      <div class="flow-sidebar-value pending" id="ag-sb-val-4a">—</div>
-      <div class="flow-sidebar-value pending" id="ag-sb-val-4b" style="display:none;"></div>
-      <div class="flow-sidebar-value pending sb-action-val" id="ag-sb-val-4c" style="display:none;margin-top:4px;padding-top:4px;border-top:1px solid #e8e8e8;"></div>
-      <div class="flow-sidebar-value pending" id="ag-sb-val-4d" style="display:none;"></div>
-    </div>
-    <div class="flow-sidebar-divider"></div>
-
-    <div class="flow-sidebar-row" id="ag-sb-row-5">
-      <div class="flow-sidebar-step">Step 5</div>
-      <div class="flow-sidebar-label">Summary</div>
-      <div class="flow-sidebar-value pending" id="ag-sb-val-5">—</div>
-    </div>
-
-  </div><!-- end flow-sidebar -->
-
-  </div><!-- end flow-body-wrap -->
-
-  <!-- Footer -->
-  <div class="flow-footer">
-    <button class="btn" id="ag-rfb-btn-back" type="button" onclick="agRfbPrevStep()">← Back</button>
-    <div class="flow-step-indicator" id="ag-rfb-step-ind">Step 1 of 5</div>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <button class="btn btn-outline-secondary" id="ag-rfb-btn-use-template" type="button" style="display:none;font-size:13px;" onclick="agRfbClickUseTemplate()">Use template →</button>
-      <button class="btn btn-primary" id="ag-rfb-btn-next" type="button" onclick="agRfbNextStep()">Next →</button>
+    <div class="rfb-sidebar-inner">
+      <div class="rfb-sidebar-title">Live summary</div>
+      <div class="rfb-summary-card"><div class="rfb-summary-label">Ad groups</div><div class="rfb-summary-value" id="ag-rfb-sum-camps">—</div></div>
+      <div class="rfb-summary-card"><div class="rfb-summary-label">Type</div><div class="rfb-summary-value" id="ag-rfb-sum-type">—</div></div>
+      <div class="rfb-summary-card"><div class="rfb-summary-label">Conditions</div><div class="rfb-summary-value" id="ag-rfb-sum-conds">—</div></div>
+      <div class="rfb-summary-card" id="ag-rfb-sum-action-card"><div class="rfb-summary-label">Action</div><div class="rfb-summary-value" id="ag-rfb-sum-action">—</div></div>
+      <div class="rfb-summary-card" id="ag-rfb-sum-settings-card"><div class="rfb-summary-label">Settings</div><div class="rfb-summary-value" id="ag-rfb-sum-settings">—</div></div>
+      <div class="rfb-summary-card"><div class="rfb-summary-label">Name</div><div class="rfb-summary-value" id="ag-rfb-sum-name">—</div></div>
+      <div class="rfb-live-sentence" id="ag-rfb-live-sentence">
+        <p id="ag-rfb-live-sentence-text">Fill in the form to see a live preview</p>
+      </div>
     </div>
   </div>
 
-</div><!-- end flow-panel -->
-</div><!-- end ag-rules-flow-overlay -->
+  </div><!-- end flow-body-wrap -->
+
+  <!-- Sticky Save Footer -->
+  <div class="flow-footer">
+    <button class="btn btn-outline-secondary" type="button" onclick="agCloseRulesFlow()">Cancel</button>
+    <button class="btn btn-primary" id="ag-rfb-btn-save" type="button" onclick="agRfbSave()" style="padding:8px 20px;">
+      <span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">save</span> Save rule
+    </button>
+  </div>
+
+</div></div>
 
 
 <script>
-// ── AG Flow builder state ────────────────────────────────────────────────────
-var _agRfbStep        = 1;
-var _agRfbEditId      = null;   // rule id when editing
-var _agRfbHasPreload  = false;  // true when opened with pre-filled data (edit or template)
-var _agRfbIsTemplate  = false;  // true when editing a template row
-var _agRfbRoF         = 'rule'; // 'rule' or 'flag'
-var _agRfbType        = 'bid';
-var _agRfbCond2Open   = false;
+// ══════════════════════════════════════════════════════════════════════════════
+// AD GROUP RULES FLOW BUILDER — Long-scroll with live summary
+// ══════════════════════════════════════════════════════════════════════════════
 
-// Ad group list — pre-sanitised in the route as rfb_ad_groups (plain string dicts)
+var _agRfbEditId=null, _agRfbHasPreload=false, _agRfbIsTemplate=false;
+var _agRfbRoF='rule', _agRfbType='bid', _agRfbCond2Open=false;
+var _agRfbSelectedIds=[], _agRfbSavedActionType=null;
+
 var _agRfbAllAdGroups = {{ rfb_ad_groups | tojson if rfb_ad_groups is defined else '[]' }};
 
 var AG_RFB_TYPE_FOR_ROF = {
-  rule:  [{v:'bid',   label:'Bid',   icon:'my_location',desc:'Adjust CPC bid or tCPA target'},
-          {v:'status',label:'Status',icon:'pause_circle',desc:'Pause or enable ad group'}],
-  flag:  [{v:'performance',label:'Performance',icon:'trending_down',desc:'Monitor key performance metrics'},
-          {v:'anomaly',    label:'Anomaly',     icon:'warning',     desc:'Detect abnormal behaviour in real time'},
-          {v:'technical',  label:'Technical',   icon:'build',       desc:'Detect technical/tracking issues'}]
+  rule: [{v:'bid',label:'Bid',icon:'my_location',desc:'Adjust CPC bid or tCPA target'},
+         {v:'status',label:'Status',icon:'pause_circle',desc:'Pause or enable ad group'}],
+  flag: [{v:'performance',label:'Performance',icon:'trending_down',desc:'Monitor key performance metrics'},
+         {v:'anomaly',label:'Anomaly',icon:'warning',desc:'Detect abnormal behaviour'},
+         {v:'technical',label:'Technical',icon:'build',desc:'Detect technical/tracking issues'}]
 };
 
-var AG_RFB_STEP_TITLES = ['','Select ad groups','Rule or flag?','Choose type','Set conditions & action','Review & save'];
-var AG_RFB_STEP_SUBS   = [
-  '',
-  'Step 1 of 5 — Select the ad groups this rule will apply to',
-  'Step 2 of 5 — Choose whether to create a rule or a flag',
-  'Step 3 of 5 — Choose the type',
-  'Step 4 of 5 — Define conditions and the action to take',
-  'Step 5 of 5 — Name the rule and review everything before saving'
-];
+var AG_RFB_ACTION_OPTIONS = {
+  bid: [{v:'increase_cpc_bid',l:'Increase CPC bid by'},{v:'decrease_cpc_bid',l:'Decrease CPC bid by'},
+        {v:'increase_tcpa_target',l:'Increase tCPA target by'},{v:'decrease_tcpa_target',l:'Decrease tCPA target by'}],
+  status: [{v:'pause_ad_group',l:'Pause ad group'},{v:'enable_ad_group',l:'Enable ad group'}]
+};
 
-// ── Open / close ──────────────────────────────────────────────────────────────
+var AG_OP_SYMBOLS = {gt:'>',lt:'<',gte:'≥',lte:'≤',eq:'='};
+var AG_REF_LABELS = {x_target:'× target', pct:'%', absolute:''};
+
+// ── Open / Close ─────────────────────────────────────────────────────────────
 function agOpenRulesFlow(existingRow) {
-  _agRfbRoF       = 'rule';
-  _agRfbType      = 'bid';
-  _agRfbCond2Open = false;
-
-  if (existingRow) {
-    _agRfbRoF  = existingRow.rule_or_flag || existingRow.rof || 'rule';
-    _agRfbType = existingRow.type || 'bid';
-  }
-
+  _agRfbRoF='rule'; _agRfbType='bid'; _agRfbCond2Open=false;
+  if (existingRow) { _agRfbRoF=existingRow.rule_or_flag||existingRow.rof||'rule'; _agRfbType=existingRow.type||'bid'; }
   agRfbResetForm();
+  _agRfbEditId=existingRow?(existingRow.id||null):null;
+  _agRfbHasPreload=existingRow?true:false;
+  _agRfbIsTemplate=existingRow?(existingRow.is_template===true):false;
+  if (existingRow) agRfbPopulateFromRow(existingRow);
 
-  // Set these AFTER agRfbResetForm() so they are not wiped
-  _agRfbEditId     = existingRow ? (existingRow.id || null) : null;
-  _agRfbHasPreload = existingRow ? true : false;
-  _agRfbIsTemplate = existingRow ? (existingRow.is_template === true) : false;
+  agRfbRenderRoF(); agRfbRenderTypeCards(); agRfbShowStep4ForRoF(); agRfbAutoRisk();
 
-  if (existingRow) {
-    agRfbPopulateFromRow(existingRow);
-  }
+  document.getElementById('ag-rfb-title').textContent = _agRfbIsTemplate?'Edit template':(_agRfbEditId?'Edit rule or flag':'Add rule or flag');
+  document.getElementById('ag-rfb-subtitle').textContent = _agRfbEditId?'Editing: '+(document.getElementById('ag-rfb-name-field').value||''):'Complete the fields below to create a new rule';
+  var saveBtn=document.getElementById('ag-rfb-btn-save');
+  saveBtn.innerHTML='<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">save</span> '+(_agRfbIsTemplate?'Save template':(_agRfbEditId?'Update':'Save rule'));
 
-  _agRfbStep = 1;
-  agRfbRenderStep();
-
-  var overlay = document.getElementById('ag-rules-flow-overlay');
-  overlay.style.display = 'flex';
-  setTimeout(function(){ overlay.classList.add('show'); }, 10);
+  var overlay=document.getElementById('ag-rules-flow-overlay');
+  overlay.classList.add('open');
+  void document.querySelector('#ag-rules-flow-overlay .flow-slide-panel').offsetHeight;
+  document.querySelector('#ag-rules-flow-overlay .flow-slide-panel').classList.add('open');
+  document.body.style.overflow='hidden';
+  document.addEventListener('keydown',_agRfbEscHandler);
+  document.getElementById('ag-rfb-form-scroll').scrollTop=0;
+  agRfbLiveSummary();
 }
+
+function _agRfbEscHandler(e){if(e.key==='Escape') agCloseRulesFlow();}
 
 function agCloseRulesFlow() {
-  var overlay = document.getElementById('ag-rules-flow-overlay');
-  overlay.classList.remove('show');
-  setTimeout(function(){ overlay.style.display = 'none'; }, 220);
+  document.querySelector('#ag-rules-flow-overlay .flow-slide-panel').classList.remove('open');
+  setTimeout(function(){document.getElementById('ag-rules-flow-overlay').classList.remove('open');},300);
+  document.body.style.overflow='';
+  document.removeEventListener('keydown',_agRfbEscHandler);
 }
 
-// ── Form reset / populate ─────────────────────────────────────────────────────
+// ── Reset ────────────────────────────────────────────────────────────────────
 function agRfbResetForm() {
-  document.getElementById('ag-rfb-camp-search').value = '';
-  document.getElementById('ag-rfb-cond-2').style.display = 'none';
-  document.getElementById('ag-rfb-add-cond-btn').textContent = '+ Add second condition (optional)';
-  document.getElementById('ag-rfb-save-error').style.display = 'none';
-  document.getElementById('ag-rfb-save-error').textContent   = '';
-  document.getElementById('ag-rfb-name-field').value = '';
-  document.getElementById('ag-rfb-cond1-val').value  = '1.15';
-  document.getElementById('ag-rfb-cond2-val').value  = '30';
-  document.getElementById('ag-rfb-action-mag').value = '10';
-  document.getElementById('ag-rfb-cooldown').value   = '7';
-  _agRfbSelectedIds    = [];
-  _agRfbCond2Open      = false;
-  _agRfbSavedActionType = null;
-  _agRfbHasPreload     = false;
-  _agRfbIsTemplate     = false;
+  document.getElementById('ag-rfb-camp-search').value='';
+  document.getElementById('ag-rfb-cond-2').style.display='none';
+  document.getElementById('ag-rfb-add-cond-btn').style.display='';
+  document.getElementById('ag-rfb-save-error').style.display='none';
+  document.getElementById('ag-rfb-save-error').textContent='';
+  document.getElementById('ag-rfb-name-field').value='';
+  document.getElementById('ag-rfb-cond1-val').value='1.15';
+  document.getElementById('ag-rfb-cond2-val').value='30';
+  document.getElementById('ag-rfb-action-mag').value='10';
+  document.getElementById('ag-rfb-cooldown').value='7';
+  document.getElementById('ag-rfb-cond1-metric').selectedIndex=1;
+  document.getElementById('ag-rfb-cond1-op').selectedIndex=0;
+  document.getElementById('ag-rfb-cond1-ref').selectedIndex=0;
+  _agRfbSelectedIds=[]; _agRfbCond2Open=false; _agRfbSavedActionType=null;
+  _agRfbHasPreload=false; _agRfbIsTemplate=false;
   agRfbRenderAdGroupList('');
 }
 
+// ── Populate ─────────────────────────────────────────────────────────────────
 function agRfbPopulateFromRow(row) {
-  document.getElementById('ag-rfb-name-field').value = row.name || '';
-  document.getElementById('ag-rfb-cooldown').value   = String(row.cooldown_days || 7);
-
-  // Risk
-  var riskSel = document.getElementById('ag-rfb-risk');
-  if (row.risk_level) riskSel.value = row.risk_level;
-
-  // Entity scope → pre-select ad groups
+  document.getElementById('ag-rfb-name-field').value=row.name||'';
+  document.getElementById('ag-rfb-cooldown').value=String(row.cooldown_days||7);
+  if (row.risk_level) document.getElementById('ag-rfb-risk').value=row.risk_level;
   try {
-    var scope = typeof row.entity_scope === 'string' ? JSON.parse(row.entity_scope) : row.entity_scope;
-    if (scope && scope.scope === 'specific' && Array.isArray(scope.ad_groups)) {
-      _agRfbSelectedIds = scope.ad_groups.map(String);
-    } else {
-      _agRfbSelectedIds = [];
-    }
-  } catch(e) { _agRfbSelectedIds = []; }
-
-  // Conditions
+    var scope=typeof row.entity_scope==='string'?JSON.parse(row.entity_scope):row.entity_scope;
+    if (scope&&scope.scope==='specific'&&Array.isArray(scope.ad_groups)) _agRfbSelectedIds=scope.ad_groups.map(String);
+    else _agRfbSelectedIds=[];
+  } catch(e){_agRfbSelectedIds=[];}
   try {
-    var conds = typeof row.conditions === 'string' ? JSON.parse(row.conditions) : row.conditions;
-    if (Array.isArray(conds) && conds.length > 0) {
-      agRfbSetCondRow(1, conds[0]);
-      if (conds.length > 1) {
-        agRfbSetCondRow(2, conds[1]);
-        agRfbToggleCond2();
-      }
-    }
-  } catch(e) {}
-
-  // Action
-  _agRfbSavedActionType = row.action_type || null;
-  if (row.action_type) {
-    var at = document.getElementById('ag-rfb-action-type');
-    if (at) { for (var i=0; i<at.options.length; i++) { if (at.options[i].value === row.action_type) { at.selectedIndex = i; break; } } }
-  }
-  if (row.action_magnitude != null) {
-    document.getElementById('ag-rfb-action-mag').value = row.action_magnitude;
-  }
+    var conds=typeof row.conditions==='string'?JSON.parse(row.conditions):row.conditions;
+    if (Array.isArray(conds)&&conds.length>0) { agRfbSetCondRow(1,conds[0]); if(conds.length>1){agRfbSetCondRow(2,conds[1]);agRfbToggleCond2();} }
+  } catch(e){}
+  _agRfbSavedActionType=row.action_type||null;
+  if (row.action_type) { var at=document.getElementById('ag-rfb-action-type'); if(at){for(var i=0;i<at.options.length;i++){if(at.options[i].value===row.action_type){at.selectedIndex=i;break;}}} }
+  if (row.action_magnitude!=null) document.getElementById('ag-rfb-action-mag').value=row.action_magnitude;
+  agRfbRenderAdGroupList('');
 }
 
-var _agRfbSelectedIds    = [];
-var _agRfbSavedActionType = null;
-
-function agRfbNormOp(op) {
-  var map = {'>': 'gt', '<': 'lt', '>=': 'gte', '<=': 'lte', '=': 'eq'};
-  return map[op] || op;
-}
-function agRfbNormUnit(unit) {
-  var map = {'percent': 'pct', 'x_target': 'x_target', 'absolute': 'absolute'};
-  return map[unit] || unit;
-}
-
-function agRfbSetCondRow(n, cond) {
-  var pfx = 'ag-rfb-cond' + n + '-';
-  var mSel = document.getElementById(pfx + 'metric');
-  var oSel = document.getElementById(pfx + 'op');
-  var vIn  = document.getElementById(pfx + 'val');
-  var rSel = document.getElementById(pfx + 'ref');
-  if (!mSel) return;
-  var normOp  = cond.op  || agRfbNormOp(cond.operator || '');
-  var normRef = cond.ref || agRfbNormUnit(cond.unit || '');
-  if (cond.metric)    { for (var i=0;i<mSel.options.length;i++) { if (mSel.options[i].value===cond.metric) { mSel.selectedIndex=i; break; } } }
-  if (normOp)         { for (var i=0;i<oSel.options.length;i++) { if (oSel.options[i].value===normOp)      { oSel.selectedIndex=i; break; } } }
-  if (cond.value != null) vIn.value = cond.value;
-  if (normRef && rSel){ for (var i=0;i<rSel.options.length;i++) { if (rSel.options[i].value===normRef)     { rSel.selectedIndex=i; break; } } }
+// ── Condition helpers ────────────────────────────────────────────────────────
+function agRfbNormOp(op){return({'>':'gt','<':'lt','>=':'gte','<=':'lte','=':'eq'})[op]||op;}
+function agRfbNormUnit(u){return({percent:'pct',x_target:'x_target',absolute:'absolute'})[u]||u;}
+function agRfbSetCondRow(n,cond) {
+  var pfx='ag-rfb-cond'+n+'-';
+  var mSel=document.getElementById(pfx+'metric'),oSel=document.getElementById(pfx+'op'),
+      vIn=document.getElementById(pfx+'val'),rSel=document.getElementById(pfx+'ref');
+  if(!mSel)return;
+  var normOp=cond.op||agRfbNormOp(cond.operator||'');
+  var normRef=cond.ref||agRfbNormUnit(cond.unit||'');
+  if(cond.metric){for(var i=0;i<mSel.options.length;i++){if(mSel.options[i].value===cond.metric){mSel.selectedIndex=i;break;}}}
+  if(normOp){for(var i=0;i<oSel.options.length;i++){if(oSel.options[i].value===normOp){oSel.selectedIndex=i;break;}}}
+  if(cond.value!=null)vIn.value=cond.value;
+  if(normRef&&rSel){for(var i=0;i<rSel.options.length;i++){if(rSel.options[i].value===normRef){rSel.selectedIndex=i;break;}}}
 }
 
-// ── Ad group list rendering ───────────────────────────────────────────────────
+// ── Ad group list ────────────────────────────────────────────────────────────
 function agRfbRenderAdGroupList(filter) {
-  var list = document.getElementById('ag-rfb-camp-list');
-  if (!list) return;
-  filter = (filter || '').toLowerCase();
-  var html = '';
+  var list=document.getElementById('ag-rfb-camp-list'); if(!list)return;
+  filter=(filter||'').toLowerCase(); var html='';
   _agRfbAllAdGroups.forEach(function(ag) {
-    if (filter && ag.name.toLowerCase().indexOf(filter) < 0) return;
-    var sel = _agRfbSelectedIds.indexOf(ag.id) >= 0;
-    html += '<div class="flow-camp-item' + (sel?' selected':'') + '"' +
-            ' data-id="' + agRfbEsc(ag.id) + '"' +
-            ' onclick="agRfbToggleAdGroup(this)">' +
-            '<input type="checkbox"' + (sel?' checked':'') +
-            ' style="width:14px;height:14px;accent-color:#1a73e8;flex-shrink:0;cursor:pointer">' +
-            '<span style="flex:1;font-size:13px">' + agRfbEsc(ag.name) + '</span>' +
-            '</div>';
+    if(filter&&ag.name.toLowerCase().indexOf(filter)<0)return;
+    var sel=_agRfbSelectedIds.indexOf(ag.id)>=0;
+    html+='<div class="flow-camp-item'+(sel?' selected':'')+'" data-id="'+agRfbEsc(ag.id)+'" onclick="agRfbToggleAdGroup(this)">'+
+      '<input type="checkbox"'+(sel?' checked':'')+' style="width:14px;height:14px;accent-color:#1a73e8;flex-shrink:0;cursor:pointer">'+
+      '<span style="flex:1;font-size:13px">'+agRfbEsc(ag.name)+'</span></div>';
   });
-  if (!html) html = '<div style="padding:12px;font-size:13px;color:#5f6368">No ad groups found</div>';
-  list.innerHTML = html;
+  if(!html)html='<div style="padding:12px;font-size:13px;color:#5f6368">No ad groups found</div>';
+  list.innerHTML=html;
 }
-
-function agRfbFilterAdGroups(v) {
-  agRfbRenderAdGroupList(v);
-}
-
+function agRfbFilterAdGroups(v){agRfbRenderAdGroupList(v);}
 function agRfbToggleAdGroup(el) {
-  var id = el.getAttribute('data-id');
-  var idx = _agRfbSelectedIds.indexOf(id);
-  if (idx >= 0) {
-    _agRfbSelectedIds.splice(idx, 1);
-    el.classList.remove('selected');
-    el.querySelector('input').checked = false;
-  } else {
-    _agRfbSelectedIds.push(id);
-    el.classList.add('selected');
-    el.querySelector('input').checked = true;
-  }
+  var id=el.getAttribute('data-id'),idx=_agRfbSelectedIds.indexOf(id);
+  if(idx>=0){_agRfbSelectedIds.splice(idx,1);el.classList.remove('selected');el.querySelector('input').checked=false;}
+  else{_agRfbSelectedIds.push(id);el.classList.add('selected');el.querySelector('input').checked=true;}
   agRfbRenderAdGroupList(document.getElementById('ag-rfb-camp-search').value);
+  agRfbLiveSummary();
 }
+function agRfbSelectAll(){_agRfbSelectedIds=[];_agRfbAllAdGroups.forEach(function(ag){_agRfbSelectedIds.push(ag.id);});agRfbRenderAdGroupList(document.getElementById('ag-rfb-camp-search').value);agRfbLiveSummary();}
+function agRfbClearAll(){_agRfbSelectedIds=[];agRfbRenderAdGroupList(document.getElementById('ag-rfb-camp-search').value);agRfbLiveSummary();}
 
-function agRfbSelectAll() {
-  _agRfbSelectedIds = [];
-  _agRfbAllAdGroups.forEach(function(ag) {
-    _agRfbSelectedIds.push(ag.id);
-  });
-  agRfbRenderAdGroupList(document.getElementById('ag-rfb-camp-search').value);
+// ── RoF + Type ───────────────────────────────────────────────────────────────
+function agRfbPickRoF(v){_agRfbRoF=v;_agRfbType=v==='rule'?'bid':'performance';agRfbRenderRoF();agRfbRenderTypeCards();agRfbShowStep4ForRoF();agRfbAutoRisk();agRfbLiveSummary();}
+function agRfbRenderRoF(){document.getElementById('ag-rfb-rof-rule').classList.toggle('selected',_agRfbRoF==='rule');document.getElementById('ag-rfb-rof-flag').classList.toggle('selected',_agRfbRoF==='flag');}
+function agRfbRenderTypeCards() {
+  var label=document.getElementById('ag-rfb-type-label'),grid=document.getElementById('ag-rfb-type-grid');
+  label.textContent=_agRfbRoF==='rule'?'Type':'Flag type';
+  var cards=AG_RFB_TYPE_FOR_ROF[_agRfbRoF]||AG_RFB_TYPE_FOR_ROF.rule;
+  grid.innerHTML=cards.map(function(t){var sel=_agRfbType===t.v;
+    return '<div class="flow-cat-card rfb-compact-card'+(sel?' selected':'')+'" onclick="agRfbPickType(this,\''+t.v+'\')">'+
+      '<div class="rfb-compact-header"><span class="material-symbols-outlined rfb-compact-icon">'+t.icon+'</span><h5>'+t.label+'</h5></div>'+
+      '<p>'+t.desc+'</p></div>';}).join('');
 }
+function agRfbPickType(el,v){_agRfbType=v;document.querySelectorAll('#ag-rfb-type-grid .flow-cat-card').forEach(function(c){c.classList.remove('selected');});el.classList.add('selected');agRfbUpdateActionTypeOptions();agRfbShowStep4ForRoF();agRfbAutoRisk();agRfbLiveSummary();}
 
-function agRfbClearAll() {
-  _agRfbSelectedIds = [];
-  agRfbRenderAdGroupList(document.getElementById('ag-rfb-camp-search').value);
-}
-
-// ── RoF + Type selection ──────────────────────────────────────────────────────
-function agRfbPickRoF(v) {
-  _agRfbRoF = v;
-  document.getElementById('ag-rfb-rof-rule').classList.toggle('selected', v === 'rule');
-  document.getElementById('ag-rfb-rof-flag').classList.toggle('selected', v === 'flag');
-  // Default type for each
-  _agRfbType = v === 'rule' ? 'bid' : 'performance';
-}
-
-function agRfbRenderTypeStep() {
-  var label = document.getElementById('ag-rfb-type-label');
-  var grid  = document.getElementById('ag-rfb-type-grid');
-  label.textContent = _agRfbRoF === 'rule' ? 'Rule type' : 'Flag type';
-  var cards = AG_RFB_TYPE_FOR_ROF[_agRfbRoF] || AG_RFB_TYPE_FOR_ROF.rule;
-  grid.innerHTML = cards.map(function(t) {
-    var sel = _agRfbType === t.v;
-    return '<div class="flow-cat-card' + (sel?' selected':'') + '" onclick="agRfbPickType(this,\'' + t.v + '\')">' +
-      '<div class="flow-cat-icon"><span class="material-symbols-outlined" style="font-size:26px;vertical-align:middle">' + t.icon + '</span></div>' +
-      '<h5>' + t.label + '</h5><p>' + t.desc + '</p></div>';
-  }).join('');
-}
-
-function agRfbPickType(el, v) {
-  _agRfbType = v;
-  document.querySelectorAll('#ag-rfb-type-grid .flow-cat-card').forEach(function(c){ c.classList.remove('selected'); });
-  el.classList.add('selected');
-  agRfbUpdateActionTypeOptions();
-}
-
-// ── Step 4 dynamic adjustments ────────────────────────────────────────────────
-var AG_RFB_ACTION_OPTIONS = {
-  bid: [
-    {v:'increase_cpc_bid',    l:'Increase CPC bid by'},
-    {v:'decrease_cpc_bid',    l:'Decrease CPC bid by'},
-    {v:'increase_tcpa_target',l:'Increase tCPA target by'},
-    {v:'decrease_tcpa_target',l:'Decrease tCPA target by'}
-  ],
-  status: [
-    {v:'pause_ad_group',  l:'Pause ad group'},
-    {v:'enable_ad_group', l:'Enable ad group'}
-  ]
-};
-
+// ── Action options ───────────────────────────────────────────────────────────
 function agRfbUpdateActionTypeOptions() {
-  var sel  = document.getElementById('ag-rfb-action-type');
-  var mag  = document.getElementById('ag-rfb-action-mag');
-  var pct  = document.getElementById('ag-rfb-pct-label');
-  if (!sel) return;
-  var opts = AG_RFB_ACTION_OPTIONS[_agRfbType] || AG_RFB_ACTION_OPTIONS.bid;
-  sel.innerHTML = opts.map(function(o){ return '<option value="' + o.v + '">' + o.l + '</option>'; }).join('');
-  if (_agRfbSavedActionType) {
-    for (var i=0;i<sel.options.length;i++) { if (sel.options[i].value===_agRfbSavedActionType) { sel.selectedIndex=i; break; } }
-  }
-  var isStatus = _agRfbType === 'status';
-  mag.style.display = isStatus ? 'none' : '';
-  pct.style.display = isStatus ? 'none' : '';
-  if (!isStatus) sel.style.minWidth = '200px';
+  var sel=document.getElementById('ag-rfb-action-type'),mag=document.getElementById('ag-rfb-action-mag'),pct=document.getElementById('ag-rfb-pct-label');
+  if(!sel)return;
+  var opts=AG_RFB_ACTION_OPTIONS[_agRfbType]||AG_RFB_ACTION_OPTIONS.bid;
+  sel.innerHTML=opts.map(function(o){return '<option value="'+o.v+'">'+o.l+'</option>';}).join('');
+  if(_agRfbSavedActionType){for(var i=0;i<sel.options.length;i++){if(sel.options[i].value===_agRfbSavedActionType){sel.selectedIndex=i;break;}}}
+  var isStatus=_agRfbType==='status';mag.style.display=isStatus?'none':'';pct.style.display=isStatus?'none':'';
 }
-
 function agRfbShowStep4ForRoF() {
-  var actionSec    = document.getElementById('ag-rfb-action-section');
-  var ruleSettings = document.getElementById('ag-rfb-rule-settings');
-  var warningsSec  = document.getElementById('ag-rfb-warnings-section');
-  if (_agRfbRoF === 'flag') {
-    actionSec.style.display    = 'none';
-    ruleSettings.style.display = 'none';
-    if (warningsSec) warningsSec.style.display = 'none';
-  } else {
-    actionSec.style.display    = '';
-    ruleSettings.style.display = '';
-    if (warningsSec) warningsSec.style.display = '';
-    agRfbUpdateActionTypeOptions();
-  }
+  var a=document.getElementById('ag-rfb-action-section'),r=document.getElementById('ag-rfb-rule-settings'),w=document.getElementById('ag-rfb-warnings-section');
+  if(_agRfbRoF==='flag'){a.style.display='none';r.style.display='none';if(w)w.style.display='none';}
+  else{a.style.display='';r.style.display='';if(w)w.style.display='';agRfbUpdateActionTypeOptions();}
 }
 
-function agRfbAutoName() {
-  var nameField = document.getElementById('ag-rfb-name-field');
-  if (nameField.value.trim()) return; // don't overwrite user's choice
-  var typeLabels = {bid:'Bid',status:'Status',performance:'Performance',anomaly:'Anomaly',technical:'Technical'};
-  var metric1 = document.getElementById('ag-rfb-cond1-metric').options[document.getElementById('ag-rfb-cond1-metric').selectedIndex].text.replace(' ⚙','');
-  var action  = '';
-  if (_agRfbRoF === 'rule') {
-    var at = document.getElementById('ag-rfb-action-type');
-    action = at ? at.options[at.selectedIndex].text : '';
-    action = action.replace(' by','').replace(' target','');
-  }
-  if (_agRfbRoF === 'rule') {
-    nameField.value = action + ' — ' + metric1;
-  } else {
-    nameField.value = 'Flag: ' + metric1 + ' (' + (typeLabels[_agRfbType] || _agRfbType) + ')';
-  }
-}
+// ── Condition 2 toggle ───────────────────────────────────────────────────────
+function agRfbToggleCond2(){_agRfbCond2Open=!_agRfbCond2Open;document.getElementById('ag-rfb-cond-2').style.display=_agRfbCond2Open?'block':'none';document.getElementById('ag-rfb-add-cond-btn').style.display=_agRfbCond2Open?'none':'';agRfbLiveSummary();}
 
-// ── Condition 2 toggle ────────────────────────────────────────────────────────
-function agRfbToggleCond2() {
-  _agRfbCond2Open = !_agRfbCond2Open;
-  var el = document.getElementById('ag-rfb-cond-2');
-  var btn = document.getElementById('ag-rfb-add-cond-btn');
-  el.style.display = _agRfbCond2Open ? 'block' : 'none';
-  btn.textContent = _agRfbCond2Open ? '− Remove second condition' : '+ Add second condition (optional)';
-}
-
-// ── Step navigation ───────────────────────────────────────────────────────────
-function agRfbNextStep() {
-  if (!agRfbValidateStep(_agRfbStep)) return;
-  if (_agRfbStep < 5) {
-    _agRfbStep++;
-    agRfbRenderStep();
-  } else {
-    agRfbSave();
-  }
-}
-
-function agRfbPrevStep() {
-  if (_agRfbStep > 1) { _agRfbStep--; agRfbRenderStep(); }
-}
-
-function agRfbValidateStep(step) {
-  if (step === 1) {
-    // Empty selection = "All ad groups" — valid. No strategy lock for ad groups.
-  }
-  if (step === 5) {
-    var name = document.getElementById('ag-rfb-name-field').value.trim();
-    if (!name) {
-      document.getElementById('ag-rfb-save-error').textContent = 'Please enter a name for this rule.';
-      document.getElementById('ag-rfb-save-error').style.display = 'block';
-      return false;
-    }
-    document.getElementById('ag-rfb-save-error').style.display = 'none';
-  }
-  return true;
-}
-
-
-// ── Sidebar: update "your choices" panel ──────────────────────────────────────
-function agRfbUpdateSidebar() {
-  var AG_RFB_TYPE_LABELS = {bid:'Bid', status:'Status', performance:'Performance', anomaly:'Anomaly', technical:'Technical'};
-
-  function setVal(id, text, done) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = text;
-    el.className = 'flow-sidebar-value' + (done ? '' : ' pending');
-  }
-
-  // Step 1 — ad groups
-  if (_agRfbStep > 1 || _agRfbEditId || _agRfbHasPreload) {
-    var agLabel = _agRfbSelectedIds.length === 0
-      ? 'All ad groups'
-      : (_agRfbSelectedIds.length === 1 ? '1 ad group' : _agRfbSelectedIds.length + ' ad groups');
-    setVal('ag-sb-val-1', agLabel, true);
-  }
-
-  // Step 2 — rule or flag
-  if (_agRfbStep > 2 || _agRfbEditId || _agRfbHasPreload) {
-    setVal('ag-sb-val-2', _agRfbRoF === 'rule' ? 'Rule' : 'Flag', true);
-  }
-
-  // Step 3 — type
-  if (_agRfbStep > 3 || _agRfbEditId || _agRfbHasPreload) {
-    var typeLabel = AG_RFB_TYPE_LABELS[_agRfbType] || _agRfbType;
-    setVal('ag-sb-val-3', typeLabel, true);
-  }
-
-  // Step 4 — conditions + action + cooldown
-  if (_agRfbStep > 4 || (_agRfbStep === 4) || _agRfbEditId || _agRfbHasPreload) {
-    var OP_SYMBOLS = {gt:'>',lt:'<',gte:'≥',lte:'≤',eq:'='};
-    var REF_LABELS = {x_target:'× target', pct:'%', absolute:''};
-
-    function fmtCond(mEl, oEl, vEl, rEl) {
-      if (!mEl) return '—';
-      var metric = mEl.options[mEl.selectedIndex].text.replace(' ⚙','');
-      var op     = OP_SYMBOLS[oEl ? oEl.value : ''] || (oEl ? oEl.value : '');
-      var val    = vEl ? vEl.value.trim() : '';
-      var ref    = REF_LABELS[rEl ? rEl.value : ''] !== undefined ? REF_LABELS[rEl.value] : '';
-      return metric + ' ' + op + ' ' + val + (ref ? ref : '');
-    }
-
-    function fmtLine(prefix, text, el, extraClass) {
-      if (!el) return;
-      el.innerHTML = '<span style="display:inline-block;width:18px;color:#202124;font-size:10px;flex-shrink:0;">' + prefix + '</span>' + text;
-      el.className = 'flow-sidebar-value sb-line' + (extraClass ? ' ' + extraClass : '');
-      el.style.display = text ? '' : 'none';
-    }
-
-    // C1
-    var c1 = fmtCond(
-      document.getElementById('ag-rfb-cond1-metric'),
-      document.getElementById('ag-rfb-cond1-op'),
-      document.getElementById('ag-rfb-cond1-val'),
-      document.getElementById('ag-rfb-cond1-ref')
-    );
-    fmtLine('C1', c1, document.getElementById('ag-sb-val-4a'));
-
-    // C2
-    var el4b = document.getElementById('ag-sb-val-4b');
-    if (_agRfbCond2Open) {
-      var c2 = fmtCond(
-        document.getElementById('ag-rfb-cond2-metric'),
-        document.getElementById('ag-rfb-cond2-op'),
-        document.getElementById('ag-rfb-cond2-val'),
-        document.getElementById('ag-rfb-cond2-ref')
-      );
-      fmtLine('C2', c2, el4b);
-    } else if (el4b) { el4b.style.display = 'none'; }
-
-    // Action
-    var el4c = document.getElementById('ag-sb-val-4c');
-    if (_agRfbRoF === 'rule') {
-      var atEl  = document.getElementById('ag-rfb-action-type');
-      var magEl = document.getElementById('ag-rfb-action-mag');
-      var aStr  = _agRfbType === 'status' ? (atEl ? atEl.options[atEl.selectedIndex].text : 'Pause ad group')
-                : (atEl ? atEl.options[atEl.selectedIndex].text.replace(' by','') + (magEl ? ' ' + magEl.value + '%' : '') : '');
-      fmtLine('→', aStr, el4c, 'sb-action-val');
-    } else if (el4c) { el4c.style.display = 'none'; }
-
-    // Cooldown
-    var el4d = document.getElementById('ag-sb-val-4d');
-    if (_agRfbRoF === 'rule') {
-      var cdEl = document.getElementById('ag-rfb-cooldown');
-      fmtLine('⏱', cdEl ? cdEl.value + 'd cooldown' : '', el4d);
-    } else if (el4d) { el4d.style.display = 'none'; }
-  }
-
-  // Step 5 — name
-  if (_agRfbStep === 5 || _agRfbEditId || _agRfbHasPreload) {
-    var nameEl = document.getElementById('ag-rfb-name-field');
-    var nameVal = nameEl && nameEl.value.trim() ? nameEl.value.trim() : 'In progress…';
-    setVal('ag-sb-val-5', nameVal, nameEl && nameEl.value.trim().length > 0);
-  }
-
-  // Highlight the current step row
-  for (var i = 1; i <= 5; i++) {
-    var row = document.getElementById('ag-sb-row-' + i);
-    if (row) row.classList.toggle('active', i === _agRfbStep);
-  }
-}
-
-function agRfbClickUseTemplate() {
-  // Called from "Use template" button in footer — triggers agRfUseTemplate in parent
-  if (typeof agRfUseTemplate === 'function' && _agRfbEditId) {
-    agRfUseTemplate(_agRfbEditId);
-  }
-}
-
-function agRfbRenderStep() {
-  // Title / subtitle
-  document.getElementById('ag-rfb-title').textContent    = _agRfbIsTemplate ? 'Edit template' : (_agRfbEditId ? 'Edit rule or flag' : AG_RFB_STEP_TITLES[_agRfbStep]);
-  document.getElementById('ag-rfb-subtitle').textContent = AG_RFB_STEP_SUBS[_agRfbStep];
-  var editLbl = document.getElementById('ag-rfb-editing-label');
-  if (editLbl) {
-    var nameEl = document.getElementById('ag-rfb-name-field');
-    var editName = nameEl && nameEl.value.trim() ? nameEl.value.trim() : '';
-    if (_agRfbIsTemplate && editName) { editLbl.textContent = 'Template: ' + editName; editLbl.style.display = ''; }
-    else if (_agRfbEditId && editName) { editLbl.textContent = 'Editing: ' + editName; editLbl.style.display = ''; }
-    else { editLbl.style.display = 'none'; }
-  }
-  document.getElementById('ag-rfb-step-ind').textContent = 'Step ' + _agRfbStep + ' of 5';
-
-  // Back / next buttons
-  document.getElementById('ag-rfb-btn-back').style.visibility = _agRfbStep === 1 ? 'hidden' : 'visible';
-  document.getElementById('ag-rfb-btn-next').textContent = _agRfbStep === 5 ? (_agRfbIsTemplate ? '✓ Save template' : '✓ Save') : 'Next →';
-  var useTemplateBtn = document.getElementById('ag-rfb-btn-use-template');
-  if (useTemplateBtn) useTemplateBtn.style.display = _agRfbIsTemplate ? '' : 'none';
-
-  // Progress circles — use 'active' and 'done' to match CSS (.flow-prog-step.active / .done)
-  for (var i = 1; i <= 5; i++) {
-    var prog = document.getElementById('ag-rfb-prog-' + i);
-    prog.classList.remove('active', 'done');
-    if (i < _agRfbStep) prog.classList.add('done');
-    else if (i === _agRfbStep) prog.classList.add('active');
-    if (i < 5) {
-      var pl = document.getElementById('ag-rfb-pline-' + i);
-      if (pl) pl.classList.toggle('done', i < _agRfbStep);
-    }
-  }
-
-  // Step content — show/hide via inline style (IDs ag-rfb-sc-1 through ag-rfb-sc-5)
-  for (var j = 1; j <= 5; j++) {
-    var sc = document.getElementById('ag-rfb-sc-' + j);
-    if (sc) sc.style.display = j === _agRfbStep ? 'block' : 'none';
-  }
-
-  // Step-specific setup
-  if (_agRfbStep === 2) {
-    document.getElementById('ag-rfb-rof-rule').classList.toggle('selected', _agRfbRoF === 'rule');
-    document.getElementById('ag-rfb-rof-flag').classList.toggle('selected', _agRfbRoF === 'flag');
-  }
-  if (_agRfbStep === 3) {
-    agRfbRenderTypeStep();
-  }
-  if (_agRfbStep === 4) {
-    agRfbShowStep4ForRoF();
-  }
-  if (_agRfbStep === 5) {
-    agRfbAutoName();
-    agRfbAutoRisk();
-    agRfbBuildSummary();
-  }
-  agRfbUpdateSidebar();
-}
-
+// ── Auto-risk ────────────────────────────────────────────────────────────────
 function agRfbAutoRisk() {
-  // Skip auto-risk when editing — preserve the saved risk level
-  if (_agRfbEditId) return;
-  var riskSel = document.getElementById('ag-rfb-risk');
-  if (!riskSel) return;
-  var mag = parseFloat(document.getElementById('ag-rfb-action-mag').value || '10');
-  var risk = 'low';
-  if (_agRfbRoF === 'flag') risk = 'low';
-  else if (_agRfbType === 'status') risk = 'high';
-  else if (_agRfbType === 'bid') risk = mag > 10 ? 'high' : 'medium';
-  riskSel.value = risk;
+  if(_agRfbEditId)return;
+  var riskSel=document.getElementById('ag-rfb-risk'); if(!riskSel)return;
+  var mag=parseFloat(document.getElementById('ag-rfb-action-mag').value||'10');
+  var risk='low';
+  if(_agRfbRoF==='flag')risk='low';
+  else if(_agRfbType==='status')risk='high';
+  else{risk=mag>10?'high':'medium';}
+  riskSel.value=risk;
 }
 
-// ── Summary ───────────────────────────────────────────────────────────────────
-function agRfbBuildSummary() {
-  var box = document.getElementById('ag-rfb-summary-box');
-
-  var agNames = _agRfbSelectedIds.length === 0 ? 'All ad groups' :
-    _agRfbSelectedIds.map(function(id) {
-      var ag = _agRfbAllAdGroups.filter(function(x){ return x.id===id; })[0];
-      return ag ? ag.name : id;
-    }).join(', ');
-
-  var typeLabel = {bid:'Bid rule',status:'Status rule',
-                   performance:'Performance flag',anomaly:'Anomaly flag',technical:'Technical flag'}[_agRfbType] || _agRfbType;
-
-  var m1Sel = document.getElementById('ag-rfb-cond1-metric');
-  var m1    = m1Sel.options[m1Sel.selectedIndex].text.replace(' ⚙','');
-  var o1Sel = document.getElementById('ag-rfb-cond1-op');
-  var o1    = o1Sel.options[o1Sel.selectedIndex].text;
-  var v1    = document.getElementById('ag-rfb-cond1-val').value;
-  var r1Sel = document.getElementById('ag-rfb-cond1-ref');
-  var r1    = r1Sel.options[r1Sel.selectedIndex].text;
-  var cond1Str = m1 + ' ' + o1 + ' ' + v1 + (r1 !== 'absolute' ? ' ' + r1 : '');
-
-  var cond2Str = '';
-  if (_agRfbCond2Open) {
-    var m2Sel = document.getElementById('ag-rfb-cond2-metric');
-    var m2    = m2Sel.options[m2Sel.selectedIndex].text;
-    var o2Sel = document.getElementById('ag-rfb-cond2-op');
-    var o2    = o2Sel.options[o2Sel.selectedIndex].text;
-    var v2    = document.getElementById('ag-rfb-cond2-val').value;
-    var r2Sel = document.getElementById('ag-rfb-cond2-ref');
-    var r2    = r2Sel.options[r2Sel.selectedIndex].text;
-    cond2Str  = m2 + ' ' + o2 + ' ' + v2 + (r2 !== 'absolute' ? ' ' + r2 : '');
-  }
-
-  var actionStr = '—';
-  var cooldownStr = '—';
-  var riskStr = '—';
-  if (_agRfbRoF === 'rule') {
-    if (_agRfbType === 'status') {
-      var statusSel = document.getElementById('ag-rfb-action-type');
-      actionStr = statusSel ? statusSel.options[statusSel.selectedIndex].text : 'Pause ad group';
-    } else {
-      var atSel = document.getElementById('ag-rfb-action-type');
-      var at    = atSel.options[atSel.selectedIndex].text;
-      var mag   = document.getElementById('ag-rfb-action-mag').value;
-      actionStr = at + ' ' + mag + '%';
-    }
-    cooldownStr = document.getElementById('ag-rfb-cooldown').value + ' days';
-    var riskSel = document.getElementById('ag-rfb-risk');
-    riskStr = riskSel.options[riskSel.selectedIndex].text || riskSel.value;
-    riskStr = riskStr.charAt(0).toUpperCase() + riskStr.slice(1);
-  }
-
-  var line = function(icon, label, value) {
-    return '<div class="flow-summary-line">' +
-      '<span class="material-symbols-outlined" style="font-size:15px;vertical-align:middle;margin-right:5px">' + icon + '</span>' +
-      '<strong>' + label + ':</strong>&nbsp;' + agRfbEsc(value) + '</div>';
-  };
-
-  var html = '<h5>' + (_agRfbRoF === 'rule' ? 'Rule' : 'Flag') + ' summary</h5>' +
-    line('push_pin',  'Ad groups',    agNames) +
-    line('bolt',      'Type',         typeLabel) +
-    line('list_alt',  'Condition 1',  cond1Str);
-  if (cond2Str) html += line('list_alt', 'Condition 2', cond2Str);
-  if (_agRfbRoF === 'rule') {
-    html += line('ads_click', 'Action',   actionStr) +
-            line('shield',    'Guardrail', 'Capped by Client Settings') +
-            line('lock',      'Confirmation', 'Required before execution') +
-            line('timer',     'Cooldown', cooldownStr) +
-            line('bar_chart', 'Risk',     riskStr);
-  }
-
-  box.innerHTML = html;
+// ── Auto-name ────────────────────────────────────────────────────────────────
+function agRfbAutoName() {
+  var nf=document.getElementById('ag-rfb-name-field'); if(nf.value.trim())return;
+  var m1=document.getElementById('ag-rfb-cond1-metric');
+  var metric1=m1.options[m1.selectedIndex].text.replace(' ⚙','');
+  if(_agRfbRoF==='rule'){var at=document.getElementById('ag-rfb-action-type');var action=at?at.options[at.selectedIndex].text:'';action=action.replace(' by','').replace(' target','');nf.value=action+' — '+metric1;}
+  else{nf.value='Flag: '+metric1+' ('+(_agRfbType||'')+')';}
 }
 
-// ── Save ──────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// LIVE SUMMARY
+// ══════════════════════════════════════════════════════════════════════════════
+function agRfbLiveSummary() {
+  agRfbAutoRisk();
+  var agCount=_agRfbSelectedIds.length;
+  document.getElementById('ag-rfb-sum-camps').textContent=agCount===0?'All ad groups':agCount+' selected';
+
+  var typeLabels={bid:'Bid',status:'Status',performance:'Performance',anomaly:'Anomaly',technical:'Technical'};
+  document.getElementById('ag-rfb-sum-type').textContent=(_agRfbRoF==='rule'?'Rule':'Flag')+' · '+(typeLabels[_agRfbType]||_agRfbType);
+
+  var m1=document.getElementById('ag-rfb-cond1-metric'),m1T=m1.options[m1.selectedIndex].text.replace(' ⚙','');
+  var o1=AG_OP_SYMBOLS[document.getElementById('ag-rfb-cond1-op').value]||'>';
+  var v1=document.getElementById('ag-rfb-cond1-val').value||'?';
+  var r1=AG_REF_LABELS[document.getElementById('ag-rfb-cond1-ref').value]||'';
+  var condHtml=m1T+' '+o1+' '+v1+(r1?' '+r1:'');
+  var m2T='',o2='',v2='',r2='';
+  if(_agRfbCond2Open){var m2=document.getElementById('ag-rfb-cond2-metric');m2T=m2.options[m2.selectedIndex].text.replace(' ⚙','');o2=AG_OP_SYMBOLS[document.getElementById('ag-rfb-cond2-op').value]||'>';v2=document.getElementById('ag-rfb-cond2-val').value||'?';r2=AG_REF_LABELS[document.getElementById('ag-rfb-cond2-ref').value]||'';condHtml+='<br>AND '+m2T+' '+o2+' '+v2+(r2?' '+r2:'');}
+  document.getElementById('ag-rfb-sum-conds').innerHTML=condHtml;
+
+  var ac=document.getElementById('ag-rfb-sum-action-card'),sc=document.getElementById('ag-rfb-sum-settings-card');
+  if(_agRfbRoF==='flag'){ac.style.display='none';sc.style.display='none';}
+  else{ac.style.display='';sc.style.display='';
+    var atSel=document.getElementById('ag-rfb-action-type');
+    var isStatus=_agRfbType==='status';
+    document.getElementById('ag-rfb-sum-action').textContent=isStatus?atSel.options[atSel.selectedIndex].text:atSel.options[atSel.selectedIndex].text+' '+document.getElementById('ag-rfb-action-mag').value+'%';
+    var cd=document.getElementById('ag-rfb-cooldown').value,rk=document.getElementById('ag-rfb-risk').value;
+    document.getElementById('ag-rfb-sum-settings').textContent='Cooldown: '+cd+'d · Risk: '+rk.charAt(0).toUpperCase()+rk.slice(1);
+  }
+
+  var name=document.getElementById('ag-rfb-name-field').value;
+  var sn=document.getElementById('ag-rfb-sum-name');sn.textContent=name||'—';sn.classList.toggle('empty',!name);
+
+  var sentence='<strong>When</strong> '+agRfbEsc(m1T)+' '+o1+' '+agRfbEsc(v1)+(r1?' '+r1:'');
+  if(_agRfbCond2Open)sentence+=' <strong>AND</strong> '+agRfbEsc(m2T)+' '+o2+' '+agRfbEsc(v2)+(r2?' '+r2:'');
+  if(_agRfbRoF==='rule'){var atSel2=document.getElementById('ag-rfb-action-type');sentence+='<br><strong>Then</strong> '+(_agRfbType==='status'?atSel2.options[atSel2.selectedIndex].text.toLowerCase():agRfbEsc(atSel2.options[atSel2.selectedIndex].text.toLowerCase())+' '+agRfbEsc(document.getElementById('ag-rfb-action-mag').value)+'%');sentence+='<br><strong>Cooldown</strong> '+document.getElementById('ag-rfb-cooldown').value+'d · <strong>Risk</strong> '+document.getElementById('ag-rfb-risk').value;}
+  sentence+='<br><strong>Applies to</strong> '+(agCount?agCount+' ad group'+(agCount>1?'s':''):'all ad groups');
+  document.getElementById('ag-rfb-live-sentence-text').innerHTML=sentence;
+}
+
+// ── Save ─────────────────────────────────────────────────────────────────────
 function agRfbSave() {
-  var btnNext = document.getElementById('ag-rfb-btn-next');
-  btnNext.disabled = true;
-  btnNext.textContent = 'Saving…';
+  var name=document.getElementById('ag-rfb-name-field').value.trim();
+  if(!name){agRfbAutoName();name=document.getElementById('ag-rfb-name-field').value.trim();
+    if(!name){document.getElementById('ag-rfb-save-error').textContent='Please enter a name for this rule.';document.getElementById('ag-rfb-save-error').style.display='block';document.getElementById('ag-rfb-name-field').scrollIntoView({behavior:'smooth',block:'center'});return;}}
+  document.getElementById('ag-rfb-save-error').style.display='none';
 
-  // Build conditions array
-  var m1Sel = document.getElementById('ag-rfb-cond1-metric');
-  var o1Sel = document.getElementById('ag-rfb-cond1-op');
-  var r1Sel = document.getElementById('ag-rfb-cond1-ref');
-  var conds = [{
-    metric: m1Sel.value,
-    op:     o1Sel.value,
-    value:  document.getElementById('ag-rfb-cond1-val').value,
-    ref:    r1Sel.value
-  }];
-  if (_agRfbCond2Open) {
-    var m2Sel = document.getElementById('ag-rfb-cond2-metric');
-    var o2Sel = document.getElementById('ag-rfb-cond2-op');
-    var r2Sel = document.getElementById('ag-rfb-cond2-ref');
-    conds.push({
-      metric: m2Sel.value,
-      op:     o2Sel.value,
-      value:  document.getElementById('ag-rfb-cond2-val').value,
-      ref:    r2Sel.value
-    });
-  }
+  var saveBtn=document.getElementById('ag-rfb-btn-save');
+  saveBtn.disabled=true;saveBtn.innerHTML='<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">hourglass_empty</span> Saving…';
 
-  // Entity scope
-  var entityScope;
-  if (_agRfbSelectedIds.length === 0) {
-    entityScope = {scope: 'all'};
-  } else {
-    entityScope = {scope: 'specific', ad_groups: _agRfbSelectedIds};
-  }
+  var conds=[{metric:document.getElementById('ag-rfb-cond1-metric').value,op:document.getElementById('ag-rfb-cond1-op').value,value:document.getElementById('ag-rfb-cond1-val').value,ref:document.getElementById('ag-rfb-cond1-ref').value}];
+  if(_agRfbCond2Open)conds.push({metric:document.getElementById('ag-rfb-cond2-metric').value,op:document.getElementById('ag-rfb-cond2-op').value,value:document.getElementById('ag-rfb-cond2-val').value,ref:document.getElementById('ag-rfb-cond2-ref').value});
 
-  // Action
-  var actionType = null, actionMag = null;
-  if (_agRfbRoF === 'rule') {
-    var atSel = document.getElementById('ag-rfb-action-type');
-    actionType = atSel.value;
-    if (_agRfbType !== 'status') {
-      actionMag = parseFloat(document.getElementById('ag-rfb-action-mag').value) || null;
-    }
-  }
+  var entityScope=_agRfbSelectedIds.length===0?{scope:'all'}:{scope:'specific',ad_groups:_agRfbSelectedIds};
+  var actionType=null,actionMag=null;
+  if(_agRfbRoF==='rule'){var atSel=document.getElementById('ag-rfb-action-type');actionType=atSel.value;if(_agRfbType!=='status')actionMag=parseFloat(document.getElementById('ag-rfb-action-mag').value)||null;}
+  var riskLevel=null,cooldownDays=7;
+  if(_agRfbRoF==='rule'){riskLevel=document.getElementById('ag-rfb-risk').value;cooldownDays=parseInt(document.getElementById('ag-rfb-cooldown').value,10)||7;}
 
-  // Risk / cooldown
-  var riskLevel   = null;
-  var cooldownDays = 7;
-  if (_agRfbRoF === 'rule') {
-    var riskSel = document.getElementById('ag-rfb-risk');
-    riskLevel   = riskSel.value;
-    cooldownDays = parseInt(document.getElementById('ag-rfb-cooldown').value, 10) || 7;
-  }
+  var payload={name:name,rule_or_flag:_agRfbRoF,type:_agRfbType,entity_scope:entityScope,conditions:conds,action_type:actionType,action_magnitude:actionMag,cooldown_days:cooldownDays,risk_level:riskLevel,entity_type:'ad_group',enabled:true,is_template:_agRfbIsTemplate};
+  var url=_agRfbEditId?'/ad_groups/rules/'+_agRfbEditId:'/ad_groups/rules';
+  var method=_agRfbEditId?'PUT':'POST';
 
-  var payload = {
-    name:             document.getElementById('ag-rfb-name-field').value.trim(),
-    rule_or_flag:     _agRfbRoF,
-    type:             _agRfbType,
-    entity_scope:     entityScope,
-    conditions:       conds,
-    action_type:      actionType,
-    action_magnitude: actionMag,
-    cooldown_days:    cooldownDays,
-    risk_level:       riskLevel,
-    entity_type:      'ad_group',
-    enabled:          true,
-    is_template:      _agRfbIsTemplate
-  };
-
-  var url    = _agRfbEditId ? '/ad_groups/rules/' + _agRfbEditId : '/ad_groups/rules';
-  var method = _agRfbEditId ? 'PUT' : 'POST';
-
-  fetch(url, {
-    method:  method,
-    headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken()},
-    body:    JSON.stringify(payload)
+  fetch(url,{method:method,headers:{'Content-Type':'application/json','X-CSRFToken':getCSRFToken()},body:JSON.stringify(payload)})
+  .then(function(r){return r.json();})
+  .then(function(data){
+    saveBtn.disabled=false;saveBtn.innerHTML='<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">save</span> '+(_agRfbIsTemplate?'Save template':(_agRfbEditId?'Update':'Save rule'));
+    if(data.success){agCloseRulesFlow();if(typeof agRfLoadData==='function')agRfLoadData();agRfbShowToast((_agRfbEditId?'Updated':'Created')+' successfully.','success');}
+    else{document.getElementById('ag-rfb-save-error').textContent=data.error||'Save failed.';document.getElementById('ag-rfb-save-error').style.display='block';}
   })
-  .then(function(r){ return r.json(); })
-  .then(function(data) {
-    btnNext.disabled = false;
-    btnNext.textContent = _agRfbIsTemplate ? '✓ Save template' : '✓ Save';
-    if (data.success) {
-      agCloseRulesFlow();
-      if (typeof agRfLoadData === 'function') agRfLoadData();
-      agRfbShowToast((_agRfbEditId ? 'Updated' : 'Created') + ' successfully.', 'success');
-    } else {
-      var errEl = document.getElementById('ag-rfb-save-error');
-      errEl.textContent = data.error || 'Save failed. Please try again.';
-      errEl.style.display = 'block';
-    }
-  })
-  .catch(function(err) {
-    btnNext.disabled = false;
-    btnNext.textContent = _agRfbIsTemplate ? '✓ Save template' : '✓ Save';
-    var errEl = document.getElementById('ag-rfb-save-error');
-    errEl.textContent = 'Network error. Please try again.';
-    errEl.style.display = 'block';
-  });
+  .catch(function(err){saveBtn.disabled=false;saveBtn.innerHTML='<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">save</span> Save rule';document.getElementById('ag-rfb-save-error').textContent='Network error.';document.getElementById('ag-rfb-save-error').style.display='block';});
 }
 
-// ── Toast (shared with rules_flags_tab if not already defined) ────────────────
-if (typeof agRfbShowToast === 'undefined') {
-  function agRfbShowToast(msg, type) {
-    if (typeof agRfShowToast === 'function') { agRfShowToast(msg, type); return; }
-    var t = document.createElement('div');
-    t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 18px;border-radius:6px;font-size:13px;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.15)';
-    t.style.background = type === 'success' ? '#137333' : type === 'warning' ? '#b45309' : '#dc3545';
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(function(){ t.remove(); }, 3500);
-  }
-}
+// ── Toast ────────────────────────────────────────────────────────────────────
+if(typeof agRfbShowToast==='undefined'){function agRfbShowToast(msg,type){if(typeof agRfShowToast==='function'){agRfShowToast(msg,type);return;}var t=document.createElement('div');t.style.cssText='position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 18px;border-radius:6px;font-size:13px;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.15)';t.style.background=type==='success'?'#137333':type==='warning'?'#b45309':'#dc3545';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove();},3500);}}
 
-// ── Utility ───────────────────────────────────────────────────────────────────
-function agRfbEsc(s) {
-  if (s == null) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+function agRfbEsc(s){if(s==null)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 </script>

@@ -6,64 +6,165 @@
  * or any Bootstrap utility class overrides.
  */
 
-/* ── Flow Builder Overlay ─────────────────────────────────────────────────── */
+/* ── Flow Builder Slide-In Overlay ────────────────────────────────────────── */
 
-#rules-flow-overlay {
+.flow-slide-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background: rgba(32, 33, 36, 0.45);
-  z-index: 1050;
+  z-index: 1049;
   display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
 }
 
-#rules-flow-overlay.show {
-  display: flex;
+.flow-slide-overlay.open {
+  display: block;
 }
 
-/* Chat 107: Ad Group flow builder overlay — same styling as campaigns */
-#ag-rules-flow-overlay,
-#kw-rules-flow-overlay,
-#adR-rules-flow-overlay,
-#prd-rules-flow-overlay,
-#shCam-rules-flow-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(32, 33, 36, 0.45);
-  z-index: 1050;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-#ag-rules-flow-overlay.show,
-#kw-rules-flow-overlay.show,
-#adR-rules-flow-overlay.show,
-#prd-rules-flow-overlay.show,
-#shCam-rules-flow-overlay.show {
-  display: flex;
-}
+/* ── Flow Builder Slide-In Panel ─────────────────────────────────────────── */
 
 .flow-panel {
-  background: #fff;
-  border-radius: 8px;
-  width: 800px;
-  max-width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  background: #fff;
+}
+
+.flow-slide-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 720px;
+  height: 100vh;
+  max-width: 100%;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+  z-index: 1050;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 0;
+  overflow-y: hidden;
+}
+
+.flow-slide-panel.open {
+  transform: translateX(0);
+}
+
+/* ── Long-scroll Section Numbers ─────────────────────────────────────────── */
+
+.rfb-section {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.rfb-section:last-child { border-bottom: none; margin-bottom: 0; }
+
+.rfb-section-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #1a73e8;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.rfb-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #202124;
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* Compact card layout for Rule/Flag and Type cards */
+.rfb-compact-card {
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 10px 14px !important;
+  gap: 0 !important;
+}
+.rfb-compact-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rfb-compact-header h5 { margin: 0 !important; font-size: 13px !important; }
+.rfb-compact-icon { font-size: 18px; flex-shrink: 0; }
+.rfb-compact-card p { margin: 3px 0 0 !important; font-size: 11px !important; line-height: 1.3 !important; }
+
+/* ── Live Summary Sidebar ────────────────────────────────────────────────── */
+
+.rfb-sidebar-inner {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 14px;
+}
+
+.rfb-sidebar-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #9aa0a6;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.rfb-summary-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.rfb-summary-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: #9aa0a6;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+
+.rfb-summary-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #202124;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.rfb-summary-value.empty {
+  color: #bdbdbd;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.rfb-live-sentence {
+  background: #e6f4ea;
+  border: 1px solid #ceead6;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.rfb-live-sentence p {
+  font-size: 12px;
+  color: #137333;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.rfb-live-sentence strong {
+  font-weight: 700;
 }
 
 .flow-overlay-header {
@@ -915,6 +1016,11 @@
   .flow-choice-grid { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 768px) {
+  .flow-slide-panel { width: 100vw; }
+  .flow-sidebar { display: none; }
+}
+
 @media (max-width: 576px) {
   .rules-template-grid { grid-template-columns: 1fr; }
   .flow-body { padding: 16px; }
@@ -940,10 +1046,10 @@
 /* ── Sidebar: Your choices ────────────────────────────────────────────────── */
 
 .flow-sidebar {
-  width: 180px;
+  width: 210px;
   flex-shrink: 0;
   border-left: 1px solid #e0e0e0;
-  padding: 20px 14px;
+  padding: 0;
   background: #fafafa;
   overflow-y: auto;
 }
