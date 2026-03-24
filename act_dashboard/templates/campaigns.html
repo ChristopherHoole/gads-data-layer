@@ -808,8 +808,8 @@ function applyColumns() {
   }
   function actionCell(r) {
     const dir = r.action_direction || '';
-    const cls = dir === 'increase' ? 'rec-action-increase' : dir === 'decrease' ? 'rec-action-decrease' : dir === 'pause' ? 'rec-action-pause' : 'rec-action-hold';
-    const arrow = dir === 'increase' ? '↑' : dir === 'decrease' ? '↓' : dir === 'pause' ? '⏸' : '→';
+    const cls = dir === 'increase' ? 'rec-action-increase' : dir === 'decrease' ? 'rec-action-decrease' : dir === 'pause' ? 'rec-action-pause' : dir === 'enable' ? 'rec-action-increase' : 'rec-action-hold';
+    const arrow = dir === 'increase' ? '↑' : dir === 'decrease' ? '↓' : dir === 'pause' ? '⏸' : dir === 'enable' ? '▶' : '→';
     const sub = r.value_label ? '<div class="rec-action-sub">' + esc(r.value_label) + '</div>' : '';
     const hum = r.risk_level === 'high' ? '<div class="rec-human-badge"><i class="bi bi-exclamation-triangle-fill"></i> Human confirm</div>' : '';
     return hum + '<div><span class="rec-action-text ' + cls + '">' + arrow + ' ' + esc(r.action_label || '—') + '</span>' + sub + '</div>';

@@ -71,14 +71,16 @@ ACTION_MAP = {
     "increase_tcpa_target":"increase",
     "decrease_tcpa_target":"decrease",
     "pause_ad_group":      "pause",
-    "enable_ad_group":     "hold",
+    "enable_ad_group":     "enable",
     # Keyword actions
     "increase_bid":        "increase",
     "decrease_bid":        "decrease",
     "increase_bid_to_first_page": "increase",
+    "pause":               "pause",
+    "enable":              "enable",
     # Ad actions
     "pause_ad":            "pause",
-    "enable_ad":           "hold",
+    "enable_ad":           "enable",
     # Shopping actions
     "increase_shopping_budget": "increase",
     "decrease_shopping_budget": "decrease",

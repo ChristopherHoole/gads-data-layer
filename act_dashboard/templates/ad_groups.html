@@ -926,8 +926,8 @@ let agRecommendations = {
   }
   function actionCell(r) {
     var dir = r.action_direction || '';
-    var cls = dir === 'increase' ? 'rec-action-increase' : dir === 'decrease' ? 'rec-action-decrease' : dir === 'pause' ? 'rec-action-pause' : 'rec-action-hold';
-    var arrow = dir === 'increase' ? '\u2191' : dir === 'decrease' ? '\u2193' : dir === 'pause' ? '\u23f8' : '\u2192';
+    var cls = dir === 'increase' ? 'rec-action-increase' : dir === 'decrease' ? 'rec-action-decrease' : dir === 'pause' ? 'rec-action-pause' : dir === 'enable' ? 'rec-action-increase' : 'rec-action-hold';
+    var arrow = dir === 'increase' ? '\u2191' : dir === 'decrease' ? '\u2193' : dir === 'pause' ? '\u23f8' : dir === 'enable' ? '\u25b6' : '\u2192';
     var sub = r.value_label ? '<div class="rec-action-sub">' + esc(r.value_label) + '</div>' : '';
     var hum = r.risk_level === 'high' ? '<div class="rec-human-badge"><i class="bi bi-exclamation-triangle-fill"></i> Human confirm</div>' : '';
     return hum + '<div><span class="rec-action-text ' + cls + '">' + arrow + ' ' + esc(r.action_label || '\u2014') + '</span>' + sub + '</div>';
