@@ -147,17 +147,17 @@ button:not(:disabled):active {
         <!-- Tabs -->
         <div class="border-b border-gray-200 mb-6">
             <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                <a href="#" onclick="showTab('ad-groups'); return false;" 
+                <a href="#" onclick="showTab('ad-groups'); return false;"
                    id="tab-ad-groups"
                    class="tab-link border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                     Ad Groups
                 </a>
-                <a href="#" onclick="showTab('ads'); return false;" 
+                <a href="#" onclick="showTab('ads'); return false;"
                    id="tab-ads"
                    class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                     Ads
                 </a>
-                <a href="#" onclick="showTab('recommendations'); return false;" 
+                <a href="#" onclick="showTab('recommendations'); return false;"
                    id="tab-recommendations"
                    class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                     Recommendations
@@ -295,205 +295,126 @@ button:not(:disabled):active {
         <!-- Tab 3: Recommendations -->
         <div id="content-recommendations" class="tab-content hidden">
 <link rel="stylesheet" href="/static/css/recommendations.css">
-<div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
-  <h5 style="margin:0;font-size:16px;font-weight:600;">Recommendations</h5>
-  <div style="display:flex;gap:8px;">
-    <button style="padding:5px 12px;border:1px solid #d1d5db;border-radius:4px;background:#fff;font-size:13px;cursor:pointer;" onclick="adAcceptLowRisk()">Accept low risk</button>
-    <button id="ad-run-engine-btn" style="padding:5px 12px;background:#1a73e8;color:#fff;border:none;border-radius:4px;font-size:13px;cursor:pointer;">Run engine</button>
+
+<!-- Header -->
+<div class="d-flex align-items-start justify-content-between gap-3 mb-4">
+  <div>
+    <h5 style="font-size:16px;font-weight:600;margin:0 0 4px;color:#1a1d23;">Ad Recommendations</h5>
+    <p style="margin:0;color:#6b7280;font-size:13px;">Rules and flags triggered for ads in this account. <a href="/recommendations" style="color:#0d6efd;text-decoration:none;">View full recommendations page &rarr;</a></p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <button id="ad-accept-low-risk-btn" class="btn btn-sm btn-outline-success" style="font-size:13px;" onclick="adAcceptLowRisk()">Accept all low risk</button>
+    <button id="ad-run-engine-btn" class="btn btn-sm btn-outline-secondary" style="font-size:13px;display:flex;align-items:center;gap:5px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg>
+      Run Recommendations Now
+    </button>
   </div>
 </div>
 <!-- Sub-tabs -->
-<div style="display:flex;gap:0;border-bottom:2px solid #e5e7eb;margin-bottom:12px;">
-  <button id="ad-tab-pending" onclick="adSwitchTab('pending')" style="padding:8px 16px;border:none;background:none;font-size:13px;font-weight:600;color:#1a73e8;border-bottom:2px solid #1a73e8;cursor:pointer;margin-bottom:-2px;">Pending <span id="ad-badge-pending" style="background:#e5e7eb;color:#374151;border-radius:9999px;padding:1px 7px;font-size:11px;">0</span></button>
-  <button id="ad-tab-monitoring" onclick="adSwitchTab('monitoring')" style="padding:8px 16px;border:none;background:none;font-size:13px;color:#6b7280;cursor:pointer;">Monitoring <span id="ad-badge-monitoring" style="background:#e5e7eb;color:#374151;border-radius:9999px;padding:1px 7px;font-size:11px;">0</span></button>
-  <button id="ad-tab-successful" onclick="adSwitchTab('successful')" style="padding:8px 16px;border:none;background:none;font-size:13px;color:#6b7280;cursor:pointer;">Successful <span id="ad-badge-successful" style="background:#e5e7eb;color:#374151;border-radius:9999px;padding:1px 7px;font-size:11px;">0</span></button>
-  <button id="ad-tab-history" onclick="adSwitchTab('history')" style="padding:8px 16px;border:none;background:none;font-size:13px;color:#6b7280;cursor:pointer;">History <span id="ad-badge-history" style="background:#e5e7eb;color:#374151;border-radius:9999px;padding:1px 7px;font-size:11px;">0</span></button>
-  <button id="ad-tab-flags" onclick="adSwitchTab('flags')" style="padding:8px 16px;border:none;background:none;font-size:13px;color:#6b7280;cursor:pointer;">Flags <span id="ad-badge-flags" style="background:#ea4335;color:#fff;border-radius:9999px;padding:1px 7px;font-size:11px;">0</span></button>
-</div>
+<ul class="nav nav-tabs mb-3" id="adRecTabs" role="tablist">
+  <li class="nav-item" role="presentation"><button class="nav-link active" id="ad-rec-pending-tab" data-bs-toggle="tab" data-bs-target="#ad-pane-pending" type="button" role="tab">Pending <span class="badge bg-secondary ms-1" id="ad-badge-pending">0</span></button></li>
+  <li class="nav-item" role="presentation"><button class="nav-link" id="ad-rec-monitoring-tab" data-bs-toggle="tab" data-bs-target="#ad-pane-monitoring" type="button" role="tab">Monitoring <span class="badge bg-secondary ms-1" id="ad-badge-monitoring">0</span></button></li>
+  <li class="nav-item" role="presentation"><button class="nav-link" id="ad-rec-successful-tab" data-bs-toggle="tab" data-bs-target="#ad-pane-successful" type="button" role="tab">Successful <span class="badge bg-secondary ms-1" id="ad-badge-successful">0</span></button></li>
+  <li class="nav-item" role="presentation"><button class="nav-link" id="ad-rec-history-tab" data-bs-toggle="tab" data-bs-target="#ad-pane-history" type="button" role="tab">History <span class="badge bg-secondary ms-1" id="ad-badge-history">0</span></button></li>
+  <li class="nav-item" role="presentation"><button class="nav-link" id="ad-flag-tab" data-bs-toggle="tab" data-bs-target="#ad-pane-flags" type="button" role="tab">Flags <span class="badge bg-secondary ms-1" id="ad-badge-flags">0</span></button></li>
+</ul>
+<div class="tab-content" id="adRecTabContent">
 <!-- PENDING -->
-<div id="ad-pane-pending">
+<div class="tab-pane fade show active" id="ad-pane-pending" role="tabpanel">
   <div id="ad-bulk-bar" class="rec-bulk-bar" style="display:none;">
     <span id="ad-bulk-count">0 selected</span>
-    <button style="margin-left:8px;padding:4px 12px;background:#1a73e8;color:#fff;border:none;border-radius:4px;font-size:12px;cursor:pointer;" onclick="adDoBulk('accept')">Accept selected</button>
-    <button style="margin-left:4px;padding:4px 12px;background:#fff;color:#dc2626;border:1px solid #fca5a5;border-radius:4px;font-size:12px;cursor:pointer;" onclick="adDoBulk('decline')">Decline selected</button>
+    <button class="btn btn-sm btn-primary ms-2" onclick="adDoBulk('accept')">Accept selected</button>
+    <button class="btn btn-sm btn-outline-danger ms-1" onclick="adDoBulk('decline')">Decline selected</button>
     <span class="rec-bulk-clear" onclick="adClearSelection()">Clear</span>
   </div>
-  <table class="rec-tab-slim" style="width:100%;border-collapse:collapse;font-size:13px;">
-    <thead style="background:#f9fafb;">
-      <tr>
-        <th class="rec-col-cb" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;"><input type="checkbox" id="ad-chk-all" onchange="adToggleAll(this)"></th>
-        <th class="rec-col-name" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Ad</th>
-        <th class="rec-col-rule" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Rule</th>
-        <th class="rec-col-ruleflag" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">R/F</th>
-        <th class="rec-col-ruletype" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Rule type</th>
-        <th class="rec-col-conditions" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Conditions</th>
-        <th class="rec-col-action" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Action</th>
-        <th class="rec-col-risk" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Risk</th>
-        <th class="rec-col-age" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Age</th>
-        <th class="rec-col-acts" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Actions</th>
-      </tr>
-    </thead>
+  <div class="rec-table-wrapper">
+  <table class="table table-sm align-middle rec-tab-slim">
+    <thead><tr>
+      <th style="width:40px;"><input type="checkbox" id="ad-chk-all" onchange="adToggleAll(this)"></th>
+      <th class="rec-col-name">Ad name</th>
+      <th class="rec-col-rule">Rule name</th>
+      <th class="rec-col-plain">Plain English</th>
+      <th class="rec-col-ruleflag">Rule/Flag</th>
+      <th class="rec-col-ruletype">Rule type</th>
+      <th class="rec-col-conditions">Conditions</th>
+      <th class="rec-col-action">Action</th>
+      <th class="rec-col-risk">Risk</th>
+      <th class="rec-col-age">Age</th>
+      <th class="rec-col-acts">Actions</th>
+    </tr></thead>
     <tbody id="ad-pending-tbody"></tbody>
   </table>
-  <div id="ad-pending-paginator"></div>
+  </div>
+  <div id="ad-pending-paginator" class="d-flex gap-1 flex-wrap mt-2"></div>
 </div>
 <!-- MONITORING -->
-<div id="ad-pane-monitoring" style="display:none;">
-  <table class="rec-tab-slim" style="width:100%;border-collapse:collapse;font-size:13px;">
-    <thead style="background:#f9fafb;">
-      <tr>
-        <th class="rec-col-name" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Ad</th>
-        <th class="rec-col-rule" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Rule</th>
-        <th class="rec-col-ruleflag" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">R/F</th>
-        <th class="rec-col-action" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Action taken</th>
-        <th class="rec-col-risk" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Risk</th>
-        <th class="rec-col-date" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Accepted</th>
-        <th class="rec-col-progress" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Progress</th>
-      </tr>
-    </thead>
-    <tbody id="ad-monitoring-tbody"></tbody>
-  </table>
-  <div id="ad-monitoring-paginator"></div>
+<div class="tab-pane fade" id="ad-pane-monitoring" role="tabpanel">
+  <div class="rec-table-wrapper">
+  <table class="table table-sm align-middle rec-tab-slim"><thead><tr>
+    <th style="width:40px;"></th><th class="rec-col-date">Accepted</th><th class="rec-col-progress">Monitoring progress</th>
+    <th class="rec-col-name">Ad name</th><th class="rec-col-rule">Rule name</th><th class="rec-col-plain">Plain English</th>
+    <th class="rec-col-ruleflag">Rule/Flag</th><th class="rec-col-ruletype">Rule type</th><th class="rec-col-conditions">Conditions</th>
+    <th class="rec-col-action">Action taken</th><th class="rec-col-risk">Risk</th>
+  </tr></thead><tbody id="ad-monitoring-tbody"></tbody></table>
+  </div>
+  <div id="ad-monitoring-paginator" class="d-flex gap-1 flex-wrap mt-2"></div>
 </div>
 <!-- SUCCESSFUL -->
-<div id="ad-pane-successful" style="display:none;">
-  <table class="rec-tab-slim" style="width:100%;border-collapse:collapse;font-size:13px;">
-    <thead style="background:#f9fafb;">
-      <tr>
-        <th class="rec-col-name" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Ad</th>
-        <th class="rec-col-rule" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Rule</th>
-        <th class="rec-col-ruleflag" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">R/F</th>
-        <th class="rec-col-action" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Action taken</th>
-        <th class="rec-col-risk" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Risk</th>
-        <th class="rec-col-date" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Completed</th>
-      </tr>
-    </thead>
-    <tbody id="ad-successful-tbody"></tbody>
-  </table>
-  <div id="ad-successful-paginator"></div>
+<div class="tab-pane fade" id="ad-pane-successful" role="tabpanel">
+  <div class="rec-table-wrapper">
+  <table class="table table-sm align-middle rec-tab-slim"><thead><tr>
+    <th style="width:40px;"></th><th class="rec-col-date">Accepted</th><th class="rec-col-date">Completed</th>
+    <th class="rec-col-name">Ad name</th><th class="rec-col-rule">Rule name</th><th class="rec-col-plain">Plain English</th>
+    <th class="rec-col-ruleflag">Rule/Flag</th><th class="rec-col-ruletype">Rule type</th><th class="rec-col-conditions">Conditions</th>
+    <th class="rec-col-action">Action taken</th><th class="rec-col-risk">Risk</th>
+  </tr></thead><tbody id="ad-successful-tbody"></tbody></table>
+  </div>
+  <div id="ad-successful-paginator" class="d-flex gap-1 flex-wrap mt-2"></div>
 </div>
 <!-- HISTORY -->
-<div id="ad-pane-history" style="display:none;">
-  <table class="rec-tab-slim" style="width:100%;border-collapse:collapse;font-size:13px;">
-    <thead style="background:#f9fafb;">
-      <tr>
-        <th class="rec-col-name" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Ad</th>
-        <th class="rec-col-rule" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Rule</th>
-        <th class="rec-col-ruleflag" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">R/F</th>
-        <th class="rec-col-action" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Action</th>
-        <th class="rec-col-risk" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Risk</th>
-        <th class="rec-col-date" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Date</th>
-        <th class="rec-col-status" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Outcome</th>
-      </tr>
-    </thead>
-    <tbody id="ad-history-tbody"></tbody>
-  </table>
-  <div id="ad-history-paginator"></div>
+<div class="tab-pane fade" id="ad-pane-history" role="tabpanel">
+  <div class="rec-table-wrapper">
+  <table class="table table-sm align-middle rec-tab-slim"><thead><tr>
+    <th style="width:40px;"></th><th class="rec-col-status">Outcome</th><th class="rec-col-date">Date actioned</th>
+    <th class="rec-col-name">Ad name</th><th class="rec-col-rule">Rule name</th><th class="rec-col-plain">Plain English</th>
+    <th class="rec-col-ruleflag">Rule/Flag</th><th class="rec-col-ruletype">Rule type</th><th class="rec-col-conditions">Conditions</th>
+    <th class="rec-col-action">Action</th><th class="rec-col-risk">Risk</th>
+  </tr></thead><tbody id="ad-history-tbody"></tbody></table>
+  </div>
+  <div id="ad-history-paginator" class="d-flex gap-1 flex-wrap mt-2"></div>
 </div>
-<!-- FLAGS (active only — entity page view) -->
-<div id="ad-pane-flags" style="display:none;">
-  <table style="width:100%;border-collapse:collapse;font-size:13px;">
-    <thead style="background:#f9fafb;">
-      <tr>
-        <th class="rec-col-name" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Ad</th>
-        <th class="rec-col-rule" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Flag name</th>
-        <th class="rec-col-plain" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Plain English</th>
-        <th class="rec-col-risk" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Severity</th>
-        <th class="rec-col-age" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Age</th>
-        <th class="rec-col-acts" style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Actions</th>
-      </tr>
-    </thead>
-    <tbody id="ad-flag-tbody">
-      <tr><td colspan="6" style="text-align:center;padding:24px;color:#6b7280;">Loading…</td></tr>
-    </tbody>
-  </table>
-
-  <!-- SNOOZED FLAGS SECTION -->
-  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;margin-top:12px;background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;cursor:pointer;"
-       onclick="adFlagSectionToggle('ad-flag-snooze-body','ad-flag-snooze-chev')">
-    <span id="ad-flag-snooze-chev" style="font-size:12px;">▶</span>
-    <strong style="font-size:13px;">Snoozed</strong>
-    <span id="ad-flag-snooze-count" style="background:#6c757d;color:#fff;font-size:11px;padding:2px 6px;border-radius:10px;">0</span>
+<!-- FLAGS -->
+<div class="tab-pane fade" id="ad-pane-flags" role="tabpanel">
+  <div class="rec-table-wrapper">
+    <table class="table table-sm align-middle" id="ad-flag-table"><thead><tr>
+      <th class="rec-col-name">Ad name</th><th class="rec-col-rule">Flag name</th><th class="rec-col-plain">Plain English</th>
+      <th class="rec-col-ruleflag">Rule/Flag</th><th class="rec-col-risk">Severity</th><th class="rec-col-age">Age</th><th class="rec-col-acts">Actions</th>
+    </tr></thead>
+    <tbody id="ad-flag-tbody"><tr><td colspan="7" class="text-center text-muted py-4">Loading…</td></tr></tbody>
+    </table>
+  </div>
+  <div class="d-flex align-items-center gap-2 px-3 py-2 mt-3 mb-1" style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;cursor:pointer;" onclick="adFlagSectionToggle('ad-flag-snooze-body','ad-flag-snooze-chev')">
+    <span id="ad-flag-snooze-chev" style="font-size:12px;">▶</span><strong style="font-size:13px;">Snoozed</strong><span class="badge bg-secondary" id="ad-flag-snooze-count">0</span>
   </div>
   <div id="ad-flag-snooze-body" style="display:none;">
-    <table style="width:100%;border-collapse:collapse;font-size:13px;">
-      <thead style="background:#f9fafb;">
-        <tr>
-          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Ad</th>
-          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Flag name</th>
-          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Plain English</th>
-          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Severity</th>
-          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Age</th>
-          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Snoozed until</th>
-          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="ad-flag-snooze-tbody">
-        <tr><td colspan="7" style="text-align:center;padding:24px;color:#6b7280;">No snoozed flags.</td></tr>
-      </tbody>
-    </table>
+    <div class="rec-table-wrapper"><table class="table table-sm align-middle"><thead><tr>
+      <th class="rec-col-name">Ad name</th><th class="rec-col-rule">Flag name</th><th class="rec-col-plain">Plain English</th>
+      <th class="rec-col-risk">Severity</th><th class="rec-col-age">Age</th><th style="min-width:110px;">Snoozed until</th><th class="rec-col-acts">Actions</th>
+    </tr></thead><tbody id="ad-flag-snooze-tbody"><tr><td colspan="7" class="text-center text-muted py-3">No snoozed flags.</td></tr></tbody></table></div>
   </div>
-
-  <!-- HISTORY FLAGS SECTION -->
-  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;margin-top:4px;background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;cursor:pointer;"
-       onclick="adFlagSectionToggle('ad-flag-hist-body','ad-flag-hist-chev')">
-    <span id="ad-flag-hist-chev" style="font-size:12px;">▶</span>
-    <strong style="font-size:13px;">History</strong>
-    <span id="ad-flag-hist-count" style="background:#6c757d;color:#fff;font-size:11px;padding:2px 6px;border-radius:10px;">0</span>
+  <div class="d-flex align-items-center gap-2 px-3 py-2 mb-1" style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;cursor:pointer;" onclick="adFlagSectionToggle('ad-flag-hist-body','ad-flag-hist-chev')">
+    <span id="ad-flag-hist-chev" style="font-size:12px;">▶</span><strong style="font-size:13px;">History</strong><span class="badge bg-secondary" id="ad-flag-hist-count">0</span>
   </div>
   <div id="ad-flag-hist-body" style="display:none;">
-    <table style="width:100%;border-collapse:collapse;font-size:13px;">
-      <thead style="background:#f9fafb;">
-        <tr>
-          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Ad</th>
-          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Flag name</th>
-          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Plain English</th>
-          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Severity</th>
-          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Age</th>
-          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Actioned</th>
-          <th style="padding:8px;text-align:left;border-bottom:1px solid #e5e7eb;">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="ad-flag-hist-tbody">
-        <tr><td colspan="7" style="text-align:center;padding:24px;color:#6b7280;">No history.</td></tr>
-      </tbody>
-    </table>
+    <div class="rec-table-wrapper"><table class="table table-sm align-middle"><thead><tr>
+      <th class="rec-col-name">Ad name</th><th class="rec-col-rule">Flag name</th><th class="rec-col-plain">Plain English</th>
+      <th class="rec-col-risk">Severity</th><th class="rec-col-age">Age</th><th style="min-width:110px;">Actioned</th><th class="rec-col-acts">Actions</th>
+    </tr></thead><tbody id="ad-flag-hist-tbody"><tr><td colspan="7" class="text-center text-muted py-3">No history.</td></tr></tbody></table></div>
   </div>
 </div>
-<script>
-function adSwitchTab(tab) {
-  ['pending','monitoring','successful','history','flags'].forEach(function(t) {
-    var pane = document.getElementById('ad-pane-' + t);
-    var btn  = document.getElementById('ad-tab-' + t);
-    if (!pane || !btn) return;
-    if (t === tab) {
-      pane.style.display = '';
-      btn.style.color = '#1a73e8';
-      btn.style.borderBottom = '2px solid #1a73e8';
-      btn.style.marginBottom = '-2px';
-    } else {
-      pane.style.display = 'none';
-      btn.style.color = '#6b7280';
-      btn.style.borderBottom = 'none';
-      btn.style.marginBottom = '';
-    }
-  });
-}
-document.addEventListener('DOMContentLoaded', function() {
-  var runBtn = document.getElementById('ad-run-engine-btn');
-  if (runBtn) {
-    runBtn.addEventListener('click', function() {
-      var self = this;
-      self.disabled = true; self.textContent = 'Running...';
-      fetch('/recommendations/run', { method:'POST' })
-        .then(function(r) { return r.json(); })
-        .then(function(d) { if (typeof showToast==='function') showToast(d.message||'Engine started','success',3000); setTimeout(window.adRecLoad, 2000); })
-        .catch(function() { if (typeof showToast==='function') showToast('Error','error',3000); })
-        .finally(function() { self.disabled=false; self.textContent='Run engine'; });
-    });
-  }
-});
-</script>
+
+</div><!-- /adRecTabContent -->
+<!-- old adSwitchTab removed - now using Bootstrap nav-tabs -->
         </div>
         {% endif %}
     </div>
@@ -505,451 +426,106 @@ function showTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(el => {
         el.classList.add('hidden');
     });
-    
+
     // Remove active class from all tabs
     document.querySelectorAll('.tab-link').forEach(el => {
         el.classList.remove('border-indigo-500', 'text-indigo-600');
         el.classList.add('border-transparent', 'text-gray-500');
     });
-    
+
     // Show selected tab content
     document.getElementById('content-' + tabName).classList.remove('hidden');
-    
+
     // Add active class to selected tab
     document.getElementById('tab-' + tabName).classList.remove('border-transparent', 'text-gray-500');
     document.getElementById('tab-' + tabName).classList.add('border-indigo-500', 'text-indigo-600');
 }
 
 
-{%- raw -%}(function () {
-  var _ENTITY_TYPE = 'ad';
-  var _PREFIX = 'ad';
+// ===========================================================================
+// AD RECOMMENDATIONS — TABLE-BASED (Chat 113)
+// ===========================================================================
+(function(){
 
-  function esc(s) {{ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }}
-  function rfBadge(v) {{
-    if (!v) return '';
-    var cls = v === 'rule' ? 'rec-rf-rule' : 'rec-rf-flag';
-    return '<span class="rec-rf-badge ' + cls + '">' + esc(v.charAt(0).toUpperCase()+v.slice(1)) + '</span>';
-  }}
-  function rtBadge(v) {{
-    if (!v) return '';
-    var map = {{ budget:'rec-rt-budget', bid:'rec-rt-bid', status:'rec-rt-status', keyword:'rec-rt-keyword', shopping:'rec-rt-shopping' }};
-    var cls = map[v] || 'rec-rt-budget';
-    return '<span class="rec-rt-badge ' + cls + '">' + esc(v.charAt(0).toUpperCase()+v.slice(1)) + '</span>';
-  }}
-  function condCell(conds) {{
-    if (!conds || !conds.length) return '';
-    return '<div class="rec-conditions-cell">' + conds.map(function(c){{ return '<span>' + esc(c) + '</span>'; }}).join('') + '</div>';
-  }}
-  function actionCell(r) {{
-    var dir = r.action_direction || '';
-    var cls = dir === 'increase' ? 'rec-action-increase' : dir === 'decrease' ? 'rec-action-decrease' : dir === 'pause' ? 'rec-action-pause' : 'rec-action-flag';
-    var arrow = dir === 'increase' ? '\u2191 ' : dir === 'decrease' ? '\u2193 ' : '';
-    var plain = r.plain_english || (arrow + (r.action_magnitude ? r.action_magnitude + '%' : dir));
-    var html = '<span class="rec-action-text ' + cls + '">' + esc(plain) + '</span>';
-    if (r.current_value != null && r.proposed_value != null) {{
-      html += '<div class="rec-action-sub">' + esc(String(r.current_value)) + ' \u2192 ' + esc(String(r.proposed_value)) + '</div>';
-    }}
-    return html;
-  }}
-  function riskBadge(v) {{
-    if (!v) return '';
-    var cls = v === 'low' ? 'rec-risk-low' : v === 'medium' ? 'rec-risk-medium' : 'rec-risk-high';
-    return '<span class="rec-risk-badge ' + cls + '">' + esc(v.charAt(0).toUpperCase()+v.slice(1)) + '</span>';
-  }}
-  function outcomeBadge(status) {{
-    var map = {{ successful:'rec-outcome-successful', declined:'rec-outcome-declined', reverted:'rec-outcome-reverted', monitoring:'rec-outcome-monitoring' }};
-    var label = {{ successful:'Successful', declined:'Declined', reverted:'Reverted', monitoring:'Monitoring' }};
-    var cls = map[status] || '';
-    return '<span class="rec-outcome-badge ' + cls + '">' + (label[status]||esc(status)) + '</span>';
-  }}
-  function fmtDate(s) {{
-    if (!s) return '';
-    var d = new Date(s);
-    return isNaN(d) ? esc(s) : d.toLocaleDateString('en-GB', {{day:'numeric',month:'short',year:'numeric'}});
-  }}
-  function ageLabel(s) {{
-    if (!s) return '';
-    var diff = Math.floor((Date.now() - new Date(s)) / 86400000);
-    return diff === 0 ? 'Today' : diff + 'd';
-  }}
-  function progressBar(r) {{
-    if (!r.accepted_at || !r.monitoring_ends_at) return '';
-    var start = new Date(r.accepted_at).getTime();
-    var end   = new Date(r.monitoring_ends_at).getTime();
-    var now   = Date.now();
-    var pct   = Math.min(100, Math.max(0, Math.round((now - start) / (end - start) * 100)));
-    var days  = Math.ceil((end - now) / 86400000);
-    var endStr = new Date(r.monitoring_ends_at).toLocaleDateString('en-GB', {{day:'numeric',month:'short',year:'numeric'}});
-    return '<div class="rec-progress-wrap"><div class="rec-progress-bg"><div class="rec-progress-fill" style="width:' + pct + '%"></div></div>' +
-           '<div class="rec-progress-label">' + (days > 0 ? days + 'd remaining' : 'Ending') + ' \u00b7 ends ' + endStr + '</div></div>';
-  }}
-  function makeExpRow(r, colspan) {{
-    var why = esc(r.trigger_summary || r.plain_english || '\u2014');
-    var change = (r.current_value != null && r.proposed_value != null)
-      ? esc(String(r.current_value)) + ' \u2192 ' + esc(String(r.proposed_value))
-      : (r.action_magnitude ? esc(String(r.action_magnitude)) + '%' : '\u2014');
-    var cooldown = r.cooldown_days ? esc(String(r.cooldown_days)) + ' days' : '\u2014';
-    return '<tr class="rec-expand-row" id="exp-' + esc(r.rec_id) + '">' +
-      '<td colspan="' + colspan + '">' +
-        '<div class="rec-expand-grid">' +
-          '<div><div class="rec-expand-label">Why triggered</div><div class="rec-expand-val">' + why + '</div></div>' +
-          '<div><div class="rec-expand-label">Proposed change</div><div class="rec-expand-val">' + change + '</div></div>' +
-          '<div><div class="rec-expand-label">Rule details</div><div class="rec-expand-val"><ul>' +
-            '<li>Cooldown: ' + cooldown + '</li>' +
-            '<li>Rule: ' + esc(r.rule_id||'\u2014') + '</li>' +
-          '</ul></div></div>' +
-        '</div>' +
-      '</td></tr>';
-  }}
+function esc(s){if(s==null)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function rfBadge(v){var t=(v||'').toLowerCase();return t==='rule'?'<span class="rec-rf-badge rec-rf-rule">Rule</span>':t==='flag'?'<span class="rec-rf-badge rec-rf-flag">Flag</span>':esc(v||'\u2014');}
+function rtBadge(v){if(!v)return '';return '<span class="rec-rt-badge">'+esc(v)+'</span>';}
+function condCell(conds){if(!conds)return '\u2014';if(typeof conds==='string'){try{conds=JSON.parse(conds);}catch(e){return esc(conds);}}if(!Array.isArray(conds))return esc(String(conds));var lines=conds.map(function(c){if(typeof c==='string')return c;var m=c.metric||'';var o=c.op||c.operator||'';var v=c.value!=null?c.value:'';var r=c.ref||c.unit||'';return m+' '+o+' '+v+(r&&r!=='absolute'?' '+r:'');});return '<div class="rec-conditions-cell">'+lines.map(function(c){return '<span>'+esc(c)+'</span>';}).join('')+'</div>';}
+function actionCell(r){var dir=r.action_direction||'';var cls=dir==='increase'?'rec-action-increase':dir==='decrease'?'rec-action-decrease':dir==='pause'?'rec-action-pause':dir==='enable'?'rec-action-increase':'rec-action-hold';var arrow=dir==='increase'?'\u2191':dir==='decrease'?'\u2193':dir==='pause'?'\u23f8':dir==='enable'?'\u25b6':'\u2192';var sub=r.value_label?'<div class="rec-action-sub">'+esc(r.value_label)+'</div>':'';var hum=r.risk_level==='high'?'<div class="rec-human-badge"><i class="bi bi-exclamation-triangle-fill"></i> Human confirm</div>':'';return hum+'<div><span class="rec-action-text '+cls+'">'+arrow+' '+esc(r.action_label||'\u2014')+'</span>'+sub+'</div>';}
+function riskBadge(v){if(!v)return '';var cls=v==='low'?'rec-risk-low':v==='medium'?'rec-risk-medium':'rec-risk-high';return '<span class="rec-risk-badge '+cls+'">'+esc(v.charAt(0).toUpperCase()+v.slice(1))+'</span>';}
+function outcomeBadge(status){var map={successful:'rec-outcome-successful',declined:'rec-outcome-declined',reverted:'rec-outcome-reverted',monitoring:'rec-outcome-monitoring'};var label={successful:'Successful',declined:'Declined',reverted:'Reverted',monitoring:'Monitoring'};var cls=map[status]||'';return '<span class="rec-outcome-badge '+cls+'">'+(label[status]||esc(status))+'</span>';}
+function fmtDate(s){if(!s)return '';var d=new Date(s);return isNaN(d)?esc(s):d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+function ageLabel(s){if(!s)return '';var diff=Math.floor((Date.now()-new Date(s))/86400000);return diff===0?'Today':diff+'d';}
+function progressBar(r){if(!r.accepted_at||!r.monitoring_ends_at)return '';var start=new Date(r.accepted_at).getTime();var end=new Date(r.monitoring_ends_at).getTime();var now=Date.now();var pct=Math.min(100,Math.max(0,Math.round((now-start)/(end-start)*100)));var days=Math.ceil((end-now)/86400000);var endStr=new Date(r.monitoring_ends_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});return '<div class="rec-progress-wrap"><div class="rec-progress-bg"><div class="rec-progress-fill" style="width:'+pct+'%"></div></div><div class="rec-progress-label">'+(days>0?days+'d remaining':'Ending')+' \u00b7 ends '+endStr+'</div></div>';}
+function makeExpRow(r,colspan){var why=esc(r.trigger_summary||'\u2014');var cur=r.current_value!=null?esc(String(r.current_value)):'\u2014';var prop=r.proposed_value!=null?esc(String(r.proposed_value))+(r.value_suffix?' '+esc(r.value_suffix):''):'\u2014';var det=[(r.rule_name||r.rule_id)?'Rule: '+esc(r.rule_name||r.rule_id):'',r.cooldown_days?'Cooldown: '+r.cooldown_days+' days':''].filter(Boolean).join('<br>')||'\u2014';var proposedHtml=r.rule_type==='status'?'Enabled \u2192 Paused':'Current: '+cur+'<br>Proposed: '+prop;return '<tr class="rec-expand-row" id="exp-'+esc(r.rec_id)+'"><td colspan="'+colspan+'"><div class="rec-expand-inner"><div class="rec-expand-grid"><div class="rec-expand-card"><div class="rec-expand-label">Why triggered</div><div class="rec-expand-val">'+why+'</div></div><div class="rec-expand-card"><div class="rec-expand-label">Proposed change</div><div class="rec-expand-val">'+proposedHtml+'</div></div><div class="rec-expand-card"><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">'+det+'</div></div></div></div></td></tr>';}
 
-  var REC = {{ pending:[], monitoring:[], successful:[], history:[] }};
-  var SEL = {{}};
-  var PAGE = {{ pending:1, monitoring:1, successful:1, history:1 }};
-  var PER = 20;
+var AD_REC={pending:[],monitoring:[],successful:[],history:[]};
+var AD_SEL={};
+var AD_PAGE={pending:1,monitoring:1,successful:1,history:1};
+var AD_PER_PAGE=20;
 
-  function pendingRow(r) {{
-    var checked = SEL[r.rec_id] ? 'checked' : '';
-    var high = (r.risk_level === 'high') ? '<div class="rec-human-badge"><i class="bi bi-exclamation-triangle-fill"></i> Human confirm</div>' : '';
-    return '<tr class="' + (SEL[r.rec_id] ? 'rec-selected' : '') + '" onclick="adRecExp(event,\'' + esc(r.rec_id) + '\')" style="cursor:pointer">' +
-      '<td class="rec-col-cb" onclick="event.stopPropagation()"><input type="checkbox" ' + checked + ' onchange="adRecCbChange(this,\'' + esc(r.rec_id) + '\')" ></td>' +
-      '<td class="rec-col-name">' + esc(r.entity_name||'') + '</td>' +
-      '<td class="rec-col-rule">' + esc(r.rule_name||r.rule_id||'') + '</td>' +
-      '<td class="rec-col-ruleflag">' + rfBadge(r.rule_or_flag) + '</td>' +
-      '<td class="rec-col-ruletype">' + rtBadge(r.rule_type_display) + '</td>' +
-      '<td class="rec-col-conditions">' + condCell(r.conditions) + '</td>' +
-      '<td class="rec-col-action">' + high + actionCell(r) + '</td>' +
-      '<td class="rec-col-risk">' + riskBadge(r.risk_level) + '</td>' +
-      '<td class="rec-col-age">' + ageLabel(r.generated_at) + '</td>' +
-      '<td class="rec-col-acts"><div class="rec-row-acts">' +
-        '<button class="rec-row-btn rec-row-btn-accept" onclick="event.stopPropagation();adRecAccept(\'' + esc(r.rec_id) + '\',this)">Accept</button>' +
-        '<button class="rec-row-btn rec-row-btn-decline" onclick="event.stopPropagation();adRecDecline(\'' + esc(r.rec_id) + '\',this)">Decline</button>' +
-      '</div></td>' +
-    '</tr>' + makeExpRow(r, 10);
-  }}
-  function monitoringRow(r) {{
-    return '<tr onclick="adRecExp(event,\'' + esc(r.rec_id) + '\')" style="cursor:pointer">' +
-      '<td class="rec-col-name">' + esc(r.entity_name||'') + '</td>' +
-      '<td class="rec-col-rule">' + esc(r.rule_name||r.rule_id||'') + '</td>' +
-      '<td class="rec-col-ruleflag">' + rfBadge(r.rule_or_flag) + '</td>' +
-      '<td class="rec-col-action">' + actionCell(r) + '</td>' +
-      '<td class="rec-col-risk">' + riskBadge(r.risk_level) + '</td>' +
-      '<td class="rec-col-date">' + fmtDate(r.accepted_at) + '</td>' +
-      '<td class="rec-col-progress">' + progressBar(r) + '</td>' +
-    '</tr>' + makeExpRow(r, 7);
-  }}
-  function successfulRow(r) {{
-    return '<tr onclick="adRecExp(event,\'' + esc(r.rec_id) + '\')" style="cursor:pointer">' +
-      '<td class="rec-col-name">' + esc(r.entity_name||'') + '</td>' +
-      '<td class="rec-col-rule">' + esc(r.rule_name||r.rule_id||'') + '</td>' +
-      '<td class="rec-col-ruleflag">' + rfBadge(r.rule_or_flag) + '</td>' +
-      '<td class="rec-col-action">' + actionCell(r) + '</td>' +
-      '<td class="rec-col-risk">' + riskBadge(r.risk_level) + '</td>' +
-      '<td class="rec-col-date">' + fmtDate(r.completed_at || r.resolved_at) + '</td>' +
-    '</tr>' + makeExpRow(r, 6);
-  }}
-  function historyRow(r) {{
-    return '<tr onclick="adRecExp(event,\'' + esc(r.rec_id) + '\')" style="cursor:pointer">' +
-      '<td class="rec-col-name">' + esc(r.entity_name||'') + '</td>' +
-      '<td class="rec-col-rule">' + esc(r.rule_name||r.rule_id||'') + '</td>' +
-      '<td class="rec-col-ruleflag">' + rfBadge(r.rule_or_flag) + '</td>' +
-      '<td class="rec-col-action">' + actionCell(r) + '</td>' +
-      '<td class="rec-col-risk">' + riskBadge(r.risk_level) + '</td>' +
-      '<td class="rec-col-date">' + fmtDate(r.resolved_at || r.accepted_at) + '</td>' +
-      '<td class="rec-col-status">' + outcomeBadge(r.status) + '</td>' +
-    '</tr>' + makeExpRow(r, 7);
-  }}
+// Row builders
+function pendingRow(r){var id=r.rec_id;var checked=AD_SEL[id]?'checked':'';return '<tr data-rec-id="'+id+'" class="'+(AD_SEL[id]?'rec-selected':'')+'" onclick="adRecExp(event,\''+esc(id)+'\')" style="cursor:pointer"><td onclick="event.stopPropagation()"><input type="checkbox" class="ad-rec-cb" value="'+id+'" '+checked+' onchange="adRecCbChange(this,\''+esc(id)+'\')" ></td><td class="rec-col-name">'+esc(r.entity_name||r.campaign_name||'\u2014')+'</td><td class="rec-col-rule">'+esc(r.rule_name||(r.rule_id?r.rule_id.replace(/_/g,' '):'\u2014'))+'</td><td class="rec-col-plain">'+esc(r.plain_english||'\u2014')+'</td><td class="rec-col-ruleflag">'+rfBadge(r.rule_or_flag)+'</td><td class="rec-col-ruletype">'+rtBadge(r.rule_type_display)+'</td><td class="rec-col-conditions">'+condCell(r.conditions)+'</td><td class="rec-col-action">'+actionCell(r)+'</td><td class="rec-col-risk">'+riskBadge(r.risk_level)+'</td><td class="rec-col-age">'+ageLabel(r.generated_at)+'</td><td class="rec-col-acts" onclick="event.stopPropagation()"><div class="rec-row-acts"><button class="rec-row-btn rec-row-btn-accept" onclick="adRecAccept(\''+esc(id)+'\',this)">Accept</button><button class="rec-row-btn rec-row-btn-decline" onclick="adRecDecline(\''+esc(id)+'\',this)">Decline</button></div></td></tr>'+makeExpRow(r,11);}
+function monitoringRow(r){var id=r.rec_id;return '<tr data-rec-id="'+id+'" onclick="adRecExp(event,\''+esc(id)+'\')" style="cursor:pointer"><td></td><td class="rec-col-date">'+fmtDate(r.accepted_at)+'</td><td class="rec-col-progress">'+progressBar(r)+'</td><td class="rec-col-name">'+esc(r.entity_name||r.campaign_name||'\u2014')+'</td><td class="rec-col-rule">'+esc(r.rule_name||(r.rule_id?r.rule_id.replace(/_/g,' '):'\u2014'))+'</td><td class="rec-col-plain">'+esc(r.plain_english||'\u2014')+'</td><td class="rec-col-ruleflag">'+rfBadge(r.rule_or_flag)+'</td><td class="rec-col-ruletype">'+rtBadge(r.rule_type_display)+'</td><td class="rec-col-conditions">'+condCell(r.conditions)+'</td><td class="rec-col-action">'+actionCell(r)+'</td><td class="rec-col-risk">'+riskBadge(r.risk_level)+'</td></tr>'+makeExpRow(r,11);}
+function successfulRow(r){var id=r.rec_id;return '<tr data-rec-id="'+id+'" onclick="adRecExp(event,\''+esc(id)+'\')" style="cursor:pointer"><td></td><td class="rec-col-date">'+fmtDate(r.accepted_at)+'</td><td class="rec-col-date">'+fmtDate(r.completed_at||r.resolved_at)+'</td><td class="rec-col-name">'+esc(r.entity_name||r.campaign_name||'\u2014')+'</td><td class="rec-col-rule">'+esc(r.rule_name||(r.rule_id?r.rule_id.replace(/_/g,' '):'\u2014'))+'</td><td class="rec-col-plain">'+esc(r.plain_english||'\u2014')+'</td><td class="rec-col-ruleflag">'+rfBadge(r.rule_or_flag)+'</td><td class="rec-col-ruletype">'+rtBadge(r.rule_type_display)+'</td><td class="rec-col-conditions">'+condCell(r.conditions)+'</td><td class="rec-col-action">'+actionCell(r)+'</td><td class="rec-col-risk">'+riskBadge(r.risk_level)+'</td></tr>'+makeExpRow(r,11);}
+function historyRow(r){var id=r.rec_id;var date=fmtDate(r.completed_at||r.resolved_at||r.updated_at);return '<tr data-rec-id="'+id+'" onclick="adRecExp(event,\''+esc(id)+'\')" style="cursor:pointer"><td></td><td class="rec-col-status">'+outcomeBadge(r.status)+'</td><td class="rec-col-date">'+date+'</td><td class="rec-col-name">'+esc(r.entity_name||r.campaign_name||'\u2014')+'</td><td class="rec-col-rule">'+esc(r.rule_name||(r.rule_id?r.rule_id.replace(/_/g,' '):'\u2014'))+'</td><td class="rec-col-plain">'+esc(r.plain_english||'\u2014')+'</td><td class="rec-col-ruleflag">'+rfBadge(r.rule_or_flag)+'</td><td class="rec-col-ruletype">'+rtBadge(r.rule_type_display)+'</td><td class="rec-col-conditions">'+condCell(r.conditions)+'</td><td class="rec-col-action">'+actionCell(r)+'</td><td class="rec-col-risk">'+riskBadge(r.risk_level)+'</td></tr>'+makeExpRow(r,11);}
 
-  function renderTab(tab) {{
-    var items = REC[tab];
-    var page  = PAGE[tab];
-    var start = (page - 1) * PER;
-    var slice = items.slice(start, start + PER);
-    var tbody = document.getElementById('ad-' + tab + '-tbody');
-    var pag   = document.getElementById('ad-' + tab + '-paginator');
-    if (!tbody) return;
-    if (!items.length) {{
-      tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:24px;color:#6b7280;">No ' + tab + ' recommendations.</td></tr>';
-      if (pag) pag.innerHTML = '';
-      return;
-    }}
-    var html = '';
-    slice.forEach(function(r) {{
-      html += (tab === 'pending' ? pendingRow(r) : tab === 'monitoring' ? monitoringRow(r) : tab === 'successful' ? successfulRow(r) : historyRow(r));
-    }});
-    tbody.innerHTML = html;
-    buildPag(pag, items.length, page, function(p) {{ PAGE[tab] = p; renderTab(tab); }});
-  }}
+function renderTab(tab){var items=AD_REC[tab];var page=AD_PAGE[tab];var start=(page-1)*AD_PER_PAGE;var slice=items.slice(start,start+AD_PER_PAGE);var tbody=document.getElementById('ad-'+tab+'-tbody');var pag=document.getElementById('ad-'+tab+'-paginator');if(!tbody)return;if(!items.length){tbody.innerHTML='<tr><td colspan="11" class="text-center text-muted py-4">No '+tab+' recommendations for ads.</td></tr>';if(pag)pag.innerHTML='';return;}var html='';slice.forEach(function(r){html+=(tab==='pending'?pendingRow(r):tab==='monitoring'?monitoringRow(r):tab==='successful'?successfulRow(r):historyRow(r));});tbody.innerHTML=html;buildPag(pag,items.length,page,function(p){AD_PAGE[tab]=p;renderTab(tab);});}
+function buildPag(el,total,current,cb){if(!el)return;var pages=Math.ceil(total/AD_PER_PAGE);if(pages<=1){el.innerHTML='';return;}var html='';for(var i=1;i<=pages;i++){html+='<button class="btn btn-sm '+(i===current?'btn-primary':'btn-outline-secondary')+'" data-p="'+i+'">'+i+'</button>';}el.innerHTML=html;el.querySelectorAll('button').forEach(function(btn){btn.addEventListener('click',function(){cb(parseInt(this.dataset.p));});});}
+function adRecRenderAll(){['pending','monitoring','successful','history'].forEach(renderTab);['pending','monitoring','successful','history'].forEach(function(k){var el=document.getElementById('ad-badge-'+k);if(el)el.textContent=AD_REC[k].length;});var total=AD_REC.pending.length+AD_REC.monitoring.length+AD_REC.successful.length+AD_REC.history.length;var mainCount=document.getElementById('rec-tab-count');if(mainCount)mainCount.textContent=total;}
 
-  function buildPag(el, total, current, cb) {{
-    if (!el) return;
-    var pages = Math.ceil(total / PER);
-    if (pages <= 1) {{ el.innerHTML = ''; return; }}
-    var html = '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;">';
-    for (var i = 1; i <= pages; i++) {{
-      var style = i === current
-        ? 'background:#1a73e8;color:#fff;border:1px solid #1a73e8;'
-        : 'background:#fff;color:#374151;border:1px solid #d1d5db;';
-      html += '<button style="' + style + 'padding:4px 10px;border-radius:4px;font-size:12px;cursor:pointer;" data-p="' + i + '">' + i + '</button>';
-    }}
-    html += '</div>';
-    el.innerHTML = html;
-    el.querySelectorAll('button').forEach(function(btn) {{
-      btn.addEventListener('click', function() {{ cb(parseInt(this.dataset.p)); }});
-    }});
-  }}
+function adShowToast(msg,type){var wrap=document.getElementById('act-toast-wrap');if(!wrap){wrap=document.createElement('div');wrap.id='act-toast-wrap';document.body.appendChild(wrap);}var cls=type==='success'?'t-success':type==='error'?'t-error':'t-muted';wrap.innerHTML='<div class="act-toast '+cls+'">'+esc(msg)+'</div>';var t=wrap.querySelector('.act-toast');if(t)t.style.display='block';setTimeout(function(){wrap.innerHTML='';},3500);}
 
-  function renderAll() {{
-    ['pending','monitoring','successful','history'].forEach(renderTab);
-    ['pending','monitoring','successful','history'].forEach(function(k) {{
-      var el = document.getElementById('ad-badge-' + k);
-      if (el) el.textContent = REC[k].length;
-    }});
-  }}
+function adRecLoad(){fetch('/recommendations/cards').then(function(r){return r.json();}).then(function(data){AD_REC.pending=(data.pending||[]).filter(function(r){return r.entity_type==='ad';});AD_REC.monitoring=(data.monitoring||[]).filter(function(r){return r.entity_type==='ad';});AD_REC.successful=(data.successful||[]).filter(function(r){return r.entity_type==='ad';});var hist=(data.declined||[]).concat(data.reverted||[]).filter(function(r){return r.entity_type==='ad';});hist.sort(function(a,b){return new Date(b.resolved_at||b.accepted_at||0)-new Date(a.resolved_at||a.accepted_at||0);});AD_REC.history=hist;AD_SEL={};adRecRenderAll();}).catch(function(err){console.error('adRecLoad error',err);});}
 
-  function toast(msg, type) {{
-    if (typeof showToast === 'function') showToast(msg, type, 3000);
-  }}
+window.adRecExp=function(evt,id){if(evt.target.type==='checkbox'||evt.target.tagName==='BUTTON')return;var row=document.getElementById('exp-'+id);if(row)row.classList.toggle('open');};
+window.adRecCbChange=function(chk,id){if(chk.checked)AD_SEL[id]=true;else delete AD_SEL[id];updateBulkBar();};
+window.adToggleAll=function(chk){var page=AD_PAGE.pending;var start=(page-1)*AD_PER_PAGE;var slice=AD_REC.pending.slice(start,start+AD_PER_PAGE);slice.forEach(function(r){if(chk.checked)AD_SEL[r.rec_id]=true;else delete AD_SEL[r.rec_id];});renderTab('pending');updateBulkBar();};
+window.adClearSelection=function(){AD_SEL={};var master=document.getElementById('ad-chk-all');if(master)master.checked=false;renderTab('pending');updateBulkBar();};
+function updateBulkBar(){var count=Object.keys(AD_SEL).length;var bar=document.getElementById('ad-bulk-bar');var lbl=document.getElementById('ad-bulk-count');if(bar)bar.style.display=count>0?'flex':'none';if(lbl)lbl.textContent=count+' selected';}
 
-  function recLoad() {{
-    fetch('/recommendations/cards')
-      .then(function(r) {{ return r.json(); }})
-      .then(function(data) {{
-        REC.pending    = (data.pending    || []).filter(function(r){{ return r.entity_type === _ENTITY_TYPE; }});
-        REC.monitoring = (data.monitoring || []).filter(function(r){{ return r.entity_type === _ENTITY_TYPE; }});
-        REC.successful = (data.successful || []).filter(function(r){{ return r.entity_type === _ENTITY_TYPE; }});
-        var hist = (data.declined || []).concat(data.reverted || []).filter(function(r){{ return r.entity_type === _ENTITY_TYPE; }});
-        hist.sort(function(a,b){{ return new Date(b.resolved_at||b.accepted_at||0) - new Date(a.resolved_at||a.accepted_at||0); }});
-        REC.history = hist;
-        SEL = {{}};
-        renderAll();
-      }})
-      .catch(function(err) {{ console.error('ad recLoad error', err); }});
-  }}
+window.adRecAccept=function(recId,btn){btn.disabled=true;btn.textContent='...';fetch('/recommendations/'+recId+'/accept',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCSRFToken()}}).then(function(r){return r.json();}).then(function(d){if(d.success){AD_REC.pending=AD_REC.pending.filter(function(r){return r.rec_id!==recId;});delete AD_SEL[recId];adRecRenderAll();adShowToast('Recommendation accepted','success');}else{adShowToast(d.message||'Failed','error');btn.disabled=false;btn.textContent='Accept';}}).catch(function(){adShowToast('Error','error');btn.disabled=false;btn.textContent='Accept';});};
+window.adRecDecline=function(recId,btn){btn.disabled=true;btn.textContent='...';fetch('/recommendations/'+recId+'/decline',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCSRFToken()}}).then(function(r){return r.json();}).then(function(d){if(d.success){AD_REC.pending=AD_REC.pending.filter(function(r){return r.rec_id!==recId;});delete AD_SEL[recId];adRecRenderAll();adShowToast('Recommendation declined','success');}else{adShowToast(d.message||'Failed','error');btn.disabled=false;btn.textContent='Decline';}}).catch(function(){adShowToast('Error','error');btn.disabled=false;btn.textContent='Decline';});};
+window.adDoBulk=function(action){var ids=Object.keys(AD_SEL);if(!ids.length)return;var done=0;ids.forEach(function(id){fetch('/recommendations/'+id+'/'+action,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCSRFToken()}}).then(function(r){return r.json();}).then(function(d){if(d.success)AD_REC.pending=AD_REC.pending.filter(function(r){return r.rec_id!==id;});done++;if(done===ids.length){AD_SEL={};adRecRenderAll();adShowToast('Done','success');}});});};
+window.adAcceptLowRisk=function(){var lowRisk=AD_REC.pending.filter(function(r){return r.risk_level==='low';});if(!lowRisk.length){adShowToast('No low-risk recommendations pending','info');return;}lowRisk.forEach(function(r){AD_SEL[r.rec_id]=true;});window.adDoBulk('accept');};
 
-  window['adRecExp'] = function(evt, id) {{
-    if (evt.target.type === 'checkbox' || evt.target.tagName === 'BUTTON') return;
-    var row = document.getElementById('exp-' + id);
-    if (row) row.classList.toggle('open');
-  }};
-  window['adRecCbChange'] = function(chk, id) {{
-    if (chk.checked) SEL[id] = true; else delete SEL[id];
-    updateBulkBar();
-  }};
-  window['adToggleAll'] = function(chk) {{
-    var start = (PAGE.pending - 1) * PER;
-    var slice = REC.pending.slice(start, start + PER);
-    slice.forEach(function(r) {{ if (chk.checked) SEL[r.rec_id] = true; else delete SEL[r.rec_id]; }});
-    renderTab('pending');
-    updateBulkBar();
-  }};
-  window['adClearSelection'] = function() {{
-    SEL = {{}};
-    var master = document.getElementById('ad-chk-all');
-    if (master) master.checked = false;
-    renderTab('pending');
-    updateBulkBar();
-  }};
-  function updateBulkBar() {{
-    var count = Object.keys(SEL).length;
-    var bar = document.getElementById('ad-bulk-bar');
-    var lbl = document.getElementById('ad-bulk-count');
-    if (bar) bar.style.display = count > 0 ? 'flex' : 'none';
-    if (lbl) lbl.textContent = count + ' selected';
-  }}
-  window['adRecAccept'] = function(recId, btn) {{
-    btn.disabled = true; btn.textContent = '...';
-    fetch('/recommendations/' + recId + '/accept', {{ method:'POST', headers:{{'Content-Type':'application/json'}} }})
-      .then(function(r){{ return r.json(); }})
-      .then(function(d){{
-        if (d.success) {{
-          REC.pending = REC.pending.filter(function(r){{ return r.rec_id !== recId; }});
-          delete SEL[recId];
-          renderAll();
-          toast('Recommendation accepted', 'success');
-        }} else {{ toast(d.message || 'Failed', 'error'); btn.disabled=false; btn.textContent='Accept'; }}
-      }})
-      .catch(function(){{ toast('Error', 'error'); btn.disabled=false; btn.textContent='Accept'; }});
-  }};
-  window['adRecDecline'] = function(recId, btn) {{
-    btn.disabled = true; btn.textContent = '...';
-    fetch('/recommendations/' + recId + '/decline', {{ method:'POST', headers:{{'Content-Type':'application/json'}} }})
-      .then(function(r){{ return r.json(); }})
-      .then(function(d){{
-        if (d.success) {{
-          REC.pending = REC.pending.filter(function(r){{ return r.rec_id !== recId; }});
-          delete SEL[recId];
-          renderAll();
-          toast('Recommendation declined', 'success');
-        }} else {{ toast(d.message || 'Failed', 'error'); btn.disabled=false; btn.textContent='Decline'; }}
-      }})
-      .catch(function(){{ toast('Error', 'error'); btn.disabled=false; btn.textContent='Decline'; }});
-  }};
-  window['adDoBulk'] = function(action) {{
-    var ids = Object.keys(SEL);
-    if (!ids.length) return;
-    var done = 0;
-    ids.forEach(function(id) {{
-      fetch('/recommendations/' + id + '/' + action, {{ method:'POST', headers:{{'Content-Type':'application/json'}} }})
-        .then(function(r){{ return r.json(); }})
-        .then(function(d){{
-          if (d.success) REC.pending = REC.pending.filter(function(r){{ return r.rec_id !== id; }});
-          done++;
-          if (done === ids.length) {{ SEL = {{}}; renderAll(); toast('Done', 'success'); }}
-        }});
-    }});
-  }};
+// ── Patch showTab to load recommendations on first open ──────────────────
+var _adRecLoaded=false;
+var _origShowTab=window.showTab;
+window.showTab=function(tabName){_origShowTab(tabName);if(tabName==='recommendations'&&!_adRecLoaded){_adRecLoaded=true;adRecLoad();}};
 
-  // Accept low risk
-  window['adAcceptLowRisk'] = function() {{
-    var low = REC.pending.filter(function(r){{ return r.risk_level === 'low'; }});
-    if (!low.length) {{ toast('No low-risk recommendations pending', 'info'); return; }}
-    low.forEach(function(r) {{ SEL[r.rec_id] = true; }});
-    window['adDoBulk']('accept');
-  }};
+// ── Engine button + DOMContentLoaded ─────────────────────────────────────
+document.addEventListener('DOMContentLoaded',function(){
+  var runBtn=document.getElementById('ad-run-engine-btn');
+  if(runBtn){runBtn.addEventListener('click',function(){var self=this;self.disabled=true;self.innerHTML='<span class="spinner-border spinner-border-sm"></span> Running...';fetch('/recommendations/run',{method:'POST',headers:{'X-CSRFToken':getCSRFToken()}}).then(function(r){return r.json();}).then(function(d){adShowToast(d.message||'Engine started','success');setTimeout(adRecLoad,2000);}).catch(function(){adShowToast('Error','error');}).finally(function(){self.disabled=false;self.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg> Run Recommendations Now';});});}
+  var flagTabBtn=document.getElementById('ad-flag-tab');
+  if(flagTabBtn)flagTabBtn.addEventListener('shown.bs.tab',function(){adLoadFlags();});
+});
+window.adRecLoad=adRecLoad;
 
-  // Patch showTab to load on first open
-  var _adLoaded = false;
-  var _origAdShowTab = typeof showTab === 'function' ? showTab : null;
-  showTab = function(tab) {{
-    if (_origAdShowTab) _origAdShowTab(tab);
-    if (tab === 'recommendations' && !_adLoaded) {{
-      _adLoaded = true;
-      recLoad();
-    }}
-  }};
+// ── Ad Flags ─────────────────────────────────────────────────────────────
+var AD_FLAGS=[],AD_FLAGS_SNOOZED=[],AD_FLAGS_HISTORY=[];
 
-  window.adRecLoad = recLoad;
+window.adFlagSectionToggle=function(bodyId,chevId){var body=document.getElementById(bodyId);var chev=document.getElementById(chevId);if(!body)return;var open=body.style.display!=='none';body.style.display=open?'none':'block';if(chev)chev.textContent=open?'\u25b6':'\u25bc';};
 
-  // Patch adSwitchTab to load flags on first open
-  var _adFlagsLoaded = false;
-  var _origAdSwitchTab = typeof adSwitchTab === 'function' ? adSwitchTab : null;
-  if (_origAdSwitchTab) {
-    adSwitchTab = function(tab) {{
-      _origAdSwitchTab(tab);
-      if (tab === 'flags' && !_adFlagsLoaded) {{ _adFlagsLoaded = true; if (window.adLoadFlags) window.adLoadFlags(); }}
-    }};
-  }
-}})();{%- endraw -%}
-// ── Ad Flags ──────────────────────────────────────────────────────────────
-window.adFlagSectionToggle = function(bodyId, chevId) {
-  var body = document.getElementById(bodyId);
-  var chev = document.getElementById(chevId);
-  if (!body) return;
-  var open = body.style.display !== 'none';
-  body.style.display = open ? 'none' : 'block';
-  if (chev) chev.textContent = open ? '▶' : '▼';
-};
-(function() {
-  var AD_FLAGS = [], AD_FLAGS_SNOOZED = [], AD_FLAGS_HISTORY = [];
-  function adFmtDate(dt) {
-    if (!dt) return '—';
-    try { return new Date(dt).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}); } catch(e) { return dt; }
-  }
-  function adEsc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function adSevBadge(sev) {
-    var s = (sev || '').toLowerCase();
-    var cls = s === 'high' ? 'flag-sev-high' : s === 'medium' ? 'flag-sev-medium' : 'flag-sev-low';
-    return '<span class="flag-sev-badge ' + cls + '">' + (s ? s.charAt(0).toUpperCase() + s.slice(1) : '—') + '</span>';
-  }
-  function adFlagActionsHtml(flag_id) {
-    return '<div class="rec-row-acts">'
-      + '<button class="rec-row-btn rec-row-btn-accept" onclick="adFlagAction(\'' + flag_id + '\',\'acknowledge\',0)">Acknowledge</button>'
-      + '<select onchange="if(this.value){adFlagAction(\'' + flag_id + '\',\'ignore\',parseInt(this.value));this.value=\'\'}" style="font-size:12px;padding:4px 6px;border:1px solid #fca5a5;border-radius:4px;color:#dc2626;cursor:pointer;">'
-      + '<option value="">Snooze…</option>'
-      + '<option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option>'
-      + '</select></div>';
-  }
-  function adFlagRender() {
-    var tbody = document.getElementById('ad-flag-tbody');
-    if (!tbody) return;
-    var badge = document.getElementById('ad-badge-flags');
-    if (badge) badge.textContent = AD_FLAGS.length;
-    if (!AD_FLAGS.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:#6b7280;">No active flags for ads.</td></tr>';
-      return;
-    }
-    tbody.innerHTML = AD_FLAGS.map(function(f) {
-      return '<tr style="border-bottom:1px solid #e5e7eb;">'
-        + '<td class="rec-col-name" style="padding:8px;">' + adEsc(f.entity_name || '—') + '</td>'
-        + '<td class="rec-col-rule" style="padding:8px;">' + adEsc(f.rule_name || '—') + '</td>'
-        + '<td class="rec-col-plain" style="padding:8px;">' + adEsc(f.plain_english || '—') + '</td>'
-        + '<td class="rec-col-risk" style="padding:8px;">' + adSevBadge(f.severity) + '</td>'
-        + '<td class="rec-col-age" style="padding:8px;">' + adEsc(f.generated_ago || '—') + '</td>'
-        + '<td class="rec-col-acts" style="padding:8px;">' + adFlagActionsHtml(f.flag_id) + '</td>'
-        + '</tr>';
-    }).join('');
-  }
-  function adFlagSnoozedRender() {
-    var tbody = document.getElementById('ad-flag-snooze-tbody');
-    var countEl = document.getElementById('ad-flag-snooze-count');
-    if (!tbody) return;
-    if (countEl) countEl.textContent = AD_FLAGS_SNOOZED.length;
-    if (!AD_FLAGS_SNOOZED.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#6b7280;">No snoozed flags.</td></tr>';
-      return;
-    }
-    tbody.innerHTML = AD_FLAGS_SNOOZED.map(function(f) {
-      return '<tr style="border-bottom:1px solid #e5e7eb;">'
-        + '<td style="padding:8px;">' + adEsc(f.entity_name || '—') + '</td>'
-        + '<td style="padding:8px;">' + adEsc(f.rule_name || '—') + '</td>'
-        + '<td style="padding:8px;font-size:12px;color:#6b7280;">' + adEsc(f.plain_english || '—') + '</td>'
-        + '<td style="padding:8px;">' + adSevBadge(f.severity) + '</td>'
-        + '<td style="padding:8px;font-size:11px;color:#9ca3af;">' + adEsc(f.generated_ago || '—') + '</td>'
-        + '<td style="padding:8px;font-size:12px;color:#6b7280;">' + adEsc(adFmtDate(f.snooze_until)) + '</td>'
-        + '<td style="padding:8px;">' + adFlagActionsHtml(f.flag_id) + '</td>'
-        + '</tr>';
-    }).join('');
-  }
-  function adFlagHistoryRender() {
-    var tbody = document.getElementById('ad-flag-hist-tbody');
-    var countEl = document.getElementById('ad-flag-hist-count');
-    if (!tbody) return;
-    if (countEl) countEl.textContent = AD_FLAGS_HISTORY.length;
-    if (!AD_FLAGS_HISTORY.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#6b7280;">No history.</td></tr>';
-      return;
-    }
-    tbody.innerHTML = AD_FLAGS_HISTORY.map(function(f) {
-      return '<tr style="border-bottom:1px solid #e5e7eb;">'
-        + '<td style="padding:8px;">' + adEsc(f.entity_name || '—') + '</td>'
-        + '<td style="padding:8px;">' + adEsc(f.rule_name || '—') + '</td>'
-        + '<td style="padding:8px;font-size:12px;color:#6b7280;">' + adEsc(f.plain_english || '—') + '</td>'
-        + '<td style="padding:8px;">' + adSevBadge(f.severity) + '</td>'
-        + '<td style="padding:8px;font-size:11px;color:#9ca3af;">' + adEsc(f.generated_ago || '—') + '</td>'
-        + '<td style="padding:8px;font-size:12px;color:#6b7280;">' + adEsc(adFmtDate(f.acknowledged_at || f.updated_at)) + '</td>'
-        + '<td style="padding:8px;">' + adFlagActionsHtml(f.flag_id) + '</td>'
-        + '</tr>';
-    }).join('');
-  }
-  function adLoadFlagsInner() {
-    fetch('/flags/cards')
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        AD_FLAGS         = (d.active   || []).filter(function(f) { return f.entity_type === 'ad'; });
-        AD_FLAGS_SNOOZED = (d.snoozed  || []).filter(function(f) { return f.entity_type === 'ad'; });
-        AD_FLAGS_HISTORY = (d.history  || []).filter(function(f) { return f.entity_type === 'ad'; });
-        adFlagRender();
-        adFlagSnoozedRender();
-        adFlagHistoryRender();
-      })
-      .catch(function() {
-        var tbody = document.getElementById('ad-flag-tbody');
-        if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:#6b7280;">Failed to load flags.</td></tr>';
-      });
-  }
-  window.adLoadFlags = adLoadFlagsInner;
-  window.adFlagAction = function(flag_id, action, days) {
-    var token = typeof getCSRFToken === 'function' ? getCSRFToken() : '';
-    fetch('/flags/' + flag_id + '/' + action, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': token }, body: JSON.stringify({ days: days }) })
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        var msg = d.success ? (action === 'acknowledge' ? 'Flag acknowledged.' : 'Flag snoozed for ' + days + ' days.') : ('Error: ' + (d.error || 'unknown'));
-        if (typeof showToast === 'function') showToast(msg, d.success ? 'success' : 'error', 3000);
-        if (d.success) adLoadFlagsInner();
-      })
-      .catch(function() { if (typeof showToast === 'function') showToast('Request failed.', 'error', 3000); });
-  };
+function adFmtDate(dt){if(!dt)return '\u2014';try{return new Date(dt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return dt;}}
+function adSevBadge(sev){var s=(sev||'').toLowerCase();var cls=s==='high'?'flag-sev-high':s==='medium'?'flag-sev-medium':'flag-sev-low';var lbl=s?s.charAt(0).toUpperCase()+s.slice(1):'\u2014';return '<span class="flag-sev-badge '+cls+'">'+lbl+'</span>';}
+function adFlagActionsHtml(flag_id){return '<div class="rec-row-acts"><button class="rec-row-btn rec-row-btn-accept" onclick="adFlagAction(\''+flag_id+'\',\'acknowledge\',0)">Acknowledge</button><div class="dropdown d-inline-block"><button class="rec-row-btn rec-row-btn-decline dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Snooze</button><ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item" href="#" onclick="adFlagAction(\''+flag_id+'\',\'ignore\',7);return false;">Snooze 7 days</a></li><li><a class="dropdown-item" href="#" onclick="adFlagAction(\''+flag_id+'\',\'ignore\',14);return false;">Snooze 14 days</a></li><li><a class="dropdown-item" href="#" onclick="adFlagAction(\''+flag_id+'\',\'ignore\',30);return false;">Snooze 30 days</a></li></ul></div></div>';}
+
+function adMakeFlagExpRow(f){var sevLabel=f.severity?(f.severity.charAt(0).toUpperCase()+f.severity.slice(1))+' severity':'\u2014';return '<tr class="rec-expand-row" id="ad-flag-exp-'+f.flag_id+'"><td colspan="7"><div class="rec-expand-inner"><div class="rec-expand-grid"><div class="rec-expand-card"><div class="rec-expand-label">Why this was triggered</div><div class="rec-expand-val">'+esc(f.trigger_summary||'\u2014')+'</div></div><div class="rec-expand-card"><div class="rec-expand-label">Flag details</div><div class="rec-expand-val">'+esc(f.plain_english||'\u2014')+'</div></div><div class="rec-expand-card"><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">'+esc(sevLabel)+'</div></div></div></div></td></tr>';}
+window.adFlagExp=function(evt,id){if(evt.target.closest('button,input,a,select'))return;var el=document.getElementById('ad-flag-exp-'+id);if(!el)return;el.classList.toggle('open');};
+
+function adFlagRender(){var tbody=document.getElementById('ad-flag-tbody');if(!tbody)return;var badgeEl=document.getElementById('ad-badge-flags');if(badgeEl)badgeEl.textContent=AD_FLAGS.length;if(!AD_FLAGS.length){tbody.innerHTML='<tr><td colspan="7" class="text-center text-muted py-4">No active flags for ads.</td></tr>';return;}tbody.innerHTML=AD_FLAGS.map(function(f){return '<tr style="cursor:pointer;" onclick="adFlagExp(event, \''+f.flag_id+'\')">'+'<td class="rec-col-name">'+esc(f.entity_name||'\u2014')+'</td>'+'<td class="rec-col-rule">'+esc(f.rule_name||'\u2014')+'</td>'+'<td class="rec-col-plain">'+esc(f.plain_english||'\u2014')+'</td>'+'<td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-flag">Flag</span></td>'+'<td class="rec-col-risk">'+adSevBadge(f.severity)+'</td>'+'<td class="rec-col-age">'+esc(f.generated_ago||'\u2014')+'</td>'+'<td class="rec-col-acts" onclick="event.stopPropagation()">'+adFlagActionsHtml(f.flag_id)+'</td>'+'</tr>'+adMakeFlagExpRow(f);}).join('');}
+
+function adFlagSnoozedRender(){var tbody=document.getElementById('ad-flag-snooze-tbody');var countEl=document.getElementById('ad-flag-snooze-count');if(!tbody)return;if(countEl)countEl.textContent=AD_FLAGS_SNOOZED.length;if(!AD_FLAGS_SNOOZED.length){tbody.innerHTML='<tr><td colspan="7" class="text-center text-muted py-3">No snoozed flags.</td></tr>';return;}tbody.innerHTML=AD_FLAGS_SNOOZED.map(function(f){return '<tr><td>'+esc(f.entity_name||'\u2014')+'</td><td>'+esc(f.rule_name||'\u2014')+'</td><td style="font-size:12px;color:#5f6368;">'+esc(f.plain_english||'\u2014')+'</td><td>'+adSevBadge(f.severity)+'</td><td style="font-size:11px;color:#9aa0a6;">'+esc(f.generated_ago||'\u2014')+'</td><td style="font-size:12px;color:#5f6368;">'+esc(adFmtDate(f.snooze_until))+'</td><td onclick="event.stopPropagation()">'+adFlagActionsHtml(f.flag_id)+'</td></tr>';}).join('');}
+
+function adFlagHistoryRender(){var tbody=document.getElementById('ad-flag-hist-tbody');var countEl=document.getElementById('ad-flag-hist-count');if(!tbody)return;if(countEl)countEl.textContent=AD_FLAGS_HISTORY.length;if(!AD_FLAGS_HISTORY.length){tbody.innerHTML='<tr><td colspan="7" class="text-center text-muted py-3">No history.</td></tr>';return;}tbody.innerHTML=AD_FLAGS_HISTORY.map(function(f){var actioned=adFmtDate(f.acknowledged_at||f.updated_at);return '<tr><td>'+esc(f.entity_name||'\u2014')+'</td><td>'+esc(f.rule_name||'\u2014')+'</td><td style="font-size:12px;color:#5f6368;">'+esc(f.plain_english||'\u2014')+'</td><td>'+adSevBadge(f.severity)+'</td><td style="font-size:11px;color:#9aa0a6;">'+esc(f.generated_ago||'\u2014')+'</td><td style="font-size:12px;color:#5f6368;">'+esc(actioned)+'</td><td onclick="event.stopPropagation()">'+adFlagActionsHtml(f.flag_id)+'</td></tr>';}).join('');}
+
+function adLoadFlags(){fetch('/flags/cards').then(function(r){return r.json();}).then(function(d){AD_FLAGS=(d.active||[]).filter(function(f){return f.entity_type==='ad';});AD_FLAGS_SNOOZED=(d.snoozed||[]).filter(function(f){return f.entity_type==='ad';});AD_FLAGS_HISTORY=(d.history||[]).filter(function(f){return f.entity_type==='ad';});adFlagRender();adFlagSnoozedRender();adFlagHistoryRender();}).catch(function(){var tbody=document.getElementById('ad-flag-tbody');if(tbody)tbody.innerHTML='<tr><td colspan="7" class="text-center text-muted py-4">Failed to load flags.</td></tr>';});}
+window.adLoadFlags=adLoadFlags;
+
+window.adFlagAction=function(flag_id,action,days){var url='/flags/'+flag_id+'/'+action;fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':getCSRFToken()},body:JSON.stringify({days:days})}).then(function(r){return r.json();}).then(function(d){if(d.success){adShowToast(action==='acknowledge'?'Flag acknowledged.':'Flag snoozed for '+days+' days.','success');adLoadFlags();}else{adShowToast('Error: '+(d.error||'unknown'),'error');}}).catch(function(){adShowToast('Request failed.','error');});};
+
 })();
 </script>
 {% endblock %}
