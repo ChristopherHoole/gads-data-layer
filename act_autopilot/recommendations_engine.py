@@ -487,7 +487,7 @@ def _detect_entity_type(rule_id: str) -> str:
     entity_type = clean_id.split("_")[0]
 
     # Validate known types
-    if entity_type in ("campaign", "keyword", "ad", "shopping"):
+    if entity_type in ("campaign", "keyword", "ad", "shopping", "product"):
         return entity_type
 
     return "campaign"  # fallback for unknown types
@@ -971,7 +971,11 @@ def _run_flag_engine(conn, customer_id: str):
 
         for _, entity_row in entity_data.iterrows():
             features = entity_row.to_dict()
-            entity_id = str(int(features.get(id_col, 0)))
+            raw_eid = features.get(id_col, 0)
+            try:
+                entity_id = str(int(raw_eid))
+            except (ValueError, TypeError):
+                entity_id = str(raw_eid)
             entity_name = features.get(name_col) or f"{entity_type}_{entity_id}"
 
             for rule in rules:
@@ -1226,11 +1230,19 @@ def run_recommendations_engine(
         # Process each entity row
         for _, entity_row in entity_data.iterrows():
             features = entity_row.to_dict()
-            entity_id = str(int(features.get(id_col, 0)))
+            raw_eid = features.get(id_col, 0)
+            try:
+                entity_id = str(int(raw_eid))
+            except (ValueError, TypeError):
+                entity_id = str(raw_eid)
             entity_name = features.get(name_col) or f"{entity_type}_{entity_id}"
 
             # Get campaign_id for backward compatibility
-            campaign_id = str(int(features.get("campaign_id", 0)))
+            raw_cid = features.get("campaign_id", 0)
+            try:
+                campaign_id = str(int(raw_cid))
+            except (ValueError, TypeError):
+                campaign_id = str(raw_cid)
 
             for rule in entity_rules:
                 rule_id = rule["rule_id"]
