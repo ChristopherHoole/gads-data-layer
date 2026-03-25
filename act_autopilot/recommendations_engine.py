@@ -310,9 +310,9 @@ AD_METRIC_MAP = {
     "roas_w7_mean":     ("roas_7d",     None, None),
     "roas_w14_mean":    ("roas_7d",     None, None),   # 14d not in features, use 7d
     "roas_w30_mean":    ("roas_30d",    None, None),
-    "cpa_w7_mean":      ("cpa_7d",      None, None),
-    "cpa_w14_mean":     ("cpa_7d",      None, None),   # 14d not in features, use 7d
-    "cpa_w30_mean":     ("cpa_30d",     None, None),
+    "cpa_w7_mean":      ("cpa_7d",      None, None, 1_000_000),
+    "cpa_w14_mean":     ("cpa_7d",      None, None, 1_000_000),   # 14d not in features, use 7d
+    "cpa_w30_mean":     ("cpa_30d",     None, None, 1_000_000),
     "clicks_w7_sum":    ("clicks_7d",   None, None),
     "clicks_w14_sum":   ("clicks_14d",  None, None),
     "clicks_w30_sum":   ("clicks_30d",  None, None),
@@ -537,8 +537,11 @@ def _evaluate(value, operator, threshold) -> bool:
                 return bool(value) == threshold
             return float(value) == float(threshold)
         if operator == "in":
-            # Handle "in" operator for comma-separated string lists (e.g., ad_strength in "GOOD,EXCELLENT")
-            allowed = [s.strip() for s in str(threshold).split(",")]
+            # Handle "in" operator for comma-separated string lists
+            # Supports both "GOOD,EXCELLENT" and "['POOR', 'AVERAGE']" formats
+            import re
+            cleaned = re.sub(r"[\[\]'\"]", "", str(threshold))
+            allowed = [s.strip() for s in cleaned.split(",") if s.strip()]
             return str(value).strip() in allowed
     except (TypeError, ValueError):
         return False
