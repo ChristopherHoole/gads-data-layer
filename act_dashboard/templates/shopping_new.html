@@ -1410,343 +1410,332 @@ function applyShopColumns() {
 })();
 
 // ===========================================================================
-// RECOMMENDATIONS TAB - TABLE UI (Chat 96)
+// RECOMMENDATIONS TAB - TABLE UI (Chat 96 -> Chat 114 rewrite to match ad_groups pattern)
 // ===========================================================================
-(function () {
-  'use strict';
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  function esc(s) {
-    if (s == null) return '';
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
+// ===========================================================================
+// RECOMMENDATIONS TAB - DATA FETCHING
+// ===========================================================================
+let shopRecommendations = {
+  pending: [],
+  monitoring: [],
+  successful: [],
+  reverted: [],
+  declined: []
+};
+
+(function () {
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function rfBadge(v) {
-    if (!v) return '<span class="rec-badge-flag">Flag</span>';
-    var lv = v.toLowerCase();
-    if (lv === 'rule') return '<span class="rec-badge-rule">Rule</span>';
-    return '<span class="rec-badge-flag">Flag</span>';
+    if (!v) return '';
+    var cls = v === 'rule' ? 'rec-rf-rule' : 'rec-rf-flag';
+    return '<span class="rec-rf-badge ' + cls + '">' + esc(v.charAt(0).toUpperCase()+v.slice(1)) + '</span>';
   }
   function rtBadge(v) {
-    var m = { budget:'Budget', bid:'Bid', status:'Status', keyword:'Keyword', shopping:'Shopping' };
-    return '<span class="rec-badge-type">' + esc(m[v] || v || 'Other') + '</span>';
+    if (!v) return '';
+    var map = { budget:'rec-rt-budget', bid:'rec-rt-bid', status:'rec-rt-status', keyword:'rec-rt-keyword', shopping:'rec-rt-shopping' };
+    var cls = map[v] || 'rec-rt-budget';
+    return '<span class="rec-rt-badge ' + cls + '">' + esc(v.charAt(0).toUpperCase()+v.slice(1)) + '</span>';
   }
-  function condCell(v) {
-    if (!v) return '<span class="text-muted">—</span>';
-    return '<span class="rec-cond-cell" title="' + esc(v) + '">' + esc(v.length > 60 ? v.slice(0,58)+'…' : v) + '</span>';
+  function condCell(conds) {
+    if (!conds || !conds.length) return '';
+    return '<div class="rec-conditions-cell">' + conds.map(function(c){ return '<span>' + esc(c) + '</span>'; }).join('') + '</div>';
   }
-  function actionCell(v) {
-    if (!v) return '<span class="text-muted">—</span>';
-    return '<span class="rec-action-pill">' + esc(v) + '</span>';
+  function actionCell(r) {
+    var dir = r.action_direction || '';
+    var cls = dir === 'increase' ? 'rec-action-increase' : dir === 'decrease' ? 'rec-action-decrease' : dir === 'pause' ? 'rec-action-pause' : dir === 'enable' ? 'rec-action-increase' : 'rec-action-hold';
+    var arrow = dir === 'increase' ? '\u2191' : dir === 'decrease' ? '\u2193' : dir === 'pause' ? '\u23f8' : dir === 'enable' ? '\u25b6' : '\u2192';
+    var sub = r.value_label ? '<div class="rec-action-sub">' + esc(r.value_label) + '</div>' : '';
+    var hum = r.risk_level === 'high' ? '<div class="rec-human-badge"><i class="bi bi-exclamation-triangle-fill"></i> Human confirm</div>' : '';
+    return hum + '<div><span class="rec-action-text ' + cls + '">' + arrow + ' ' + esc(r.action_label || '\u2014') + '</span>' + sub + '</div>';
   }
-  function riskBadge(r) {
-    var cls = { low:'rec-risk-low', medium:'rec-risk-med', high:'rec-risk-high' };
-    return '<span class="' + (cls[r] || 'rec-risk-low') + '">' + esc(r||'low') + '</span>';
+  function riskBadge(v) {
+    if (!v) return '';
+    var cls = v === 'low' ? 'rec-risk-low' : v === 'medium' ? 'rec-risk-medium' : 'rec-risk-high';
+    return '<span class="rec-risk-badge ' + cls + '">' + esc(v.charAt(0).toUpperCase()+v.slice(1)) + '</span>';
   }
-  function outcomeBadge(s) {
-    var cls = { declined:'rec-outcome-declined', reverted:'rec-outcome-reverted' };
-    return '<span class="' + (cls[s] || 'rec-outcome-declined') + '">' + esc(s) + '</span>';
+  function outcomeBadge(status) {
+    var map = { successful:'rec-outcome-successful', declined:'rec-outcome-declined', reverted:'rec-outcome-reverted', monitoring:'rec-outcome-monitoring' };
+    var label = { successful:'Successful', declined:'Declined', reverted:'Reverted', monitoring:'Monitoring' };
+    var cls = map[status] || '';
+    return '<span class="rec-outcome-badge ' + cls + '">' + (label[status]||esc(status)) + '</span>';
   }
-  function fmtDate(d) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  function fmtDate(s) {
+    if (!s) return '';
+    var d = new Date(s);
+    return isNaN(d) ? esc(s) : d.toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'});
   }
-  function ageLabel(d) {
-    if (!d) return '—';
-    var days = Math.round((Date.now() - new Date(d)) / 86400000);
-    return days < 1 ? 'Today' : days + 'd';
+  function ageLabel(s) {
+    if (!s) return '';
+    var diff = Math.floor((Date.now() - new Date(s)) / 86400000);
+    return diff === 0 ? 'Today' : diff + 'd';
   }
   function progressBar(r) {
-    var pct = Math.min(100, Math.max(0, r.monitoring_progress_pct || 0));
-    return '<div class="rec-progress-wrap"><div class="rec-progress-bar" style="width:' + pct + '%"></div></div><span style="font-size:11px;color:#6b7280;">' + pct + '%</span>';
+    if (!r.accepted_at || !r.monitoring_ends_at) return '';
+    var start = new Date(r.accepted_at).getTime();
+    var end   = new Date(r.monitoring_ends_at).getTime();
+    var now   = Date.now();
+    var pct   = Math.min(100, Math.max(0, Math.round((now - start) / (end - start) * 100)));
+    var days  = Math.ceil((end - now) / 86400000);
+    var endStr = new Date(r.monitoring_ends_at).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'});
+    return '<div class="rec-progress-wrap"><div class="rec-progress-bg"><div class="rec-progress-fill" style="width:' + pct + '%"></div></div>' +
+           '<div class="rec-progress-label">' + (days > 0 ? days + 'd remaining' : 'Ending') + ' \u00b7 ends ' + endStr + '</div></div>';
   }
-  function makeExpRow(r, cols) {
-    var plain = r.plain_english || r.action_description || '';
-    var cond  = r.conditions || '';
-    return '<tr class="rec-exp-row"><td colspan="' + cols + '" class="rec-exp-cell">'
-      + (plain ? '<div><strong>Plain English:</strong> ' + esc(plain) + '</div>' : '')
-      + (cond  ? '<div><strong>Conditions:</strong> ' + esc(cond) + '</div>' : '')
-      + '<div><strong>Rec ID:</strong> ' + esc(r.rec_id) + '</div>'
-      + '</td></tr>';
+  function makeExpRow(r, colspan) {
+    var why = esc(r.trigger_summary || '\u2014');
+    var cur = r.current_value != null ? esc(String(r.current_value)) : '\u2014';
+    var prop = r.proposed_value != null ? esc(String(r.proposed_value)) + (r.value_suffix ? ' ' + esc(r.value_suffix) : '') : '\u2014';
+    var det = [(r.rule_name || r.rule_id) ? 'Rule: ' + esc(r.rule_name || r.rule_id) : '', r.cooldown_days ? 'Cooldown: ' + r.cooldown_days + ' days' : ''].filter(Boolean).join('<br>') || '\u2014';
+    var proposedHtml = r.rule_type === 'status'
+      ? 'Enabled \u2192 Paused'
+      : 'Current: ' + cur + '<br>Proposed: ' + prop;
+    return '<tr class="rec-expand-row" id="exp-' + esc(r.rec_id) + '"><td colspan="' + colspan + '"><div class="rec-expand-inner"><div class="rec-expand-grid">'
+      + '<div class="rec-expand-card"><div class="rec-expand-label">Why triggered</div><div class="rec-expand-val">' + why + '</div></div>'
+      + '<div class="rec-expand-card"><div class="rec-expand-label">Proposed change</div><div class="rec-expand-val">' + proposedHtml + '</div></div>'
+      + '<div class="rec-expand-card"><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">' + det + '</div></div>'
+      + '</div></div></td></tr>';
   }
-
-  // ── State ─────────────────────────────────────────────────────────────────
   var SHOP_REC = { pending:[], monitoring:[], successful:[], history:[] };
   var SHOP_SEL = {};
   var SHOP_PAGE = { pending:1, monitoring:1, successful:1, history:1 };
-  var SHOP_PER_PAGE = 25;
-
-  // ── Row builders ──────────────────────────────────────────────────────────
+  var SHOP_PER_PAGE = 20;
   function pendingRow(r) {
     var id = r.rec_id;
-    var chk = '<input type="checkbox" class="shop-rec-cb" data-id="' + id + '" onchange="shopRecCbChange(this)" ' + (SHOP_SEL[id] ? 'checked' : '') + '>';
-    return '<tr data-id="' + id + '">'
-      + '<td>' + chk + '</td>'
-      + '<td class="rec-col-name">' + esc(r.entity_name || r.campaign_name || '—') + '</td>'
-      + '<td>' + esc(r.rule_name || r.rule_id || '—') + '</td>'
-      + '<td>' + condCell(r.plain_english || r.action_description) + '</td>'
-      + '<td>' + rfBadge(r.rule_or_flag) + '</td>'
-      + '<td>' + rtBadge(r.rule_type_display || r.rule_type) + '</td>'
-      + '<td>' + condCell(r.conditions) + '</td>'
-      + '<td>' + actionCell(r.action_description) + '</td>'
-      + '<td>' + riskBadge(r.risk_level) + '</td>'
-      + '<td>' + ageLabel(r.created_at) + '</td>'
-      + '<td style="white-space:nowrap;">'
-        + '<button class="btn btn-xs btn-link p-0 me-1" onclick="shopRecExp(' + id + ', this)" title="Expand">&#x25BC;</button>'
-        + '<button class="btn btn-xs btn-success py-0 px-1 me-1" style="font-size:11px;" onclick="shopRecAccept(' + id + ', this)">Accept</button>'
-        + '<button class="btn btn-xs btn-outline-danger py-0 px-1" style="font-size:11px;" onclick="shopRecDecline(' + id + ', this)">Decline</button>'
-      + '</td>'
-      + '</tr>';
+    var checked = SHOP_SEL[id] ? 'checked' : '';
+    return '<tr data-rec-id="' + id + '" class="' + (SHOP_SEL[id] ? 'rec-selected' : '') + '" onclick="shopRecExp(event,\'' + esc(id) + '\')" style="cursor:pointer">' +
+      '<td onclick="event.stopPropagation()"><input type="checkbox" class="shop-rec-cb" value="' + id + '" ' + checked + ' onchange="shopRecCbChange(this,\'' + esc(id) + '\')" ></td>' +
+      '<td class="rec-col-name">' + esc(r.entity_name || r.campaign_name || '\u2014') + '</td>' +
+      '<td class="rec-col-rule">' + esc(r.rule_name || (r.rule_id ? r.rule_id.replace(/_/g,' ') : '\u2014')) + '</td>' +
+      '<td class="rec-col-plain">' + esc(r.plain_english || '\u2014') + '</td>' +
+      '<td class="rec-col-ruleflag">' + rfBadge(r.rule_or_flag) + '</td>' +
+      '<td class="rec-col-ruletype">' + rtBadge(r.rule_type_display) + '</td>' +
+      '<td class="rec-col-conditions">' + condCell(r.conditions) + '</td>' +
+      '<td class="rec-col-action">' + actionCell(r) + '</td>' +
+      '<td class="rec-col-risk">' + riskBadge(r.risk_level) + '</td>' +
+      '<td class="rec-col-age">' + ageLabel(r.generated_at) + '</td>' +
+      '<td class="rec-col-acts" onclick="event.stopPropagation()"><div class="rec-row-acts">' +
+        '<button class="rec-row-btn rec-row-btn-accept" onclick="shopRecAccept(\'' + esc(id) + '\',this)">Accept</button>' +
+        '<button class="rec-row-btn rec-row-btn-decline" onclick="shopRecDecline(\'' + esc(id) + '\',this)">Decline</button>' +
+      '</div></td>' +
+    '</tr>' + makeExpRow(r, 11);
   }
   function monitoringRow(r) {
-    return '<tr>'
-      + '<td></td>'
-      + '<td>' + fmtDate(r.accepted_at) + '</td>'
-      + '<td>' + progressBar(r) + '</td>'
-      + '<td class="rec-col-name">' + esc(r.entity_name || r.campaign_name || '—') + '</td>'
-      + '<td>' + esc(r.rule_name || r.rule_id || '—') + '</td>'
-      + '<td>' + condCell(r.plain_english || r.action_description) + '</td>'
-      + '<td>' + rfBadge(r.rule_or_flag) + '</td>'
-      + '<td>' + rtBadge(r.rule_type_display || r.rule_type) + '</td>'
-      + '<td>' + condCell(r.conditions) + '</td>'
-      + '<td>' + actionCell(r.action_description) + '</td>'
-      + '<td>' + riskBadge(r.risk_level) + '</td>'
-      + '</tr>';
+    var id = r.rec_id;
+    return '<tr data-rec-id="' + id + '" onclick="shopRecExp(event,\'' + esc(id) + '\')" style="cursor:pointer">' +
+      '<td></td>' +
+      '<td class="rec-col-date">' + fmtDate(r.accepted_at) + '</td>' +
+      '<td class="rec-col-progress">' + progressBar(r) + '</td>' +
+      '<td class="rec-col-name">' + esc(r.entity_name || r.campaign_name || '\u2014') + '</td>' +
+      '<td class="rec-col-rule">' + esc(r.rule_name || (r.rule_id ? r.rule_id.replace(/_/g,' ') : '\u2014')) + '</td>' +
+      '<td class="rec-col-plain">' + esc(r.plain_english || '\u2014') + '</td>' +
+      '<td class="rec-col-ruleflag">' + rfBadge(r.rule_or_flag) + '</td>' +
+      '<td class="rec-col-ruletype">' + rtBadge(r.rule_type_display) + '</td>' +
+      '<td class="rec-col-conditions">' + condCell(r.conditions) + '</td>' +
+      '<td class="rec-col-action">' + actionCell(r) + '</td>' +
+      '<td class="rec-col-risk">' + riskBadge(r.risk_level) + '</td>' +
+    '</tr>' + makeExpRow(r, 11);
   }
   function successfulRow(r) {
-    return '<tr>'
-      + '<td></td>'
-      + '<td>' + fmtDate(r.accepted_at) + '</td>'
-      + '<td>' + fmtDate(r.completed_at) + '</td>'
-      + '<td class="rec-col-name">' + esc(r.entity_name || r.campaign_name || '—') + '</td>'
-      + '<td>' + esc(r.rule_name || r.rule_id || '—') + '</td>'
-      + '<td>' + condCell(r.plain_english || r.action_description) + '</td>'
-      + '<td>' + rfBadge(r.rule_or_flag) + '</td>'
-      + '<td>' + rtBadge(r.rule_type_display || r.rule_type) + '</td>'
-      + '<td>' + condCell(r.conditions) + '</td>'
-      + '<td>' + actionCell(r.action_description) + '</td>'
-      + '<td>' + riskBadge(r.risk_level) + '</td>'
-      + '</tr>';
+    var id = r.rec_id;
+    return '<tr data-rec-id="' + id + '" onclick="shopRecExp(event,\'' + esc(id) + '\')" style="cursor:pointer">' +
+      '<td></td>' +
+      '<td class="rec-col-date">' + fmtDate(r.accepted_at) + '</td>' +
+      '<td class="rec-col-date">' + fmtDate(r.completed_at || r.resolved_at) + '</td>' +
+      '<td class="rec-col-name">' + esc(r.entity_name || r.campaign_name || '\u2014') + '</td>' +
+      '<td class="rec-col-rule">' + esc(r.rule_name || (r.rule_id ? r.rule_id.replace(/_/g,' ') : '\u2014')) + '</td>' +
+      '<td class="rec-col-plain">' + esc(r.plain_english || '\u2014') + '</td>' +
+      '<td class="rec-col-ruleflag">' + rfBadge(r.rule_or_flag) + '</td>' +
+      '<td class="rec-col-ruletype">' + rtBadge(r.rule_type_display) + '</td>' +
+      '<td class="rec-col-conditions">' + condCell(r.conditions) + '</td>' +
+      '<td class="rec-col-action">' + actionCell(r) + '</td>' +
+      '<td class="rec-col-risk">' + riskBadge(r.risk_level) + '</td>' +
+    '</tr>' + makeExpRow(r, 11);
   }
   function historyRow(r) {
-    var dt = r.declined_at || r.reverted_at || r.completed_at;
-    return '<tr>'
-      + '<td></td>'
-      + '<td>' + outcomeBadge(r.status) + '</td>'
-      + '<td>' + fmtDate(dt) + '</td>'
-      + '<td class="rec-col-name">' + esc(r.entity_name || r.campaign_name || '—') + '</td>'
-      + '<td>' + esc(r.rule_name || r.rule_id || '—') + '</td>'
-      + '<td>' + condCell(r.plain_english || r.action_description) + '</td>'
-      + '<td>' + rfBadge(r.rule_or_flag) + '</td>'
-      + '<td>' + rtBadge(r.rule_type_display || r.rule_type) + '</td>'
-      + '<td>' + condCell(r.conditions) + '</td>'
-      + '<td>' + actionCell(r.action_description) + '</td>'
-      + '<td>' + riskBadge(r.risk_level) + '</td>'
-      + '</tr>';
+    var id = r.rec_id;
+    var date = fmtDate(r.completed_at || r.resolved_at || r.updated_at);
+    return '<tr data-rec-id="' + id + '" onclick="shopRecExp(event,\'' + esc(id) + '\')" style="cursor:pointer">' +
+      '<td></td>' +
+      '<td class="rec-col-status">' + outcomeBadge(r.status) + '</td>' +
+      '<td class="rec-col-date">' + date + '</td>' +
+      '<td class="rec-col-name">' + esc(r.entity_name || r.campaign_name || '\u2014') + '</td>' +
+      '<td class="rec-col-rule">' + esc(r.rule_name || (r.rule_id ? r.rule_id.replace(/_/g,' ') : '\u2014')) + '</td>' +
+      '<td class="rec-col-plain">' + esc(r.plain_english || '\u2014') + '</td>' +
+      '<td class="rec-col-ruleflag">' + rfBadge(r.rule_or_flag) + '</td>' +
+      '<td class="rec-col-ruletype">' + rtBadge(r.rule_type_display) + '</td>' +
+      '<td class="rec-col-conditions">' + condCell(r.conditions) + '</td>' +
+      '<td class="rec-col-action">' + actionCell(r) + '</td>' +
+      '<td class="rec-col-risk">' + riskBadge(r.risk_level) + '</td>' +
+    '</tr>' + makeExpRow(r, 11);
   }
-
-  // ── Render ────────────────────────────────────────────────────────────────
-  function renderTab(tab, rowFn, cols) {
-    var rows = SHOP_REC[tab];
-    var pg   = SHOP_PAGE[tab];
-    var start = (pg - 1) * SHOP_PER_PAGE;
-    var slice = rows.slice(start, start + SHOP_PER_PAGE);
+  function renderTab(tab) {
+    var items = SHOP_REC[tab];
+    var page  = SHOP_PAGE[tab];
+    var start = (page - 1) * SHOP_PER_PAGE;
+    var slice = items.slice(start, start + SHOP_PER_PAGE);
     var tbody = document.getElementById('shop-' + tab + '-tbody');
+    var pag   = document.getElementById('shop-' + tab + '-paginator');
     if (!tbody) return;
-    if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="' + cols + '" class="text-center text-muted py-4">No ' + tab + ' recommendations</td></tr>';
-    } else {
-      tbody.innerHTML = slice.map(rowFn).join('');
+    if (!items.length) {
+      tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-4">No ' + tab + ' recommendations for shopping.</td></tr>';
+      if (pag) pag.innerHTML = '';
+      return;
     }
-    buildPag(tab, rows.length, pg, cols);
-    var badge = document.getElementById('shop-badge-' + tab);
-    if (badge) badge.textContent = rows.length;
+    var html = '';
+    slice.forEach(function(r) {
+      html += (tab === 'pending' ? pendingRow(r) : tab === 'monitoring' ? monitoringRow(r) : tab === 'successful' ? successfulRow(r) : historyRow(r));
+    });
+    tbody.innerHTML = html;
+    buildPag(pag, items.length, page, function(p) { SHOP_PAGE[tab] = p; renderTab(tab); });
   }
-  function buildPag(tab, total, pg, cols) {
-    var el = document.getElementById('shop-' + tab + '-paginator');
+  function buildPag(el, total, current, cb) {
     if (!el) return;
     var pages = Math.ceil(total / SHOP_PER_PAGE);
     if (pages <= 1) { el.innerHTML = ''; return; }
-    var btns = '';
+    var html = '';
     for (var i = 1; i <= pages; i++) {
-      btns += '<button class="btn btn-xs ' + (i === pg ? 'btn-primary' : 'btn-outline-secondary') + ' py-0 px-2" style="font-size:11px;" onclick="shopRecRenderAll(\'' + tab + '\',' + i + ')">' + i + '</button> ';
+      html += '<button class="btn btn-sm ' + (i === current ? 'btn-primary' : 'btn-outline-secondary') + '" data-p="' + i + '">' + i + '</button>';
     }
-    el.innerHTML = '<span style="color:#6b7280;">Page ' + pg + ' of ' + pages + '</span><div class="d-flex gap-1">' + btns + '</div>';
+    el.innerHTML = html;
+    el.querySelectorAll('button').forEach(function(btn) {
+      btn.addEventListener('click', function() { cb(parseInt(this.dataset.p)); });
+    });
   }
-  function shopRecRenderAll(jumpTab, jumpPage) {
-    if (jumpTab && jumpPage) SHOP_PAGE[jumpTab] = jumpPage;
-    renderTab('pending',    pendingRow,    11);
-    renderTab('monitoring', monitoringRow, 11);
-    renderTab('successful', successfulRow, 11);
-    renderTab('history',    historyRow,    11);
-    var tot = SHOP_REC.pending.length + SHOP_REC.monitoring.length + SHOP_REC.successful.length + SHOP_REC.history.length;
-    var outerBadge = document.getElementById('shop-total-count');
-    if (outerBadge) outerBadge.textContent = tot;
+  function shopRecRenderAll() {
+    ['pending','monitoring','successful','history'].forEach(renderTab);
+    ['pending','monitoring','successful','history'].forEach(function(k) {
+      var el = document.getElementById('shop-badge-' + k);
+      if (el) el.textContent = SHOP_REC[k].length;
+    });
   }
-
-  // ── Toast ─────────────────────────────────────────────────────────────────
   function shopShowToast(msg, type) {
     var wrap = document.getElementById('act-toast-wrap');
-    if (!wrap) {
-      wrap = document.createElement('div');
-      wrap.id = 'act-toast-wrap';
-      document.body.appendChild(wrap);
-    }
-    var t = document.createElement('div');
-    t.className = 'act-toast t-' + (type || 'success');
-    t.textContent = msg;
-    wrap.appendChild(t);
-    setTimeout(function () { t.style.opacity = '0'; setTimeout(function () { t.remove(); }, 300); }, 3000);
+    if (!wrap) { wrap = document.createElement('div'); wrap.id = 'act-toast-wrap'; document.body.appendChild(wrap); }
+    var cls = type === 'success' ? 't-success' : type === 'error' ? 't-error' : 't-muted';
+    wrap.innerHTML = '<div class="act-toast ' + cls + '">' + esc(msg) + '</div>';
+    var t = wrap.querySelector('.act-toast');
+    if (t) t.style.display = 'block';
+    setTimeout(function() { wrap.innerHTML = ''; }, 3500);
   }
-
-  // ── Load data ─────────────────────────────────────────────────────────────
   function shopRecLoad() {
     fetch('/recommendations/cards')
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        SHOP_REC.pending    = (data.pending    || []).filter(function (r) { return (r.entity_type === 'shopping' || r.entity_type === 'product'); });
-        SHOP_REC.monitoring = (data.monitoring || []).filter(function (r) { return (r.entity_type === 'shopping' || r.entity_type === 'product'); });
-        SHOP_REC.successful = (data.successful || []).filter(function (r) { return (r.entity_type === 'shopping' || r.entity_type === 'product'); });
-        var hist = (data.declined || []).concat(data.reverted || []).filter(function (r) { return (r.entity_type === 'shopping' || r.entity_type === 'product'); });
-        hist.sort(function (a, b) {
-          var da = a.declined_at || a.reverted_at || ''; var db = b.declined_at || b.reverted_at || '';
-          return da < db ? 1 : da > db ? -1 : 0;
-        });
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        SHOP_REC.pending    = (data.pending    || []).filter(function(r){ return (r.entity_type === 'shopping' || r.entity_type === 'product'); });
+        SHOP_REC.monitoring = (data.monitoring || []).filter(function(r){ return (r.entity_type === 'shopping' || r.entity_type === 'product'); });
+        SHOP_REC.successful = (data.successful || []).filter(function(r){ return (r.entity_type === 'shopping' || r.entity_type === 'product'); });
+        var hist = (data.declined || []).concat(data.reverted || []).filter(function(r){ return (r.entity_type === 'shopping' || r.entity_type === 'product'); });
+        hist.sort(function(a,b){ return new Date(b.resolved_at||b.accepted_at||0) - new Date(a.resolved_at||a.accepted_at||0); });
         SHOP_REC.history = hist;
+        SHOP_SEL = {};
         shopRecRenderAll();
       })
-      .catch(function (e) { console.error('shopRecLoad error', e); });
+      .catch(function(err) { console.error('shopRecLoad error', err); });
   }
-  window.shopRecLoad = shopRecLoad;
-
-  // ── Expand row ────────────────────────────────────────────────────────────
-  window.shopRecExp = function (id, btn) {
-    var tr = btn.closest('tr');
-    var next = tr.nextElementSibling;
-    if (next && next.classList.contains('rec-exp-row')) {
-      next.remove(); btn.innerHTML = '&#x25BC;'; return;
-    }
-    btn.innerHTML = '&#x25B2;';
-    var r = SHOP_REC.pending.find(function (x) { return x.rec_id === id; });
-    if (!r) return;
-    var exp = document.createElement('tbody');
-    exp.innerHTML = makeExpRow(r, 11);
-    tr.parentNode.insertBefore(exp.firstElementChild, tr.nextSibling);
+  window.shopRecExp = function(evt, id) {
+    if (evt.target.type === 'checkbox' || evt.target.tagName === 'BUTTON') return;
+    var row = document.getElementById('exp-' + id);
+    if (row) row.classList.toggle('open');
   };
-
-  // ── Checkbox selection ────────────────────────────────────────────────────
-  window.shopRecCbChange = function (cb) {
-    var id = parseInt(cb.dataset.id);
-    if (cb.checked) SHOP_SEL[id] = true; else delete SHOP_SEL[id];
+  window.shopRecCbChange = function(chk, id) {
+    if (chk.checked) SHOP_SEL[id] = true; else delete SHOP_SEL[id];
     updateBulkBar();
   };
-  window.shopToggleAll = function (cb) {
-    document.querySelectorAll('.shop-rec-cb').forEach(function (c) {
-      c.checked = cb.checked;
-      var id = parseInt(c.dataset.id);
-      if (cb.checked) SHOP_SEL[id] = true; else delete SHOP_SEL[id];
-    });
+  window.shopToggleAll = function(chk) {
+    var page = SHOP_PAGE.pending;
+    var start = (page - 1) * SHOP_PER_PAGE;
+    var slice = SHOP_REC.pending.slice(start, start + SHOP_PER_PAGE);
+    slice.forEach(function(r) { if (chk.checked) SHOP_SEL[r.rec_id] = true; else delete SHOP_SEL[r.rec_id]; });
+    renderTab('pending');
     updateBulkBar();
   };
-  window.shopClearSelection = function () {
+  window.shopClearSelection = function() {
     SHOP_SEL = {};
-    document.querySelectorAll('.shop-rec-cb').forEach(function (c) { c.checked = false; });
-    var allCb = document.getElementById('shop-cb-all-pending');
-    if (allCb) allCb.checked = false;
+    var master = document.getElementById('shop-chk-all');
+    if (master) master.checked = false;
+    renderTab('pending');
     updateBulkBar();
   };
   function updateBulkBar() {
-    var n = Object.keys(SHOP_SEL).length;
+    var count = Object.keys(SHOP_SEL).length;
     var bar = document.getElementById('shop-bulk-bar');
-    var cnt = document.getElementById('shop-bulk-count');
-    if (bar) bar.style.display = n ? '' : 'none';
-    if (cnt) cnt.textContent = n + ' selected';
+    var lbl = document.getElementById('shop-bulk-count');
+    if (bar) bar.style.display = count > 0 ? 'flex' : 'none';
+    if (lbl) lbl.textContent = count + ' selected';
   }
-
-  // ── Accept / Decline ──────────────────────────────────────────────────────
-  window.shopRecAccept = function (id, btn) {
-    btn.disabled = true; btn.textContent = '…';
-    fetch('/recommendations/' + id + '/accept', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
+  window.shopRecAccept = function(recId, btn) {
+    btn.disabled = true; btn.textContent = '...';
+    fetch('/recommendations/' + recId + '/accept', { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': getCSRFToken()} })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
         if (d.success) {
-          var r = SHOP_REC.pending.find(function (x) { return x.rec_id === id; });
-          SHOP_REC.pending = SHOP_REC.pending.filter(function (x) { return x.rec_id !== id; });
-          if (r) { r.status = 'monitoring'; r.accepted_at = new Date().toISOString(); SHOP_REC.monitoring.push(r); }
-          delete SHOP_SEL[id]; updateBulkBar(); shopRecRenderAll();
-          shopShowToast(d.message || 'Accepted', 'success');
-        } else { shopShowToast(d.message || 'Failed', 'error'); btn.disabled = false; btn.textContent = 'Accept'; }
+          SHOP_REC.pending = SHOP_REC.pending.filter(function(r){ return r.rec_id !== recId; });
+          delete SHOP_SEL[recId];
+          shopRecRenderAll();
+          shopShowToast('Recommendation accepted', 'success');
+        } else { shopShowToast(d.message || 'Failed', 'error'); btn.disabled=false; btn.textContent='Accept'; }
       })
-      .catch(function () { shopShowToast('Request failed', 'error'); btn.disabled = false; btn.textContent = 'Accept'; });
+      .catch(function(){ shopShowToast('Error', 'error'); btn.disabled=false; btn.textContent='Accept'; });
   };
-  window.shopRecDecline = function (id, btn) {
-    btn.disabled = true; btn.textContent = '…';
-    fetch('/recommendations/' + id + '/decline', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
+  window.shopRecDecline = function(recId, btn) {
+    btn.disabled = true; btn.textContent = '...';
+    fetch('/recommendations/' + recId + '/decline', { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': getCSRFToken()} })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
         if (d.success) {
-          var r = SHOP_REC.pending.find(function (x) { return x.rec_id === id; });
-          SHOP_REC.pending = SHOP_REC.pending.filter(function (x) { return x.rec_id !== id; });
-          if (r) { r.status = 'declined'; r.declined_at = new Date().toISOString(); SHOP_REC.history.unshift(r); }
-          delete SHOP_SEL[id]; updateBulkBar(); shopRecRenderAll();
-          shopShowToast(d.message || 'Declined', 'muted');
-        } else { shopShowToast(d.message || 'Failed', 'error'); btn.disabled = false; btn.textContent = 'Decline'; }
+          SHOP_REC.pending = SHOP_REC.pending.filter(function(r){ return r.rec_id !== recId; });
+          delete SHOP_SEL[recId];
+          shopRecRenderAll();
+          shopShowToast('Recommendation declined', 'success');
+        } else { shopShowToast(d.message || 'Failed', 'error'); btn.disabled=false; btn.textContent='Decline'; }
       })
-      .catch(function () { shopShowToast('Request failed', 'error'); btn.disabled = false; btn.textContent = 'Decline'; });
+      .catch(function(){ shopShowToast('Error', 'error'); btn.disabled=false; btn.textContent='Decline'; });
   };
-  window.shopDoBulk = function (action) {
-    var ids = Object.keys(SHOP_SEL).map(Number);
+  window.shopDoBulk = function(action) {
+    var ids = Object.keys(SHOP_SEL);
     if (!ids.length) return;
-    ids.forEach(function (id) {
-      var btn = document.querySelector('[data-id="' + id + '"]');
-      if (action === 'accept') window.shopRecAccept(id, btn || document.createElement('button'));
-      else window.shopRecDecline(id, btn || document.createElement('button'));
+    var done = 0;
+    ids.forEach(function(id) {
+      fetch('/recommendations/' + id + '/' + action, { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': getCSRFToken()} })
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if (d.success) SHOP_REC.pending = SHOP_REC.pending.filter(function(r){ return r.rec_id !== id; });
+          done++;
+          if (done === ids.length) { SHOP_SEL = {}; shopRecRenderAll(); shopShowToast('Done', 'success'); }
+        });
     });
   };
-
-  // ── DOMContentLoaded ──────────────────────────────────────────────────────
-  document.addEventListener('DOMContentLoaded', function () {
+  document.addEventListener('DOMContentLoaded', function() {
     var runBtn = document.getElementById('shop-run-engine-btn');
     if (runBtn) {
-      runBtn.addEventListener('click', function () {
-        var btn = this; var orig = btn.innerHTML;
-        btn.disabled = true; btn.innerHTML = 'Running…';
-        fetch('/recommendations/run', { method: 'POST' })
-          .then(function (r) { return r.json(); })
-          .then(function (d) {
-            btn.disabled = false; btn.innerHTML = orig;
-            shopShowToast(d.success ? ('Generated ' + (d.generated || 0) + ' new recommendations.') : ('Error: ' + (d.message || 'unknown')), d.success ? 'success' : 'error');
-            if (d.success) shopRecLoad();
-          })
-          .catch(function () { btn.disabled = false; btn.innerHTML = orig; shopShowToast('Request failed.', 'error'); });
+      runBtn.addEventListener('click', function() {
+        var self = this;
+        self.disabled = true;
+        self.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Running...';
+        fetch('/recommendations/run', { method:'POST', headers:{'X-CSRFToken': getCSRFToken()} })
+          .then(function(r){ return r.json(); })
+          .then(function(d){ shopShowToast(d.message || 'Engine started', 'success'); setTimeout(shopRecLoad, 2000); })
+          .catch(function(){ shopShowToast('Error', 'error'); })
+          .finally(function(){ self.disabled=false; self.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg> Run Recommendations Now'; });
       });
     }
-    var lowRiskBtn = document.getElementById('shop-accept-low-risk-btn');
-    if (lowRiskBtn) {
-      lowRiskBtn.addEventListener('click', function () {
-        SHOP_REC.pending.filter(function (r) { return (r.risk_level || 'low') === 'low'; }).forEach(function (r) {
-          var btn = document.createElement('button');
-          window.shopRecAccept(r.rec_id, btn);
-        });
-      });
-      var tabBtns = document.querySelectorAll('#shopRecTabs button[data-bs-toggle="tab"]');
-      tabBtns.forEach(function (btn) {
-        btn.addEventListener('shown.bs.tab', function (e) {
-          if (lowRiskBtn) lowRiskBtn.style.display = e.target.id === 'shop-rec-pending-tab' ? '' : 'none';
-        });
+    var lrBtn = document.getElementById('shop-accept-low-risk-btn');
+    if (lrBtn) {
+      lrBtn.addEventListener('click', function() {
+        var lowRisk = SHOP_REC.pending.filter(function(r){ return r.risk_level === 'low'; });
+        if (!lowRisk.length) { shopShowToast('No low-risk recommendations pending', 'info'); return; }
+        lowRisk.forEach(function(r) { SHOP_SEL[r.rec_id] = true; });
+        window.shopDoBulk('accept');
       });
     }
-    // Trigger load when outer recommendations tab is shown
     var recTabBtn = document.getElementById('tab-btn-recommendations');
-    if (recTabBtn) recTabBtn.addEventListener('shown.bs.tab', function () { shopRecLoad(); });
-    // Also load if page opened directly on recommendations tab
-    var recPane = document.getElementById('recommendations-tab');
-    if (recPane && recPane.classList.contains('active')) { shopRecLoad(); }
-    // Wire up flags tab
-    var flagTabBtn = document.getElementById('shop-flag-tab');
-    if (flagTabBtn) flagTabBtn.addEventListener('shown.bs.tab', function () { shopLoadFlags(); });
+    if (recTabBtn) {
+      recTabBtn.addEventListener('shown.bs.tab', shopRecLoad);
+    }
   });
+  window.shopRecLoad = shopRecLoad;
 
-  // ── Shopping Flags ──────────────────────────────────────────────────────────
+  // ── Shopping Flags ─────────────────────────────────────────────────────────
   var SHOP_FLAGS = [], SHOP_FLAGS_SNOOZED = [], SHOP_FLAGS_HISTORY = [];
 
   window.shopFlagSectionToggle = function(bodyId, chevId) {
@@ -1898,6 +1887,9 @@ function applyShopColumns() {
       })
       .catch(function() { shopShowToast('Request failed.', 'error'); });
   };
+
+  var shopFlagTabBtn = document.getElementById('shop-flag-tab');
+  if (shopFlagTabBtn) shopFlagTabBtn.addEventListener('shown.bs.tab', function() { shopLoadFlags(); });
 
 })();
 
