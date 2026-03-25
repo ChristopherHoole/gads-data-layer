@@ -473,10 +473,11 @@ def _load_db_rules(conn, entity_type: str = "campaign") -> list:
         c1 = conditions[0]
         op1  = c1.get("op") or _normalise_operator(c1.get("operator", ""))
         ref1 = c1.get("ref") or c1.get("unit") or "absolute"
+        raw_val1 = c1.get("value", 0)
         try:
-            val1 = float(c1.get("value", 0))
+            val1 = float(raw_val1)
         except (TypeError, ValueError):
-            val1 = 0.0
+            val1 = raw_val1  # Keep as string for 'in' operator etc.
 
         # Normalise condition 2 (optional)
         c2 = conditions[1] if len(conditions) > 1 else None
@@ -484,10 +485,11 @@ def _load_db_rules(conn, entity_type: str = "campaign") -> list:
         if c2:
             cond2_metric = c2.get("metric")
             cond2_op     = c2.get("op") or _normalise_operator(c2.get("operator", ""))
+            raw_val2 = c2.get("value", 0)
             try:
-                cond2_val = float(c2.get("value", 0))
+                cond2_val = float(raw_val2)
             except (TypeError, ValueError):
-                cond2_val = 0.0
+                cond2_val = raw_val2  # Keep as string for 'in' operator etc.
 
         action_direction = ACTION_MAP.get(rd["action_type"] or "", rd["action_type"] or "hold")
         try:
@@ -777,23 +779,25 @@ def _run_flag_engine(conn, customer_id: str):
 
         c1 = conditions[0]
         op1 = c1.get("op") or _normalise_operator(c1.get("operator", ""))
+        raw_val1 = c1.get("value", 0)
         try:
-            val1 = float(c1.get("value", 0))
+            val1 = float(raw_val1)
         except (TypeError, ValueError):
-            val1 = 0.0
+            val1 = raw_val1  # Keep as string for 'in' operator etc.
 
         c2 = conditions[1] if len(conditions) > 1 else None
         cond2_metric = cond2_op = cond2_val = None
         if c2:
             cond2_metric = c2.get("metric")
             cond2_op = c2.get("op") or _normalise_operator(c2.get("operator", ""))
+            raw_val2 = c2.get("value", 0)
             try:
-                cond2_val = float(c2.get("value", 0))
+                cond2_val = float(raw_val2)
             except (TypeError, ValueError):
-                cond2_val = 0.0
+                cond2_val = raw_val2  # Keep as string for 'in' operator etc.
 
         flag_rules.append({
-            "rule_id":              f"db_campaign_{rd['id']}",
+            "rule_id":              f"db_{rd['entity_type'] or 'campaign'}_{rd['id']}",
             "rule_name":            rd["name"],
             "entity_type":          rd["entity_type"] or "campaign",
             "condition_metric":     c1.get("metric"),
