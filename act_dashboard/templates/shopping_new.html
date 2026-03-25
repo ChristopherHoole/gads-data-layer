@@ -7,6 +7,7 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/table-styles.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/rules.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/recommendations.css') }}">
 <style>
   :root {
     --border: #e5e9f0;
@@ -990,6 +991,11 @@
             History <span class="badge bg-secondary ms-1" id="shop-badge-history">0</span>
           </button>
         </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="shop-flag-tab" data-bs-toggle="tab" data-bs-target="#shop-flag-panel" type="button" role="tab">
+            Flags <span class="badge bg-secondary ms-1" id="shop-flag-badge">0</span>
+          </button>
+        </li>
       </ul>
 
       <div class="tab-content" id="shopRecTabContent">
@@ -1002,9 +1008,9 @@
             <button class="btn btn-sm btn-outline-danger" onclick="shopDoBulk('decline')">Decline selected</button>
             <span class="rec-bulk-clear" onclick="shopClearSelection()">Clear selection</span>
           </div>
-          <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle rec-tab-slim" id="shop-pending-table">
-              <thead class="table-light">
+          <div class="rec-table-wrapper">
+            <table class="table table-sm align-middle rec-tab-slim" id="shop-pending-table">
+              <thead>
                 <tr>
                   <th class="rec-col-cb"><input type="checkbox" id="shop-cb-all-pending" onchange="shopToggleAll(this)"></th>
                   <th class="rec-col-name">Product</th>
@@ -1029,9 +1035,9 @@
 
         <!-- MONITORING -->
         <div class="tab-pane fade" id="shop-rec-monitoring" role="tabpanel">
-          <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle rec-tab-slim" id="shop-monitoring-table">
-              <thead class="table-light">
+          <div class="rec-table-wrapper">
+            <table class="table table-sm align-middle rec-tab-slim" id="shop-monitoring-table">
+              <thead>
                 <tr>
                   <th class="rec-col-cb"></th>
                   <th class="rec-col-date">Accepted</th>
@@ -1056,9 +1062,9 @@
 
         <!-- SUCCESSFUL -->
         <div class="tab-pane fade" id="shop-rec-successful" role="tabpanel">
-          <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle rec-tab-slim" id="shop-successful-table">
-              <thead class="table-light">
+          <div class="rec-table-wrapper">
+            <table class="table table-sm align-middle rec-tab-slim" id="shop-successful-table">
+              <thead>
                 <tr>
                   <th class="rec-col-cb"></th>
                   <th class="rec-col-date">Accepted</th>
@@ -1083,9 +1089,9 @@
 
         <!-- HISTORY (declined + reverted) -->
         <div class="tab-pane fade" id="shop-rec-history" role="tabpanel">
-          <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle rec-tab-slim" id="shop-history-table">
-              <thead class="table-light">
+          <div class="rec-table-wrapper">
+            <table class="table table-sm align-middle rec-tab-slim" id="shop-history-table">
+              <thead>
                 <tr>
                   <th class="rec-col-cb"></th>
                   <th class="rec-col-status">Outcome</th>
@@ -1106,6 +1112,86 @@
             </table>
           </div>
           <div id="shop-history-paginator" class="d-flex justify-content-between align-items-center mt-2" style="font-size:13px;"></div>
+        </div>
+
+        <!-- FLAGS (active only — entity page view) -->
+        <div class="tab-pane fade" id="shop-flag-panel" role="tabpanel">
+          <div class="rec-table-wrapper">
+            <table class="table table-sm align-middle" id="shop-flag-table">
+              <thead>
+                <tr>
+                  <th class="rec-col-name">Entity name</th>
+                  <th class="rec-col-rule">Flag name</th>
+                  <th class="rec-col-plain">Plain English</th>
+                  <th class="rec-col-ruleflag">Rule/Flag</th>
+                  <th class="rec-col-risk">Severity</th>
+                  <th class="rec-col-age">Age</th>
+                  <th class="rec-col-acts">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="shop-flag-tbody">
+                <tr><td colspan="7" class="text-center text-muted py-4">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- SNOOZED FLAGS SECTION -->
+          <div class="d-flex align-items-center gap-2 px-3 py-2 mt-3 mb-1"
+               style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;cursor:pointer;"
+               onclick="shopFlagSectionToggle('shop-flag-snooze-body','shop-flag-snooze-chev')">
+            <span id="shop-flag-snooze-chev" style="font-size:12px;">&#x25b6;</span>
+            <strong style="font-size:13px;">Snoozed</strong>
+            <span class="badge bg-secondary" id="shop-flag-snooze-count">0</span>
+          </div>
+          <div id="shop-flag-snooze-body" style="display:none;">
+            <div class="rec-table-wrapper">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th class="rec-col-name">Entity name</th>
+                    <th class="rec-col-rule">Flag name</th>
+                    <th class="rec-col-plain">Plain English</th>
+                    <th class="rec-col-risk">Severity</th>
+                    <th class="rec-col-age">Age</th>
+                    <th style="min-width:110px;">Snoozed until</th>
+                    <th class="rec-col-acts">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="shop-flag-snooze-tbody">
+                  <tr><td colspan="7" class="text-center text-muted py-3">No snoozed flags.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- HISTORY FLAGS SECTION -->
+          <div class="d-flex align-items-center gap-2 px-3 py-2 mb-1"
+               style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;cursor:pointer;"
+               onclick="shopFlagSectionToggle('shop-flag-hist-body','shop-flag-hist-chev')">
+            <span id="shop-flag-hist-chev" style="font-size:12px;">&#x25b6;</span>
+            <strong style="font-size:13px;">History</strong>
+            <span class="badge bg-secondary" id="shop-flag-hist-count">0</span>
+          </div>
+          <div id="shop-flag-hist-body" style="display:none;">
+            <div class="rec-table-wrapper">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th class="rec-col-name">Entity name</th>
+                    <th class="rec-col-rule">Flag name</th>
+                    <th class="rec-col-plain">Plain English</th>
+                    <th class="rec-col-risk">Severity</th>
+                    <th class="rec-col-age">Age</th>
+                    <th style="min-width:110px;">Actioned</th>
+                    <th class="rec-col-acts">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="shop-flag-hist-tbody">
+                  <tr><td colspan="7" class="text-center text-muted py-3">No history.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
       </div><!-- /shopRecTabContent -->
@@ -1517,10 +1603,10 @@ function applyShopColumns() {
     fetch('/recommendations/cards')
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        SHOP_REC.pending    = (data.pending    || []).filter(function (r) { return r.entity_type === 'shopping_product'; });
-        SHOP_REC.monitoring = (data.monitoring || []).filter(function (r) { return r.entity_type === 'shopping_product'; });
-        SHOP_REC.successful = (data.successful || []).filter(function (r) { return r.entity_type === 'shopping_product'; });
-        var hist = (data.declined || []).concat(data.reverted || []).filter(function (r) { return r.entity_type === 'shopping_product'; });
+        SHOP_REC.pending    = (data.pending    || []).filter(function (r) { return (r.entity_type === 'shopping' || r.entity_type === 'product'); });
+        SHOP_REC.monitoring = (data.monitoring || []).filter(function (r) { return (r.entity_type === 'shopping' || r.entity_type === 'product'); });
+        SHOP_REC.successful = (data.successful || []).filter(function (r) { return (r.entity_type === 'shopping' || r.entity_type === 'product'); });
+        var hist = (data.declined || []).concat(data.reverted || []).filter(function (r) { return (r.entity_type === 'shopping' || r.entity_type === 'product'); });
         hist.sort(function (a, b) {
           var da = a.declined_at || a.reverted_at || ''; var db = b.declined_at || b.reverted_at || '';
           return da < db ? 1 : da > db ? -1 : 0;
@@ -1628,7 +1714,7 @@ function applyShopColumns() {
           .then(function (r) { return r.json(); })
           .then(function (d) {
             btn.disabled = false; btn.innerHTML = orig;
-            shopShowToast(d.success ? (d.message || 'Engine complete.') : ('Error: ' + (d.message || 'unknown')), d.success ? 'success' : 'error');
+            shopShowToast(d.success ? ('Generated ' + (d.generated || 0) + ' new recommendations.') : ('Error: ' + (d.message || 'unknown')), d.success ? 'success' : 'error');
             if (d.success) shopRecLoad();
           })
           .catch(function () { btn.disabled = false; btn.innerHTML = orig; shopShowToast('Request failed.', 'error'); });
@@ -1655,7 +1741,163 @@ function applyShopColumns() {
     // Also load if page opened directly on recommendations tab
     var recPane = document.getElementById('recommendations-tab');
     if (recPane && recPane.classList.contains('active')) { shopRecLoad(); }
+    // Wire up flags tab
+    var flagTabBtn = document.getElementById('shop-flag-tab');
+    if (flagTabBtn) flagTabBtn.addEventListener('shown.bs.tab', function () { shopLoadFlags(); });
   });
+
+  // ── Shopping Flags ──────────────────────────────────────────────────────────
+  var SHOP_FLAGS = [], SHOP_FLAGS_SNOOZED = [], SHOP_FLAGS_HISTORY = [];
+
+  window.shopFlagSectionToggle = function(bodyId, chevId) {
+    var body = document.getElementById(bodyId);
+    var chev = document.getElementById(chevId);
+    if (!body) return;
+    var open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'block';
+    if (chev) chev.textContent = open ? '\u25b6' : '\u25bc';
+  };
+
+  function shopFmtDate(dt) {
+    if (!dt) return '\u2014';
+    try { return new Date(dt).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}); } catch(e) { return dt; }
+  }
+
+  function shopSevBadge(sev) {
+    var s = (sev || '').toLowerCase();
+    var cls = s === 'high' ? 'flag-sev-high' : s === 'medium' ? 'flag-sev-medium' : 'flag-sev-low';
+    var lbl = s ? s.charAt(0).toUpperCase() + s.slice(1) : '\u2014';
+    return '<span class="flag-sev-badge ' + cls + '">' + lbl + '</span>';
+  }
+
+  function shopFlagActionsHtml(flag_id) {
+    return '<div class="rec-row-acts">'
+      + '<button class="rec-row-btn rec-row-btn-accept" onclick="shopFlagAction(\'' + flag_id + '\',\'acknowledge\',0)">Acknowledge</button>'
+      + '<div class="dropdown d-inline-block">'
+      + '<button class="rec-row-btn rec-row-btn-decline dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Snooze</button>'
+      + '<ul class="dropdown-menu dropdown-menu-end">'
+      + '<li><a class="dropdown-item" href="#" onclick="shopFlagAction(\'' + flag_id + '\',\'ignore\',7);return false;">Snooze 7 days</a></li>'
+      + '<li><a class="dropdown-item" href="#" onclick="shopFlagAction(\'' + flag_id + '\',\'ignore\',14);return false;">Snooze 14 days</a></li>'
+      + '<li><a class="dropdown-item" href="#" onclick="shopFlagAction(\'' + flag_id + '\',\'ignore\',30);return false;">Snooze 30 days</a></li>'
+      + '</ul></div></div>';
+  }
+
+  function shopMakeFlagExpRow(f) {
+    var sevLabel = f.severity ? (f.severity.charAt(0).toUpperCase() + f.severity.slice(1)) + ' severity' : '\u2014';
+    return '<tr class="rec-expand-row" id="shop-flag-exp-' + f.flag_id + '">'
+      + '<td colspan="7"><div class="rec-expand-inner"><div class="rec-expand-grid">'
+      + '<div class="rec-expand-card"><div class="rec-expand-label">Why this was triggered</div><div class="rec-expand-val">' + esc(f.trigger_summary || '\u2014') + '</div></div>'
+      + '<div class="rec-expand-card"><div class="rec-expand-label">Flag details</div><div class="rec-expand-val">' + esc(f.plain_english || '\u2014') + '</div></div>'
+      + '<div class="rec-expand-card"><div class="rec-expand-label">Rule details</div><div class="rec-expand-val">' + esc(sevLabel) + '</div></div>'
+      + '</div></div></td></tr>';
+  }
+
+  window.shopFlagExp = function(evt, id) {
+    if (evt.target.closest('button,input,a,select')) return;
+    var el = document.getElementById('shop-flag-exp-' + id);
+    if (!el) return;
+    el.classList.toggle('open');
+  };
+
+  function shopFlagRender() {
+    var tbody = document.getElementById('shop-flag-tbody');
+    if (!tbody) return;
+    document.getElementById('shop-flag-badge').textContent = SHOP_FLAGS.length;
+    if (!SHOP_FLAGS.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No active flags for shopping.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = SHOP_FLAGS.map(function(f) {
+      return '<tr style="cursor:pointer;" onclick="shopFlagExp(event, \'' + f.flag_id + '\')">'
+        + '<td class="rec-col-name">' + esc(f.entity_name || '\u2014') + '</td>'
+        + '<td class="rec-col-rule">' + esc(f.rule_name || '\u2014') + '</td>'
+        + '<td class="rec-col-plain">' + esc(f.plain_english || '\u2014') + '</td>'
+        + '<td class="rec-col-ruleflag"><span class="rec-rf-badge rec-rf-flag">Flag</span></td>'
+        + '<td class="rec-col-risk">' + shopSevBadge(f.severity) + '</td>'
+        + '<td class="rec-col-age">' + esc(f.generated_ago || '\u2014') + '</td>'
+        + '<td class="rec-col-acts" onclick="event.stopPropagation()">' + shopFlagActionsHtml(f.flag_id) + '</td>'
+        + '</tr>'
+        + shopMakeFlagExpRow(f);
+    }).join('');
+  }
+
+  function shopFlagSnoozedRender() {
+    var tbody = document.getElementById('shop-flag-snooze-tbody');
+    var countEl = document.getElementById('shop-flag-snooze-count');
+    if (!tbody) return;
+    if (countEl) countEl.textContent = SHOP_FLAGS_SNOOZED.length;
+    if (!SHOP_FLAGS_SNOOZED.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No snoozed flags.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = SHOP_FLAGS_SNOOZED.map(function(f) {
+      return '<tr>'
+        + '<td>' + esc(f.entity_name || '\u2014') + '</td>'
+        + '<td>' + esc(f.rule_name || '\u2014') + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;">' + esc(f.plain_english || '\u2014') + '</td>'
+        + '<td>' + shopSevBadge(f.severity) + '</td>'
+        + '<td style="font-size:11px;color:#9aa0a6;">' + esc(f.generated_ago || '\u2014') + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;">' + esc(shopFmtDate(f.snooze_until)) + '</td>'
+        + '<td onclick="event.stopPropagation()">' + shopFlagActionsHtml(f.flag_id) + '</td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  function shopFlagHistoryRender() {
+    var tbody = document.getElementById('shop-flag-hist-tbody');
+    var countEl = document.getElementById('shop-flag-hist-count');
+    if (!tbody) return;
+    if (countEl) countEl.textContent = SHOP_FLAGS_HISTORY.length;
+    if (!SHOP_FLAGS_HISTORY.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No history.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = SHOP_FLAGS_HISTORY.map(function(f) {
+      var actioned = shopFmtDate(f.acknowledged_at || f.updated_at);
+      return '<tr>'
+        + '<td>' + esc(f.entity_name || '\u2014') + '</td>'
+        + '<td>' + esc(f.rule_name || '\u2014') + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;">' + esc(f.plain_english || '\u2014') + '</td>'
+        + '<td>' + shopSevBadge(f.severity) + '</td>'
+        + '<td style="font-size:11px;color:#9aa0a6;">' + esc(f.generated_ago || '\u2014') + '</td>'
+        + '<td style="font-size:12px;color:#5f6368;">' + esc(actioned) + '</td>'
+        + '<td onclick="event.stopPropagation()">' + shopFlagActionsHtml(f.flag_id) + '</td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  function shopLoadFlags() {
+    fetch('/flags/cards')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        SHOP_FLAGS         = (d.active  || []).filter(function(f) { return (f.entity_type === 'shopping' || f.entity_type === 'product'); });
+        SHOP_FLAGS_SNOOZED = (d.snoozed || []).filter(function(f) { return (f.entity_type === 'shopping' || f.entity_type === 'product'); });
+        SHOP_FLAGS_HISTORY = (d.history || []).filter(function(f) { return (f.entity_type === 'shopping' || f.entity_type === 'product'); });
+        shopFlagRender();
+        shopFlagSnoozedRender();
+        shopFlagHistoryRender();
+      })
+      .catch(function() {
+        var tbody = document.getElementById('shop-flag-tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Failed to load flags.</td></tr>';
+      });
+  }
+  window.shopLoadFlags = shopLoadFlags;
+
+  window.shopFlagAction = function(flag_id, action, days) {
+    var url = '/flags/' + flag_id + '/' + action;
+    fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() }, body: JSON.stringify({ days: days }) })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.success) {
+          shopShowToast(action === 'acknowledge' ? 'Flag acknowledged.' : 'Flag snoozed for ' + days + ' days.', 'success');
+          shopLoadFlags();
+        } else {
+          shopShowToast('Error: ' + (d.error || 'unknown'), 'error');
+        }
+      })
+      .catch(function() { shopShowToast('Request failed.', 'error'); });
+  };
 
 })();
 

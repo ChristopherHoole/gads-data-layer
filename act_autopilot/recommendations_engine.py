@@ -85,9 +85,10 @@ ACTION_MAP = {
     "increase_shopping_budget": "increase",
     "decrease_shopping_budget": "decrease",
     "pause_shopping":      "pause",
-    "enable_shopping":     "hold",
+    "enable_shopping":     "enable",
     "increase_product_bid":"increase",
     "decrease_product_bid":"decrease",
+    "decrease_target_roas":"decrease",
     # Generic
     "flag":                "flag",
     "hold":                "hold",
@@ -104,6 +105,7 @@ ENTITY_TABLES = {
     "ad_group": "ro.analytics.ad_group_daily",
     "shopping": "ro.analytics.shopping_campaign_daily",
     "ad":       "ro.analytics.ad_features_daily",
+    "product":  "ro.analytics.product_features_daily",
 }
 
 # Entity ID and Name column mappings
@@ -113,6 +115,7 @@ ENTITY_ID_COLUMNS = {
     "ad_group": ("ad_group_id", "ad_group_name"),
     "shopping": ("campaign_id", "campaign_name"),  # Shopping uses campaign-level data
     "ad":       ("ad_id", "ad_name"),
+    "product":  ("product_id", "product_title"),
 }
 
 # ---------------------------------------------------------------------------
@@ -335,17 +338,97 @@ AD_METRIC_MAP = {
 }
 
 SHOPPING_METRIC_MAP = {
-    "cost":                ("cost_micros", None, None, 1_000_000),  # BIGINT (needs /1M conversion)
-    "conversions":         ("conversions", None, None),         # DOUBLE field
-    "ctr":                 ("ctr", None, None),                 # DOUBLE field
-    "roas":                ("roas", None, None),                # DOUBLE field
-    "impressions":         ("impressions", None, None),         # BIGINT field
-    "clicks":              ("clicks", None, None),              # BIGINT field
-    "optimization_score":  ("optimization_score", None, None),  # DOUBLE field
-    "search_impression_share": ("search_impression_share", None, None),  # DOUBLE field
-    # Missing columns (gracefully handled):
-    # "feed_error_count": NOT IN DATABASE
-    # "out_of_stock_product_count": NOT IN DATABASE
+    # ── Direct columns ───────────────────────────────────────────────────────
+    "cost":                ("cost_micros", None, None, 1_000_000),
+    "conversions":         ("conversions", None, None),
+    "ctr":                 ("ctr", None, None),
+    "roas":                ("roas", None, None),
+    "impressions":         ("impressions", None, None),
+    "clicks":              ("clicks", None, None),
+    "optimization_score":  ("optimization_score", None, None),
+    "search_impression_share": ("search_impression_share", None, None),
+
+    # ── _Nd aliases (Shopping rules use roas_7d, conversions_7d, cost_7d) ────
+    "roas_7d":          ("roas", None, None),
+    "roas_14d":         ("roas", None, None),
+    "roas_30d":         ("roas", None, None),
+    "conversions_7d":   ("conversions", None, None),
+    "conversions_14d":  ("conversions", None, None),
+    "conversions_30d":  ("conversions", None, None),
+    "cost_7d":          ("cost_micros", None, None, 1_000_000),
+    "cost_14d":         ("cost_micros", None, None, 1_000_000),
+    "cost_30d":         ("cost_micros", None, None, 1_000_000),
+    "clicks_7d":        ("clicks", None, None),
+    "impressions_7d":   ("impressions", None, None),
+    "ctr_7d":           ("ctr", None, None),
+
+    # ── Windowed aliases (in case UI sends these) ────────────────────────────
+    "roas_w7_mean":     ("roas", None, None),
+    "roas_w14_mean":    ("roas", None, None),
+    "roas_w30_mean":    ("roas", None, None),
+    "ctr_w7_mean":      ("ctr", None, None),
+    "clicks_w7_sum":    ("clicks", None, None),
+    "conversions_w7_sum":  ("conversions", None, None),
+    "cost_w7_sum":      ("cost_micros", None, None, 1_000_000),
+    "impressions_w7_sum":  ("impressions", None, None),
+}
+
+# ---------------------------------------------------------------------------
+# Metric → DB column mapping (PRODUCTS) - Chat 113
+# Based on analytics.product_features_daily which has full windowed columns
+# ---------------------------------------------------------------------------
+
+PRODUCT_METRIC_MAP = {
+    # ── Direct columns ───────────────────────────────────────────────────────
+    "roas":            ("roas_w7", None, None),
+    "impressions":     ("impressions_w7_sum", None, None),
+    "clicks":          ("clicks_w7_sum", None, None),
+    "conversions":     ("conversions_w7_sum", None, None),
+    "cost":            ("cost_micros_w7_sum", None, None, 1_000_000),
+
+    # ── Windowed aliases ─────────────────────────────────────────────────────
+    "roas_w7_mean":     ("roas_w7",  None, None),
+    "roas_w14_mean":    ("roas_w14", None, None),
+    "roas_w30_mean":    ("roas_w30", None, None),
+    "clicks_w7_sum":    ("clicks_w7_sum",  None, None),
+    "clicks_w14_sum":   ("clicks_w14_sum", None, None),
+    "clicks_w30_sum":   ("clicks_w30_sum", None, None),
+    "conversions_w7_sum":  ("conversions_w7_sum",  None, None),
+    "conversions_w14_sum": ("conversions_w14_sum", None, None),
+    "conversions_w30_sum": ("conversions_w30_sum", None, None),
+    "cost_w7_sum":      ("cost_micros_w7_sum",  None, None, 1_000_000),
+    "cost_w14_sum":     ("cost_micros_w14_sum", None, None, 1_000_000),
+    "cost_w30_sum":     ("cost_micros_w30_sum", None, None, 1_000_000),
+    "impressions_w7_sum":  ("impressions_w7_sum",  None, None),
+    "impressions_w14_sum": ("impressions_w14_sum", None, None),
+    "impressions_w30_sum": ("impressions_w30_sum", None, None),
+    "conversions_value_w7_sum":  ("conversions_value_w7_sum",  None, None),
+    "conversions_value_w14_sum": ("conversions_value_w14_sum", None, None),
+    "conversions_value_w30_sum": ("conversions_value_w30_sum", None, None),
+
+    # ── Direct short aliases (product rules use roas_w7, cpa_w7, ctr_w7) ────
+    "roas_w7":          ("roas_w7",  None, None),
+    "roas_w14":         ("roas_w14", None, None),
+    "roas_w30":         ("roas_w30", None, None),
+    "cpa_w7":           ("cpa_w7",   None, None),
+    "cpa_w14":          ("cpa_w14",  None, None),
+    "cpa_w30":          ("cpa_w30",  None, None),
+    "ctr_w7":           ("ctr_w7",   None, None),
+    "ctr_w14":          ("ctr_w14",  None, None),
+    "ctr_w30":          ("ctr_w30",  None, None),
+    "cvr_w7":           ("cvr_w7",   None, None),
+
+    # ── Product-specific columns ─────────────────────────────────────────────
+    "feed_quality_score":  ("feed_quality_score",  None, None),
+    "stock_out_flag":      ("stock_out_flag",      None, None),
+    "stock_out_days_w30":  ("stock_out_days_w30",  None, None),
+    "has_price_mismatch":  ("has_price_mismatch",  None, None),
+    "has_disapproval":     ("has_disapproval",     None, None),
+    "availability":        ("availability",        None, None),
+    "cost_w14_cv":         ("cost_w14_cv",         None, None),
+
+    # ── System ───────────────────────────────────────────────────────────────
+    "low_data_flag":    ("clicks_w7_sum", "lte", 5.0),
 }
 
 # Consolidated metric map selector
@@ -361,6 +444,8 @@ def _get_metric_map_for_entity(entity_type: str) -> dict:
         return SHOPPING_METRIC_MAP
     elif entity_type == "ad":
         return AD_METRIC_MAP
+    elif entity_type == "product":
+        return PRODUCT_METRIC_MAP
     else:
         return {}
 
