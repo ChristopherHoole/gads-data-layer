@@ -916,7 +916,7 @@ let agRecommendations = {
   }
   function rtBadge(v) {
     if (!v) return '';
-    var map = { budget:'rec-rt-budget', bid:'rec-rt-bid', status:'rec-rt-status', keyword:'rec-rt-keyword', shopping:'rec-rt-shopping' };
+    var map = { budget:'rec-rt-budget', bid:'rec-rt-bid', status:'rec-rt-status', keyword:'rec-rt-keyword', shopping:'rec-rt-shopping', performance:'rec-rt-bid', anomaly:'rec-rt-status', technical:'rec-rt-status', feed_quality:'rec-rt-status', lifecycle:'rec-rt-keyword', stock:'rec-rt-status' };
     var cls = map[v] || 'rec-rt-budget';
     return '<span class="rec-rt-badge ' + cls + '">' + esc(v.charAt(0).toUpperCase()+v.slice(1)) + '</span>';
   }

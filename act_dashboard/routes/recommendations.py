@@ -155,7 +155,29 @@ def get_action_label(rec: dict) -> str:
             return f"Decrease ad group bid by {action_magnitude}%"
         elif action_direction == 'flag':
             return "Flag ad group for review"
-    
+
+    # Ad actions
+    elif entity_type == 'ad':
+        if action_direction == 'pause':
+            return "Pause ad"
+        elif action_direction == 'enable':
+            return "Enable ad"
+        elif action_direction == 'flag':
+            return "Flag ad for review"
+
+    # Product actions
+    elif entity_type == 'product':
+        if action_direction == 'pause':
+            return "Pause product"
+        elif action_direction == 'enable':
+            return "Enable product"
+        elif action_direction == 'increase':
+            return f"Increase product bid by {action_magnitude}%"
+        elif action_direction == 'decrease':
+            return f"Decrease product bid by {action_magnitude}%"
+        elif action_direction == 'flag':
+            return "Flag product for review"
+
     # Final fallback
     if action_magnitude and action_magnitude > 0:
         return f"{action_direction.replace('_', ' ').title()} by {action_magnitude}%"
@@ -948,9 +970,15 @@ def _derive_rule_type_for_display(action_type, entity_type):
     """Map action_type + entity_type to display rule_type string."""
     if entity_type == "keyword":
         return "keyword"
-    if entity_type in ("shopping_product", "shopping"):
-        return "shopping"
-    return _ACTION_TYPE_TO_RULE_TYPE.get(str(action_type or ""), "status")
+    # Add product-specific action types to the lookup
+    product_map = {
+        "increase_bid": "bid", "decrease_bid": "bid",
+        "increase_product_bid": "bid", "decrease_product_bid": "bid",
+        "increase_shopping_budget": "budget", "decrease_shopping_budget": "budget",
+        "increase_troas": "bid", "decrease_target_roas": "bid",
+    }
+    mapped = _ACTION_TYPE_TO_RULE_TYPE.get(str(action_type or "")) or product_map.get(str(action_type or ""))
+    return mapped or "status"
 
 
 def _build_rule_data_map():
@@ -964,7 +992,7 @@ def _build_rule_data_map():
         try:
             rows = conn.execute(
                 "SELECT id, plain_english, rule_or_flag, conditions, "
-                "risk_level, cooldown_days, action_type, entity_type "
+                "risk_level, cooldown_days, action_type, entity_type, type "
                 "FROM rules"
             ).fetchall()
             for row in rows:
@@ -975,6 +1003,7 @@ def _build_rule_data_map():
                     "risk_level":    row[4] or "",
                     "cooldown_days": row[5],
                     "action_type":   row[6] or "",
+                    "rule_type":     row[8] or "",
                     "rule_entity_type": row[7] or "",
                 }
         finally:
@@ -1010,10 +1039,14 @@ def _enrich_with_rule_data(rec, rule_data_map):
     rec["cooldown_days"]   = rule_data.get("cooldown_days")
     rec["action_type"]     = rule_data.get("action_type", "")
 
-    # Derive display rule_type from action_type + entity_type
-    action_type  = rule_data.get("action_type") or ""
-    entity_type  = rec.get("entity_type") or rule_data.get("rule_entity_type") or ""
-    rec["rule_type_display"] = _derive_rule_type_for_display(action_type, entity_type)
+    # Derive display rule_type — prefer direct type field from rules table
+    direct_type = rule_data.get("rule_type", "")
+    if direct_type and direct_type in ("budget", "bid", "status", "performance", "anomaly", "technical", "feed_quality", "lifecycle", "stock"):
+        rec["rule_type_display"] = direct_type
+    else:
+        action_type  = rule_data.get("action_type") or ""
+        entity_type  = rec.get("entity_type") or rule_data.get("rule_entity_type") or ""
+        rec["rule_type_display"] = _derive_rule_type_for_display(action_type, entity_type)
 
     # campaign_name: already present in rec from recommendations table
     # accepted_at: already in rec

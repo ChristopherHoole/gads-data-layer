@@ -797,10 +797,11 @@ function applyColumns() {
       : '<span class="rec-rf-badge rec-rf-rule">Rule</span>';
   }
   function rtBadge(v) {
-    const map = {budget:'rec-rt-budget',bid:'rec-rt-bid',status:'rec-rt-status',keyword:'rec-rt-keyword',shopping:'rec-rt-shopping'};
-    const lbl = {budget:'Budget',bid:'Bid',status:'Status',keyword:'Keyword',shopping:'Shopping'};
-    if (!v || !map[v]) return '';
-    return '<span class="rec-rt-badge ' + map[v] + '">' + lbl[v] + '</span>';
+    const map = {budget:'rec-rt-budget',bid:'rec-rt-bid',status:'rec-rt-status',keyword:'rec-rt-keyword',shopping:'rec-rt-shopping',performance:'rec-rt-bid',anomaly:'rec-rt-status',technical:'rec-rt-status',feed_quality:'rec-rt-status',lifecycle:'rec-rt-keyword',stock:'rec-rt-status'};
+    if (!v) return '';
+    var cls = map[v] || 'rec-rt-budget';
+    var label = v.replace(/_/g,' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+    return '<span class="rec-rt-badge ' + cls + '">' + label + '</span>';
   }
   function condCell(arr) {
     if (!arr || !arr.length) return '—';
