@@ -103,7 +103,7 @@ ENTITY_TABLES = {
     "keyword":  "ro.analytics.keyword_daily",
     "ad_group": "ro.analytics.ad_group_daily",
     "shopping": "ro.analytics.shopping_campaign_daily",
-    "ad":       "ro.analytics.ad_daily",
+    "ad":       "ro.analytics.ad_features_daily",
 }
 
 # Entity ID and Name column mappings
@@ -294,13 +294,44 @@ AD_GROUP_METRIC_MAP = {
 # ---------------------------------------------------------------------------
 
 AD_METRIC_MAP = {
-    "ctr":         ("ctr",         None, None),   # DOUBLE (decimal, e.g. 0.05 = 5%)
-    "impressions": ("impressions", None, None),   # BIGINT
-    "ad_strength": ("ad_strength", None, None),   # VARCHAR (POOR/AVERAGE/GOOD/EXCELLENT)
-    "roas":        ("roas",        None, None),   # DOUBLE
-    "conversions": ("conversions", None, None),   # DOUBLE
-    "clicks":      ("clicks",      None, None),   # BIGINT
-    "cost":        ("cost_micros", None, None, 1_000_000),   # BIGINT (micros; column renamed from cost)
+    # ── Direct columns from ad_features_daily ────────────────────────────────
+    "ctr":         ("ctr_7d",       None, None),   # DOUBLE (decimal, e.g. 0.05 = 5%)
+    "impressions": ("impressions_7d", None, None), # BIGINT
+    "ad_strength": ("ad_strength",  None, None),   # VARCHAR (POOR/AVERAGE/GOOD/EXCELLENT)
+    "roas":        ("roas_7d",      None, None),   # DOUBLE
+    "conversions": ("conversions_7d", None, None), # DOUBLE
+    "clicks":      ("clicks_7d",    None, None),   # BIGINT
+    "cost":        ("cost_micros_7d", None, None, 1_000_000),  # BIGINT (micros)
+
+    # ── Windowed aliases (UI sends these — map to ad_features_daily columns) ─
+    "ctr_w7_mean":      ("ctr_7d",      None, None),
+    "ctr_w14_mean":     ("ctr_7d",      None, None),   # 14d not in features, use 7d
+    "ctr_w30_mean":     ("ctr_30d",     None, None),
+    "roas_w7_mean":     ("roas_7d",     None, None),
+    "roas_w14_mean":    ("roas_7d",     None, None),   # 14d not in features, use 7d
+    "roas_w30_mean":    ("roas_30d",    None, None),
+    "cpa_w7_mean":      ("cpa_7d",      None, None),
+    "cpa_w14_mean":     ("cpa_7d",      None, None),   # 14d not in features, use 7d
+    "cpa_w30_mean":     ("cpa_30d",     None, None),
+    "clicks_w7_sum":    ("clicks_7d",   None, None),
+    "clicks_w14_sum":   ("clicks_14d",  None, None),
+    "clicks_w30_sum":   ("clicks_30d",  None, None),
+    "conversions_w7_sum":  ("conversions_7d",  None, None),
+    "conversions_w14_sum": ("conversions_14d", None, None),
+    "conversions_w30_sum": ("conversions_30d", None, None),
+    "cost_w7_sum":      ("cost_micros_7d",  None, None, 1_000_000),
+    "cost_w14_sum":     ("cost_micros_14d", None, None, 1_000_000),
+    "cost_w30_sum":     ("cost_micros_30d", None, None, 1_000_000),
+    "impressions_w7_sum":  ("impressions_7d",  None, None),
+    "impressions_w14_sum": ("impressions_14d", None, None),
+    "impressions_w30_sum": ("impressions_30d", None, None),
+
+    # ── Trend columns ────────────────────────────────────────────────────────
+    "ctr_w7_vs_prev_pct":  ("ctr_trend_7d_vs_30d",  None, None),
+    "cvr_w7_vs_prev_pct":  ("cvr_trend_7d_vs_30d",  None, None),
+
+    # ── System ───────────────────────────────────────────────────────────────
+    "low_data_flag":    ("low_data_flag", None, None),
 }
 
 SHOPPING_METRIC_MAP = {
@@ -505,6 +536,10 @@ def _evaluate(value, operator, threshold) -> bool:
             if isinstance(threshold, bool):
                 return bool(value) == threshold
             return float(value) == float(threshold)
+        if operator == "in":
+            # Handle "in" operator for comma-separated string lists (e.g., ad_strength in "GOOD,EXCELLENT")
+            allowed = [s.strip() for s in str(threshold).split(",")]
+            return str(value).strip() in allowed
     except (TypeError, ValueError):
         return False
     return False
