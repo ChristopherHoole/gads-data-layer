@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACT Optimization Architecture</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* ══════════════════════════════════════════
+           THEME VARIABLES
+           ══════════════════════════════════════════ */
+        :root {
+            /* Light theme (default) */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --bg-card: #ffffff;
+            --bg-code: #f1f5f9;
+            --bg-nav: rgba(255,255,255,0.95);
+            --border: #e2e8f0;
+            --border-hover: #cbd5e1;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --text-faint: #cbd5e1;
+            --shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-hover: 0 4px 12px rgba(0,0,0,0.08);
+            /* Accent colors stay the same */
+            --blue: #3b82f6;
+            --blue-bg: #eff6ff;
+            --blue-border: #bfdbfe;
+            --green: #10b981;
+            --green-bg: #ecfdf5;
+            --green-border: #a7f3d0;
+            --purple: #8b5cf6;
+            --purple-bg: #f5f3ff;
+            --purple-border: #c4b5fd;
+            --amber: #f59e0b;
+            --amber-bg: #fffbeb;
+            --amber-border: #fde68a;
+            --red: #ef4444;
+            --red-bg: #fef2f2;
+            --red-border: #fecaca;
+            --pink: #ec4899;
+            --pink-bg: #fdf2f8;
+            --pink-border: #fbcfe8;
+            --indigo: #6366f1;
+            --teal: #14b8a6;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-tertiary: #1e293b;
+            --bg-card: #111827;
+            --bg-code: #0d1117;
+            --bg-nav: rgba(10,14,23,0.95);
+            --border: #1e293b;
+            --border-hover: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --text-faint: #334155;
+            --shadow-card: 0 1px 3px rgba(0,0,0,0.3);
+            --shadow-hover: 0 4px 12px rgba(0,0,0,0.3);
+            --blue-bg: #1e3a5f;
+            --blue-border: #1e3a5f;
+            --green-bg: #065f4620;
+            --green-border: #34d39940;
+            --purple-bg: #1e1a2e;
+            --purple-border: #8b5cf640;
+            --amber-bg: #92400e20;
+            --amber-border: #fbbf2440;
+            --red-bg: #991b1b20;
+            --red-border: #f8717140;
+            --pink-bg: #831843;
+            --pink-border: #ec489940;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* ══════════════════════════════════════════
+           TOP NAVIGATION
+           ══════════════════════════════════════════ */
+        .top-nav {
+            position: fixed; top: 0; left: 0; right: 0;
+            background: var(--bg-nav);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+            padding: 0 32px;
+            display: flex; align-items: center;
+            height: 56px; gap: 24px;
+        }
+        .nav-logo { font-size: 18px; font-weight: 700; color: var(--blue); letter-spacing: -0.5px; white-space: nowrap; }
+        .nav-logo span { color: var(--text-muted); font-weight: 400; }
+        .nav-tabs { display: flex; gap: 4px; height: 100%; align-items: center; }
+        .nav-tab {
+            padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+            color: var(--text-muted); cursor: pointer; transition: all 0.2s; white-space: nowrap;
+        }
+        .nav-tab:hover { color: var(--text-secondary); background: var(--bg-tertiary); }
+        .nav-tab.active { color: var(--blue); background: var(--blue-bg); }
+        .nav-tab.disabled { opacity: 0.3; cursor: not-allowed; }
+        .nav-tab.disabled:hover { color: var(--text-muted); background: transparent; }
+
+        .nav-right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+
+        /* Theme toggle */
+        .theme-toggle {
+            width: 44px; height: 24px; border-radius: 12px;
+            background: var(--bg-tertiary); border: 1px solid var(--border);
+            cursor: pointer; position: relative; transition: all 0.3s;
+        }
+        .theme-toggle::after {
+            content: '☀️'; position: absolute; top: 2px; left: 2px;
+            width: 18px; height: 18px; border-radius: 50%;
+            background: white; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center; font-size: 11px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        [data-theme="dark"] .theme-toggle { background: #334155; }
+        [data-theme="dark"] .theme-toggle::after { content: '🌙'; left: 22px; }
+
+        .nav-status { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+        .nav-status .done { color: var(--green); }
+
+        /* ══════════════════════════════════════════
+           SUB-TABS (within each level)
+           ══════════════════════════════════════════ */
+        .sub-nav {
+            position: fixed; top: 56px; left: 0; right: 0;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            z-index: 99; padding: 0 32px;
+            display: flex; align-items: center; height: 44px; gap: 4px;
+            overflow-x: auto;
+        }
+        .sub-tab {
+            padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 500;
+            color: var(--text-muted); cursor: pointer; transition: all 0.2s; white-space: nowrap;
+        }
+        .sub-tab:hover { color: var(--text-secondary); background: var(--bg-tertiary); }
+        .sub-tab.active { color: var(--blue); background: var(--blue-bg); font-weight: 600; }
+
+        /* ══════════════════════════════════════════
+           MAIN CONTENT
+           ══════════════════════════════════════════ */
+        .main { padding: 120px 32px 60px; max-width: 1400px; margin: 0 auto; }
+        .level-section { display: none; }
+        .level-section.active { display: block; }
+        .sub-section { display: none; }
+        .sub-section.active { display: block; }
+
+        /* ── Header ── */
+        .level-header { margin-bottom: 32px; }
+        .level-badge {
+            display: inline-block; padding: 4px 12px; border-radius: 20px;
+            font-size: 11px; font-weight: 600; letter-spacing: 1px;
+            text-transform: uppercase; margin-bottom: 12px;
+            background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue-border);
+        }
+        .level-header h1 { font-size: 28px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+        .level-header p { font-size: 15px; color: var(--text-secondary); max-width: 700px; }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 28px; margin-bottom: 24px; box-shadow: var(--shadow-card);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .card:hover { border-color: var(--border-hover); box-shadow: var(--shadow-hover); }
+        .card-title {
+            font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .card-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+
+        /* ── Persona cards ── */
+        .persona-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+        .persona-card {
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px;
+            padding: 24px; position: relative; overflow: hidden;
+        }
+        .persona-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+        .persona-lead::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .persona-ecomm::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+        .persona-label { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+        .persona-lead .persona-label { color: var(--blue); }
+        .persona-ecomm .persona-label { color: var(--purple); }
+        .persona-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+        .persona-kpi { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
+        .campaign-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+        .campaign-tag { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; background: var(--bg-tertiary); color: var(--text-secondary); }
+
+        /* ── Role grid ── */
+        .role-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 16px 0; }
+        .role-card {
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px;
+            padding: 16px; text-align: center; transition: all 0.2s;
+        }
+        .role-card:hover { border-color: var(--border-hover); transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+        .role-prefix { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+        .role-prefix.bd { color: var(--amber); }
+        .role-prefix.cp { color: var(--green); }
+        .role-prefix.rt { color: var(--purple); }
+        .role-prefix.pr { color: var(--blue); }
+        .role-prefix.ts { color: var(--pink); }
+        .role-name { font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+        .role-desc { font-size: 11px; color: var(--text-muted); }
+
+        /* ── Budget bars ── */
+        .budget-bar-container { margin: 16px 0; }
+        .budget-bar-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .budget-bar-label .label-left { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+        .budget-bar-label .label-right { font-size: 12px; color: var(--text-muted); }
+        .budget-bar-track { height: 28px; background: var(--bg-tertiary); border-radius: 8px; position: relative; overflow: hidden; }
+        .budget-bar-fill {
+            height: 100%; border-radius: 8px; display: flex; align-items: center;
+            justify-content: center; font-size: 11px; font-weight: 600; color: white; transition: width 0.5s ease;
+        }
+        .bar-bd { background: linear-gradient(90deg, #f59e0b80, #f59e0b); }
+        .bar-cp { background: linear-gradient(90deg, #10b98180, #10b981); }
+        .bar-rt { background: linear-gradient(90deg, #8b5cf680, #8b5cf6); }
+        .bar-pr { background: linear-gradient(90deg, #3b82f680, #3b82f6); }
+        .bar-ts { background: linear-gradient(90deg, #ec489980, #ec4899); }
+
+        /* ── Zone visual ── */
+        .zone-visual { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2px; margin: 12px 0; border-radius: 10px; overflow: hidden; }
+        .zone-block { padding: 16px; text-align: center; }
+        .zone-outperform { background: var(--green-bg); }
+        .zone-target { background: var(--bg-tertiary); }
+        .zone-underperform { background: var(--red-bg); }
+        .zone-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .zone-outperform .zone-label { color: var(--green); }
+        .zone-target .zone-label { color: var(--text-muted); }
+        .zone-underperform .zone-label { color: var(--red); }
+        .zone-example { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+        .zone-action { font-size: 12px; color: var(--text-secondary); }
+
+        /* ── Formula box ── */
+        .formula-box {
+            background: var(--bg-code); border: 1px solid var(--border); border-radius: 8px;
+            padding: 14px 20px; margin: 12px 0; font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 15px; color: var(--text-primary); text-align: center;
+        }
+        .formula-box .operator { color: var(--text-muted); }
+        .formula-box .metric-cpc { color: var(--amber); font-weight: 600; }
+        .formula-box .metric-cvr { color: var(--green); font-weight: 600; }
+        .formula-box .metric-aov { color: var(--purple); font-weight: 600; }
+        .formula-box .metric-result { color: var(--blue); font-weight: 600; }
+
+        /* ── Tables ── */
+        .data-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+        .data-table th {
+            text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 600;
+            letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted);
+            border-bottom: 2px solid var(--border); background: var(--bg-secondary);
+        }
+        .data-table th:first-child { border-radius: 8px 0 0 0; }
+        .data-table th:last-child { border-radius: 0 8px 0 0; }
+        .data-table td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover td { background: var(--bg-tertiary); }
+
+        /* ── Status badges ── */
+        .status { display: inline-block; padding: 3px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; }
+        .status-act { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+        .status-investigate { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+        .status-alert { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+        .status-monitor { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue-border); }
+
+        /* ── Signal cards ── */
+        .signal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; }
+        .signal-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
+        .signal-icon { font-size: 24px; margin-bottom: 8px; }
+        .signal-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+        .signal-name.cpc { color: var(--amber); }
+        .signal-name.cvr { color: var(--green); }
+        .signal-name.aov { color: var(--purple); }
+        .signal-window { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+        .signal-why { font-size: 11px; color: var(--text-secondary); }
+
+        /* ── Scoring bar ── */
+        .scoring-bar { display: flex; height: 40px; border-radius: 10px; overflow: hidden; margin: 16px 0; }
+        .scoring-segment { display: flex; align-items: center; justify-content: center; flex-direction: column; color: white; font-weight: 600; }
+        .scoring-segment .seg-weight { font-size: 16px; }
+        .scoring-segment .seg-label { font-size: 10px; opacity: 0.8; }
+        .seg-7d { background: #3b82f6; flex: 5; }
+        .seg-14d { background: #6366f1; flex: 3; }
+        .seg-30d { background: #8b5cf6; flex: 2; }
+
+        /* ── Callout boxes ── */
+        .callout { border-radius: 10px; padding: 14px 18px; margin: 16px 0; font-size: 13px; }
+        .callout strong { color: inherit; }
+        .callout-info { background: var(--blue-bg); border: 1px solid var(--blue-border); color: var(--blue); }
+        .callout-warning { background: var(--amber-bg); border: 1px solid var(--amber-border); color: var(--amber); }
+        .callout-key { background: var(--green-bg); border: 1px solid var(--green-border); color: var(--green); }
+        [data-theme="dark"] .callout-info { color: #93c5fd; }
+        [data-theme="dark"] .callout-warning { color: #fcd34d; }
+        [data-theme="dark"] .callout-key { color: #6ee7b7; }
+
+        /* ── Guardrail list ── */
+        .guardrail-list { list-style: none; margin: 16px 0; }
+        .guardrail-list li {
+            padding: 12px 16px; border-left: 3px solid var(--amber);
+            background: var(--bg-secondary); margin-bottom: 8px;
+            border-radius: 0 8px 8px 0; font-size: 13px; color: var(--text-primary);
+        }
+        .guardrail-list li strong { color: var(--amber); }
+
+        /* ── Scenario flow (inline) ── */
+        .scenario-flow { display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap; }
+        .flow-step { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; }
+        .flow-trigger { background: var(--bg-tertiary); color: var(--text-secondary); }
+        .flow-check { background: var(--blue-bg); color: var(--blue); }
+        .flow-result-act { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+        .flow-result-investigate { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+        .flow-result-alert { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+        .flow-arrow { color: var(--text-faint); font-size: 14px; }
+
+        /* ── Decision tree (list style) ── */
+        .decision-tree { position: relative; padding: 16px 0; }
+        .tree-node { position: relative; margin-bottom: 16px; padding-left: 40px; }
+        .tree-node::before { content: ''; position: absolute; left: 14px; top: 0; bottom: -16px; width: 2px; background: var(--border); }
+        .tree-node:last-child::before { display: none; }
+        .tree-node .node-dot {
+            position: absolute; left: 6px; top: 8px; width: 18px; height: 18px;
+            border-radius: 50%; border: 2px solid var(--border); background: var(--bg-card);
+            display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; z-index: 1;
+        }
+        .node-dot.step-check { border-color: var(--blue); color: var(--blue); }
+        .node-dot.step-yes { border-color: var(--green); color: var(--green); }
+        .node-dot.step-no { border-color: var(--red); color: var(--red); }
+        .tree-node .node-content { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; }
+        .node-question { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+        .node-detail { font-size: 12px; color: var(--text-secondary); }
+        .tree-branches { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .tree-branch { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+        .branch-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+        .branch-yes .branch-label { color: var(--green); }
+        .branch-no .branch-label { color: var(--red); }
+        .branch-detail { font-size: 12px; color: var(--text-secondary); }
+
+        /* ── Visual Flowchart ── */
+        .flowchart { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 20px 0; }
+        .fc-node {
+            padding: 12px 24px; border-radius: 10px; font-size: 13px; font-weight: 600;
+            text-align: center; min-width: 240px; position: relative; max-width: 340px;
+        }
+        .fc-diamond {
+            padding: 14px 28px; font-size: 13px; font-weight: 600;
+            text-align: center; min-width: 280px; position: relative;
+            background: var(--blue-bg); border: 2px solid var(--blue); color: var(--blue);
+            border-radius: 10px; transform: none; /* keeping rectangular for readability */
+        }
+        .fc-start { background: var(--bg-tertiary); border: 2px solid var(--text-muted); color: var(--text-primary); border-radius: 24px; }
+        .fc-action-act { background: var(--green-bg); border: 2px solid var(--green); color: var(--green); }
+        .fc-action-investigate { background: var(--amber-bg); border: 2px solid var(--amber); color: var(--amber); }
+        .fc-action-alert { background: var(--red-bg); border: 2px solid var(--red); color: var(--red); }
+        .fc-action-monitor { background: var(--bg-tertiary); border: 2px solid var(--text-muted); color: var(--text-secondary); border-radius: 24px; }
+
+        .fc-connector { width: 2px; height: 20px; background: var(--border); }
+        .fc-label { font-size: 11px; color: var(--text-muted); font-weight: 500; padding: 2px 0; }
+
+        .fc-branch { display: flex; gap: 20px; align-items: flex-start; justify-content: center; width: 100%; }
+        .fc-branch-col { display: flex; flex-direction: column; align-items: center; gap: 0; flex: 1; }
+
+        .fc-split { display: flex; align-items: center; gap: 0; width: 100%; justify-content: center; position: relative; }
+        .fc-split::before {
+            content: ''; position: absolute; top: 50%; left: 25%; right: 25%;
+            height: 2px; background: var(--border);
+        }
+        .fc-split-arm { width: 2px; height: 24px; background: var(--border); }
+
+        .fc-sublabel { font-size: 10px; color: var(--text-muted); margin-top: -2px; font-weight: 400; }
+
+        /* ── Review flow ── */
+        .review-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0; }
+        .review-step {
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px;
+            padding: 16px; text-align: center; position: relative;
+        }
+        .review-step::after { content: '→'; position: absolute; right: -14px; top: 50%; transform: translateY(-50%); color: var(--text-faint); font-size: 16px; }
+        .review-step:last-child::after { display: none; }
+        .review-step-num {
+            width: 24px; height: 24px; border-radius: 50%; background: var(--blue-bg); color: var(--blue);
+            font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px;
+        }
+        .review-step-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+        .review-step-detail { font-size: 11px; color: var(--text-muted); }
+
+        /* ── Three action columns ── */
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+        .action-col { border-radius: 10px; padding: 20px; }
+        .action-col h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+        .action-col .action-desc { font-size: 12px; margin-bottom: 12px; }
+        .action-col ul { font-size: 12px; list-style: none; }
+        .action-col ul li { padding: 3px 0; }
+        .action-col ul li::before { content: '• '; }
+        .action-col .action-footer { margin-top: 12px; font-size: 11px; padding-top: 10px; border-top: 1px solid; }
+        .col-act { background: var(--green-bg); border: 1px solid var(--green-border); color: var(--green); }
+        .col-act .action-footer { border-color: var(--green-border); }
+        .col-investigate { background: var(--amber-bg); border: 1px solid var(--amber-border); color: var(--amber); }
+        .col-investigate .action-footer { border-color: var(--amber-border); }
+        .col-alert { background: var(--red-bg); border: 1px solid var(--red-border); color: var(--red); }
+        .col-alert .action-footer { border-color: var(--red-border); }
+
+        /* ── Caveat cards ── */
+        .caveat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 16px 0; }
+        .caveat-card {
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 16px;
+        }
+        .caveat-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+        .caveat-rule { font-size: 13px; font-weight: 600; color: var(--blue); margin-bottom: 6px; }
+        .caveat-detail { font-size: 12px; color: var(--text-secondary); }
+        .caveat-example { font-size: 11px; color: var(--text-muted); margin-top: 8px; font-style: italic; }
+
+        /* ── Coming soon ── */
+        .coming-soon { text-align: center; padding: 80px 40px; color: var(--text-faint); }
+        .coming-soon h2 { font-size: 24px; margin-bottom: 8px; color: var(--text-muted); }
+        .coming-soon p { font-size: 14px; }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .persona-grid, .tree-branches, .caveat-grid, .action-grid { grid-template-columns: 1fr; }
+            .role-grid { grid-template-columns: repeat(3, 1fr); }
+            .zone-visual { grid-template-columns: 1fr; }
+            .review-flow { grid-template-columns: 1fr 1fr; }
+            .review-step:nth-child(2)::after { display: none; }
+            .fc-branch { flex-direction: column; align-items: center; }
+        }
+
+        html { scroll-behavior: smooth; }
+
+        /* ── Info grid (3 col) ── */
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 16px; }
+        .info-box { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+        .info-box-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+        .info-box-text { font-size: 12px; color: var(--text-secondary); }
+
+        /* ── Two-col grid ── */
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+    </style>
+</head>
+<body>
+
+<!-- ═══════ NAVIGATION ═══════ -->
+<nav class="top-nav">
+    <div class="nav-logo">ACT <span>Optimization Architecture</span></div>
+    <div class="nav-tabs">
+        <div class="nav-tab active" onclick="showSection('account')">Account Level</div>
+        <div class="nav-tab disabled">Campaign Level</div>
+        <div class="nav-tab disabled">Ad Group Level</div>
+        <div class="nav-tab disabled">Keyword Level</div>
+        <div class="nav-tab disabled">Ad Level</div>
+        <div class="nav-tab disabled">Shopping</div>
+    </div>
+    <div class="nav-right">
+        <div class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light theme"></div>
+        <div class="nav-status"><span class="done">● Account</span></div>
+    </div>
+</nav>
+
+<!-- ═══════ SUB-TABS ═══════ -->
+<div class="sub-nav" id="sub-nav-account">
+    <div class="sub-tab active" onclick="showSubSection('overview')">Overview</div>
+    <div class="sub-tab" onclick="showSubSection('roles-budget')">Roles & Budget</div>
+    <div class="sub-tab" onclick="showSubSection('signals')">Signal Decomposition</div>
+    <div class="sub-tab" onclick="showSubSection('scoring')">Performance Scoring</div>
+    <div class="sub-tab" onclick="showSubSection('decisions')">Decision Trees</div>
+    <div class="sub-tab" onclick="showSubSection('flowcharts')">Flowcharts</div>
+    <div class="sub-tab" onclick="showSubSection('actions')">Actions & Review</div>
+    <div class="sub-tab" onclick="showSubSection('guardrails')">Guardrails</div>
+    <div class="sub-tab" onclick="showSubSection('setup')">Client Setup</div>
+</div>
+
+
+<div class="main">
+<div class="level-section active" id="section-account">
+
+
+<!-- ══════════════════ SUB: OVERVIEW ══════════════════ -->
+<div class="sub-section active" id="sub-overview">
+    <div class="level-header">
+        <div class="level-badge">Level 1 — Account</div>
+        <h1>Budget Allocation &amp; Account Health</h1>
+        <p>The account level sits above everything. Before optimizing any campaign, ACT answers: <strong>"Is the money in the right place?"</strong></p>
+    </div>
+
+    <!-- Personas -->
+    <div class="card">
+        <div class="card-title">👤 Client Personas</div>
+        <div class="card-subtitle">Every client falls into one of two personas. The persona determines the primary KPI and optimization model.</div>
+
+        <div class="persona-grid">
+            <div class="persona-card persona-lead">
+                <div class="persona-label">Persona 1</div>
+                <div class="persona-title">Lead Gen / Services</div>
+                <div class="persona-kpi">Primary KPI: <strong>Cost Per Acquisition (CPA)</strong></div>
+                <div class="campaign-tags">
+                    <span class="campaign-tag">Search campaigns</span>
+                    <span class="campaign-tag">PMax campaigns</span>
+                    <span class="campaign-tag">Retargeting (Display/YouTube)</span>
+                </div>
+                <div style="font-size:13px;color:var(--text-secondary);">
+                    <strong style="color:var(--text-primary);">Examples:</strong> Plumbers, solicitors, SaaS companies, recruitment agencies, B2B services
+                </div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">
+                    No revenue data in Google Ads. Conversions = form fills, calls, bookings.
+                </div>
+            </div>
+            <div class="persona-card persona-ecomm">
+                <div class="persona-label">Persona 2</div>
+                <div class="persona-title">Ecommerce</div>
+                <div class="persona-kpi">Primary KPI: <strong>Return on Ad Spend (ROAS)</strong></div>
+                <div class="campaign-tags">
+                    <span class="campaign-tag">Shopping campaigns (core)</span>
+                    <span class="campaign-tag">Brand Search (1 campaign)</span>
+                    <span class="campaign-tag">Prospecting Search (occasional)</span>
+                    <span class="campaign-tag">Retargeting (Display/YouTube)</span>
+                </div>
+                <div style="font-size:13px;color:var(--text-secondary);">
+                    <strong style="color:var(--text-primary);">Examples:</strong> Online retailers, D2C brands, ecommerce stores
+                </div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">
+                    Has transaction values in Google Ads. Conversions = purchases with £ values.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Target Ranges -->
+    <div class="card">
+        <div class="card-title">🎯 Target Ranges &amp; Performance Zones</div>
+        <div class="card-subtitle">Targets are ranges, not single numbers. This creates three performance zones that determine ACT's response. Set per client account.</div>
+
+        <div class="persona-grid">
+            <div>
+                <div style="font-size:13px;font-weight:600;color:var(--blue);margin-bottom:8px;">Lead Gen Example: CPA Target £45–£50</div>
+                <div class="zone-visual">
+                    <div class="zone-block zone-outperform">
+                        <div class="zone-label">Outperforming</div>
+                        <div class="zone-example">Below £45</div>
+                        <div class="zone-action">Scale opportunity</div>
+                    </div>
+                    <div class="zone-block zone-target">
+                        <div class="zone-label">On Target</div>
+                        <div class="zone-example">£45 – £50</div>
+                        <div class="zone-action">Monitor only</div>
+                    </div>
+                    <div class="zone-block zone-underperform">
+                        <div class="zone-label">Underperforming</div>
+                        <div class="zone-example">Above £50</div>
+                        <div class="zone-action">Diagnose &amp; act</div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div style="font-size:13px;font-weight:600;color:var(--purple);margin-bottom:8px;">Ecommerce Example: ROAS Target 3.8x–4.2x</div>
+                <div class="zone-visual">
+                    <div class="zone-block zone-outperform">
+                        <div class="zone-label">Outperforming</div>
+                        <div class="zone-example">Above 4.2x</div>
+                        <div class="zone-action">Scale opportunity</div>
+                    </div>
+                    <div class="zone-block zone-target">
+                        <div class="zone-label">On Target</div>
+                        <div class="zone-example">3.8x – 4.2x</div>
+                        <div class="zone-action">Monitor only</div>
+                    </div>
+                    <div class="zone-block zone-underperform">
+                        <div class="zone-label">Underperforming</div>
+                        <div class="zone-example">Below 3.8x</div>
+                        <div class="zone-action">Diagnose &amp; act</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="callout callout-info">
+            <strong>Deviation threshold:</strong> ACT investigates when performance moves beyond 10% outside the target range (default, editable per client). E.g., CPA above £55 (£50 + 10%) or below ~£40 (£45 - 10%) triggers deeper analysis.
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════ SUB: ROLES & BUDGET ══════════════════ -->
+<div class="sub-section" id="sub-roles-budget">
+    <div class="level-header">
+        <div class="level-badge">Level 1 — Account</div>
+        <h1>Campaign Roles &amp; Budget Bands</h1>
+        <p>Every campaign is assigned a role. The role determines budget priority and which optimization rules apply.</p>
+    </div>
+
+    <div class="card">
+        <div class="card-title">🏷️ Campaign Roles</div>
+        <div class="card-subtitle">Assigned via naming convention prefix. Manually set by the account manager to eliminate any ambiguity.</div>
+
+        <div class="role-grid">
+            <div class="role-card"><div class="role-prefix bd">[BD]</div><div class="role-name">Brand Defence</div><div class="role-desc">Protect brand terms. Always on. Success = impression share.</div></div>
+            <div class="role-card"><div class="role-prefix cp">[CP]</div><div class="role-name">Core Performer</div><div class="role-desc">Money-makers. Primary KPI applies. Gets bulk of budget.</div></div>
+            <div class="role-card"><div class="role-prefix rt">[RT]</div><div class="role-name">Retargeting</div><div class="role-desc">Warm audiences. Should have best CPA/ROAS. Audience-limited.</div></div>
+            <div class="role-card"><div class="role-prefix pr">[PR]</div><div class="role-name">Prospecting</div><div class="role-desc">New customer acquisition. Higher CPA/lower ROAS tolerance.</div></div>
+            <div class="role-card"><div class="role-prefix ts">[TS]</div><div class="role-name">Testing</div><div class="role-desc">Fixed budget cap. Learning phase. Never auto-increase.</div></div>
+        </div>
+
+        <div class="callout callout-info">
+            <strong>Naming convention examples:</strong> <code>[BD] Brand Terms</code> · <code>[CP] Shopping - Shoes</code> · <code>[RT] Display Remarketing</code> · <code>[PR] Search - Generic Terms</code> · <code>[TS] New Landing Page Test</code>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">💰 Budget Allocation Bands</div>
+        <div class="card-subtitle">Each role has a min/max % of total budget. ACT moves budget freely within bands. Breaching bands requires human approval. Defaults editable per client.</div>
+
+        <div class="budget-bar-container"><div class="budget-bar-label"><span class="label-left"><span style="color:var(--amber);">[BD]</span> Brand Defence</span><span class="label-right">2% – 8%</span></div><div class="budget-bar-track"><div class="budget-bar-fill bar-bd" style="width:8%;">2-8%</div></div></div>
+        <div class="budget-bar-container"><div class="budget-bar-label"><span class="label-left"><span style="color:var(--green);">[CP]</span> Core Performer</span><span class="label-right">40% – 70%</span></div><div class="budget-bar-track"><div class="budget-bar-fill bar-cp" style="width:70%;">40-70%</div></div></div>
+        <div class="budget-bar-container"><div class="budget-bar-label"><span class="label-left"><span style="color:var(--purple);">[RT]</span> Retargeting</span><span class="label-right">5% – 15%</span></div><div class="budget-bar-track"><div class="budget-bar-fill bar-rt" style="width:15%;">5-15%</div></div></div>
+        <div class="budget-bar-container"><div class="budget-bar-label"><span class="label-left"><span style="color:var(--blue);">[PR]</span> Prospecting</span><span class="label-right">10% – 30%</span></div><div class="budget-bar-track"><div class="budget-bar-fill bar-pr" style="width:30%;">10-30%</div></div></div>
+        <div class="budget-bar-container"><div class="budget-bar-label"><span class="label-left"><span style="color:var(--pink);">[TS]</span> Testing</span><span class="label-right">2% – 10%</span></div><div class="budget-bar-track"><div class="budget-bar-fill bar-ts" style="width:10%;">2-10%</div></div></div>
+
+        <div class="callout callout-key" style="margin-top:20px;">
+            <strong>Budget priority order:</strong> 1. Brand Defence gets what it needs first → 2. Core Performers get the bulk (ranked by efficiency) → 3. Retargeting gets proportional share → 4. Prospecting gets what's left → 5. Testing gets a fixed cap — never auto-increased.
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">⚖️ Within-Role Budget Competition</div>
+        <div class="card-subtitle">When multiple campaigns share the same role, how does ACT split budget between them? The answer depends on how many campaigns share the role.</div>
+
+        <div class="caveat-grid">
+            <div class="caveat-card">
+                <div class="caveat-title">1 Campaign in Role</div>
+                <div class="caveat-rule">Gets 100% of the role's allocation</div>
+                <div class="caveat-detail">No competition. The single campaign receives the entire budget band for that role.</div>
+                <div class="caveat-example">E.g., 1× [BD] Brand campaign → gets the full 2-8% brand budget.</div>
+            </div>
+            <div class="caveat-card">
+                <div class="caveat-title">2 Campaigns in Role</div>
+                <div class="caveat-rule">Ranked by efficiency. Best performer gets up to 65%.</div>
+                <div class="caveat-detail">The better performing campaign (by CPA or ROAS) gets the larger share. But the weaker campaign still gets at least 35% to maintain its ability to compete and recover.</div>
+                <div class="caveat-example">E.g., 2× [CP] Shopping campaigns → best ROAS gets 65%, other gets 35% of the CP band.</div>
+            </div>
+            <div class="caveat-card">
+                <div class="caveat-title">3+ Campaigns in Role</div>
+                <div class="caveat-rule">Ranked by efficiency. No single campaign gets &gt;50%.</div>
+                <div class="caveat-detail">Prevents one campaign from starving the others. Budget is distributed proportionally by efficiency score, with a 50% cap on any single campaign. Ensures underperformers still get enough budget to be evaluated fairly.</div>
+                <div class="caveat-example">E.g., 3× [CP] Shopping campaigns → best gets 50%, second gets 30%, third gets 20%.</div>
+            </div>
+        </div>
+
+        <div class="callout callout-warning">
+            <strong>Why the cap matters:</strong> A campaign having a bad week shouldn't be starved of budget entirely. It might recover. If ACT keeps cutting its budget, it creates a death spiral — less budget means less data, which means worse performance, which means even less budget. The minimum share prevents this.
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════ SUB: SIGNALS ══════════════════ -->
+<div class="sub-section" id="sub-signals">
+    <div class="level-header">
+        <div class="level-badge">Level 1 — Account</div>
+        <h1>Signal Decomposition</h1>
+        <p>CPA and ROAS are outcome metrics — the result, not the cause. ACT decomposes them into input signals to understand <strong>what changed</strong> before acting.</p>
+    </div>
+
+    <!-- Lead Gen -->
+    <div class="card">
+        <div class="card-title" style="color:var(--blue);">📊 Persona 1: Lead Gen — Two Signals</div>
+        <div class="card-subtitle">CPA can only change if CPC changes, CVR changes, or both. ACT checks which one moved before deciding how to respond.</div>
+
+        <div class="formula-box">
+            <span class="metric-result">CPA</span>
+            <span class="operator"> = </span>
+            <span class="metric-cpc">CPC</span>
+            <span class="operator"> ÷ </span>
+            <span class="metric-cvr">Conversion Rate</span>
+        </div>
+
+        <table class="data-table">
+            <thead><tr><th>Scenario</th><th>CPC</th><th>CVR</th><th>CPA Impact</th><th>What It Means</th><th>ACT Response</th></tr></thead>
+            <tbody>
+                <tr><td>Auction problem</td><td style="color:var(--red);font-weight:600;">↑ Up</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--red);">CPA rises</td><td style="font-size:12px;">Competitors bidding more, quality score dropped, or bid strategy being aggressive</td><td><span class="status status-act">Act</span></td></tr>
+                <tr><td>Site/traffic issue</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--red);font-weight:600;">↓ Down</td><td style="color:var(--red);">CPA rises</td><td style="font-size:12px;">Landing page problem, website speed issue, or bad search terms leaking in</td><td><span class="status status-investigate">Investigate</span></td></tr>
+                <tr><td>Multiple problems</td><td style="color:var(--red);font-weight:600;">↑ Up</td><td style="color:var(--red);font-weight:600;">↓ Down</td><td style="color:var(--red);">CPA rises sharply</td><td style="font-size:12px;">More than one thing is wrong — auction AND conversion problems simultaneously</td><td><span class="status status-alert">Alert</span></td></tr>
+                <tr><td>Cheaper auctions</td><td style="color:var(--green);font-weight:600;">↓ Down</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--green);">CPA drops</td><td style="font-size:12px;">Winning auctions at a lower cost — competitor pulled back or QS improved</td><td><span class="status status-act">Act — scale?</span></td></tr>
+                <tr><td>Better conversions</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--green);font-weight:600;">↑ Up</td><td style="color:var(--green);">CPA drops</td><td style="font-size:12px;">Website or landing page converting better, or higher-quality traffic arriving</td><td><span class="status status-act">Act — scale?</span></td></tr>
+                <tr><td>Everything improving</td><td style="color:var(--green);font-weight:600;">↓ Down</td><td style="color:var(--green);font-weight:600;">↑ Up</td><td style="color:var(--green);">CPA drops significantly</td><td style="font-size:12px;">Both auction efficiency and conversion performance are improving — strongest scale signal</td><td><span class="status status-act">Act — strong scale</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Ecommerce -->
+    <div class="card">
+        <div class="card-title" style="color:var(--purple);">📊 Persona 2: Ecommerce — Three Signals</div>
+        <div class="card-subtitle">ROAS depends on three inputs. The critical difference from Lead Gen is that AOV is completely outside Google Ads control — ACT must never auto-act on AOV changes.</div>
+
+        <div class="formula-box">
+            <span class="metric-result">ROAS</span>
+            <span class="operator"> = (</span>
+            <span class="metric-cvr">CVR</span>
+            <span class="operator"> × </span>
+            <span class="metric-aov">AOV</span>
+            <span class="operator">) ÷ </span>
+            <span class="metric-cpc">CPC</span>
+        </div>
+
+        <table class="data-table">
+            <thead><tr><th>Scenario</th><th>CPC</th><th>CVR</th><th>AOV</th><th>ROAS Impact</th><th>What It Means</th><th>ACT Response</th></tr></thead>
+            <tbody>
+                <tr><td>Auction problem</td><td style="color:var(--red);font-weight:600;">↑ Up</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--red);">ROAS drops</td><td style="font-size:12px;">Competitors bidding more, quality score dropped, or bid strategy being aggressive</td><td><span class="status status-act">Act</span></td></tr>
+                <tr><td>Site/traffic issue</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--red);font-weight:600;">↓ Down</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--red);">ROAS drops</td><td style="font-size:12px;">Landing page problem, website speed issue, bad search terms, or checkout friction</td><td><span class="status status-investigate">Investigate</span></td></tr>
+                <tr><td>Product/stock issue</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--red);font-weight:600;">↓ Down</td><td style="color:var(--red);">ROAS drops</td><td style="font-size:12px;">Best seller out of stock, product mix shifted to cheaper items, or promo ended</td><td><span class="status status-alert">Alert</span></td></tr>
+                <tr><td>Multi ad-side issues</td><td style="color:var(--red);font-weight:600;">↑ Up</td><td style="color:var(--red);font-weight:600;">↓ Down</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--red);">ROAS drops sharply</td><td style="font-size:12px;">Auction costs rising AND traffic quality/site performance declining — dual ad-side problem</td><td><span class="status status-alert">Alert</span></td></tr>
+                <tr><td>External collapse</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--red);font-weight:600;">↓ Down</td><td style="color:var(--red);font-weight:600;">↓ Down</td><td style="color:var(--red);">ROAS drops sharply</td><td style="font-size:12px;">Website AND product/inventory problems — something big changed outside Google Ads</td><td><span class="status status-alert">Alert — external</span></td></tr>
+                <tr><td>Major crisis</td><td style="color:var(--red);font-weight:600;">↑ Up</td><td style="color:var(--red);font-weight:600;">↓ Down</td><td style="color:var(--red);font-weight:600;">↓ Down</td><td style="color:var(--red);">ROAS collapses</td><td style="font-size:12px;">Everything is failing — auction, conversions, AND product economics all worsening at once</td><td><span class="status status-alert">Alert — urgent</span></td></tr>
+                <tr><td>Cheaper traffic</td><td style="color:var(--green);font-weight:600;">↓ Down</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--green);">ROAS rises</td><td style="font-size:12px;">Winning auctions cheaper — competitor pulled back or quality score improved</td><td><span class="status status-act">Act — scale?</span></td></tr>
+                <tr><td>Better conversions</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--green);font-weight:600;">↑ Up</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--green);">ROAS rises</td><td style="font-size:12px;">Site converting better, improved UX, or higher quality traffic arriving</td><td><span class="status status-act">Act — scale?</span></td></tr>
+                <tr><td>AOV spike (caution)</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--green);font-weight:600;">↑ Up</td><td style="color:var(--green);">ROAS rises</td><td style="font-size:12px;">Customers buying more expensive items or larger orders — may be temporary (1 big order can skew)</td><td><span class="status status-monitor">Monitor — may be temporary</span></td></tr>
+                <tr><td>AOV + cheaper traffic</td><td style="color:var(--green);font-weight:600;">↓ Down</td><td style="color:var(--text-muted);">— Stable</td><td style="color:var(--green);font-weight:600;">↑ Up</td><td style="color:var(--green);">ROAS rises strongly</td><td style="font-size:12px;">CPC confirms the improvement is real (not just AOV anomaly) — safer to act on</td><td><span class="status status-act">Act — scale (CPC confirms)</span></td></tr>
+                <tr><td>Everything improving</td><td style="color:var(--green);font-weight:600;">↓ Down</td><td style="color:var(--green);font-weight:600;">↑ Up</td><td style="color:var(--green);font-weight:600;">↑ Up</td><td style="color:var(--green);">ROAS rises sharply</td><td style="font-size:12px;">All three inputs improving — strongest possible scale signal</td><td><span class="status status-act">Act — strong scale</span></td></tr>
+            </tbody>
+        </table>
+
+        <div class="callout callout-warning">
+            <strong>AOV caution rule:</strong> If ROAS outperformance is driven <em>solely</em> by AOV increase, ACT does NOT auto-recommend budget increases. AOV spikes can be caused by a single large order — scaling budget based on that would waste money. ACT monitors and waits for the trend to confirm over the 30-day AOV window.
+        </div>
+    </div>
+
+    <!-- Signal Windows -->
+    <div class="card">
+        <div class="card-title">⏱️ Signal Detection Windows</div>
+        <div class="card-subtitle">Each signal has its own detection window. More volatile signals get longer windows to avoid false alarms.</div>
+
+        <div class="signal-grid">
+            <div class="signal-card"><div class="signal-icon">📈</div><div class="signal-name cpc">CPC</div><div class="signal-window">7-day window</div><div class="signal-why">Changes fast due to auction dynamics. Needs to be caught early before budget is wasted.</div></div>
+            <div class="signal-card"><div class="signal-icon">🔄</div><div class="signal-name cvr">Conversion Rate</div><div class="signal-window">14-day window</div><div class="signal-why">Noisy day-to-day. A single day with 0 conversions doesn't mean CVR has dropped — needs smoothing.</div></div>
+            <div class="signal-card"><div class="signal-icon">🛒</div><div class="signal-name aov">Avg Order Value</div><div class="signal-window">30-day window</div><div class="signal-why">Most volatile signal. One large order can skew a whole week. Ecommerce persona only.</div></div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════ SUB: SCORING ══════════════════ -->
+<div class="sub-section" id="sub-scoring">
+    <div class="level-header">
+        <div class="level-badge">Level 1 — Account</div>
+        <h1>Performance Scoring</h1>
+        <p>ACT rates each campaign's overall health using a weighted blend of three time windows. This score determines budget allocation ranking within a campaign role.</p>
+    </div>
+
+    <div class="card">
+        <div class="card-title">📊 Multi-Window Weighted Blend</div>
+        <div class="card-subtitle">Recent data is weighted most heavily, but longer-term performance provides stability and prevents overreaction.</div>
+
+        <div class="scoring-bar">
+            <div class="scoring-segment seg-7d"><span class="seg-weight">50%</span><span class="seg-label">Last 7 days</span></div>
+            <div class="scoring-segment seg-14d"><span class="seg-weight">30%</span><span class="seg-label">Last 14 days</span></div>
+            <div class="scoring-segment seg-30d"><span class="seg-weight">20%</span><span class="seg-label">Last 30 days</span></div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-box"><div class="info-box-title" style="color:var(--blue);">7 Days — 50% Weight</div><div class="info-box-text">Catches recent trend changes. If a campaign tanked this week, ACT responds quickly.</div></div>
+            <div class="info-box"><div class="info-box-title" style="color:var(--indigo);">14 Days — 30% Weight</div><div class="info-box-text">Smooths out weekly variation. Prevents overreacting to a single bad week.</div></div>
+            <div class="info-box"><div class="info-box-title" style="color:var(--purple);">30 Days — 20% Weight</div><div class="info-box-text">Baseline stability. Protects campaigns with one bad week after three strong weeks.</div></div>
+        </div>
+
+        <div class="callout callout-info" style="margin-top:20px;">
+            <strong>How scoring and signal detection work together:</strong> Signal detection (CPC 7d, CVR 14d, AOV 30d) tells ACT <em>what's wrong</em>. Performance scoring (7/14/30 blend) tells ACT <em>how to rank campaigns for budget allocation</em>. Both run in parallel.
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════ SUB: DECISIONS ══════════════════ -->
+<div class="sub-section" id="sub-decisions">
+    <div class="level-header">
+        <div class="level-badge">Level 1 — Account</div>
+        <h1>Decision Trees</h1>
+        <p>The exact step-by-step logic ACT follows each night when evaluating budget allocation.</p>
+    </div>
+
+    <div class="persona-grid">
+        <!-- Lead Gen -->
+        <div class="card">
+            <div class="card-title" style="color:var(--blue);">🌳 Lead Gen Decision Tree</div>
+            <div class="decision-tree">
+                <div class="tree-node"><div class="node-dot step-check">1</div><div class="node-content">
+                    <div class="node-question">Is CPA within target range?</div>
+                    <div class="node-detail">Compare weighted performance score against client's CPA range</div>
+                    <div class="tree-branches">
+                        <div class="tree-branch branch-yes"><div class="branch-label">Yes — On Target</div><div class="branch-detail">No action needed. Monitor.</div></div>
+                        <div class="tree-branch branch-no"><div class="branch-label">No — Outside Range</div><div class="branch-detail">Go to Step 2 →</div></div>
+                    </div>
+                </div></div>
+                <div class="tree-node"><div class="node-dot step-check">2</div><div class="node-content">
+                    <div class="node-question">Which direction?</div>
+                    <div class="tree-branches">
+                        <div class="tree-branch branch-yes"><div class="branch-label">Outperforming (below range)</div><div class="branch-detail">Scale opportunity → Step 3A</div></div>
+                        <div class="tree-branch branch-no"><div class="branch-label">Underperforming (above range)</div><div class="branch-detail">Diagnose problem → Step 3B</div></div>
+                    </div>
+                </div></div>
+                <div class="tree-node"><div class="node-dot step-yes">3A</div><div class="node-content">
+                    <div class="node-question">Outperforming — what improved?</div>
+                    <div class="node-detail">Check CPC (7d) and CVR (14d)</div>
+                    <div style="margin-top:8px;">
+                        <div class="scenario-flow"><span class="flow-step flow-trigger">CPC ↓</span><span class="flow-arrow">→</span><span class="flow-step flow-check">IS lost to budget?</span><span class="flow-arrow">→</span><span class="flow-step flow-result-act">Act: Increase budget</span></div>
+                        <div class="scenario-flow"><span class="flow-step flow-trigger">CVR ↑</span><span class="flow-arrow">→</span><span class="flow-step flow-check">IS lost to budget?</span><span class="flow-arrow">→</span><span class="flow-step flow-result-act">Act: Increase budget</span></div>
+                        <div class="scenario-flow"><span class="flow-step flow-trigger">Both improved</span><span class="flow-arrow">→</span><span class="flow-step flow-result-act">Act: Strong scale signal</span></div>
+                    </div>
+                </div></div>
+                <div class="tree-node"><div class="node-dot step-no">3B</div><div class="node-content">
+                    <div class="node-question">Underperforming — what worsened?</div>
+                    <div class="node-detail">Check CPC (7d) and CVR (14d)</div>
+                    <div style="margin-top:8px;">
+                        <div class="scenario-flow"><span class="flow-step flow-trigger">CPC ↑ only</span><span class="flow-arrow">→</span><span class="flow-step flow-result-act">Act: Budget/bid recommendation</span></div>
+                        <div class="scenario-flow"><span class="flow-step flow-trigger">CVR ↓ only</span><span class="flow-arrow">→</span><span class="flow-step flow-check">Check search terms</span><span class="flow-arrow">→</span><span class="flow-step flow-result-investigate">Investigate</span></div>
+                        <div class="scenario-flow"><span class="flow-step flow-trigger">Both worsened</span><span class="flow-arrow">→</span><span class="flow-step flow-result-alert">Alert: Human review</span></div>
+                    </div>
+                </div></div>
+            </div>
+        </div>
+
+        <!-- Ecommerce -->
+        <div class="card">
+            <div class="card-title" style="color:var(--purple);">🌳 Ecommerce Decision Tree</div>
+            <div class="decision-tree">
+                <div class="tree-node"><div class="node-dot step-check">1</div><div class="node-content">
+                    <div class="node-question">Is ROAS within target range?</div>
+                    <div class="node-detail">Compare weighted performance score against client's ROAS range</div>
+                    <div class="tree-branches">
+                        <div class="tree-branch branch-yes"><div class="branch-label">Yes — On Target</div><div class="branch-detail">No action needed. Monitor.</div></div>
+                        <div class="tree-branch branch-no"><div class="branch-label">No — Outside Range</div><div class="branch-detail">Go to Step 2 →</div></div>
+                    </div>
+                </div></div>
+                <div class="tree-node"><div class="node-dot step-check">2</div><div class="node-content">
+                    <div class="node-question">Which direction?</div>
+                    <div class="tree-branches">
+                        <div class="tree-branch branch-yes"><div class="branch-label">Outperforming (above range)</div><div class="branch-detail">Scale opportunity → Step 3A</div></div>
+                        <div class="tree-branch branch-no"><div class="branch-label">Underperforming (below range)</div><div class="branch-detail">Diagnose problem → Step 3B</div></div>
+                    </div>
+                </div></div>
+                <div class="tree-node"><div class="node-dot step-yes">3A</div><div class="node-content">
+                    <div class="node-question">Outperforming — what improved?</div>
+                    <div class="node-detail">Check CPC (7d), CVR (14d), AOV (30d)</div>
+                    <div style="margin-top:8px;">
+                        <div class="scenario-flow"><span class="flow-step flow-trigger">CPC ↓ or CVR ↑</span><span class="flow-arrow">→</span><span class="flow-step flow-check">IS lost to budget?</span><span class="flow-arrow">→</span><span class="flow-step flow-result-act">Act: Scale</span></div>
+                        <div class="scenario-flow"><span class="flow-step flow-trigger">AOV ↑ only</span><span class="flow-arrow">→</span><span class="flow-step flow-result-investigate">Monitor: May be temporary</span></div>
+                        <div class="scenario-flow"><span class="flow-step flow-trigger">AOV ↑ + CPC ↓</span><span class="flow-arrow">→</span><span class="flow-step flow-result-act">Act: Scale (CPC confirms)</span></div>
+                    </div>
+                </div></div>
+                <div class="tree-node"><div class="node-dot step-no">3B</div><div class="node-content">
+                    <div class="node-question">Underperforming — what worsened?</div>
+                    <div class="node-detail">Check CPC (7d), CVR (14d), AOV (30d)</div>
+                    <div style="margin-top:8px;">
+                        <div class="scenario-flow"><span class="flow-step flow-trigger">CPC ↑ only</span><span class="flow-arrow">→</span><span class="flow-step flow-result-act">Act: Budget/bid recommendation</span></div>
+                        <div class="scenario-flow"><span class="flow-step flow-trigger">CVR ↓ only</span><span class="flow-arrow">→</span><span class="flow-step flow-check">Check search terms</span><span class="flow-arrow">→</span><span class="flow-step flow-result-investigate">Investigate</span></div>
+                        <div class="scenario-flow"><span class="flow-step flow-trigger">AOV ↓ (any combo)</span><span class="flow-arrow">→</span><span class="flow-step flow-result-alert">Alert: Product/inventory issue</span></div>
+                        <div class="scenario-flow"><span class="flow-step flow-trigger">All three worsened</span><span class="flow-arrow">→</span><span class="flow-step flow-result-alert">Alert: Urgent — major issue</span></div>
+                    </div>
+                </div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════ SUB: FLOWCHARTS ══════════════════ -->
+<div class="sub-section" id="sub-flowcharts">
+    <div class="level-header">
+        <div class="level-badge">Level 1 — Account</div>
+        <h1>Visual Flowcharts</h1>
+        <p>The same decision logic as the decision trees, presented as visual flowcharts for a clearer picture of the logic path.</p>
+    </div>
+
+    <div class="persona-grid">
+        <!-- Lead Gen Flowchart -->
+        <div class="card">
+            <div class="card-title" style="color:var(--blue);">🔀 Lead Gen — Budget Decision Flowchart</div>
+            <div class="card-subtitle">CPA-focused evaluation flow</div>
+
+            <div class="flowchart">
+                <div class="fc-node fc-start">Campaign Daily Evaluation</div>
+                <div class="fc-connector"></div>
+                <div class="fc-node fc-diamond">Is CPA within target range?</div>
+                <div class="fc-connector"></div>
+
+                <div class="fc-split">
+                    <div class="fc-split-arm"></div>
+                    <div class="fc-split-arm"></div>
+                </div>
+
+                <div class="fc-branch">
+                    <div class="fc-branch-col">
+                        <div class="fc-label" style="color:var(--green);">✓ YES</div>
+                        <div class="fc-connector"></div>
+                        <div class="fc-node fc-action-monitor">Monitor — no action</div>
+                    </div>
+                    <div class="fc-branch-col">
+                        <div class="fc-label" style="color:var(--red);">✗ NO</div>
+                        <div class="fc-connector"></div>
+                        <div class="fc-node fc-diamond">Above or below range?</div>
+                        <div class="fc-connector"></div>
+
+                        <div class="fc-split">
+                            <div class="fc-split-arm"></div>
+                            <div class="fc-split-arm"></div>
+                        </div>
+
+                        <div class="fc-branch">
+                            <div class="fc-branch-col">
+                                <div class="fc-label" style="color:var(--green);">BELOW (outperforming)</div>
+                                <div class="fc-connector"></div>
+                                <div class="fc-node fc-diamond">What improved?<div class="fc-sublabel">CPC (7d) / CVR (14d)</div></div>
+                                <div class="fc-connector"></div>
+                                <div class="fc-node fc-diamond">IS lost to budget &gt; 0%?</div>
+                                <div class="fc-connector"></div>
+
+                                <div class="fc-split">
+                                    <div class="fc-split-arm"></div>
+                                    <div class="fc-split-arm"></div>
+                                </div>
+
+                                <div class="fc-branch">
+                                    <div class="fc-branch-col">
+                                        <div class="fc-label" style="color:var(--green);">YES</div>
+                                        <div class="fc-connector"></div>
+                                        <div class="fc-node fc-action-act">ACT: Increase budget</div>
+                                    </div>
+                                    <div class="fc-branch-col">
+                                        <div class="fc-label" style="color:var(--red);">NO</div>
+                                        <div class="fc-connector"></div>
+                                        <div class="fc-node fc-action-monitor">Already at max reach</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="fc-branch-col">
+                                <div class="fc-label" style="color:var(--red);">ABOVE (underperforming)</div>
+                                <div class="fc-connector"></div>
+                                <div class="fc-node fc-diamond">What worsened?<div class="fc-sublabel">CPC (7d) / CVR (14d)</div></div>
+                                <div class="fc-connector"></div>
+
+                                <div class="fc-split">
+                                    <div class="fc-split-arm"></div>
+                                    <div class="fc-split-arm"></div>
+                                </div>
+
+                                <div class="fc-branch">
+                                    <div class="fc-branch-col">
+                                        <div class="fc-label">CPC ↑ only</div>
+                                        <div class="fc-connector"></div>
+                                        <div class="fc-node fc-action-act">ACT: Bid/budget change</div>
+                                    </div>
+                                    <div class="fc-branch-col">
+                                        <div class="fc-label">CVR ↓ or both</div>
+                                        <div class="fc-connector"></div>
+                                        <div class="fc-node fc-diamond">Search terms OK?</div>
+                                        <div class="fc-connector"></div>
+                                        <div class="fc-split"><div class="fc-split-arm"></div><div class="fc-split-arm"></div></div>
+                                        <div class="fc-branch">
+                                            <div class="fc-branch-col">
+                                                <div class="fc-label">BAD</div>
+                                                <div class="fc-connector"></div>
+                                                <div class="fc-node fc-action-act">ACT: Add negatives</div>
+                                            </div>
+                                            <div class="fc-branch-col">
+                                                <div class="fc-label">FINE</div>
+                                                <div class="fc-connector"></div>
+                                                <div class="fc-node fc-action-investigate">INVESTIGATE: Site issue</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ecommerce Flowchart -->
+        <div class="card">
+            <div class="card-title" style="color:var(--purple);">🔀 Ecommerce — Budget Decision Flowchart</div>
+            <div class="card-subtitle">ROAS-focused evaluation flow</div>
+
+            <div class="flowchart">
+                <div class="fc-node fc-start">Campaign Daily Evaluation</div>
+                <div class="fc-connector"></div>
+                <div class="fc-node fc-diamond">Is ROAS within target range?</div>
+                <div class="fc-connector"></div>
+
+                <div class="fc-split"><div class="fc-split-arm"></div><div class="fc-split-arm"></div></div>
+
+                <div class="fc-branch">
+                    <div class="fc-branch-col">
+                        <div class="fc-label" style="color:var(--green);">✓ YES</div>
+                        <div class="fc-connector"></div>
+                        <div class="fc-node fc-action-monitor">Monitor — no action</div>
+                    </div>
+                    <div class="fc-branch-col">
+                        <div class="fc-label" style="color:var(--red);">✗ NO</div>
+                        <div class="fc-connector"></div>
+                        <div class="fc-node fc-diamond">Above or below range?</div>
+                        <div class="fc-connector"></div>
+
+                        <div class="fc-split"><div class="fc-split-arm"></div><div class="fc-split-arm"></div></div>
+
+                        <div class="fc-branch">
+                            <div class="fc-branch-col">
+                                <div class="fc-label" style="color:var(--green);">ABOVE (outperforming)</div>
+                                <div class="fc-connector"></div>
+                                <div class="fc-node fc-diamond">Did AOV drive it?<div class="fc-sublabel">CPC (7d) / CVR (14d) / AOV (30d)</div></div>
+                                <div class="fc-connector"></div>
+
+                                <div class="fc-split"><div class="fc-split-arm"></div><div class="fc-split-arm"></div></div>
+
+                                <div class="fc-branch">
+                                    <div class="fc-branch-col">
+                                        <div class="fc-label">AOV only</div>
+                                        <div class="fc-connector"></div>
+                                        <div class="fc-node fc-action-investigate">MONITOR: May be temporary</div>
+                                    </div>
+                                    <div class="fc-branch-col">
+                                        <div class="fc-label">CPC ↓ or CVR ↑</div>
+                                        <div class="fc-connector"></div>
+                                        <div class="fc-node fc-diamond">IS lost to budget?</div>
+                                        <div class="fc-connector"></div>
+                                        <div class="fc-split"><div class="fc-split-arm"></div><div class="fc-split-arm"></div></div>
+                                        <div class="fc-branch">
+                                            <div class="fc-branch-col">
+                                                <div class="fc-label" style="color:var(--green);">YES</div>
+                                                <div class="fc-connector"></div>
+                                                <div class="fc-node fc-action-act">ACT: Scale budget</div>
+                                            </div>
+                                            <div class="fc-branch-col">
+                                                <div class="fc-label" style="color:var(--red);">NO</div>
+                                                <div class="fc-connector"></div>
+                                                <div class="fc-node fc-action-monitor">Already at max reach</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="fc-branch-col">
+                                <div class="fc-label" style="color:var(--red);">BELOW (underperforming)</div>
+                                <div class="fc-connector"></div>
+                                <div class="fc-node fc-diamond">Did AOV move?<div class="fc-sublabel">Check AOV (30d) first</div></div>
+                                <div class="fc-connector"></div>
+
+                                <div class="fc-split"><div class="fc-split-arm"></div><div class="fc-split-arm"></div></div>
+
+                                <div class="fc-branch">
+                                    <div class="fc-branch-col">
+                                        <div class="fc-label">AOV ↓</div>
+                                        <div class="fc-connector"></div>
+                                        <div class="fc-node fc-action-alert">ALERT: Product/inventory issue</div>
+                                    </div>
+                                    <div class="fc-branch-col">
+                                        <div class="fc-label">AOV stable</div>
+                                        <div class="fc-connector"></div>
+                                        <div class="fc-node fc-diamond">CPC or CVR issue?</div>
+                                        <div class="fc-connector"></div>
+                                        <div class="fc-split"><div class="fc-split-arm"></div><div class="fc-split-arm"></div></div>
+                                        <div class="fc-branch">
+                                            <div class="fc-branch-col">
+                                                <div class="fc-label">CPC ↑</div>
+                                                <div class="fc-connector"></div>
+                                                <div class="fc-node fc-action-act">ACT: Bid/budget change</div>
+                                            </div>
+                                            <div class="fc-branch-col">
+                                                <div class="fc-label">CVR ↓</div>
+                                                <div class="fc-connector"></div>
+                                                <div class="fc-node fc-action-investigate">INVESTIGATE: Site/traffic</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════ SUB: ACTIONS & REVIEW ══════════════════ -->
+<div class="sub-section" id="sub-actions">
+    <div class="level-header">
+        <div class="level-badge">Level 1 — Account</div>
+        <h1>Actions &amp; Morning Review</h1>
+        <p>Every recommendation falls into one of three categories. Budget changes execute overnight and are reviewed each morning.</p>
+    </div>
+
+    <div class="card">
+        <div class="card-title">⚡ Three Action Types</div>
+        <div class="card-subtitle">Categorised by whether the issue is within Google Ads control.</div>
+
+        <div class="action-grid">
+            <div class="action-col col-act">
+                <div style="font-size:24px;margin-bottom:6px;">✅</div>
+                <h3>Act</h3>
+                <div class="action-desc">ACT can execute this. Within Google Ads control.</div>
+                <ul><li>Budget shifts between campaigns</li><li>Bid adjustments</li><li>Negative keyword additions</li><li>Budget increases for scaling</li></ul>
+                <div class="action-footer">Executed overnight, reviewed in morning.</div>
+            </div>
+            <div class="action-col col-investigate">
+                <div style="font-size:24px;margin-bottom:6px;">🔍</div>
+                <h3>Investigate</h3>
+                <div class="action-desc">Partially within control. Needs human analysis first.</div>
+                <ul><li>CVR drops — check search terms first</li><li>If search terms fine → likely website issue</li><li>Quality score declines</li><li>Landing page performance</li></ul>
+                <div class="action-footer">Flagged for morning review with diagnostic data.</div>
+            </div>
+            <div class="action-col col-alert">
+                <div style="font-size:24px;margin-bottom:6px;">🚨</div>
+                <h3>Alert</h3>
+                <div class="action-desc">Outside Google Ads control. Human must investigate externally.</div>
+                <ul><li>AOV shifts (product/inventory issues)</li><li>Multiple signals worsening</li><li>Whole account underperforming</li><li>Website/Merchant Center problems</li></ul>
+                <div class="action-footer">No automated action. Notification only.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">🌙 Overnight Execution &amp; Morning Review</div>
+        <div class="card-subtitle">ACT makes budget shifts overnight within guardrails. You review and approve/reject each morning.</div>
+
+        <div class="review-flow">
+            <div class="review-step"><div class="review-step-num">1</div><div class="review-step-title">Overnight Analysis</div><div class="review-step-detail">ACT runs signal decomposition and performance scoring across all campaigns</div></div>
+            <div class="review-step"><div class="review-step-num">2</div><div class="review-step-title">Auto-Execute</div><div class="review-step-detail">Budget shifts within bands, max 10% of daily budget per move</div></div>
+            <div class="review-step"><div class="review-step-num">3</div><div class="review-step-title">Morning Dashboard</div><div class="review-step-detail">See what changed, why, and the signal decomposition behind each move</div></div>
+            <div class="review-step"><div class="review-step-num">4</div><div class="review-step-title">Approve / Reject</div><div class="review-step-detail">Approve to keep changes. Reject to roll back immediately.</div></div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════ SUB: GUARDRAILS ══════════════════ -->
+<div class="sub-section" id="sub-guardrails">
+    <div class="level-header">
+        <div class="level-badge">Level 1 — Account</div>
+        <h1>Guardrails &amp; Safety Limits</h1>
+        <p>Hard limits that ACT cannot breach without human approval. These protect against bad automated decisions.</p>
+    </div>
+
+    <div class="card">
+        <div class="card-title">🛡️ Safety Boundaries</div>
+        <ul class="guardrail-list">
+            <li><strong>Budget bands:</strong> ACT cannot move a campaign role below its minimum or above its maximum allocation percentage.</li>
+            <li><strong>Max single move:</strong> Maximum 10% of daily budget can be shifted in a single overnight cycle. Larger moves are queued for approval before execution.</li>
+            <li><strong>Within-role cap:</strong> No single campaign within a role gets more than 50% of that role's allocation (3+ campaigns) or 65% (2 campaigns). Solo campaigns get 100%.</li>
+            <li><strong>Testing campaigns [TS]:</strong> Budget is never auto-increased. Fixed cap set at account setup.</li>
+            <li><strong>Whole account underperformance:</strong> If ALL campaigns are outside target range, ACT flags an Account Health Alert and does NOT redistribute — human must investigate externally.</li>
+            <li><strong>AOV-driven outperformance:</strong> For ecommerce accounts, if ROAS outperformance is driven solely by AOV increase, ACT monitors but does NOT auto-scale. AOV spikes may be temporary.</li>
+        </ul>
+    </div>
+</div>
+
+
+<!-- ══════════════════ SUB: CLIENT SETUP ══════════════════ -->
+<div class="sub-section" id="sub-setup">
+    <div class="level-header">
+        <div class="level-badge">Level 1 — Account</div>
+        <h1>Client Account Configuration</h1>
+        <p>What gets set when onboarding a new client into ACT.</p>
+    </div>
+
+    <div class="card">
+        <div class="card-title">⚙️ Account Setup Parameters</div>
+        <table class="data-table">
+            <thead><tr><th>Setting</th><th>Description</th><th>Default</th><th>Example</th></tr></thead>
+            <tbody>
+                <tr><td style="font-weight:600;color:var(--text-primary);">Persona</td><td>Lead Gen (CPA) or Ecommerce (ROAS)</td><td>Required — no default</td><td>Lead Gen</td></tr>
+                <tr><td style="font-weight:600;color:var(--text-primary);">Monthly Budget</td><td>Total monthly ad spend</td><td>Required — no default</td><td>£10,000</td></tr>
+                <tr><td style="font-weight:600;color:var(--text-primary);">Target Range</td><td>CPA range or ROAS range</td><td>Required — no default</td><td>CPA: £45–£50</td></tr>
+                <tr><td style="font-weight:600;color:var(--text-primary);">Deviation Threshold</td><td>% beyond target range before ACT investigates</td><td>10%</td><td>15% (conservative client)</td></tr>
+                <tr><td style="font-weight:600;color:var(--text-primary);">Budget Bands</td><td>Min/max % per campaign role</td><td>BD: 2-8%, CP: 40-70%, RT: 5-15%, PR: 10-30%, TS: 2-10%</td><td>CP: 50-80%</td></tr>
+                <tr><td style="font-weight:600;color:var(--text-primary);">Campaign Role Mapping</td><td>Which campaigns have which role prefix</td><td>Auto-detected from naming convention</td><td>[BD] Brand, [CP] Shopping</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+</div><!-- end section-account -->
+
+
+<!-- ═══════ PLACEHOLDER SECTIONS ═══════ -->
+<div class="level-section" id="section-campaign"><div class="coming-soon"><h2>Campaign Level</h2><p>Coming next — optimization by bid strategy type</p></div></div>
+<div class="level-section" id="section-adgroup"><div class="coming-soon"><h2>Ad Group Level</h2><p>Coming soon</p></div></div>
+<div class="level-section" id="section-keyword"><div class="coming-soon"><h2>Keyword Level</h2><p>Coming soon</p></div></div>
+<div class="level-section" id="section-ad"><div class="coming-soon"><h2>Ad Level</h2><p>Coming soon</p></div></div>
+<div class="level-section" id="section-shopping"><div class="coming-soon"><h2>Shopping</h2><p>Coming soon</p></div></div>
+
+</div><!-- end main -->
+
+
+<script>
+    const sections = ['account','campaign','adgroup','keyword','ad','shopping'];
+    const subSections = ['overview','roles-budget','signals','scoring','decisions','flowcharts','actions','guardrails','setup'];
+
+    function showSection(name) {
+        sections.forEach(s => {
+            const el = document.getElementById('section-' + s);
+            if (el) el.classList.toggle('active', s === name);
+        });
+        document.querySelectorAll('.nav-tab').forEach((tab, i) => {
+            if (i < sections.length) tab.classList.toggle('active', sections[i] === name);
+        });
+    }
+
+    function showSubSection(name) {
+        subSections.forEach(s => {
+            const el = document.getElementById('sub-' + s);
+            if (el) el.classList.toggle('active', s === name);
+        });
+        document.querySelectorAll('.sub-tab').forEach((tab, i) => {
+            if (i < subSections.length) tab.classList.toggle('active', subSections[i] === name);
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function toggleTheme() {
+        const html = document.documentElement;
+        const current = html.getAttribute('data-theme');
+        html.setAttribute('data-theme', current === 'light' ? 'dark' : 'light');
+    }
+</script>
+
+</body>
+</html>

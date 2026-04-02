@@ -1,0 +1,593 @@
+{
+  "total_spend": 18338.25,
+  "total_conversions": 552.0,
+  "total_waste": 7836.55,
+  "waste_pct": 42.7,
+  "waste_categories": {
+    "Non-Converting Search Terms": 1485.38,
+    "Zero-Conv Ad Groups": 78.91,
+    "Dead Hours (0 Conversions)": 50.8,
+    "Geographic Waste": 5694.35,
+    "Sunday Premium": 527.11
+  },
+  "search_term_waste": {
+    "total": 1485.38,
+    "count": 258,
+    "top20": [
+      {
+        "Search term": "planning objection letters",
+        "Clicks": 19,
+        "Cost": 43.55,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "object to a planning application",
+        "Clicks": 14,
+        "Cost": 38.32,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "planning application objection",
+        "Clicks": 10,
+        "Cost": 33.03,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "advice on objecting to planning application",
+        "Clicks": 12,
+        "Cost": 32.03,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "objection letter for planning permission",
+        "Clicks": 12,
+        "Cost": 31.05,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "objection letter to planning applications",
+        "Clicks": 17,
+        "Cost": 30.93,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "opposing planning applications",
+        "Clicks": 12,
+        "Cost": 25.93,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "planning refusal",
+        "Clicks": 5,
+        "Cost": 24.490000000000002,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "planning permission objections",
+        "Clicks": 12,
+        "Cost": 24.36,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "objections to planning permission",
+        "Clicks": 15,
+        "Cost": 24.18,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "planning application objection letter",
+        "Clicks": 9,
+        "Cost": 23.63,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "objecting to neighbours planning application",
+        "Clicks": 12,
+        "Cost": 23.37,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "objecting to planning application",
+        "Clicks": 11,
+        "Cost": 23.32,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "objection to a planning application",
+        "Clicks": 5,
+        "Cost": 23.09,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "planning permission disputes",
+        "Clicks": 6,
+        "Cost": 22.63,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "opposing planning permission",
+        "Clicks": 14,
+        "Cost": 20.9,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "object to planning",
+        "Clicks": 6,
+        "Cost": 19.85,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "hmo objection letter",
+        "Clicks": 14,
+        "Cost": 19.6,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "objecting to retrospective planning permission",
+        "Clicks": 11,
+        "Cost": 19.15,
+        "Conversions": 0.0
+      },
+      {
+        "Search term": "planning dispute solicitor",
+        "Clicks": 2,
+        "Cost": 18.32,
+        "Conversions": 0.0
+      }
+    ],
+    "by_category": [
+      {
+        "Category": "Other Non-Converting",
+        "Cost": 1245.89,
+        "Clicks": 768
+      },
+      {
+        "Category": "Wrong Service",
+        "Cost": 114.1,
+        "Clicks": 37
+      },
+      {
+        "Category": "Neighbourhood Disputes",
+        "Cost": 42.13,
+        "Clicks": 25
+      },
+      {
+        "Category": "DIY / Template Seekers",
+        "Cost": 41.72,
+        "Clicks": 24
+      },
+      {
+        "Category": "Informational Queries",
+        "Cost": 35.2,
+        "Clicks": 14
+      },
+      {
+        "Category": "Jobs / Careers",
+        "Cost": 6.34,
+        "Clicks": 2
+      }
+    ]
+  },
+  "negative_keywords": {
+    "total_main": 431,
+    "total_details": 191,
+    "exact_count": 221,
+    "phrase_count": 17,
+    "broad_count": 383,
+    "examples_exact": [
+      "[town planner]",
+      "[planning consultancy]",
+      "[retrospective planning permission]",
+      "[planning department]",
+      "[planning advisors]",
+      "[pre planning advice]",
+      "[chartered town planner]",
+      "[chichester planning]"
+    ],
+    "examples_broad": [
+      "workshops",
+      "canada",
+      "history",
+      "university",
+      "interviews",
+      "drug",
+      "drugs",
+      "training"
+    ]
+  },
+  "ad_groups": {
+    "data": [
+      {
+        "Ad group": "Planning Objections",
+        "Cost": 17412.86,
+        "Clicks": 6990,
+        "Conversions": 526.67,
+        "CPA": 33.06218315073956
+      },
+      {
+        "Ad group": "Planning Objection Consultants",
+        "Cost": 490.42,
+        "Clicks": 127,
+        "Conversions": 17.83,
+        "CPA": 27.50532809871004
+      },
+      {
+        "Ad group": "Planning Objection Letters",
+        "Cost": 351.06,
+        "Clicks": 228,
+        "Conversions": 7.5,
+        "CPA": 46.808
+      },
+      {
+        "Ad group": "Neighbourhood Objections",
+        "Cost": 78.91,
+        "Clicks": 23,
+        "Conversions": 0.0,
+        "CPA": null
+      }
+    ],
+    "zero_conv_spend": 78.91
+  },
+  "hour_of_day": {
+    "data": [
+      {
+        "Hour of the day": 0,
+        "Cost": 142.12,
+        "Clicks": 84,
+        "Conversions": 6.5,
+        "CPA": 21.864615384615384
+      },
+      {
+        "Hour of the day": 1,
+        "Cost": 50.8,
+        "Clicks": 34,
+        "Conversions": 0.0,
+        "CPA": null
+      },
+      {
+        "Hour of the day": 2,
+        "Cost": 52.4,
+        "Clicks": 27,
+        "Conversions": 3.0,
+        "CPA": 17.466666666666665
+      },
+      {
+        "Hour of the day": 3,
+        "Cost": 54.92,
+        "Clicks": 29,
+        "Conversions": 1.0,
+        "CPA": 54.92
+      },
+      {
+        "Hour of the day": 4,
+        "Cost": 58.7,
+        "Clicks": 32,
+        "Conversions": 1.0,
+        "CPA": 58.7
+      },
+      {
+        "Hour of the day": 5,
+        "Cost": 132.09,
+        "Clicks": 66,
+        "Conversions": 5.0,
+        "CPA": 26.418
+      },
+      {
+        "Hour of the day": 6,
+        "Cost": 274.21999999999997,
+        "Clicks": 132,
+        "Conversions": 6.0,
+        "CPA": 45.703333333333326
+      },
+      {
+        "Hour of the day": 7,
+        "Cost": 540.66,
+        "Clicks": 246,
+        "Conversions": 15.58,
+        "CPA": 34.70218228498074
+      },
+      {
+        "Hour of the day": 8,
+        "Cost": 778.4499999999999,
+        "Clicks": 333,
+        "Conversions": 26.08,
+        "CPA": 29.848542944785276
+      },
+      {
+        "Hour of the day": 9,
+        "Cost": 1259.26,
+        "Clicks": 472,
+        "Conversions": 38.0,
+        "CPA": 33.13842105263158
+      },
+      {
+        "Hour of the day": 10,
+        "Cost": 1453.29,
+        "Clicks": 514,
+        "Conversions": 34.83,
+        "CPA": 41.72523686477175
+      },
+      {
+        "Hour of the day": 11,
+        "Cost": 1692.2700000000002,
+        "Clicks": 570,
+        "Conversions": 53.0,
+        "CPA": 31.92962264150944
+      },
+      {
+        "Hour of the day": 12,
+        "Cost": 1665.2,
+        "Clicks": 571,
+        "Conversions": 52.25,
+        "CPA": 31.869856459330144
+      },
+      {
+        "Hour of the day": 13,
+        "Cost": 1472.24,
+        "Clicks": 540,
+        "Conversions": 40.75,
+        "CPA": 36.128588957055214
+      },
+      {
+        "Hour of the day": 14,
+        "Cost": 1592.51,
+        "Clicks": 555,
+        "Conversions": 39.83,
+        "CPA": 39.98267637459202
+      },
+      {
+        "Hour of the day": 15,
+        "Cost": 1442.53,
+        "Clicks": 553,
+        "Conversions": 51.33,
+        "CPA": 28.10305864017144
+      },
+      {
+        "Hour of the day": 16,
+        "Cost": 1230.03,
+        "Clicks": 498,
+        "Conversions": 36.5,
+        "CPA": 33.69945205479452
+      },
+      {
+        "Hour of the day": 17,
+        "Cost": 842.71,
+        "Clicks": 389,
+        "Conversions": 28.67,
+        "CPA": 29.39344262295082
+      },
+      {
+        "Hour of the day": 18,
+        "Cost": 827.78,
+        "Clicks": 372,
+        "Conversions": 34.33,
+        "CPA": 24.112438100786484
+      },
+      {
+        "Hour of the day": 19,
+        "Cost": 777.54,
+        "Clicks": 330,
+        "Conversions": 19.75,
+        "CPA": 39.36911392405063
+      },
+      {
+        "Hour of the day": 20,
+        "Cost": 718.76,
+        "Clicks": 344,
+        "Conversions": 23.5,
+        "CPA": 30.585531914893618
+      },
+      {
+        "Hour of the day": 21,
+        "Cost": 571.52,
+        "Clicks": 298,
+        "Conversions": 17.0,
+        "CPA": 33.61882352941176
+      },
+      {
+        "Hour of the day": 22,
+        "Cost": 447.31,
+        "Clicks": 241,
+        "Conversions": 13.08,
+        "CPA": 34.198012232415905
+      },
+      {
+        "Hour of the day": 23,
+        "Cost": 255.95,
+        "Clicks": 138,
+        "Conversions": 5.0,
+        "CPA": 51.19
+      }
+    ],
+    "zero_conv_hours": [
+      "1"
+    ],
+    "zero_conv_spend": 50.8
+  },
+  "day_of_week": {
+    "data": [
+      {
+        "Day of the week": "Monday",
+        "Cost": 3250.64,
+        "Clicks": 1227,
+        "Conversions": 121.58,
+        "CPA": 26.736634314854417
+      },
+      {
+        "Day of the week": "Tuesday",
+        "Cost": 3250.61,
+        "Clicks": 1270,
+        "Conversions": 85.75,
+        "CPA": 37.907988338192425
+      },
+      {
+        "Day of the week": "Wednesday",
+        "Cost": 2922.81,
+        "Clicks": 1136,
+        "Conversions": 96.5,
+        "CPA": 30.28818652849741
+      },
+      {
+        "Day of the week": "Thursday",
+        "Cost": 2877.05,
+        "Clicks": 1124,
+        "Conversions": 86.0,
+        "CPA": 33.454069767441865
+      },
+      {
+        "Day of the week": "Friday",
+        "Cost": 2559.15,
+        "Clicks": 967,
+        "Conversions": 73.83,
+        "CPA": 34.662738724095895
+      },
+      {
+        "Day of the week": "Saturday",
+        "Cost": 1782.68,
+        "Clicks": 822,
+        "Conversions": 52.67,
+        "CPA": 33.84621226504652
+      },
+      {
+        "Day of the week": "Sunday",
+        "Cost": 1690.31,
+        "Clicks": 822,
+        "Conversions": 35.67,
+        "CPA": 47.38744042612839
+      }
+    ],
+    "sunday_cpa": 47.39,
+    "avg_weekday_cpa": 32.61,
+    "sunday_excess": 527.11
+  },
+  "device": {
+    "data": [
+      {
+        "Device": "Mobile phones",
+        "Cost": 10398.36,
+        "Clicks": 4675,
+        "Conversions": 322.5,
+        "CPA": 32.242976744186045,
+        "Conv Rate": 6.898395721925134
+      },
+      {
+        "Device": "Computers",
+        "Cost": 7445.04,
+        "Clicks": 2415,
+        "Conversions": 215.5,
+        "CPA": 34.5477494199536,
+        "Conv Rate": 8.923395445134576
+      },
+      {
+        "Device": "Tablets",
+        "Cost": 489.86,
+        "Clicks": 278,
+        "Conversions": 14.0,
+        "CPA": 34.99,
+        "Conv Rate": 5.0359712230215825
+      }
+    ],
+    "bid_adjustments": {
+      "Computers": "+10%",
+      "Mobile phones": "+10%",
+      "Tablets": "-20%"
+    }
+  },
+  "geographic": {
+    "total_waste": 5694.35,
+    "count": 903,
+    "top15": [
+      {
+        "City (User location)": "Tewkesbury",
+        "Region (User location)": "England",
+        "Cost": 90.35,
+        "Clicks": 40
+      },
+      {
+        "City (User location)": "Edgware",
+        "Region (User location)": "England",
+        "Cost": 68.07,
+        "Clicks": 19
+      },
+      {
+        "City (User location)": "Sutton",
+        "Region (User location)": "England",
+        "Cost": 67.55,
+        "Clicks": 22
+      },
+      {
+        "City (User location)": "Coventry",
+        "Region (User location)": "England",
+        "Cost": 60.93,
+        "Clicks": 28
+      },
+      {
+        "City (User location)": "Mansfield",
+        "Region (User location)": "England",
+        "Cost": 52.9,
+        "Clicks": 4
+      },
+      {
+        "City (User location)": "Sheffield",
+        "Region (User location)": "England",
+        "Cost": 49.72,
+        "Clicks": 19
+      },
+      {
+        "City (User location)": "Haywards Heath",
+        "Region (User location)": "England",
+        "Cost": 48.12,
+        "Clicks": 14
+      },
+      {
+        "City (User location)": "Kings Langley",
+        "Region (User location)": "England",
+        "Cost": 46.46,
+        "Clicks": 15
+      },
+      {
+        "City (User location)": "St Albans",
+        "Region (User location)": "England",
+        "Cost": 45.01,
+        "Clicks": 19
+      },
+      {
+        "City (User location)": "Solihull",
+        "Region (User location)": "England",
+        "Cost": 41.16,
+        "Clicks": 6
+      },
+      {
+        "City (User location)": "Richmond",
+        "Region (User location)": "England",
+        "Cost": 39.94,
+        "Clicks": 10
+      },
+      {
+        "City (User location)": "Bushey",
+        "Region (User location)": "England",
+        "Cost": 34.8,
+        "Clicks": 12
+      },
+      {
+        "City (User location)": "Isleworth",
+        "Region (User location)": "England",
+        "Cost": 34.07,
+        "Clicks": 10
+      },
+      {
+        "City (User location)": "Stoke-on-Trent",
+        "Region (User location)": "Stoke-on-Trent",
+        "Cost": 33.53,
+        "Clicks": 16
+      },
+      {
+        "City (User location)": "Bognor Regis",
+        "Region (User location)": "England",
+        "Cost": 33.14,
+        "Clicks": 11
+      }
+    ]
+  },
+  "monthly_waste_estimate": 522.44
+}

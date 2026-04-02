@@ -1,0 +1,93 @@
+{
+  "before_after": {
+    "pre": {
+      "weeks": 40,
+      "spend": 10766.86,
+      "clicks": 4315,
+      "conversions": 356,
+      "avg_weekly_spend": 269.17,
+      "avg_cpc": 2.5,
+      "cpa": 30.24,
+      "conv_rate": 8.25
+    },
+    "post": {
+      "weeks": 25,
+      "spend": 7571.39,
+      "clicks": 3053,
+      "conversions": 196,
+      "avg_weekly_spend": 302.86,
+      "avg_cpc": 2.48,
+      "cpa": 38.63,
+      "conv_rate": 6.42
+    }
+  },
+  "quality_scores": {
+    "distribution": {
+      "2": 3,
+      "3": 3,
+      "4": 1,
+      "7": 1
+    },
+    "mean": 3.2,
+    "total_keywords": 8,
+    "poor_count": 6,
+    "poor_pct": 75.0
+  },
+  "ad_performance": [
+    {
+      "Headline 1": "{KeyWord:Experts in Planning Objections}",
+      "Ad type": "Responsive search ad",
+      "Cost": 14939.99,
+      "Clicks": 5966,
+      "Conversions": 476.42,
+      "CPA": 31.358864027538726,
+      "CTR_proxy": 5966
+    },
+    {
+      "Headline 1": "Planning Objection Letter",
+      "Ad type": "Responsive search ad",
+      "Cost": 1604.18,
+      "Clicks": 699,
+      "Conversions": 37.25,
+      "CPA": 43.065234899328864,
+      "CTR_proxy": 699
+    },
+    {
+      "Headline 1": "Planning Objection Help",
+      "Ad type": "Responsive search ad",
+      "Cost": 702.6,
+      "Clicks": 276,
+      "Conversions": 12.16,
+      "CPA": 57.7796052631579,
+      "CTR_proxy": 276
+    },
+    {
+      "Headline 1": "Expert Planning Objection Help",
+      "Ad type": "Call-only ad",
+      "Cost": 166.11,
+      "Clicks": 49,
+      "Conversions": 0.8300000000000001,
+      "CPA": 200.13253012048193,
+      "CTR_proxy": 49
+    }
+  ],
+  "conversion_actions": {
+    "form_submissions": 464.0,
+    "google_forwarding": 26.0,
+    "email_click": 17.0,
+    "phone_number_click": 45.0,
+    "total_reported": 552.0,
+    "real_conversions": 490.0,
+    "inflated_by": 62.0
+  },
+  "change_history": {
+    "total_changes": 372,
+    "flex_digital": 137,
+    "generate_leads": 90,
+    "client_owen": 119,
+    "auto_apply": 1
+  },
+  "bid_strategy": "Maximise Conversions (no target CPA)",
+  "audiences_total": 1066,
+  "audiences_with_clicks": 434
+}

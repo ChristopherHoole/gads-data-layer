@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quote — Objection Experts — Christopher Hoole</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm 10mm 15mm;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+    font-size: 9pt;
+    line-height: 1.35;
+    color: #2C3E50;
+    background: #fff;
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    padding: 10mm 15mm;
+  }
+
+  /* ---- Header ---- */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 3px solid #1B2A4A;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+  }
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header-logo svg {
+    width: 40px;
+    height: 40px;
+  }
+  .header-left h1 {
+    font-size: 18pt;
+    font-weight: 700;
+    color: #1B2A4A;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+  .header-left .subtitle {
+    font-size: 10pt;
+    color: #00B4D8;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .header-right {
+    text-align: right;
+    font-size: 8.5pt;
+    color: #4A5568;
+    line-height: 1.6;
+  }
+  .header-right a {
+    color: #00B4D8;
+    text-decoration: none;
+  }
+
+  /* ---- Document title ---- */
+  .doc-title {
+    font-size: 13pt;
+    font-weight: 700;
+    color: #1B2A4A;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* ---- Section headings ---- */
+  .section-heading {
+    font-size: 9pt;
+    font-weight: 700;
+    color: #1B2A4A;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    border-bottom: 1.5px solid #E2E8F0;
+    padding-bottom: 3px;
+    margin-top: 10px;
+    margin-bottom: 5px;
+  }
+
+  /* ---- Quote-for block ---- */
+  .quote-meta {
+    display: flex;
+    gap: 40px;
+    margin-bottom: 6px;
+  }
+  .quote-meta .col { flex: 1; }
+  .meta-row {
+    display: flex;
+    font-size: 9pt;
+    margin-bottom: 1px;
+  }
+  .meta-label {
+    width: 100px;
+    font-weight: 600;
+    color: #4A5568;
+    flex-shrink: 0;
+  }
+  .meta-value {
+    color: #2C3E50;
+  }
+
+  /* ---- Scope list ---- */
+  .scope-list {
+    list-style: none;
+    padding: 0;
+  }
+  .scope-list li {
+    padding: 1px 0 1px 14px;
+    position: relative;
+    font-size: 9pt;
+  }
+  .scope-list li::before {
+    content: "\2022";
+    color: #00B4D8;
+    font-weight: 700;
+    position: absolute;
+    left: 0;
+  }
+
+  /* ---- Pricing table ---- */
+  .pricing-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2px;
+    font-size: 9pt;
+  }
+  .pricing-table th {
+    background: #1B2A4A;
+    color: #fff;
+    text-align: left;
+    padding: 6px 10px;
+    font-weight: 600;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .pricing-table th:last-child {
+    text-align: right;
+    width: 100px;
+  }
+  .pricing-table td {
+    padding: 5px 10px;
+    border-bottom: 1px solid #E2E8F0;
+  }
+  .pricing-table td:last-child {
+    text-align: right;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .pricing-table .desc {
+    font-size: 8.5pt;
+    color: #718096;
+    display: block;
+    margin-top: 1px;
+  }
+  .pricing-table tr.total-row td {
+    border-top: 2px solid #1B2A4A;
+    border-bottom: none;
+    font-weight: 700;
+    font-size: 10pt;
+    padding-top: 8px;
+    color: #1B2A4A;
+  }
+
+  /* ---- Included list ---- */
+  .included-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 24px;
+  }
+  .included-grid li {
+    font-size: 8.5pt;
+    padding: 1px 0 1px 14px;
+    position: relative;
+    list-style: none;
+  }
+  .included-grid li::before {
+    content: "\2713";
+    color: #00B4D8;
+    font-weight: 700;
+    position: absolute;
+    left: 0;
+  }
+
+  /* ---- Terms / Payment ---- */
+  .terms-list {
+    list-style: none;
+    padding: 0;
+  }
+  .terms-list li {
+    font-size: 8.5pt;
+    padding: 1px 0 1px 14px;
+    position: relative;
+  }
+  .terms-list li::before {
+    content: "\2022";
+    color: #4A5568;
+    position: absolute;
+    left: 0;
+  }
+
+  /* ---- Acceptance ---- */
+  .acceptance-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 40px;
+    margin-top: 8px;
+  }
+  .sig-line {
+    border-bottom: 1px solid #2C3E50;
+    padding-bottom: 2px;
+    margin-bottom: 2px;
+    min-height: 16px;
+  }
+  .sig-label {
+    font-size: 8pt;
+    color: #718096;
+  }
+
+  /* ---- Footer ---- */
+  .footer {
+    margin-top: 12px;
+    padding-top: 6px;
+    border-top: 1.5px solid #E2E8F0;
+    text-align: center;
+    font-size: 7.5pt;
+    color: #A0AEC0;
+  }
+  .footer a { color: #00B4D8; text-decoration: none; }
+
+  /* ---- Print ---- */
+  @media print {
+    html, body {
+      width: 210mm;
+      height: 297mm;
+      margin: 0;
+      padding: 0;
+      background: #fff;
+    }
+    body {
+      padding: 0;
+      min-height: auto;
+    }
+    .header, .footer { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="41" fill="none" stroke="#4285F4" stroke-width="10"/><circle cx="50" cy="50" r="29" fill="none" stroke="#EA4335" stroke-width="10"/><circle cx="50" cy="50" r="17" fill="none" stroke="#FBBC05" stroke-width="10"/><circle cx="50" cy="50" r="10" fill="#34A853"/></svg>
+      </div>
+      <div class="header-text">
+        <h1>Christopher Hoole</h1>
+        <div class="subtitle">Google Ads Specialist</div>
+      </div>
+    </div>
+    <div class="header-right">
+      christopherhoole.com<br>
+      chris@christopherhoole.com<br>
+      +44 7XXX XXX XXX
+    </div>
+  </div>
+
+  <!-- DOCUMENT TITLE -->
+  <div class="doc-title">Quote</div>
+
+  <!-- QUOTE FOR -->
+  <div class="section-heading">Quote For</div>
+  <div class="quote-meta">
+    <div class="col">
+      <div class="meta-row"><span class="meta-label">Client:</span> <span class="meta-value">Owen Hoare</span></div>
+      <div class="meta-row"><span class="meta-label">Company:</span> <span class="meta-value">Objection Experts</span></div>
+      <div class="meta-row"><span class="meta-label">Website:</span> <span class="meta-value">objectionexperts.com</span></div>
+    </div>
+    <div class="col">
+      <div class="meta-row"><span class="meta-label">Date:</span> <span class="meta-value">30 March 2026</span></div>
+      <div class="meta-row"><span class="meta-label">Quote Ref:</span> <span class="meta-value">CH-OE-001</span></div>
+      <div class="meta-row"><span class="meta-label">Valid Until:</span> <span class="meta-value">30 April 2026</span></div>
+    </div>
+  </div>
+
+
+
+  <!-- PRICING -->
+  <div class="section-heading">Pricing</div>
+  <table class="pricing-table">
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          Setup Fee <span class="desc">One-off &mdash; account restructure and implementation of all quick wins from the audit reports</span>
+        </td>
+        <td>&pound;[SETUP_FEE]</td>
+      </tr>
+      <tr>
+        <td>
+          Monthly Management Fee <span class="desc">Ongoing optimisation, monitoring, reporting, and strategic management</span>
+        </td>
+        <td>&pound;[MONTHLY_FEE] /mo</td>
+      </tr>
+      <tr class="total-row">
+        <td>Total Due on Acceptance</td>
+        <td>&pound;[SETUP_FEE]</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- WHAT'S INCLUDED -->
+  <div class="section-heading">What's Included</div>
+  <ul class="included-grid">
+    <li>Weekly campaign optimisation</li>
+    <li>Monthly performance report</li>
+    <li>Search term reviews &amp; negatives</li>
+    <li>Ad copy A/B testing &amp; refresh</li>
+    <li>Bid strategy management</li>
+    <li>Conversion tracking monitoring</li>
+    <li>Ad schedule optimisation</li>
+    <li>Email support</li>
+  </ul>
+
+  <!-- PAYMENT TERMS -->
+  <div class="section-heading">Payment Terms</div>
+  <ul class="terms-list">
+    <li>Setup fee due on acceptance of this quote</li>
+    <li>Monthly fee billed on the 1st of each month, starting the month after setup</li>
+    <li>Payment by bank transfer</li>
+    <li>30-day notice period to cancel</li>
+  </ul>
+
+  <!-- TERMS & CONDITIONS -->
+  <div class="section-heading">Terms &amp; Conditions</div>
+  <ul class="terms-list">
+    <li>Minimum contract period: 3 months after setup completion (to allow optimisations to take effect)</li>
+    <li>30-day written notice required to terminate after the minimum period</li>
+    <li>Ad spend is billed directly by Google and is not included in the fees above</li>
+    <li>Landing page design, website development, and creative assets are not included unless explicitly stated</li>
+    <li>Results are influenced by factors outside the scope of campaign management, including budget, landing page quality, and market conditions. No specific performance outcomes are guaranteed.</li>
+  </ul>
+
+  <!-- ACCEPTANCE -->
+  <div class="section-heading">Acceptance</div>
+  <p style="font-size:9pt; margin-bottom:6px; color:#4A5568;">Please sign and return to confirm your acceptance of this quote.</p>
+  <div class="acceptance-grid">
+    <div>
+      <div class="sig-line"></div>
+      <div class="sig-label">Signature</div>
+    </div>
+    <div>
+      <div class="sig-line"></div>
+      <div class="sig-label">Date</div>
+    </div>
+    <div>
+      <div class="sig-line"></div>
+      <div class="sig-label">Printed Name</div>
+    </div>
+    <div>
+      <div class="sig-line"></div>
+      <div class="sig-label">Company</div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    Christopher Hoole &nbsp;&middot;&nbsp; Google Ads Specialist &nbsp;&middot;&nbsp;
+    <a href="https://christopherhoole.com">christopherhoole.com</a> &nbsp;&middot;&nbsp;
+    chris@christopherhoole.com<br>
+    This quote is confidential and intended solely for the named recipient.
+  </div>
+
+</body>
+</html>
