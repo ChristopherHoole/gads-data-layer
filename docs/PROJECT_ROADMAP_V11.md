@@ -461,7 +461,7 @@
 - Status: Jobs defined but cannot execute until Memurai installed
 
 **Google Ads:**
-- Account 487-268-1731: Suspended, appeal in review (ID: 6448619522)
+- Account 487-268-1731: Active
 - Account 125-489-5944: Active (test account)
 - MCC: 152-796-4125
 - Developer Token: oDANZ-BXQprTm7_Sg4rjDg
