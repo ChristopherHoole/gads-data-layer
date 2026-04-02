@@ -23,6 +23,7 @@ from act_dashboard.auth import init_auth
 from act_dashboard.cache import ExpiringCache
 from act_dashboard.config_validator import validate_all_configs, print_validation_errors
 from act_dashboard.outreach_poller import start_poller
+from act_dashboard.queue_scheduler import QueueScheduler
 
 
 def discover_clients():
@@ -163,7 +164,7 @@ def create_app():
     for route_name in session_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [Chat 36] CSRF exempted: {route_name}")
+            print(f"[OK] [Chat 36] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 36] Route not found (skipping): {route_name}")
 
@@ -181,7 +182,7 @@ def create_app():
     for route_name in rules_api_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [EMERGENCY FIX] CSRF exempted: {route_name}")
+            print(f"[OK] [EMERGENCY FIX] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [EMERGENCY FIX] Route not found (skipping): {route_name}")
 
@@ -190,8 +191,8 @@ def create_app():
     # Protected by @login_required decorator instead
     csrf.exempt(app.view_functions['recommendations.recommendation_accept'])
     csrf.exempt(app.view_functions['recommendations.recommendation_decline'])
-    print("✅ [Chat 49] CSRF exempted: recommendations.recommendation_accept")
-    print("✅ [Chat 49] CSRF exempted: recommendations.recommendation_decline")
+    print("[OK] [Chat 49] CSRF exempted: recommendations.recommendation_accept")
+    print("[OK] [Chat 49] CSRF exempted: recommendations.recommendation_decline")
 
     # Chat 59: CSRF exemption for outreach AJAX endpoints (JSON API, no CSRF tokens sent)
     # PATCH /outreach/leads/<id>/notes and POST /outreach/leads/add are JSON APIs
@@ -207,7 +208,7 @@ def create_app():
     for route_name in outreach_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [Chat 59] CSRF exempted: {route_name}")
+            print(f"[OK] [Chat 59] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 59] Route not found (skipping): {route_name}")
 
@@ -222,7 +223,7 @@ def create_app():
     for route_name in queue_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [Chat 60] CSRF exempted: {route_name}")
+            print(f"[OK] [Chat 60] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 60] Route not found (skipping): {route_name}")
 
@@ -238,7 +239,7 @@ def create_app():
     for route_name in sent_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [Chat 61] CSRF exempted: {route_name}")
+            print(f"[OK] [Chat 61] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 61] Route not found (skipping): {route_name}")
 
@@ -255,7 +256,7 @@ def create_app():
     for route_name in replies_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [Chat 62] CSRF exempted: {route_name}")
+            print(f"[OK] [Chat 62] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 62] Route not found (skipping): {route_name}")
 
@@ -269,7 +270,7 @@ def create_app():
     for route_name in templates_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [Chat 63] CSRF exempted: {route_name}")
+            print(f"[OK] [Chat 63] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 63] Route not found (skipping): {route_name}")
 
@@ -278,7 +279,7 @@ def create_app():
     # Protected by @login_required decorator instead
     if 'outreach.sync_from_sheets' in app.view_functions:
         csrf.exempt(app.view_functions['outreach.sync_from_sheets'])
-        print("✅ [Chat 65] CSRF exempted: outreach.sync_from_sheets")
+        print("[OK] [Chat 65] CSRF exempted: outreach.sync_from_sheets")
     else:
         print("⚠️  [Chat 65] Route not found (skipping): outreach.sync_from_sheets")
 
@@ -294,7 +295,7 @@ def create_app():
     for route_name in chat70_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [Chat 70] CSRF exempted: {route_name}")
+            print(f"[OK] [Chat 70] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 70] Route not found (skipping): {route_name}")
 
@@ -310,7 +311,7 @@ def create_app():
     for route_name in chat71_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [Chat 71] CSRF exempted: {route_name}")
+            print(f"[OK] [Chat 71] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 71] Route not found (skipping): {route_name}")
 
@@ -325,7 +326,7 @@ def create_app():
     for route_name in tracking_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [Chat 73] CSRF exempted: {route_name}")
+            print(f"[OK] [Chat 73] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 73] Route not found (skipping): {route_name}")
 
@@ -334,7 +335,7 @@ def create_app():
     # Protected by @login_required decorator instead
     if 'outreach.replies_mark_unread' in app.view_functions:
         csrf.exempt(app.view_functions['outreach.replies_mark_unread'])
-        print("✅ [Chat 74] CSRF exempted: outreach.replies_mark_unread")
+        print("[OK] [Chat 74] CSRF exempted: outreach.replies_mark_unread")
     else:
         print("⚠️  [Chat 74] Route not found (skipping): outreach.replies_mark_unread")
 
@@ -348,7 +349,7 @@ def create_app():
     for route_name in chat75_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [Chat 75] CSRF exempted: {route_name}")
+            print(f"[OK] [Chat 75] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 75] Route not found (skipping): {route_name}")
 
@@ -360,9 +361,21 @@ def create_app():
     for route_name in chat78_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [Chat 78] CSRF exempted: {route_name}")
+            print(f"[OK] [Chat 78] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 78] Route not found (skipping): {route_name}")
+
+    # MC Outreach Launch: CSRF exemption for Apollo import routes (JSON APIs)
+    apollo_routes = [
+        'outreach.apollo_search',
+        'outreach.apollo_import',
+    ]
+    for route_name in apollo_routes:
+        if route_name in app.view_functions:
+            csrf.exempt(app.view_functions[route_name])
+            print(f"[OK] [Apollo] CSRF exempted: {route_name}")
+        else:
+            print(f"⚠️  [Apollo] Route not found (skipping): {route_name}")
 
     # Chat 91: CSRF exemption for campaign rules CRUD endpoints (JSON API, no CSRF tokens sent)
     # GET/POST/PUT/DELETE/toggle /campaigns/rules/* are JSON APIs called from JavaScript
@@ -377,7 +390,7 @@ def create_app():
     for route_name in chat91_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [Chat 91] CSRF exempted: {route_name}")
+            print(f"[OK] [Chat 91] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 91] Route not found (skipping): {route_name}")
 
@@ -386,7 +399,7 @@ def create_app():
     # Protected by @login_required decorator instead
     if 'campaigns.save_as_template' in app.view_functions:
         csrf.exempt(app.view_functions['campaigns.save_as_template'])
-        print("✅ [Chat 93] CSRF exempted: campaigns.save_as_template")
+        print("[OK] [Chat 93] CSRF exempted: campaigns.save_as_template")
     else:
         print("⚠️  [Chat 93] Route not found (skipping): campaigns.save_as_template")
 
@@ -395,7 +408,7 @@ def create_app():
     # Protected by @login_required decorator instead
     if 'recommendations.recommendations_run' in app.view_functions:
         csrf.exempt(app.view_functions['recommendations.recommendations_run'])
-        print("✅ [Chat 95] CSRF exempted: recommendations.recommendations_run")
+        print("[OK] [Chat 95] CSRF exempted: recommendations.recommendations_run")
     else:
         print("⚠️  [Chat 95] Route not found (skipping): recommendations.recommendations_run")
 
@@ -410,7 +423,7 @@ def create_app():
     for route_name in chat101_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [Chat 101] CSRF exempted: {route_name}")
+            print(f"[OK] [Chat 101] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 101] Route not found (skipping): {route_name}")
 
@@ -426,7 +439,7 @@ def create_app():
     for route_name in chat107_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [Chat 107] CSRF exempted: {route_name}")
+            print(f"[OK] [Chat 107] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 107] Route not found (skipping): {route_name}")
 
@@ -442,7 +455,7 @@ def create_app():
     for route_name in chat112_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [Chat 112] CSRF exempted: {route_name}")
+            print(f"[OK] [Chat 112] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 112] Route not found (skipping): {route_name}")
 
@@ -458,7 +471,7 @@ def create_app():
     for route_name in chat111_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [Chat 111] CSRF exempted: {route_name}")
+            print(f"[OK] [Chat 111] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 111] Route not found (skipping): {route_name}")
 
@@ -475,7 +488,7 @@ def create_app():
     for route_name in chat109_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [Chat 109] CSRF exempted: {route_name}")
+            print(f"[OK] [Chat 109] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 109] Route not found (skipping): {route_name}")
 
@@ -491,9 +504,27 @@ def create_app():
     for route_name in chat108_routes:
         if route_name in app.view_functions:
             csrf.exempt(app.view_functions[route_name])
-            print(f"✅ [Chat 108] CSRF exempted: {route_name}")
+            print(f"[OK] [Chat 108] CSRF exempted: {route_name}")
         else:
             print(f"⚠️  [Chat 108] Route not found (skipping): {route_name}")
+
+    # Chat 115: Jobs Tracker — CRUD API endpoints (JSON, no CSRF tokens)
+    # Protected by @login_required decorator instead
+    jobs_routes = [
+        'jobs.create_job',
+        'jobs.update_job',
+        'jobs.delete_job',
+        'jobs.fetch_url',
+        'jobs.sync_sheet',
+        'jobs.search_jobs',
+        'jobs.check_duplicate',
+    ]
+    for route_name in jobs_routes:
+        if route_name in app.view_functions:
+            csrf.exempt(app.view_functions[route_name])
+            print(f"[OK] [Chat 115] CSRF exempted: {route_name}")
+        else:
+            print(f"⚠️  [Chat 115] Route not found (skipping): {route_name}")
 
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
@@ -508,7 +539,14 @@ def create_app():
     # Chat 90 note: Celery + Redis was intended for background tasks but Memurai is not installed.
     # Restored daemon thread approach (Chat 74) — start_poller() runs on Flask startup, no Redis needed.
     start_poller()
-    print("✅ [Chat 74] Outreach poller started (daemon thread, every 120s)")
+    print("[OK] [Chat 74] Outreach poller started (daemon thread, every 120s)")
+
+    # Start queue scheduler — auto-sends scheduled emails when their time arrives
+    import threading
+    scheduler = QueueScheduler(app)
+    sched_thread = threading.Thread(target=scheduler.run, daemon=True, name="QueueScheduler")
+    sched_thread.start()
+    print("[OK] Queue scheduler started (daemon thread, every 300s)")
 
     # Centralized error handlers (Phase 1i)
     

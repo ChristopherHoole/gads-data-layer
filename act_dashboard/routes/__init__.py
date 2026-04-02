@@ -1,14 +1,14 @@
 """
 Routes package - modular Blueprint-based routes.
 
-Phase 1a: Auth routes ✅
-Phase 1b: API routes ✅
-Phase 1c: Page routes ✅
-Phase 1d: Final routes ✅ (NEW - COMPLETE!)
+Phase 1a: Auth routes [OK]
+Phase 1b: API routes [OK]
+Phase 1c: Page routes [OK]
+Phase 1d: Final routes [OK] (NEW - COMPLETE!)
 
 ALL 16 ROUTES MIGRATED TO BLUEPRINTS
-Chat 22: Shared utility routes ✅
-Chat 29 (M8): Changes blueprint ✅
+Chat 22: Shared utility routes [OK]
+Chat 29 (M8): Changes blueprint [OK]
 """
 
 from flask import Flask
@@ -66,14 +66,18 @@ def register_blueprints(app: Flask):
     from act_dashboard.routes import outreach
     app.register_blueprint(outreach.bp)
 
-    print("✅ [Phase 1a] Registered auth blueprint (login, logout, switch-client)")
-    print("✅ [Phase 1b] Registered api blueprint (execute, batch, status, approve, reject)")
-    print("✅ [Phase 1c] Registered page blueprints (keywords, ads, shopping)")
-    print("✅ [Phase 1d] Registered final blueprints (dashboard, recommendations, settings)")
-    print("✅ [Chat 21c] Registered campaigns blueprint")
-    print("✅ [Chat 21e] Registered ad_groups blueprint")
-    print("✅ [Chat 22] Registered shared blueprint (set-date-range)")
-    print("✅ [Chat 26 M5] Registered rules_api blueprint (GET/POST/PUT/DELETE /api/rules)")
-    print("✅ [Chat 29 M8] Registered changes blueprint (/changes)")
-    print("✅ [Chat 59] Registered outreach blueprint (/outreach/leads)")
-    print("🎉 ALL ROUTES REGISTERED - Phase 1 + Campaigns + Ad Groups + Date Range + Rules API + Changes + Outreach COMPLETE!")
+    # Chat 115: Jobs Tracker — job hunting system
+    from act_dashboard.routes import jobs
+    app.register_blueprint(jobs.bp)
+
+    print("[OK] [Phase 1a] Registered auth blueprint (login, logout, switch-client)")
+    print("[OK] [Phase 1b] Registered api blueprint (execute, batch, status, approve, reject)")
+    print("[OK] [Phase 1c] Registered page blueprints (keywords, ads, shopping)")
+    print("[OK] [Phase 1d] Registered final blueprints (dashboard, recommendations, settings)")
+    print("[OK] [Chat 21c] Registered campaigns blueprint")
+    print("[OK] [Chat 21e] Registered ad_groups blueprint")
+    print("[OK] [Chat 22] Registered shared blueprint (set-date-range)")
+    print("[OK] [Chat 26 M5] Registered rules_api blueprint (GET/POST/PUT/DELETE /api/rules)")
+    print("[OK] [Chat 29 M8] Registered changes blueprint (/changes)")
+    print("[OK] [Chat 59] Registered outreach blueprint (/outreach/leads)")
+    print("[OK] [Chat 115] Registered jobs blueprint (/jobs)")
