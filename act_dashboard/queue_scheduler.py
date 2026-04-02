@@ -49,7 +49,10 @@ class QueueScheduler:
 
         conn = duckdb.connect(_WAREHOUSE_PATH)
         try:
-            # Find queued emails whose scheduled_at has arrived
+            # Find queued emails whose scheduled_at (stored as naive UTC) has arrived
+            # Use Python utcnow to avoid DuckDB CURRENT_TIMESTAMP timezone mismatch
+            from datetime import timezone
+            utc_now = datetime.now(timezone.utc).replace(tzinfo=None)
             rows = conn.execute("""
                 SELECT e.email_id, e.lead_id, e.subject, e.body, e.cv_attached,
                        l.email, l.first_name, l.full_name, l.company
@@ -57,9 +60,10 @@ class QueueScheduler:
                 JOIN outreach_leads l ON e.lead_id = l.lead_id
                 WHERE e.status = 'queued'
                   AND e.scheduled_at IS NOT NULL
-                  AND e.scheduled_at <= CURRENT_TIMESTAMP
+                  AND e.scheduled_at <= ?
                 ORDER BY e.scheduled_at ASC
-            """).fetchall()
+            """, [utc_now]).fetchall()
+            print(f"[SCHEDULER] UTC now: {utc_now.strftime('%Y-%m-%d %H:%M')} — checking {len(rows)} due emails")
 
             if not rows:
                 print(f"[SCHEDULER] Cycle complete — 0 auto-sent")

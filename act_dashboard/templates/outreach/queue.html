@@ -4,284 +4,233 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/outreach.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/outreach-slidein.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rules.css') }}">
+<style>
+.merge-field-missing {
+    background: #fff3e0; color: #e65100; border: 1px solid #ffcc80;
+    border-radius: 3px; padding: 0 4px; font-weight: 600; font-size: 12px;
+}
+.q-sched-pill { display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;white-space:nowrap; }
+.q-sched-scheduled { background:#fff8e1;color:#f57f17; }
+.q-sched-unscheduled { background:#f1f3f4;color:#5f6368; }
+.q-subject-cell { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px; }
+</style>
 {% endblock %}
 
 {# ── Custom top navbar ── #}
 {% block page_header %}
 <div class="outreach-top-navbar">
     <div class="outreach-top-navbar-title">Outreach — Queue</div>
-    <div class="outreach-top-navbar-right"></div>
+    <div class="outreach-top-navbar-right" style="display:flex;gap:8px;align-items:center;">
+        <button class="columns-btn" id="scheduleAllBtn" onclick="scheduleAllEmails()">
+            <span class="material-symbols-outlined" style="font-size:16px;">schedule</span>
+            Schedule All
+        </button>
+    </div>
 </div>
 {% endblock %}
 
 {% block content %}
-<div class="queue-content">
+<div class="outreach-content">
 
-    {# ── Stats Row (4 columns) ── #}
-    <div class="stats-row stats-row-4">
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon">pending</span>
-            <div>
-                <div class="stat-val" id="statAwaiting">{{ stats.awaiting }}</div>
-                <div class="stat-lbl">Awaiting approval</div>
-            </div>
+    {# ── Toolbar ── #}
+    <div class="leads-toolbar">
+        <div class="rules-sub-tabs" id="queueTabs">
+            {% set agency_count = queued_emails|selectattr('track', 'equalto', 'Agency')|list|length %}
+            {% set recruiter_count = queued_emails|selectattr('track', 'equalto', 'Recruiter')|list|length %}
+            {% set sched_count = queued_emails|selectattr('is_scheduled')|list|length %}
+            {% set unsched_count = queued_emails|length - sched_count %}
+            <button class="rules-sub-tab active" onclick="filterQueue('', this)">All <span class="rules-sub-badge" style="background:#6b7280;color:#fff;">{{ queued_emails|length }}</span></button>
+            <button class="rules-sub-tab" onclick="filterQueue('Agency', this)">Agency <span class="rules-sub-badge" style="background:#1d4ed8;color:#fff;">{{ agency_count }}</span></button>
+            <button class="rules-sub-tab" onclick="filterQueue('Recruiter', this)">Recruiter <span class="rules-sub-badge" style="background:#6d28d9;color:#fff;">{{ recruiter_count }}</span></button>
+            <button class="rules-sub-tab" onclick="filterQueue('scheduled', this)">Scheduled <span class="rules-sub-badge" style="background:#f57f17;color:#fff;">{{ sched_count }}</span></button>
+            <button class="rules-sub-tab" onclick="filterQueue('unscheduled', this)">Unscheduled <span class="rules-sub-badge" style="background:#9ca3af;color:#fff;">{{ unsched_count }}</span></button>
         </div>
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon">schedule</span>
-            <div>
-                <div class="stat-val">{{ stats.scheduled_this_week }}</div>
-                <div class="stat-lbl">Scheduled this week</div>
+        <div class="leads-toolbar-right">
+            <span class="result-count" id="qResultCount">Showing {{ queued_emails|length }} emails</span>
+            <div class="rows-per-page">
+                Rows per page:
+                <select id="qRowsPerPage" onchange="qChangeRows()">
+                    <option value="10">10</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                </select>
             </div>
-        </div>
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon">send</span>
-            <div>
-                <div class="stat-val">{{ stats.sent_today }}</div>
-                <div class="stat-lbl">Sent today</div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon">block</span>
-            <div>
-                <div class="stat-val stat-val-grey">{{ stats.daily_limit_remaining }}</div>
-                <div class="stat-lbl">Daily limit remaining</div>
-            </div>
+            <input class="filter-search" type="text" id="qSearch"
+                   placeholder="Search..." oninput="qFilter()" style="max-width:200px;">
         </div>
     </div>
 
-    {# ── Queue header ── #}
-    <div class="queue-header">
-        <div class="queue-header-left">
-            <h2 id="queueCountHeading">{{ queued_emails|length }} email{{ 's' if queued_emails|length != 1 else '' }} awaiting your approval</h2>
-            <p>Review each email before it sends. Click Send to approve, Skip to delay by one cycle, or Discard to remove.</p>
-        </div>
-    </div>
-
-    {# ── Queue cards ── #}
-    <div id="queueList">
-    {% for email in queued_emails %}
-    {% set loop_idx = loop.index %}
-    <div class="queue-card collapsed{% if email.is_scheduled %} is-scheduled{% endif %}"
-         id="card-{{ email.email_id }}">
-
-        {# Card header #}
-        <div class="queue-card-header"
-             onclick="toggleCard('card-{{ email.email_id }}')">
-            <div class="queue-card-header-left">
-                <div class="queue-number{% if email.is_scheduled %} is-scheduled{% endif %}"
-                     style="background:{% if email.is_scheduled %}#FBBC05{% else %}#5f6368{% endif %};">{{ loop_idx }}</div>
-                <div>
-                    <div class="queue-prospect">
-                        {{ email.company }}
-                        {% if email.full_name %}
-                        <span class="queue-prospect-contact">· {{ email.full_name }}</span>
+    {# ── Table ── #}
+    <div class="table-outer">
+        <div class="table-wrapper">
+            <table class="leads-table" id="queueTable">
+                <thead>
+                    <tr>
+                        <th style="min-width:150px;max-width:170px;width:160px;">Scheduled</th>
+                        <th style="min-width:90px;max-width:120px;width:100px;">Status</th>
+                        <th style="min-width:120px;width:auto;">Company</th>
+                        <th style="min-width:100px;width:auto;">Contact</th>
+                        <th style="min-width:65px;max-width:85px;width:75px;">Track</th>
+                        <th style="min-width:150px;width:auto;">Subject</th>
+                        <th style="min-width:80px;max-width:110px;width:95px;">Type</th>
+                    </tr>
+                </thead>
+                <tbody id="queueBody">
+                {% for email in queued_emails %}
+                <tr onclick="qOpenPanel('{{ email.email_id }}')" style="cursor:pointer;"
+                    data-email-id="{{ email.email_id }}"
+                    data-track="{{ email.track }}"
+                    data-scheduled="{{ 'true' if email.is_scheduled else 'false' }}">
+                    <td class="date-cell">{{ email.scheduled_display or 'Not scheduled' }}</td>
+                    <td>
+                        {% if email.is_scheduled %}
+                        <span class="q-sched-pill q-sched-scheduled">Scheduled</span>
+                        {% else %}
+                        <span class="q-sched-pill q-sched-unscheduled">Unscheduled</span>
                         {% endif %}
-                    </div>
-                    <div class="queue-prospect-sub">
-                        {{ email.email }}
-                        {% if email.city_state %} · {{ email.city_state }}{% endif %}
-                        {% if email.country %} · {{ email.flag }} {{ email.country }}{% endif %}
-                    </div>
-                </div>
-            </div>
-            <div class="queue-card-meta">
-                <span class="track-badge {{ email.track_css }}">{{ email.track }}</span>
-                <span class="email-type-pill {{ email.pill_css }}">{{ email.pill_label }}</span>
-                {% if email.is_scheduled %}
-                <span class="auto-send-badge">⚡ Auto-send</span>
-                {% endif %}
-                <div class="send-time-badge">
-                    <span class="material-symbols-outlined">schedule</span>
-                    {{ email.send_time }}
-                </div>
-            </div>
+                    </td>
+                    <td><span class="company-name">{{ email.company }}</span></td>
+                    <td class="contact-cell">{{ email.full_name or '—' }}</td>
+                    <td><span class="track-badge {{ email.track_css }}">{{ email.track }}</span></td>
+                    <td class="q-subject-cell" title="{{ email.subject }}">{{ email.subject }}</td>
+                    <td><span class="email-type-pill {{ email.pill_css }}">{{ email.pill_label }}</span></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
         </div>
 
-        {# Scheduled banner — shown only when scheduled_at is set #}
-        {% if email.is_scheduled %}
-        <div class="scheduled-banner">
-            <span class="material-symbols-outlined">calendar_clock</span>
-            <span class="sched-banner-label">Scheduled for</span>
-            <span class="sched-banner-time">{{ email.scheduled_display }}</span>
-            <span class="sched-banner-local">&nbsp;(recipient's local time)</span>
-            <button class="sched-banner-cancel"
-                    onclick="cancelSchedule('{{ email.email_id }}')">Cancel</button>
+        <div class="pagination-row">
+            <div class="pagination-info" id="qPagInfo">—</div>
+            <div class="pagination-controls" id="qPagControls"></div>
         </div>
-        {% endif %}
-
-        {# Subject bar — always visible #}
-        <div class="queue-subject-bar">
-            <span class="subject-label">SUBJECT</span>{{ email.subject }}
-        </div>
-
-        {# Email preview — hidden when collapsed #}
-        <div class="email-preview">
-            <div class="email-fields">
-                <div class="email-field">
-                    <span class="email-field-label">To</span>
-                    <span class="email-field-value to">{{ email.email }}</span>
-                </div>
-                <div class="email-field">
-                    <span class="email-field-label">Subject</span>
-                    <span class="email-field-value">{{ email.subject }}</span>
-                </div>
-            </div>
-
-            <div class="email-body-area">{{ email.body }}</div>
-
-            <div class="attachment-badge{% if not email.cv_attached %} not-attached{% endif %}"
-                 id="attach-{{ email.email_id }}"
-                 onclick="toggleAttachment('{{ email.email_id }}')"
-                 title="Click to toggle CV attachment">
-                <span class="material-symbols-outlined">attach_file</span>
-                Christopher_Hoole_CV.pdf &nbsp;·&nbsp;
-                <span id="attach-label-{{ email.email_id }}" style="font-weight:700;">
-                    {%- if email.cv_attached %}attached ✕{% else %}not attached +{% endif -%}
-                </span>
-            </div>
-        </div>
-
-        {# Edit bar — hidden when collapsed #}
-        <div class="edit-bar">
-            <button class="edit-bar-btn"
-                    onclick="openEditModal('{{ email.email_id }}')">✏ Edit this email</button>
-            <span class="edit-bar-sep">|</span>
-            <button class="edit-bar-btn"
-                    onclick="showToast('AI regeneration coming soon', 'info')">🔄 Regenerate with AI</button>
-            <span class="edit-bar-sep">|</span>
-            <button class="edit-bar-btn"
-                    onclick="openTemplateModal('{{ email.email_id }}')">📋 Switch template</button>
-        </div>
-
-        {# Action row — hidden when collapsed #}
-        <div class="queue-actions">
-            {% if email.is_scheduled %}
-            <button class="btn-cancel-schedule"
-                    onclick="cancelSchedule('{{ email.email_id }}')">
-                ✕ Cancel Schedule
-            </button>
-            <div class="sched-auto-note">
-                <span class="material-symbols-outlined">check_circle</span>
-                Will auto-send {{ email.scheduled_display }} — no action needed
-            </div>
-            {% else %}
-            <button class="btn-send" onclick="sendCard('{{ email.email_id }}')">
-                <span class="material-symbols-outlined">send</span>
-                Send now
-            </button>
-            <button class="btn-schedule" onclick="scheduleCard('{{ email.email_id }}')">
-                <span class="material-symbols-outlined">calendar_clock</span>
-                Schedule
-            </button>
-            <button class="btn-skip" onclick="skipCard('{{ email.email_id }}')">⏭ Skip</button>
-            <div class="send-schedule-note">
-                <span class="material-symbols-outlined">info</span>
-                {{ email.schedule_note }}
-            </div>
-            {% endif %}
-            <button class="btn-discard" onclick="discardCard('{{ email.email_id }}')">🗑 Discard</button>
-        </div>
-
-    </div>
-    {% endfor %}
-    </div>{# /queueList #}
-
-    {# ── Empty queue state ── #}
-    <div class="empty-queue{% if queued_emails %} d-none{% endif %}" id="emptyQueue">
-        <div class="empty-queue-icon">
-            <span class="material-symbols-outlined" style="font-size:48px; color:#dadce0;">inbox</span>
-        </div>
-        <div class="empty-queue-title">Queue is empty</div>
-        <div class="empty-queue-sub">All emails have been sent or discarded. Add more leads to generate new emails.</div>
     </div>
 
-</div>{# /queue-content #}
+    {# ── Empty state ── #}
+    {% if not queued_emails %}
+    <div style="text-align:center;padding:60px 20px;color:#9ca3af;">
+        <span class="material-symbols-outlined" style="font-size:48px;color:#dadce0;">inbox</span>
+        <div style="font-size:15px;margin-top:12px;">Queue is empty</div>
+        <div style="font-size:13px;margin-top:4px;">All emails have been sent or discarded. Add more leads to generate new emails.</div>
+    </div>
+    {% endif %}
+
+</div>{# /outreach-content #}
 
 
 {# ══════════════════════════════════════════════════════════
-   DISCARD CONFIRM MODAL (Bootstrap)
+   QUEUE SLIDE-IN PANEL
    ══════════════════════════════════════════════════════════ #}
-<div class="modal fade" id="discardModal" tabindex="-1"
-     aria-labelledby="discardModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="discardModalLabel">Remove from queue</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>Remove this email from the queue? This cannot be undone.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary"
-                        data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger"
-                        onclick="confirmDiscard()">Remove</button>
-            </div>
-        </div>
-    </div>
-</div>
+<div class="si-overlay" id="qOverlay" onclick="qClosePanel()"></div>
 
-{# ══════════════════════════════════════════════════════════
-   EDIT EMAIL MODAL (Bootstrap)
-   ══════════════════════════════════════════════════════════ #}
-<div class="modal fade" id="editEmailModal" tabindex="-1"
-     aria-labelledby="editEmailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editEmailModalLabel">Edit email</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+<div class="si-panel" id="qPanel">
+
+    {# ── Header ── #}
+    <div class="si-header">
+        <div class="si-header-top">
+            <div>
+                <div class="si-name" id="qPanelCompany">—</div>
+                <div class="si-contact-row" id="qPanelContact">—</div>
             </div>
-            <div class="modal-body" style="padding:24px;">
-                <div style="margin-bottom:16px;">
-                    <label for="editSubjectInput"
-                           style="display:block;font-weight:600;margin-bottom:6px;">Subject</label>
-                    <input type="text" class="form-control" id="editSubjectInput"
-                           style="display:block;width:100%;">
-                </div>
-                <div style="margin-bottom:8px;">
-                    <label for="editBodyTextarea"
-                           style="display:block;font-weight:600;margin-bottom:6px;">Body</label>
-                    <textarea class="form-control" id="editBodyTextarea" rows="14"
-                              style="display:block;width:100%;font-family:monospace;font-size:13px;resize:vertical;"></textarea>
-                </div>
-                <div style="font-size:12px;color:#6c757d;">
-                    Placeholders like <code>&#123;&#123;first_name&#125;&#125;</code> are substituted at send time — leave them as-is.
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary"
-                        data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary"
-                        onclick="confirmEditEmail()">Save changes</button>
-            </div>
+            <button class="si-close" onclick="qClosePanel()">✕</button>
+        </div>
+        <div class="si-badges">
+            <div class="si-badges-left" id="qPanelBadgesLeft"></div>
+            <div class="si-badges-right" id="qPanelBadgesRight"></div>
         </div>
     </div>
-</div>
+
+    {# ── Scrollable body: email preview / edit ── #}
+    <div class="si-body" style="padding:20px;">
+
+        {# Template selector — inline #}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div style="font-size:13px;color:#202124;">Template: <span id="qPanelTemplate" style="font-weight:600;">—</span></div>
+            <select id="qTemplateSelect" style="font-size:13px;padding:4px 10px;border:1px solid #dadce0;border-radius:4px;color:#202124;background:#fff;cursor:pointer;" onchange="qApplyTemplate()">
+                <option value="">Switch template...</option>
+            </select>
+        </div>
+
+        {# To field #}
+        <div style="margin-bottom:12px;">
+            <div style="font-size:12px;color:#202124;font-weight:500;margin-bottom:2px;">To</div>
+            <div style="font-size:13px;color:#1a73e8;" id="qPanelTo">—</div>
+        </div>
+
+        {# Subject — display + edit #}
+        <div style="margin-bottom:16px;">
+            <div style="font-size:12px;color:#202124;font-weight:500;margin-bottom:2px;">Subject</div>
+            <div id="qSubjectDisplay" style="font-size:15px;font-weight:600;color:#202124;">—</div>
+            <input type="text" id="qSubjectInput" style="display:none;width:100%;font-size:14px;font-weight:600;padding:8px 12px;border:1px solid #1a73e8;border-radius:6px;outline:none;">
+        </div>
+
+        {# Body — display + edit #}
+        <div style="margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <div style="font-size:12px;color:#202124;font-weight:500;">Body</div>
+                <button id="qEditToggle" onclick="qStartEdit()" style="font-size:13px;padding:4px 14px;background:#1a73e8;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:500;">Edit email</button>
+            </div>
+            <div id="qBodyDisplay" style="font-size:13px;color:#202124;line-height:1.6;white-space:pre-wrap;word-break:break-word;padding:16px;background:#f8f9fa;border-radius:8px;border:1px solid #e5e7eb;">
+            </div>
+            <textarea id="qBodyTextarea" style="display:none;width:100%;font-size:13px;line-height:1.6;padding:16px;border:1px solid #1a73e8;border-radius:8px;outline:none;resize:none;font-family:'DM Sans',sans-serif;background:#fff;color:#202124;"></textarea>
+            <div id="qEditActions" style="display:none;margin-top:8px;width:100%;">
+                <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <button class="si-toolbar-btn bold" onclick="qFormatBold()">B</button>
+                        <button class="si-toolbar-btn italic" onclick="qFormatItalic()">I</button>
+                        <label class="si-sig-toggle" id="qSigToggle" onclick="qToggleSignature()">
+                            <div class="si-toggle-pip" id="qSigPip"></div>
+                            Signature
+                        </label>
+                        <label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#202124;cursor:pointer;">
+                            <input type="checkbox" id="qCvCheck" onchange="qToggleCv()">
+                            CV
+                        </label>
+                    </div>
+                    <div style="display:flex;gap:8px;">
+                        <button class="si-footer-btn" onclick="qCancelEdit()" style="font-size:13px;">Cancel</button>
+                        <button class="si-footer-btn primary" onclick="qSaveEdit()" style="font-size:13px;">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Signature preview #}
+        <div id="qSigPreview" style="padding:8px 12px;border:1px solid #e8eaed;border-radius:6px;background:#f8f9fa;font-size:11px;color:#555;line-height:1.5;">
+            <strong>Christopher Hoole</strong><br>
+            Google Ads Specialist | 16 Years Experience<br>
+            +44 7451 252857<br>
+            <span style="color:#1a73e8;">chris@christopherhoole.com</span><br>
+            <span style="color:#1a73e8;">christopherhoole.com</span>
+        </div>
+    </div>
+
+    {# ── Fixed bottom: actions ── #}
+    <div class="si-bottom-fixed">
+        <div class="si-footer" id="qPanelActions">
+            {# Populated by JS based on scheduled state #}
+        </div>
+    </div>
+
+</div>{# /qPanel #}
 
 {# ══════════════════════════════════════════════════════════
    TEMPLATE PICKER MODAL (Bootstrap)
    ══════════════════════════════════════════════════════════ #}
-<div class="modal fade" id="templatePickerModal" tabindex="-1"
-     aria-labelledby="templatePickerModalLabel" aria-hidden="true">
+<div class="modal fade" id="templatePickerModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="templatePickerModalLabel">Switch template</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" style="max-height:60vh;overflow-y:auto;">
-                <div id="templatePickerList">
-                    <p class="text-muted">Loading templates…</p>
-                </div>
+                <div id="templatePickerList"><p class="text-muted">Loading templates…</p></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary"
-                        data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
             </div>
         </div>
     </div>
@@ -293,440 +242,450 @@
 {% block extra_js %}
 <script>
 /* ══════════════════════════════════════════════════════════════
-   OUTREACH QUEUE — CLIENT-SIDE LOGIC
-   Chat 60
+   QUEUE PAGE — Table + Slide-in
    ══════════════════════════════════════════════════════════════ */
 
-// ── Attachment state (tracks cv_attached toggle per card) ──────────────────
-const cvAttached = {};
-{% for email in queued_emails %}
-cvAttached['{{ email.email_id }}'] = {{ 'true' if email.cv_attached else 'false' }};
-{% endfor %}
+const Q_DATA = {{ queued_emails|tojson|safe }};
+let qCurrentId = null;
+let qFilteredRows = [];
+let qRowsPerPage = 25;
+let qCurrentPage = 1;
 
-// ── Discard modal state ────────────────────────────────────────────────────
-let discardEmailId = null;
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
 
-/* ──────────────────────────────────────────────────────────────
-   TOAST NOTIFICATION (inline override of base template version)
-   ────────────────────────────────────────────────────────────── */
-function showToast(message, type) {
-    const toast = document.createElement('div');
-    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:6px;color:#fff;font-size:14px;z-index:9999;transition:opacity 0.4s;';
-    toast.style.background = type === 'success' ? '#34A853' : type === 'error' ? '#EA4335' : '#4285F4';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, 3000);
+/* ── Filtering ── */
+let qActiveFilter = '';
+
+function filterQueue(filter, btn) {
+    document.querySelectorAll('.rules-sub-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    qActiveFilter = filter;
+    qApplyFilters();
 }
 
-/* ──────────────────────────────────────────────────────────────
-   TOGGLE CARD (expand one, collapse all others)
-   ────────────────────────────────────────────────────────────── */
-function toggleCard(cardId) {
-    const card = document.getElementById(cardId);
-    if (!card) return;
-    const isCollapsed = card.classList.contains('collapsed');
+function qFilter() { qApplyFilters(); }
 
-    // Collapse all cards (restore bubble colour to scheduled=yellow or default=grey)
-    document.querySelectorAll('.queue-card').forEach(c => {
-        c.classList.add('collapsed');
-        const num = c.querySelector('.queue-number');
-        if (num) num.style.background = c.classList.contains('is-scheduled') ? '#FBBC05' : '#5f6368';
+function qApplyFilters() {
+    const search = (document.getElementById('qSearch').value || '').toLowerCase();
+    const allRows = Array.from(document.querySelectorAll('#queueBody tr'));
+
+    qFilteredRows = allRows.filter(row => {
+        const track = row.dataset.track || '';
+        const scheduled = row.dataset.scheduled;
+        const text = row.textContent.toLowerCase();
+
+        let trackMatch = true;
+        if (qActiveFilter === 'Agency') trackMatch = track === 'Agency';
+        else if (qActiveFilter === 'Recruiter') trackMatch = track === 'Recruiter';
+        else if (qActiveFilter === 'scheduled') trackMatch = scheduled === 'true';
+        else if (qActiveFilter === 'unscheduled') trackMatch = scheduled === 'false';
+
+        return trackMatch && (!search || text.includes(search));
     });
 
-    // Expand clicked card if it was collapsed
-    if (isCollapsed) {
-        card.classList.remove('collapsed');
-        const num = card.querySelector('.queue-number');
-        if (num) num.style.background = '#1a73e8';
+    qCurrentPage = 1;
+    qRenderPage();
+}
+
+/* ── Pagination ── */
+function qRenderPage() {
+    const allRows = Array.from(document.querySelectorAll('#queueBody tr'));
+    allRows.forEach(r => r.style.display = 'none');
+
+    const start = (qCurrentPage - 1) * qRowsPerPage;
+    const end = start + qRowsPerPage;
+    const pageRows = qFilteredRows.slice(start, end);
+    pageRows.forEach(r => r.style.display = '');
+
+    const total = qFilteredRows.length;
+    document.getElementById('qResultCount').textContent =
+        'Showing ' + Math.min(start + 1, total) + '–' + Math.min(end, total) + ' of ' + total;
+
+    // Pagination controls
+    const totalPages = Math.ceil(total / qRowsPerPage) || 1;
+    let html = '';
+    html += `<button onclick="qGoPage(${qCurrentPage - 1})" ${qCurrentPage <= 1 ? 'disabled' : ''}>← Prev</button>`;
+    for (let p = 1; p <= totalPages; p++) {
+        html += `<button onclick="qGoPage(${p})" class="${p === qCurrentPage ? 'active' : ''}">${p}</button>`;
     }
+    html += `<button onclick="qGoPage(${qCurrentPage + 1})" ${qCurrentPage >= totalPages ? 'disabled' : ''}>Next →</button>`;
+    document.getElementById('qPagControls').innerHTML = html;
 }
 
-/* ──────────────────────────────────────────────────────────────
-   REMOVE CARD (animate out + remove from DOM)
-   ────────────────────────────────────────────────────────────── */
-function removeCard(cardId, callback) {
-    const card = document.getElementById(cardId);
-    if (!card) { if (callback) callback(); return; }
-
-    card.style.transition = 'opacity 0.2s ease, height 0.3s ease, margin 0.3s ease';
-    card.style.opacity = '0';
-    card.style.overflow = 'hidden';
-    const h = card.offsetHeight;
-    card.style.height = h + 'px';
-    card.style.marginBottom = card.style.marginBottom || '16px';
-
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            card.style.height = '0';
-            card.style.marginBottom = '0';
-            card.style.paddingTop = '0';
-            card.style.paddingBottom = '0';
-        });
-    });
-
-    setTimeout(() => {
-        card.remove();
-        if (callback) callback();
-        updateQueue();
-    }, 350);
+function qGoPage(p) {
+    const totalPages = Math.ceil(qFilteredRows.length / qRowsPerPage) || 1;
+    if (p < 1 || p > totalPages) return;
+    qCurrentPage = p;
+    qRenderPage();
 }
 
-/* ──────────────────────────────────────────────────────────────
-   SEND CARD
-   ────────────────────────────────────────────────────────────── */
-function sendCard(emailId) {
-    fetch(`/outreach/queue/${emailId}/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-    })
+function qChangeRows() {
+    qRowsPerPage = parseInt(document.getElementById('qRowsPerPage').value);
+    qCurrentPage = 1;
+    qRenderPage();
+}
+
+/* ── Slide-in panel ── */
+function qOpenPanel(emailId) {
+    qCurrentId = emailId;
+    const email = Q_DATA.find(e => e.email_id === emailId);
+    if (!email) return;
+
+    // Header
+    document.getElementById('qPanelCompany').textContent = email.company || '—';
+    document.getElementById('qPanelContact').textContent =
+        [email.full_name, email.email, email.role].filter(Boolean).join(' | ') || '—';
+
+    // Badges left: Track + Type
+    const trackClass = {Agency:'si-badge-agency',Recruiter:'si-badge-recruiter',Direct:'si-badge-direct',Job:'si-badge-job'}[email.track] || 'si-badge-job';
+    document.getElementById('qPanelBadgesLeft').innerHTML = `
+        <span class="si-badge ${trackClass}">${esc(email.track)}</span>
+        <span class="email-type-pill ${email.pill_css}">${esc(email.pill_label)}</span>
+    `;
+
+    // Badges right: scheduled time
+    if (email.is_scheduled) {
+        document.getElementById('qPanelBadgesRight').innerHTML = `
+            <span class="q-sched-pill q-sched-scheduled">Scheduled: ${esc(email.scheduled_display)}</span>
+        `;
+    } else {
+        document.getElementById('qPanelBadgesRight').innerHTML = `
+            <span class="q-sched-pill q-sched-unscheduled">Not scheduled</span>
+        `;
+    }
+
+    // Template info + load dropdown
+    const templateName = email.pill_label || 'Initial email';
+    document.getElementById('qPanelTemplate').textContent = templateName;
+    qLoadTemplateDropdown();
+
+    // Email fields
+    document.getElementById('qPanelTo').textContent = email.email || '—';
+    document.getElementById('qSubjectDisplay').textContent = email.subject || '—';
+    document.getElementById('qBodyDisplay').textContent = email.body || '';
+
+    // Reset edit mode
+    qCancelEdit();
+
+    // CV toggle
+    document.getElementById('qCvCheck').checked = email.cv_attached;
+
+    // Actions — primary on right, secondary on left
+    let actionsHtml = '';
+    if (email.is_scheduled) {
+        actionsHtml = `
+            <div class="si-footer-group" style="font-size:13px;color:#16a34a;">
+                <span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;">check_circle</span>
+                Auto-send ${esc(email.scheduled_display)}
+            </div>
+            <div class="si-footer-group">
+                <button class="si-footer-btn danger" onclick="qDiscard()">Discard</button>
+                <button class="si-footer-btn danger" onclick="qCancelSchedule()">Cancel Schedule</button>
+            </div>
+        `;
+    } else {
+        actionsHtml = `
+            <div class="si-footer-group">
+                <button class="si-footer-btn danger" onclick="qDiscard()">Discard</button>
+                <button class="si-footer-btn" onclick="qSkip()">Skip</button>
+            </div>
+            <div class="si-footer-group">
+                <button class="si-footer-btn" onclick="qSchedule()">Schedule</button>
+                <button class="si-footer-btn primary" onclick="qSendNow()">Send now</button>
+            </div>
+        `;
+    }
+    document.getElementById('qPanelActions').innerHTML = actionsHtml;
+
+    // Open
+    document.getElementById('qOverlay').classList.add('si-open');
+    document.getElementById('qPanel').classList.add('si-open');
+}
+
+function qClosePanel() {
+    document.getElementById('qOverlay').classList.remove('si-open');
+    document.getElementById('qPanel').classList.remove('si-open');
+    qCurrentId = null;
+}
+
+/* ── Actions ── */
+function qSendNow() {
+    if (!qCurrentId) return;
+    fetch(`/outreach/queue/${qCurrentId}/send`, { method:'POST', headers:{'Content-Type':'application/json'} })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            showToast('Email sent successfully!', 'success');
-            removeCard('card-' + emailId, () => {
-                const next = document.querySelector('.queue-card.collapsed');
-                if (next) toggleCard(next.id);
-            });
+            showToast('Email sent!', 'success');
+            qClosePanel();
+            setTimeout(() => location.reload(), 800);
         } else {
             showToast('Error: ' + (data.message || 'Send failed'), 'error');
         }
     })
-    .catch(() => showToast('Network error — could not send email', 'error'));
+    .catch(() => showToast('Network error', 'error'));
 }
 
-/* ──────────────────────────────────────────────────────────────
-   SKIP CARD (move to bottom of list)
-   ────────────────────────────────────────────────────────────── */
-function skipCard(emailId) {
-    fetch(`/outreach/queue/${emailId}/skip`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-    })
+function qSchedule() {
+    if (!qCurrentId) return;
+    fetch(`/outreach/queue/${qCurrentId}/schedule`, { method:'POST' })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            const card = document.getElementById('card-' + emailId);
-            if (!card) return;
-            card.classList.add('collapsed');
-            const num = card.querySelector('.queue-number');
-            if (num) num.style.background = '#5f6368';
-            card.parentNode.appendChild(card);
-            const next = document.querySelector('.queue-card.collapsed');
-            if (next) toggleCard(next.id);
-            updateQueue();
+            showToast('Scheduled for ' + data.scheduled_display, 'success');
+            qClosePanel();
+            setTimeout(() => location.reload(), 800);
+        } else {
+            showToast(data.message || 'Could not schedule', 'error');
+        }
+    })
+    .catch(() => showToast('Network error', 'error'));
+}
+
+function qCancelSchedule() {
+    if (!qCurrentId) return;
+    fetch(`/outreach/queue/${qCurrentId}/cancel-schedule`, { method:'POST' })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Schedule cancelled', 'success');
+            qClosePanel();
+            setTimeout(() => location.reload(), 800);
+        } else {
+            showToast(data.message || 'Could not cancel', 'error');
+        }
+    })
+    .catch(() => showToast('Network error', 'error'));
+}
+
+function qSkip() {
+    if (!qCurrentId) return;
+    fetch(`/outreach/queue/${qCurrentId}/skip`, { method:'POST', headers:{'Content-Type':'application/json'} })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Email skipped — moved back in queue', 'success');
+            qClosePanel();
+            setTimeout(() => location.reload(), 800);
         } else {
             showToast('Error: ' + (data.message || 'Skip failed'), 'error');
         }
     })
-    .catch(() => showToast('Network error — could not skip email', 'error'));
+    .catch(() => showToast('Network error', 'error'));
 }
 
-/* ──────────────────────────────────────────────────────────────
-   DISCARD CARD (show confirm modal)
-   ────────────────────────────────────────────────────────────── */
-function discardCard(emailId) {
-    discardEmailId = emailId;
-    bootstrap.Modal.getOrCreateInstance(
-        document.getElementById('discardModal')
-    ).show();
-}
-
-function confirmDiscard() {
-    if (!discardEmailId) return;
-    const modal = bootstrap.Modal.getOrCreateInstance(
-        document.getElementById('discardModal')
-    );
-    const emailId = discardEmailId;
-    discardEmailId = null;
-
-    fetch(`/outreach/queue/${emailId}/discard`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-    })
+function qDiscard() {
+    if (!qCurrentId) return;
+    if (!confirm('Remove this email from the queue? This cannot be undone.')) return;
+    fetch(`/outreach/queue/${qCurrentId}/discard`, { method:'POST', headers:{'Content-Type':'application/json'} })
     .then(r => r.json())
     .then(data => {
-        modal.hide();
         if (data.success) {
-            removeCard('card-' + emailId, () => {
-                const next = document.querySelector('.queue-card.collapsed');
-                if (next) toggleCard(next.id);
-            });
+            showToast('Email discarded', 'success');
+            qClosePanel();
+            setTimeout(() => location.reload(), 800);
         } else {
             showToast('Error: ' + (data.message || 'Discard failed'), 'error');
         }
     })
-    .catch(() => {
-        modal.hide();
-        showToast('Network error — could not discard email', 'error');
-    });
+    .catch(() => showToast('Network error', 'error'));
 }
 
-/* ──────────────────────────────────────────────────────────────
-   UPDATE QUEUE (counts, numbering, empty state, nav badge)
-   ────────────────────────────────────────────────────────────── */
-function updateQueue() {
-    const cards = document.querySelectorAll('.queue-card');
-    const remaining = cards.length;
+/* ── Inline edit email ── */
+let qIsEditing = false;
 
-    // Update awaiting stat
-    const statEl = document.getElementById('statAwaiting');
-    if (statEl) statEl.textContent = remaining;
+function qStartEdit() {
+    if (qIsEditing) return;
+    qIsEditing = true;
+    const email = Q_DATA.find(e => e.email_id === qCurrentId);
+    if (!email) return;
 
-    // Update queue heading
-    const heading = document.getElementById('queueCountHeading');
-    if (heading) {
-        heading.textContent = remaining + ' email' + (remaining !== 1 ? 's' : '') +
-                              ' awaiting your approval';
-    }
+    // Match textarea height to body display height
+    const bodyDisplay = document.getElementById('qBodyDisplay');
+    const bodyHeight = Math.max(bodyDisplay.offsetHeight, 200);
 
-    // Re-number circles
-    cards.forEach((c, i) => {
-        const n = c.querySelector('.queue-number');
-        if (n) n.textContent = i + 1;
-    });
+    // Show inputs, hide display
+    document.getElementById('qSubjectDisplay').style.display = 'none';
+    document.getElementById('qSubjectInput').style.display = '';
+    document.getElementById('qSubjectInput').value = email.subject || '';
 
-    // Update nav badge(s)
-    document.querySelectorAll('.nav-badge').forEach(b => {
-        b.textContent = remaining;
-        if (remaining === 0) b.classList.add('d-none');
-        else b.classList.remove('d-none');
-    });
+    document.getElementById('qBodyDisplay').style.display = 'none';
+    const textarea = document.getElementById('qBodyTextarea');
+    textarea.style.display = '';
+    textarea.style.height = bodyHeight + 'px';
+    textarea.value = email.body || '';
 
-    // Show/hide empty queue state
-    const emptyEl = document.getElementById('emptyQueue');
-    if (emptyEl) {
-        if (remaining === 0) emptyEl.classList.remove('d-none');
-        else emptyEl.classList.add('d-none');
-    }
+    document.getElementById('qEditActions').style.display = 'flex';
+    document.getElementById('qEditToggle').style.display = 'none';
+
+    document.getElementById('qSubjectInput').focus();
 }
 
-/* ──────────────────────────────────────────────────────────────
-   TOGGLE CV ATTACHMENT
-   ────────────────────────────────────────────────────────────── */
-function toggleAttachment(emailId) {
-    fetch('/outreach/queue/' + emailId + '/toggle-cv', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-        if (!data.success) {
-            showToast('Could not update attachment', 'error');
-            return;
-        }
-        cvAttached[emailId] = data.cv_attached;
-        const badge = document.getElementById('attach-' + emailId);
-        const label = document.getElementById('attach-label-' + emailId);
-        if (!badge || !label) return;
-        if (data.cv_attached) {
-            badge.classList.remove('not-attached');
-            label.textContent = 'attached \u2715';
-        } else {
-            badge.classList.add('not-attached');
-            label.textContent = 'not attached +';
-        }
-    })
-    .catch(function() { showToast('Network error', 'error'); });
+function qCancelEdit() {
+    qIsEditing = false;
+    document.getElementById('qSubjectDisplay').style.display = '';
+    document.getElementById('qSubjectInput').style.display = 'none';
+    document.getElementById('qBodyDisplay').style.display = '';
+    document.getElementById('qBodyTextarea').style.display = 'none';
+    document.getElementById('qEditActions').style.display = 'none';
+    document.getElementById('qEditToggle').style.display = '';
 }
 
-/* ──────────────────────────────────────────────────────────────
-   EDIT EMAIL MODAL
-   ────────────────────────────────────────────────────────────── */
-let editEmailId = null;
-
-function openEditModal(emailId) {
-    editEmailId = emailId;
-    fetch('/outreach/queue/' + emailId + '/get')
-        .then(r => r.json())
-        .then(data => {
-            if (!data.success) {
-                showToast('Could not load email: ' + (data.message || 'Unknown error'), 'error');
-                return;
-            }
-            document.getElementById('editSubjectInput').value = data.subject;
-            document.getElementById('editBodyTextarea').value = data.body;
-            bootstrap.Modal.getOrCreateInstance(
-                document.getElementById('editEmailModal')
-            ).show();
-        })
-        .catch(() => showToast('Network error — could not load email', 'error'));
-}
-
-function confirmEditEmail() {
-    if (!editEmailId) return;
-    const subject = document.getElementById('editSubjectInput').value.trim();
-    const body    = document.getElementById('editBodyTextarea').value.trim();
-
-    if (!subject) {
-        showToast('Subject cannot be empty', 'error');
-        return;
-    }
-
-    fetch('/outreach/queue/' + editEmailId + '/edit', {
+function qSaveEdit() {
+    if (!qCurrentId) return;
+    const subject = document.getElementById('qSubjectInput').value.trim();
+    const body = document.getElementById('qBodyTextarea').value.trim();
+    if (!subject) { showToast('Subject is required', 'warning'); return; }
+    fetch(`/outreach/queue/${qCurrentId}/edit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject: subject, body: body })
+        body: JSON.stringify({ subject, body })
     })
     .then(r => r.json())
     .then(data => {
-        bootstrap.Modal.getOrCreateInstance(
-            document.getElementById('editEmailModal')
-        ).hide();
         if (data.success) {
-            // Update card subject in DOM (subject bar + expanded field)
-            const card = document.getElementById('card-' + editEmailId);
-            if (card) {
-                const subjectBar = card.querySelector('.queue-subject-bar');
-                if (subjectBar) subjectBar.innerHTML = '<span class="subject-label">SUBJECT</span>' + data.subject;
-                const subjectField = card.querySelector('.email-field-value:not(.to)');
-                if (subjectField) subjectField.textContent = data.subject;
-            }
+            // Update local data + display
+            const email = Q_DATA.find(e => e.email_id === qCurrentId);
+            if (email) { email.subject = subject; email.body = body; }
+            document.getElementById('qSubjectDisplay').textContent = subject;
+            document.getElementById('qBodyDisplay').textContent = body;
+            qCancelEdit();
             showToast('Email updated', 'success');
         } else {
             showToast('Error: ' + (data.message || 'Save failed'), 'error');
         }
-        editEmailId = null;
     })
-    .catch(() => {
-        bootstrap.Modal.getOrCreateInstance(
-            document.getElementById('editEmailModal')
-        ).hide();
-        showToast('Network error — could not save', 'error');
-        editEmailId = null;
-    });
+    .catch(() => showToast('Network error', 'error'));
 }
 
-/* ──────────────────────────────────────────────────────────────
-   TEMPLATE PICKER MODAL
-   ────────────────────────────────────────────────────────────── */
-let templateEmailId = null;
+/* ── Bold / Italic for composer ── */
+function qFormatBold() {
+    const ta = document.getElementById('qBodyTextarea');
+    const start = ta.selectionStart, end = ta.selectionEnd;
+    const sel = ta.value.substring(start, end);
+    ta.value = ta.value.substring(0, start) + '**' + sel + '**' + ta.value.substring(end);
+    ta.selectionStart = start + 2;
+    ta.selectionEnd = end + 2;
+    ta.focus();
+}
+function qFormatItalic() {
+    const ta = document.getElementById('qBodyTextarea');
+    const start = ta.selectionStart, end = ta.selectionEnd;
+    const sel = ta.value.substring(start, end);
+    ta.value = ta.value.substring(0, start) + '*' + sel + '*' + ta.value.substring(end);
+    ta.selectionStart = start + 1;
+    ta.selectionEnd = end + 1;
+    ta.focus();
+}
 
-function openTemplateModal(emailId) {
-    templateEmailId = emailId;
-    const list = document.getElementById('templatePickerList');
-    list.innerHTML = '<p class="text-muted">Loading templates\u2026</p>';
+/* ── Signature toggle (matches Leads page) ── */
+let qSigOn = true;
+function qToggleSignature() {
+    qSigOn = !qSigOn;
+    const pip = document.getElementById('qSigPip');
+    const preview = document.getElementById('qSigPreview');
+    if (qSigOn) {
+        pip.classList.remove('off');
+        preview.style.display = 'block';
+    } else {
+        pip.classList.add('off');
+        preview.style.display = 'none';
+    }
+}
 
-    bootstrap.Modal.getOrCreateInstance(
-        document.getElementById('templatePickerModal')
-    ).show();
+/* ── CV toggle ── */
+function qToggleCv() {
+    if (!qCurrentId) return;
+    fetch(`/outreach/queue/${qCurrentId}/toggle-cv`, { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const email = Q_DATA.find(e => e.email_id === qCurrentId);
+            if (email) email.cv_attached = data.cv_attached;
+            showToast(data.cv_attached ? 'CV attached' : 'CV removed', 'success');
+        } else {
+            showToast('Error toggling CV', 'error');
+            document.getElementById('qCvCheck').checked = !document.getElementById('qCvCheck').checked;
+        }
+    })
+    .catch(() => showToast('Network error', 'error'));
+}
 
-    fetch('/outreach/queue/' + emailId + '/templates')
-        .then(r => r.json())
-        .then(data => {
-            if (!data.success) {
-                list.innerHTML = '<p class="text-danger">Error: ' + (data.message || 'Could not load templates') + '</p>';
-                return;
-            }
-            if (!data.templates || data.templates.length === 0) {
-                list.innerHTML = '<p class="text-muted">No templates found for track: ' + data.track + '</p>';
-                return;
-            }
-
-            document.getElementById('templatePickerModalLabel').textContent =
-                'Switch template \u2014 ' + data.track + ' track';
-
-            let html = '';
-            data.templates.forEach(function(tmpl) {
-                // Encode template data in data-attributes to avoid JS/Jinja brace conflict
-                const safeId      = tmpl.template_id;
-                const safeName    = tmpl.name.replace(/"/g, '&quot;');
-                const safeSubject = tmpl.subject.replace(/"/g, '&quot;');
-                html += '<div class="card mb-2">' +
-                        '<div class="card-body py-2 px-3 d-flex justify-content-between align-items-center">' +
-                        '<div>' +
-                        '<div class="fw-semibold">' + tmpl.name + '</div>' +
-                        '<div class="text-muted" style="font-size:12px;">Step ' + tmpl.step + ' &nbsp;&middot;&nbsp; ' + tmpl.subject + '</div>' +
-                        '</div>' +
-                        '<button class="btn btn-sm btn-primary ms-3" ' +
-                        'data-tmpl-id="' + safeId + '" ' +
-                        'onclick="selectTemplate(this)">Select</button>' +
-                        '</div></div>';
-            });
-            list.innerHTML = html;
-        })
-        .catch(() => {
-            list.innerHTML = '<p class="text-danger">Network error — could not load templates</p>';
+/* ── Switch template — inline dropdown ── */
+function qLoadTemplateDropdown() {
+    if (!qCurrentId) return;
+    const sel = document.getElementById('qTemplateSelect');
+    sel.innerHTML = '<option value="">Switch template...</option>';
+    fetch(`/outreach/queue/${qCurrentId}/templates`)
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success || !data.templates) return;
+        data.templates.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.template_id;
+            opt.textContent = 'Step ' + t.step + ': ' + t.name;
+            sel.appendChild(opt);
         });
+    })
+    .catch(() => {});
 }
 
-function selectTemplate(btn) {
-    const templateId = btn.getAttribute('data-tmpl-id');
-    if (!templateEmailId || !templateId) return;
-
-    fetch('/outreach/queue/' + templateEmailId + '/switch-template', {
+function qApplyTemplate() {
+    const sel = document.getElementById('qTemplateSelect');
+    const templateId = sel.value;
+    if (!templateId || !qCurrentId) { sel.value = ''; return; }
+    fetch(`/outreach/queue/${qCurrentId}/switch-template`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ template_id: templateId })
     })
     .then(r => r.json())
     .then(data => {
-        bootstrap.Modal.getOrCreateInstance(
-            document.getElementById('templatePickerModal')
-        ).hide();
         if (data.success) {
-            // Update card subject in DOM
-            const card = document.getElementById('card-' + templateEmailId);
-            if (card) {
-                const subjectBar = card.querySelector('.queue-subject-bar');
-                if (subjectBar) subjectBar.innerHTML = '<span class="subject-label">SUBJECT</span>' + data.subject;
-                const subjectField = card.querySelector('.email-field-value:not(.to)');
-                if (subjectField) subjectField.textContent = data.subject;
-            }
-            showToast('Template applied', 'success');
+            showToast('Template switched', 'success');
+            setTimeout(() => location.reload(), 800);
         } else {
             showToast('Error: ' + (data.message || 'Switch failed'), 'error');
+            sel.value = '';
         }
-        templateEmailId = null;
     })
-    .catch(() => {
-        bootstrap.Modal.getOrCreateInstance(
-            document.getElementById('templatePickerModal')
-        ).hide();
-        showToast('Network error — could not switch template', 'error');
-        templateEmailId = null;
+    .catch(() => { showToast('Network error', 'error'); sel.value = ''; });
+}
+
+/* ── Schedule All ── */
+function scheduleAllEmails() {
+    const unscheduled = Array.from(document.querySelectorAll('#queueBody tr[data-scheduled="false"]'));
+    const visible = unscheduled.filter(r => r.style.display !== 'none');
+    if (visible.length === 0) { showToast('All emails are already scheduled', 'info'); return; }
+
+    const btn = document.getElementById('scheduleAllBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">hourglass_empty</span> Scheduling...';
+
+    const ids = visible.map(r => r.dataset.emailId);
+    let completed = 0, failed = 0;
+
+    ids.forEach((emailId, idx) => {
+        setTimeout(() => {
+            fetch('/outreach/queue/' + emailId + '/schedule', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => { data.success ? completed++ : failed++; })
+            .catch(() => failed++)
+            .finally(() => {
+                if (completed + failed >= ids.length) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">schedule</span> Schedule All';
+                    showToast('Scheduled ' + completed + ' emails' + (failed > 0 ? ', ' + failed + ' failed' : ''), 'success');
+                    setTimeout(() => location.reload(), 1500);
+                }
+            });
+        }, idx * 300);
     });
 }
 
-/* ──────────────────────────────────────────────────────────────
-   SCHEDULE CARD — Chat 78
-   ────────────────────────────────────────────────────────────── */
-function scheduleCard(emailId) {
-    fetch('/outreach/queue/' + emailId + '/schedule', { method: 'POST' })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                showToast('Scheduled for ' + data.scheduled_display, 'success');
-                setTimeout(() => location.reload(), 800);
-            } else {
-                showToast(data.message || 'Could not schedule', 'error');
-            }
-        })
-        .catch(() => showToast('Network error', 'error'));
-}
-
-/* ──────────────────────────────────────────────────────────────
-   CANCEL SCHEDULE — Chat 78
-   ────────────────────────────────────────────────────────────── */
-function cancelSchedule(emailId) {
-    fetch('/outreach/queue/' + emailId + '/cancel-schedule', { method: 'POST' })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                showToast('Schedule cancelled', 'success');
-                setTimeout(() => location.reload(), 800);
-            } else {
-                showToast(data.message || 'Could not cancel', 'error');
-            }
-        })
-        .catch(() => showToast('Network error', 'error'));
-}
-
-/* ──────────────────────────────────────────────────────────────
-   INIT — all cards start collapsed; expand the first one
-   ────────────────────────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', function () {
-    const first = document.querySelector('.queue-card');
-    if (first) toggleCard(first.id);
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', function() {
+    qFilteredRows = Array.from(document.querySelectorAll('#queueBody tr'));
+    qRenderPage();
 });
 </script>
 {% endblock %}

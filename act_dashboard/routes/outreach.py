@@ -419,8 +419,13 @@ _TZ_ABBR = {
 
 
 def _find_next_send_window(country):
-    """Return next Tue/Wed/Thu 10:00 or 14:00 as a tz-aware datetime in lead's local zone."""
+    """Return next Tue/Wed/Thu ~9:54 as a tz-aware datetime in lead's local zone.
+
+    Morning only. Adds random jitter of ±5 minutes around 9:54
+    so emails arrive between 9:49–9:59 — looks more natural.
+    """
     import pytz
+    import random
     from datetime import timedelta
 
     tz_name = _COUNTRY_TZ.get(country or "")
@@ -433,22 +438,24 @@ def _find_next_send_window(country):
     local_now = now_utc.astimezone(tz)
 
     VALID_WEEKDAYS = {1, 2, 3}  # Tue=1, Wed=2, Thu=3
-    WINDOWS = [10, 14]
+    # Morning only: 9:54 with ±5 jitter → 9:49–9:59
+    WINDOWS = [(9, 54)]
 
     for day_offset in range(8):
         candidate = local_now + timedelta(days=day_offset)
         if candidate.weekday() not in VALID_WEEKDAYS:
             continue
-        for hour in WINDOWS:
-            local_candidate = candidate.replace(hour=hour, minute=0, second=0, microsecond=0)
+        for base_hour, base_minute in WINDOWS:
+            jitter = random.randint(-5, 5)
+            minute = base_minute + jitter
+            local_candidate = candidate.replace(hour=base_hour, minute=minute, second=0, microsecond=0)
             if local_candidate > local_now:
                 return local_candidate
 
-    # Fallback: next Tuesday at 10:00
-    import pytz as _pytz
+    # Fallback: next Tuesday at 9:54
     days_until_tuesday = (1 - local_now.weekday()) % 7 or 7
     return (local_now + timedelta(days=days_until_tuesday)).replace(
-        hour=10, minute=0, second=0, microsecond=0
+        hour=9, minute=54, second=0, microsecond=0
     )
 
 
@@ -538,12 +545,27 @@ def leads():
             "SELECT COUNT(*) FROM outreach_leads WHERE status = 'won'"
         ).fetchone()[0]
 
+        cold = conn.execute(
+            "SELECT COUNT(*) FROM outreach_leads WHERE status = 'cold'"
+        ).fetchone()[0]
+
+        queued = conn.execute(
+            "SELECT COUNT(*) FROM outreach_leads WHERE status = 'queued'"
+        ).fetchone()[0]
+
+        no_reply = conn.execute(
+            "SELECT COUNT(*) FROM outreach_leads WHERE status = 'no_reply'"
+        ).fetchone()[0]
+
         stats = {
             "total":     total,
+            "cold":      cold,
+            "queued":    queued,
             "contacted": contacted,
             "replies":   replies,
             "hot_leads": hot_leads,
             "won":       won,
+            "no_reply":  no_reply,
         }
 
         # ── Leads ────────────────────────────────────────────────────────────
@@ -688,28 +710,88 @@ def queue_email(lead_id):
         if existing > 0:
             return jsonify({"success": False, "message": "Email already queued or sent for this lead"}), 409
 
-        # Look up Step 1 template (sequence_step=1, active)
+        # Company-level send guard — check if another lead at the same company
+        # already has outreach (by company name OR email domain)
+        force = request.get_json(silent=True) or {}
+        if not force.get("force_company_override"):
+            _GENERIC_DOMAINS = {
+                "gmail.com", "outlook.com", "yahoo.com", "hotmail.com",
+                "live.com", "icloud.com", "aol.com", "mail.com", "protonmail.com",
+            }
+            lead_company = (lead.get("company") or "").strip().lower()
+            lead_email = (lead.get("email") or "").strip().lower()
+            lead_domain = lead_email.split("@")[1] if "@" in lead_email else ""
+
+            company_match = None
+
+            # Check by company name (case-insensitive)
+            if lead_company:
+                company_match = conn.execute(
+                    "SELECT l.full_name, l.company, l.status FROM outreach_leads l "
+                    "JOIN outreach_emails e ON l.lead_id = e.lead_id "
+                    "WHERE LOWER(TRIM(l.company)) = ? AND l.lead_id != ? "
+                    "AND e.status IN ('queued', 'sent') LIMIT 1",
+                    [lead_company, lead_id],
+                ).fetchone()
+
+            # Check by email domain (skip generic domains)
+            if not company_match and lead_domain and lead_domain not in _GENERIC_DOMAINS:
+                company_match = conn.execute(
+                    "SELECT l.full_name, l.company, l.status FROM outreach_leads l "
+                    "JOIN outreach_emails e ON l.lead_id = e.lead_id "
+                    "WHERE LOWER(l.email) LIKE ? AND l.lead_id != ? "
+                    "AND e.status IN ('queued', 'sent') LIMIT 1",
+                    [f"%@{lead_domain}", lead_id],
+                ).fetchone()
+
+            if company_match:
+                existing_name = company_match[0] or "Someone"
+                existing_company = company_match[1] or "this company"
+                return jsonify({
+                    "success": False,
+                    "company_conflict": True,
+                    "message": f"An outreach email has already been sent to {existing_name} at {existing_company}. Send anyway?",
+                }), 409
+
+        # Look up Step 1 template — prefer track-specific, fall back to generic
+        lead_track = lead.get("track") or ""
         tmpl = conn.execute(
             "SELECT template_id, subject, body, cv_attached_default "
-            "FROM outreach_templates WHERE sequence_step = 1 AND active = true LIMIT 1"
+            "FROM outreach_templates WHERE sequence_step = 1 AND active = true "
+            "AND track = ? LIMIT 1",
+            [lead_track],
         ).fetchone()
+        if not tmpl:
+            # Fallback: generic template (track IS NULL)
+            tmpl = conn.execute(
+                "SELECT template_id, subject, body, cv_attached_default "
+                "FROM outreach_templates WHERE sequence_step = 1 AND active = true "
+                "AND track IS NULL LIMIT 1"
+            ).fetchone()
         if not tmpl:
             return jsonify({"success": False, "message": "No active Step 1 template found"}), 500
         template_id, subject, body, cv_attached = tmpl
 
-        # Substitute template variables (templates use single-brace format)
+        # Substitute merge fields (single-brace format)
         full_name  = lead.get("full_name") or ""
         first_name = lead.get("first_name") or (full_name.split()[0] if full_name else "")
         subs = {
-            "first_name": first_name,
-            "last_name":  lead.get("last_name") or "",
-            "full_name":  full_name,
-            "company":    lead.get("company") or "",
-            "email":      lead.get("email") or "",
+            "contact_name": first_name,
+            "company_name": lead.get("company") or "",
+            "role_title":   lead.get("role") or "",
+            "location":     lead.get("city_state") or "",
+            # Backward compatibility
+            "first_name":   first_name,
+            "last_name":    lead.get("last_name") or "",
+            "full_name":    full_name,
+            "company":      lead.get("company") or "",
+            "email":        lead.get("email") or "",
+            "role":         lead.get("role") or "",
         }
         for key, val in subs.items():
-            subject = subject.replace("{" + key + "}", val)
-            body    = body.replace("{" + key + "}", val)
+            if val:
+                subject = subject.replace("{" + key + "}", val)
+                body    = body.replace("{" + key + "}", val)
 
         # Insert queued email
         email_id = str(uuid.uuid4())
@@ -753,6 +835,7 @@ def edit_lead(lead_id):
         "last_name":       (data.get("last_name") or "").strip(),
         "company":         (data.get("company") or "").strip(),
         "email":           (data.get("email") or "").strip(),
+        "role":            (data.get("role") or "").strip(),
         "city_state":      (data.get("city_state") or "").strip(),
         "country":         (data.get("country") or "").strip(),
         "track":           (data.get("track") or "").strip(),
@@ -801,7 +884,8 @@ def edit_lead(lead_id):
 # ── Status → pipeline stage mapping ──────────────────────────────────────────
 _STATUS_STAGE = {
     "cold": 1, "queued": 2, "contacted": 3, "followed_up": 4,
-    "no_reply": 5, "replied": 6, "reply_received": 6, "meeting": 7, "won": 8, "lost": 8,
+    "replied": 5, "reply_received": 5, "in_conversation": 5,
+    "meeting": 6, "won": 7, "lost": 7, "no_reply": 3,
 }
 
 
@@ -889,9 +973,8 @@ def add_lead():
     elif parts:
         first_name = parts[0]
 
-    # Default score by track
-    score_map = {"Agency": 3, "Recruiter": 2, "Direct": 3, "Job": 1}
-    score = score_map.get(track, 1)
+    # All new leads start at score 1 (Low) until manually upgraded
+    score = 1
 
     # Default timezone by country
     tz_map = {"UK": "GMT", "USA": "EST", "UAE": "GST", "Canada": "EST", "Australia": "AEST"}
@@ -967,7 +1050,7 @@ def queue():
             FROM outreach_emails e
             JOIN outreach_leads l ON e.lead_id = l.lead_id
             WHERE e.status = 'queued'
-            ORDER BY e.scheduled_at ASC
+            ORDER BY l.track ASC, e.scheduled_at ASC NULLS LAST
         """).fetchall()
 
         queued_emails = []
@@ -1084,7 +1167,8 @@ def queue_send(email_id):
         # Fetch email content + recipient from DB
         row = conn.execute("""
             SELECT e.lead_id, e.subject, e.body, e.cv_attached,
-                   l.email, l.first_name, l.full_name, l.company
+                   l.email, l.first_name, l.full_name, l.company,
+                   l.role, l.city_state
             FROM outreach_emails e
             JOIN outreach_leads l ON e.lead_id = l.lead_id
             WHERE e.email_id = ?
@@ -1092,18 +1176,25 @@ def queue_send(email_id):
         if not row:
             return jsonify({"success": False, "message": "Email not found"}), 404
 
-        lead_id, subject, body, cv_attached, to_email, first_name, full_name, company = row
+        lead_id, subject, body, cv_attached, to_email, first_name, full_name, company, role, city_state = row
 
-        # Substitute placeholders with lead data before sending
-        # Templates use single-brace format: {first_name}
+        # Substitute merge fields (single-brace format)
+        _first = first_name or (full_name.split()[0] if full_name else "")
         _vars = {
-            "first_name": first_name or (full_name.split()[0] if full_name else ""),
-            "full_name":  full_name or "",
-            "company":    company or "",
+            "contact_name": _first,
+            "company_name": company or "",
+            "role_title":   role or "",
+            "location":     city_state or "",
+            # Backward compatibility
+            "first_name":   _first,
+            "full_name":    full_name or "",
+            "company":      company or "",
+            "role":         role or "",
         }
         for key, val in _vars.items():
-            subject = subject.replace("{" + key + "}", val)
-            body    = body.replace("{" + key + "}", val)
+            if val:
+                subject = subject.replace("{" + key + "}", val)
+                body    = body.replace("{" + key + "}", val)
         print(f"[OUTREACH] send: email_id={email_id} to={to_email} subject='{subject[:60]}'")
 
         # Check daily sending limit
@@ -1915,7 +2006,7 @@ def replies():
         # ── Stats ────────────────────────────────────────────────────────────
         total_replies = conn.execute(
             "SELECT COUNT(*) FROM outreach_leads "
-            "WHERE status IN ('replied', 'reply_received', 'meeting', 'won')"
+            "WHERE status IN ('replied', 'reply_received', 'in_conversation', 'meeting', 'won')"
         ).fetchone()[0]
 
         unread_count = conn.execute(
@@ -1928,7 +2019,7 @@ def replies():
 
         awaiting_count = conn.execute(
             "SELECT COUNT(*) FROM outreach_leads "
-            "WHERE status IN ('replied', 'reply_received')"
+            "WHERE status IN ('replied', 'reply_received', 'in_conversation')"
         ).fetchone()[0]
 
         won_count = conn.execute(
@@ -1973,7 +2064,7 @@ def replies():
             FROM outreach_leads l
             LEFT JOIN latest_reply lr ON l.lead_id = lr.lead_id AND lr.rn = 1
             LEFT JOIN latest_sent  ls ON l.lead_id = ls.lead_id AND ls.rn = 1
-            WHERE l.status IN ('replied', 'reply_received', 'meeting', 'won')
+            WHERE l.status IN ('replied', 'reply_received', 'in_conversation', 'meeting', 'won')
             ORDER BY lr.received_at DESC NULLS LAST
         """).fetchall()
 
@@ -2321,14 +2412,14 @@ def templates():
     try:
         tmpl_rows = conn.execute(
             """SELECT template_id, name, email_type, sequence_step, subject, body,
-                      send_delay_days, cv_attached_default
+                      send_delay_days, cv_attached_default, track
                FROM outreach_templates
-               ORDER BY sequence_step ASC"""
+               ORDER BY track NULLS FIRST, sequence_step ASC"""
         ).fetchall()
 
         tmpl_cols = [
             "template_id", "name", "email_type", "sequence_step",
-            "subject", "body", "send_delay_days", "cv_attached_default",
+            "subject", "body", "send_delay_days", "cv_attached_default", "track",
         ]
 
         # Per-email-type stats from outreach_emails
@@ -2378,9 +2469,9 @@ def templates():
             )
             t["cv_class"] = "attach-on" if t["cv_attached_default"] else "attach-off"
 
-            # Detect template variables (preserve insertion order, deduplicate)
+            # Detect template variables — single-brace {var} format
             t["variables"] = list(
-                dict.fromkeys(_re.findall(r"\{\{(\w+)\}\}", t["body"] or ""))
+                dict.fromkeys(_re.findall(r"\{(\w+)\}", t["body"] or ""))
             )
 
             templates_list.append(t)
@@ -2794,6 +2885,183 @@ def analytics():
             available_clients=[],
             current_client_config=None,
         )
+    finally:
+        conn.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# APOLLO.IO INTEGRATION — Import saved contacts
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _load_apollo_key():
+    """Load Apollo API key from email_config.yaml."""
+    import yaml
+    config_path = Path(__file__).parent.parent / "secrets" / "email_config.yaml"
+    with open(config_path, "r") as f:
+        config = yaml.safe_load(f)
+    return config.get("apollo_api_key", "")
+
+
+@bp.route("/apollo/search", methods=["POST"])
+@login_required
+def apollo_search():
+    """Fetch ALL saved contacts from Apollo (all pages). AJAX — CSRF exempt."""
+    import requests as _requests
+
+    api_key = _load_apollo_key()
+    if not api_key:
+        return jsonify({"success": False, "message": "Apollo API key not configured"}), 500
+
+    try:
+        # Fetch all pages from Apollo
+        all_contacts = []
+        page = 1
+        while True:
+            resp = _requests.post(
+                "https://api.apollo.io/api/v1/contacts/search",
+                headers={"Content-Type": "application/json", "X-Api-Key": api_key},
+                json={"per_page": 100, "page": page},
+                timeout=15,
+            )
+            if resp.status_code != 200:
+                return jsonify({"success": False, "message": f"Apollo API error: {resp.status_code}"}), 502
+
+            result = resp.json()
+            contacts = result.get("contacts", [])
+            pagination = result.get("pagination", {})
+            all_contacts.extend(contacts)
+
+            total_pages = pagination.get("total_pages", 1)
+            if page >= total_pages or not contacts:
+                break
+            page += 1
+            if page > 20:  # Safety cap
+                break
+
+        # Get existing emails for duplicate detection
+        conn = get_outreach_db()
+        try:
+            existing_rows = conn.execute(
+                "SELECT LOWER(email) FROM outreach_leads"
+            ).fetchall()
+            existing_emails = {r[0] for r in existing_rows}
+        finally:
+            conn.close()
+
+        # Map Apollo fields to our display format
+        mapped = []
+        for c in all_contacts:
+            email = c.get("email") or ""
+            if not email:
+                continue  # Skip contacts without email
+            phones = c.get("phone_numbers") or []
+            phone = phones[0].get("sanitized_number", "") if phones else ""
+            mapped.append({
+                "apollo_id":   c.get("id", ""),
+                "first_name":  c.get("first_name") or "",
+                "last_name":   c.get("last_name") or "",
+                "name":        c.get("name") or "",
+                "title":       c.get("title") or "",
+                "company":     c.get("organization_name") or "",
+                "email":       email,
+                "phone":       phone,
+                "city":        c.get("city") or "",
+                "state":       c.get("state") or "",
+                "country":     c.get("country") or "",
+                "linkedin_url": c.get("linkedin_url") or "",
+                "already_imported": email.lower() in existing_emails,
+            })
+
+        # Sort by company name by default
+        mapped.sort(key=lambda x: (x.get("company") or "").lower())
+
+        return jsonify({
+            "success":  True,
+            "contacts": mapped,
+            "total":    len(mapped),
+        })
+    except Exception as e:
+        print(f"[APOLLO] Search error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@bp.route("/apollo/import", methods=["POST"])
+@login_required
+def apollo_import():
+    """Import selected Apollo contacts as outreach leads. AJAX — CSRF exempt."""
+    data = request.get_json(silent=True)
+    if not data or "contacts" not in data:
+        return jsonify({"success": False, "message": "No contacts provided"}), 400
+
+    contacts = data["contacts"]
+    track = data.get("track", "Recruiter")
+
+    # Country → timezone mapping
+    _tz_map = {"United Kingdom": "GMT", "United States": "EST", "Canada": "EST",
+               "Australia": "AEST", "New Zealand": "NZST", "UK": "GMT", "USA": "EST"}
+    # Country name normalisation for our short format
+    _country_map = {"United Kingdom": "UK", "United States": "USA", "US": "USA",
+                    "Canada": "Canada", "Australia": "Australia", "New Zealand": "NZ"}
+
+    conn = get_outreach_db()
+    imported = 0
+    skipped = 0
+    try:
+        for c in contacts:
+            email = (c.get("email") or "").strip().lower()
+            if not email:
+                skipped += 1
+                continue
+
+            # Duplicate check by email
+            exists = conn.execute(
+                "SELECT COUNT(*) FROM outreach_leads WHERE LOWER(email) = ?", [email]
+            ).fetchone()[0]
+            if exists > 0:
+                skipped += 1
+                continue
+
+            first_name = (c.get("first_name") or "").strip()
+            last_name = (c.get("last_name") or "").strip()
+            full_name = (c.get("name") or f"{first_name} {last_name}").strip()
+            company = (c.get("company") or "").strip()
+            role = (c.get("title") or "").strip()
+            city = (c.get("city") or "").strip()
+            state = (c.get("state") or "").strip()
+            city_state = f"{city}, {state}" if city and state else (city or state)
+            raw_country = (c.get("country") or "").strip()
+            country = _country_map.get(raw_country, raw_country)
+            if not country:
+                country = "UK"  # default
+            timezone = _tz_map.get(raw_country, _tz_map.get(country, "GMT"))
+            linkedin = (c.get("linkedin_url") or "").strip()
+            phone = (c.get("phone") or "").strip()
+            notes = f"Phone: {phone}" if phone else ""
+
+            lead_id = str(uuid.uuid4())
+            conn.execute(
+                """INSERT INTO outreach_leads
+                   (lead_id, first_name, last_name, full_name, company, role, email,
+                    linkedin_url, website, city_state, country, timezone,
+                    track, source, lead_type_score, status, progress_stage,
+                    notes, added_date, last_activity, sequence_step, do_not_contact)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                [lead_id, first_name, last_name, full_name, company, role, email,
+                 linkedin, "", city_state, country, timezone,
+                 track, "Apollo", 1, "cold", 1,
+                 notes, date.today(), datetime.now(), 0, False]
+            )
+            imported += 1
+
+        return jsonify({
+            "success": True,
+            "imported": imported,
+            "skipped": skipped,
+            "message": f"Imported {imported} leads, skipped {skipped} duplicates",
+        })
+    except Exception as e:
+        print(f"[APOLLO] Import error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
     finally:
         conn.close()
 

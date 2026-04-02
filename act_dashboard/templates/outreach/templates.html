@@ -107,10 +107,14 @@
         {# Track badges row #}
         <div class="template-track-row">
             <span class="track-label">Used for:</span>
-            <span class="track-badge track-job">Job</span>
-            <span class="track-badge track-recruiter">Recruiter</span>
-            <span class="track-badge track-agency">Agency</span>
-            <span class="track-badge track-direct">Direct</span>
+            {% if t.track %}
+                <span class="track-badge track-{{ t.track|lower }}">{{ t.track }}</span>
+            {% else %}
+                <span class="track-badge track-job">Job</span>
+                <span class="track-badge track-recruiter">Recruiter</span>
+                <span class="track-badge track-agency">Agency</span>
+                <span class="track-badge track-direct">Direct</span>
+            {% endif %}
         </div>
 
         {# Body #}
@@ -188,14 +192,14 @@
             <div class="tpl-form-group">
                 <label class="form-label">Body</label>
                 <div class="var-chips-row">
-                    <span style="font-size:11px;color:#9aa0a6;">Insert variable:</span>
-                    <span class="var-chip-insert" onclick="insertVar('first_name')">&#123;&#123;first_name&#125;&#125;</span>
-                    <span class="var-chip-insert" onclick="insertVar('company')">&#123;&#123;company&#125;&#125;</span>
-                    <span class="var-chip-insert" onclick="insertVar('track')">&#123;&#123;track&#125;&#125;</span>
-                    <span class="var-chip-insert" onclick="insertVar('role')">&#123;&#123;role&#125;&#125;</span>
+                    <span style="font-size:11px;color:#9aa0a6;">Insert merge field:</span>
+                    <span class="var-chip-insert" onclick="insertVar('contact_name')">&#123;contact_name&#125;</span>
+                    <span class="var-chip-insert" onclick="insertVar('company_name')">&#123;company_name&#125;</span>
+                    <span class="var-chip-insert" onclick="insertVar('role_title')">&#123;role_title&#125;</span>
+                    <span class="var-chip-insert" onclick="insertVar('location')">&#123;location&#125;</span>
                 </div>
                 <textarea class="tpl-form-textarea" id="tplModalBody"></textarea>
-                <div class="form-hint">Use &#123;&#123;first_name&#125;&#125;, &#123;&#123;company&#125;&#125; etc. These are replaced automatically when the email is generated.</div>
+                <div class="form-hint">Use &#123;contact_name&#125;, &#123;company_name&#125; etc. These are replaced with lead data when the email is queued.</div>
             </div>
 
             <div class="tpl-form-group">
@@ -339,7 +343,7 @@ function closeTplModal(e) {
 
 /* ── Insert variable at cursor ── */
 function insertVar(varName) {
-    const v     = '{' + '{' + varName + '}' + '}';
+    const v     = '{' + varName + '}';
     const ta    = document.getElementById('tplModalBody');
     const start = ta.selectionStart;
     const end   = ta.selectionEnd;

@@ -4,13 +4,22 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/outreach.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rules.css') }}">
 {% endblock %}
 
 {# ── Custom top navbar (replaces default Bootstrap navbar context) ── #}
 {% block page_header %}
 <div class="outreach-top-navbar">
     <div class="outreach-top-navbar-title">Outreach — Leads</div>
-    <div class="outreach-top-navbar-right">
+    <div class="outreach-top-navbar-right" style="display:flex;gap:8px;align-items:center;">
+        <button class="columns-btn" id="apolloImportBtn" onclick="openApolloPanel()">
+            <span class="material-symbols-outlined" style="font-size:16px;">cloud_download</span>
+            Import from Apollo
+        </button>
+        <button class="columns-btn" id="syncSheetsBtn" onclick="syncFromSheets()">
+            <span class="material-symbols-outlined" style="font-size:16px;">sync</span>
+            Sync from Sheets
+        </button>
         <button class="create-btn" onclick="openAddModal()">+ Add Lead</button>
     </div>
 </div>
@@ -19,135 +28,55 @@
 {% block content %}
 <div class="outreach-content">
 
-    {# ── Stats Row ── #}
-    <div class="stats-row">
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon">group</span>
-            <div>
-                <div class="stat-val">{{ stats.total }}</div>
-                <div class="stat-lbl">Total leads</div>
-            </div>
+    {# ── Status Tab Filters (Jobs-page style) ── #}
+    <div class="leads-toolbar">
+        <div class="rules-sub-tabs" id="statusTabs">
+            <button class="rules-sub-tab active" onclick="setTabFilter('', this)">All <span class="rules-sub-badge" style="background:#6b7280;color:#fff;">{{ stats.total }}</span></button>
+            <button class="rules-sub-tab" onclick="setTabFilter('Cold', this)">Cold <span class="rules-sub-badge" style="background:#9ca3af;color:#fff;">{{ stats.cold }}</span></button>
+            <button class="rules-sub-tab" onclick="setTabFilter('Queued', this)">Queued <span class="rules-sub-badge" style="background:#3b82f6;color:#fff;">{{ stats.queued }}</span></button>
+            <button class="rules-sub-tab" onclick="setTabFilter('Contacted', this)">Contacted <span class="rules-sub-badge" style="background:#1e40af;color:#fff;">{{ stats.contacted }}</span></button>
+            <button class="rules-sub-tab" onclick="setTabFilter('Reply Received', this)">Replied <span class="rules-sub-badge" style="background:#16a34a;color:#fff;">{{ stats.replies }}</span></button>
+            <button class="rules-sub-tab" onclick="setTabFilter('Won', this)">Won <span class="rules-sub-badge" style="background:#166534;color:#fff;">{{ stats.won }}</span></button>
+            <button class="rules-sub-tab" onclick="setTabFilter('No Reply', this)">No reply <span class="rules-sub-badge" style="background:#9ca3af;color:#fff;">{{ stats.no_reply }}</span></button>
         </div>
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon">send</span>
-            <div>
-                <div class="stat-val">{{ stats.contacted }}</div>
-                <div class="stat-lbl">Contacted</div>
+        <div class="leads-toolbar-right">
+            <span class="result-count" id="resultCount">Showing {{ leads|length }} leads</span>
+            <div class="rows-per-page">
+                Rows per page:
+                <select id="rowsPerPageSelect" onchange="changeRowsPerPage()">
+                    <option value="10">10</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
             </div>
-        </div>
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon">forum</span>
-            <div>
-                <div class="stat-val">{{ stats.replies }}</div>
-                <div class="stat-lbl">Replies</div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon">local_fire_department</span>
-            <div>
-                <div class="stat-val stat-val-hot">{{ stats.hot_leads }}</div>
-                <div class="stat-lbl">Hot leads</div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon">check_circle</span>
-            <div>
-                <div class="stat-val stat-val-won">{{ stats.won }}</div>
-                <div class="stat-lbl">Won</div>
-            </div>
+            <select class="filter-select" id="filterTrack" onchange="filterTable()">
+                <option value="">All tracks</option>
+                <option value="Agency">Agency</option>
+                <option value="Recruiter">Recruiter</option>
+                <option value="Direct">Direct</option>
+                <option value="Job">Job</option>
+            </select>
+            <input class="filter-search" type="text" id="searchInput"
+                   placeholder="Search…" oninput="filterTable()" style="max-width:200px;">
         </div>
     </div>
-
-    {# ── Filter Section ── #}
-    <div class="filter-section">
-        <span class="filter-label">Search:</span>
-        <input class="filter-search" type="text" id="searchInput"
-               placeholder="Company, contact or email…" oninput="filterTable()">
-        <select class="filter-select" id="filterTrack" onchange="filterTable()">
-            <option value="">All tracks</option>
-            <option value="Agency">Agency</option>
-            <option value="Recruiter">Recruiter</option>
-            <option value="Direct">Direct</option>
-            <option value="Job">Job</option>
-        </select>
-        <select class="filter-select" id="filterCountry" onchange="filterTable()">
-            <option value="">All countries</option>
-            <option value="UK">🇬🇧 UK</option>
-            <option value="USA">🇺🇸 USA</option>
-            <option value="UAE">🇦🇪 UAE</option>
-            <option value="Canada">🇨🇦 Canada</option>
-            <option value="Australia">🇦🇺 Australia</option>
-        </select>
-        <select class="filter-select" id="filterStatus" onchange="filterTable()">
-            <option value="">All statuses</option>
-            <option value="Cold">Cold</option>
-            <option value="Queued">Queued</option>
-            <option value="Contacted">Contacted</option>
-            <option value="Followed Up">Followed Up</option>
-            <option value="Replied">Replied</option>
-            <option value="Meeting">Meeting</option>
-            <option value="Won">Won</option>
-            <option value="Lost">Lost</option>
-            <option value="No Reply">No Reply</option>
-        </select>
-        <select class="filter-select" id="filterSource" onchange="filterTable()">
-            <option value="">All sources</option>
-            <option value="Apollo">Apollo</option>
-            <option value="Indeed">Indeed</option>
-            <option value="Manual">Manual</option>
-        </select>
-        <button class="filter-reset" onclick="resetFilters()">Reset</button>
-    </div>
-
-    <div class="result-count" id="resultCount">Showing {{ leads|length }} leads</div>
 
     {# ── Table Container ── #}
     <div class="table-outer">
-        <div class="top-controls">
-            <div class="left-controls">
-                <div class="filter-tabs">
-                    <button class="filter-tab active" onclick="setTabFilter('', this)">All</button>
-                    <button class="filter-tab" onclick="setTabFilter('active', this)">Active</button>
-                    <button class="filter-tab" onclick="setTabFilter('Won', this)">Won</button>
-                    <button class="filter-tab" onclick="setTabFilter('No Reply', this)">No reply</button>
-                </div>
-                <div class="rows-per-page">
-                    Rows per page:
-                    <select id="rowsPerPageSelect" onchange="changeRowsPerPage()">
-                        <option value="10">10</option>
-                        <option value="25" selected>25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
-                </div>
-            </div>
-            <div class="right-controls">
-                <button class="columns-btn" id="syncSheetsBtn" onclick="syncFromSheets()">
-                    <span class="material-symbols-outlined" style="font-size:16px;">sync</span>
-                    Sync from Sheets
-                </button>
-                <button class="columns-btn" onclick="showToast('Column selector coming soon', 'info')">
-                    <span class="material-symbols-outlined" style="font-size:16px;">view_column</span>
-                    Columns
-                </button>
-            </div>
-        </div>
-
         <div class="table-wrapper">
             <table class="leads-table" id="leadsTable">
                 <thead>
                     <tr>
-                        <th>Status</th>
-                        <th>Company &amp; contact</th>
-                        <th>Email</th>
-                        <th>City / State</th>
-                        <th>Country</th>
-                        <th>Track</th>
-                        <th>Source</th>
-                        <th>Type score</th>
-                        <th>Pipeline progress</th>
-                        <th>Added <span class="sort-icon">↓</span></th>
-                        <th>Actions</th>
+                        <th class="leads-col-added">Added <span class="sort-icon">↓</span></th>
+                        <th class="leads-col-status">Status</th>
+                        <th class="leads-col-company">Company</th>
+                        <th class="leads-col-contact">Contact</th>
+                        <th class="leads-col-role">Role</th>
+                        <th class="leads-col-email">Email</th>
+                        <th class="leads-col-location">Location</th>
+                        <th class="leads-col-track">Track</th>
+                        <th class="leads-col-priority">Priority</th>
                     </tr>
                 </thead>
                 <tbody id="leadsBody">
@@ -159,65 +88,38 @@
                     data-status="{{ lead.status_display }}"
                     data-source="{{ lead.source }}">
 
+                    {# Added date #}
+                    <td class="date-cell">{{ lead.added_date_fmt }}</td>
+
                     {# Status — dot + label #}
                     <td class="status-cell s-{{ lead.status_css }}">
                         <span class="status-dot"></span>
                         <span class="status-label">{{ lead.status_display }}</span>
                     </td>
 
-                    {# Company & contact #}
-                    <td>
-                        <div class="company-name">{{ lead.company }}</div>
-                        <div class="contact-sub">{{ lead.contact_display }}</div>
-                    </td>
+                    {# Company #}
+                    <td><div class="company-name">{{ lead.company }}</div></td>
+
+                    {# Contact name #}
+                    <td class="contact-cell">{{ lead.full_name or '—' }}</td>
+
+                    {# Role #}
+                    <td><div class="role-clamp">{{ lead.role or '—' }}</div></td>
 
                     {# Email #}
                     <td class="email-cell">{{ lead.email }}</td>
 
-                    {# City / State #}
-                    <td>{{ lead.city_state or '—' }}</td>
-
-                    {# Country #}
-                    <td>{{ lead.country }}</td>
+                    {# Location — City/State + Country flag #}
+                    <td><div class="location-clamp">{{ lead.city_state or '—' }}{% if lead.flag %} {{ lead.flag }}{% endif %}</div></td>
 
                     {# Track badge #}
                     <td>
                         <span class="track-badge {{ lead.track_css }}">{{ lead.track }}</span>
                     </td>
 
-                    {# Source #}
-                    <td><span class="source-badge">{{ lead.source }}</span></td>
-
-                    {# Type score #}
+                    {# Priority — coloured pill #}
                     <td>
-                        <span class="type-score {{ lead.score_css }}">{{ lead.score_label }}</span>
-                    </td>
-
-                    {# Pipeline progress — 8 pips #}
-                    <td>
-                        <div class="progress-bar-outer prog-{{ lead.prog_css }}">
-                            {% for i in range(8) %}
-                            <div class="progress-pip {% if i < lead.progress_stage %}filled{% endif %}"></div>
-                            {% endfor %}
-                        </div>
-                    </td>
-
-                    {# Added date #}
-                    <td class="date-cell">{{ lead.added_date_fmt }}</td>
-
-                    {# Actions dropdown #}
-                    <td class="actions-cell" onclick="event.stopPropagation()">
-                        <button class="actions-btn" onclick="toggleDropdown(this)">Actions ▾</button>
-                        <div class="actions-dropdown">
-                            <button onclick="openPanel('{{ lead.lead_id }}')">👁 View prospect</button>
-                            <button onclick="queueEmailForLead('{{ lead.lead_id }}', this)">+ Queue email</button>
-                            <button onclick="openStatusModal('{{ lead.lead_id }}')">📋 Update status</button>
-                            <div class="dropdown-divider"></div>
-                            <button onclick="markWon('{{ lead.lead_id }}', this)">✓ Mark won</button>
-                            <button class="danger" onclick="markLost('{{ lead.lead_id }}', this)">✕ Mark lost</button>
-                            <div class="dropdown-divider"></div>
-                            <button class="danger" onclick="deleteLead('{{ lead.lead_id }}', this)">🗑 Delete</button>
-                        </div>
+                        <span class="leads-priority-pill lp-{{ lead.score_css }}">{{ lead.score_label }}</span>
                     </td>
                 </tr>
                 {% endfor %}
@@ -241,90 +143,185 @@
 
 <div class="si-panel" id="siPanel">
 
-    {# ── Fixed Header ── #}
+    {# ── Fixed Header (dark) ── #}
     <div class="si-header">
-        <div class="si-header-top">
-            <div>
-                <div class="si-name" id="siName">—</div>
-                <div class="si-email" id="siEmail">—</div>
+
+        {# Display mode #}
+        <div id="siHeaderDisplay">
+            <div class="si-header-top">
+                <div>
+                    <div class="si-name" id="siName">—</div>
+                    <div class="si-contact-row" id="siContactRow">—</div>
+                </div>
+                <button class="si-close" onclick="closePanel()">✕</button>
             </div>
-            <button class="si-close" onclick="closePanel()">✕</button>
+            <div class="si-badges" id="siBadges">
+                <div class="si-badges-left" id="siBadgesLeft"></div>
+                <div class="si-badges-right" id="siBadgesRight"></div>
+            </div>
         </div>
-        <div class="si-badges" id="siBadges"></div>
+
+        {# Edit mode (hidden by default) #}
+        <div id="siHeaderEdit" style="display:none;">
+            <div class="si-header-top">
+                <div style="flex:1;">
+                    <div class="si-edit-label">Company</div>
+                    <input type="text" class="si-edit-input si-edit-company" id="siEditCompany" placeholder="Company name">
+                </div>
+                <button class="si-close" onclick="siCancelEdit()">✕</button>
+            </div>
+            <div class="si-edit-row">
+                <div style="flex:1;">
+                    <div class="si-edit-label">Contact name</div>
+                    <input type="text" class="si-edit-input" id="siEditContact" placeholder="Contact name">
+                </div>
+                <div style="flex:1;">
+                    <div class="si-edit-label">Email</div>
+                    <input type="email" class="si-edit-input" id="siEditEmail" placeholder="Email">
+                </div>
+            </div>
+            <div class="si-edit-row">
+                <div style="flex:1;">
+                    <div class="si-edit-label">Role / Job title</div>
+                    <input type="text" class="si-edit-input" id="siEditRole" placeholder="Role / Job title">
+                </div>
+                <div style="flex:1;">
+                    <div class="si-edit-label">City / State</div>
+                    <input type="text" class="si-edit-input" id="siEditCity" placeholder="City / State">
+                </div>
+            </div>
+            <div class="si-edit-row">
+                <div style="flex:1;">
+                    <div class="si-edit-label">Track</div>
+                    <select class="si-edit-select" id="siEditTrack">
+                        <option value="">Track...</option>
+                        <option value="Agency">Agency</option>
+                        <option value="Recruiter">Recruiter</option>
+                        <option value="Direct">Direct</option>
+                        <option value="Job">Job</option>
+                    </select>
+                </div>
+                <div style="flex:1;">
+                    <div class="si-edit-label">Country</div>
+                    <select class="si-edit-select" id="siEditCountry">
+                        <option value="">Country...</option>
+                        <option value="UK">UK</option>
+                        <option value="USA">USA</option>
+                        <option value="UAE">UAE</option>
+                        <option value="Canada">Canada</option>
+                        <option value="Australia">Australia</option>
+                    </select>
+                </div>
+                <div style="flex:1;">
+                    <div class="si-edit-label">Source</div>
+                    <select class="si-edit-select" id="siEditSource">
+                        <option value="">Source...</option>
+                        <option value="Apollo">Apollo</option>
+                        <option value="Indeed">Indeed</option>
+                        <option value="Manual">Manual</option>
+                    </select>
+                </div>
+                <div style="flex:1;">
+                    <div class="si-edit-label">Priority</div>
+                    <select class="si-edit-select" id="siEditPriority">
+                        <option value="Cold">Low</option>
+                        <option value="Warm">Medium</option>
+                        <option value="Hot">High</option>
+                    </select>
+                </div>
+            </div>
+            <div class="si-edit-actions">
+                <button class="si-edit-save" onclick="siSaveEdit()">Save changes</button>
+                <button class="si-edit-cancel" onclick="siCancelEdit()">Cancel</button>
+            </div>
+        </div>
+
+        {# Progress bar (always visible) #}
         <div class="si-progress" id="siProgress"></div>
         <div class="si-prog-labels">
-            <div class="si-prog-label">Cold</div>
-            <div class="si-prog-label">Queued</div>
-            <div class="si-prog-label">Contacted</div>
-            <div class="si-prog-label">Reply Received</div>
-            <div class="si-prog-label">Meeting</div>
-            <div class="si-prog-label">Won</div>
+            <div class="si-prog-label" data-status="cold" onclick="siClickStage('cold')">Cold</div>
+            <div class="si-prog-label" data-status="queued" onclick="siClickStage('queued')">Queued</div>
+            <div class="si-prog-label" data-status="contacted" onclick="siClickStage('contacted')">Contacted</div>
+            <div class="si-prog-label" data-status="followed_up" onclick="siClickStage('followed_up')">Followed Up</div>
+            <div class="si-prog-label" data-status="in_conversation" onclick="siClickStage('in_conversation')">In Conversation</div>
+            <div class="si-prog-label" data-status="meeting" onclick="siClickStage('meeting')">Meeting</div>
+            <div class="si-prog-label" data-status="won" onclick="siClickStage('won')">Won</div>
+        </div>
+        <div class="si-exit-states">
+            <button class="si-exit-btn" onclick="siClickStage('no_reply')">No Reply</button>
+            <button class="si-exit-btn si-exit-lost" onclick="siClickStage('lost')">Lost</button>
         </div>
     </div>
 
-    {# ── Scrollable Body ── #}
+    {# ── Scrollable Body: Thread only ── #}
     <div class="si-body">
-
-        {# Composer #}
-        <div class="si-composer">
-            <div class="si-composer-label">Reply</div>
-            <textarea class="si-composer-textarea" id="siComposerText" placeholder="Write a reply…"></textarea>
-            <div class="si-composer-toolbar">
-                <button class="si-toolbar-btn bold" onclick="siFormatBold()">B</button>
-                <button class="si-toolbar-btn italic" onclick="siFormatItalic()">I</button>
-                <label class="si-sig-toggle" id="siSigToggle" onclick="siToggleSignature()">
-                    <div class="si-toggle-pip" id="siSigPip"></div>
-                    + Signature
-                </label>
-                <button class="si-send-btn" onclick="siSendReply()">Send Reply</button>
-            </div>
-            {# CV attach toggle #}
-            <div class="si-cv-row" id="siCvRow" style="margin-top:6px;">
-                <label class="si-cv-label" id="siCvLabel" title="">
-                    <input type="checkbox" id="siCvCheck" disabled style="margin-right:5px;">
-                    Attach CV
-                </label>
-            </div>
-            {# Signature preview #}
-            <div id="siSigPreview" style="margin-top:8px;padding:8px 12px;border:1px solid #e8eaed;border-radius:6px;background:#f8f9fa;font-size:11px;color:#9aa0a6;line-height:1.5;display:block;">
-                <strong style="color:#888;">Christopher Hoole</strong><br>
-                Google Ads Specialist | 16 Years Experience<br>
-                chris@christopherhoole.com<br>
-                https://christopherhoole.com
-            </div>
-        </div>
-
-        {# Notes #}
-        <div class="si-notes">
-            <div class="si-notes-header">
-                <span class="si-notes-title">Notes</span>
-                <button class="si-notes-edit-btn" id="siNotesEditBtn" onclick="siStartEditNotes()">Edit</button>
-            </div>
-            <div id="siNotesDisplay"></div>
-            <div id="siNotesEditWrap" class="si-notes-edit-wrap" style="display:none;">
-                <textarea class="si-notes-textarea" id="siNotesTextarea" placeholder="Add notes about this lead…"></textarea>
-                <div class="si-notes-save-row">
-                    <button class="si-notes-save-btn" onclick="siSaveNotes()">Save</button>
-                    <button class="si-notes-cancel-btn" onclick="siCancelNotes()">Cancel</button>
+        <div class="si-thread">
+            <div class="si-thread-label">Conversation</div>
+            <div id="siThread">
+                <div class="si-thread-empty" id="siThreadEmpty">
+                    No emails yet — queue an email to start the conversation
                 </div>
             </div>
         </div>
-
-        {# Thread #}
-        <div class="si-thread">
-            <div class="si-thread-label">Conversation</div>
-            <div id="siThread"></div>
-        </div>
-
     </div>{# /si-body #}
 
-    {# ── Fixed Footer ── #}
-    <div class="si-footer">
-        <button id="panelQueueEmailBtn" class="si-footer-btn primary" onclick="siQueueEmail()">+ Queue email</button>
-        <button class="si-footer-btn" onclick="openEditModal()">✏ Edit lead</button>
-        <button class="si-footer-btn success" onclick="siMarkWon()">✓ Mark won</button>
-        <button class="si-footer-btn danger" onclick="siMarkLost()">✕ Mark lost</button>
-        <button class="si-footer-btn" onclick="openStatusModal(currentLeadId)">Update status</button>
+    {# ── Fixed Bottom: Notes bar + Composer + Footer ── #}
+    <div class="si-bottom-fixed">
+
+        {# Collapsible Notes bar #}
+        <div class="si-notes-bar" id="siNotesBar" onclick="siToggleNotes()">
+            <span class="si-notes-bar-icon">📝</span>
+            <span class="si-notes-bar-text" id="siNotesBarText">Notes: Click to add...</span>
+            <span class="si-notes-bar-arrow" id="siNotesBarArrow">▾</span>
+        </div>
+        <div class="si-notes-expand" id="siNotesExpand" style="display:none;">
+            <textarea class="si-notes-textarea" id="siNotesTextarea" placeholder="Add notes about this lead…"></textarea>
+            <div class="si-notes-save-row">
+                <button class="si-notes-save-btn" onclick="siSaveNotes()">Save</button>
+                <button class="si-notes-cancel-btn" onclick="siCancelNotes()">Cancel</button>
+            </div>
+        </div>
+
+        {# Reply Composer #}
+        <div class="si-composer">
+            <div class="si-composer-label">Reply</div>
+            <textarea class="si-composer-textarea" id="siComposerText" placeholder="Write a reply…"
+                      oninput="siAutoGrow(this)"></textarea>
+            <div class="si-composer-options">
+                <div class="si-composer-options-left">
+                    <button class="si-toolbar-btn bold" onclick="siFormatBold()">B</button>
+                    <button class="si-toolbar-btn italic" onclick="siFormatItalic()">I</button>
+                    <label class="si-sig-toggle" id="siSigToggle" onclick="siToggleSignature()">
+                        <div class="si-toggle-pip" id="siSigPip"></div>
+                        Signature
+                    </label>
+                    <label class="si-cv-label" id="siCvLabel">
+                        <input type="checkbox" id="siCvCheck" disabled style="margin-right:4px;">
+                        CV
+                    </label>
+                </div>
+                <button class="si-send-btn-new" onclick="siSendReply()">Send Reply</button>
+            </div>
+            {# Signature preview #}
+            <div id="siSigPreview" class="si-sig-preview">
+                <strong>Christopher Hoole</strong><br>
+                Google Ads Specialist | 16 Years Experience<br>
+                +44 7451 252857<br>
+                chris@christopherhoole.com<br>
+                christopherhoole.com
+            </div>
+        </div>
+
+        {# Footer actions #}
+        <div class="si-footer">
+            <div class="si-footer-group">
+                <button id="panelQueueEmailBtn" class="si-footer-btn primary" onclick="siQueueEmail()">+ Queue email</button>
+                <button class="si-footer-btn" onclick="siStartEdit()">Edit lead</button>
+            </div>
+            <div class="si-footer-group">
+                <button class="si-footer-btn danger-text" onclick="deleteLead(currentLeadId)">Delete</button>
+            </div>
+        </div>
     </div>
 
 </div>{# /si-panel #}
@@ -350,9 +347,15 @@
                     <input class="form-input" type="text" id="addContactName" placeholder="e.g. Sarah Mitchell">
                 </div>
             </div>
-            <div class="form-row">
-                <label class="form-label">Email address *</label>
-                <input class="form-input" type="email" id="addEmail" placeholder="e.g. sarah@digitaltalentgroup.com">
+            <div class="form-grid-2">
+                <div>
+                    <label class="form-label">Email address *</label>
+                    <input class="form-input" type="email" id="addEmail" placeholder="e.g. sarah@digitaltalentgroup.com">
+                </div>
+                <div>
+                    <label class="form-label">Role / Job Title</label>
+                    <input class="form-input" type="text" id="addRole" placeholder="e.g. PPC Manager">
+                </div>
             </div>
             <div class="form-grid-3">
                 <div>
@@ -471,9 +474,15 @@
             </div>
             <div class="form-grid-2">
                 <div>
+                    <label class="form-label">Role / Job Title</label>
+                    <input class="form-input" type="text" id="editRole" placeholder="e.g. PPC Manager">
+                </div>
+                <div>
                     <label class="form-label">City / State</label>
                     <input class="form-input" type="text" id="editCityState">
                 </div>
+            </div>
+            <div class="form-grid-2">
                 <div>
                     <label class="form-label">Country</label>
                     <select class="form-select-modal" id="editCountry">
@@ -498,7 +507,7 @@
                     </select>
                 </div>
                 <div>
-                    <label class="form-label">Type Score</label>
+                    <label class="form-label">Priority</label>
                     <select class="form-select-modal" id="editTypeScore">
                         <option value="">Select…</option>
                         <option>Cold</option>
@@ -538,6 +547,60 @@
                 <button type="button" class="btn btn-danger" onclick="confirmDelete()">Delete</button>
             </div>
         </div>
+    </div>
+</div>
+
+{# ── Apollo Import Panel ── #}
+<div id="apolloPanel" style="display:none;position:fixed;top:0;right:0;width:900px;height:100vh;background:#fff;box-shadow:-4px 0 20px rgba(0,0,0,0.15);z-index:1100;overflow-y:auto;transition:transform .25s ease;transform:translateX(100%);">
+    <div style="padding:20px;border-bottom:1px solid #e8eaed;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+            <h3 style="margin:0;font-size:18px;">Import from Apollo</h3>
+            <p style="margin:4px 0 0;font-size:12px;color:#9aa0a6;" id="apolloStatusText">Loading contacts from your Apollo account…</p>
+        </div>
+        <button onclick="closeApolloPanel()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;">✕</button>
+    </div>
+    <div style="padding:16px 20px;border-bottom:1px solid #e8eaed;display:flex;gap:12px;align-items:center;">
+        <label style="font-size:13px;font-weight:600;">Track:</label>
+        <select id="apolloTrack" style="padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;">
+            <option value="Recruiter">Recruiter</option>
+            <option value="Agency">Agency</option>
+            <option value="Direct">Direct</option>
+            <option value="Job">Job</option>
+        </select>
+        <label style="margin-left:auto;font-size:12px;color:#888;">
+            <input type="checkbox" id="apolloSelectAll" onchange="toggleApolloSelectAll(this.checked)"> Select all
+        </label>
+        <button id="apolloImportSelectedBtn" onclick="importApolloSelected()" style="padding:6px 16px;background:#1a73e8;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">
+            Import selected
+        </button>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;" id="apolloTable">
+        <colgroup>
+            <col style="width:30px;">
+            <col style="width:15%;">
+            <col style="width:22%;">
+            <col style="width:17%;">
+            <col style="width:28%;">
+            <col style="width:12%;"
+        </colgroup>
+        <thead>
+            <tr style="background:#f8f9fa;border-bottom:2px solid #e8eaed;">
+                <th style="padding:6px 8px;text-align:left;"></th>
+                <th style="padding:6px 8px;text-align:left;">Name</th>
+                <th style="padding:6px 8px;text-align:left;">Title</th>
+                <th style="padding:6px 8px;text-align:left;cursor:pointer;" onclick="sortApolloByCompany()">Company ↕</th>
+                <th style="padding:6px 8px;text-align:left;">Email</th>
+                <th style="padding:6px 8px;text-align:left;">Location</th>
+            </tr>
+        </thead>
+        <tbody id="apolloBody">
+            <tr><td colspan="6" style="padding:40px;text-align:center;color:#aaa;">Loading…</td></tr>
+        </tbody>
+    </table>
+    <div id="apolloPagination" style="padding:12px 20px;text-align:center;display:none;">
+        <button id="apolloPrevBtn" onclick="loadApolloPage(apolloCurrentPage-1)" style="padding:6px 14px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;margin-right:8px;">← Prev</button>
+        <span id="apolloPageInfo" style="font-size:13px;color:#666;"></span>
+        <button id="apolloNextBtn" onclick="loadApolloPage(apolloCurrentPage+1)" style="padding:6px 14px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;margin-left:8px;">Next →</button>
     </div>
 </div>
 
@@ -605,48 +668,117 @@ function esc(str) {
         .replace(/"/g, '&quot;');
 }
 
-// 6-stage progress: Cold=1, Queued=2, Contacted=3, Replied=4, Meeting=5, Won=6
+// 7-stage progress: Cold=1, Queued=2, Contacted=3, Followed Up=4, In Conversation=5, Meeting=6, Won=7
 const SI_STAGE_MAP = {
-    cold:1, queued:2, contacted:3, followed_up:3, no_reply:3,
-    replied:4, reply_received:4, in_conversation:4,
-    meeting:5, won:6, lost:6
+    cold:1, queued:2, contacted:3, followed_up:4, no_reply:3,
+    replied:5, reply_received:5, in_conversation:5,
+    meeting:6, won:7, lost:7
 };
+
+// Status dot colours — must match table dot colours
+const SI_DOT_COLORS = {
+    cold:'#9ca3af', queued:'#3b82f6', contacted:'#1e40af', followed_up:'#d97706',
+    replied:'#16a34a', reply_received:'#16a34a', in_conversation:'#1e40af',
+    meeting:'#e8710a', won:'#166534', lost:'#dc2626', no_reply:'#9ca3af'
+};
+
+function siUpdateProgressBar(status) {
+    const stage = SI_STAGE_MAP[status] || 1;
+    const bars = Array.from({length:7}, (_,i) => {
+        const cls = i+1 < stage ? 'done' : (i+1 === stage ? 'active' : '');
+        return `<div class="si-prog-stage ${cls}"></div>`;
+    }).join('');
+    document.getElementById('siProgress').innerHTML = bars;
+
+    // Update labels
+    document.querySelectorAll('.si-prog-label').forEach((label, i) => {
+        label.classList.remove('active', 'done');
+        const labelStage = i + 1;
+        if (labelStage < stage) label.classList.add('done');
+        else if (labelStage === stage) label.classList.add('active');
+    });
+
+    // Highlight exit states if active
+    document.querySelectorAll('.si-exit-btn').forEach(btn => btn.classList.remove('active'));
+    if (status === 'no_reply' || status === 'lost') {
+        const selector = status === 'lost' ? '.si-exit-lost' : '.si-exit-btn:not(.si-exit-lost)';
+        const btn = document.querySelector(selector);
+        if (btn) btn.classList.add('active');
+    }
+}
+
+function siClickStage(newStatus) {
+    if (!currentLeadId) return;
+    fetch(`/outreach/leads/${currentLeadId}/update-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // Update local data
+            const lead = LEADS_DATA.find(l => l.lead_id === currentLeadId);
+            if (lead) {
+                lead.status = newStatus;
+                const displayMap = {
+                    cold:'Cold', queued:'Queued', contacted:'Contacted',
+                    followed_up:'Followed Up', reply_received:'Reply Received',
+                    in_conversation:'In Conversation', meeting:'Meeting',
+                    won:'Won', lost:'Lost', no_reply:'No Reply'
+                };
+                lead.status_display = displayMap[newStatus] || newStatus;
+            }
+            siUpdateProgressBar(newStatus);
+            // Update status badge in header
+            const dotColor = SI_DOT_COLORS[newStatus] || '#9ca3af';
+            const statusDisplay = lead ? lead.status_display : newStatus;
+            document.getElementById('siBadgesLeft').querySelector('.si-status-badge').innerHTML =
+                `<span class="si-status-dot" style="background:${dotColor};"></span>${esc(statusDisplay)}`;
+            showToast('Status updated', 'success');
+        } else {
+            showToast(data.message || 'Error', 'error');
+        }
+    })
+    .catch(() => showToast('Network error', 'error'));
+}
 
 function openPanel(leadId) {
     currentLeadId = leadId;
     const lead = LEADS_DATA.find(l => l.lead_id === leadId);
     if (!lead) return;
 
-    // Name + email
-    const nameStr = [lead.company, lead.full_name].filter(Boolean).join(' · ') || '—';
-    document.getElementById('siName').textContent  = nameStr;
-    document.getElementById('siEmail').textContent = lead.email || '—';
+    // Row 1: Company name only
+    document.getElementById('siName').textContent = lead.company || '—';
 
-    // Badges row
+    // Row 2: Contact · email · role
+    const contactParts = [lead.full_name, lead.email, lead.role].filter(Boolean);
+    document.getElementById('siContactRow').textContent = contactParts.join(' | ') || '—';
+
+    // Row 3: Badges — Left: Status dot + Track | Right: Source + Timezone
     const trackBadgeClass = {
         Agency:'si-badge-agency', Direct:'si-badge-direct',
         Recruiter:'si-badge-recruiter', Job:'si-badge-job'
     }[lead.track] || 'si-badge-job';
-    const statusBadgeClass = {
-        cold:'si-badge-cold', queued:'si-badge-queued',
-        contacted:'si-badge-contacted', followed_up:'si-badge-contacted',
-        replied:'si-badge-rr', reply_received:'si-badge-rr', meeting:'si-badge-rr',
-        won:'si-badge-hot', lost:'si-badge-low', no_reply:'si-badge-low'
-    }[lead.status] || 'si-badge-cold';
-    document.getElementById('siBadges').innerHTML = `
+    const dotColor = SI_DOT_COLORS[lead.status] || '#9ca3af';
+
+    document.getElementById('siBadgesLeft').innerHTML = `
+        <span class="si-badge si-status-badge" style="background:#fff;color:#202124;border:1px solid #dadce0;">
+            <span class="si-status-dot" style="background:${dotColor};"></span>${esc(lead.status_display||'')}
+        </span>
         <span class="si-badge ${trackBadgeClass}">${esc(lead.track||'')}</span>
+    `;
+    const priorityClass = {
+        'type-high': 'lp-type-high', 'type-medium': 'lp-type-medium', 'type-low': 'lp-type-low'
+    }[lead.score_css] || 'lp-type-low';
+    document.getElementById('siBadgesRight').innerHTML = `
+        <span class="leads-priority-pill ${priorityClass}">${esc(lead.score_label||'')}</span>
         <span class="si-badge si-badge-website">${esc(lead.source||'')}</span>
-        <span class="si-badge ${statusBadgeClass}">${esc(lead.status_display||'')}</span>
         ${lead.tz_badge ? `<span class="si-badge si-badge-tz">${esc(lead.tz_badge)}</span>` : ''}
     `;
 
-    // 6-stage progress bar
-    const stage = SI_STAGE_MAP[lead.status] || 1;
-    const bars = Array.from({length:6}, (_,i) => {
-        const cls = i+1 < stage ? 'done' : (i+1 === stage ? 'active' : '');
-        return `<div class="si-prog-stage ${cls}"></div>`;
-    }).join('');
-    document.getElementById('siProgress').innerHTML = bars;
+    // Progress bar
+    siUpdateProgressBar(lead.status);
 
     // Notes
     siRenderNotes(lead.notes || '');
@@ -678,29 +810,35 @@ function closePanel() {
 /* ──────────────────────────────────────────────────────────────
    NOTES — si-panel version
    ────────────────────────────────────────────────────────────── */
+/* ── Notes (collapsible bar) ── */
 function siRenderNotes(text) {
-    const disp = document.getElementById('siNotesDisplay');
+    const barText = document.getElementById('siNotesBarText');
     if (text && text.trim()) {
-        disp.className = 'si-notes-body';
-        disp.textContent = text;
+        barText.textContent = 'Notes: ' + text.substring(0, 80) + (text.length > 80 ? '...' : '');
     } else {
-        disp.className = 'si-notes-empty';
-        disp.textContent = 'No notes yet. Click Edit to add some.';
+        barText.textContent = 'Notes: Click to add...';
     }
 }
 
-function siStartEditNotes() {
-    const lead = LEADS_DATA.find(l => l.lead_id === currentLeadId);
-    document.getElementById('siNotesTextarea').value = (lead && lead.notes) || '';
-    document.getElementById('siNotesDisplay').style.display  = 'none';
-    document.getElementById('siNotesEditBtn').style.display  = 'none';
-    document.getElementById('siNotesEditWrap').style.display = '';
+function siToggleNotes() {
+    const expand = document.getElementById('siNotesExpand');
+    const arrow = document.getElementById('siNotesBarArrow');
+    const isOpen = expand.style.display !== 'none';
+    if (isOpen) {
+        expand.style.display = 'none';
+        arrow.classList.remove('open');
+    } else {
+        const lead = LEADS_DATA.find(l => l.lead_id === currentLeadId);
+        document.getElementById('siNotesTextarea').value = (lead && lead.notes) || '';
+        expand.style.display = '';
+        arrow.classList.add('open');
+        document.getElementById('siNotesTextarea').focus();
+    }
 }
 
 function siCancelNotes() {
-    document.getElementById('siNotesDisplay').style.display  = '';
-    document.getElementById('siNotesEditBtn').style.display  = '';
-    document.getElementById('siNotesEditWrap').style.display = 'none';
+    document.getElementById('siNotesExpand').style.display = 'none';
+    document.getElementById('siNotesBarArrow').classList.remove('open');
 }
 
 function siSaveNotes() {
@@ -725,6 +863,26 @@ function siSaveNotes() {
     })
     .catch(() => showToast('Network error saving notes', 'error'));
 }
+
+/* ── Auto-grow textarea ── */
+function siAutoGrow(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 350) + 'px';
+}
+
+/* ── More actions dropdown ── */
+function siMoreActions() {
+    const dd = document.getElementById('siMoreDropdown');
+    dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    const dd = document.getElementById('siMoreDropdown');
+    const btn = document.getElementById('siMoreActionsBtn');
+    if (dd && btn && !btn.contains(e.target) && !dd.contains(e.target)) {
+        dd.style.display = 'none';
+    }
+});
 
 /* ──────────────────────────────────────────────────────────────
    THREAD RENDERER — Chat 76
@@ -1123,7 +1281,7 @@ function openAddModal() {
 function closeAddModal() {
     document.getElementById('addModal').classList.remove('modal-open');
     // Clear fields
-    ['addCompany','addContactName','addEmail','addTrack','addCountry','addSource','addCityState','addNotes']
+    ['addCompany','addContactName','addEmail','addRole','addTrack','addCountry','addSource','addCityState','addNotes']
         .forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = '';
@@ -1146,6 +1304,7 @@ function submitAddLead() {
         company:      company,
         contact_name: document.getElementById('addContactName').value.trim(),
         email:        email,
+        role:         document.getElementById('addRole').value.trim(),
         track:        track,
         country:      country,
         source:       source,
@@ -1178,26 +1337,21 @@ function getAllRows() {
     return Array.from(document.querySelectorAll('#leadsBody tr'));
 }
 
+let activeTabStatus = '';
+
 function filterTable() {
-    const search  = document.getElementById('searchInput').value.toLowerCase();
-    const track   = document.getElementById('filterTrack').value;
-    const country = document.getElementById('filterCountry').value;
-    const status  = document.getElementById('filterStatus').value;
-    const source  = document.getElementById('filterSource').value;
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const track  = document.getElementById('filterTrack').value;
 
     filteredRows = getAllRows().filter(row => {
-        const text    = row.textContent.toLowerCase();
-        const rTrack  = row.dataset.track   || '';
-        const rCntry  = row.dataset.country || '';
-        const rStatus = row.dataset.status  || '';
-        const rSource = row.dataset.source  || '';
+        const text   = row.textContent.toLowerCase();
+        const rTrack = row.dataset.track  || '';
+        const rStatus = row.dataset.status || '';
 
         return (
-            (!search  || text.includes(search))    &&
-            (!track   || rTrack   === track)        &&
-            (!country || rCntry   === country)      &&
-            (!status  || rStatus  === status)       &&
-            (!source  || rSource  === source)
+            (!search || text.includes(search)) &&
+            (!track  || rTrack === track) &&
+            (!activeTabStatus || rStatus === activeTabStatus)
         );
     });
 
@@ -1206,21 +1360,10 @@ function filterTable() {
 }
 
 function setTabFilter(val, btn) {
-    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.rules-sub-tab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-
-    if (val === 'active') {
-        filteredRows = getAllRows().filter(r => {
-            const s = r.dataset.status;
-            return !['Won', 'Lost', 'No Reply'].includes(s);
-        });
-    } else if (val) {
-        filteredRows = getAllRows().filter(r => r.dataset.status === val);
-    } else {
-        filteredRows = getAllRows();
-    }
-    currentPage = 1;
-    renderPage();
+    activeTabStatus = val;
+    filterTable();
 }
 
 function changeRowsPerPage() {
@@ -1230,12 +1373,10 @@ function changeRowsPerPage() {
 }
 
 function resetFilters() {
-    document.getElementById('searchInput').value  = '';
-    document.getElementById('filterTrack').value  = '';
-    document.getElementById('filterCountry').value= '';
-    document.getElementById('filterStatus').value = '';
-    document.getElementById('filterSource').value = '';
-    document.querySelectorAll('.filter-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterTrack').value = '';
+    activeTabStatus = '';
+    document.querySelectorAll('.rules-sub-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
     filteredRows = getAllRows();
     currentPage  = 1;
     renderPage();
@@ -1327,24 +1468,31 @@ function syncFromSheets() {
 /* ──────────────────────────────────────────────────────────────
    QUEUE EMAIL
    ────────────────────────────────────────────────────────────── */
-function queueEmail() {
+function queueEmail(forceOverride) {
     if (!currentLeadId) return;
     const btn = document.getElementById('panelQueueEmailBtn');
     btn.disabled = true;
+    const body = forceOverride ? { force_company_override: true } : {};
     fetch(`/outreach/leads/${currentLeadId}/queue-email`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
             showToast(data.message || 'Email queued', 'success');
-            // Update local lead status to queued
             const lead = LEADS_DATA.find(l => l.lead_id === currentLeadId);
             if (lead && lead.status === 'cold') {
                 lead.status = 'queued';
                 lead.status_display = 'Queued';
                 lead.status_css = 'queued';
+            }
+        } else if (data.company_conflict) {
+            // Show confirmation dialog for company-level conflict
+            if (confirm(data.message)) {
+                queueEmail(true);  // Retry with force override
+                return;
             }
         } else {
             showToast(data.message || 'Error queueing email', 'error');
@@ -1354,16 +1502,23 @@ function queueEmail() {
     .finally(() => { btn.disabled = false; });
 }
 
-function queueEmailForLead(leadId, btn) {
+function queueEmailForLead(leadId, btn, forceOverride) {
     if (btn) btn.disabled = true;
+    const body = forceOverride ? { force_company_override: true } : {};
     fetch(`/outreach/leads/${leadId}/queue-email`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
             showToast(data.message || 'Email queued', 'success');
+        } else if (data.company_conflict) {
+            if (confirm(data.message)) {
+                queueEmailForLead(leadId, btn, true);
+                return;
+            }
         } else {
             showToast(data.message || 'Error queueing email', 'error');
         }
@@ -1383,6 +1538,134 @@ function _scoreToLabel(score) {
     return 'Cold';
 }
 
+/* ── Inline edit in slide-in header ── */
+function siStartEdit() {
+    if (!currentLeadId) return;
+    const lead = LEADS_DATA.find(l => l.lead_id === currentLeadId);
+    if (!lead) return;
+
+    // Populate edit fields
+    document.getElementById('siEditCompany').value = lead.company || '';
+    document.getElementById('siEditContact').value = lead.full_name || '';
+    document.getElementById('siEditEmail').value   = lead.email || '';
+    document.getElementById('siEditRole').value    = lead.role || '';
+    document.getElementById('siEditCity').value    = lead.city_state || '';
+    document.getElementById('siEditTrack').value   = lead.track || '';
+    document.getElementById('siEditCountry').value = lead.country || '';
+    document.getElementById('siEditSource').value  = lead.source || '';
+    // Map score to dropdown value
+    const scoreToLabel = {1:'Cold', 2:'Warm', 3:'Warm', 4:'Hot'};
+    document.getElementById('siEditPriority').value = scoreToLabel[lead.lead_type_score] || 'Cold';
+
+    // Simple crossfade — no height animation to avoid layout jumps
+    const disp = document.getElementById('siHeaderDisplay');
+    const edit = document.getElementById('siHeaderEdit');
+    const header = document.querySelector('.si-header');
+    const startHeight = header.offsetHeight;
+
+    // Fade out display
+    disp.style.opacity = '0';
+    setTimeout(() => {
+        disp.style.display = 'none';
+        disp.style.opacity = '';
+        edit.style.display = '';
+        edit.style.opacity = '0';
+
+        // Measure new height, then animate from old to new
+        const endHeight = header.scrollHeight;
+        header.style.height = startHeight + 'px';
+        requestAnimationFrame(() => {
+            header.style.height = endHeight + 'px';
+            edit.style.opacity = '1';
+        });
+        setTimeout(() => {
+            header.style.height = '';
+            document.getElementById('siEditCompany').focus();
+        }, 450);
+    }, 400);
+}
+
+function siCancelEdit() {
+    const disp = document.getElementById('siHeaderDisplay');
+    const edit = document.getElementById('siHeaderEdit');
+    const header = document.querySelector('.si-header');
+    const startHeight = header.offsetHeight;
+
+    // Fade out edit
+    edit.style.opacity = '0';
+    setTimeout(() => {
+        edit.style.display = 'none';
+        edit.style.opacity = '';
+        disp.style.display = '';
+        disp.style.opacity = '0';
+
+        // Measure new height, then animate from old to new
+        const endHeight = header.scrollHeight;
+        header.style.height = startHeight + 'px';
+        requestAnimationFrame(() => {
+            header.style.height = endHeight + 'px';
+            disp.style.opacity = '1';
+        });
+        setTimeout(() => { header.style.height = ''; }, 450);
+    }, 400);
+}
+
+function siSaveEdit() {
+    if (!currentLeadId) return;
+
+    const nameParts = (document.getElementById('siEditContact').value || '').trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    const body = {
+        first_name: firstName,
+        last_name:  lastName,
+        company:    document.getElementById('siEditCompany').value.trim(),
+        email:      document.getElementById('siEditEmail').value.trim(),
+        role:       document.getElementById('siEditRole').value.trim(),
+        city_state: document.getElementById('siEditCity').value.trim(),
+        track:      document.getElementById('siEditTrack').value,
+        country:    document.getElementById('siEditCountry').value,
+        source:     document.getElementById('siEditSource').value,
+        type_score: document.getElementById('siEditPriority').value,
+    };
+
+    const btn = document.querySelector('.si-edit-save');
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+
+    fetch(`/outreach/leads/${currentLeadId}/edit`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.textContent = 'Save changes';
+        btn.disabled = false;
+        if (data.success && data.lead) {
+            // Update local data
+            const idx = LEADS_DATA.findIndex(l => l.lead_id === currentLeadId);
+            if (idx !== -1) LEADS_DATA[idx] = data.lead;
+
+            // Exit edit mode and refresh display
+            siCancelEdit();
+            openPanel(currentLeadId);
+            showToast('Lead updated', 'success');
+
+            // Refresh the table row too
+            setTimeout(() => location.reload(), 800);
+        } else {
+            showToast('Error: ' + (data.message || 'unknown'), 'error');
+        }
+    })
+    .catch(() => {
+        btn.textContent = 'Save changes';
+        btn.disabled = false;
+        showToast('Network error', 'error');
+    });
+}
+
 function openEditModal() {
     if (!currentLeadId) return;
     const lead = LEADS_DATA.find(l => l.lead_id === currentLeadId);
@@ -1392,6 +1675,7 @@ function openEditModal() {
     document.getElementById('editLastName').value   = lead.last_name   || '';
     document.getElementById('editCompany').value    = lead.company     || '';
     document.getElementById('editEmail').value      = lead.email       || '';
+    document.getElementById('editRole').value       = lead.role        || '';
     document.getElementById('editCityState').value  = lead.city_state  || '';
     document.getElementById('editCountry').value    = lead.country     || '';
     document.getElementById('editTrack').value      = lead.track       || '';
@@ -1412,6 +1696,7 @@ function submitEditLead() {
         last_name:  document.getElementById('editLastName').value.trim(),
         company:    document.getElementById('editCompany').value.trim(),
         email:      document.getElementById('editEmail').value.trim(),
+        role:       document.getElementById('editRole').value.trim(),
         city_state: document.getElementById('editCityState').value.trim(),
         country:    document.getElementById('editCountry').value,
         track:      document.getElementById('editTrack').value,
@@ -1441,6 +1726,148 @@ function submitEditLead() {
     })
     .catch(() => showToast('Network error', 'error'));
 }
+/* ──────────────────────────────────────────────────────────────
+   APOLLO IMPORT
+   ────────────────────────────────────────────────────────────── */
+let apolloCurrentPage = 1;
+let apolloContacts = [];
+
+function openApolloPanel() {
+    const panel = document.getElementById('apolloPanel');
+    panel.style.display = 'block';
+    requestAnimationFrame(() => { panel.style.transform = 'translateX(0)'; });
+    loadApolloPage();
+}
+
+function closeApolloPanel() {
+    const panel = document.getElementById('apolloPanel');
+    panel.style.transform = 'translateX(100%)';
+    setTimeout(() => { panel.style.display = 'none'; }, 250);
+}
+
+function loadApolloPage() {
+    document.getElementById('apolloBody').innerHTML =
+        '<tr><td colspan="6" style="padding:40px;text-align:center;color:#aaa;">Loading all contacts…</td></tr>';
+    document.getElementById('apolloStatusText').textContent = 'Loading contacts from your Apollo account…';
+    document.getElementById('apolloPagination').style.display = 'none';
+
+    fetch('/outreach/apollo/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) {
+            document.getElementById('apolloBody').innerHTML =
+                '<tr><td colspan="6" style="padding:40px;text-align:center;color:#e53935;">' + (data.message || 'Error') + '</td></tr>';
+            return;
+        }
+        apolloContacts = data.contacts;
+        const importedCount = apolloContacts.filter(c => c.already_imported).length;
+        document.getElementById('apolloStatusText').textContent =
+            data.total + ' contacts in Apollo · ' + importedCount + ' already imported · Sorted by company';
+
+        if (apolloContacts.length === 0) {
+            document.getElementById('apolloBody').innerHTML =
+                '<tr><td colspan="6" style="padding:40px;text-align:center;color:#aaa;">' +
+                'No contacts found. Save people in the Apollo web UI first, then import them here.</td></tr>';
+            return;
+        }
+
+        renderApolloTable();
+        document.getElementById('apolloSelectAll').checked = false;
+    })
+    .catch(err => {
+        document.getElementById('apolloBody').innerHTML =
+            '<tr><td colspan="6" style="padding:40px;text-align:center;color:#e53935;">Network error: ' + err + '</td></tr>';
+    });
+}
+
+function _esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+let apolloSortAsc = true;
+function sortApolloByCompany() {
+    apolloSortAsc = !apolloSortAsc;
+    apolloContacts.sort((a, b) => {
+        const cA = (a.company || '').toLowerCase();
+        const cB = (b.company || '').toLowerCase();
+        return apolloSortAsc ? cA.localeCompare(cB) : cB.localeCompare(cA);
+    });
+    renderApolloTable();
+}
+
+function renderApolloTable() {
+    let html = '';
+    apolloContacts.forEach((c, i) => {
+        const loc = [c.city, c.country].filter(Boolean).join(', ');
+        const imported = c.already_imported;
+        const rowStyle = imported
+            ? 'border-bottom:1px solid #f0f0f0;background:#f5f5f5;opacity:0.6;'
+            : 'border-bottom:1px solid #f0f0f0;';
+        const cb = imported
+            ? '<input type="checkbox" disabled title="Already imported">'
+            : '<input type="checkbox" class="apollo-cb" data-idx="' + i + '">';
+        const tag = imported ? ' <span style="font-size:10px;color:#4caf50;font-weight:600;">✓ imported</span>' : '';
+        const cell = 'padding:6px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+        html += '<tr style="' + rowStyle + '">' +
+            '<td style="' + cell + '">' + cb + '</td>' +
+            '<td style="' + cell + 'font-weight:600;" title="' + _esc(c.name) + '">' + _esc(c.name) + tag + '</td>' +
+            '<td style="' + cell + 'color:#666;" title="' + _esc(c.title) + '">' + _esc(c.title) + '</td>' +
+            '<td style="' + cell + '" title="' + _esc(c.company) + '">' + _esc(c.company) + '</td>' +
+            '<td style="' + cell + 'color:#1a73e8;" title="' + _esc(c.email) + '">' + _esc(c.email) + '</td>' +
+            '<td style="' + cell + 'color:#888;" title="' + _esc(loc) + '">' + _esc(loc) + '</td>' +
+            '</tr>';
+    });
+    document.getElementById('apolloBody').innerHTML = html;
+    document.getElementById('apolloSelectAll').checked = false;
+}
+
+function toggleApolloSelectAll(checked) {
+    document.querySelectorAll('.apollo-cb').forEach(cb => { cb.checked = checked; });
+}
+
+function importApolloSelected() {
+    const checked = document.querySelectorAll('.apollo-cb:checked');
+    if (checked.length === 0) {
+        showToast('Select at least one contact to import', 'warning');
+        return;
+    }
+
+    const track = document.getElementById('apolloTrack').value;
+    const selected = [];
+    checked.forEach(cb => {
+        const idx = parseInt(cb.dataset.idx);
+        selected.push(apolloContacts[idx]);
+    });
+
+    const btn = document.getElementById('apolloImportSelectedBtn');
+    btn.textContent = 'Importing…';
+    btn.disabled = true;
+
+    fetch('/outreach/apollo/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contacts: selected, track: track })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.textContent = 'Import selected';
+        btn.disabled = false;
+        if (data.success) {
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast('Error: ' + (data.message || 'unknown'), 'error');
+        }
+    })
+    .catch(err => {
+        btn.textContent = 'Import selected';
+        btn.disabled = false;
+        showToast('Network error: ' + err, 'error');
+    });
+}
+
 </script>
 <style>
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

@@ -69,7 +69,7 @@
   position: fixed;
   top: 0;
   right: 0;
-  width: 500px;
+  width: 620px;
   height: 100vh;
   background: #fff;
   border-left: 1px solid var(--divider);
@@ -77,17 +77,11 @@
   flex-direction: column;
   z-index: 1050;
   transform: translateX(100%);
-  transition: transform 0.22s ease;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .si-panel.si-open {
   transform: translateX(0);
-  animation: siSlideIn 0.22s ease;
-}
-
-@keyframes siSlideIn {
-  from { transform: translateX(30px); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
 }
 
 .si-overlay {
@@ -95,40 +89,45 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.3);
   z-index: 1049;
-  display: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
 }
 
 .si-overlay.si-open {
-  display: block;
+  opacity: 1;
+  pointer-events: auto;
 }
 
-/* ─── SECTION 1: HEADER ──────────────────────────────────────── */
+/* ─── SECTION 1: HEADER (dark) ───────────────────────────────── */
 .si-header {
   padding: 16px 20px;
-  border-bottom: 1px solid var(--divider);
+  border-bottom: 1px solid #374151;
   flex-shrink: 0;
-  background: #fff;
+  background: #1f2937;
+  overflow: hidden;
+  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .si-header-top {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .si-name {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
-  color: var(--heading-text);
+  color: #fff;
   line-height: 1.3;
   font-family: 'DM Sans', sans-serif;
 }
 
-.si-email {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 2px;
+.si-contact-row {
+  font-size: 13px;
+  color: #ffffff;
+  margin-top: 3px;
   font-family: 'DM Sans', sans-serif;
 }
 
@@ -137,8 +136,8 @@
   height: 28px;
   border-radius: 6px;
   border: none;
-  background: #f3f4f6;
-  color: #6b7280;
+  background: #374151;
+  color: #9ca3af;
   cursor: pointer;
   font-size: 16px;
   display: flex;
@@ -148,51 +147,75 @@
   transition: background 0.1s, color 0.1s;
   font-family: 'DM Sans', sans-serif;
 }
-.si-close:hover { background: #e5e7eb; color: #111; }
+.si-close:hover { background: #4b5563; color: #fff; }
 
 /* Badges row */
 .si-badges {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
   gap: 6px;
-  margin-top: 8px;
+  margin-top: 10px;
+}
+
+.si-badges-left {
+  display: flex;
+  gap: 6px;
+}
+
+.si-badges-right {
+  display: flex;
+  gap: 6px;
 }
 
 .si-badge {
   font-size: 11px;
-  font-weight: 500;
-  padding: 2px 8px;
+  font-weight: 600;
+  padding: 3px 10px;
   border-radius: 4px;
   white-space: nowrap;
   font-family: 'DM Sans', sans-serif;
 }
 
-.si-badge-agency    { background: var(--badge-agency-bg);    color: var(--badge-agency-text); }
-.si-badge-direct    { background: var(--badge-direct-bg);    color: var(--badge-direct-text); }
-.si-badge-recruiter { background: var(--badge-recruiter-bg); color: var(--badge-recruiter-text); }
-.si-badge-job       { background: var(--badge-website-bg);   color: var(--badge-website-text); }
-.si-badge-website   { background: var(--badge-website-bg);   color: var(--badge-website-text); }
-.si-badge-rr        { background: var(--badge-rr-bg);        color: var(--badge-rr-text); }
-.si-badge-cold      { background: var(--badge-cold-bg);      color: var(--badge-cold-text); }
-.si-badge-queued    { background: var(--badge-queued-bg);    color: var(--badge-queued-text); }
-.si-badge-contacted { background: var(--badge-contacted-bg); color: var(--badge-contacted-text); }
-.si-badge-low       { background: var(--badge-low-bg);       color: var(--badge-low-text); }
-.si-badge-medium    { background: var(--badge-medium-bg);    color: var(--badge-medium-text); }
-.si-badge-hot       { background: var(--badge-hot-bg);       color: var(--badge-hot-text); }
-.si-badge-tz        { background: var(--badge-tz-bg);        color: var(--badge-tz-text); }
+/* Status dots in header — match table colours */
+.si-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* Track badges — match table colours exactly */
+.si-badge-agency    { background: #dbeafe; color: #1d4ed8; }
+.si-badge-direct    { background: #d1fae5; color: #065f46; }
+.si-badge-recruiter { background: #ede9fe; color: #6d28d9; }
+.si-badge-job       { background: #fef3c7; color: #92400e; }
+/* Source + Timezone pills */
+.si-badge-website   { background: #f3f4f6; color: #374151; }
+.si-badge-tz        { background: #e0f2fe; color: #0369a1; }
+/* Status badges (used in other contexts) */
+.si-badge-rr        { background: #dcfce7; color: #15803d; }
+.si-badge-cold      { background: #f3f4f6; color: #6b7280; }
+.si-badge-queued    { background: #dbeafe; color: #1d4ed8; }
+.si-badge-contacted { background: #dbeafe; color: #1d4ed8; }
+.si-badge-low       { background: #fef2f2; color: #991b1b; }
+.si-badge-medium    { background: #fff7ed; color: #9a3412; }
+.si-badge-hot       { background: #dcfce7; color: #166534; }
 
 /* Progress bar */
 .si-progress {
   display: flex;
   gap: 3px;
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 .si-prog-stage {
   flex: 1;
   height: 4px;
   border-radius: 2px;
-  background: #e5e7eb;
+  background: #374151;
   transition: background 0.2s;
 }
 .si-prog-stage.done   { background: var(--act-green); }
@@ -205,10 +228,146 @@
 
 .si-prog-label {
   flex: 1;
-  font-size: 9px;
+  font-size: 11px;
   color: #9ca3af;
   text-align: center;
   font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  padding: 2px 0;
+  border-radius: 2px;
+  transition: color 0.15s;
+}
+.si-prog-label:hover { color: #d1d5db; }
+.si-prog-label.active { color: #60a5fa; font-weight: 600; }
+.si-prog-label.done { color: #4ade80; }
+
+/* Exit state buttons (No Reply, Lost) */
+.si-exit-states {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+.si-exit-btn {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 10px;
+  border-radius: 3px;
+  border: 1px solid #374151;
+  background: none;
+  color: #6b7280;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+}
+.si-exit-btn:hover {
+  border-color: #6b7280;
+  color: #9ca3af;
+}
+.si-exit-btn.active {
+  background: #6b7280;
+  color: #fff;
+  border-color: #6b7280;
+}
+.si-exit-lost:hover {
+  border-color: #dc2626;
+  color: #f87171;
+}
+.si-exit-lost.active {
+  background: #dc2626;
+  color: #fff;
+  border-color: #dc2626;
+}
+
+/* ─── INLINE EDIT MODE ──────────────────────────────────────── */
+.si-edit-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: #9ca3af;
+  margin-bottom: 3px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.si-edit-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.si-edit-input {
+  padding: 6px 10px;
+  border: 1px solid #4b5563;
+  border-radius: 4px;
+  background: #374151;
+  color: #ffffff;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  width: 100%;
+}
+.si-edit-input:focus { border-color: #60a5fa; }
+.si-edit-input::placeholder { color: #6b7280; }
+
+.si-edit-input.si-edit-company {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.si-edit-select {
+  padding: 6px 10px;
+  border: 1px solid #4b5563;
+  border-radius: 4px;
+  background: #374151;
+  color: #ffffff;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  width: 100%;
+  cursor: pointer;
+}
+.si-edit-select:focus { border-color: #60a5fa; }
+
+.si-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.si-edit-save {
+  padding: 6px 16px;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+}
+.si-edit-save:hover { background: #2563eb; }
+
+.si-edit-cancel {
+  padding: 6px 16px;
+  background: none;
+  color: #9ca3af;
+  border: 1px solid #4b5563;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+}
+.si-edit-cancel:hover { background: #374151; color: #fff; }
+
+/* Edit mode transitions — crossfade with no layout shift */
+#siHeaderDisplay, #siHeaderEdit {
+  transition: opacity 0.45s ease;
+}
+#siHeaderDisplay.si-hidden {
+  display: none;
+}
+#siHeaderEdit.si-hidden {
+  display: none;
 }
 
 /* ─── SECTION 2: SCROLLABLE BODY ─────────────────────────────── */
@@ -224,27 +383,72 @@
 .si-body::-webkit-scrollbar-track { background: transparent; }
 .si-body::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
 
+/* ─── FIXED BOTTOM SECTION ───────────────────────────────────── */
+.si-bottom-fixed {
+  flex-shrink: 0;
+  border-top: 1px solid var(--divider);
+  background: #fff;
+}
+
+/* ─── NOTES BAR (collapsible) ────────────────────────────────── */
+.si-notes-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #fffbeb;
+  border-bottom: 1px solid #fde68a;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.si-notes-bar:hover { background: #fef3c7; }
+
+.si-notes-bar-icon { font-size: 13px; }
+
+.si-notes-bar-text {
+  flex: 1;
+  font-size: 13px;
+  color: #92400e;
+  font-family: 'DM Sans', sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.si-notes-bar-arrow {
+  font-size: 13px;
+  color: #92400e;
+  transition: transform 0.2s;
+}
+.si-notes-bar-arrow.open { transform: rotate(180deg); }
+
+.si-notes-expand {
+  padding: 10px 20px;
+  background: #fffbeb;
+  border-bottom: 1px solid #fde68a;
+}
+
 /* ─── SECTION 3: REPLY COMPOSER ──────────────────────────────── */
 .si-composer {
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--divider);
-  background: #fafafa;
+  padding: 12px 20px;
+  background: #fff;
   flex-shrink: 0;
 }
 
 .si-composer-label {
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 600;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  color: var(--muted);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--heading-text);
   margin-bottom: 8px;
   font-family: 'DM Sans', sans-serif;
 }
 
 .si-composer-textarea {
   width: 100%;
-  min-height: 80px;
+  min-height: 60px;
+  max-height: 350px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   padding: 10px 12px;
@@ -255,9 +459,34 @@
   background: #fff;
   transition: border-color 0.15s;
   outline: none;
+  overflow-y: auto;
 }
 .si-composer-textarea:focus { border-color: var(--act-blue); }
 .si-composer-textarea::placeholder { color: #d1d5db; }
+
+.si-composer-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.si-composer-options-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.si-sig-preview {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border: 1px solid #e8eaed;
+  border-radius: 6px;
+  background: #f8f9fa;
+  font-size: 11px;
+  color: #9aa0a6;
+  line-height: 1.5;
+}
 
 .si-composer-toolbar {
   display: flex;
@@ -324,6 +553,21 @@
 .si-toggle-pip.off { background: #d1d5db; }
 .si-toggle-pip.off::after { right: auto; left: 2px; }
 
+.si-send-btn-new {
+  padding: 8px 20px;
+  background: var(--act-blue);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: background 0.15s;
+}
+.si-send-btn-new:hover { background: #2b6de4; }
+.si-send-btn-new:disabled { background: #9ca3af; cursor: not-allowed; }
+
 .si-send-btn {
   margin-left: auto;
   padding: 6px 16px;
@@ -356,11 +600,11 @@
 }
 
 .si-notes-title {
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--notes-title);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--heading-text);
   font-family: 'DM Sans', sans-serif;
 }
 
@@ -446,11 +690,11 @@
 }
 
 .si-thread-label {
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 600;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  color: var(--muted);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--heading-text);
   margin-bottom: 2px;
   flex-shrink: 0;
   font-family: 'DM Sans', sans-serif;
@@ -484,12 +728,12 @@
 }
 
 .si-thread-badge {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   padding: 2px 7px;
   border-radius: 3px;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-transform: none;
   font-family: 'DM Sans', sans-serif;
 }
 .si-thread-badge.sent {
@@ -522,7 +766,7 @@
 }
 
 .si-thread-subject {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: #374151;
   margin-bottom: 4px;
@@ -530,7 +774,7 @@
 }
 
 .si-thread-body {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--body-text);
   line-height: 1.5;
   font-family: 'DM Sans', sans-serif;
@@ -602,13 +846,56 @@
 
 /* ─── SECTION 6: FOOTER ──────────────────────────────────────── */
 .si-footer {
-  padding: 12px 20px;
+  padding: 10px 20px;
   border-top: 1px solid var(--divider);
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
   flex-shrink: 0;
   background: #fff;
+  gap: 6px;
+}
+
+.si-footer-group {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.si-more-dropdown {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 4px;
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+  min-width: 160px;
+  z-index: 1100;
+}
+
+.si-more-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+}
+.si-more-dropdown button:hover { background: #f3f4f6; }
+.si-more-dropdown button:last-child { color: #dc2626; }
+
+.si-thread-empty {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  padding: 40px 20px;
+  font-family: 'DM Sans', sans-serif;
 }
 
 .si-footer-btn {
@@ -646,3 +933,10 @@
   background: #fff;
 }
 .si-footer-btn.danger:hover { background: #fef2f2; }
+
+.si-footer-btn.danger-text {
+  color: #dc2626;
+  border-color: transparent;
+  background: none;
+}
+.si-footer-btn.danger-text:hover { background: #fef2f2; border-color: #fecaca; }
