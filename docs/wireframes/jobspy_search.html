@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JobSpy Search — Wireframe</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ======== EXACT ACT NAVIGATION CSS ======== */
+* { box-sizing: border-box; }
+body { background: #f8f9fa; margin: 0; font-family: 'DM Sans', sans-serif; }
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 40;
+}
+
+.nav-sidebar {
+  width: 110px; background: #ffffff; border-right: 1px solid #dadce0;
+  display: flex; flex-direction: column; position: fixed; left: 0; top: 0; height: 100vh; z-index: 1000;
+}
+.nav-brand {
+  padding: 16px 12px; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid #dadce0;
+}
+.nav-brand-logo { width: 48px; height: 48px; margin-bottom: 8px; }
+.nav-brand-text { font-size: 14px; font-weight: 600; color: #202124; text-align: center; line-height: 1.3; }
+.nav-items { flex: 1; padding: 8px 0; overflow-y: auto; }
+.nav-item {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 12px 8px; margin: 4px 8px; text-decoration: none; color: #5f6368;
+  border-radius: 8px; transition: all 150ms ease; cursor: pointer; min-height: 80px;
+}
+.nav-item:hover { background: #f1f3f4; color: #202124; }
+.nav-item.active { background: #e8f0fe; color: #1a73e8; }
+.nav-item-icon { font-size: 32px; margin-bottom: 4px; }
+.nav-item-text { font-size: 14px; font-weight: 500; text-align: center; line-height: 1.2; }
+.nav-item-text.small { font-size: 11px; }
+
+/* ======== MAIN CONTENT ======== */
+.main-content { margin-left: 110px; padding: 24px 32px; }
+
+/* ======== EXACT ACT JOBS CSS ======== */
+.jb-stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+.jb-stat-card {
+  background: #fff; border: 1px solid #e0e0e0; border-left: 4px solid #9e9e9e;
+  border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px;
+}
+.jb-stat-value { font-size: 24px; font-weight: 700; color: #202124; line-height: 1.2; }
+.jb-stat-label { font-size: 11px; font-weight: 600; color: #5f6368; text-transform: uppercase; letter-spacing: 0.3px; }
+.jb-stat-blue { border-left-color: #1d4ed8; }
+.jb-stat-amber { border-left-color: #d97706; }
+.jb-stat-green { border-left-color: #15803d; }
+.jb-stat-purple { border-left-color: #7c3aed; }
+
+/* Filter tabs */
+.filter-tabs { display: flex; gap: 4px; background: #f1f3f4; padding: 4px; border-radius: 6px; }
+.filter-tab {
+  padding: 6px 16px; background: transparent; border: none; border-radius: 4px;
+  font-size: 13px; color: #5f6368; cursor: pointer; transition: all 0.15s;
+}
+.filter-tab:hover { background: rgba(0,0,0,0.05); }
+.filter-tab.active { background: white; color: #202124; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
+/* Search input */
+.jb-search-input {
+  width: 220px; padding: 6px 12px 6px 32px; border: 1px solid #dadce0; border-radius: 4px;
+  font-size: 13px; color: #202124;
+  background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E") no-repeat 10px center;
+}
+.jb-search-input:focus { outline: none; border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,0.15); }
+
+/* View toggle */
+.jb-view-btn {
+  padding: 4px 10px; background: transparent; border: none; border-radius: 4px;
+  color: #5f6368; font-size: 14px; cursor: pointer;
+}
+.jb-view-btn.active { background: #fff; color: #1a73e8; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
+/* Table */
+.table-wrapper { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+.table { margin-bottom: 0; }
+.table thead th {
+  font-size: 11px; font-weight: 600; color: #5f6368; text-transform: uppercase;
+  letter-spacing: 0.5px; border-bottom: 2px solid #e0e0e0; padding: 10px 12px; background: #fafafa;
+}
+.table tbody td { padding: 10px 12px; font-size: 13px; color: #202124; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+.table tbody tr:hover { background: #f8f9ff; }
+.table tbody tr.jb-row { cursor: pointer; }
+.table tbody tr.jb-row-expanded { background: #f0f4ff; }
+
+/* Badges */
+.jb-status-pill { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.jb-status-saved { background: #f1f3f4; color: #5f6368; }
+.jb-status-applied { background: #dbeafe; color: #1d4ed8; }
+.jb-status-interview { background: #fef3c7; color: #92400e; }
+.jb-status-offer { background: #dcfce7; color: #15803d; }
+.jb-status-rejected { background: #fee2e2; color: #991b1b; }
+
+.jb-priority-badge { display: inline-flex; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.jb-priority-high { background: #fee2e2; color: #991b1b; }
+.jb-priority-medium { background: #fef3c7; color: #92400e; }
+.jb-priority-low { background: #f1f3f4; color: #5f6368; }
+
+.jb-source-badge { display: inline-flex; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+.jb-source-indeed { background: #dbeafe; color: #1d4ed8; }
+.jb-source-linkedin { background: #dbeafe; color: #0a66c2; }
+.jb-source-glassdoor { background: #dcfce7; color: #15803d; }
+.jb-source-ziprecruiter { background: #fef3c7; color: #92400e; }
+.jb-source-google { background: #fee2e2; color: #991b1b; }
+.jb-source-other { background: #f1f3f4; color: #5f6368; }
+
+/* Sortable headers */
+.jb-sortable { cursor: pointer; user-select: none; position: relative; padding-right: 20px !important; }
+.jb-sort-icon { font-size: 14px; margin-left: 2px; opacity: 0.4; vertical-align: middle; }
+.jb-sort-active .jb-sort-icon { opacity: 1; color: #1a73e8; }
+
+/* Expanded detail row */
+.jb-expand-row { display: none; background: #fafbfc; }
+.jb-expand-row.open { display: table-row; }
+.jb-expand-cell { padding: 16px 20px !important; white-space: normal !important; }
+.jb-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 32px; max-width: 800px; }
+.jb-detail-label { font-size: 11px; font-weight: 600; color: #5f6368; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.jb-detail-value { font-size: 13px; color: #202124; word-break: break-word; }
+.jb-detail-value a { color: #1a73e8; text-decoration: none; }
+.jb-detail-description { grid-column: 1 / -1; margin-top: 8px; }
+.jb-detail-description .jb-detail-value {
+  max-height: 120px; overflow-y: auto; padding: 8px 12px; background: #fff;
+  border: 1px solid #e0e0e0; border-radius: 4px; line-height: 1.5;
+}
+
+/* Pagination */
+.jb-pagination-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px; border-top: 1px solid #e0e0e0; background: #fafbfc; font-size: 13px; color: #5f6368;
+}
+.rows-per-page { display: flex; align-items: center; gap: 8px; }
+.rows-per-page select { border: 1px solid #dadce0; border-radius: 4px; padding: 2px 8px; font-size: 13px; }
+
+/* ======== SEARCH PANEL (slide-in) ======== */
+.search-panel {
+  position: fixed; top: 0; right: 0; width: 860px; height: 100vh;
+  background: #fff; box-shadow: -4px 0 20px rgba(0,0,0,0.15); z-index: 1050;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.search-panel-header {
+  padding: 18px 24px; border-bottom: 1px solid #e0e0e0;
+  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+.search-panel-header h4 { margin: 0; font-size: 18px; font-weight: 700; color: #202124; }
+.search-panel-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+
+/* Search form card */
+.search-form { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+.search-form label { font-size: 11px; font-weight: 600; color: #5f6368; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.search-form .form-control, .search-form .form-select {
+  font-size: 13px; border: 1px solid #dadce0; border-radius: 6px; padding: 8px 12px;
+}
+.search-form .form-control:focus, .search-form .form-select:focus {
+  border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
+}
+
+/* Search form collapsed */
+.search-form-collapsed {
+  background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px;
+  padding: 12px 20px; margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.search-form-collapsed .search-summary { font-size: 13px; color: #202124; }
+.search-form-collapsed .search-summary strong { font-weight: 600; }
+
+/* Site checkboxes */
+.site-checks { display: flex; gap: 12px; flex-wrap: wrap; }
+.site-check { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #202124; cursor: pointer; }
+.site-check input[type="checkbox"] { accent-color: #1a73e8; width: 16px; height: 16px; }
+
+/* Remote toggle */
+.form-check-input:checked { background-color: #1a73e8; border-color: #1a73e8; }
+
+/* Results header */
+.results-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e0e0e0;
+}
+.results-header h6 { margin: 0; font-size: 14px; font-weight: 600; color: #202124; }
+
+/* Save buttons */
+.btn-save-job {
+  font-size: 11px; padding: 4px 12px; border-radius: 4px;
+  background: #1a73e8; color: #fff; border: none; cursor: pointer; white-space: nowrap;
+}
+.btn-save-job:hover { background: #1557b0; }
+.btn-saved {
+  font-size: 11px; padding: 4px 12px; border-radius: 4px;
+  background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; cursor: default; white-space: nowrap;
+}
+
+/* Loading & empty */
+.search-loading { text-align: center; padding: 48px 20px; color: #5f6368; }
+.search-loading .spinner-border { width: 28px; height: 28px; border-width: 3px; color: #1a73e8; }
+.search-empty { text-align: center; padding: 48px 20px; color: #5f6368; }
+
+/* Overlay */
+.panel-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 1040; }
+
+/* Toast */
+.toast-msg {
+  position: fixed; top: 16px; right: 16px; z-index: 2000;
+  background: #dcfce7; border: 1px solid #bbf7d0; color: #15803d;
+  padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;
+}
+
+/* New row highlight */
+.jb-row-new { background: #f0fdf4 !important; }
+.jb-row-new:hover { background: #dcfce7 !important; }
+
+/* ======== WIREFRAME STATE SWITCHER ======== */
+.wireframe-bar {
+  position: fixed; bottom: 0; left: 110px; right: 0; background: #202124;
+  display: flex; z-index: 3000; border-top: 2px solid #1a73e8;
+}
+.wireframe-bar button {
+  flex: 1; padding: 12px 8px; background: transparent; border: none; color: #9aa0a6;
+  font-size: 11px; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.wireframe-bar button.active { color: #fff; background: #1a73e8; }
+.wireframe-bar button:hover:not(.active) { background: #333; color: #fff; }
+
+.state { display: none; }
+.state.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- ======== EXACT ACT SIDEBAR ======== -->
+<nav class="nav-sidebar">
+  <div class="nav-brand">
+    <svg class="nav-brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="41" fill="none" stroke="#4285F4" stroke-width="10"/>
+      <circle cx="50" cy="50" r="29" fill="none" stroke="#EA4335" stroke-width="10"/>
+      <circle cx="50" cy="50" r="17" fill="none" stroke="#FBBC05" stroke-width="10"/>
+      <circle cx="50" cy="50" r="10" fill="#34A853"/>
+    </svg>
+    <div class="nav-brand-text">Ads<br>Control<br>Tower</div>
+  </div>
+  <div class="nav-items">
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">home</span><span class="nav-item-text">Dashboard</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">campaign</span><span class="nav-item-text">Campaigns</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">folder</span><span class="nav-item-text">Ad Groups</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">search</span><span class="nav-item-text">Keywords</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">article</span><span class="nav-item-text">Ads</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">shopping_cart</span><span class="nav-item-text">Shopping</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">lightbulb</span><span class="nav-item-text small">Recommendations</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">history</span><span class="nav-item-text">Changes</span></a>
+    <a class="nav-item active" href="#"><span class="material-symbols-outlined nav-item-icon">work</span><span class="nav-item-text">Jobs</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">send</span><span class="nav-item-text">Outreach</span></a>
+    <a class="nav-item" href="#"><span class="material-symbols-outlined nav-item-icon">settings</span><span class="nav-item-text">Settings</span></a>
+  </div>
+</nav>
+
+<!-- ================================================================= -->
+<!-- STATE 1: Jobs page — new Search Jobs button in header -->
+<!-- ================================================================= -->
+<div class="state active" id="state-1">
+<div class="main-content" style="padding-bottom:60px;">
+  <div class="d-flex align-items-start justify-content-between mb-4">
+    <div>
+      <h2 class="mb-1" style="font-size:22px;font-weight:700;">Jobs</h2>
+      <p class="text-muted mb-0" style="font-size:13px;">Track job applications for PPC &amp; Google Ads roles</p>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      <div class="d-flex gap-1" style="background:#f1f3f4;padding:3px;border-radius:6px;">
+        <button class="btn btn-sm jb-view-btn active"><i class="bi bi-table"></i></button>
+        <button class="btn btn-sm jb-view-btn"><i class="bi bi-kanban"></i></button>
+      </div>
+      <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-cloud-download me-1"></i>Sync from Sheet</button>
+      <button class="btn btn-sm" onclick="showState(2)" style="border:1px solid #1a73e8;color:#1a73e8;background:#fff;font-size:12px;padding:5px 14px;border-radius:6px;">
+        <i class="bi bi-search me-1"></i>Search Jobs
+      </button>
+      <button class="btn btn-primary btn-sm" style="background:#1a73e8;border-color:#1a73e8;"><i class="bi bi-plus-lg me-1"></i>Add Job</button>
+    </div>
+  </div>
+
+  <div class="jb-stats-row">
+    <div class="jb-stat-card"><div class="jb-stat-value">4</div><div class="jb-stat-label">Total Jobs</div></div>
+    <div class="jb-stat-card jb-stat-blue"><div class="jb-stat-value">1</div><div class="jb-stat-label">Applications Sent</div></div>
+    <div class="jb-stat-card jb-stat-amber"><div class="jb-stat-value">1</div><div class="jb-stat-label">Interviews Scheduled</div></div>
+    <div class="jb-stat-card jb-stat-green"><div class="jb-stat-value">0</div><div class="jb-stat-label">Offers Received</div></div>
+    <div class="jb-stat-card jb-stat-purple"><div class="jb-stat-value">25%</div><div class="jb-stat-label">Response Rate</div></div>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+      <div class="filter-tabs" style="padding:4px;">
+        <button class="filter-tab active">All <span class="badge bg-secondary ms-1">4</span></button>
+        <button class="filter-tab">Saved <span class="badge ms-1" style="background:#5f6368;">2</span></button>
+        <button class="filter-tab">Applied <span class="badge ms-1" style="background:#1d4ed8;">1</span></button>
+        <button class="filter-tab">Interview <span class="badge ms-1" style="background:#92400e;">1</span></button>
+        <button class="filter-tab">Offer <span class="badge ms-1" style="background:#15803d;">0</span></button>
+        <button class="filter-tab">Rejected <span class="badge ms-1" style="background:#991b1b;">0</span></button>
+      </div>
+      <span class="text-muted" style="font-size:13px;">4 jobs</span>
+    </div>
+    <input class="jb-search-input" type="text" placeholder="Search jobs...">
+  </div>
+
+  <div class="table-wrapper">
+    <div class="jb-pagination-row" style="border-top:none;border-bottom:1px solid #e0e0e0;">
+      <span>1-4 of 4</span>
+      <div class="rows-per-page">Rows per page: <select><option>25</option></select></div>
+    </div>
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th class="jb-sortable jb-sort-active" style="width:90px;">Added <span class="jb-sort-icon">&#8595;</span></th>
+          <th class="jb-sortable" style="width:220px;">Title <span class="jb-sort-icon">&#8597;</span></th>
+          <th class="jb-sortable" style="width:140px;">Company <span class="jb-sort-icon">&#8597;</span></th>
+          <th class="jb-sortable" style="width:120px;">Location <span class="jb-sort-icon">&#8597;</span></th>
+          <th class="jb-sortable" style="width:130px;">Salary <span class="jb-sort-icon">&#8597;</span></th>
+          <th class="jb-sortable" style="width:80px;">Source <span class="jb-sort-icon">&#8597;</span></th>
+          <th class="jb-sortable" style="width:80px;">Status <span class="jb-sort-icon">&#8597;</span></th>
+          <th class="jb-sortable" style="width:70px;">Priority <span class="jb-sort-icon">&#8597;</span></th>
+          <th style="width:80px;">Applied</th>
+          <th style="width:80px;">Follow-up</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="jb-row"><td>27 Mar</td><td style="color:#1a73e8;font-weight:500;">Google Ads and PPC Strategist</td><td>Harnham</td><td>USA, US</td><td>$35-$40/hr</td><td><span class="jb-source-badge jb-source-other">Other</span></td><td><span class="jb-status-pill jb-status-saved">Saved</span></td><td><span class="jb-priority-badge jb-priority-medium">Medium</span></td><td>-</td><td>-</td></tr>
+        <tr class="jb-row"><td>25 Mar</td><td style="color:#1a73e8;font-weight:500;">Senior Performance Marketing Manager</td><td>OnBuy</td><td>Manchester, UK</td><td>£75k-£85k/yr</td><td><span class="jb-source-badge jb-source-linkedin">LinkedIn</span></td><td><span class="jb-status-pill jb-status-interview">Interview</span></td><td><span class="jb-priority-badge jb-priority-medium">Medium</span></td><td>-</td><td>-</td></tr>
+        <tr class="jb-row"><td>25 Mar</td><td style="color:#1a73e8;font-weight:500;">Huzzle.com PPC Manager</td><td>Huzzle</td><td>Remote, UK</td><td>-</td><td><span class="jb-source-badge jb-source-linkedin">LinkedIn</span></td><td><span class="jb-status-pill jb-status-saved">Saved</span></td><td><span class="jb-priority-badge jb-priority-low">Low</span></td><td>-</td><td>-</td></tr>
+        <tr class="jb-row"><td>25 Mar</td><td style="color:#1a73e8;font-weight:500;">Test Job</td><td>Test Company</td><td>Remote, UK</td><td>£50,000</td><td><span class="jb-source-badge jb-source-indeed">Indeed</span></td><td><span class="jb-status-pill jb-status-applied">Applied</span></td><td><span class="jb-priority-badge jb-priority-medium">Medium</span></td><td>26 Mar</td><td>-</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+<!-- ================================================================= -->
+<!-- STATE 2: Search panel open — search form -->
+<!-- ================================================================= -->
+<div class="state" id="state-2">
+<div class="main-content" style="padding-bottom:60px;filter:brightness(0.7);pointer-events:none;">
+  <div class="d-flex align-items-start justify-content-between mb-4">
+    <div><h2 class="mb-1" style="font-size:22px;font-weight:700;">Jobs</h2></div>
+  </div>
+</div>
+<div class="panel-overlay" onclick="showState(1)"></div>
+<div class="search-panel">
+  <div class="search-panel-header">
+    <h4><span class="material-symbols-outlined" style="font-size:22px;vertical-align:middle;color:#1a73e8;margin-right:8px;">search</span>Search Jobs</h4>
+    <button class="btn btn-sm" onclick="showState(1)" style="font-size:22px;color:#5f6368;background:none;border:none;line-height:1;">&times;</button>
+  </div>
+  <div class="search-panel-body">
+    <div class="search-form">
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label">Keywords</label>
+          <input type="text" class="form-control" value="Google Ads Manager" placeholder="e.g. Google Ads Manager, PPC Specialist...">
+        </div>
+        <div class="col-4">
+          <label class="form-label">Location</label>
+          <select class="form-select">
+            <option>United Kingdom</option>
+            <option>United States</option>
+            <option selected>Both UK &amp; USA</option>
+          </select>
+        </div>
+        <div class="col-4">
+          <label class="form-label">Posted Within</label>
+          <select class="form-select">
+            <option>Last 24 hours</option>
+            <option selected>Last 3 days</option>
+            <option>Last 7 days</option>
+            <option>Last 14 days</option>
+            <option>Last 30 days</option>
+          </select>
+        </div>
+        <div class="col-4">
+          <label class="form-label">Max Results</label>
+          <select class="form-select">
+            <option>10</option>
+            <option selected>20</option>
+            <option>50</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Search On</label>
+          <div class="site-checks" style="margin-top:6px;">
+            <label class="site-check"><input type="checkbox" checked> Indeed</label>
+            <label class="site-check"><input type="checkbox" checked> LinkedIn</label>
+            <label class="site-check"><input type="checkbox"> Glassdoor</label>
+            <label class="site-check"><input type="checkbox"> ZipRecruiter</label>
+            <label class="site-check"><input type="checkbox"> Google</label>
+          </div>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Remote Only</label>
+          <div style="margin-top:6px;">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" checked style="width:36px;height:20px;">
+              <label class="form-check-label" style="font-size:13px;margin-left:4px;">Remote positions only</label>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 mt-2">
+          <button class="btn btn-primary" onclick="showState(3)" style="background:#1a73e8;border-color:#1a73e8;padding:8px 28px;font-size:13px;">
+            <i class="bi bi-search me-2"></i>Search Jobs
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="search-empty">
+      <span class="material-symbols-outlined" style="font-size:48px;color:#dadce0;display:block;margin-bottom:12px;">work_outline</span>
+      <div style="font-size:14px;font-weight:500;color:#202124;">Search for jobs</div>
+      <div style="font-size:12px;margin-top:4px;">Enter keywords and click Search to find remote PPC &amp; Google Ads roles across multiple job boards.</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ================================================================= -->
+<!-- STATE 3: Search panel — loading -->
+<!-- ================================================================= -->
+<div class="state" id="state-3">
+<div class="main-content" style="padding-bottom:60px;filter:brightness(0.7);pointer-events:none;">
+  <div class="d-flex align-items-start justify-content-between mb-4">
+    <div><h2 class="mb-1" style="font-size:22px;font-weight:700;">Jobs</h2></div>
+  </div>
+</div>
+<div class="panel-overlay"></div>
+<div class="search-panel">
+  <div class="search-panel-header">
+    <h4><span class="material-symbols-outlined" style="font-size:22px;vertical-align:middle;color:#1a73e8;margin-right:8px;">search</span>Search Jobs</h4>
+    <button class="btn btn-sm" onclick="showState(2)" style="font-size:22px;color:#5f6368;background:none;border:none;line-height:1;">&times;</button>
+  </div>
+  <div class="search-panel-body">
+    <div class="search-form-collapsed">
+      <div class="search-summary">
+        <strong>Google Ads Manager</strong> &middot; Both UK &amp; USA &middot; Last 3 days &middot; Remote &middot; Indeed, LinkedIn
+      </div>
+      <button class="btn btn-sm btn-outline-secondary" style="font-size:11px;" onclick="showState(2)">Edit</button>
+    </div>
+    <div class="search-loading" onclick="showState(4)" style="cursor:pointer;">
+      <div class="spinner-border mb-3" role="status"></div>
+      <div style="font-size:14px;font-weight:500;color:#202124;">Searching Indeed &amp; LinkedIn...</div>
+      <div style="font-size:12px;margin-top:4px;color:#5f6368;">This usually takes 10–15 seconds</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ================================================================= -->
+<!-- STATE 4: Search panel — results (click row to view detail slide-in) -->
+<!-- ================================================================= -->
+<div class="state" id="state-4">
+<div class="main-content" style="padding-bottom:60px;filter:brightness(0.7);pointer-events:none;">
+  <div class="d-flex align-items-start justify-content-between mb-4">
+    <div><h2 class="mb-1" style="font-size:22px;font-weight:700;">Jobs</h2></div>
+  </div>
+</div>
+<div class="panel-overlay"></div>
+<div class="search-panel">
+  <div class="search-panel-header">
+    <h4><span class="material-symbols-outlined" style="font-size:22px;vertical-align:middle;color:#1a73e8;margin-right:8px;">search</span>Search Jobs</h4>
+    <button class="btn btn-sm" onclick="showState(1)" style="font-size:22px;color:#5f6368;background:none;border:none;line-height:1;">&times;</button>
+  </div>
+  <div class="search-panel-body">
+    <div class="search-form-collapsed">
+      <div class="search-summary">
+        <strong>Google Ads Manager</strong> &middot; Both UK &amp; USA &middot; Last 3 days &middot; Remote &middot; Indeed, LinkedIn
+      </div>
+      <button class="btn btn-sm btn-outline-secondary" style="font-size:11px;" onclick="showState(2)">Edit</button>
+    </div>
+
+    <div class="results-header">
+      <div class="d-flex align-items-center gap-3">
+        <h6>18 jobs found</h6>
+        <span style="font-size:12px;color:#5f6368;">3 already in tracker</span>
+      </div>
+      <div class="d-flex gap-2 align-items-center">
+        <div class="rows-per-page">Rows per page: <select style="font-size:12px;"><option>25</option><option>50</option></select></div>
+        <button class="btn btn-sm" style="font-size:11px;padding:4px 12px;border:1px solid #1a73e8;border-radius:4px;background:#fff;color:#1a73e8;" onclick="showState(6)">
+          Save All New (15)
+        </button>
+      </div>
+    </div>
+
+    <!-- Results table — click row to open detail slide-in -->
+    <div class="table-wrapper">
+      <table class="table table-sm mb-0" style="font-size:12px;">
+        <thead>
+          <tr>
+            <th style="width:240px;">Title</th>
+            <th style="width:130px;">Company</th>
+            <th style="width:100px;">Location</th>
+            <th style="width:110px;">Salary</th>
+            <th style="width:80px;">Source</th>
+            <th style="width:70px;">Posted</th>
+            <th style="width:80px;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="jb-row" onclick="showState(5)" style="background:#f0f4ff;">
+            <td style="color:#1a73e8;font-weight:500;">Performance Marketing Manager <i class="bi bi-chevron-right" style="font-size:10px;color:#5f6368;margin-left:4px;"></i></td>
+            <td>Constructor</td>
+            <td>Remote, GB</td>
+            <td>-</td>
+            <td><span class="jb-source-badge jb-source-indeed">Indeed</span></td>
+            <td style="color:#5f6368;">24 Mar</td>
+            <td><button class="btn-save-job" onclick="event.stopPropagation()">+ Save</button></td>
+          </tr>
+          <tr class="jb-row">
+            <td style="color:#1a73e8;font-weight:500;">Paid Media Strategist, Google Ads &amp; Meta</td>
+            <td>Blue Sky Marketing</td>
+            <td>Remote, US</td>
+            <td style="font-weight:500;">$80k-$120k</td>
+            <td><span class="jb-source-badge jb-source-indeed">Indeed</span></td>
+            <td style="color:#5f6368;">25 Mar</td>
+            <td><button class="btn-save-job" onclick="event.stopPropagation()">+ Save</button></td>
+          </tr>
+          <tr class="jb-row">
+            <td style="color:#1a73e8;font-weight:500;">Senior Google Ads &amp; Facebook Ads Manager</td>
+            <td>The Growth Agency</td>
+            <td>Remote, US</td>
+            <td style="font-weight:500;">$90k-$130k</td>
+            <td><span class="jb-source-badge jb-source-linkedin">LinkedIn</span></td>
+            <td style="color:#5f6368;">26 Mar</td>
+            <td><button class="btn-save-job" onclick="event.stopPropagation()">+ Save</button></td>
+          </tr>
+          <tr class="jb-row">
+            <td style="color:#1a73e8;font-weight:500;">Digital Marketing Specialist (Google/Meta)</td>
+            <td>SYVO</td>
+            <td>Texas, US</td>
+            <td style="font-weight:500;">$65k-$85k</td>
+            <td><span class="jb-source-badge jb-source-linkedin">LinkedIn</span></td>
+            <td style="color:#5f6368;">22 Mar</td>
+            <td><button class="btn-save-job" onclick="event.stopPropagation()">+ Save</button></td>
+          </tr>
+          <tr class="jb-row">
+            <td style="color:#1a73e8;font-weight:500;">Manager, Digital Marketing Growth</td>
+            <td>Xactly Corp.</td>
+            <td>Remote, US</td>
+            <td style="font-weight:500;">$112k-$139k</td>
+            <td><span class="jb-source-badge jb-source-indeed">Indeed</span></td>
+            <td style="color:#5f6368;">21 Mar</td>
+            <td><button class="btn-save-job" onclick="event.stopPropagation()">+ Save</button></td>
+          </tr>
+          <!-- Duplicate -->
+          <tr class="jb-row" style="opacity:0.6;">
+            <td style="color:#5f6368;font-weight:500;">Senior Performance Marketing Manager</td>
+            <td style="color:#5f6368;">OnBuy</td>
+            <td style="color:#5f6368;">Manchester, UK</td>
+            <td style="color:#5f6368;">£75k-£85k</td>
+            <td><span class="jb-source-badge jb-source-linkedin">LinkedIn</span></td>
+            <td style="color:#5f6368;">20 Mar</td>
+            <td><span class="btn-saved"><i class="bi bi-check2"></i> Saved</span></td>
+          </tr>
+          <tr class="jb-row">
+            <td style="color:#1a73e8;font-weight:500;">PPC Manager (Google &amp; Bing Ads)</td>
+            <td>Boost Media Group</td>
+            <td>Remote, US</td>
+            <td style="font-weight:500;">$70k-$95k</td>
+            <td><span class="jb-source-badge jb-source-linkedin">LinkedIn</span></td>
+            <td style="color:#5f6368;">23 Mar</td>
+            <td><button class="btn-save-job" onclick="event.stopPropagation()">+ Save</button></td>
+          </tr>
+          <tr class="jb-row">
+            <td style="color:#1a73e8;font-weight:500;">Digital Performance Specialist</td>
+            <td>Learning Pool</td>
+            <td>Remote, GB</td>
+            <td style="font-weight:500;">£40k-£50k</td>
+            <td><span class="jb-source-badge jb-source-indeed">Indeed</span></td>
+            <td style="color:#5f6368;">19 Mar</td>
+            <td><button class="btn-save-job" onclick="event.stopPropagation()">+ Save</button></td>
+          </tr>
+          <tr class="jb-row">
+            <td style="color:#1a73e8;font-weight:500;">Paid Media Performance Specialist</td>
+            <td>Bath Fitter</td>
+            <td>Remote, US</td>
+            <td>-</td>
+            <td><span class="jb-source-badge jb-source-glassdoor">Glassdoor</span></td>
+            <td style="color:#5f6368;">25 Mar</td>
+            <td><button class="btn-save-job" onclick="event.stopPropagation()">+ Save</button></td>
+          </tr>
+          <tr class="jb-row">
+            <td style="color:#1a73e8;font-weight:500;">Google Ads Specialist (Remote)</td>
+            <td>Rocket Digital</td>
+            <td>Remote, GB</td>
+            <td style="font-weight:500;">£45k-£55k</td>
+            <td><span class="jb-source-badge jb-source-ziprecruiter">ZipRecruiter</span></td>
+            <td style="color:#5f6368;">26 Mar</td>
+            <td><button class="btn-save-job" onclick="event.stopPropagation()">+ Save</button></td>
+          </tr>
+          <tr class="jb-row">
+            <td style="color:#1a73e8;font-weight:500;">Head of Paid Media</td>
+            <td>TechFlow Inc.</td>
+            <td>Remote, US</td>
+            <td style="font-weight:500;">$140k-$170k</td>
+            <td><span class="jb-source-badge jb-source-google">Google</span></td>
+            <td style="color:#5f6368;">24 Mar</td>
+            <td><button class="btn-save-job" onclick="event.stopPropagation()">+ Save</button></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="jb-pagination-row">
+        <span>Showing 1-11 of 18</span>
+        <div></div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:8px;font-size:11px;color:#9aa0a6;">Click any row to view full job details</div>
+  </div>
+</div>
+</div>
+
+<!-- ================================================================= -->
+<!-- STATE 5: Job detail slide-in (opens over search panel) -->
+<!-- ================================================================= -->
+<div class="state" id="state-5">
+<div class="main-content" style="padding-bottom:60px;filter:brightness(0.5);pointer-events:none;">
+  <div class="d-flex align-items-start justify-content-between mb-4">
+    <div><h2 class="mb-1" style="font-size:22px;font-weight:700;">Jobs</h2></div>
+  </div>
+</div>
+<div class="panel-overlay"></div>
+<!-- Search panel behind, dimmed -->
+<div style="position:fixed;top:0;right:0;width:860px;height:100vh;background:#fff;z-index:1050;filter:brightness(0.85);pointer-events:none;">
+  <div class="search-panel-header" style="border-bottom:1px solid #e0e0e0;padding:18px 24px;">
+    <h4 style="margin:0;font-size:18px;font-weight:700;color:#202124;">Search Jobs</h4>
+  </div>
+</div>
+<!-- Detail slide-in on top -->
+<div style="position:fixed;top:0;right:0;width:520px;height:100vh;background:#fff;box-shadow:-4px 0 20px rgba(0,0,0,0.2);z-index:1060;display:flex;flex-direction:column;overflow:hidden;">
+  <!-- Header -->
+  <div style="padding:18px 24px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="btn btn-sm" onclick="showState(4)" style="border:none;background:none;color:#5f6368;font-size:18px;padding:0;"><i class="bi bi-arrow-left"></i></button>
+      <h5 style="margin:0;font-size:16px;font-weight:700;color:#202124;">Job Details</h5>
+    </div>
+    <button class="btn btn-sm" onclick="showState(4)" style="font-size:20px;color:#5f6368;background:none;border:none;line-height:1;">&times;</button>
+  </div>
+  <!-- Body -->
+  <div style="padding:24px;overflow-y:auto;flex:1;">
+    <!-- Title & Company -->
+    <h4 style="font-size:18px;font-weight:700;color:#202124;margin-bottom:4px;">Performance Marketing Manager</h4>
+    <div style="font-size:14px;color:#1a73e8;font-weight:500;margin-bottom:16px;">Constructor</div>
+
+    <!-- Quick info pills -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+      <span class="jb-source-badge jb-source-indeed" style="font-size:12px;padding:4px 10px;">Indeed</span>
+      <span style="background:#f1f3f4;padding:4px 10px;border-radius:4px;font-size:12px;color:#5f6368;"><i class="bi bi-geo-alt me-1"></i>Remote, GB</span>
+      <span style="background:#f1f3f4;padding:4px 10px;border-radius:4px;font-size:12px;color:#5f6368;"><i class="bi bi-briefcase me-1"></i>Full-time</span>
+      <span style="background:#f1f3f4;padding:4px 10px;border-radius:4px;font-size:12px;color:#5f6368;"><i class="bi bi-calendar3 me-1"></i>Posted 24 Mar</span>
+    </div>
+
+    <!-- Detail grid -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;margin-bottom:24px;">
+      <div>
+        <div class="jb-detail-label">Salary</div>
+        <div class="jb-detail-value" style="font-weight:600;">Not listed</div>
+      </div>
+      <div>
+        <div class="jb-detail-label">Remote</div>
+        <div class="jb-detail-value"><span style="color:#15803d;font-weight:500;">&#10003; Yes — Remote</span></div>
+      </div>
+      <div>
+        <div class="jb-detail-label">Job URL</div>
+        <div class="jb-detail-value"><a href="#" style="color:#1a73e8;text-decoration:none;font-size:12px;">https://uk.indeed.com/viewjob?jk=be70a82c...</a></div>
+      </div>
+      <div>
+        <div class="jb-detail-label">Company URL</div>
+        <div class="jb-detail-value"><a href="#" style="color:#1a73e8;text-decoration:none;font-size:12px;">https://constructor.io</a></div>
+      </div>
+      <div>
+        <div class="jb-detail-label">Date Posted</div>
+        <div class="jb-detail-value">24 Mar 2026</div>
+      </div>
+      <div>
+        <div class="jb-detail-label">Job Type</div>
+        <div class="jb-detail-value">Full-time</div>
+      </div>
+    </div>
+
+    <!-- Contact section -->
+    <div style="background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;padding:16px;margin-bottom:24px;">
+      <div class="jb-detail-label" style="margin-bottom:12px;font-size:12px;">Contact Information</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div>
+          <div class="jb-detail-label">Contact Name</div>
+          <div class="jb-detail-value" style="font-weight:500;">Sarah Mitchell</div>
+        </div>
+        <div>
+          <div class="jb-detail-label">Email</div>
+          <div class="jb-detail-value" style="color:#9aa0a6;font-style:italic;font-size:12px;">Add after saving</div>
+        </div>
+        <div>
+          <div class="jb-detail-label">Phone</div>
+          <div class="jb-detail-value" style="color:#9aa0a6;font-style:italic;font-size:12px;">Add after saving</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div style="margin-bottom:24px;">
+      <div class="jb-detail-label" style="margin-bottom:8px;">Description</div>
+      <div style="background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;padding:16px;font-size:13px;line-height:1.7;color:#202124;max-height:500px;overflow-y:auto;">
+        <p style="margin-bottom:12px;">We are looking for a <strong>Performance Marketing Manager</strong> to lead paid search and paid social campaigns across global markets. This is a remote-first role based in the UK.</p>
+        <p style="margin-bottom:12px;"><strong>What you'll do:</strong></p>
+        <ul style="margin-bottom:12px;padding-left:20px;">
+          <li>Manage six-figure monthly budgets across Google Ads (Search, Shopping, PMAX) and Meta Ads</li>
+          <li>Optimise campaigns for ROAS and CPA targets across multiple product verticals</li>
+          <li>Work closely with product and analytics teams to drive growth</li>
+          <li>Own the paid media reporting stack and present insights to leadership</li>
+          <li>Test new channels and audiences to scale acquisition profitably</li>
+        </ul>
+        <p style="margin-bottom:12px;"><strong>Requirements:</strong></p>
+        <ul style="padding-left:20px;">
+          <li>5+ years managing Google Ads at scale</li>
+          <li>Strong Shopping and Performance Max experience</li>
+          <li>Experience with Meta Ads and attribution modelling</li>
+          <li>Analytical mindset with proficiency in GA4 and Looker Studio</li>
+          <li>E-commerce or SaaS background preferred</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div style="display:flex;gap:12px;">
+      <button class="btn btn-primary" style="background:#1a73e8;border-color:#1a73e8;padding:10px 24px;font-size:13px;flex:1;">
+        <i class="bi bi-plus-lg me-2"></i>Save to Tracker
+      </button>
+      <a href="#" class="btn btn-outline-secondary" style="padding:10px 20px;font-size:13px;">
+        <i class="bi bi-box-arrow-up-right me-2"></i>Open Original
+      </a>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ================================================================= -->
+<!-- STATE 6: After bulk import — toast + updated table -->
+<!-- ================================================================= -->
+<div class="state" id="state-6">
+<div class="main-content" style="padding-bottom:60px;">
+  <div class="d-flex align-items-start justify-content-between mb-4">
+    <div>
+      <h2 class="mb-1" style="font-size:22px;font-weight:700;">Jobs</h2>
+      <p class="text-muted mb-0" style="font-size:13px;">Track job applications for PPC &amp; Google Ads roles</p>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      <div class="d-flex gap-1" style="background:#f1f3f4;padding:3px;border-radius:6px;">
+        <button class="btn btn-sm jb-view-btn active"><i class="bi bi-table"></i></button>
+        <button class="btn btn-sm jb-view-btn"><i class="bi bi-kanban"></i></button>
+      </div>
+      <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-cloud-download me-1"></i>Sync from Sheet</button>
+      <button class="btn btn-sm" style="border:1px solid #1a73e8;color:#1a73e8;background:#fff;font-size:12px;padding:5px 14px;border-radius:6px;">
+        <i class="bi bi-search me-1"></i>Search Jobs
+      </button>
+      <button class="btn btn-primary btn-sm" style="background:#1a73e8;border-color:#1a73e8;"><i class="bi bi-plus-lg me-1"></i>Add Job</button>
+    </div>
+  </div>
+
+  <div class="jb-stats-row">
+    <div class="jb-stat-card"><div class="jb-stat-value">19</div><div class="jb-stat-label">Total Jobs</div></div>
+    <div class="jb-stat-card jb-stat-blue"><div class="jb-stat-value">1</div><div class="jb-stat-label">Applications Sent</div></div>
+    <div class="jb-stat-card jb-stat-amber"><div class="jb-stat-value">1</div><div class="jb-stat-label">Interviews Scheduled</div></div>
+    <div class="jb-stat-card jb-stat-green"><div class="jb-stat-value">0</div><div class="jb-stat-label">Offers Received</div></div>
+    <div class="jb-stat-card jb-stat-purple"><div class="jb-stat-value">5%</div><div class="jb-stat-label">Response Rate</div></div>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+      <div class="filter-tabs" style="padding:4px;">
+        <button class="filter-tab active">All <span class="badge bg-secondary ms-1">19</span></button>
+        <button class="filter-tab">Saved <span class="badge ms-1" style="background:#5f6368;">17</span></button>
+        <button class="filter-tab">Applied <span class="badge ms-1" style="background:#1d4ed8;">1</span></button>
+        <button class="filter-tab">Interview <span class="badge ms-1" style="background:#92400e;">1</span></button>
+        <button class="filter-tab">Offer <span class="badge ms-1" style="background:#15803d;">0</span></button>
+        <button class="filter-tab">Rejected <span class="badge ms-1" style="background:#991b1b;">0</span></button>
+      </div>
+      <span class="text-muted" style="font-size:13px;">19 jobs</span>
+    </div>
+    <input class="jb-search-input" type="text" placeholder="Search jobs...">
+  </div>
+
+  <div class="table-wrapper">
+    <div class="jb-pagination-row" style="border-top:none;border-bottom:1px solid #e0e0e0;">
+      <span>1-19 of 19</span>
+      <div class="rows-per-page">Rows per page: <select><option>25</option></select></div>
+    </div>
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th class="jb-sortable jb-sort-active" style="width:90px;">Added <span class="jb-sort-icon">&#8595;</span></th>
+          <th class="jb-sortable" style="width:220px;">Title <span class="jb-sort-icon">&#8597;</span></th>
+          <th class="jb-sortable" style="width:140px;">Company <span class="jb-sort-icon">&#8597;</span></th>
+          <th class="jb-sortable" style="width:120px;">Location <span class="jb-sort-icon">&#8597;</span></th>
+          <th class="jb-sortable" style="width:130px;">Salary <span class="jb-sort-icon">&#8597;</span></th>
+          <th class="jb-sortable" style="width:80px;">Source <span class="jb-sort-icon">&#8597;</span></th>
+          <th class="jb-sortable" style="width:80px;">Status <span class="jb-sort-icon">&#8597;</span></th>
+          <th class="jb-sortable" style="width:70px;">Priority <span class="jb-sort-icon">&#8597;</span></th>
+          <th style="width:80px;">Applied</th>
+          <th style="width:80px;">Follow-up</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="jb-row jb-row-new"><td>27 Mar</td><td style="color:#1a73e8;font-weight:500;">Head of Paid Media</td><td>TechFlow Inc.</td><td>Remote, US</td><td>$140k-$170k</td><td><span class="jb-source-badge jb-source-google">Google</span></td><td><span class="jb-status-pill jb-status-saved">Saved</span></td><td><span class="jb-priority-badge jb-priority-medium">Medium</span></td><td>-</td><td>-</td></tr>
+        <tr class="jb-row jb-row-new"><td>27 Mar</td><td style="color:#1a73e8;font-weight:500;">Google Ads Specialist (Remote)</td><td>Rocket Digital</td><td>Remote, GB</td><td>£45k-£55k</td><td><span class="jb-source-badge jb-source-ziprecruiter">ZipRecruiter</span></td><td><span class="jb-status-pill jb-status-saved">Saved</span></td><td><span class="jb-priority-badge jb-priority-medium">Medium</span></td><td>-</td><td>-</td></tr>
+        <tr class="jb-row jb-row-new"><td>27 Mar</td><td style="color:#1a73e8;font-weight:500;">Manager, Digital Marketing Growth</td><td>Xactly Corp.</td><td>Remote, US</td><td>$112k-$139k</td><td><span class="jb-source-badge jb-source-indeed">Indeed</span></td><td><span class="jb-status-pill jb-status-saved">Saved</span></td><td><span class="jb-priority-badge jb-priority-medium">Medium</span></td><td>-</td><td>-</td></tr>
+        <tr class="jb-row jb-row-new"><td>27 Mar</td><td style="color:#1a73e8;font-weight:500;">Paid Media Strategist, Google Ads &amp; Meta</td><td>Blue Sky Marketing</td><td>Remote, US</td><td>$80k-$120k</td><td><span class="jb-source-badge jb-source-indeed">Indeed</span></td><td><span class="jb-status-pill jb-status-saved">Saved</span></td><td><span class="jb-priority-badge jb-priority-medium">Medium</span></td><td>-</td><td>-</td></tr>
+        <tr class="jb-row"><td>27 Mar</td><td style="color:#1a73e8;font-weight:500;">Google Ads and PPC Strategist</td><td>Harnham</td><td>USA, US</td><td>$35-$40/hr</td><td><span class="jb-source-badge jb-source-other">Other</span></td><td><span class="jb-status-pill jb-status-saved">Saved</span></td><td><span class="jb-priority-badge jb-priority-medium">Medium</span></td><td>-</td><td>-</td></tr>
+        <tr class="jb-row"><td>25 Mar</td><td style="color:#1a73e8;font-weight:500;">Senior Performance Marketing Manager</td><td>OnBuy</td><td>Manchester, UK</td><td>£75k-£85k/yr</td><td><span class="jb-source-badge jb-source-linkedin">LinkedIn</span></td><td><span class="jb-status-pill jb-status-interview">Interview</span></td><td><span class="jb-priority-badge jb-priority-medium">Medium</span></td><td>-</td><td>-</td></tr>
+      </tbody>
+    </table>
+    <div class="jb-pagination-row">
+      <span>Showing 6 of 19 (scroll for more)</span>
+      <div></div>
+    </div>
+  </div>
+
+  <!-- Success toast -->
+  <div class="toast-msg">
+    <i class="bi bi-check-circle-fill"></i>
+    15 new jobs saved to tracker. 3 duplicates skipped.
+  </div>
+</div>
+</div>
+
+<!-- ======== STATE SWITCHER BAR ======== -->
+<div class="wireframe-bar">
+  <button class="active" onclick="showState(1)">1. Jobs Page</button>
+  <button onclick="showState(2)">2. Search Form</button>
+  <button onclick="showState(3)">3. Loading</button>
+  <button onclick="showState(4)">4. Results</button>
+  <button onclick="showState(5)">5. Job Detail</button>
+  <button onclick="showState(6)">6. After Import</button>
+</div>
+
+<script>
+function showState(n) {
+  document.querySelectorAll('.state').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.wireframe-bar button').forEach(b => b.classList.remove('active'));
+  document.getElementById('state-' + n).classList.add('active');
+  document.querySelectorAll('.wireframe-bar button')[n-1].classList.add('active');
+}
+function toggleExpand(row) {
+  const next = row.nextElementSibling;
+  if (next && next.classList.contains('jb-expand-row')) {
+    next.classList.toggle('open');
+    row.classList.toggle('jb-row-expanded');
+  }
+}
+</script>
+
+</body>
+</html>
