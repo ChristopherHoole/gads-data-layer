@@ -1,0 +1,111 @@
+Hi Owen,
+
+Two documents attached from today's work.
+
+Day 1 Implementation Report — everything I changed in your Google Ads account today. The highlights: I fixed your conversion tracking so the algorithm stops optimising for email clicks, set a target CPA of £30, rebuilt your negative keywords from scratch (and found 6 that were actively blocking your paying customers), re-enabled 8 high-performing keywords the previous agency had paused, and rebuilt your geographic targeting across 52 UK counties.
+Monthly Optimisation Plan — the roadmap for the next 3 months. Im going to work 2 hours every Monday on your account. Tomorrow i'll do a deep keyword and search term audit plus build new ad copy for testing. Over the coming weeks i'll also build you a dedicated landing page to improve your Quality Scores, which is the biggest lever for reducing your click costs.
+ObjectionExperts.com - Day1 Implementation Report
+ObjectionExperts.com - Monthly Optimisation Plan
+The target is to bring your cost per lead from £39 down to £25 within 8-12 weeks.
+
+Happy to jump on a call to walk through either document if useful.
+
+Best,
+Christopher
+ 2 attachment
+  •  Scanned by Gmail
+
+owen@objectionexperts.com
+Wed 1 Apr, 17:52 (2 days ago)
+to me
+
+Thanks for this Chris – one thing I should note is that “appeals” and “objection” are two different things in planning – appeals happen by applicants when permission is approved, so we should keep a close eye on these, as I am not looking for people seeking planning appeals (this is a totally different service), I am looking for people seeking planning objections.
+
+ 
+
+Kind regards,
+
+Owen
+
+
+Chris H <chris@christopherhoole.com>
+Wed 1 Apr, 18:01 (2 days ago)
+to owen
+
+Hi Owen,
+
+Thanks for the feedback. I will implement this and keep it in mind going forward. 
+Anything else, just let me know. 
+
+Owen Hoare
+Wed 1 Apr, 18:13 (2 days ago)
+to me
+
+Hi Chris,
+
+By implement, do you mean readding appeals to negatives?
+
+Also, just want to say how good I think this presentation is doing and is really what I expected from past agencies. I have my fingers crossed that this will work, as it aligns with what I had been hoping for my old agency to do.
+
+Cheers
+Owen
+
+Sent from Outlook for Android
+From: Chris H <chris@christopherhoole.com>
+Sent: Wednesday, April 1, 2026 6:01:29 PM
+To: owen@objectionexperts.com <owen@objectionexperts.com>
+Subject: Re: Day 1 Implementation Report + Monthly Optimisation Plan
+ 
+...
+
+[Message clipped]  View entire message
+
+Owen Hoare
+Wed 1 Apr, 21:06 (2 days ago)
+to me
+
+Hi Chris,
+
+ 
+
+Hope I am not micromanaging you, I just thought I’d go through the list of added negatives, just in case anything else slipped through the cracks like the appeals thing due to the somewhat unique nature of the business.
+
+ 
+
+Ones which may potentially merit some consideration for removal (and keeping a close eye on) are:
+
+ 
+
+planning consultant (for objections by planning consultant or similar)
+
+permitted development (as I do object to permitted development applications)
+
+ 
+
+change of use (as I object to change of use applications – these are actually what I seem to be doing most of at the moment, so don’t want to lose people searching to stuff like object to change of use).
+
+planning permission extension (I don’t want to lose people searching stuff like planning permission extension objection)
+
+ 
+
+If I am misunderstanding how phrase match works, do let me know – just food for thought.
+
+ 
+
+Cheers,
+
+Owen
+
+...
+
+[Message clipped]  View entire message
+
+Chris H <chris@christopherhoole.com>
+Thu 2 Apr, 11:02 (1 day ago)
+to Owen
+
+Hi Owen,
+
+This info is great feedback, thank you. 
+I'll go over all this today and apply it when I'm doing the keyword and search term review later. 
+Any other information you have like this is invaluable, so please keep it coming. 
