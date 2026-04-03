@@ -34,10 +34,11 @@
             <button class="rules-sub-tab active" onclick="setTabFilter('', this)">All <span class="rules-sub-badge" style="background:#6b7280;color:#fff;">{{ stats.total }}</span></button>
             <button class="rules-sub-tab" onclick="setTabFilter('Cold', this)">Cold <span class="rules-sub-badge" style="background:#9ca3af;color:#fff;">{{ stats.cold }}</span></button>
             <button class="rules-sub-tab" onclick="setTabFilter('Queued', this)">Queued <span class="rules-sub-badge" style="background:#3b82f6;color:#fff;">{{ stats.queued }}</span></button>
-            <button class="rules-sub-tab" onclick="setTabFilter('Contacted', this)">Contacted <span class="rules-sub-badge" style="background:#1e40af;color:#fff;">{{ stats.contacted }}</span></button>
-            <button class="rules-sub-tab" onclick="setTabFilter('Reply Received', this)">Replied <span class="rules-sub-badge" style="background:#16a34a;color:#fff;">{{ stats.replies }}</span></button>
+            <button class="rules-sub-tab" onclick="setTabFilter('active', this)">Active <span class="rules-sub-badge" style="background:#1e40af;color:#fff;">{{ stats.contacted }}</span></button>
+            <button class="rules-sub-tab" onclick="setTabFilter('in_conversation', this)">In Conversation <span class="rules-sub-badge" style="background:#16a34a;color:#fff;">{{ stats.replies }}</span></button>
+            <button class="rules-sub-tab" onclick="setTabFilter('Meeting', this)">Meeting <span class="rules-sub-badge" style="background:#e8710a;color:#fff;">{{ stats.meeting }}</span></button>
             <button class="rules-sub-tab" onclick="setTabFilter('Won', this)">Won <span class="rules-sub-badge" style="background:#166534;color:#fff;">{{ stats.won }}</span></button>
-            <button class="rules-sub-tab" onclick="setTabFilter('No Reply', this)">No reply <span class="rules-sub-badge" style="background:#9ca3af;color:#fff;">{{ stats.no_reply }}</span></button>
+            <button class="rules-sub-tab" onclick="setTabFilter('closed', this)">Closed <span class="rules-sub-badge" style="background:#dc2626;color:#fff;">{{ stats.no_reply + stats.bounced }}</span></button>
         </div>
         <div class="leads-toolbar-right">
             <span class="result-count" id="resultCount">Showing {{ leads|length }} leads</span>
@@ -250,6 +251,7 @@
         <div class="si-exit-states">
             <button class="si-exit-btn" onclick="siClickStage('no_reply')">No Reply</button>
             <button class="si-exit-btn si-exit-lost" onclick="siClickStage('lost')">Lost</button>
+            <button class="si-exit-btn si-exit-bounced" onclick="siClickStage('bounced')">Bounced</button>
         </div>
     </div>
 
@@ -302,8 +304,12 @@
                 </div>
                 <button class="si-send-btn-new" onclick="siSendReply()">Send Reply</button>
             </div>
-            {# Signature preview #}
-            <div id="siSigPreview" class="si-sig-preview">
+            {# Signature preview (collapsible) #}
+            <div class="si-sig-bar" onclick="siToggleSigPreview()">
+                <span>✍ Signature preview</span>
+                <span class="si-sig-bar-arrow" id="siSigArrow">▾</span>
+            </div>
+            <div id="siSigPreview" class="si-sig-preview" style="display:none;">
                 <strong>Christopher Hoole</strong><br>
                 Google Ads Specialist | 16 Years Experience<br>
                 +44 7451 252857<br>
@@ -312,14 +318,14 @@
             </div>
         </div>
 
-        {# Footer actions #}
+        {# Footer actions: Delete far left | Edit lead + Queue email far right #}
         <div class="si-footer">
             <div class="si-footer-group">
-                <button id="panelQueueEmailBtn" class="si-footer-btn primary" onclick="siQueueEmail()">+ Queue email</button>
-                <button class="si-footer-btn" onclick="siStartEdit()">Edit lead</button>
+                <button class="si-footer-btn danger" onclick="siConfirmDelete()">Delete lead</button>
             </div>
             <div class="si-footer-group">
-                <button class="si-footer-btn danger-text" onclick="deleteLead(currentLeadId)">Delete</button>
+                <button class="si-footer-btn" onclick="siStartEdit()">Edit lead</button>
+                <button id="panelQueueEmailBtn" class="si-footer-btn primary" onclick="siQueueEmail()">+ Queue email</button>
             </div>
         </div>
     </div>
@@ -670,39 +676,85 @@ function esc(str) {
 
 // 7-stage progress: Cold=1, Queued=2, Contacted=3, Followed Up=4, In Conversation=5, Meeting=6, Won=7
 const SI_STAGE_MAP = {
-    cold:1, queued:2, contacted:3, followed_up:4, no_reply:3,
+    cold:1, queued:2, contacted:3, followed_up:4,
     replied:5, reply_received:5, in_conversation:5,
-    meeting:6, won:7, lost:7
+    meeting:6, won:7,
+    // Exit states fill to end (stage 7)
+    lost:7, no_reply:7, bounced:7
 };
+
+const SI_EXIT_STATES = ['lost', 'no_reply', 'bounced'];
+const SI_EXIT_LABELS = { lost:'Lost', no_reply:'No Reply', bounced:'Bounced' };
+const SI_EXIT_COLORS = { lost:'#dc2626', no_reply:'#9ca3af', bounced:'#dc2626' };
 
 // Status dot colours — must match table dot colours
 const SI_DOT_COLORS = {
     cold:'#9ca3af', queued:'#3b82f6', contacted:'#1e40af', followed_up:'#d97706',
     replied:'#16a34a', reply_received:'#16a34a', in_conversation:'#1e40af',
-    meeting:'#e8710a', won:'#166534', lost:'#dc2626', no_reply:'#9ca3af'
+    meeting:'#e8710a', won:'#166534', lost:'#dc2626', no_reply:'#9ca3af', bounced:'#dc2626'
 };
 
 function siUpdateProgressBar(status) {
+    const isExit = SI_EXIT_STATES.includes(status);
     const stage = SI_STAGE_MAP[status] || 1;
+
+    // Build progress bars — exit states fill everything as "done" (not green, use exit colour)
     const bars = Array.from({length:7}, (_,i) => {
-        const cls = i+1 < stage ? 'done' : (i+1 === stage ? 'active' : '');
+        let cls = '';
+        if (isExit) {
+            cls = 'done';  // All bars filled for exit states
+        } else {
+            if (i+1 < stage) cls = 'done';
+            else if (i+1 === stage) cls = 'active';
+        }
         return `<div class="si-prog-stage ${cls}"></div>`;
     }).join('');
     document.getElementById('siProgress').innerHTML = bars;
 
+    // If exit state, override the bar colours to the exit colour
+    if (isExit) {
+        const exitColor = SI_EXIT_COLORS[status] || '#9ca3af';
+        document.querySelectorAll('.si-prog-stage').forEach(bar => {
+            bar.style.background = exitColor;
+        });
+    }
+
     // Update labels
-    document.querySelectorAll('.si-prog-label').forEach((label, i) => {
+    const labels = document.querySelectorAll('.si-prog-label');
+    const lastLabel = labels[labels.length - 1];
+
+    // Reset last label back to Won
+    if (lastLabel) {
+        lastLabel.textContent = 'Won';
+        lastLabel.setAttribute('data-status', 'won');
+        lastLabel.setAttribute('onclick', "siClickStage('won')");
+    }
+
+    labels.forEach((label, i) => {
         label.classList.remove('active', 'done');
+        label.style.color = '';  // Reset colour
         const labelStage = i + 1;
-        if (labelStage < stage) label.classList.add('done');
-        else if (labelStage === stage) label.classList.add('active');
+        if (isExit) {
+            label.classList.add('done');
+        } else {
+            if (labelStage < stage) label.classList.add('done');
+            else if (labelStage === stage) label.classList.add('active');
+        }
     });
 
-    // Highlight exit states if active
+    // If exit state, change last label to show the exit state name
+    if (isExit && lastLabel) {
+        lastLabel.textContent = SI_EXIT_LABELS[status] || status;
+        lastLabel.classList.remove('done');
+        lastLabel.classList.add('active');
+        lastLabel.style.color = SI_EXIT_COLORS[status] || '#9ca3af';
+    }
+
+    // Highlight exit button
     document.querySelectorAll('.si-exit-btn').forEach(btn => btn.classList.remove('active'));
-    if (status === 'no_reply' || status === 'lost') {
-        const selector = status === 'lost' ? '.si-exit-lost' : '.si-exit-btn:not(.si-exit-lost)';
-        const btn = document.querySelector(selector);
+    if (isExit) {
+        const selectorMap = { lost: '.si-exit-lost', bounced: '.si-exit-bounced', no_reply: '.si-exit-btn:not(.si-exit-lost):not(.si-exit-bounced)' };
+        const btn = document.querySelector(selectorMap[status]);
         if (btn) btn.classList.add('active');
     }
 }
@@ -725,7 +777,7 @@ function siClickStage(newStatus) {
                     cold:'Cold', queued:'Queued', contacted:'Contacted',
                     followed_up:'Followed Up', reply_received:'Reply Received',
                     in_conversation:'In Conversation', meeting:'Meeting',
-                    won:'Won', lost:'Lost', no_reply:'No Reply'
+                    won:'Won', lost:'Lost', no_reply:'No Reply', bounced:'Bounced'
                 };
                 lead.status_display = displayMap[newStatus] || newStatus;
             }
@@ -802,6 +854,27 @@ function openPanel(leadId) {
 }
 
 function closePanel() {
+    // Update table row with any changes made in the slide-in
+    if (currentLeadId) {
+        const lead = LEADS_DATA.find(l => l.lead_id === currentLeadId);
+        const row = document.querySelector(`tr[data-lead-id="${currentLeadId}"]`);
+        if (lead && row) {
+            // Update status dot + label
+            const statusCell = row.querySelector('.status-cell');
+            if (statusCell) {
+                const cssMap = {
+                    cold:'cold', queued:'queued', contacted:'contacted', followed_up:'followedup',
+                    replied:'replied', reply_received:'replied', in_conversation:'replied',
+                    meeting:'meeting', won:'won', lost:'lost', no_reply:'noreply', bounced:'bounced'
+                };
+                statusCell.className = 'status-cell s-' + (cssMap[lead.status] || 'cold');
+                const label = statusCell.querySelector('.status-label');
+                if (label) label.textContent = lead.status_display || lead.status;
+            }
+            // Update data attribute for filtering
+            row.dataset.status = lead.status_display || lead.status;
+        }
+    }
     document.getElementById('siOverlay').classList.remove('si-open');
     document.getElementById('siPanel').classList.remove('si-open');
     currentLeadId = null;
@@ -981,9 +1054,21 @@ let siSigOn = true;
 function siToggleSignature() {
     siSigOn = !siSigOn;
     const pip = document.getElementById('siSigPip');
-    const preview = document.getElementById('siSigPreview');
     if (pip) pip.classList.toggle('off', !siSigOn);
-    if (preview) preview.style.display = siSigOn ? 'block' : 'none';
+    // If turning off, also collapse the preview
+    if (!siSigOn) {
+        document.getElementById('siSigPreview').style.display = 'none';
+        document.getElementById('siSigArrow').classList.remove('open');
+    }
+}
+
+function siToggleSigPreview() {
+    if (!siSigOn) return; // Don't expand if signature is off
+    const preview = document.getElementById('siSigPreview');
+    const arrow = document.getElementById('siSigArrow');
+    const isOpen = preview.style.display !== 'none';
+    preview.style.display = isOpen ? 'none' : 'block';
+    arrow.classList.toggle('open', !isOpen);
 }
 
 /* ── CV status ───────────────────────────────────────────────── */
@@ -1240,6 +1325,11 @@ function saveStatusUpdate() {
     .catch(() => showToast('Network error', 'error'));
 }
 
+function siConfirmDelete() {
+    if (!currentLeadId) return;
+    deleteLead(currentLeadId);
+}
+
 function deleteLead(leadId) {
     const lead = LEADS_DATA.find(l => l.lead_id === leadId);
     actionLeadId = leadId;
@@ -1339,6 +1429,13 @@ function getAllRows() {
 
 let activeTabStatus = '';
 
+// Grouped tab filters — maps tab value to matching status display names
+const TAB_STATUS_GROUPS = {
+    'active':          ['Contacted', 'Followed Up'],
+    'in_conversation': ['Reply Received', 'In Conversation'],
+    'closed':          ['No Reply', 'Lost', 'Bounced'],
+};
+
 function filterTable() {
     const search = document.getElementById('searchInput').value.toLowerCase();
     const track  = document.getElementById('filterTrack').value;
@@ -1348,10 +1445,20 @@ function filterTable() {
         const rTrack = row.dataset.track  || '';
         const rStatus = row.dataset.status || '';
 
+        let statusMatch = true;
+        if (activeTabStatus) {
+            const group = TAB_STATUS_GROUPS[activeTabStatus];
+            if (group) {
+                statusMatch = group.includes(rStatus);
+            } else {
+                statusMatch = rStatus === activeTabStatus;
+            }
+        }
+
         return (
             (!search || text.includes(search)) &&
             (!track  || rTrack === track) &&
-            (!activeTabStatus || rStatus === activeTabStatus)
+            statusMatch
         );
     });
 
@@ -1487,6 +1594,18 @@ function queueEmail(forceOverride) {
                 lead.status = 'queued';
                 lead.status_display = 'Queued';
                 lead.status_css = 'queued';
+            }
+            // Update progress bar + status badge in slide-in
+            if (lead) {
+                siUpdateProgressBar(lead.status);
+                const dotColor = SI_DOT_COLORS[lead.status] || '#9ca3af';
+                const badgeEl = document.getElementById('siBadgesLeft');
+                if (badgeEl) {
+                    const statusBadge = badgeEl.querySelector('.si-status-badge');
+                    if (statusBadge) {
+                        statusBadge.innerHTML = `<span class="si-status-dot" style="background:${dotColor};"></span>${esc(lead.status_display)}`;
+                    }
+                }
             }
         } else if (data.company_conflict) {
             // Show confirmation dialog for company-level conflict

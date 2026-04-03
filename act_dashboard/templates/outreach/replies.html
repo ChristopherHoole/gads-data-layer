@@ -4,6 +4,8 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/outreach.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/outreach-slidein.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rules.css') }}">
 {% endblock %}
 
 {# ── Custom top navbar ── #}
@@ -17,151 +19,180 @@
 {% block content %}
 <div class="outreach-content">
 
-    {# ── Stats Row (5-col) ── #}
-    <div class="stats-row">
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon stat-icon-green">mark_email_read</span>
-            <div>
-                <div class="stat-val stat-val-green">{{ stats.total_replies }}</div>
-                <div class="stat-lbl">Total replies</div>
-            </div>
+    {# ── Toolbar ── #}
+    <div class="leads-toolbar">
+        <div class="rules-sub-tabs" id="repliesTabs">
+            <button class="rules-sub-tab active" onclick="rFilterTab('', this)">All <span class="rules-sub-badge" style="background:#6b7280;color:#fff;">{{ stats.total_replies }}</span></button>
+            <button class="rules-sub-tab" onclick="rFilterTab('unread', this)">Unread <span class="rules-sub-badge" style="background:#1a73e8;color:#fff;">{{ stats.unread }}</span></button>
+            <button class="rules-sub-tab" onclick="rFilterTab('awaiting', this)">Needs action <span class="rules-sub-badge" style="background:#e8710a;color:#fff;">{{ stats.awaiting }}</span></button>
+            <button class="rules-sub-tab" onclick="rFilterTab('Meeting', this)">Meeting <span class="rules-sub-badge" style="background:#e8710a;color:#fff;">{{ stats.meetings }}</span></button>
+            <button class="rules-sub-tab" onclick="rFilterTab('Won', this)">Won <span class="rules-sub-badge" style="background:#166534;color:#fff;">{{ stats.won }}</span></button>
         </div>
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon" style="color:#1a73e8;">notifications_unread</span>
-            <div>
-                <div class="stat-val" id="statUnread" style="color:#1a73e8;">{{ stats.unread }}</div>
-                <div class="stat-lbl">Unread</div>
+        <div class="leads-toolbar-right">
+            <span class="result-count" id="rResultCount">Showing {{ replies|length }} replies</span>
+            <div class="rows-per-page">
+                Rows per page:
+                <select id="rRowsPerPage" onchange="rChangeRows()">
+                    <option value="10">10</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                </select>
             </div>
-        </div>
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon" style="color:#00897b;">event</span>
-            <div>
-                <div class="stat-val" style="color:#00897b;">{{ stats.meetings }}</div>
-                <div class="stat-lbl">Meetings booked</div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon stat-icon-muted">reply</span>
-            <div>
-                <div class="stat-val stat-val-muted">{{ stats.awaiting }}</div>
-                <div class="stat-lbl">Awaiting your reply</div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon" style="color:#1b5e20;">emoji_events</span>
-            <div>
-                <div class="stat-val" style="color:#1b5e20;">{{ stats.won }}</div>
-                <div class="stat-lbl">Won</div>
-            </div>
+            <select class="filter-select" id="rFilterTrack" onchange="rApplyFilters()">
+                <option value="">All tracks</option>
+                <option value="Agency">Agency</option>
+                <option value="Recruiter">Recruiter</option>
+                <option value="Direct">Direct</option>
+                <option value="Job">Job</option>
+            </select>
+            <input class="filter-search" type="text" id="rSearch"
+                   placeholder="Search..." oninput="rApplyFilters()" style="max-width:200px;">
         </div>
     </div>
 
-    {# ── Control Bar ── #}
-    <div class="sent-control-bar">
-        <div class="filter-tabs">
-            <button class="filter-tab active" onclick="setTab('all', this)">
-                All <span id="tabCountAll" class="tab-count-muted"></span>
-            </button>
-            <button class="filter-tab" onclick="setTab('unread', this)">
-                Unread <span class="tab-count-muted" id="tabCountUnread">({{ stats.unread }})</span>
-            </button>
-            <button class="filter-tab" onclick="setTab('action', this)">
-                Needs action <span class="tab-count-orange">({{ stats.awaiting }})</span>
-            </button>
-            <button class="filter-tab" onclick="setTab('meeting', this)">
-                Meeting booked <span class="tab-count-green">({{ stats.meetings }})</span>
-            </button>
-            <button class="filter-tab" onclick="setTab('won', this)">
-                Won <span class="tab-count-muted" id="tabCountWon"></span>
-            </button>
+    {# ── Table ── #}
+    <div class="table-outer">
+        <div class="table-wrapper">
+            <table class="leads-table" id="repliesTable">
+                <thead>
+                    <tr>
+                        <th class="leads-col-added">Replied</th>
+                        <th class="leads-col-status">Status</th>
+                        <th class="leads-col-company">Company</th>
+                        <th class="leads-col-contact">Contact</th>
+                        <th style="min-width:200px;width:auto;">Reply preview</th>
+                        <th style="min-width:65px;max-width:85px;width:75px;">Track</th>
+                        <th style="min-width:55px;max-width:75px;width:65px;">Priority</th>
+                    </tr>
+                </thead>
+                <tbody id="repliesBody">
+                {% for r in replies %}
+                <tr onclick="rOpenPanel('{{ r.lead_id }}')" style="cursor:pointer;"
+                    data-lead-id="{{ r.lead_id }}"
+                    data-track="{{ r.track }}"
+                    data-status="{{ r.status_display }}"
+                    data-unread="{{ 'true' if r.unread else 'false' }}"
+                    data-search="{{ (r.company ~ ' ' ~ r.full_name ~ ' ' ~ r.reply_text) | lower }}"
+                    {% if r.unread %}style="cursor:pointer;font-weight:600;"{% endif %}>
+                    <td class="date-cell">{{ r.replied_date }}<br><span style="color:#5f6368;font-size:11px;">{{ r.replied_time }}</span></td>
+                    <td class="status-cell s-{{ r.status_css }}">
+                        <span class="status-dot"></span>
+                        <span class="status-label">{{ r.status_display }}</span>
+                    </td>
+                    <td><span class="company-name">{{ r.company }}</span></td>
+                    <td class="contact-cell">{{ r.full_name or '—' }}</td>
+                    <td class="reply-preview-cell" style="font-size:12px;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px;{% if r.unread %}font-weight:600;{% endif %}" title="{{ r.reply_text }}">
+                        {% if r.unread %}<span class="reply-new-badge" style="color:#1a73e8;">New · </span>{% endif %}{{ r.reply_text_plain[:100] }}{% if r.reply_text_plain|length > 100 %}...{% endif %}
+                    </td>
+                    <td><span class="track-badge {{ r.track_css }}">{{ r.track }}</span></td>
+                    <td><span class="leads-priority-pill lp-{{ r.score_css }}">{{ r.score_label }}</span></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
         </div>
-        <select class="control-select" id="rowsPerPageSelect" onchange="changeRowsPerPage()">
-            <option value="10" selected>10 rows</option>
-            <option value="25">25 rows</option>
-            <option value="50">50 rows</option>
-        </select>
-        <div class="control-spacer"></div>
-        <input class="control-search" type="text" id="searchInput"
-               placeholder="Search company or contact…"
-               oninput="filterAndRender()">
-        <select class="control-select" id="filterTrack" onchange="filterAndRender()">
-            <option value="">All tracks</option>
-            <option value="Job">Job</option>
-            <option value="Recruiter">Recruiter</option>
-            <option value="Agency">Agency</option>
-            <option value="Direct">Direct</option>
-        </select>
+
+        <div class="pagination-row">
+            <div class="pagination-info" id="rPagInfo">—</div>
+            <div class="pagination-controls" id="rPagControls"></div>
+        </div>
     </div>
 
-    {# ── Reply Cards ── #}
-    <div class="cards-wrap" id="cardsWrap">
-        <div style="padding:48px;text-align:center;color:#9aa0a6;">Loading replies…</div>
+    {% if not replies %}
+    <div style="text-align:center;padding:60px 20px;color:#9ca3af;">
+        <span class="material-symbols-outlined" style="font-size:48px;color:#dadce0;">forum</span>
+        <div style="font-size:15px;margin-top:12px;">No replies yet</div>
+        <div style="font-size:13px;margin-top:4px;">When leads reply to your outreach emails, they'll appear here.</div>
     </div>
-
-    {# ── Pagination ── #}
-    <div class="replies-pagination-bar">
-        <div class="pagination-info" id="paginationInfo">—</div>
-        <div class="pagination-controls" id="paginationControls"></div>
-    </div>
+    {% endif %}
 
 </div>{# /outreach-content #}
 
 
 {# ══════════════════════════════════════════════════════════
-   SLIDEIN PANEL — Chat 76 redesign
+   REPLIES SLIDE-IN PANEL
    ══════════════════════════════════════════════════════════ #}
-<div class="si-overlay" id="siOverlay" onclick="closePanel()"></div>
+<div class="si-overlay" id="rOverlay" onclick="rClosePanel()"></div>
 
-<div class="si-panel" id="siPanel">
+<div class="si-panel" id="rPanel">
 
-    {# ── Fixed Header ── #}
+    {# ── Header (dark, read-only, consistent) ── #}
     <div class="si-header">
         <div class="si-header-top">
             <div>
-                <div class="si-name" id="siName">—</div>
-                <div class="si-email" id="siEmail">—</div>
+                <div class="si-name" id="rPanelCompany">—</div>
+                <div class="si-contact-row" id="rPanelContact">—</div>
             </div>
-            <button class="si-close" onclick="closePanel()">✕</button>
+            <button class="si-close" onclick="rClosePanel()">✕</button>
         </div>
-        <div class="si-badges" id="siBadges"></div>
-        <div class="si-progress" id="siProgress"></div>
-        <div class="si-prog-labels">
+        <div class="si-badges">
+            <div class="si-badges-left" id="rPanelBadgesLeft"></div>
+            <div class="si-badges-right" id="rPanelBadgesRight"></div>
+        </div>
+        <div class="si-progress" id="rPanelProgress"></div>
+        <div class="si-prog-labels si-prog-readonly">
             <div class="si-prog-label">Cold</div>
             <div class="si-prog-label">Queued</div>
             <div class="si-prog-label">Contacted</div>
-            <div class="si-prog-label">Reply Received</div>
+            <div class="si-prog-label">Followed Up</div>
+            <div class="si-prog-label">In Conversation</div>
             <div class="si-prog-label">Meeting</div>
             <div class="si-prog-label">Won</div>
         </div>
     </div>
 
-    {# ── Scrollable Body ── #}
+    {# ── Scrollable Body: Thread ── #}
     <div class="si-body">
+        <div class="si-thread">
+            <div class="si-thread-label">Conversation</div>
+            <div id="rThread">
+                <div class="si-thread-empty">No conversation yet</div>
+            </div>
+        </div>
+    </div>
 
-        {# Composer #}
+    {# ── Fixed Bottom: Notes + Composer + Footer ── #}
+    <div class="si-bottom-fixed">
+
+        {# Collapsible Notes bar #}
+        <div class="si-notes-bar" onclick="rToggleNotes()">
+            <span class="si-notes-bar-icon">📝</span>
+            <span class="si-notes-bar-text" id="rNotesBarText">Notes: Click to add...</span>
+            <span class="si-notes-bar-arrow" id="rNotesBarArrow">▾</span>
+        </div>
+        <div class="si-notes-expand" id="rNotesExpand" style="display:none;">
+            <textarea class="si-notes-textarea" id="rNotesTextarea" placeholder="Add notes about this lead…"></textarea>
+            <div class="si-notes-save-row">
+                <button class="si-notes-cancel-btn" onclick="rCancelNotes()">Cancel</button>
+                <button class="si-notes-save-btn" onclick="rSaveNotes()">Save</button>
+            </div>
+        </div>
+
+        {# Reply Composer #}
         <div class="si-composer">
             <div class="si-composer-label">Reply</div>
-            <textarea class="si-composer-textarea" id="siComposerText" placeholder="Write a reply…"></textarea>
-            <div class="si-composer-toolbar">
-                <button class="si-toolbar-btn bold">B</button>
-                <button class="si-toolbar-btn italic">I</button>
-                <button class="si-toolbar-btn ai-draft" onclick="showToast('AI draft coming soon','info')">AI draft</button>
-                <label class="si-sig-toggle" onclick="siToggleSignature()">
-                    <div class="si-toggle-pip" id="siSigPip"></div>
-                    + Signature
-                </label>
-                <button class="si-send-btn" onclick="siSendReply()">Send Reply</button>
+            <textarea class="si-composer-textarea" id="rComposerText" placeholder="Write a reply…"
+                      oninput="rAutoGrow(this)"></textarea>
+            <div class="si-composer-options">
+                <div class="si-composer-options-left">
+                    <button class="si-toolbar-btn bold" onclick="rFormatBold()">B</button>
+                    <button class="si-toolbar-btn italic" onclick="rFormatItalic()">I</button>
+                    <label class="si-sig-toggle" onclick="rToggleSignature()">
+                        <div class="si-toggle-pip" id="rSigPip"></div>
+                        Signature
+                    </label>
+                    <label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#202124;cursor:pointer;">
+                        <input type="checkbox" id="rCvCheck"> CV
+                    </label>
+                </div>
+                <button class="si-send-btn-new" onclick="rSendReply()">Send Reply</button>
             </div>
-            {# CV attach toggle #}
-            <div class="si-cv-row" id="siCvRow" style="margin-top:6px;">
-                <label class="si-cv-label" id="siCvLabel" title="">
-                    <input type="checkbox" id="siCvCheck" disabled style="margin-right:5px;">
-                    Attach CV
-                </label>
+            <div class="si-sig-bar" onclick="rToggleSigPreview()">
+                <span>✍ Signature preview</span>
+                <span class="si-sig-bar-arrow" id="rSigArrow">▾</span>
             </div>
-            {# Signature preview #}
-            <div id="siSigPreview" style="margin-top:8px;padding:8px 12px;border:1px solid #e8eaed;border-radius:6px;background:#f8f9fa;font-size:11px;color:#9aa0a6;line-height:1.5;display:block;">
-                <strong style="color:#888;">Christopher Hoole</strong><br>
+            <div id="rSigPreview" class="si-sig-preview" style="display:none;">
+                <strong>Christopher Hoole</strong><br>
                 Google Ads Specialist | 16 Years Experience<br>
                 +44 7451 252857<br>
                 chris@christopherhoole.com<br>
@@ -169,66 +200,16 @@
             </div>
         </div>
 
-        {# Notes #}
-        <div class="si-notes">
-            <div class="si-notes-header">
-                <span class="si-notes-title">Notes</span>
-                <button class="si-notes-edit-btn" id="siNotesEditBtn" onclick="siStartEditNotes()">Edit</button>
+        {# Footer #}
+        <div class="si-footer">
+            <div class="si-footer-group">
+                <button class="si-footer-btn" onclick="rMarkUnread()">Mark as unread</button>
             </div>
-            <div id="siNotesDisplay"></div>
-            <div id="siNotesEditWrap" class="si-notes-edit-wrap" style="display:none;">
-                <textarea class="si-notes-textarea" id="siNotesTextarea" placeholder="Add notes about this lead…"></textarea>
-                <div class="si-notes-save-row">
-                    <button class="si-notes-save-btn" onclick="siSaveNotes()">Save</button>
-                    <button class="si-notes-cancel-btn" onclick="siCancelNotes()">Cancel</button>
-                </div>
-            </div>
-        </div>
-
-        {# Thread #}
-        <div class="si-thread">
-            <div class="si-thread-label">Conversation</div>
-            <div id="siThread"></div>
-        </div>
-
-    </div>{# /si-body #}
-
-    {# ── Fixed Footer ── #}
-    <div class="si-footer">
-        <button class="si-footer-btn success" onclick="siMarkWon()">✓ Mark as won</button>
-        <button class="si-footer-btn" onclick="siBookMeeting()">Book meeting</button>
-        <button class="si-footer-btn" onclick="openStatusModal()">Update status</button>
-        <button class="si-footer-btn danger" onclick="siMarkLost()">✕ Mark as lost</button>
-    </div>
-
-</div>{# /si-panel #}
-
-
-{# ══════════════════════════════════════════════════════════
-   UPDATE STATUS MODAL
-   ══════════════════════════════════════════════════════════ #}
-<div class="modal fade" id="repliesStatusModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Update status</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <label class="form-label fw-semibold mb-2">New status</label>
-                <select class="form-select" id="repliesStatusSelect">
-                    <option value="meeting">Meeting booked</option>
-                    <option value="won">Won</option>
-                    <option value="lost">Lost</option>
-                </select>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveStatusUpdate()">Save</button>
-            </div>
+            <div class="si-footer-group"></div>
         </div>
     </div>
-</div>
+
+</div>{# /rPanel #}
 
 {% endblock %}
 
@@ -236,609 +217,416 @@
 {% block extra_js %}
 <script>
 /* ══════════════════════════════════════════════════════════════
-   OUTREACH REPLIES — CLIENT-SIDE LOGIC
-   Chat 62
+   REPLIES PAGE — Table + Slide-in
    ══════════════════════════════════════════════════════════════ */
 
-// ── Server data ────────────────────────────────────────────────
-const REPLIES_DATA = {{ replies_json | safe }};
-const EMAILS_DATA  = {{ emails_json  | safe }};
-const THREAD_DATA  = {{ thread_json  | safe }};
+const R_DATA = {{ replies_json|safe }};
+const R_THREAD = {{ thread_json|safe }};
+let rCurrentLeadId = null;
+let rFilteredRows = [];
+let rRowsPerPage = 25;
+let rCurrentPage = 1;
+let rActiveTab = '';
 
-// ── State ──────────────────────────────────────────────────────
-let currentPage   = 1;
-let rowsPerPage   = 10;
-let currentTab    = 'all';
-let currentLeadId = null;
-let actionLeadId  = null;
-let liveUnread    = {{ stats.unread }};
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
 
-// ── Init ───────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('tabCountAll').textContent = '(' + REPLIES_DATA.length + ')';
-    // Won tab count — computed client-side from data
-    const wonCount = REPLIES_DATA.filter(r => (r.status || '').trim().toLowerCase() === 'won').length;
-    const wonBadge = document.getElementById('tabCountWon');
-    if (wonBadge) wonBadge.textContent = '(' + wonCount + ')';
-    renderCards();
-});
+/* ── Stage map + colours (matches Leads page) ── */
+const R_STAGE_MAP = {
+    cold:1, queued:2, contacted:3, followed_up:4,
+    replied:5, reply_received:5, in_conversation:5,
+    meeting:6, won:7, lost:7, no_reply:7, bounced:7
+};
+const R_DOT_COLORS = {
+    cold:'#9ca3af', queued:'#3b82f6', contacted:'#1e40af', followed_up:'#d97706',
+    replied:'#16a34a', reply_received:'#16a34a', in_conversation:'#1e40af',
+    meeting:'#e8710a', won:'#166534', lost:'#dc2626', no_reply:'#9ca3af', bounced:'#dc2626'
+};
+const R_EXIT_STATES = ['lost', 'no_reply', 'bounced'];
+const R_EXIT_COLORS = { lost:'#dc2626', no_reply:'#9ca3af', bounced:'#dc2626' };
+const R_EXIT_LABELS = { lost:'Lost', no_reply:'No Reply', bounced:'Bounced' };
 
-/* ──────────────────────────────────────────────────────────────
-   LIVE UNREAD COUNTER — updates stat card, tab badge, nav badge
-   ────────────────────────────────────────────────────────────── */
-function updateUnreadCounts(delta) {
-    liveUnread = Math.max(0, liveUnread - delta);
-
-    // Stat card
-    const statEl = document.getElementById('statUnread');
-    if (statEl) statEl.textContent = liveUnread;
-
-    // Filter tab count
-    const tabEl = document.getElementById('tabCountUnread');
-    if (tabEl) tabEl.textContent = '(' + liveUnread + ')';
-
-    // Nav sidebar badge
-    const navEl = document.getElementById('navRepliesBadge');
-    if (navEl) {
-        if (liveUnread > 0) {
-            navEl.textContent  = liveUnread;
-            navEl.style.display = '';
-        } else {
-            navEl.style.display = 'none';
-        }
-    }
-}
-
-/* ──────────────────────────────────────────────────────────────
-   FILTERING + PAGINATION
-   ────────────────────────────────────────────────────────────── */
-function getFiltered() {
-    const search = (document.getElementById('searchInput').value || '').toLowerCase().trim();
-    const track  = document.getElementById('filterTrack').value;
-
-    return REPLIES_DATA.filter(r => {
-        const status = (r.status || '').trim().toLowerCase();
-        if (currentTab === 'unread'  && !r.unread)              return false;
-        if (currentTab === 'action'  && !['replied','reply_received'].includes(status)) return false;
-        if (currentTab === 'meeting' && status !== 'meeting')   return false;
-        if (currentTab === 'won'     && status !== 'won')       return false;
-        if (search && !(r.full_name + ' ' + r.company).toLowerCase().includes(search)) return false;
-        if (track  && r.track !== track)                        return false;
-        return true;
-    });
-}
-
-function renderCards() {
-    const filtered = getFiltered();
-    const total    = filtered.length;
-    const start    = (currentPage - 1) * rowsPerPage;
-    const page     = filtered.slice(start, start + rowsPerPage);
-    const wrap     = document.getElementById('cardsWrap');
-
-    if (page.length === 0) {
-        wrap.innerHTML = '<div style="padding:48px;text-align:center;color:#9aa0a6;">No replies found.</div>';
-        document.getElementById('paginationInfo').textContent = '';
-        document.getElementById('paginationControls').innerHTML = '';
-        return;
-    }
-
-    wrap.innerHTML = page.map(r => buildCard(r)).join('');
-    renderPagination(total);
-}
-
-function buildCard(r) {
-    const unreadDot  = r.unread ? '<span class="unread-dot"></span>' : '';
-    const newLabel   = r.unread ? ' &middot; <span style="color:#1a73e8;font-size:11px;">New</span>' : '';
-    const statusPill = statusPillHtml(r.status);
-    const firstName  = esc((r.full_name || '').split(' ')[0]);
-    const snippet    = esc(r.reply_text || '(No reply text)');
-    const safeId     = esc(r.lead_id);
-
-    return `<div class="reply-card-wrap" id="card-wrap-${safeId}">
-        <div class="reply-card ${r.unread ? 'unread' : ''}" onclick="openPanel('${safeId}')">
-            <div class="card-top">
-                <div class="card-top-left">
-                    <div>
-                        <div class="reply-card-name prospect-name">${esc(r.full_name)}${newLabel}</div>
-                        <div class="prospect-company">${esc(r.company)}</div>
-                    </div>
-                </div>
-                <div class="card-top-right">
-                    ${unreadDot}
-                    <span class="reply-date">${esc(r.replied_date)} &middot; ${esc(r.replied_time)}</span>
-                </div>
-            </div>
-            <div class="reply-snippet"><strong>${firstName}:</strong> ${snippet}</div>
-            <div class="card-bottom">
-                <span class="track-badge ${esc(r.track_css)}">${esc(r.track)}</span>
-                <span id="status-pill-${safeId}">${statusPill}</span>
-                <div class="card-actions" onclick="event.stopPropagation()">
-                    <button class="btn-small primary" onclick="toggleCompose('${safeId}')">Send Reply</button>
-                    <button class="btn-small success" onclick="markWon('${safeId}')">Mark as won</button>
-                    <button class="btn-small" onclick="showToast('Queue follow-up coming soon','info')">Queue follow-up</button>
-                    ${!r.unread && r.reply_id ? `<button class="btn-small" style="font-size:11px;opacity:0.7;" onclick="markUnread('${esc(r.reply_id)}','${safeId}')">Mark as Unread</button>` : ''}
-                </div>
-            </div>
-        </div>
-        <div id="inline-compose-${safeId}" style="display:none;padding:12px 16px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 8px 8px;background:#f8f9fa;">
-            <textarea class="form-control" id="inline-compose-text-${safeId}" rows="6" placeholder="Type your reply..." style="font-size:13px;resize:vertical;"></textarea>
-            <div style="margin-top:8px;display:flex;gap:8px;">
-                <button class="btn btn-primary btn-sm" onclick="sendInlineReply('${safeId}')">Send Reply</button>
-                <button class="btn btn-outline-secondary btn-sm" onclick="toggleCompose('${safeId}')">Cancel</button>
-            </div>
-        </div>
-    </div>`;
-}
-
-function statusPillHtml(status) {
-    if (status === 'meeting') return '<span class="status-pill-meeting">Meeting booked</span>';
-    if (status === 'won')     return '<span class="status-pill-won">Won</span>';
-    return '<span class="status-pill-needs-action">Needs action</span>';
-}
-
-function renderPagination(total) {
-    const totalPages = Math.max(1, Math.ceil(total / rowsPerPage));
-    const start      = (currentPage - 1) * rowsPerPage + 1;
-    const end        = Math.min(currentPage * rowsPerPage, total);
-
-    document.getElementById('paginationInfo').textContent =
-        total === 0 ? 'No results' : `${start}–${end} of ${total} replies`;
-
-    const container = document.getElementById('paginationControls');
-    container.innerHTML = '';
-
-    const prev = document.createElement('button');
-    prev.textContent = '← Prev';
-    prev.disabled    = currentPage === 1;
-    prev.onclick     = () => { currentPage--; renderCards(); };
-    container.appendChild(prev);
-
-    const maxVisible = 7;
-    let startPage = Math.max(1, currentPage - 3);
-    let endPage   = Math.min(totalPages, startPage + maxVisible - 1);
-    if (endPage - startPage < maxVisible - 1) startPage = Math.max(1, endPage - maxVisible + 1);
-    for (let i = startPage; i <= endPage; i++) {
-        const btn = document.createElement('button');
-        btn.textContent = i;
-        if (i === currentPage) btn.classList.add('active');
-        btn.onclick = (function(p) { return function () { currentPage = p; renderCards(); }; })(i);
-        container.appendChild(btn);
-    }
-
-    const next = document.createElement('button');
-    next.textContent = 'Next →';
-    next.disabled    = currentPage === totalPages;
-    next.onclick     = () => { currentPage++; renderCards(); };
-    container.appendChild(next);
-}
-
-function setTab(tab, btn) {
-    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentTab  = tab;
-    currentPage = 1;
-    renderCards();
-}
-
-function filterAndRender() {
-    currentPage = 1;
-    renderCards();
-}
-
-function changeRowsPerPage() {
-    rowsPerPage = parseInt(document.getElementById('rowsPerPageSelect').value);
-    currentPage = 1;
-    renderCards();
-}
-
-/* ──────────────────────────────────────────────────────────────
-   SLIDE PANEL — Chat 76 si-panel
-   ────────────────────────────────────────────────────────────── */
-
-// 6-stage progress map
-const SI_STAGE_MAP = {
-    cold:1, queued:2, contacted:3, followed_up:3, no_reply:3,
-    replied:4, reply_received:4, in_conversation:4,
-    meeting:5, won:6, lost:6
+/* ── Tab filter groups ── */
+const R_TAB_GROUPS = {
+    'awaiting': ['Reply Received', 'In Conversation'],
 };
 
-function openPanel(leadId) {
-    const r = REPLIES_DATA.find(x => x.lead_id === leadId);
-    if (!r) return;
+/* ── Filtering ── */
+function rFilterTab(val, btn) {
+    document.querySelectorAll('.rules-sub-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    rActiveTab = val;
+    rApplyFilters();
+}
 
-    currentLeadId = leadId;
+function rApplyFilters() {
+    const search = (document.getElementById('rSearch').value || '').toLowerCase();
+    const trackFilter = (document.getElementById('rFilterTrack') || {}).value || '';
+    const allRows = Array.from(document.querySelectorAll('#repliesBody tr'));
 
-    // Mark as read (fire and forget)
-    if (r.unread) {
-        r.unread     = false;
-        r.reply_read = true;
-        updateUnreadCounts(1);
-        fetch(`/outreach/replies/${leadId}/mark-read`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }
-        }).catch(() => {});
-        renderCards();
+    rFilteredRows = allRows.filter(row => {
+        const track = row.dataset.track || '';
+        const status = row.dataset.status || '';
+        const unread = row.dataset.unread;
+        const text = (row.dataset.search || row.textContent).toLowerCase();
+
+        let tabMatch = true;
+        if (rActiveTab === 'unread') tabMatch = unread === 'true';
+        else if (rActiveTab) {
+            const group = R_TAB_GROUPS[rActiveTab];
+            if (group) tabMatch = group.includes(status);
+            else tabMatch = status === rActiveTab;
+        }
+
+        return tabMatch && (!trackFilter || track === trackFilter) && (!search || text.includes(search));
+    });
+
+    rCurrentPage = 1;
+    rRenderPage();
+}
+
+/* ── Pagination ── */
+function rRenderPage() {
+    const allRows = Array.from(document.querySelectorAll('#repliesBody tr'));
+    allRows.forEach(r => r.style.display = 'none');
+
+    const start = (rCurrentPage - 1) * rRowsPerPage;
+    const end = start + rRowsPerPage;
+    const pageRows = rFilteredRows.slice(start, end);
+    pageRows.forEach(r => r.style.display = '');
+
+    const total = rFilteredRows.length;
+    document.getElementById('rResultCount').textContent =
+        'Showing ' + Math.min(start + 1, total) + '–' + Math.min(end, total) + ' of ' + total;
+
+    const totalPages = Math.ceil(total / rRowsPerPage) || 1;
+    let html = '';
+    html += `<button onclick="rGoPage(${rCurrentPage - 1})" ${rCurrentPage <= 1 ? 'disabled' : ''}>← Prev</button>`;
+    for (let p = 1; p <= totalPages; p++) {
+        html += `<button onclick="rGoPage(${p})" class="${p === rCurrentPage ? 'active' : ''}">${p}</button>`;
+    }
+    html += `<button onclick="rGoPage(${rCurrentPage + 1})" ${rCurrentPage >= totalPages ? 'disabled' : ''}>Next →</button>`;
+    document.getElementById('rPagControls').innerHTML = html;
+}
+
+function rGoPage(p) {
+    const totalPages = Math.ceil(rFilteredRows.length / rRowsPerPage) || 1;
+    if (p < 1 || p > totalPages) return;
+    rCurrentPage = p;
+    rRenderPage();
+}
+
+function rChangeRows() {
+    rRowsPerPage = parseInt(document.getElementById('rRowsPerPage').value);
+    rCurrentPage = 1;
+    rRenderPage();
+}
+
+/* ── Progress bar (read-only) ── */
+function rUpdateProgressBar(status) {
+    const isExit = R_EXIT_STATES.includes(status);
+    const stage = R_STAGE_MAP[status] || 1;
+    const bars = Array.from({length:7}, (_,i) => {
+        let cls = '';
+        if (isExit) cls = 'done';
+        else { if (i+1 < stage) cls = 'done'; else if (i+1 === stage) cls = 'active'; }
+        return `<div class="si-prog-stage ${cls}"></div>`;
+    }).join('');
+    document.getElementById('rPanelProgress').innerHTML = bars;
+
+    if (isExit) {
+        const exitColor = R_EXIT_COLORS[status] || '#9ca3af';
+        document.querySelectorAll('#rPanelProgress .si-prog-stage').forEach(bar => { bar.style.background = exitColor; });
     }
 
+    const labels = document.querySelectorAll('#rPanel .si-prog-label');
+    const lastLabel = labels[labels.length - 1];
+    if (lastLabel) lastLabel.textContent = 'Won';
+    labels.forEach((label, i) => {
+        label.classList.remove('active', 'done'); label.style.color = '';
+        if (isExit) label.classList.add('done');
+        else { if (i+1 < stage) label.classList.add('done'); else if (i+1 === stage) label.classList.add('active'); }
+    });
+    if (isExit && lastLabel) {
+        lastLabel.textContent = R_EXIT_LABELS[status] || status;
+        lastLabel.classList.remove('done'); lastLabel.classList.add('active');
+        lastLabel.style.color = R_EXIT_COLORS[status] || '#9ca3af';
+    }
+}
+
+/* ── Slide-in panel ── */
+function rOpenPanel(leadId) {
+    rCurrentLeadId = leadId;
+    const reply = R_DATA.find(r => r.lead_id === leadId);
+    if (!reply) return;
+
     // Header
-    const nameStr = [r.full_name, r.company].filter(Boolean).join(' · ') || '—';
-    document.getElementById('siName').textContent  = nameStr;
-    document.getElementById('siEmail').textContent = r.email || '—';
+    document.getElementById('rPanelCompany').textContent = reply.company || '—';
+    document.getElementById('rPanelContact').textContent =
+        [reply.full_name, reply.email, reply.role].filter(Boolean).join(' | ') || '—';
 
     // Badges
-    const trackBadgeClass = {
-        Agency:'si-badge-agency', Direct:'si-badge-direct',
-        Recruiter:'si-badge-recruiter', Job:'si-badge-job'
-    }[r.track] || 'si-badge-job';
-    const statusBadgeClass = {
-        replied:'si-badge-rr', reply_received:'si-badge-rr',
-        meeting:'si-badge-rr', won:'si-badge-hot', lost:'si-badge-low'
-    }[r.status] || 'si-badge-cold';
-    const tzBadge = r.tz_badge ? `<span class="si-badge si-badge-tz">${esc(r.tz_badge)}</span>` : '';
-    document.getElementById('siBadges').innerHTML = `
-        <span class="si-badge ${trackBadgeClass}">${esc(r.track||'')}</span>
-        <span class="si-badge ${statusBadgeClass}">${esc(r.status_display||'')}</span>
-        ${tzBadge}
+    const trackClass = {Agency:'si-badge-agency',Recruiter:'si-badge-recruiter',Direct:'si-badge-direct',Job:'si-badge-job'}[reply.track] || 'si-badge-job';
+    const dotColor = R_DOT_COLORS[reply.status] || '#9ca3af';
+    document.getElementById('rPanelBadgesLeft').innerHTML = `
+        <span class="si-badge" style="background:#fff;color:#202124;border:1px solid #dadce0;">
+            <span class="si-status-dot" style="background:${dotColor};"></span>${esc(reply.status_display)}
+        </span>
+        <span class="si-badge ${trackClass}">${esc(reply.track)}</span>
+    `;
+    document.getElementById('rPanelBadgesRight').innerHTML = `
+        ${reply.tz_badge ? `<span class="si-badge si-badge-tz">${esc(reply.tz_badge)}</span>` : ''}
     `;
 
     // Progress bar
-    const stage = SI_STAGE_MAP[r.status] || 4;
-    document.getElementById('siProgress').innerHTML = Array.from({length:6}, (_,i) => {
-        const cls = i+1 < stage ? 'done' : (i+1 === stage ? 'active' : '');
-        return `<div class="si-prog-stage ${cls}"></div>`;
-    }).join('');
-
-    // Notes
-    siRenderNotes(r.notes || '');
-    siCancelNotes();
+    rUpdateProgressBar(reply.status);
 
     // Thread
-    siRenderThread(THREAD_DATA[leadId] || []);
+    rRenderThread(R_THREAD[leadId] || []);
+
+    // Notes
+    rRenderNotes(reply.notes);
+    rCancelNotes();
 
     // Reset composer
-    document.getElementById('siComposerText').value = '';
-    siSigOn = true;
-    const pip = document.getElementById('siSigPip');
-    if (pip) pip.classList.remove('off');
-    const preview = document.getElementById('siSigPreview');
-    if (preview) preview.style.display = 'block';
-    siLoadCvStatus();
+    document.getElementById('rComposerText').value = '';
+
+    // Mark as read — update UI immediately
+    if (reply.unread) {
+        fetch(`/outreach/replies/${reply.lead_id}/mark-read`, { method: 'POST' }).catch(() => {});
+        reply.unread = false;
+        reply.reply_read = true;
+
+        // Update the table row
+        const row = document.querySelector(`tr[data-lead-id="${leadId}"]`);
+        if (row) {
+            row.style.fontWeight = '';
+            row.dataset.unread = 'false';
+            // Remove "New · " prefix and bold from reply preview
+            const previewCell = row.querySelector('.reply-preview-cell');
+            if (previewCell) {
+                previewCell.style.fontWeight = '';
+                const newBadge = previewCell.querySelector('.reply-new-badge');
+                if (newBadge) newBadge.remove();
+            }
+        }
+
+        // Update Unread tab count
+        const unreadBadge = document.querySelector('.rules-sub-tab:nth-child(2) .rules-sub-badge');
+        if (unreadBadge) {
+            const current = parseInt(unreadBadge.textContent) || 0;
+            unreadBadge.textContent = Math.max(0, current - 1);
+        }
+    }
 
     // Open
-    document.getElementById('siOverlay').classList.add('si-open');
-    document.getElementById('siPanel').classList.add('si-open');
+    document.getElementById('rOverlay').classList.add('si-open');
+    document.getElementById('rPanel').classList.add('si-open');
 }
 
-function closePanel() {
-    document.getElementById('siOverlay').classList.remove('si-open');
-    document.getElementById('siPanel').classList.remove('si-open');
-    currentLeadId = null;
+function rClosePanel() {
+    document.getElementById('rOverlay').classList.remove('si-open');
+    document.getElementById('rPanel').classList.remove('si-open');
+    rCurrentLeadId = null;
 }
 
-/* Notes */
-function siRenderNotes(text) {
-    const disp = document.getElementById('siNotesDisplay');
-    if (text && text.trim()) {
-        disp.className = 'si-notes-body';
-        disp.textContent = text;
-    } else {
-        disp.className = 'si-notes-empty';
-        disp.textContent = 'No notes yet. Click Edit to add some.';
-    }
-}
-function siStartEditNotes() {
-    const r = REPLIES_DATA.find(x => x.lead_id === currentLeadId);
-    document.getElementById('siNotesTextarea').value = (r && r.notes) || '';
-    document.getElementById('siNotesDisplay').style.display  = 'none';
-    document.getElementById('siNotesEditBtn').style.display  = 'none';
-    document.getElementById('siNotesEditWrap').style.display = '';
-}
-function siCancelNotes() {
-    document.getElementById('siNotesDisplay').style.display  = '';
-    document.getElementById('siNotesEditBtn').style.display  = '';
-    document.getElementById('siNotesEditWrap').style.display = 'none';
-}
-function siSaveNotes() {
-    if (!currentLeadId) return;
-    const notes = document.getElementById('siNotesTextarea').value.trim();
-    fetch(`/outreach/leads/${currentLeadId}/notes`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes })
-    })
-    .then(r => r.json())
-    .then(d => {
-        if (d.success) {
-            const rec = REPLIES_DATA.find(x => x.lead_id === currentLeadId);
-            if (rec) rec.notes = notes;
-            siRenderNotes(notes);
-            siCancelNotes();
-            showToast('Notes saved', 'success');
-        } else showToast('Error saving notes', 'error');
-    })
-    .catch(() => showToast('Network error', 'error'));
+/* ── Thread renderer (matches Leads/Sent pages) ── */
+function rFormatTs(ts) {
+    if (!ts) return '';
+    return new Date(ts).toLocaleString('en-GB', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
 }
 
-/* Thread */
-function siFormatTs(tsStr) {
-    if (!tsStr) return '—';
-    try {
-        const d = new Date(tsStr);
-        return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})
-            + ' · ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-    } catch { return tsStr; }
-}
-function siRenderThread(items) {
-    const container = document.getElementById('siThread');
+function rRenderThread(items) {
+    const container = document.getElementById('rThread');
     if (!items || items.length === 0) {
         container.innerHTML = '<div class="si-thread-empty">No conversation yet</div>';
         return;
     }
     const sorted = [...items].sort((a,b) => (b.ts||'').localeCompare(a.ts||''));
-    container.innerHTML = sorted.map((item,idx) => {
-        const ts = siFormatTs(item.ts);
+    container.innerHTML = sorted.map((item, idx) => {
+        const id = 'rt-body-' + idx;
+        const ts = rFormatTs(item.ts);
         if (item.direction === 'outbound') {
+            const isQueued = item.status === 'queued';
+            const isScheduled = isQueued && !!item.scheduled_at;
+            const badgeClass = isScheduled ? 'scheduled' : (isQueued ? 'queued' : 'sent');
+            const badgeText = isScheduled ? 'Scheduled' : (isQueued ? 'Queued' : 'Sent');
+            const tsDisplay = ts || (isScheduled ? rFormatTs(item.scheduled_at) : '');
             const subj = item.subject ? `<div class="si-thread-subject">${esc(item.subject)}</div>` : '';
             const body = item.body || '';
-            const id   = 'si-body-' + idx;
             const clamped = body.length > 200 ? 'clamped' : '';
-            const more = body.length > 200 ? `<button class="si-show-more-btn" onclick="siToggleBody(this,'${id}')">Show more</button>` : '';
+            const showMore = body.length > 200
+                ? `<button class="si-show-more-btn" onclick="rToggleBody(this,'${id}')">Show more</button>` : '';
             return `<div class="si-thread-item outbound">
                 <div class="si-thread-item-header">
-                    <span class="si-thread-badge sent">SENT</span>
-                    <span class="si-thread-ts">${ts}</span>
-                </div>${subj}
+                    <span class="si-thread-badge ${badgeClass}">${badgeText}</span>
+                    <span class="si-thread-ts">${tsDisplay}</span>
+                </div>
+                ${subj}
                 <div class="si-thread-body ${clamped}" id="${id}">${esc(body)}</div>
-                ${more}</div>`;
+                ${showMore}
+            </div>`;
         } else {
-            const body = item.body || '';
-            const { main, quoted } = siSplitBody(body);
-            const quotedHtml = quoted
-                ? `<button class="si-quoted-toggle" onclick="siToggleQuoted(this)">··· Show original</button><div class="si-quoted-content">${esc(quoted)}</div>`
-                : '';
+            const rawBody = item.body || '';
+            // Convert HTML to readable plain text: preserve line breaks from block elements
+            const tmp = document.createElement('div');
+            tmp.innerHTML = rawBody;
+            // Replace block elements with newlines before extracting text
+            tmp.querySelectorAll('br').forEach(el => el.replaceWith('\n'));
+            tmp.querySelectorAll('p, div').forEach(el => {
+                el.insertAdjacentText('afterend', '\n');
+            });
+            const plainBody = (tmp.textContent || tmp.innerText || rawBody)
+                .replace(/\n{3,}/g, '\n\n')  // Collapse excessive newlines
+                .trim();
+            const inId = 'rt-in-' + idx;
+            const inClamped = plainBody.length > 200 ? 'clamped' : '';
+            const inShowMore = plainBody.length > 200
+                ? `<button class="si-show-more-btn" onclick="rToggleBody(this,'${inId}')">Show more</button>` : '';
             return `<div class="si-thread-item inbound">
                 <div class="si-thread-item-header">
-                    <span class="si-thread-badge reply-received">REPLY RECEIVED</span>
+                    <span class="si-thread-badge reply-received">Reply Received</span>
                     <span class="si-thread-ts">${esc(item.sender_name||'')} · ${ts}</span>
                 </div>
-                <div class="si-thread-body">${esc(main)}${quotedHtml}</div></div>`;
+                <div class="si-thread-body ${inClamped}" id="${inId}">${esc(plainBody)}</div>
+                ${inShowMore}
+            </div>`;
         }
     }).join('');
 }
-function siSplitBody(body) {
-    const m = /\n(On [\s\S]+?wrote:[\s\S]*)/.exec(body);
-    if (m) return { main: body.slice(0, m.index).trim(), quoted: m[1].trim() };
-    const lines = body.split('\n');
-    const qi = lines.findIndex(l => l.trimStart().startsWith('>'));
-    if (qi > 0) return { main: lines.slice(0, qi).join('\n').trim(), quoted: lines.slice(qi).join('\n').trim() };
-    return { main: body, quoted: '' };
-}
-function siToggleQuoted(btn) {
-    const content = btn.nextElementSibling;
-    content.classList.toggle('open');
-    btn.textContent = content.classList.contains('open') ? '··· Hide original' : '··· Show original';
-}
-function siToggleBody(btn, id) {
+
+function rToggleBody(btn, id) {
     const el = document.getElementById(id);
     if (!el) return;
     el.classList.toggle('clamped');
     btn.textContent = el.classList.contains('clamped') ? 'Show more' : 'Show less';
 }
 
-/* ── Signature toggle ────────────────────────────────────────── */
-let siSigOn = true;
-function siToggleSignature() {
-    siSigOn = !siSigOn;
-    const pip = document.getElementById('siSigPip');
-    const preview = document.getElementById('siSigPreview');
-    if (pip) pip.classList.toggle('off', !siSigOn);
-    if (preview) preview.style.display = siSigOn ? 'block' : 'none';
+/* ── Notes ── */
+function rRenderNotes(text) {
+    const barText = document.getElementById('rNotesBarText');
+    if (text && text.trim()) barText.textContent = 'Notes: ' + text.substring(0, 80) + (text.length > 80 ? '...' : '');
+    else barText.textContent = 'Notes: Click to add...';
 }
 
-/* ── CV status ───────────────────────────────────────────────── */
-let siCvAvailable = false;
-function siLoadCvStatus() {
-    fetch('/outreach/cv/status')
-        .then(r => r.json())
-        .then(d => {
-            siCvAvailable = d.uploaded;
-            const chk   = document.getElementById('siCvCheck');
-            const label = document.getElementById('siCvLabel');
-            if (chk) {
-                chk.disabled = !d.uploaded;
-                chk.checked  = d.uploaded;
-            }
-            if (label) {
-                label.title = d.uploaded ? d.filename : 'No CV uploaded';
-                label.style.opacity = d.uploaded ? '1' : '0.5';
-            }
-        })
-        .catch(() => {});
-}
-
-/* Send reply from si-panel composer */
-function siSendReply() {
-    if (!currentLeadId) return;
-    const ta   = document.getElementById('siComposerText');
-    const body = ta ? ta.value.trim() : '';
-    if (!body) { showToast('Please type a reply first.', 'error'); return; }
-    const attachCv = !!(document.getElementById('siCvCheck') || {}).checked;
-    const btn = document.querySelector('.si-send-btn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
-    fetch(`/outreach/replies/${currentLeadId}/send-reply`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body, attach_cv: attachCv }),
-    })
-    .then(r => r.json())
-    .then(d => {
-        if (btn) { btn.disabled = false; btn.textContent = 'Send Reply'; }
-        if (d.success) {
-            showToast('Reply sent', 'success');
-            if (ta) ta.value = '';
-            siRenderThread(THREAD_DATA[currentLeadId] || []);
-        } else showToast(d.error || 'Failed to send reply', 'error');
-    })
-    .catch(() => {
-        if (btn) { btn.disabled = false; btn.textContent = 'Send Reply'; }
-        showToast('Network error sending reply', 'error');
-    });
-}
-
-/* ──────────────────────────────────────────────────────────────
-   INLINE COMPOSE — Chat 72
-   ────────────────────────────────────────────────────────────── */
-function toggleCompose(leadId) {
-    const el = document.getElementById('inline-compose-' + leadId);
-    if (!el) return;
-    const isHidden = el.style.display === 'none';
-    el.style.display = isHidden ? 'block' : 'none';
-    if (isHidden) {
-        const ta = document.getElementById('inline-compose-text-' + leadId);
-        if (ta) ta.focus();
+function rToggleNotes() {
+    const expand = document.getElementById('rNotesExpand');
+    const arrow = document.getElementById('rNotesBarArrow');
+    if (expand.style.display !== 'none') { expand.style.display = 'none'; arrow.classList.remove('open'); }
+    else {
+        const reply = R_DATA.find(r => r.lead_id === rCurrentLeadId);
+        document.getElementById('rNotesTextarea').value = (reply && reply.notes) || '';
+        expand.style.display = ''; arrow.classList.add('open');
     }
 }
 
-function sendInlineReply(leadId) {
-    const ta = document.getElementById('inline-compose-text-' + leadId);
-    if (!ta || !ta.value.trim()) { showToast('Please type a reply first.', 'error'); return; }
-    const body = ta.value;
-    const compose = document.getElementById('inline-compose-' + leadId);
-    const sendBtn = compose ? compose.querySelector('.btn-primary') : null;
-    if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'Sending…'; }
-    fetch('/outreach/replies/' + leadId + '/send-reply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body: body }),
+function rCancelNotes() {
+    document.getElementById('rNotesExpand').style.display = 'none';
+    document.getElementById('rNotesBarArrow').classList.remove('open');
+}
+
+function rSaveNotes() {
+    if (!rCurrentLeadId) return;
+    const notes = document.getElementById('rNotesTextarea').value.trim();
+    fetch(`/outreach/leads/${rCurrentLeadId}/notes`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes })
     })
     .then(r => r.json())
-    .then(d => {
-        if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Send Reply'; }
-        if (d.success) {
+    .then(data => {
+        if (data.success) {
+            const reply = R_DATA.find(r => r.lead_id === rCurrentLeadId);
+            if (reply) reply.notes = notes;
+            rRenderNotes(notes);
+            rCancelNotes();
+            showToast('Notes saved', 'success');
+        } else showToast('Error saving notes', 'error');
+    })
+    .catch(() => showToast('Network error', 'error'));
+}
+
+/* ── Composer helpers ── */
+function rAutoGrow(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 350) + 'px'; }
+
+let rSigOn = true;
+function rToggleSignature() {
+    rSigOn = !rSigOn;
+    document.getElementById('rSigPip').classList.toggle('off', !rSigOn);
+    if (!rSigOn) {
+        document.getElementById('rSigPreview').style.display = 'none';
+        document.getElementById('rSigArrow').classList.remove('open');
+    }
+}
+function rToggleSigPreview() {
+    if (!rSigOn) return;
+    const preview = document.getElementById('rSigPreview');
+    const arrow = document.getElementById('rSigArrow');
+    const isOpen = preview.style.display !== 'none';
+    preview.style.display = isOpen ? 'none' : 'block';
+    arrow.classList.toggle('open', !isOpen);
+}
+
+function rFormatBold() {
+    const ta = document.getElementById('rComposerText');
+    const s = ta.selectionStart, e = ta.selectionEnd, sel = ta.value.substring(s, e);
+    ta.value = ta.value.substring(0, s) + '**' + sel + '**' + ta.value.substring(e);
+    ta.selectionStart = s + 2; ta.selectionEnd = e + 2; ta.focus();
+}
+function rFormatItalic() {
+    const ta = document.getElementById('rComposerText');
+    const s = ta.selectionStart, e = ta.selectionEnd, sel = ta.value.substring(s, e);
+    ta.value = ta.value.substring(0, s) + '*' + sel + '*' + ta.value.substring(e);
+    ta.selectionStart = s + 1; ta.selectionEnd = e + 1; ta.focus();
+}
+
+/* ── Send reply ── */
+function rSendReply() {
+    if (!rCurrentLeadId) return;
+    const body = document.getElementById('rComposerText').value.trim();
+    if (!body) { showToast('Write a reply first', 'warning'); return; }
+    const btn = document.querySelector('#rPanel .si-send-btn-new');
+    btn.disabled = true; btn.textContent = 'Sending...';
+
+    fetch(`/outreach/replies/${rCurrentLeadId}/send-reply`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            body: body,
+            include_signature: rSigOn,
+            attach_cv: document.getElementById('rCvCheck').checked
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false; btn.textContent = 'Send Reply';
+        if (data.success) {
             showToast('Reply sent', 'success');
-            if (compose) compose.style.display = 'none';
-            if (ta) ta.value = '';
-        } else {
-            showToast(d.error || 'Failed to send reply', 'error');
-        }
+            document.getElementById('rComposerText').value = '';
+            setTimeout(() => location.reload(), 1000);
+        } else showToast('Error: ' + (data.message || 'Send failed'), 'error');
     })
-    .catch(() => {
-        if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Send Reply'; }
-        showToast('Network error. Please try again.', 'error');
-    });
+    .catch(() => { btn.disabled = false; btn.textContent = 'Send Reply'; showToast('Network error', 'error'); });
 }
 
-function esc(str) {
-    if (!str) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
-
-/* ──────────────────────────────────────────────────────────────
-   PANEL ACTIONS — Chat 76 si-panel
-   ────────────────────────────────────────────────────────────── */
-function markWon(leadId) {
-    fetch(`/outreach/replies/${leadId}/mark-won`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }
-    })
+/* ── Mark as unread ── */
+function rMarkUnread() {
+    if (!rCurrentLeadId) return;
+    const reply = R_DATA.find(r => r.lead_id === rCurrentLeadId);
+    if (!reply || !reply.reply_id) return;
+    fetch(`/outreach/replies/${reply.reply_id}/mark-unread`, { method: 'POST' })
     .then(r => r.json())
-    .then(d => {
-        if (d.success) { showToast('Lead marked as won', 'success'); setTimeout(() => location.reload(), 800); }
-        else showToast('Error: ' + (d.message || 'unknown'), 'error');
+    .then(data => {
+        if (data.success) {
+            showToast('Marked as unread', 'success');
+            rClosePanel();
+            setTimeout(() => location.reload(), 500);
+        } else showToast('Error', 'error');
     })
     .catch(() => showToast('Network error', 'error'));
 }
 
-function siMarkWon() {
-    if (!currentLeadId) return;
-    if (!confirm('Mark this lead as Won?')) return;
-    fetch(`/outreach/replies/${currentLeadId}/mark-won`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }
-    })
-    .then(r => r.json())
-    .then(d => {
-        if (d.success) { showToast('Lead marked as won', 'success'); setTimeout(() => location.reload(), 800); }
-        else showToast('Error: ' + (d.message || 'unknown'), 'error');
-    })
-    .catch(() => showToast('Network error', 'error'));
-}
-
-function siMarkLost() {
-    if (!currentLeadId) return;
-    if (!confirm('Mark this lead as Lost?')) return;
-    fetch(`/outreach/replies/${currentLeadId}/mark-lost`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }
-    })
-    .then(r => r.json())
-    .then(d => {
-        if (d.success) { showToast('Lead marked as lost', 'success'); setTimeout(() => location.reload(), 800); }
-        else showToast('Error: ' + (d.message || 'unknown'), 'error');
-    })
-    .catch(() => showToast('Network error', 'error'));
-}
-
-function siBookMeeting() {
-    if (!currentLeadId) return;
-    fetch(`/outreach/replies/${currentLeadId}/book-meeting`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }
-    })
-    .then(r => r.json())
-    .then(d => {
-        if (d.success) { showToast('Meeting booked', 'success'); setTimeout(() => location.reload(), 800); }
-        else showToast('Error: ' + (d.message || 'unknown'), 'error');
-    })
-    .catch(() => showToast('Network error', 'error'));
-}
-
-function openStatusModal() {
-    if (!currentLeadId) return;
-    actionLeadId = currentLeadId;
-    const r = REPLIES_DATA.find(x => x.lead_id === currentLeadId);
-    if (r) document.getElementById('repliesStatusSelect').value = r.status || 'replied';
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('repliesStatusModal')).show();
-}
-
-function saveStatusUpdate() {
-    if (!actionLeadId) return;
-    const newStatus = document.getElementById('repliesStatusSelect').value;
-    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('repliesStatusModal'));
-    const routeMap = {
-        'won':     'mark-won',
-        'lost':    'mark-lost',
-        'meeting': 'book-meeting',
-    };
-    const route = routeMap[newStatus] || 'mark-won';
-    fetch(`/outreach/replies/${actionLeadId}/${route}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }
-    })
-    .then(r => r.json())
-    .then(d => {
-        modal.hide();
-        if (d.success) { showToast('Status updated', 'success'); setTimeout(() => location.reload(), 800); }
-        else showToast('Error: ' + (d.message || 'unknown'), 'error');
-    })
-    .catch(() => { modal.hide(); showToast('Network error', 'error'); });
-}
-
-/* ──────────────────────────────────────────────────────────────
-   MARK AS UNREAD — Chat 74
-   ────────────────────────────────────────────────────────────── */
-function markUnread(replyId, leadId) {
-    fetch(`/outreach/replies/${replyId}/mark-unread`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }
-    })
-    .then(r => r.json())
-    .then(d => {
-        if (d.success) {
-            const r = REPLIES_DATA.find(x => x.lead_id === leadId);
-            if (r) { r.unread = true; r.reply_read = false; }
-            updateUnreadCounts(-1);
-            renderCards();
-        }
-    })
-    .catch(() => {});
-}
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', function() {
+    rFilteredRows = Array.from(document.querySelectorAll('#repliesBody tr'));
+    rRenderPage();
+});
 </script>
 {% endblock %}

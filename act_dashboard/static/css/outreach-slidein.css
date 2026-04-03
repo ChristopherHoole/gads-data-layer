@@ -238,6 +238,8 @@
   transition: color 0.15s;
 }
 .si-prog-label:hover { color: #d1d5db; }
+.si-prog-readonly .si-prog-label { cursor: default; }
+.si-prog-readonly .si-prog-label:hover { color: #9ca3af; }
 .si-prog-label.active { color: #60a5fa; font-weight: 600; }
 .si-prog-label.done { color: #4ade80; }
 
@@ -275,6 +277,15 @@
   color: #f87171;
 }
 .si-exit-lost.active {
+  background: #dc2626;
+  color: #fff;
+  border-color: #dc2626;
+}
+.si-exit-bounced:hover {
+  border-color: #dc2626;
+  color: #f87171;
+}
+.si-exit-bounced.active {
   background: #dc2626;
   color: #fff;
   border-color: #dc2626;
@@ -430,7 +441,7 @@
 
 /* ─── SECTION 3: REPLY COMPOSER ──────────────────────────────── */
 .si-composer {
-  padding: 12px 20px;
+  padding: 12px 20px 0 20px;
   background: #fff;
   flex-shrink: 0;
 }
@@ -447,7 +458,7 @@
 
 .si-composer-textarea {
   width: 100%;
-  min-height: 60px;
+  min-height: 80px;
   max-height: 350px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
@@ -477,14 +488,37 @@
   gap: 6px;
 }
 
+.si-sig-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  margin: 10px -20px 0 -20px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #374151;
+  background: #f3f4f6;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  transition: background 0.15s;
+}
+.si-sig-bar:hover { background: #e5e7eb; }
+
+.si-sig-bar-arrow {
+  font-size: 13px;
+  margin-left: auto;
+  color: #374151;
+  transition: transform 0.2s;
+}
+.si-sig-bar-arrow.open { transform: rotate(180deg); }
+
 .si-sig-preview {
-  margin-top: 8px;
-  padding: 8px 12px;
-  border: 1px solid #e8eaed;
-  border-radius: 6px;
-  background: #f8f9fa;
+  padding: 10px 20px;
+  margin: 0 -20px;
+  background: #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
   font-size: 11px;
-  color: #9aa0a6;
+  color: #555;
   line-height: 1.5;
 }
 
@@ -655,6 +689,7 @@
 
 .si-notes-save-row {
   display: flex;
+  justify-content: flex-end;
   gap: 6px;
   margin-top: 6px;
 }
@@ -802,6 +837,19 @@
   display: block;
 }
 .si-show-more-btn:hover { text-decoration: underline; }
+
+.si-thread-toggle {
+  font-size: 12px;
+  color: var(--act-blue);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  font-family: 'DM Sans', sans-serif;
+  margin-top: 4px;
+  display: block;
+}
+.si-thread-toggle:hover { text-decoration: underline; }
 
 .si-quoted-toggle {
   display: inline-flex;

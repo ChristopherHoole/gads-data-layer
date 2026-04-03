@@ -171,6 +171,10 @@ def _run_poll_cycle():
                     from_name  = ""
                     from_email = from_raw
 
+                # Skip our own emails (sent copies appearing in inbox)
+                if from_email.lower() == username.lower():
+                    continue
+
                 # Parse received_at
                 try:
                     received_at = email.utils.parsedate_to_datetime(date_raw)
@@ -190,19 +194,37 @@ def _run_poll_cycle():
                 if existing:
                     continue
 
-                # Strip Re:/Fwd: prefixes and match against outreach_emails
-                clean_subject = _strip_re_prefixes(subject_raw)
-
+                # ── MATCHING LOGIC ──
+                # Step 1: Match by sender email → lead email (most reliable)
                 matched = conn.execute(
-                    "SELECT email_id, lead_id FROM outreach_emails "
-                    "WHERE LOWER(subject) = LOWER(?) AND status = 'sent' "
+                    "SELECT e.email_id, e.lead_id FROM outreach_emails e "
+                    "JOIN outreach_leads l ON e.lead_id = l.lead_id "
+                    "WHERE LOWER(l.email) = LOWER(?) AND e.status = 'sent' "
                     "LIMIT 1",
-                    [clean_subject],
+                    [from_email],
                 ).fetchone()
 
+                if matched:
+                    print(f"[POLLER] Matched by sender email: {from_email} → lead_id={matched[1]}")
+
+                # Step 2: Fallback — match by subject ONLY if exactly 1 match exists
                 if not matched:
-                    print(f'[POLLER] Unmatched reply subject: "{clean_subject}" — skipped')
-                    continue
+                    clean_subject = _strip_re_prefixes(subject_raw)
+                    subject_matches = conn.execute(
+                        "SELECT email_id, lead_id FROM outreach_emails "
+                        "WHERE LOWER(subject) = LOWER(?) AND status = 'sent'",
+                        [clean_subject],
+                    ).fetchall()
+
+                    if len(subject_matches) == 1:
+                        matched = subject_matches[0]
+                        print(f"[POLLER] Matched by unique subject: \"{clean_subject}\" → lead_id={matched[1]}")
+                    elif len(subject_matches) > 1:
+                        print(f"[POLLER] Ambiguous subject match: \"{clean_subject}\" — {len(subject_matches)} leads share this subject. Reply from {from_email} skipped.")
+                        continue
+                    else:
+                        print(f"[POLLER] Unmatched reply from {from_email} subject: \"{clean_subject}\" — skipped")
+                        continue
 
                 email_id, lead_id = matched
                 body = _get_plain_body(msg)
@@ -230,7 +252,7 @@ def _run_poll_cycle():
 
                 # Update lead status to replied
                 conn.execute(
-                    "UPDATE outreach_leads SET status = 'replied' WHERE lead_id = ?",
+                    "UPDATE outreach_leads SET status = 'reply_received' WHERE lead_id = ?",
                     [str(lead_id)],
                 )
 

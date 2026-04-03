@@ -37,15 +37,11 @@
     {# ── Toolbar ── #}
     <div class="leads-toolbar">
         <div class="rules-sub-tabs" id="queueTabs">
-            {% set agency_count = queued_emails|selectattr('track', 'equalto', 'Agency')|list|length %}
-            {% set recruiter_count = queued_emails|selectattr('track', 'equalto', 'Recruiter')|list|length %}
             {% set sched_count = queued_emails|selectattr('is_scheduled')|list|length %}
             {% set unsched_count = queued_emails|length - sched_count %}
             <button class="rules-sub-tab active" onclick="filterQueue('', this)">All <span class="rules-sub-badge" style="background:#6b7280;color:#fff;">{{ queued_emails|length }}</span></button>
-            <button class="rules-sub-tab" onclick="filterQueue('Agency', this)">Agency <span class="rules-sub-badge" style="background:#1d4ed8;color:#fff;">{{ agency_count }}</span></button>
-            <button class="rules-sub-tab" onclick="filterQueue('Recruiter', this)">Recruiter <span class="rules-sub-badge" style="background:#6d28d9;color:#fff;">{{ recruiter_count }}</span></button>
-            <button class="rules-sub-tab" onclick="filterQueue('scheduled', this)">Scheduled <span class="rules-sub-badge" style="background:#f57f17;color:#fff;">{{ sched_count }}</span></button>
             <button class="rules-sub-tab" onclick="filterQueue('unscheduled', this)">Unscheduled <span class="rules-sub-badge" style="background:#9ca3af;color:#fff;">{{ unsched_count }}</span></button>
+            <button class="rules-sub-tab" onclick="filterQueue('scheduled', this)">Scheduled <span class="rules-sub-badge" style="background:#f57f17;color:#fff;">{{ sched_count }}</span></button>
         </div>
         <div class="leads-toolbar-right">
             <span class="result-count" id="qResultCount">Showing {{ queued_emails|length }} emails</span>
@@ -57,6 +53,13 @@
                     <option value="50">50</option>
                 </select>
             </div>
+            <select class="filter-select" id="qFilterTrack" onchange="qFilter()">
+                <option value="">All tracks</option>
+                <option value="Agency">Agency</option>
+                <option value="Recruiter">Recruiter</option>
+                <option value="Direct">Direct</option>
+                <option value="Job">Job</option>
+            </select>
             <input class="filter-search" type="text" id="qSearch"
                    placeholder="Search..." oninput="qFilter()" style="max-width:200px;">
         </div>
@@ -68,13 +71,14 @@
             <table class="leads-table" id="queueTable">
                 <thead>
                     <tr>
-                        <th style="min-width:150px;max-width:170px;width:160px;">Scheduled</th>
-                        <th style="min-width:90px;max-width:120px;width:100px;">Status</th>
+                        <th style="min-width:140px;max-width:170px;width:155px;">Scheduled</th>
+                        <th class="leads-col-status">Status</th>
                         <th style="min-width:120px;width:auto;">Company</th>
                         <th style="min-width:100px;width:auto;">Contact</th>
-                        <th style="min-width:65px;max-width:85px;width:75px;">Track</th>
                         <th style="min-width:150px;width:auto;">Subject</th>
                         <th style="min-width:80px;max-width:110px;width:95px;">Type</th>
+                        <th style="min-width:65px;max-width:85px;width:75px;">Track</th>
+                        <th style="min-width:55px;max-width:75px;width:65px;">Priority</th>
                     </tr>
                 </thead>
                 <tbody id="queueBody">
@@ -84,18 +88,21 @@
                     data-track="{{ email.track }}"
                     data-scheduled="{{ 'true' if email.is_scheduled else 'false' }}">
                     <td class="date-cell">{{ email.scheduled_display or 'Not scheduled' }}</td>
-                    <td>
+                    <td class="status-cell s-{{ email.track_css }}">
                         {% if email.is_scheduled %}
-                        <span class="q-sched-pill q-sched-scheduled">Scheduled</span>
+                        <span class="status-dot" style="background:#f57f17;"></span>
+                        <span class="status-label">Scheduled</span>
                         {% else %}
-                        <span class="q-sched-pill q-sched-unscheduled">Unscheduled</span>
+                        <span class="status-dot" style="background:#9ca3af;"></span>
+                        <span class="status-label">Unscheduled</span>
                         {% endif %}
                     </td>
                     <td><span class="company-name">{{ email.company }}</span></td>
                     <td class="contact-cell">{{ email.full_name or '—' }}</td>
-                    <td><span class="track-badge {{ email.track_css }}">{{ email.track }}</span></td>
                     <td class="q-subject-cell" title="{{ email.subject }}">{{ email.subject }}</td>
                     <td><span class="email-type-pill {{ email.pill_css }}">{{ email.pill_label }}</span></td>
+                    <td><span class="track-badge {{ email.track_css }}">{{ email.track }}</span></td>
+                    <td><span class="leads-priority-pill lp-{{ email.score_css }}">{{ email.score_label }}</span></td>
                 </tr>
                 {% endfor %}
                 </tbody>
@@ -127,7 +134,7 @@
 
 <div class="si-panel" id="qPanel">
 
-    {# ── Header ── #}
+    {# ── Header (matches Leads page — read-only) ── #}
     <div class="si-header">
         <div class="si-header-top">
             <div>
@@ -139,6 +146,16 @@
         <div class="si-badges">
             <div class="si-badges-left" id="qPanelBadgesLeft"></div>
             <div class="si-badges-right" id="qPanelBadgesRight"></div>
+        </div>
+        <div class="si-progress" id="qPanelProgress"></div>
+        <div class="si-prog-labels si-prog-readonly" id="qPanelProgLabels">
+            <div class="si-prog-label">Cold</div>
+            <div class="si-prog-label">Queued</div>
+            <div class="si-prog-label">Contacted</div>
+            <div class="si-prog-label">Followed Up</div>
+            <div class="si-prog-label">In Conversation</div>
+            <div class="si-prog-label">Meeting</div>
+            <div class="si-prog-label">Won</div>
         </div>
     </div>
 
@@ -197,8 +214,12 @@
             </div>
         </div>
 
-        {# Signature preview #}
-        <div id="qSigPreview" style="padding:8px 12px;border:1px solid #e8eaed;border-radius:6px;background:#f8f9fa;font-size:11px;color:#555;line-height:1.5;">
+        {# Signature preview (collapsible) #}
+        <div class="si-sig-bar" onclick="qToggleSigPreview()">
+            <span>✍ Signature preview</span>
+            <span class="si-sig-bar-arrow" id="qSigArrow">▾</span>
+        </div>
+        <div id="qSigPreview" class="si-sig-preview" style="display:none;">
             <strong>Christopher Hoole</strong><br>
             Google Ads Specialist | 16 Years Experience<br>
             +44 7451 252857<br>
@@ -267,6 +288,7 @@ function qFilter() { qApplyFilters(); }
 
 function qApplyFilters() {
     const search = (document.getElementById('qSearch').value || '').toLowerCase();
+    const trackFilter = (document.getElementById('qFilterTrack') || {}).value || '';
     const allRows = Array.from(document.querySelectorAll('#queueBody tr'));
 
     qFilteredRows = allRows.filter(row => {
@@ -274,13 +296,15 @@ function qApplyFilters() {
         const scheduled = row.dataset.scheduled;
         const text = row.textContent.toLowerCase();
 
-        let trackMatch = true;
-        if (qActiveFilter === 'Agency') trackMatch = track === 'Agency';
-        else if (qActiveFilter === 'Recruiter') trackMatch = track === 'Recruiter';
-        else if (qActiveFilter === 'scheduled') trackMatch = scheduled === 'true';
-        else if (qActiveFilter === 'unscheduled') trackMatch = scheduled === 'false';
+        // Tab filter (schedule status)
+        let tabMatch = true;
+        if (qActiveFilter === 'scheduled') tabMatch = scheduled === 'true';
+        else if (qActiveFilter === 'unscheduled') tabMatch = scheduled === 'false';
 
-        return trackMatch && (!search || text.includes(search));
+        // Track dropdown
+        let trackMatch = !trackFilter || track === trackFilter;
+
+        return tabMatch && trackMatch && (!search || text.includes(search));
     });
 
     qCurrentPage = 1;
@@ -336,9 +360,24 @@ function qOpenPanel(emailId) {
     document.getElementById('qPanelContact').textContent =
         [email.full_name, email.email, email.role].filter(Boolean).join(' | ') || '—';
 
-    // Badges left: Track + Type
+    // Badges left: Status dot + Track + Type
     const trackClass = {Agency:'si-badge-agency',Recruiter:'si-badge-recruiter',Direct:'si-badge-direct',Job:'si-badge-job'}[email.track] || 'si-badge-job';
+    const Q_DOT_COLORS = {
+        cold:'#9ca3af', queued:'#3b82f6', contacted:'#1e40af', followed_up:'#d97706',
+        replied:'#16a34a', reply_received:'#16a34a', in_conversation:'#1e40af',
+        meeting:'#e8710a', won:'#166534', lost:'#dc2626', no_reply:'#9ca3af', bounced:'#dc2626'
+    };
+    const Q_STATUS_DISPLAY = {
+        cold:'Cold', queued:'Queued', contacted:'Contacted', followed_up:'Followed Up',
+        replied:'In Conversation', reply_received:'In Conversation', in_conversation:'In Conversation',
+        meeting:'Meeting', won:'Won', lost:'Lost', no_reply:'No Reply', bounced:'Bounced'
+    };
+    const statusDotColor = Q_DOT_COLORS[email.lead_status] || '#9ca3af';
+    const statusLabel = Q_STATUS_DISPLAY[email.lead_status] || email.lead_status;
     document.getElementById('qPanelBadgesLeft').innerHTML = `
+        <span class="si-badge si-status-badge" style="background:#fff;color:#202124;border:1px solid #dadce0;">
+            <span class="si-status-dot" style="background:${statusDotColor};"></span>${esc(statusLabel)}
+        </span>
         <span class="si-badge ${trackClass}">${esc(email.track)}</span>
         <span class="email-type-pill ${email.pill_css}">${esc(email.pill_label)}</span>
     `;
@@ -355,8 +394,7 @@ function qOpenPanel(emailId) {
     }
 
     // Template info + load dropdown
-    const templateName = email.pill_label || 'Initial email';
-    document.getElementById('qPanelTemplate').textContent = templateName;
+    document.getElementById('qPanelTemplate').textContent = email.template_display || 'Unknown';
     qLoadTemplateDropdown();
 
     // Email fields
@@ -369,6 +407,50 @@ function qOpenPanel(emailId) {
 
     // CV toggle
     document.getElementById('qCvCheck').checked = email.cv_attached;
+
+    // Progress bar (read-only, matches Leads page)
+    const Q_STAGE_MAP = {
+        cold:1, queued:2, contacted:3, followed_up:4,
+        replied:5, reply_received:5, in_conversation:5,
+        meeting:6, won:7, lost:7, no_reply:7, bounced:7
+    };
+    const Q_EXIT_STATES = ['lost', 'no_reply', 'bounced'];
+    const Q_EXIT_COLORS = { lost:'#dc2626', no_reply:'#9ca3af', bounced:'#dc2626' };
+    const leadStatus = email.lead_status || 'queued';
+    const isExit = Q_EXIT_STATES.includes(leadStatus);
+    const stage = Q_STAGE_MAP[leadStatus] || 1;
+
+    const bars = Array.from({length:7}, (_,i) => {
+        let cls = '';
+        if (isExit) { cls = 'done'; }
+        else if (i+1 < stage) cls = 'done';
+        else if (i+1 === stage) cls = 'active';
+        return `<div class="si-prog-stage ${cls}"></div>`;
+    }).join('');
+    document.getElementById('qPanelProgress').innerHTML = bars;
+
+    if (isExit) {
+        const exitColor = Q_EXIT_COLORS[leadStatus] || '#9ca3af';
+        document.querySelectorAll('#qPanelProgress .si-prog-stage').forEach(b => b.style.background = exitColor);
+    }
+
+    const progLabels = document.querySelectorAll('#qPanelProgLabels .si-prog-label');
+    const lastLabel = progLabels[progLabels.length - 1];
+    if (lastLabel) { lastLabel.textContent = 'Won'; }
+    progLabels.forEach((label, i) => {
+        label.classList.remove('active', 'done');
+        label.style.color = '';
+        if (isExit) { label.classList.add('done'); }
+        else if (i+1 < stage) label.classList.add('done');
+        else if (i+1 === stage) label.classList.add('active');
+    });
+    if (isExit && lastLabel) {
+        const exitLabels = { lost:'Lost', no_reply:'No Reply', bounced:'Bounced' };
+        lastLabel.textContent = exitLabels[leadStatus] || leadStatus;
+        lastLabel.classList.remove('done');
+        lastLabel.classList.add('active');
+        lastLabel.style.color = Q_EXIT_COLORS[leadStatus] || '#9ca3af';
+    }
 
     // Actions — primary on right, secondary on left
     let actionsHtml = '';
@@ -390,8 +472,8 @@ function qOpenPanel(emailId) {
                 <button class="si-footer-btn" onclick="qSkip()">Skip</button>
             </div>
             <div class="si-footer-group">
-                <button class="si-footer-btn" onclick="qSchedule()">Schedule</button>
-                <button class="si-footer-btn primary" onclick="qSendNow()">Send now</button>
+                <button class="si-footer-btn" onclick="qSendNow()">Send now</button>
+                <button class="si-footer-btn" onclick="qSchedule()" style="background:#f57f17;color:#fff;border-color:#f57f17;">Schedule</button>
             </div>
         `;
     }
@@ -582,14 +664,19 @@ let qSigOn = true;
 function qToggleSignature() {
     qSigOn = !qSigOn;
     const pip = document.getElementById('qSigPip');
-    const preview = document.getElementById('qSigPreview');
-    if (qSigOn) {
-        pip.classList.remove('off');
-        preview.style.display = 'block';
-    } else {
-        pip.classList.add('off');
-        preview.style.display = 'none';
+    if (pip) pip.classList.toggle('off', !qSigOn);
+    if (!qSigOn) {
+        document.getElementById('qSigPreview').style.display = 'none';
+        document.getElementById('qSigArrow').classList.remove('open');
     }
+}
+function qToggleSigPreview() {
+    if (!qSigOn) return;
+    const preview = document.getElementById('qSigPreview');
+    const arrow = document.getElementById('qSigArrow');
+    const isOpen = preview.style.display !== 'none';
+    preview.style.display = isOpen ? 'none' : 'block';
+    arrow.classList.toggle('open', !isOpen);
 }
 
 /* ── CV toggle ── */

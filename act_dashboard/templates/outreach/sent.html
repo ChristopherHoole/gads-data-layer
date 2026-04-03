@@ -4,6 +4,8 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/outreach.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/outreach-slidein.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rules.css') }}">
 {% endblock %}
 
 {# ── Custom top navbar ── #}
@@ -17,234 +19,180 @@
 {% block content %}
 <div class="outreach-content">
 
-    {# ── Stats Row ── #}
-    <div class="stats-row">
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon">send</span>
-            <div>
-                <div class="stat-val">{{ stats.total_sent }}</div>
-                <div class="stat-lbl">Total sent</div>
+    {# ── Toolbar ── #}
+    <div class="leads-toolbar">
+        <div class="rules-sub-tabs" id="sentTabs">
+            <button class="rules-sub-tab active" onclick="sFilterTab('', this)">All <span class="rules-sub-badge" style="background:#6b7280;color:#fff;">{{ stats.total_sent }}</span></button>
+            <button class="rules-sub-tab" onclick="sFilterTab('active', this)">Active <span class="rules-sub-badge" style="background:#1e40af;color:#fff;">{{ stats.total_sent - stats.replied - stats.closed }}</span></button>
+            <button class="rules-sub-tab" onclick="sFilterTab('replied', this)">In Conversation <span class="rules-sub-badge" style="background:#16a34a;color:#fff;">{{ stats.replied }}</span></button>
+            <button class="rules-sub-tab" onclick="sFilterTab('Meeting', this)">Meeting <span class="rules-sub-badge" style="background:#e8710a;color:#fff;">0</span></button>
+            <button class="rules-sub-tab" onclick="sFilterTab('Won', this)">Won <span class="rules-sub-badge" style="background:#166534;color:#fff;">0</span></button>
+            <button class="rules-sub-tab" onclick="sFilterTab('closed', this)">Closed <span class="rules-sub-badge" style="background:#dc2626;color:#fff;">{{ stats.closed }}</span></button>
+        </div>
+        <div class="leads-toolbar-right">
+            <span class="result-count" id="sResultCount">Showing {{ sent_emails|length }} emails</span>
+            <div class="rows-per-page">
+                Rows per page:
+                <select id="sRowsPerPage" onchange="sChangeRows()">
+                    <option value="10">10</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                </select>
             </div>
+            <select class="filter-select" id="sFilterTrack" onchange="sApplyFilters()">
+                <option value="">All tracks</option>
+                <option value="Agency">Agency</option>
+                <option value="Recruiter">Recruiter</option>
+                <option value="Direct">Direct</option>
+                <option value="Job">Job</option>
+            </select>
+            <input class="filter-search" type="text" id="sSearch"
+                   placeholder="Search..." oninput="sApplyFilters()" style="max-width:200px;">
         </div>
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon stat-icon-red">schedule</span>
-            <div>
-                <div class="stat-val stat-val-red">{{ stats.overdue }}</div>
-                <div class="stat-lbl">Follow-ups overdue</div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon stat-icon-orange">upcoming</span>
-            <div>
-                <div class="stat-val stat-val-orange">{{ stats.due_today }}</div>
-                <div class="stat-lbl">Due today</div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon stat-icon-green">mark_email_read</span>
-            <div>
-                <div class="stat-val stat-val-green">{{ stats.replied }}</div>
-                <div class="stat-lbl">Replied</div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <span class="material-symbols-outlined stat-icon stat-icon-muted">do_not_disturb</span>
-            <div>
-                <div class="stat-val stat-val-muted">{{ stats.closed }}</div>
-                <div class="stat-lbl">No reply / closed</div>
-            </div>
-        </div>
-    </div>
-
-    {# ── Control Bar ── #}
-    <div class="sent-control-bar">
-        <div class="filter-tabs">
-            <button class="filter-tab active" onclick="setTab('all', this)">
-                All <span id="tabCountAll" class="tab-count-muted"></span>
-            </button>
-            <button class="filter-tab" onclick="setTab('overdue', this)">
-                Overdue <span class="tab-count-red">({{ stats.overdue }})</span>
-            </button>
-            <button class="filter-tab" onclick="setTab('today', this)">
-                Due today <span class="tab-count-orange">({{ stats.due_today }})</span>
-            </button>
-            <button class="filter-tab" onclick="setTab('replied', this)">
-                Replied <span class="tab-count-green">({{ stats.replied }})</span>
-            </button>
-            <button class="filter-tab" onclick="setTab('closed', this)">Closed</button>
-        </div>
-        <select class="control-select" id="rowsPerPageSelect" onchange="changeRowsPerPage()">
-            <option value="10" selected>10 rows</option>
-            <option value="25">25 rows</option>
-            <option value="50">50 rows</option>
-            <option value="100">100 rows</option>
-        </select>
-        <div class="control-spacer"></div>
-        <input class="control-search" type="text" id="searchInput"
-               placeholder="Search company or contact…"
-               oninput="filterTable()">
-        <select class="control-select" id="filterTrack" onchange="filterTable()">
-            <option value="">All tracks</option>
-            <option value="Job">Job</option>
-            <option value="Recruiter">Recruiter</option>
-            <option value="Agency">Agency</option>
-            <option value="Direct">Direct</option>
-        </select>
-        <select class="control-select" id="filterEmailType" onchange="filterTable()">
-            <option value="">All email types</option>
-            <option value="initial">Initial email</option>
-            <option value="follow_up_1">Follow-up 1</option>
-            <option value="follow_up_2">Follow-up 2</option>
-            <option value="follow_up_3">Follow-up 3</option>
-        </select>
     </div>
 
     {# ── Table ── #}
-    <div class="sent-table-wrap">
-        <table class="sent-table" id="sentTable">
-            <thead>
-                <tr>
-                    <th>Prospect</th>
-                    <th>Email</th>
-                    <th>Track</th>
-                    <th>Email type</th>
-                    <th>Sent</th>
-                    <th>Follow-up due</th>
-                    <th>Status</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody id="sentTableBody">
-            {% for email in sent_emails %}
-            <tr class="{% if email.due_status == 'overdue' %}overdue-row{% endif %}"
-                onclick="openPanel('{{ email.email_id }}')"
-                data-email-id="{{ email.email_id }}"
-                data-lead-id="{{ email.lead_id }}"
-                data-due-status="{{ email.due_status }}"
-                data-lead-status="{{ email.status }}"
-                data-track="{{ email.track }}"
-                data-email-type-group="{{ email.email_type }}"
-                data-search="{{ (email.company ~ ' ' ~ email.full_name) | lower }}">
-
-                {# Prospect #}
-                <td>
-                    <div class="prospect-name">{{ email.full_name or '—' }}</div>
-                    <div class="prospect-company">{{ email.company }}</div>
-                </td>
-
-                {# Email #}
-                <td><span class="prospect-email">{{ email.email }}</span></td>
-
-                {# Track #}
-                <td><span class="track-badge {{ email.track_css }}">{{ email.track }}</span></td>
-
-                {# Email type #}
-                <td><span class="email-type-pill {{ email.pill_css }}">{{ email.pill_label }}</span></td>
-
-                {# Sent date/time #}
-                <td>
-                    <div class="sent-date">{{ email.sent_date }}</div>
-                    <div class="sent-time">{{ email.sent_time }}</div>
-                </td>
-
-                {# Follow-up due #}
-                <td>
-                    <span class="followup-{{ email.due_status }}">{{ email.due_label }}</span>
-                </td>
-
-                {# Status #}
-                <td>
-                    <span class="status-inline s-{{ email.status_css }}">
+    <div class="table-outer">
+        <div class="table-wrapper">
+            <table class="leads-table" id="sentTable">
+                <thead>
+                    <tr>
+                        <th class="leads-col-added">Sent</th>
+                        <th class="leads-col-status">Status</th>
+                        <th class="leads-col-company">Company</th>
+                        <th class="leads-col-contact">Contact</th>
+                        <th style="min-width:150px;max-width:400px;width:auto;">Subject</th>
+                        <th style="min-width:80px;max-width:110px;width:95px;">Type</th>
+                        <th style="min-width:65px;max-width:85px;width:75px;">Track</th>
+                        <th style="min-width:55px;max-width:75px;width:65px;">Priority</th>
+                    </tr>
+                </thead>
+                <tbody id="sentBody">
+                {% for email in sent_emails %}
+                <tr onclick="sOpenPanel('{{ email.email_id }}')" style="cursor:pointer;"
+                    data-email-id="{{ email.email_id }}"
+                    data-lead-id="{{ email.lead_id }}"
+                    data-track="{{ email.track }}"
+                    data-status="{{ email.status_display }}"
+                    data-search="{{ (email.company ~ ' ' ~ email.full_name ~ ' ' ~ email.subject) | lower }}">
+                    <td class="date-cell">{{ email.sent_date }}<br><span style="color:#5f6368;font-size:11px;">{{ email.sent_time }}</span></td>
+                    <td class="status-cell s-{{ email.status_css }}">
                         <span class="status-dot"></span>
                         <span class="status-label">{{ email.status_display }}</span>
-                    </span>
-                </td>
+                    </td>
+                    <td><span class="company-name">{{ email.company }}</span></td>
+                    <td class="contact-cell">{{ email.full_name or '—' }}</td>
+                    <td class="q-subject-cell" title="{{ email.subject }}">{{ email.subject }}</td>
+                    <td><span class="email-type-pill {{ email.pill_css }}">{{ email.pill_label }}</span></td>
+                    <td><span class="track-badge {{ email.track_css }}">{{ email.track }}</span></td>
+                    <td><span class="leads-priority-pill lp-{{ email.score_css }}">{{ email.score_label }}</span></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-                {# Actions #}
-                <td class="actions-cell" onclick="event.stopPropagation()">
-                    <button class="actions-btn"
-                            onclick="toggleDropdown(this)">Actions ▾</button>
-                    <div class="actions-dropdown">
-                        <button onclick="openPanel('{{ email.email_id }}')">👁 View email thread</button>
-                        <button onclick="queueFollowup('{{ email.email_id }}', this)">⏰ Queue follow-up</button>
-                        <button onclick="openStatusModal('{{ email.lead_id }}')">📋 Update status</button>
-                        <div class="dropdown-divider"></div>
-                        <button onclick="quickStatus('{{ email.lead_id }}', 'replied', this)">✓ Mark as replied</button>
-                        <button onclick="quickStatus('{{ email.lead_id }}', 'won', this)">🏆 Mark as won</button>
-                        <button class="danger" onclick="quickStatus('{{ email.lead_id }}', 'lost', this)">✕ Mark as lost</button>
-                        <div class="dropdown-divider"></div>
-                        <button class="danger" onclick="showToast('Delete coming soon', 'info')">🗑 Delete</button>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+        <div class="pagination-row">
+            <div class="pagination-info" id="sPagInfo">—</div>
+            <div class="pagination-controls" id="sPagControls"></div>
+        </div>
     </div>
 
-    {# ── Pagination ── #}
-    <div class="sent-pagination-bar">
-        <div class="pagination-info" id="paginationInfo">—</div>
-        <div class="pagination-controls" id="paginationControls"></div>
+    {% if not sent_emails %}
+    <div style="text-align:center;padding:60px 20px;color:#9ca3af;">
+        <span class="material-symbols-outlined" style="font-size:48px;color:#dadce0;">mail</span>
+        <div style="font-size:15px;margin-top:12px;">No emails sent yet</div>
+        <div style="font-size:13px;margin-top:4px;">Queue and send emails from the Leads page to see them here.</div>
     </div>
+    {% endif %}
 
 </div>{# /outreach-content #}
 
 
 {# ══════════════════════════════════════════════════════════
-   SLIDEIN PANEL — Chat 76 redesign
+   SENT SLIDE-IN PANEL
    ══════════════════════════════════════════════════════════ #}
-<div class="si-overlay" id="siOverlay" onclick="closePanel()"></div>
+<div class="si-overlay" id="sOverlay" onclick="sClosePanel()"></div>
 
-<div class="si-panel" id="siPanel">
+<div class="si-panel" id="sPanel">
 
-    {# ── Fixed Header ── #}
+    {# ── Header (dark, read-only, matches Leads/Queue) ── #}
     <div class="si-header">
         <div class="si-header-top">
             <div>
-                <div class="si-name" id="siName">—</div>
-                <div class="si-email" id="siEmail">—</div>
+                <div class="si-name" id="sPanelCompany">—</div>
+                <div class="si-contact-row" id="sPanelContact">—</div>
             </div>
-            <button class="si-close" onclick="closePanel()">✕</button>
+            <button class="si-close" onclick="sClosePanel()">✕</button>
         </div>
-        <div class="si-badges" id="siBadges"></div>
-        <div class="si-progress" id="siProgress"></div>
-        <div class="si-prog-labels">
+        <div class="si-badges">
+            <div class="si-badges-left" id="sPanelBadgesLeft"></div>
+            <div class="si-badges-right" id="sPanelBadgesRight"></div>
+        </div>
+        <div class="si-progress" id="sPanelProgress"></div>
+        <div class="si-prog-labels si-prog-readonly">
             <div class="si-prog-label">Cold</div>
             <div class="si-prog-label">Queued</div>
             <div class="si-prog-label">Contacted</div>
-            <div class="si-prog-label">Reply Received</div>
+            <div class="si-prog-label">Followed Up</div>
+            <div class="si-prog-label">In Conversation</div>
             <div class="si-prog-label">Meeting</div>
             <div class="si-prog-label">Won</div>
         </div>
     </div>
 
-    {# ── Scrollable Body ── #}
+    {# ── Scrollable Body: Thread ── #}
     <div class="si-body">
+        <div class="si-thread">
+            <div class="si-thread-label">Conversation</div>
+            <div id="sThread">
+                <div class="si-thread-empty">No conversation yet</div>
+            </div>
+        </div>
+    </div>
 
-        {# Composer #}
+    {# ── Fixed Bottom: Notes + Composer + Footer ── #}
+    <div class="si-bottom-fixed">
+
+        {# Collapsible Notes bar #}
+        <div class="si-notes-bar" id="sNotesBar" onclick="sToggleNotes()">
+            <span class="si-notes-bar-icon">📝</span>
+            <span class="si-notes-bar-text" id="sNotesBarText">Notes: Click to add...</span>
+            <span class="si-notes-bar-arrow" id="sNotesBarArrow">▾</span>
+        </div>
+        <div class="si-notes-expand" id="sNotesExpand" style="display:none;">
+            <textarea class="si-notes-textarea" id="sNotesTextarea" placeholder="Add notes about this lead…"></textarea>
+            <div class="si-notes-save-row">
+                <button class="si-notes-cancel-btn" onclick="sCancelNotes()">Cancel</button>
+                <button class="si-notes-save-btn" onclick="sSaveNotes()">Save</button>
+            </div>
+        </div>
+
+        {# Reply Composer #}
         <div class="si-composer">
             <div class="si-composer-label">Reply</div>
-            <textarea class="si-composer-textarea" id="siComposerText" placeholder="Write a reply…"></textarea>
-            <div class="si-composer-toolbar">
-                <button class="si-toolbar-btn bold">B</button>
-                <button class="si-toolbar-btn italic">I</button>
-                <label class="si-sig-toggle" onclick="siToggleSignature()">
-                    <div class="si-toggle-pip" id="siSigPip"></div>
-                    + Signature
-                </label>
-                <button class="si-send-btn" onclick="siSendReply()">Send Reply</button>
+            <textarea class="si-composer-textarea" id="sComposerText" placeholder="Write a reply…"
+                      oninput="sAutoGrow(this)"></textarea>
+            <div class="si-composer-options">
+                <div class="si-composer-options-left">
+                    <button class="si-toolbar-btn bold" onclick="sFormatBold()">B</button>
+                    <button class="si-toolbar-btn italic" onclick="sFormatItalic()">I</button>
+                    <label class="si-sig-toggle" onclick="sToggleSignature()">
+                        <div class="si-toggle-pip" id="sSigPip"></div>
+                        Signature
+                    </label>
+                    <label style="display:flex;align-items:center;gap:4px;font-size:13px;color:#202124;cursor:pointer;">
+                        <input type="checkbox" id="sCvCheck"> CV
+                    </label>
+                </div>
+                <button class="si-send-btn-new" onclick="sSendReply()">Send Reply</button>
             </div>
-            {# CV attach toggle #}
-            <div class="si-cv-row" id="siCvRow" style="margin-top:6px;">
-                <label class="si-cv-label" id="siCvLabel" title="">
-                    <input type="checkbox" id="siCvCheck" disabled style="margin-right:5px;">
-                    Attach CV
-                </label>
+            <div class="si-sig-bar" onclick="sToggleSigPreview()">
+                <span>✍ Signature preview</span>
+                <span class="si-sig-bar-arrow" id="sSigArrow">▾</span>
             </div>
-            {# Signature preview #}
-            <div id="siSigPreview" style="margin-top:8px;padding:8px 12px;border:1px solid #e8eaed;border-radius:6px;background:#f8f9fa;font-size:11px;color:#9aa0a6;line-height:1.5;display:block;">
-                <strong style="color:#888;">Christopher Hoole</strong><br>
+            <div id="sSigPreview" class="si-sig-preview" style="display:none;">
+                <strong>Christopher Hoole</strong><br>
                 Google Ads Specialist | 16 Years Experience<br>
                 +44 7451 252857<br>
                 chris@christopherhoole.com<br>
@@ -252,70 +200,16 @@
             </div>
         </div>
 
-        {# Notes #}
-        <div class="si-notes">
-            <div class="si-notes-header">
-                <span class="si-notes-title">Notes</span>
-                <button class="si-notes-edit-btn" id="siNotesEditBtn" onclick="siStartEditNotes()">Edit</button>
-            </div>
-            <div id="siNotesDisplay"></div>
-            <div id="siNotesEditWrap" class="si-notes-edit-wrap" style="display:none;">
-                <textarea class="si-notes-textarea" id="siNotesTextarea" placeholder="Add notes about this lead…"></textarea>
-                <div class="si-notes-save-row">
-                    <button class="si-notes-save-btn" onclick="siSaveNotes()">Save</button>
-                    <button class="si-notes-cancel-btn" onclick="siCancelNotes()">Cancel</button>
-                </div>
-            </div>
-        </div>
-
-        {# Thread #}
-        <div class="si-thread">
-            <div class="si-thread-label">Conversation</div>
-            <div id="siThread"></div>
-        </div>
-
-    </div>{# /si-body #}
-
-    {# ── Fixed Footer ── #}
-    <div class="si-footer">
-        <button class="si-footer-btn primary" id="siQueueFollowupBtn" onclick="siQueueFollowup()">Queue follow-up</button>
-        <button class="si-footer-btn" onclick="openStatusModal(currentLeadId)">Update status</button>
-        <button class="si-footer-btn success" onclick="siMarkWon()">✓ Mark won</button>
-        <button class="si-footer-btn danger" onclick="siMarkLost()">✕ Mark lost</button>
-    </div>
-
-</div>{# /si-panel #}
-
-
-{# ══════════════════════════════════════════════════════════
-   UPDATE STATUS MODAL
-   ══════════════════════════════════════════════════════════ #}
-<div class="modal fade" id="sentStatusModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Update status</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <label class="form-label fw-semibold mb-2">New status</label>
-                <select class="form-select" id="sentStatusSelect">
-                    <option value="contacted">Contacted</option>
-                    <option value="followed_up">Followed Up</option>
-                    <option value="replied">Replied</option>
-                    <option value="meeting">Meeting</option>
-                    <option value="won">Won</option>
-                    <option value="lost">Lost</option>
-                    <option value="no_reply">No Reply</option>
-                </select>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveStatusUpdate()">Save</button>
+        {# Footer #}
+        <div class="si-footer">
+            <div class="si-footer-group"></div>
+            <div class="si-footer-group">
+                <button class="si-footer-btn primary" onclick="sQueueFollowup()">Queue follow-up</button>
             </div>
         </div>
     </div>
-</div>
+
+</div>{# /sPanel #}
 
 {% endblock %}
 
@@ -323,487 +217,399 @@
 {% block extra_js %}
 <script>
 /* ══════════════════════════════════════════════════════════════
-   OUTREACH SENT — CLIENT-SIDE LOGIC
-   Chat 61
+   SENT PAGE — Table + Slide-in
    ══════════════════════════════════════════════════════════════ */
 
-// ── Server data ────────────────────────────────────────────────
-const SENT_DATA   = {{ sent_emails_json | safe }};
-const EMAILS_DATA = {{ emails_json | safe }};
-const THREAD_DATA = {{ thread_json | safe }};
+const S_DATA = {{ sent_emails_json|safe }};
+const S_THREAD = {{ thread_json|safe }};
+let sCurrentEmailId = null;
+let sCurrentLeadId = null;
+let sFilteredRows = [];
+let sRowsPerPage = 25;
+let sCurrentPage = 1;
+let sActiveTab = '';
 
-// ── State ──────────────────────────────────────────────────────
-let currentPage   = 1;
-let rowsPerPage   = 10;
-let currentTab    = 'all';
-let currentLeadId = null;
-let currentEmailId = null;
-let actionLeadId  = null;
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
 
-// ── Init ───────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', function() {
-    // Set "All" tab count
-    document.getElementById('tabCountAll').textContent = '(' + SENT_DATA.length + ')';
-    renderPage();
-});
+/* ── Stage map + dot colours (matches Leads page) ── */
+const S_STAGE_MAP = {
+    cold:1, queued:2, contacted:3, followed_up:4,
+    replied:5, reply_received:5, in_conversation:5,
+    meeting:6, won:7, lost:7, no_reply:7, bounced:7
+};
+const S_DOT_COLORS = {
+    cold:'#9ca3af', queued:'#3b82f6', contacted:'#1e40af', followed_up:'#d97706',
+    replied:'#16a34a', reply_received:'#16a34a', in_conversation:'#1e40af',
+    meeting:'#e8710a', won:'#166534', lost:'#dc2626', no_reply:'#9ca3af', bounced:'#dc2626'
+};
+const S_EXIT_STATES = ['lost', 'no_reply', 'bounced'];
+const S_EXIT_COLORS = { lost:'#dc2626', no_reply:'#9ca3af', bounced:'#dc2626' };
+const S_EXIT_LABELS = { lost:'Lost', no_reply:'No Reply', bounced:'Bounced' };
 
-/* ──────────────────────────────────────────────────────────────
-   FILTERING + PAGINATION
-   ────────────────────────────────────────────────────────────── */
-function getAllRows() {
-    return Array.from(document.querySelectorAll('#sentTableBody tr'));
-}
-
-function getFilteredRows() {
-    const search    = (document.getElementById('searchInput').value || '').toLowerCase();
-    const track     = document.getElementById('filterTrack').value;
-    const emailType = document.getElementById('filterEmailType').value;
-
-    return getAllRows().filter(row => {
-        const due    = row.dataset.dueStatus;
-        const status = row.dataset.leadStatus;
-
-        if (currentTab === 'overdue' && due !== 'overdue') return false;
-        if (currentTab === 'today'   && due !== 'today')   return false;
-        if (currentTab === 'replied' && !['replied','reply_received','meeting','won'].includes(status)) return false;
-        if (currentTab === 'closed'  && !['no_reply','lost'].includes(status)) return false;
-
-        if (search && !(row.dataset.search || '').includes(search)) return false;
-        if (track  && row.dataset.track !== track)   return false;
-        if (emailType && row.dataset.emailTypeGroup !== emailType) return false;
-
-        return true;
-    });
-}
-
-function renderPage() {
-    const allRows      = getAllRows();
-    allRows.forEach(r => r.classList.add('hidden-row'));
-
-    const filtered = getFilteredRows();
-    const start    = (currentPage - 1) * rowsPerPage;
-    const pageRows = filtered.slice(start, start + rowsPerPage);
-    pageRows.forEach(r => r.classList.remove('hidden-row'));
-
-    const total = filtered.length;
-    const end   = Math.min(start + rowsPerPage, total);
-    document.getElementById('paginationInfo').textContent =
-        total === 0 ? 'No results' : `${start + 1}–${end} of ${total} emails`;
-
-    renderPaginationControls(total);
-}
-
-function renderPaginationControls(total) {
-    const totalPages = Math.max(1, Math.ceil(total / rowsPerPage));
-    const container  = document.getElementById('paginationControls');
-    container.innerHTML = '';
-
-    const prev = document.createElement('button');
-    prev.textContent = '← Prev';
-    prev.disabled    = currentPage === 1;
-    prev.onclick     = () => { currentPage--; renderPage(); };
-    container.appendChild(prev);
-
-    const maxVisible = 7;
-    let startPage = Math.max(1, currentPage - 3);
-    let endPage   = Math.min(totalPages, startPage + maxVisible - 1);
-    if (endPage - startPage < maxVisible - 1) startPage = Math.max(1, endPage - maxVisible + 1);
-
-    for (let i = startPage; i <= endPage; i++) {
-        const btn = document.createElement('button');
-        btn.textContent = i;
-        if (i === currentPage) btn.classList.add('active');
-        btn.onclick = (function(p) { return function() { currentPage = p; renderPage(); }; })(i);
-        container.appendChild(btn);
-    }
-
-    const next = document.createElement('button');
-    next.textContent = 'Next →';
-    next.disabled    = currentPage === totalPages;
-    next.onclick     = () => { currentPage++; renderPage(); };
-    container.appendChild(next);
-}
-
-function setTab(tab, btn) {
-    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentTab  = tab;
-    currentPage = 1;
-    renderPage();
-}
-
-function filterTable() {
-    currentPage = 1;
-    renderPage();
-}
-
-function changeRowsPerPage() {
-    rowsPerPage = parseInt(document.getElementById('rowsPerPageSelect').value);
-    currentPage = 1;
-    renderPage();
-}
-
-/* ──────────────────────────────────────────────────────────────
-   DROPDOWN TOGGLE
-   ────────────────────────────────────────────────────────────── */
-function toggleDropdown(btn) {
-    const dd = btn.nextElementSibling;
-    document.querySelectorAll('.actions-dropdown.show').forEach(d => {
-        if (d !== dd) d.classList.remove('show');
-    });
-    dd.classList.toggle('show');
-}
-
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('.actions-cell')) {
-        document.querySelectorAll('.actions-dropdown.show').forEach(d => d.classList.remove('show'));
-    }
-});
-
-/* ──────────────────────────────────────────────────────────────
-   SLIDE PANEL — Chat 76 si-panel
-   ────────────────────────────────────────────────────────────── */
-function esc(str) {
-    if (!str) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
-
-const SI_STAGE_MAP = {
-    cold:1, queued:2, contacted:3, followed_up:3, no_reply:3,
-    replied:4, reply_received:4, in_conversation:4,
-    meeting:5, won:6, lost:6
+/* ── Tab filter groups ── */
+const S_TAB_GROUPS = {
+    'active':  ['Contacted', 'Followed Up'],
+    'replied': ['Reply Received', 'In Conversation'],
+    'closed':  ['No Reply', 'Lost', 'Bounced'],
 };
 
-function openPanel(emailId) {
-    document.querySelectorAll('.actions-dropdown.show').forEach(d => d.classList.remove('show'));
+/* ── Filtering ── */
+function sFilterTab(val, btn) {
+    document.querySelectorAll('.rules-sub-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    sActiveTab = val;
+    sApplyFilters();
+}
 
-    const email = SENT_DATA.find(e => e.email_id === emailId);
+function sApplyFilters() {
+    const search = (document.getElementById('sSearch').value || '').toLowerCase();
+    const trackFilter = (document.getElementById('sFilterTrack') || {}).value || '';
+    const allRows = Array.from(document.querySelectorAll('#sentBody tr'));
+
+    sFilteredRows = allRows.filter(row => {
+        const track = row.dataset.track || '';
+        const status = row.dataset.status || '';
+        const text = (row.dataset.search || row.textContent).toLowerCase();
+
+        let tabMatch = true;
+        if (sActiveTab) {
+            const group = S_TAB_GROUPS[sActiveTab];
+            if (group) {
+                tabMatch = group.includes(status);
+            } else {
+                tabMatch = status === sActiveTab;
+            }
+        }
+
+        return tabMatch && (!trackFilter || track === trackFilter) && (!search || text.includes(search));
+    });
+
+    sCurrentPage = 1;
+    sRenderPage();
+}
+
+/* ── Pagination ── */
+function sRenderPage() {
+    const allRows = Array.from(document.querySelectorAll('#sentBody tr'));
+    allRows.forEach(r => r.style.display = 'none');
+
+    const start = (sCurrentPage - 1) * sRowsPerPage;
+    const end = start + sRowsPerPage;
+    const pageRows = sFilteredRows.slice(start, end);
+    pageRows.forEach(r => r.style.display = '');
+
+    const total = sFilteredRows.length;
+    document.getElementById('sResultCount').textContent =
+        'Showing ' + Math.min(start + 1, total) + '–' + Math.min(end, total) + ' of ' + total;
+
+    const totalPages = Math.ceil(total / sRowsPerPage) || 1;
+    let html = '';
+    html += `<button onclick="sGoPage(${sCurrentPage - 1})" ${sCurrentPage <= 1 ? 'disabled' : ''}>← Prev</button>`;
+    for (let p = 1; p <= totalPages; p++) {
+        html += `<button onclick="sGoPage(${p})" class="${p === sCurrentPage ? 'active' : ''}">${p}</button>`;
+    }
+    html += `<button onclick="sGoPage(${sCurrentPage + 1})" ${sCurrentPage >= totalPages ? 'disabled' : ''}>Next →</button>`;
+    document.getElementById('sPagControls').innerHTML = html;
+}
+
+function sGoPage(p) {
+    const totalPages = Math.ceil(sFilteredRows.length / sRowsPerPage) || 1;
+    if (p < 1 || p > totalPages) return;
+    sCurrentPage = p;
+    sRenderPage();
+}
+
+function sChangeRows() {
+    sRowsPerPage = parseInt(document.getElementById('sRowsPerPage').value);
+    sCurrentPage = 1;
+    sRenderPage();
+}
+
+/* ── Progress bar (read-only) ── */
+function sUpdateProgressBar(status) {
+    const isExit = S_EXIT_STATES.includes(status);
+    const stage = S_STAGE_MAP[status] || 1;
+
+    const bars = Array.from({length:7}, (_,i) => {
+        let cls = '';
+        if (isExit) { cls = 'done'; }
+        else { if (i+1 < stage) cls = 'done'; else if (i+1 === stage) cls = 'active'; }
+        return `<div class="si-prog-stage ${cls}"></div>`;
+    }).join('');
+    document.getElementById('sPanelProgress').innerHTML = bars;
+
+    if (isExit) {
+        const exitColor = S_EXIT_COLORS[status] || '#9ca3af';
+        document.querySelectorAll('#sPanelProgress .si-prog-stage').forEach(bar => { bar.style.background = exitColor; });
+    }
+
+    const labels = document.querySelectorAll('#sPanel .si-prog-label');
+    const lastLabel = labels[labels.length - 1];
+    if (lastLabel) { lastLabel.textContent = 'Won'; }
+
+    labels.forEach((label, i) => {
+        label.classList.remove('active', 'done');
+        label.style.color = '';
+        if (isExit) { label.classList.add('done'); }
+        else { if (i+1 < stage) label.classList.add('done'); else if (i+1 === stage) label.classList.add('active'); }
+    });
+
+    if (isExit && lastLabel) {
+        lastLabel.textContent = S_EXIT_LABELS[status] || status;
+        lastLabel.classList.remove('done');
+        lastLabel.classList.add('active');
+        lastLabel.style.color = S_EXIT_COLORS[status] || '#9ca3af';
+    }
+}
+
+/* ── Slide-in panel ── */
+function sOpenPanel(emailId) {
+    sCurrentEmailId = emailId;
+    const email = S_DATA.find(e => e.email_id === emailId);
     if (!email) return;
-
-    currentEmailId = emailId;
-    currentLeadId  = email.lead_id;
+    sCurrentLeadId = email.lead_id;
 
     // Header
-    const nameStr = [email.full_name, email.company].filter(Boolean).join(' · ') || '—';
-    document.getElementById('siName').textContent  = nameStr;
-    document.getElementById('siEmail').textContent = email.email || '—';
+    document.getElementById('sPanelCompany').textContent = email.company || '—';
+    document.getElementById('sPanelContact').textContent =
+        [email.full_name, email.email, email.role].filter(Boolean).join(' | ') || '—';
 
     // Badges
-    const trackBadgeClass = {
-        Agency:'si-badge-agency', Direct:'si-badge-direct',
-        Recruiter:'si-badge-recruiter', Job:'si-badge-job'
-    }[email.track] || 'si-badge-job';
-    const statusBadgeClass = {
-        contacted:'si-badge-contacted', followed_up:'si-badge-contacted',
-        replied:'si-badge-rr', reply_received:'si-badge-rr',
-        meeting:'si-badge-rr', won:'si-badge-hot',
-        lost:'si-badge-low', no_reply:'si-badge-low',
-        cold:'si-badge-cold', queued:'si-badge-queued'
-    }[email.status] || 'si-badge-cold';
-    const tzBadge = email.tz_badge ? `<span class="si-badge si-badge-tz">${esc(email.tz_badge)}</span>` : '';
-    document.getElementById('siBadges').innerHTML = `
-        <span class="si-badge ${trackBadgeClass}">${esc(email.track||'')}</span>
-        <span class="si-badge ${statusBadgeClass}">${esc(email.status_display||'')}</span>
-        ${tzBadge}
+    const trackClass = {Agency:'si-badge-agency',Recruiter:'si-badge-recruiter',Direct:'si-badge-direct',Job:'si-badge-job'}[email.track] || 'si-badge-job';
+    const dotColor = S_DOT_COLORS[email.status] || '#9ca3af';
+    document.getElementById('sPanelBadgesLeft').innerHTML = `
+        <span class="si-badge" style="background:#fff;color:#202124;border:1px solid #dadce0;">
+            <span class="si-status-dot" style="background:${dotColor};"></span>${esc(email.status_display)}
+        </span>
+        <span class="si-badge ${trackClass}">${esc(email.track)}</span>
+        <span class="email-type-pill ${email.pill_css}">${esc(email.pill_label)}</span>
+    `;
+    document.getElementById('sPanelBadgesRight').innerHTML = `
+        ${email.tz_badge ? `<span class="si-badge si-badge-tz">${esc(email.tz_badge)}</span>` : ''}
     `;
 
     // Progress bar
-    const stage = SI_STAGE_MAP[email.status] || 3;
-    document.getElementById('siProgress').innerHTML = Array.from({length:6}, (_,i) => {
-        const cls = i+1 < stage ? 'done' : (i+1 === stage ? 'active' : '');
-        return `<div class="si-prog-stage ${cls}"></div>`;
-    }).join('');
-
-    // Notes
-    siRenderNotes(email.notes || '');
-    siCancelNotes();
+    sUpdateProgressBar(email.status);
 
     // Thread
-    siRenderThread(THREAD_DATA[email.lead_id] || []);
+    sRenderThread(S_THREAD[email.lead_id] || []);
+
+    // Notes
+    sRenderNotes(email.notes);
+    sCancelNotes();
 
     // Reset composer
-    document.getElementById('siComposerText').value = '';
-    siSigOn = true;
-    const pip = document.getElementById('siSigPip');
-    if (pip) pip.classList.remove('off');
-    const preview = document.getElementById('siSigPreview');
-    if (preview) preview.style.display = 'block';
-    siLoadCvStatus();
+    document.getElementById('sComposerText').value = '';
 
     // Open
-    document.getElementById('siOverlay').classList.add('si-open');
-    document.getElementById('siPanel').classList.add('si-open');
+    document.getElementById('sOverlay').classList.add('si-open');
+    document.getElementById('sPanel').classList.add('si-open');
 }
 
-function closePanel() {
-    document.getElementById('siOverlay').classList.remove('si-open');
-    document.getElementById('siPanel').classList.remove('si-open');
-    currentEmailId = null;
-    currentLeadId  = null;
+function sClosePanel() {
+    document.getElementById('sOverlay').classList.remove('si-open');
+    document.getElementById('sPanel').classList.remove('si-open');
+    sCurrentEmailId = null;
+    sCurrentLeadId = null;
 }
 
-/* Notes */
-function siRenderNotes(text) {
-    const disp = document.getElementById('siNotesDisplay');
-    if (text && text.trim()) {
-        disp.className = 'si-notes-body';
-        disp.textContent = text;
-    } else {
-        disp.className = 'si-notes-empty';
-        disp.textContent = 'No notes yet. Click Edit to add some.';
-    }
-}
-function siStartEditNotes() {
-    const email = SENT_DATA.find(e => e.lead_id === currentLeadId);
-    document.getElementById('siNotesTextarea').value = (email && email.notes) || '';
-    document.getElementById('siNotesDisplay').style.display  = 'none';
-    document.getElementById('siNotesEditBtn').style.display  = 'none';
-    document.getElementById('siNotesEditWrap').style.display = '';
-}
-function siCancelNotes() {
-    document.getElementById('siNotesDisplay').style.display  = '';
-    document.getElementById('siNotesEditBtn').style.display  = '';
-    document.getElementById('siNotesEditWrap').style.display = 'none';
-}
-function siSaveNotes() {
-    if (!currentLeadId) return;
-    const notes = document.getElementById('siNotesTextarea').value.trim();
-    fetch(`/outreach/leads/${currentLeadId}/notes`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes })
-    })
-    .then(r => r.json())
-    .then(d => {
-        if (d.success) {
-            SENT_DATA.filter(e => e.lead_id === currentLeadId).forEach(e => e.notes = notes);
-            siRenderNotes(notes);
-            siCancelNotes();
-            showToast('Notes saved', 'success');
-        } else showToast('Error saving notes', 'error');
-    })
-    .catch(() => showToast('Network error', 'error'));
+/* ── Thread renderer (matches Leads page exactly) ── */
+function sFormatTs(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    return d.toLocaleString('en-GB', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
 }
 
-/* Thread */
-function siFormatTs(tsStr) {
-    if (!tsStr) return '—';
-    try {
-        const d = new Date(tsStr);
-        return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})
-            + ' · ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-    } catch { return tsStr; }
-}
-function siRenderThread(items) {
-    const container = document.getElementById('siThread');
+function sRenderThread(items) {
+    const container = document.getElementById('sThread');
     if (!items || items.length === 0) {
         container.innerHTML = '<div class="si-thread-empty">No conversation yet</div>';
         return;
     }
     const sorted = [...items].sort((a,b) => (b.ts||'').localeCompare(a.ts||''));
-    container.innerHTML = sorted.map((item,idx) => {
-        const ts = siFormatTs(item.ts);
-        if (item.direction === 'outbound') {
-            const subj = item.subject ? `<div class="si-thread-subject">${esc(item.subject)}</div>` : '';
-            const body = item.body || '';
-            const id   = 'si-body-' + idx;
-            const clamped = body.length > 200 ? 'clamped' : '';
-            const more = body.length > 200 ? `<button class="si-show-more-btn" onclick="siToggleBody(this,'${id}')">Show more</button>` : '';
-            return `<div class="si-thread-item outbound">
-                <div class="si-thread-item-header">
-                    <span class="si-thread-badge sent">SENT</span>
-                    <span class="si-thread-ts">${ts}</span>
-                </div>${subj}
-                <div class="si-thread-body ${clamped}" id="${id}">${esc(body)}</div>
-                ${more}</div>`;
-        } else {
-            const body = item.body || '';
-            const { main, quoted } = siSplitBody(body);
-            const quotedHtml = quoted
-                ? `<button class="si-quoted-toggle" onclick="siToggleQuoted(this)">··· Show original</button><div class="si-quoted-content">${esc(quoted)}</div>`
-                : '';
-            return `<div class="si-thread-item inbound">
-                <div class="si-thread-item-header">
-                    <span class="si-thread-badge reply-received">REPLY RECEIVED</span>
-                    <span class="si-thread-ts">${esc(item.sender_name||'')} · ${ts}</span>
-                </div>
-                <div class="si-thread-body">${esc(main)}${quotedHtml}</div></div>`;
-        }
-    }).join('');
+    container.innerHTML = sorted.map((item, idx) => sBuildThreadItem(item, idx)).join('');
 }
-function siSplitBody(body) {
-    const m = /\n(On [\s\S]+?wrote:[\s\S]*)/.exec(body);
-    if (m) return { main: body.slice(0, m.index).trim(), quoted: m[1].trim() };
-    const lines = body.split('\n');
-    const qi = lines.findIndex(l => l.trimStart().startsWith('>'));
-    if (qi > 0) return { main: lines.slice(0, qi).join('\n').trim(), quoted: lines.slice(qi).join('\n').trim() };
-    return { main: body, quoted: '' };
+
+function sBuildThreadItem(item, idx) {
+    const id = 'st-body-' + idx;
+    const ts = sFormatTs(item.ts);
+
+    if (item.direction === 'outbound') {
+        const isQueued = item.status === 'queued';
+        const isScheduled = isQueued && !!item.scheduled_at;
+        const badgeClass = isScheduled ? 'scheduled' : (isQueued ? 'queued' : 'sent');
+        const badgeText = isScheduled ? 'Scheduled' : (isQueued ? 'Queued' : 'Sent');
+        const tsDisplay = ts || (isScheduled ? sFormatTs(item.scheduled_at) : '');
+        const subj = item.subject ? `<div class="si-thread-subject">${esc(item.subject)}</div>` : '';
+        const body = item.body || '';
+        const clamped = body.length > 200 ? 'clamped' : '';
+        const showMore = body.length > 200
+            ? `<button class="si-show-more-btn" onclick="sToggleBody(this,'${id}')">Show more</button>` : '';
+        const itemClass = isScheduled ? 'si-thread-item outbound scheduled' : 'si-thread-item outbound';
+        const schedLine = isScheduled && item.scheduled_display
+            ? `<div class="si-thread-sched-time">${esc(item.scheduled_display)}</div>` : '';
+        return `
+        <div class="${itemClass}">
+            <div class="si-thread-item-header">
+                <span class="si-thread-badge ${badgeClass}">${badgeText}</span>
+                <span class="si-thread-ts">${tsDisplay}</span>
+            </div>
+            ${schedLine}
+            ${subj}
+            <div class="si-thread-body ${clamped}" id="${id}">${esc(body)}</div>
+            ${showMore}
+        </div>`;
+    } else {
+        const body = item.body || '';
+        return `
+        <div class="si-thread-item inbound">
+            <div class="si-thread-item-header">
+                <span class="si-thread-badge reply-received">Reply Received</span>
+                <span class="si-thread-ts">${esc(item.sender_name||'')} · ${ts}</span>
+            </div>
+            <div class="si-thread-body">${esc(body)}</div>
+        </div>`;
+    }
 }
-function siToggleQuoted(btn) {
-    const content = btn.nextElementSibling;
-    content.classList.toggle('open');
-    btn.textContent = content.classList.contains('open') ? '··· Hide original' : '··· Show original';
-}
-function siToggleBody(btn, id) {
+
+function sToggleBody(btn, id) {
     const el = document.getElementById(id);
     if (!el) return;
     el.classList.toggle('clamped');
     btn.textContent = el.classList.contains('clamped') ? 'Show more' : 'Show less';
 }
 
-/* ── Signature toggle ────────────────────────────────────────── */
-let siSigOn = true;
-function siToggleSignature() {
-    siSigOn = !siSigOn;
-    const pip = document.getElementById('siSigPip');
-    const preview = document.getElementById('siSigPreview');
-    if (pip) pip.classList.toggle('off', !siSigOn);
-    if (preview) preview.style.display = siSigOn ? 'block' : 'none';
+/* ── Notes ── */
+function sRenderNotes(text) {
+    const barText = document.getElementById('sNotesBarText');
+    if (text && text.trim()) {
+        barText.textContent = 'Notes: ' + text.substring(0, 80) + (text.length > 80 ? '...' : '');
+    } else {
+        barText.textContent = 'Notes: Click to add...';
+    }
 }
 
-/* ── CV status ───────────────────────────────────────────────── */
-let siCvAvailable = false;
-function siLoadCvStatus() {
-    fetch('/outreach/cv/status')
-        .then(r => r.json())
-        .then(d => {
-            siCvAvailable = d.uploaded;
-            const chk   = document.getElementById('siCvCheck');
-            const label = document.getElementById('siCvLabel');
-            if (chk) {
-                chk.disabled = !d.uploaded;
-                chk.checked  = d.uploaded;
-            }
-            if (label) {
-                label.title = d.uploaded ? d.filename : 'No CV uploaded';
-                label.style.opacity = d.uploaded ? '1' : '0.5';
-            }
+function sToggleNotes() {
+    const expand = document.getElementById('sNotesExpand');
+    const arrow = document.getElementById('sNotesBarArrow');
+    if (expand.style.display !== 'none') {
+        expand.style.display = 'none';
+        arrow.classList.remove('open');
+    } else {
+        const email = S_DATA.find(e => e.email_id === sCurrentEmailId);
+        document.getElementById('sNotesTextarea').value = (email && email.notes) || '';
+        expand.style.display = '';
+        arrow.classList.add('open');
+    }
+}
+
+function sCancelNotes() {
+    document.getElementById('sNotesExpand').style.display = 'none';
+    document.getElementById('sNotesBarArrow').classList.remove('open');
+}
+
+function sSaveNotes() {
+    if (!sCurrentLeadId) return;
+    const notes = document.getElementById('sNotesTextarea').value.trim();
+    fetch(`/outreach/leads/${sCurrentLeadId}/notes`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const email = S_DATA.find(e => e.email_id === sCurrentEmailId);
+            if (email) email.notes = notes;
+            sRenderNotes(notes);
+            sCancelNotes();
+            showToast('Notes saved', 'success');
+        } else { showToast('Error saving notes', 'error'); }
+    })
+    .catch(() => showToast('Network error', 'error'));
+}
+
+/* ── Composer helpers ── */
+function sAutoGrow(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 350) + 'px'; }
+
+let sSigOn = true;
+function sToggleSignature() {
+    sSigOn = !sSigOn;
+    document.getElementById('sSigPip').classList.toggle('off', !sSigOn);
+    if (!sSigOn) {
+        document.getElementById('sSigPreview').style.display = 'none';
+        document.getElementById('sSigArrow').classList.remove('open');
+    }
+}
+function sToggleSigPreview() {
+    if (!sSigOn) return;
+    const preview = document.getElementById('sSigPreview');
+    const arrow = document.getElementById('sSigArrow');
+    const isOpen = preview.style.display !== 'none';
+    preview.style.display = isOpen ? 'none' : 'block';
+    arrow.classList.toggle('open', !isOpen);
+}
+
+function sFormatBold() {
+    const ta = document.getElementById('sComposerText');
+    const s = ta.selectionStart, e = ta.selectionEnd, sel = ta.value.substring(s, e);
+    ta.value = ta.value.substring(0, s) + '**' + sel + '**' + ta.value.substring(e);
+    ta.selectionStart = s + 2; ta.selectionEnd = e + 2; ta.focus();
+}
+function sFormatItalic() {
+    const ta = document.getElementById('sComposerText');
+    const s = ta.selectionStart, e = ta.selectionEnd, sel = ta.value.substring(s, e);
+    ta.value = ta.value.substring(0, s) + '*' + sel + '*' + ta.value.substring(e);
+    ta.selectionStart = s + 1; ta.selectionEnd = e + 1; ta.focus();
+}
+
+/* ── Send reply ── */
+function sSendReply() {
+    if (!sCurrentLeadId) return;
+    const body = document.getElementById('sComposerText').value.trim();
+    if (!body) { showToast('Write a reply first', 'warning'); return; }
+    const btn = document.querySelector('.si-send-btn-new');
+    btn.disabled = true; btn.textContent = 'Sending...';
+
+    fetch(`/outreach/replies/${sCurrentLeadId}/send-reply`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            body: body,
+            include_signature: sSigOn,
+            attach_cv: document.getElementById('sCvCheck').checked
         })
-        .catch(() => {});
-}
-
-/* ── Send reply ──────────────────────────────────────────────── */
-function siSendReply() {
-    if (!currentLeadId) return;
-    const ta   = document.getElementById('siComposerText');
-    const body = ta ? ta.value.trim() : '';
-    if (!body) { showToast('Please type a reply first.', 'error'); return; }
-    const attachCv = !!(document.getElementById('siCvCheck') || {}).checked;
-    const btn = document.querySelector('.si-send-btn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
-    fetch(`/outreach/replies/${currentLeadId}/send-reply`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body, attach_cv: attachCv }),
     })
     .then(r => r.json())
-    .then(d => {
-        if (btn) { btn.disabled = false; btn.textContent = 'Send Reply'; }
-        if (d.success) {
+    .then(data => {
+        btn.disabled = false; btn.textContent = 'Send Reply';
+        if (data.success) {
             showToast('Reply sent', 'success');
-            if (ta) ta.value = '';
-            siRenderThread(THREAD_DATA[currentLeadId] || []);
-        } else showToast(d.error || 'Failed to send reply', 'error');
+            document.getElementById('sComposerText').value = '';
+            setTimeout(() => location.reload(), 1000);
+        } else { showToast('Error: ' + (data.message || 'Send failed'), 'error'); }
     })
-    .catch(() => {
-        if (btn) { btn.disabled = false; btn.textContent = 'Send Reply'; }
-        showToast('Network error sending reply', 'error');
-    });
+    .catch(() => { btn.disabled = false; btn.textContent = 'Send Reply'; showToast('Network error', 'error'); });
 }
 
-/* ──────────────────────────────────────────────────────────────
-   PANEL ACTION BUTTONS — Chat 76
-   ────────────────────────────────────────────────────────────── */
-function siMarkWon() {
-    if (!currentLeadId) return;
-    if (!confirm('Mark this lead as Won?')) return;
-    fetch(`/outreach/sent/${currentLeadId}/mark-won`, {
+/* ── Queue follow-up ── */
+function sQueueFollowup() {
+    if (!sCurrentEmailId) return;
+    fetch(`/outreach/sent/${sCurrentEmailId}/queue-followup`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }
     })
     .then(r => r.json())
-    .then(d => {
-        if (d.success) { showToast('Lead marked as won', 'success'); setTimeout(() => location.reload(), 800); }
-        else showToast('Error: ' + (d.message || 'unknown'), 'error');
+    .then(data => {
+        if (data.success) {
+            showToast('Follow-up queued', 'success');
+            setTimeout(() => location.reload(), 800);
+        } else { showToast(data.message || 'Error', 'error'); }
     })
     .catch(() => showToast('Network error', 'error'));
 }
 
-function siMarkLost() {
-    if (!currentLeadId) return;
-    if (!confirm('Mark this lead as Lost?')) return;
-    fetch(`/outreach/sent/${currentLeadId}/mark-lost`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }
-    })
-    .then(r => r.json())
-    .then(d => {
-        if (d.success) { showToast('Lead marked as lost', 'success'); setTimeout(() => location.reload(), 800); }
-        else showToast('Error: ' + (d.message || 'unknown'), 'error');
-    })
-    .catch(() => showToast('Network error', 'error'));
-}
-
-function siQueueFollowup() {
-    if (!currentEmailId) return;
-    queueFollowup(currentEmailId, null);
-}
-
-function queueFollowup(emailId, btn) {
-    document.querySelectorAll('.actions-dropdown.show').forEach(d => d.classList.remove('show'));
-    fetch(`/outreach/sent/${emailId}/queue-followup`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }
-    })
-    .then(r => r.json())
-    .then(d => {
-        if (d.success) { showToast('Follow-up queued for tomorrow', 'success'); setTimeout(() => location.reload(), 800); }
-        else showToast('Error: ' + (d.message || 'unknown'), 'error');
-    })
-    .catch(() => showToast('Network error', 'error'));
-}
-
-function quickStatus(leadId, status, btn) {
-    document.querySelectorAll('.actions-dropdown.show').forEach(d => d.classList.remove('show'));
-    fetch(`/outreach/sent/${leadId}/update-status`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: status })
-    })
-    .then(r => r.json())
-    .then(d => {
-        if (d.success) { showToast('Status updated', 'success'); setTimeout(() => location.reload(), 800); }
-        else showToast('Error: ' + (d.message || 'unknown'), 'error');
-    })
-    .catch(() => showToast('Network error', 'error'));
-}
-
-function openStatusModal(leadId) {
-    if (!leadId) return;
-    actionLeadId = leadId;
-    const email = SENT_DATA.find(e => e.lead_id === leadId);
-    if (email) document.getElementById('sentStatusSelect').value = email.status || 'contacted';
-    document.querySelectorAll('.actions-dropdown.show').forEach(d => d.classList.remove('show'));
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('sentStatusModal')).show();
-}
-
-function saveStatusUpdate() {
-    if (!actionLeadId) return;
-    const newStatus = document.getElementById('sentStatusSelect').value;
-    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('sentStatusModal'));
-    fetch(`/outreach/sent/${actionLeadId}/update-status`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
-    })
-    .then(r => r.json())
-    .then(d => {
-        modal.hide();
-        if (d.success) { showToast('Status updated', 'success'); setTimeout(() => location.reload(), 800); }
-        else showToast('Error: ' + (d.message || 'unknown'), 'error');
-    })
-    .catch(() => showToast('Network error', 'error'));
-}
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', function() {
+    sFilteredRows = Array.from(document.querySelectorAll('#sentBody tr'));
+    sRenderPage();
+});
 </script>
 {% endblock %}

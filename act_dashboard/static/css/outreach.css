@@ -487,6 +487,7 @@
 .s-won .status-dot       { background: #166534; box-shadow: 0 0 5px rgba(22,101,52,0.5); }
 .s-lost .status-dot      { background: #dc2626; }
 .s-noreply .status-dot   { background: #9ca3af; }
+.s-bounced .status-dot   { background: #dc2626; }
 
 /* ── COMPANY CELL ── */
 .company-name {

@@ -115,6 +115,7 @@ STATUS_DISPLAY = {
     "won":             "Won",
     "lost":            "Lost",
     "no_reply":        "No Reply",
+    "bounced":         "Bounced",
 }
 
 STATUS_CSS = {
@@ -123,11 +124,12 @@ STATUS_CSS = {
     "contacted":      "contacted",
     "followed_up":    "followedup",
     "replied":        "replied",
-    "reply_received": "replied",   # same CSS class Chat 76
+    "reply_received": "replied",
     "meeting":        "meeting",
     "won":            "won",
     "lost":           "lost",
     "no_reply":       "noreply",
+    "bounced":        "bounced",
 }
 
 STATUS_PROG_CSS = {
@@ -136,11 +138,12 @@ STATUS_PROG_CSS = {
     "contacted":      "contacted",
     "followed_up":    "followedup",
     "replied":        "replied",
-    "reply_received": "replied",   # Chat 76
+    "reply_received": "replied",
     "meeting":        "meeting",
     "won":            "won",
     "lost":           "lost",
     "no_reply":       "noreply",
+    "bounced":        "bounced",
 }
 
 COUNTRY_FLAG = {
@@ -557,6 +560,14 @@ def leads():
             "SELECT COUNT(*) FROM outreach_leads WHERE status = 'no_reply'"
         ).fetchone()[0]
 
+        bounced = conn.execute(
+            "SELECT COUNT(*) FROM outreach_leads WHERE status = 'bounced'"
+        ).fetchone()[0]
+
+        meeting = conn.execute(
+            "SELECT COUNT(*) FROM outreach_leads WHERE status = 'meeting'"
+        ).fetchone()[0]
+
         stats = {
             "total":     total,
             "cold":      cold,
@@ -566,11 +577,25 @@ def leads():
             "hot_leads": hot_leads,
             "won":       won,
             "no_reply":  no_reply,
+            "bounced":   bounced,
+            "meeting":   meeting,
         }
 
         # ── Leads ────────────────────────────────────────────────────────────
         lead_rows = conn.execute(
-            "SELECT * FROM outreach_leads ORDER BY added_date DESC, last_activity DESC"
+            "SELECT * FROM outreach_leads ORDER BY "
+            "CASE status "
+            "WHEN 'queued' THEN 0 "
+            "WHEN 'contacted' THEN 1 "
+            "WHEN 'followed_up' THEN 2 "
+            "WHEN 'replied' THEN 3 WHEN 'reply_received' THEN 3 WHEN 'in_conversation' THEN 3 "
+            "WHEN 'meeting' THEN 4 "
+            "WHEN 'won' THEN 5 "
+            "WHEN 'cold' THEN 6 "
+            "WHEN 'no_reply' THEN 7 WHEN 'lost' THEN 7 "
+            "WHEN 'bounced' THEN 8 "
+            "ELSE 6 END ASC, "
+            "added_date DESC, last_activity DESC"
         ).fetchall()
         leads_list = [enrich_lead(r, lead_cols) for r in lead_rows]
 
@@ -885,7 +910,7 @@ def edit_lead(lead_id):
 _STATUS_STAGE = {
     "cold": 1, "queued": 2, "contacted": 3, "followed_up": 4,
     "replied": 5, "reply_received": 5, "in_conversation": 5,
-    "meeting": 6, "won": 7, "lost": 7, "no_reply": 3,
+    "meeting": 6, "won": 7, "lost": 7, "no_reply": 3, "bounced": 3,
 }
 
 
@@ -1046,9 +1071,12 @@ def queue():
             SELECT e.email_id, e.lead_id, e.email_type, e.subject, e.body,
                    e.cv_attached, e.scheduled_at,
                    l.company, l.full_name, l.role, l.email, l.city_state,
-                   l.country, l.track, l.timezone, l.sequence_step
+                   l.country, l.track, l.timezone, l.sequence_step, l.status AS lead_status,
+                   l.lead_type_score,
+                   t.name AS template_name, t.sequence_step AS template_step
             FROM outreach_emails e
             JOIN outreach_leads l ON e.lead_id = l.lead_id
+            LEFT JOIN outreach_templates t ON e.template_id = t.template_id
             WHERE e.status = 'queued'
             ORDER BY l.track ASC, e.scheduled_at ASC NULLS LAST
         """).fetchall()
@@ -1057,7 +1085,8 @@ def queue():
         for row in rows:
             (email_id, lead_id, email_type, subject, body, cv_attached,
              scheduled_at, company, full_name, role, email_addr, city_state,
-             country, track, timezone, sequence_step) = row
+             country, track, timezone, sequence_step, lead_status,
+             lead_type_score, template_name, template_step) = row
 
             pill_label, pill_css = compute_email_type_pill(email_type, sequence_step)
             send_time     = format_send_time(scheduled_at, timezone)
@@ -1104,6 +1133,10 @@ def queue():
                 "is_scheduled":     is_scheduled,
                 "scheduled_display": scheduled_display,
                 "scheduled_at_utc": scheduled_at_utc,
+                "lead_status":      lead_status or "queued",
+                "score_css":        score_info(lead_type_score or 1)[0],
+                "score_label":      score_info(lead_type_score or 1)[1],
+                "template_display": f"Step {template_step}: {template_name}" if template_name else "Unknown",
             })
 
     except Exception as e:
@@ -1772,7 +1805,8 @@ def sent():
                    e.sent_at, e.followup_due,
                    e.cv_attached, e.reply_received, e.reply_text,
                    l.company, l.full_name, l.email, l.track,
-                   l.status, l.timezone, l.sequence_step, l.notes
+                   l.status, l.timezone, l.sequence_step, l.notes,
+                   l.role, l.city_state, l.lead_type_score, l.country
             FROM outreach_emails e
             JOIN outreach_leads l ON e.lead_id = l.lead_id
             WHERE e.status = 'sent'
@@ -1785,7 +1819,8 @@ def sent():
              sent_at, followup_due,
              cv_attached, reply_received, reply_text,
              company, full_name, email_addr, track,
-             lead_status, timezone, sequence_step, notes) = row
+             lead_status, timezone, sequence_step, notes,
+             role, city_state, lead_type_score, country) = row
 
             date_str, time_str = format_sent_at(sent_at, timezone)
             due_status, due_label = compute_followup_status(followup_due, today)
@@ -1816,6 +1851,12 @@ def sent():
                 "reply_text":     reply_text or "",
                 "notes":          notes or "",
                 "tz_badge":       TZ_BADGE.get(timezone or "GMT", timezone or ""),
+                "role":           role or "",
+                "city_state":     city_state or "",
+                "country":        country or "",
+                "flag":           COUNTRY_FLAG.get(country or "", ""),
+                "score_css":      score_info(lead_type_score or 1)[0],
+                "score_label":    score_info(lead_type_score or 1)[1],
             })
 
         # Fetch full email threads for leads visible on this page (for slide panel)
@@ -2060,7 +2101,8 @@ def replies():
                 ls.email_type,
                 ls.sequence_step,
                 lr.id          AS reply_id,
-                l.notes, l.timezone
+                l.notes, l.timezone,
+                l.role, l.lead_type_score, l.city_state, l.country
             FROM outreach_leads l
             LEFT JOIN latest_reply lr ON l.lead_id = lr.lead_id AND lr.rn = 1
             LEFT JOIN latest_sent  ls ON l.lead_id = ls.lead_id AND ls.rn = 1
@@ -2076,6 +2118,7 @@ def replies():
             "email_type", "sequence_step",
             "reply_id",
             "notes", "timezone",
+            "role", "lead_type_score", "city_state", "country",
         ]
 
         replies_list = []
@@ -2089,6 +2132,9 @@ def replies():
             r["reply_read"]      = bool(r.get("reply_read"))
             r["unread"]          = not r["reply_read"]
             r["reply_text"]      = r.get("reply_text") or ""
+            # Strip HTML for table preview
+            import re as _re_html
+            r["reply_text_plain"] = _re_html.sub(r'<[^>]+>', '', r["reply_text"]).strip()
             r["lead_id"]         = str(r["lead_id"])
             r["reply_id"]        = str(r["reply_id"]) if r.get("reply_id") else ""
             pill_label, pill_css = compute_email_type_pill(
@@ -2097,6 +2143,10 @@ def replies():
             r["pill_label"] = pill_label
             r["pill_css"]   = pill_css
             r["tz_badge"]   = TZ_BADGE.get(r.get("timezone") or "GMT", r.get("timezone") or "")
+            r["status_css"] = STATUS_CSS.get(r.get("status", ""), "cold")
+            r["score_css"]  = score_info(r.get("lead_type_score") or 1)[0]
+            r["score_label"] = score_info(r.get("lead_type_score") or 1)[1]
+            r["flag"]       = COUNTRY_FLAG.get(r.get("country") or "", "")
             replies_list.append(r)
 
         # Chat 76: build merged conversation thread per lead
