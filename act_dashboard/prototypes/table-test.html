@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Table Test</title>
+  <link rel="stylesheet" href="css/prototype-v7.css">
+  <link rel="stylesheet" href="css/account-level-v7.css">
+  <style>body { margin: 40px; }</style>
+</head>
+<body>
+
+<h2 style="font-size:16px;margin-bottom:16px">Signal Decomposition (8 equal columns, all left-aligned)</h2>
+<table class="data-table data-table--sig">
+  <thead><tr><th>Campaign</th><th>CPC (7d)</th><th>CPC Trend</th><th>CVR (14d)</th><th>CVR Trend</th><th>CPA</th><th>CPA Trend</th><th>CPA vs Target</th></tr></thead>
+  <tbody>
+    <tr><td><strong>GLO — Core</strong></td><td>£2.10</td><td><span class="trend-arrow trend-arrow--good">↓ 5%</span></td><td>11.4%</td><td><span class="trend-arrow trend-arrow--good">↑ 2%</span></td><td>£18.50</td><td><span class="trend-arrow trend-arrow--good">↓ 8%</span></td><td><span class="zone-badge zone-badge--outperforming">26% below</span></td></tr>
+    <tr><td><strong>GLO — Retargeting</strong></td><td>£1.80</td><td><span class="trend-arrow trend-arrow--flat">→ flat</span></td><td>15.0%</td><td><span class="trend-arrow trend-arrow--good">↑ 8%</span></td><td>£12.00</td><td><span class="trend-arrow trend-arrow--good">↓ 12%</span></td><td><span class="zone-badge zone-badge--outperforming">52% below</span></td></tr>
+    <tr><td><strong>Brand</strong></td><td>£0.95</td><td><span class="trend-arrow trend-arrow--flat">→ flat</span></td><td>11.8%</td><td><span class="trend-arrow trend-arrow--flat">→ flat</span></td><td>£8.00</td><td><span class="trend-arrow trend-arrow--flat">→ flat</span></td><td><span class="zone-badge zone-badge--outperforming">68% below</span></td></tr>
+    <tr><td><strong>Testing</strong></td><td>£3.50</td><td><span class="trend-arrow trend-arrow--bad">↑ 12%</span></td><td>10.0%</td><td><span class="trend-arrow trend-arrow--bad">↓ 6%</span></td><td>£35.00</td><td><span class="trend-arrow trend-arrow--bad">↑ 15%</span></td><td><span class="zone-badge zone-badge--underperforming">40% above</span></td></tr>
+  </tbody>
+</table>
+
+<h2 style="font-size:16px;margin:32px 0 16px">Budget Shift History (4 equal columns, all left-aligned)</h2>
+<table class="data-table data-table--hist">
+  <thead><tr><th>Date</th><th>Campaign</th><th>Change</th><th>Reason</th></tr></thead>
+  <tbody>
+    <tr><td>5 Apr 2026</td><td>GLO Campaign — Core</td><td>£28 → £30 (+7%)</td><td>Outperforming, score 82</td></tr>
+    <tr><td>3 Apr 2026</td><td>Testing — New Keywords</td><td>£7 → £5 (-29%)</td><td>Underperforming, score 38</td></tr>
+    <tr><td>1 Apr 2026</td><td>GLO Campaign — Retargeting</td><td>£9 → £10 (+11%)</td><td>Outperforming, score 91</td></tr>
+  </tbody>
+</table>
+
+</body>
+</html>

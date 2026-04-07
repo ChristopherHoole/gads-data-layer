@@ -1,0 +1,343 @@
+/* ============================================================================
+   ACT PROTOTYPE — CLIENT CONFIGURATION PAGE CSS
+   Extends prototype-v7.css (imported in HTML). Only config-specific styles here.
+   ============================================================================ */
+
+/* Page header */
+.config-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+}
+
+.config-header__left { }
+
+.config-header__title {
+  font-size: 16px; font-weight: 600; color: var(--act-text); margin: 0 0 4px;
+}
+
+.config-header__sub {
+  font-size: 14px; color: var(--act-text); margin: 0;
+}
+
+.config-header__saved {
+  font-size: 12px; color: var(--act-text); opacity: 0.7; margin-top: 4px;
+  display: flex; align-items: center; gap: 4px;
+}
+
+.config-header__saved .material-symbols-outlined { font-size: 14px; }
+
+.config-header__actions {
+  display: flex; gap: 8px; align-items: center;
+}
+
+.btn-save {
+  background: var(--act-green); color: white;
+  font-size: 12px; font-weight: 600; padding: 8px 20px;
+  border: none; border-radius: 6px; cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+}
+
+.btn-save:hover:not(.btn-save--disabled) { background: #059669; }
+.btn-save--disabled { background: #9ca3af; opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+
+.btn-reset {
+  background: var(--act-surface); color: var(--act-text);
+  font-size: 12px; font-weight: 600; padding: 8px 20px;
+  border: 1px solid var(--act-border); border-radius: 6px; cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.btn-reset:hover { background: var(--act-hover-bg); }
+
+/* Layout: vertical tabs + content */
+.config-layout {
+  display: flex; gap: 0;
+  background: var(--act-surface);
+  border: 1px solid var(--act-border-light);
+  border-radius: var(--act-card-radius);
+  box-shadow: var(--act-card-shadow);
+  min-height: 600px;
+  overflow: hidden;
+}
+
+/* Vertical tab nav */
+.config-tabs {
+  width: 200px; flex-shrink: 0;
+  border-right: 1px solid var(--act-border-light);
+  padding: 8px 0;
+}
+
+.config-tab {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px;
+  font-size: 14px; font-weight: 500; color: var(--act-text);
+  cursor: pointer; border-left: 3px solid transparent;
+  transition: all 120ms ease; text-decoration: none;
+}
+
+.config-tab:hover { background: var(--act-hover-bg); }
+
+.config-tab.active {
+  background: var(--act-hover-bg);
+  font-weight: 600;
+}
+
+/* Level colour accents on tabs */
+.config-tab[data-tab="account"].active   { border-left-color: #3b82f6; }
+.config-tab[data-tab="campaign"].active  { border-left-color: #10b981; }
+.config-tab[data-tab="keyword"].active   { border-left-color: #8b5cf6; }
+.config-tab[data-tab="adgroup"].active   { border-left-color: #f59e0b; }
+.config-tab[data-tab="ad"].active        { border-left-color: #ec4899; }
+.config-tab[data-tab="shopping"].active  { border-left-color: #14b8a6; }
+.config-tab[data-tab="onboarding"].active { border-left-color: var(--act-green); }
+
+.config-tab .material-symbols-outlined { font-size: 18px; }
+
+/* Content panels */
+.config-content {
+  flex: 1; padding: 24px; overflow-y: auto;
+}
+
+.config-panel { display: none; }
+.config-panel.active { display: block; }
+
+.config-panel__title {
+  font-size: 16px; font-weight: 600; color: var(--act-text);
+  margin: 0 0 20px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--act-border-light);
+}
+
+/* Setting rows */
+.setting-row {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--act-border-light);
+  align-items: start;
+}
+
+.setting-row:last-child { border-bottom: none; }
+
+.setting-info { }
+
+.setting-name {
+  font-size: 14px; font-weight: 600; color: var(--act-text); margin: 0 0 4px;
+}
+
+.setting-desc {
+  font-size: 14px; color: var(--act-text); opacity: 0.7; margin: 0; line-height: 1.5;
+}
+
+.setting-control { display: flex; align-items: flex-start; justify-content: flex-end; }
+
+/* Input styles */
+.config-input {
+  padding: 6px 12px; border: 1px solid var(--act-border); border-radius: 6px;
+  font-size: 14px; font-family: inherit; color: var(--act-text);
+  background: var(--act-surface); width: 160px;
+  transition: border-color 120ms ease;
+}
+
+.config-input:focus { outline: none; border-color: var(--act-primary); }
+
+.config-input--small { width: 80px; }
+.config-input--wide { width: 240px; }
+
+.config-select {
+  padding: 6px 12px; border: 1px solid var(--act-border); border-radius: 6px;
+  font-size: 14px; font-family: inherit; color: var(--act-text);
+  background: var(--act-surface); width: 200px; cursor: pointer;
+}
+
+.config-select:focus { outline: none; border-color: var(--act-primary); }
+
+/* Toggle switch */
+.config-toggle {
+  position: relative; width: 44px; height: 24px;
+  background: var(--act-border); border-radius: 12px;
+  cursor: pointer; transition: background 200ms ease;
+  flex-shrink: 0;
+}
+
+.config-toggle.on { background: var(--act-green); }
+
+.config-toggle__knob {
+  position: absolute; top: 2px; left: 2px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: white; transition: left 200ms ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.config-toggle.on .config-toggle__knob { left: 22px; }
+
+/* Input with suffix (£, %, days, hours) */
+.input-group {
+  display: flex; align-items: center; gap: 0;
+}
+
+.input-group .config-input {
+  border-radius: 6px 0 0 6px; width: 100px;
+}
+
+.input-group__suffix {
+  padding: 6px 10px; border: 1px solid var(--act-border);
+  border-left: none; border-radius: 0 6px 6px 0;
+  font-size: 12px; color: var(--act-text); opacity: 0.7;
+  background: var(--act-hover-bg); white-space: nowrap;
+}
+
+/* Multi-input row (scoring weights) */
+.multi-input {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+
+.multi-input label {
+  font-size: 12px; color: var(--act-text); white-space: nowrap;
+}
+
+.multi-input .config-input { width: 60px; text-align: center; }
+
+.validation-msg {
+  font-size: 12px; padding: 4px 8px; border-radius: 4px; margin-top: 6px;
+  display: none;
+}
+
+.validation-msg--error {
+  background: var(--act-red-bg); color: #991b1b;
+}
+
+.validation-msg--success {
+  background: var(--act-green-bg); color: #065f46;
+}
+
+.validation-msg.show { display: block; }
+
+/* Field-level validation errors */
+.config-input.invalid { border-color: var(--act-red); }
+.field-error {
+  font-size: 12px; color: #991b1b; margin-top: 4px; display: none;
+}
+.field-error.show { display: block; }
+[data-theme="dark"] .field-error { color: #fca5a5; }
+
+/* Modifier caps table */
+.caps-table {
+  width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 12px;
+}
+
+.caps-table th {
+  font-size: 12px; font-weight: 600; color: var(--act-text);
+  padding: 8px 12px; text-align: left;
+  border-bottom: 2px solid var(--act-border-light);
+}
+
+.caps-table td {
+  padding: 8px 12px; border-bottom: 1px solid var(--act-border-light);
+  vertical-align: middle;
+}
+
+.caps-table .config-input { width: 70px; }
+
+/* Onboarding checklist */
+.checklist-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--act-border-light);
+}
+
+.checklist-item:last-child { border-bottom: none; }
+
+.checklist-icon {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 14px;
+}
+
+.checklist-icon--done {
+  background: var(--act-green-bg); color: #065f46;
+}
+
+.checklist-icon--pending {
+  background: var(--act-amber-bg); color: #92400e;
+}
+
+.checklist-content { flex: 1; }
+
+.checklist-title {
+  font-size: 14px; font-weight: 600; color: var(--act-text); margin: 0 0 2px;
+}
+
+.checklist-status {
+  font-size: 12px; color: var(--act-text); opacity: 0.7;
+}
+
+.checklist-details {
+  margin-top: 8px; padding: 10px 14px;
+  background: var(--act-hover-bg); border-radius: 6px;
+  font-size: 12px; color: var(--act-text); line-height: 1.6;
+}
+
+.checklist-details ul {
+  margin: 4px 0 0; padding-left: 16px; list-style: none;
+}
+
+.checklist-details li {
+  padding: 2px 0;
+}
+
+.checklist-details li::before {
+  content: ''; display: inline-block; width: 6px; height: 6px;
+  border-radius: 50%; margin-right: 8px; vertical-align: middle;
+}
+
+.checklist-details li.done::before { background: var(--act-green); }
+.checklist-details li.pending::before { background: var(--act-amber); }
+
+.btn-onboard {
+  margin-top: 16px; background: var(--act-primary); color: white;
+  font-size: 14px; font-weight: 600; padding: 10px 24px;
+  border: none; border-radius: 6px; cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  transition: background 120ms ease;
+}
+
+.btn-onboard:hover { background: #2563eb; }
+
+/* Confirm dialog overlay */
+.config-confirm-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(32,33,36,0.45); z-index: 1049;
+  display: none; align-items: center; justify-content: center;
+}
+
+.config-confirm-overlay.show { display: flex; }
+
+.config-confirm-dialog {
+  background: var(--act-surface); border-radius: 12px;
+  padding: 24px; max-width: 400px; width: 90%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+.config-confirm-dialog h4 {
+  font-size: 16px; font-weight: 600; margin: 0 0 8px; color: var(--act-text);
+}
+
+.config-confirm-dialog p {
+  font-size: 14px; color: var(--act-text); opacity: 0.7; margin: 0 0 20px; line-height: 1.5;
+}
+
+.config-confirm-actions {
+  display: flex; gap: 8px; justify-content: flex-end;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .config-layout { flex-direction: column; }
+  .config-tabs { width: 100%; border-right: none; border-bottom: 1px solid var(--act-border-light);
+    display: flex; overflow-x: auto; padding: 0; }
+  .config-tab { white-space: nowrap; border-left: none; border-bottom: 3px solid transparent; }
+  .config-tab.active { border-bottom-color: var(--act-primary); border-left-color: transparent; }
+  .setting-row { grid-template-columns: 1fr; }
+  .setting-control { justify-content: flex-start; }
+}

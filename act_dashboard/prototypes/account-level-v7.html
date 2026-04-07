@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACT — Account Level</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/prototype-v7.css">
+  <link rel="stylesheet" href="css/account-level-v7.css">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="act-sidebar">
+  <div class="act-brand">
+    <svg class="act-brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="41" fill="none" stroke="#4285F4" stroke-width="10"/><circle cx="50" cy="50" r="29" fill="none" stroke="#EA4335" stroke-width="10"/><circle cx="50" cy="50" r="17" fill="none" stroke="#FBBC05" stroke-width="10"/><circle cx="50" cy="50" r="10" fill="#34A853"/></svg>
+    <div class="act-brand-text">Ads Control Tower<span>Optimization Engine</span></div>
+  </div>
+  <div class="act-nav">
+    <div class="act-nav-section"><div class="act-nav-label">Review</div><a href="index-v7.html" class="act-nav-item"><span class="material-symbols-outlined">wb_sunny</span>Morning Review</a></div>
+    <div class="act-nav-section"><div class="act-nav-label">Optimization</div>
+      <a href="account-level-v7.html" class="act-nav-item active"><span class="material-symbols-outlined">account_balance</span>Account Level</a>
+      <a href="#" class="act-nav-item"><span class="material-symbols-outlined">campaign</span>Campaign Level</a>
+      <a href="#" class="act-nav-item"><span class="material-symbols-outlined">folder</span>Ad Group Level</a>
+      <a href="#" class="act-nav-item"><span class="material-symbols-outlined">search</span>Keyword Level</a>
+      <a href="#" class="act-nav-item"><span class="material-symbols-outlined">article</span>Ad Level</a>
+      <a href="#" class="act-nav-item"><span class="material-symbols-outlined">shopping_cart</span>Shopping Level</a>
+    </div>
+    <div class="act-nav-divider"></div>
+    <div class="act-nav-section"><div class="act-nav-label">Settings</div><a href="client-config.html" class="act-nav-item"><span class="material-symbols-outlined">tune</span>Client Config</a></div>
+    <div class="act-nav-divider"></div>
+    <div class="act-nav-section">
+      <a href="#" class="act-nav-item"><span class="material-symbols-outlined">work</span>Jobs</a>
+      <a href="#" class="act-nav-item"><span class="material-symbols-outlined">send</span>Outreach</a>
+      <a href="#" class="act-nav-item"><span class="material-symbols-outlined">history</span>Changes</a>
+    </div>
+  </div>
+</nav>
+
+<!-- TOP BAR -->
+<header class="act-topbar">
+  <div class="act-topbar-left">
+    <h1 class="act-topbar-title">Account Level</h1>
+    <span class="act-date">Sunday, 6 April 2026</span>
+    <span class="act-last-ran"><span class="material-symbols-outlined">check_circle</span>ACT last ran: Today at 05:17 AM</span>
+  </div>
+  <div class="act-topbar-right">
+    <div style="position:relative">
+      <button class="act-client-switcher" id="clientSwitcher"><span class="act-client-dot"></span><span class="client-name">Objection Experts</span><span class="material-symbols-outlined" style="font-size:18px">expand_more</span></button>
+      <div class="dropdown-menu" id="clientMenu" style="position:absolute;right:0;top:100%;margin-top:4px;min-width:200px"><a class="dropdown-item active" href="#">Objection Experts</a><a class="dropdown-item" href="#">Demo Client 2</a><a class="dropdown-item" href="#">Demo Client 3</a></div>
+    </div>
+    <div class="theme-toggle" title="Toggle theme"><div class="sky"><div class="stars"><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div></div><div class="horizon"></div></div><div class="sun"></div><div class="moon"></div></div>
+    <div class="act-user-avatar" title="Christopher Hoole">CH</div>
+  </div>
+</header>
+
+<main class="act-main">
+
+  <!-- 1. PAGE HEADER -->
+  <div class="acct-header">
+    <div class="acct-header__top">
+      <div>
+        <h2 class="acct-header__title">Budget Allocation &amp; Health</h2>
+        <p class="acct-header__sub">Objection Experts &mdash; <span class="badge-level badge-level--account" style="vertical-align:middle">Lead Gen (CPA)</span></p>
+      </div>
+      <div class="acct-header__meta">
+        <span class="acct-header__metric"><strong>&pound;1,500</strong>/month</span>
+        <span class="acct-header__metric">Target CPA: <strong>&pound;25</strong></span>
+        <span class="acct-header__metric">Current CPA: <strong>&pound;19.50</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACT Health Cards -->
+  <div class="health-cards">
+    <div class="health-card"><div class="health-card__label">Monthly Budget</div><div class="health-card__value">&pound;1,500</div><div class="health-card__detail">Daily: &pound;50</div></div>
+    <div class="health-card"><div class="health-card__label">Current CPA</div><div class="health-card__value" style="color:#10b981">&pound;19.50</div><div class="health-card__detail">Target: &pound;25 <span class="zone-badge zone-badge--outperforming">22% below &mdash; Outperforming</span></div></div>
+    <div class="health-card"><div class="health-card__label">Budget Used (MTD)</div><div class="health-card__value">&pound;823</div><div class="health-card__detail">of &pound;1,500 (55%)</div><div class="health-card__bar"><div class="health-card__bar-fill" style="width:55%;background:#3b82f6"></div></div></div>
+    <div class="health-card"><div class="health-card__label">Conversions (MTD)</div><div class="health-card__value">42</div><div class="health-card__detail">Projected: 77 at current rate</div></div>
+  </div>
+
+  <!-- ═══ v3 Change 1: CAMPAIGNS TABLE FIRST ═══ -->
+  <div class="section-divider">Campaign Performance</div>
+
+  <!-- v3 Change 3: Bigger summary cards -->
+  <div class="summary-cards">
+    <div class="summary-card"><div class="summary-card__label">Total Cost</div><div class="summary-card__value">&pound;823</div><div class="summary-card__change summary-card__change--up">&uarr; 8%</div></div>
+    <div class="summary-card"><div class="summary-card__label">Impressions</div><div class="summary-card__value">18,420</div><div class="summary-card__change summary-card__change--up">&uarr; 12%</div></div>
+    <div class="summary-card"><div class="summary-card__label">Clicks</div><div class="summary-card__value">1,284</div><div class="summary-card__change summary-card__change--up">&uarr; 5%</div></div>
+    <div class="summary-card"><div class="summary-card__label">Avg CPC</div><div class="summary-card__value">&pound;0.64</div><div class="summary-card__change summary-card__change--down">&darr; 3%</div></div>
+    <div class="summary-card"><div class="summary-card__label">Conversions</div><div class="summary-card__value">42</div><div class="summary-card__change summary-card__change--up">&uarr; 15%</div></div>
+    <div class="summary-card"><div class="summary-card__label">Avg CPA</div><div class="summary-card__value">&pound;19.60</div><div class="summary-card__change summary-card__change--down">&darr; 6%</div></div>
+    <div class="summary-card"><div class="summary-card__label">Conv Rate</div><div class="summary-card__value">3.27%</div><div class="summary-card__change summary-card__change--up">&uarr; 9%</div></div>
+  </div>
+
+  <!-- Campaigns Table — v3 Changes 4+7: score breakdowns + aligned columns -->
+  <div class="acct-section">
+    <div class="acct-section__header" style="cursor:default">
+      <h3 class="acct-section__title"><span class="material-symbols-outlined" style="color:#3b82f6">table_chart</span>Campaigns</h3>
+      <div class="table-toolbar__right" onclick="event.stopPropagation()">
+        <div class="pill-group"><button class="pill-btn active" data-range="7d">7d</button><button class="pill-btn" data-range="30d">30d</button><button class="pill-btn" data-range="90d">90d</button></div>
+        <div class="pill-group"><button class="pill-btn active" data-filter="all">All</button><button class="pill-btn" data-filter="enabled">Enabled</button><button class="pill-btn" data-filter="paused">Paused</button></div>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="data-table" id="campaignsTable">
+        <thead>
+          <tr>
+            <th data-sort="status">Status</th>
+            <th data-sort="name">Campaign<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="role">Role</th>
+            <th data-sort="budget" class="num">Budget<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="share" class="num">Share<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="cost" class="num">Cost<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="impr" class="num">Impr.<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="clicks" class="num">Clicks<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="cpc" class="num">Avg CPC<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="ctr" class="num">CTR<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="conv" class="num">Conv.<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="costconv" class="num">Cost/Conv<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="cvr" class="num">Conv Rate<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="score" class="num">Score<span class="material-symbols-outlined">unfold_more</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr data-status="enabled">
+            <td><span class="status-dot status-dot--enabled"></span></td>
+            <td><strong>GLO Campaign &mdash; Core</strong></td>
+            <td><span class="role-badge role-badge--cp">CP</span></td>
+            <td class="num">&pound;30/d</td>
+            <td class="num">60%</td>
+            <td class="num">&pound;487.20</td>
+            <td class="num">10,850</td>
+            <td class="num">780</td>
+            <td class="num">&pound;0.62</td>
+            <td class="num">7.19%</td>
+            <td class="num">26</td>
+            <td class="num">&pound;18.74</td>
+            <td class="num">3.33%</td>
+            <td class="num"><span class="score-display score--high" data-action="expand-score" style="cursor:pointer" title="Click to expand">82</span></td>
+          </tr>
+          <tr class="score-breakdown-row" style="display:none"><td colspan="14"><div class="score-breakdown show"><div class="score-breakdown__row"><span class="score-breakdown__label">7-day</span><span>&pound;18.50 (26% below)</span><div class="score-breakdown__bar"><div class="score-breakdown__fill" style="width:50%;background:#10b981"></div></div><span class="score-breakdown__pts">50 pts</span></div><div class="score-breakdown__row"><span class="score-breakdown__label">14-day</span><span>&pound;19.50 (22% below)</span><div class="score-breakdown__bar"><div class="score-breakdown__fill" style="width:27%;background:#10b981"></div></div><span class="score-breakdown__pts">27 pts</span></div><div class="score-breakdown__row"><span class="score-breakdown__label">30-day</span><span>&pound;22.00 (12% below)</span><div class="score-breakdown__bar"><div class="score-breakdown__fill" style="width:5%;background:#10b981"></div></div><span class="score-breakdown__pts">5 pts</span></div></div></td></tr>
+
+          <tr data-status="enabled">
+            <td><span class="status-dot status-dot--enabled"></span></td>
+            <td><strong>GLO Campaign &mdash; Retargeting</strong></td>
+            <td><span class="role-badge role-badge--rt">RT</span></td>
+            <td class="num">&pound;10/d</td>
+            <td class="num">20%</td>
+            <td class="num">&pound;164.40</td>
+            <td class="num">3,200</td>
+            <td class="num">245</td>
+            <td class="num">&pound;0.67</td>
+            <td class="num">7.66%</td>
+            <td class="num">12</td>
+            <td class="num">&pound;13.70</td>
+            <td class="num">4.90%</td>
+            <td class="num"><span class="score-display score--high" data-action="expand-score" style="cursor:pointer" title="Click to expand">91</span></td>
+          </tr>
+          <tr class="score-breakdown-row" style="display:none"><td colspan="14"><div class="score-breakdown show"><div class="score-breakdown__row"><span class="score-breakdown__label">7-day</span><span>&pound;12.00 (52% below)</span><div class="score-breakdown__bar"><div class="score-breakdown__fill" style="width:50%;background:#10b981"></div></div><span class="score-breakdown__pts">50 pts</span></div><div class="score-breakdown__row"><span class="score-breakdown__label">14-day</span><span>&pound;14.50 (42% below)</span><div class="score-breakdown__bar"><div class="score-breakdown__fill" style="width:30%;background:#10b981"></div></div><span class="score-breakdown__pts">30 pts</span></div><div class="score-breakdown__row"><span class="score-breakdown__label">30-day</span><span>&pound;16.00 (36% below)</span><div class="score-breakdown__bar"><div class="score-breakdown__fill" style="width:11%;background:#10b981"></div></div><span class="score-breakdown__pts">11 pts</span></div></div></td></tr>
+
+          <tr data-status="enabled">
+            <td><span class="status-dot status-dot--enabled"></span></td>
+            <td><strong>Brand &mdash; Objection Experts</strong></td>
+            <td><span class="role-badge role-badge--bd">BD</span></td>
+            <td class="num">&pound;5/d</td>
+            <td class="num">10%</td>
+            <td class="num">&pound;68.50</td>
+            <td class="num">2,800</td>
+            <td class="num">195</td>
+            <td class="num">&pound;0.35</td>
+            <td class="num">6.96%</td>
+            <td class="num">3</td>
+            <td class="num">&pound;22.83</td>
+            <td class="num">1.54%</td>
+            <td class="num"><span class="score-display score--high" data-action="expand-score" style="cursor:pointer" title="Click to expand">95</span></td>
+          </tr>
+          <tr class="score-breakdown-row" style="display:none"><td colspan="14"><div class="score-breakdown show"><div class="score-breakdown__row"><span class="score-breakdown__label">7-day</span><span>&pound;8.00 (68% below)</span><div class="score-breakdown__bar"><div class="score-breakdown__fill" style="width:50%;background:#10b981"></div></div><span class="score-breakdown__pts">50 pts</span></div><div class="score-breakdown__row"><span class="score-breakdown__label">14-day</span><span>&pound;9.00 (64% below)</span><div class="score-breakdown__bar"><div class="score-breakdown__fill" style="width:30%;background:#10b981"></div></div><span class="score-breakdown__pts">30 pts</span></div><div class="score-breakdown__row"><span class="score-breakdown__label">30-day</span><span>&pound;10.50 (58% below)</span><div class="score-breakdown__bar"><div class="score-breakdown__fill" style="width:15%;background:#10b981"></div></div><span class="score-breakdown__pts">15 pts</span></div></div></td></tr>
+
+          <tr data-status="enabled">
+            <td><span class="status-dot status-dot--enabled"></span></td>
+            <td><strong>Testing &mdash; New Keywords</strong></td>
+            <td><span class="role-badge role-badge--ts">TS</span></td>
+            <td class="num">&pound;5/d</td>
+            <td class="num">10%</td>
+            <td class="num">&pound;102.90</td>
+            <td class="num">1,570</td>
+            <td class="num">64</td>
+            <td class="num">&pound;1.61</td>
+            <td class="num">4.08%</td>
+            <td class="num">1</td>
+            <td class="num">&pound;102.90</td>
+            <td class="num">1.56%</td>
+            <td class="num"><span class="score-display score--low" data-action="expand-score" style="cursor:pointer" title="Click to expand">38</span></td>
+          </tr>
+          <tr class="score-breakdown-row" style="display:none"><td colspan="14"><div class="score-breakdown show"><div class="score-breakdown__row"><span class="score-breakdown__label">7-day</span><span>&pound;35.00 (40% above)</span><div class="score-breakdown__bar"><div class="score-breakdown__fill" style="width:10%;background:#ef4444"></div></div><span class="score-breakdown__pts">10 pts</span></div><div class="score-breakdown__row"><span class="score-breakdown__label">14-day</span><span>&pound;32.00 (28% above)</span><div class="score-breakdown__bar"><div class="score-breakdown__fill" style="width:15%;background:#ef4444"></div></div><span class="score-breakdown__pts">15 pts</span></div><div class="score-breakdown__row"><span class="score-breakdown__label">30-day</span><span>&pound;28.00 (12% above)</span><div class="score-breakdown__bar"><div class="score-breakdown__fill" style="width:13%;background:#f59e0b"></div></div><span class="score-breakdown__pts">13 pts</span></div></div></td></tr>
+          <!-- v4 Change 3: Totals row -->
+          <tr class="totals-row">
+            <td></td>
+            <td><strong>Total / Average</strong></td>
+            <td></td>
+            <td class="num">&pound;50/d</td>
+            <td class="num">100%</td>
+            <td class="num">&pound;823.00</td>
+            <td class="num">18,420</td>
+            <td class="num">1,284</td>
+            <td class="num">&pound;0.64</td>
+            <td class="num">6.97%</td>
+            <td class="num">42</td>
+            <td class="num">&pound;19.60</td>
+            <td class="num">3.27%</td>
+            <td class="num">&mdash;</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-pagination"><div>Showing 1-4 of 4 campaigns</div><div class="table-pagination__controls"><button class="page-btn" disabled>&laquo;</button><button class="page-btn active">1</button><button class="page-btn" disabled>&raquo;</button></div></div>
+  </div>
+
+  <!-- ═══ REVIEW SECTIONS (moved below campaigns) ═══ -->
+  <div class="section-divider">Account-Level Review</div>
+
+  <!-- Awaiting Approval (expanded) — v3 Change 8: estimated impact added -->
+  <section class="act-section" id="sectionApproval">
+    <div class="act-section__header">
+      <h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-amber)">pending_actions</span>Awaiting Approval<span class="act-section__count act-section__count--amber" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-amber)">2</span></h2>
+      <span class="material-symbols-outlined act-section__toggle">expand_more</span>
+    </div>
+    <div class="act-section__body" style="padding:0">
+      <div class="act-item" data-priority="investigate" data-details='{"Check":"Account-level budget shift review (overnight)","Signal":"GLO Core outperforming (score 82), Testing underperforming (score 38).","Rule":"Budget shifts crossing role boundaries require approval.","Cooldown":"72-hour cooldown after approval.","Risk":"Low &mdash; clear performance differential."}'>
+        <div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--account">Account</span><span class="badge-action badge-action--investigate">Investigate</span><span class="badge-risk badge-risk--low">Low Risk</span></div><div class="act-item__summary"><strong>Budget shift:</strong> Move 5% from Testing &mdash; New Keywords (score 38) to GLO Campaign &mdash; Core (score 82). Testing &pound;5 &rarr; &pound;2.50, Core &pound;30 &rarr; &pound;32.50.</div><div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>ACT recommends: Reallocate budget from underperformer to top performer to maximise conversions</div><div class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>Estimated: +1-2 conversions/week from budget reallocation</div></div><div class="act-item__actions"><button class="btn-act btn-act--details" data-action="details">View Details</button><button class="btn-act btn-act--approve" data-action="approve">Approve</button><button class="btn-act btn-act--decline" data-action="decline">Decline</button></div></div>
+      </div>
+      <div class="act-item" data-priority="investigate" data-details='{"Check":"Account-level budget band review (overnight)","Signal":"Brand Defence at 10% share, exceeding max band of 8%.","Rule":"Campaigns exceeding role max band are flagged.","Risk":"Low &mdash; minor overshoot."}'>
+        <div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--account">Account</span><span class="badge-action badge-action--investigate">Investigate</span><span class="badge-risk badge-risk--low">Low Risk</span></div><div class="act-item__summary"><strong>Budget band exceeded:</strong> Brand &mdash; Objection Experts at 10% share, exceeding BD max band of 8%. Reduce to &pound;4/day (8%).</div><div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>ACT recommends: Reduce Brand Defence budget to within the 2-8% allocation band</div><div class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>Estimated saving: &pound;1/day (&pound;30/month) reallocated to higher-performing campaigns</div></div><div class="act-item__actions"><button class="btn-act btn-act--details" data-action="details">View Details</button><button class="btn-act btn-act--approve" data-action="approve">Approve</button><button class="btn-act btn-act--decline" data-action="decline">Decline</button></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Actions Executed (collapsed) -->
+  <section class="act-section collapsed">
+    <div class="act-section__header">
+      <h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-green)">check_circle</span>Actions Executed Overnight<span class="act-section__count act-section__count--green" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-green)">3</span></h2>
+      <span class="material-symbols-outlined act-section__toggle">expand_more</span>
+    </div>
+    <div class="act-section__body" style="padding:0">
+      <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--account">Account</span><span class="badge-action badge-action--act">Act</span><span class="act-item__timestamp">6 Apr, 05:14 AM</span></div><div class="act-item__summary"><strong>GLO Campaign &mdash; Core:</strong> Daily budget increased from &pound;28 to &pound;30 (+7%) &mdash; outperforming with score 82</div><div class="act-item__meta"><span class="act-item__values"><span class="val-pill val-pill--old">&pound;28</span><span class="arrow">&rarr;</span><span class="val-pill val-pill--new-positive">&pound;30</span></span></div></div><div class="act-item__actions"><button class="btn-act btn-act--undo" data-action="undo">Undo</button></div></div></div>
+      <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--account">Account</span><span class="badge-action badge-action--act">Act</span><span class="act-item__timestamp">6 Apr, 05:15 AM</span></div><div class="act-item__summary"><strong>GLO Campaign &mdash; Retargeting:</strong> Daily budget increased from &pound;9 to &pound;10 (+11%) &mdash; outperforming with score 91</div><div class="act-item__meta"><span class="act-item__values"><span class="val-pill val-pill--old">&pound;9</span><span class="arrow">&rarr;</span><span class="val-pill val-pill--new-positive">&pound;10</span></span></div></div><div class="act-item__actions"><button class="btn-act btn-act--undo" data-action="undo">Undo</button></div></div></div>
+      <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--account">Account</span><span class="badge-action badge-action--act">Act</span><span class="act-item__timestamp">6 Apr, 05:15 AM</span></div><div class="act-item__summary"><strong>Testing &mdash; New Keywords:</strong> Daily budget decreased from &pound;7 to &pound;5 (-29%) &mdash; underperforming with score 38</div><div class="act-item__meta"><span class="act-item__values"><span class="val-pill val-pill--old">&pound;7</span><span class="arrow">&rarr;</span><span class="val-pill val-pill--new-negative">&pound;5</span></span></div></div><div class="act-item__actions"><button class="btn-act btn-act--undo" data-action="undo">Undo</button></div></div></div>
+    </div>
+  </section>
+
+  <!-- Currently Monitoring (collapsed) — v3 Change 9: Started dates added -->
+  <section class="act-section collapsed">
+    <div class="act-section__header">
+      <h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-blue)">visibility</span>Currently Monitoring<span class="act-section__count act-section__count--blue" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-blue)">2</span></h2>
+      <span class="material-symbols-outlined act-section__toggle">expand_more</span>
+    </div>
+    <div class="act-section__body" style="padding:0">
+      <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--account">Account</span><span class="badge-action badge-action--monitor">Monitor</span></div><div class="act-item__summary"><strong>GLO Campaign &mdash; Core:</strong> Budget shift cooldown &mdash; increased to &pound;30/day</div><div class="act-item__started"><span class="material-symbols-outlined">calendar_today</span>Started: 4 Apr 2026, 05:14 AM</div><div class="act-item__progress"><div class="act-item__progress-bar"><div class="act-item__progress-fill" style="width:33%;background:var(--act-green)"></div></div><span class="act-item__progress-text">48h remaining of 72h cooldown</span><span class="health-label health-label--healthy">Healthy</span></div></div></div></div>
+      <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--account">Account</span><span class="badge-action badge-action--monitor">Monitor</span></div><div class="act-item__summary"><strong>Testing &mdash; New Keywords:</strong> Budget shift cooldown &mdash; decreased to &pound;5/day</div><div class="act-item__started"><span class="material-symbols-outlined">calendar_today</span>Started: 4 Apr 2026, 05:15 AM</div><div class="act-item__progress"><div class="act-item__progress-bar"><div class="act-item__progress-fill" style="width:33%;background:var(--act-green)"></div></div><span class="act-item__progress-text">48h remaining of 72h cooldown</span><span class="health-label health-label--healthy">Healthy</span></div></div></div></div>
+    </div>
+  </section>
+
+  <!-- Recent Alerts (collapsed) -->
+  <section class="act-section collapsed">
+    <div class="act-section__header">
+      <h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-red)">notifications_active</span>Recent Alerts<span class="act-section__count act-section__count--red" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-red)">1</span></h2>
+      <span class="material-symbols-outlined act-section__toggle">expand_more</span>
+    </div>
+    <div class="act-section__body" style="padding:0">
+      <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--account">Account</span><span class="badge-action badge-action--alert">Alert</span><span class="act-item__timestamp">2 Apr 2026</span></div><div class="act-item__summary"><strong>Budget overdelivery:</strong> GLO Campaign &mdash; Core spent &pound;60 vs &pound;50 daily budget (120%) &mdash; Google overdelivery</div><div class="act-item__meta"><span class="badge-resolution badge-resolution--auto">Auto-resolved</span><span style="font-size:12px;color:var(--act-text)">Google corrected spend over the following 2 days</span></div></div></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ v3 Change 2: BUDGET ALLOCATION (all collapsed) ═══ -->
+  <div class="section-divider">Budget Allocation</div>
+
+  <div class="acct-section collapsed">
+    <div class="acct-section__header"><h3 class="acct-section__title"><span class="material-symbols-outlined" style="color:#3b82f6">bar_chart</span>Budget Allocation</h3><span class="material-symbols-outlined acct-section__toggle">expand_more</span></div>
+    <div class="acct-section__body">
+      <div class="budget-vis">
+        <div class="budget-bar">
+          <div class="budget-bar__segment" style="width:60%;background:#10b981">60% Core<div class="budget-bar__tooltip">&pound;30/day &mdash; GLO Campaign Core &mdash; Score 82</div></div>
+          <div class="budget-bar__segment" style="width:20%;background:#ec4899">20% RT<div class="budget-bar__tooltip">&pound;10/day &mdash; GLO Campaign Retargeting &mdash; Score 91</div></div>
+          <div class="budget-bar__segment" style="width:10%;background:#3b82f6">10% BD<div class="budget-bar__tooltip">&pound;5/day &mdash; Brand Objection Experts &mdash; Score 95</div></div>
+          <div class="budget-bar__segment" style="width:10%;background:#ef4444">10% TS<div class="budget-bar__tooltip">&pound;5/day &mdash; Testing New Keywords &mdash; Score 38</div></div>
+        </div>
+        <div class="budget-legend">
+          <div class="budget-legend__item"><div class="budget-legend__dot" style="background:#10b981"></div>Core Performance (60%)</div>
+          <div class="budget-legend__item"><div class="budget-legend__dot" style="background:#ec4899"></div>Retargeting (20%)</div>
+          <div class="budget-legend__item"><div class="budget-legend__dot" style="background:#3b82f6"></div>Brand Defence (10%)</div>
+          <div class="budget-legend__item"><div class="budget-legend__dot" style="background:#ef4444"></div>Testing (10%)</div>
+        </div>
+      </div>
+      <div class="acct-rec">
+        <span class="material-symbols-outlined" style="color:var(--act-primary);flex-shrink:0;margin-top:2px">lightbulb</span>
+        <div class="acct-rec__text">ACT recommends: Shift 5% from <strong>Testing</strong> (score 38) to <strong>GLO Core</strong> (score 82). Proposed: Testing 10% &rarr; 5%, Core 60% &rarr; 65%.</div>
+        <div class="acct-rec__actions"><button class="btn-act btn-act--approve" data-action="approve">Approve</button><button class="btn-act btn-act--decline" data-action="decline">Decline</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Signal Decomposition -->
+  <div class="acct-section collapsed">
+    <div class="acct-section__header"><h3 class="acct-section__title"><span class="material-symbols-outlined" style="color:#3b82f6">analytics</span>Signal Decomposition</h3><span class="material-symbols-outlined acct-section__toggle">expand_more</span></div>
+    <div class="acct-section__body">
+      <table class="data-table data-table--sig">
+        <thead><tr><th>Campaign</th><th>CPC (7d)</th><th>CPC Trend</th><th>CVR (14d)</th><th>CVR Trend</th><th>CPA</th><th>CPA Trend</th><th>CPA vs Target</th></tr></thead>
+        <tbody>
+          <tr><td><strong>GLO &mdash; Core</strong></td><td>&pound;2.10</td><td><span class="trend-arrow trend-arrow--good">&darr; 5%</span></td><td>11.4%</td><td><span class="trend-arrow trend-arrow--good">&uarr; 2%</span></td><td>&pound;18.50</td><td><span class="trend-arrow trend-arrow--good">&darr; 8%</span></td><td><span class="zone-badge zone-badge--outperforming">26% below</span></td></tr>
+          <tr><td><strong>GLO &mdash; Retargeting</strong></td><td>&pound;1.80</td><td><span class="trend-arrow trend-arrow--flat">&rarr; flat</span></td><td>15.0%</td><td><span class="trend-arrow trend-arrow--good">&uarr; 8%</span></td><td>&pound;12.00</td><td><span class="trend-arrow trend-arrow--good">&darr; 12%</span></td><td><span class="zone-badge zone-badge--outperforming">52% below</span></td></tr>
+          <tr><td><strong>Brand</strong></td><td>&pound;0.95</td><td><span class="trend-arrow trend-arrow--flat">&rarr; flat</span></td><td>11.8%</td><td><span class="trend-arrow trend-arrow--flat">&rarr; flat</span></td><td>&pound;8.00</td><td><span class="trend-arrow trend-arrow--flat">&rarr; flat</span></td><td><span class="zone-badge zone-badge--outperforming">68% below</span></td></tr>
+          <tr><td><strong>Testing</strong></td><td>&pound;3.50</td><td><span class="trend-arrow trend-arrow--bad">&uarr; 12%</span></td><td>10.0%</td><td><span class="trend-arrow trend-arrow--bad">&darr; 6%</span></td><td>&pound;35.00</td><td><span class="trend-arrow trend-arrow--bad">&uarr; 15%</span></td><td><span class="zone-badge zone-badge--underperforming">40% above</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Budget Shift History -->
+  <div class="acct-section collapsed">
+    <div class="acct-section__header"><h3 class="acct-section__title"><span class="material-symbols-outlined" style="color:#3b82f6">history</span>Budget Shift History</h3><span class="material-symbols-outlined acct-section__toggle">expand_more</span></div>
+    <div class="acct-section__body">
+      <table class="data-table data-table--hist"><thead><tr><th>Date</th><th>Campaign</th><th>Change</th><th>Reason</th></tr></thead><tbody>
+        <tr><td>5 Apr 2026</td><td>GLO Campaign &mdash; Core</td><td>&pound;28 &rarr; &pound;30 (+7%)</td><td>Outperforming, score 82</td></tr>
+        <tr><td>3 Apr 2026</td><td>Testing &mdash; New Keywords</td><td>&pound;7 &rarr; &pound;5 (-29%)</td><td>Underperforming, score 38</td></tr>
+        <tr><td>1 Apr 2026</td><td>GLO Campaign &mdash; Retargeting</td><td>&pound;9 &rarr; &pound;10 (+11%)</td><td>Outperforming, score 91</td></tr>
+        <tr><td>28 Mar 2026</td><td>GLO Campaign &mdash; Core</td><td>&pound;26 &rarr; &pound;28 (+8%)</td><td>Outperforming, score 79</td></tr>
+        <tr><td>25 Mar 2026</td><td>Testing &mdash; New Keywords</td><td>&pound;8 &rarr; &pound;7 (-13%)</td><td>Underperforming, score 42</td></tr>
+        <tr><td>22 Mar 2026</td><td>Brand &mdash; Objection Experts</td><td>&pound;4 &rarr; &pound;5 (+25%)</td><td>Outperforming, score 93</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+
+  <!-- v3 Change 10: Guardrails — regular weight values -->
+  <div class="acct-section collapsed">
+    <div class="acct-section__header"><h3 class="acct-section__title"><span class="material-symbols-outlined" style="color:#3b82f6">shield</span>Guardrails</h3><span class="material-symbols-outlined acct-section__toggle">expand_more</span></div>
+    <div class="acct-section__body">
+      <ul class="guardrail-list">
+        <li><span class="material-symbols-outlined">speed</span>Max overnight budget move<span class="guardrail-value">10% of daily budget</span></li>
+        <li><span class="material-symbols-outlined">timer</span>Budget shift cooldown<span class="guardrail-value">72 hours per campaign</span></li>
+        <li><span class="material-symbols-outlined">vertical_align_center</span>Best performer cap<span class="guardrail-value">50% of role allocation</span></li>
+        <li><span class="material-symbols-outlined">lock</span>Testing campaign budget<span class="guardrail-value">Fixed &mdash; never auto-increased</span></li>
+        <li><span class="material-symbols-outlined">tune</span>Budget bands &mdash; Brand Defence<span class="guardrail-value">2&ndash;8%</span></li>
+        <li><span class="material-symbols-outlined">tune</span>Budget bands &mdash; Core Performance<span class="guardrail-value">40&ndash;70%</span></li>
+        <li><span class="material-symbols-outlined">tune</span>Budget bands &mdash; Retargeting<span class="guardrail-value">5&ndash;15%</span></li>
+        <li><span class="material-symbols-outlined">tune</span>Budget bands &mdash; Prospecting<span class="guardrail-value">10&ndash;30%</span></li>
+        <li><span class="material-symbols-outlined">tune</span>Budget bands &mdash; Testing<span class="guardrail-value">2&ndash;10%</span></li>
+      </ul>
+    </div>
+  </div>
+
+</main>
+
+<!-- Slide-in panel -->
+<div class="act-slidein-overlay" id="slideinOverlay"></div>
+<div class="act-slidein" id="slideinPanel">
+  <div class="act-slidein__header"><h3 id="slideinTitle">Decision Details</h3><button class="act-slidein__close" id="slideinClose"><span class="material-symbols-outlined">close</span></button></div>
+  <div class="act-slidein__body" id="slideinBody"></div>
+  <div class="act-slidein__footer" id="slideinFooter"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/account-level-v7.js"></script>
+</body>
+</html>
