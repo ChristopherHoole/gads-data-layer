@@ -1,0 +1,145 @@
+/* ============================================================================
+   ACT PROTOTYPE — CAMPAIGN LEVEL OPTION D v2 CSS
+   800px slide-in, single-row health cards, full detail view, proper review items
+   ============================================================================ */
+
+/* Campaign name link in table */
+.campaign-name-link {
+  color: var(--act-primary); cursor: pointer; font-weight: 600;
+}
+.campaign-name-link:hover { text-decoration: underline; }
+
+/* Strategy badge inline */
+.strategy-badge {
+  font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+  background: var(--act-blue-bg); color: #1e40af; white-space: nowrap;
+}
+
+/* ── CAMPAIGN SLIDE-IN (720px wide) ── */
+.camp-slidein-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(32,33,36,0.45); z-index: 1049; display: none;
+}
+.camp-slidein-overlay.open { display: block; }
+
+.camp-slidein {
+  position: fixed; top: 0; right: 0;
+  width: 800px; max-width: 100%; height: 100vh;
+  background: var(--act-surface);
+  box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+  z-index: 1050; display: none; flex-direction: column;
+}
+.camp-slidein.open { display: flex; }
+
+.camp-slidein__header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 20px 24px 16px; border-bottom: 1px solid var(--act-border);
+  flex-shrink: 0;
+}
+
+.camp-slidein__header-left { flex: 1; }
+
+.camp-slidein__name {
+  font-size: 16px; font-weight: 600; color: var(--act-text); margin: 0 0 8px;
+}
+
+.camp-slidein__meta {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+
+.camp-slidein__close {
+  background: none; border: none; cursor: pointer;
+  color: var(--act-text); padding: 4px; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.camp-slidein__close:hover { background: var(--act-hover-bg); }
+
+.camp-slidein__body {
+  flex: 1; overflow-y: auto; padding: 20px 24px;
+}
+
+/* 2x2 health cards inside slide-in */
+.camp-health-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px;
+}
+
+.camp-health-card {
+  background: var(--act-hover-bg); border-radius: 8px; padding: 8px 12px;
+}
+
+.camp-health-card__label { font-size: 12px; font-weight: 600; color: var(--act-text); margin-bottom: 2px; }
+.camp-health-card__value { font-size: 28px; font-weight: 700; color: var(--act-text); line-height: 1; margin-bottom: 2px; }
+.camp-health-card__detail { font-size: 12px; color: var(--act-text); }
+
+/* Lever summary table in slide-in */
+.lever-summary { margin-bottom: 20px; }
+
+.lever-summary-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--act-border-light);
+  cursor: pointer;
+}
+.lever-summary-row:last-child { border-bottom: none; }
+.lever-summary-row:hover { background: rgba(0,0,0,0.015); margin: 0 -8px; padding: 10px 8px; border-radius: 6px; }
+[data-theme="dark"] .lever-summary-row:hover { background: rgba(255,255,255,0.03); }
+
+.lever-summary-row .material-symbols-outlined { font-size: 18px; color: #10b981; margin-top: 2px; flex-shrink: 0; }
+
+.lever-summary__name { font-size: 14px; font-weight: 600; color: var(--act-text); }
+.lever-summary__status { font-size: 14px; color: var(--act-text); }
+.lever-summary__cooldown { font-size: 12px; color: var(--act-text); opacity: 0.7; }
+
+.lever-summary__detail {
+  display: none; padding: 8px 0 0 30px; font-size: 14px; color: var(--act-text);
+}
+.lever-summary-row.expanded .lever-summary__detail { display: block; }
+
+.lever-summary__chevron {
+  font-size: 16px; color: var(--act-text); margin-left: auto; flex-shrink: 0;
+  transition: transform 200ms ease;
+}
+.lever-summary-row.expanded .lever-summary__chevron { transform: rotate(90deg); }
+
+/* Strategy compact summary */
+.strategy-compact {
+  padding: 12px 16px; background: var(--act-hover-bg); border-radius: 8px; margin-bottom: 20px;
+}
+
+.strategy-compact__target {
+  font-size: 28px; font-weight: 700; color: var(--act-text); margin-bottom: 4px;
+}
+
+.strategy-compact__detail { font-size: 14px; color: var(--act-text); line-height: 1.5; }
+
+/* Section label inside slide-in */
+.camp-section-label {
+  font-size: 12px; font-weight: 600; color: var(--act-text); opacity: 0.5;
+  margin: 20px 0 8px; padding-bottom: 6px;
+  border-bottom: 1px solid var(--act-border-light);
+}
+
+/* View Full Detail button */
+.btn-full-detail {
+  width: 100%; padding: 12px; border: 1px solid var(--act-border);
+  border-radius: 8px; background: var(--act-surface); color: var(--act-text);
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  margin-top: 20px; transition: all 120ms ease;
+}
+.btn-full-detail:hover { background: var(--act-hover-bg); border-color: var(--act-primary); color: var(--act-primary); }
+
+/* Back link for full detail view */
+.back-link {
+  font-size: 14px; color: var(--act-primary); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 4px; margin-bottom: 16px;
+  text-decoration: none;
+}
+.back-link:hover { text-decoration: underline; }
+.back-link .material-symbols-outlined { font-size: 16px; }
+
+/* List view wrapper (hidden when showing full detail) */
+#listView { }
+
+@media (max-width: 768px) {
+  .camp-slidein { width: 100vw; }
+}

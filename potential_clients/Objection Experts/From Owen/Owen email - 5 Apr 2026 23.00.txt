@@ -1,0 +1,33 @@
+
+Owen Hoare
+Attachments
+5 Apr 2026, 23:00 (2 days ago)
+to me
+
+Hi Chris,
+
+ 
+
+Hope you’re well – have just been through the negatives, put them through Claude to attach to relevant search terms report and add data. Basically, this is just a “gut feel” for most of them, but some do show real buyer intent, especially terms like "planning objection letters", [objection letter for planning permission], [writing an objection to planning permission].
+
+ 
+
+I know that some of these historically have not had conversions, even with a high spend. Most haven’t really had much spend. A single conversion on most of them would make them profitable.
+
+ 
+
+Basically, my thinking is that I don’t want these search terms completely blocked from search as we increase quality score and ad rank and our landing page, as I do believe they show some intent.
+
+ 
+
+The ones relating to grounds/reasons/material considerations could potentially be left in negatives, with a view to create a new Ad Group and Landing Page for them down the road. I also think that a “top of funnel” ad group and landing page down the road could be useful for the “how to”, basically flat out saying, if you are looking at how to object, let us look for you.
+
+ 
+
+Obviously very happy to be led by you – these are just thoughts from a layman who has been thinking about this too much for the past month.
+
+ 
+
+Kind regards,
+
+Owen

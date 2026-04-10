@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACT — Campaign Level</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/prototype-v7.css">
+  <link rel="stylesheet" href="css/account-level-v10.css">
+  <link rel="stylesheet" href="css/campaign-level.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="act-sidebar">
+  <div class="act-brand"><svg class="act-brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="41" fill="none" stroke="#4285F4" stroke-width="10"/><circle cx="50" cy="50" r="29" fill="none" stroke="#EA4335" stroke-width="10"/><circle cx="50" cy="50" r="17" fill="none" stroke="#FBBC05" stroke-width="10"/><circle cx="50" cy="50" r="10" fill="#34A853"/></svg><div class="act-brand-text">Ads Control Tower<span>Optimization Engine</span></div></div>
+  <div class="act-nav">
+    <div class="act-nav-section"><div class="act-nav-label">Review</div><a href="index-v7.html" class="act-nav-item"><span class="material-symbols-outlined">wb_sunny</span>Morning Review</a></div>
+    <div class="act-nav-section"><div class="act-nav-label">Optimization</div>
+      <a href="account-level-v10.html" class="act-nav-item"><span class="material-symbols-outlined">account_balance</span>Account Level</a>
+      <a href="campaign-level.html" class="act-nav-item active"><span class="material-symbols-outlined">campaign</span>Campaign Level</a>
+      <a href="#" class="act-nav-item"><span class="material-symbols-outlined">folder</span>Ad Group Level</a>
+      <a href="#" class="act-nav-item"><span class="material-symbols-outlined">search</span>Keyword Level</a>
+      <a href="#" class="act-nav-item"><span class="material-symbols-outlined">article</span>Ad Level</a>
+      <a href="#" class="act-nav-item"><span class="material-symbols-outlined">shopping_cart</span>Shopping Level</a>
+    </div>
+    <div class="act-nav-divider"></div>
+    <div class="act-nav-section"><div class="act-nav-label">Settings</div><a href="client-config.html" class="act-nav-item"><span class="material-symbols-outlined">tune</span>Client Config</a></div>
+    <div class="act-nav-divider"></div>
+    <div class="act-nav-section"><a href="#" class="act-nav-item"><span class="material-symbols-outlined">work</span>Jobs</a><a href="#" class="act-nav-item"><span class="material-symbols-outlined">send</span>Outreach</a><a href="#" class="act-nav-item"><span class="material-symbols-outlined">history</span>Changes</a></div>
+  </div>
+</nav>
+
+<!-- TOP BAR -->
+<header class="act-topbar">
+  <div class="act-topbar-left">
+    <h1 class="act-topbar-title">Campaign Level</h1>
+    <span class="act-date">Tuesday, 8 April 2026</span>
+    <span class="act-last-ran"><span class="material-symbols-outlined">check_circle</span>ACT last ran: Today at 05:17 AM</span>
+  </div>
+  <div class="act-topbar-right">
+    <div style="position:relative"><button class="act-client-switcher" id="clientSwitcher"><span class="act-client-dot"></span><span class="client-name">Objection Experts</span><span class="material-symbols-outlined" style="font-size:18px">expand_more</span></button><div class="dropdown-menu" id="clientMenu" style="position:absolute;right:0;top:100%;margin-top:4px;min-width:200px"><a class="dropdown-item active" href="#">Objection Experts</a><a class="dropdown-item" href="#">Demo Client 2</a></div></div>
+    <div class="theme-toggle" title="Toggle theme"><div class="sky"><div class="stars"><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div></div><div class="horizon"></div></div><div class="sun"></div><div class="moon"></div></div>
+    <div class="act-user-avatar" title="Christopher Hoole">CH</div>
+  </div>
+</header>
+
+<main class="act-main">
+
+  <!-- ═══ 1. PAGE HEADER ═══ -->
+  <div class="acct-header">
+    <div class="acct-header__top" style="border-top-color:#10b981">
+      <div>
+        <h2 class="acct-header__title">Optimization Within Each Campaign</h2>
+        <div class="campaign-selector">
+          <select class="campaign-select" id="campaignSelect">
+            <option selected>GLO Campaign &mdash; Core</option>
+            <option>GLO Campaign &mdash; Retargeting</option>
+            <option>Brand &mdash; Objection Experts</option>
+            <option>Testing &mdash; New Keywords</option>
+          </select>
+        </div>
+        <div class="campaign-info">
+          <span class="strategy-badge"><span class="material-symbols-outlined" style="font-size:14px">target</span>Maximise Conversions &mdash; tCPA &pound;25</span>
+          <span class="campaign-info__item"><span class="status-dot status-dot--enabled"></span> Enabled</span>
+          <span class="campaign-info__item"><strong>&pound;30</strong>/day</span>
+          <span class="role-badge role-badge--cp">CP</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 2. HEALTH SUMMARY CARDS ═══ -->
+  <div class="health-cards">
+    <div class="health-card"><div class="health-card__label">Campaign Cost (MTD)</div><div class="health-card__value">&pound;487</div><div class="health-card__detail">Daily avg: &pound;16.23</div></div>
+    <div class="health-card"><div class="health-card__label">Campaign CPA</div><div class="health-card__value" style="color:#10b981">&pound;18.50</div><div class="health-card__detail">Target: &pound;25 <span class="zone-badge zone-badge--outperforming">26% below &mdash; Outperforming</span></div></div>
+    <div class="health-card"><div class="health-card__label">Conversions (MTD)</div><div class="health-card__value">26</div><div class="health-card__detail">vs 22 last period (+18%)</div></div>
+    <div class="health-card"><div class="health-card__label">Quality Score Avg</div><div class="health-card__value">6.2</div><div class="health-card__detail">Across all keywords</div></div>
+  </div>
+
+  <!-- ═══ 3. CAMPAIGN PERFORMANCE (combined section) ═══ -->
+  <div class="acct-section" id="perfSection">
+    <div class="acct-section__header">
+      <h3 class="acct-section__title"><span class="material-symbols-outlined" style="color:#10b981">table_chart</span>Campaign Performance<span class="acct-section__context" id="perfContext">&mdash; 5 ad groups, 30 days</span></h3>
+      <div style="display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">
+        <div class="pill-group" id="dateRangePills"><button class="pill-btn" data-range="7d">7d</button><button class="pill-btn active" data-range="30d">30d</button><button class="pill-btn" data-range="90d">90d</button></div>
+        <div class="pill-group"><button class="pill-btn active" data-filter="all">All</button><button class="pill-btn" data-filter="enabled">Enabled</button><button class="pill-btn" data-filter="paused">Paused</button></div>
+        <span class="material-symbols-outlined acct-section__toggle" style="margin-left:8px;cursor:pointer">expand_more</span>
+      </div>
+    </div>
+    <div class="acct-section__body" style="padding:0">
+      <div class="perf-inner">
+        <div class="summary-cards">
+          <div class="summary-card"><div class="summary-card__label">Cost</div><div class="summary-card__value">&pound;487</div><div class="summary-card__change summary-card__change--up">&uarr; 8%</div></div>
+          <div class="summary-card"><div class="summary-card__label">Impressions</div><div class="summary-card__value">7,450</div><div class="summary-card__change summary-card__change--up">&uarr; 10%</div></div>
+          <div class="summary-card"><div class="summary-card__label">Clicks</div><div class="summary-card__value">518</div><div class="summary-card__change summary-card__change--up">&uarr; 6%</div></div>
+          <div class="summary-card"><div class="summary-card__label">Avg CPC</div><div class="summary-card__value">&pound;0.94</div><div class="summary-card__change summary-card__change--down">&darr; 2%</div></div>
+          <div class="summary-card"><div class="summary-card__label">Conversions</div><div class="summary-card__value">26</div><div class="summary-card__change summary-card__change--up">&uarr; 18%</div></div>
+          <div class="summary-card"><div class="summary-card__label">Avg CPA</div><div class="summary-card__value">&pound;18.73</div><div class="summary-card__change summary-card__change--down">&darr; 8%</div></div>
+          <div class="summary-card"><div class="summary-card__label">Conv Rate</div><div class="summary-card__value">5.02%</div><div class="summary-card__change summary-card__change--up">&uarr; 11%</div></div>
+        </div>
+        <div class="chart-section">
+          <div class="chart-toolbar">
+            <div class="chart-select-group"><span class="chart-dot" style="background:#10b981"></span><select class="chart-select" id="chartMetric1"><option value="cost" selected>Cost</option><option value="impressions">Impressions</option><option value="clicks">Clicks</option><option value="avgCpc">Avg CPC</option><option value="ctr">CTR</option><option value="conversions">Conversions</option><option value="cpa">CPA (Cost/Conv)</option><option value="convRate">Conv Rate</option><option value="score">Performance Score</option><option value="budgetUtil">Budget Utilisation %</option></select></div>
+            <span style="font-size:14px;color:var(--act-text);opacity:0.4">vs</span>
+            <div class="chart-select-group"><span class="chart-dot" style="background:#3b82f6"></span><select class="chart-select" id="chartMetric2"><option value="cost">Cost</option><option value="impressions">Impressions</option><option value="clicks">Clicks</option><option value="avgCpc">Avg CPC</option><option value="ctr">CTR</option><option value="conversions" selected>Conversions</option><option value="cpa">CPA (Cost/Conv)</option><option value="convRate">Conv Rate</option><option value="score">Performance Score</option><option value="budgetUtil">Budget Utilisation %</option></select></div>
+          </div>
+          <div class="chart-container"><canvas id="performanceChart"></canvas></div>
+        </div>
+      </div>
+      <!-- Ad Groups table -->
+      <div style="overflow-x:auto">
+        <table class="data-table" id="adGroupsTable">
+          <thead><tr><th data-sort="s">Status</th><th data-sort="n">Ad Group<span class="material-symbols-outlined">unfold_more</span></th><th data-sort="cost">Cost<span class="material-symbols-outlined">unfold_more</span></th><th data-sort="impr">Impr.<span class="material-symbols-outlined">unfold_more</span></th><th data-sort="clicks">Clicks<span class="material-symbols-outlined">unfold_more</span></th><th data-sort="cpc">Avg CPC<span class="material-symbols-outlined">unfold_more</span></th><th data-sort="ctr">CTR<span class="material-symbols-outlined">unfold_more</span></th><th data-sort="conv">Conv.<span class="material-symbols-outlined">unfold_more</span></th><th data-sort="cc">Cost/Conv<span class="material-symbols-outlined">unfold_more</span></th><th data-sort="cvr">Conv Rate<span class="material-symbols-outlined">unfold_more</span></th><th>Ads</th><th>Keywords</th></tr></thead>
+          <tbody>
+            <tr data-status="enabled"><td><span class="status-dot status-dot--enabled"></span></td><td><strong>Dental Implants</strong></td><td>£248.50</td><td>2,720</td><td>192</td><td>£1.29</td><td>7.06%</td><td>12</td><td>£20.71</td><td>6.25%</td><td>3</td><td>24</td></tr>
+            <tr data-status="enabled"><td><span class="status-dot status-dot--enabled"></span></td><td><strong>Cosmetic Dentistry</strong></td><td>£112.80</td><td>2,080</td><td>140</td><td>£0.81</td><td>6.73%</td><td>8</td><td>£14.10</td><td>5.71%</td><td>3</td><td>18</td></tr>
+            <tr data-status="enabled"><td><span class="status-dot status-dot--enabled"></span></td><td><strong>General Dentistry</strong></td><td>£72.60</td><td>1,640</td><td>120</td><td>£0.61</td><td>7.32%</td><td>4</td><td>£18.15</td><td>3.33%</td><td>3</td><td>15</td></tr>
+            <tr data-status="enabled"><td><span class="status-dot status-dot--enabled"></span></td><td><strong>Emergency Dental</strong></td><td>£34.50</td><td>580</td><td>38</td><td>£0.91</td><td>6.55%</td><td>2</td><td>£17.25</td><td>5.26%</td><td>2</td><td>10</td></tr>
+            <tr data-status="enabled"><td><span class="status-dot status-dot--enabled"></span></td><td><strong>Veneers &amp; Whitening</strong></td><td>£18.80</td><td>430</td><td>28</td><td>£0.67</td><td>6.51%</td><td>0</td><td>&mdash;</td><td>0.00%</td><td>2</td><td>8</td></tr>
+            <tr class="totals-row"><td></td><td>Total / Average</td><td>£487</td><td>7,450</td><td>518</td><td>£0.94</td><td>&mdash;</td><td>26</td><td>£18.73</td><td>5.02%</td><td>&mdash;</td><td>&mdash;</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-pagination"><div>Showing 1-5 of 5 ad groups</div><div class="table-pagination__controls"><button class="page-btn" disabled>&laquo;</button><button class="page-btn active">1</button><button class="page-btn" disabled>&raquo;</button></div></div>
+    </div>
+  </div>
+
+  <!-- ═══ 4. CAMPAIGN-LEVEL REVIEW SECTIONS ═══ -->
+  <div class="section-divider">Campaign-Level Review</div>
+
+  <!-- Awaiting Approval -->
+  <section class="act-section" id="sectionApproval">
+    <div class="act-section__header"><h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-amber)">pending_actions</span>Awaiting Approval<span class="act-section__count act-section__count--amber" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-amber)">3</span></h2><span class="material-symbols-outlined act-section__toggle">expand_more</span></div>
+    <div class="act-section__body" style="padding:0">
+      <div class="act-item" data-priority="investigate" data-details='{"Check":"tCPA loosening review (runs every 7 days)","Signal":"14-day CPA of £18.50 vs £25.00 target = 26% below.","Rule":"Loosening requires approval. 10% increase proposed.","Cooldown":"14-day cooldown after approval.","Risk":"Low."}'>
+        <div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--campaign">Campaign</span><span class="badge-action badge-action--investigate">Investigate</span><span class="badge-risk badge-risk--low">Low Risk</span></div><div class="act-item__summary"><strong>Loosen tCPA target</strong> from &pound;25 to &pound;27.50 &mdash; CPA is 26% below target for 14 consecutive days.</div><div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>ACT recommends: Increase target to capture more volume while CPA is outperforming</div><div class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>Estimated: +2-3 conversions/week from increased volume</div></div><div class="act-item__actions"><button class="btn-act btn-act--details" data-action="details">View Details</button><button class="btn-act btn-act--approve" data-action="approve">Approve</button><button class="btn-act btn-act--decline" data-action="decline">Decline</button></div></div>
+      </div>
+      <div class="act-item" data-priority="investigate" data-details='{"Check":"Geo bid adjustment review (runs every 30 days)","Signal":"Scotland CPA 45% above target over 30 days.","Rule":"Large geo adjustments (>20%) require approval.","Cooldown":"30-day cooldown.","Risk":"Low."}'>
+        <div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--campaign">Campaign</span><span class="badge-action badge-action--investigate">Investigate</span><span class="badge-risk badge-risk--low">Low Risk</span></div><div class="act-item__summary"><strong>Reduce Scotland geo modifier</strong> from +0% to -15% &mdash; CPA 45% above target over 30 days with only 2 conversions.</div><div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>ACT recommends: Apply -15% geo modifier for Scotland to reduce wasted spend</div><div class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>Estimated saving: &pound;4/week from reduced Scotland spend</div></div><div class="act-item__actions"><button class="btn-act btn-act--details" data-action="details">View Details</button><button class="btn-act btn-act--approve" data-action="approve">Approve</button><button class="btn-act btn-act--decline" data-action="decline">Decline</button></div></div>
+      </div>
+      <div class="act-item" data-priority="investigate" data-details='{"Check":"Ad schedule bid adjustment (runs every 30 days)","Signal":"Monday CPA £14.20 vs £22.50 average.","Rule":"Positive adjustments are loosening and require approval.","Cooldown":"30-day cooldown.","Risk":"Low."}'>
+        <div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--campaign">Campaign</span><span class="badge-action badge-action--investigate">Investigate</span><span class="badge-risk badge-risk--low">Low Risk</span></div><div class="act-item__summary"><strong>Increase Monday ad schedule bid</strong> from +0% to +15% &mdash; Monday CPA &pound;14.20 vs &pound;22.50 campaign average.</div><div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>ACT recommends: Boost Monday bids to capture more volume on best-performing day</div><div class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>Estimated: +1 conversion/week from Monday volume increase</div></div><div class="act-item__actions"><button class="btn-act btn-act--details" data-action="details">View Details</button><button class="btn-act btn-act--approve" data-action="approve">Approve</button><button class="btn-act btn-act--decline" data-action="decline">Decline</button></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Actions Executed (collapsed) -->
+  <section class="act-section collapsed">
+    <div class="act-section__header"><h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-green)">check_circle</span>Actions Executed Overnight<span class="act-section__count act-section__count--green" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-green)">4</span></h2><span class="material-symbols-outlined act-section__toggle">expand_more</span></div>
+    <div class="act-section__body" style="padding:0">
+      <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--campaign">Campaign</span><span class="badge-action badge-action--act">Act</span><span class="act-item__timestamp">8 Apr, 05:14 AM</span></div><div class="act-item__summary"><strong>Reduced Sunday ad schedule modifier</strong> from +0% to -20% &mdash; Sunday CPA &pound;34.50 vs &pound;22.50 avg</div><div class="act-item__meta"><span class="act-item__values"><span class="val-pill val-pill--old">+0%</span><span class="arrow">&rarr;</span><span class="val-pill val-pill--new-negative">-20%</span></span></div></div><div class="act-item__actions"><button class="btn-act btn-act--undo" data-action="undo">Undo</button></div></div></div>
+      <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--campaign">Campaign</span><span class="badge-action badge-action--act">Act</span><span class="act-item__timestamp">8 Apr, 05:15 AM</span></div><div class="act-item__summary"><strong>Reduced tablet device modifier</strong> from -20% to -35% &mdash; tablet CPA 40% above target over 7 days</div><div class="act-item__meta"><span class="act-item__values"><span class="val-pill val-pill--old">-20%</span><span class="arrow">&rarr;</span><span class="val-pill val-pill--new-negative">-35%</span></span></div></div><div class="act-item__actions"><button class="btn-act btn-act--undo" data-action="undo">Undo</button></div></div></div>
+      <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--campaign">Campaign</span><span class="badge-action badge-action--act">Act</span><span class="act-item__timestamp">8 Apr, 05:15 AM</span></div><div class="act-item__summary"><strong>Added 4 negative keywords</strong> from search term mining to negative keyword lists</div></div><div class="act-item__actions"><button class="btn-act btn-act--undo" data-action="undo">Undo</button></div></div></div>
+      <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--campaign">Campaign</span><span class="badge-action badge-action--act">Act</span><span class="act-item__timestamp">8 Apr, 05:16 AM</span></div><div class="act-item__summary"><strong>Mobile device modifier confirmed</strong> at +10% &mdash; mobile CPA on target</div></div><div class="act-item__actions"><button class="btn-act btn-act--undo" data-action="undo">Undo</button></div></div></div>
+    </div>
+  </section>
+
+  <!-- Monitoring (collapsed) -->
+  <section class="act-section collapsed">
+    <div class="act-section__header"><h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-blue)">visibility</span>Currently Monitoring<span class="act-section__count act-section__count--blue" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-blue)">2</span></h2><span class="material-symbols-outlined act-section__toggle">expand_more</span></div>
+    <div class="act-section__body" style="padding:0">
+      <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--campaign">Campaign</span><span class="badge-action badge-action--monitor">Monitor</span></div><div class="act-item__summary"><strong>tCPA adjustment cooldown</strong> &mdash; changed from &pound;23 to &pound;25 on 29 Mar 2026</div><div class="act-item__started"><span class="material-symbols-outlined">calendar_today</span>Started: 29 Mar 2026, 05:12 AM</div><div class="act-item__progress"><div class="act-item__progress-bar"><div class="act-item__progress-fill" style="width:29%;background:var(--act-green)"></div></div><span class="act-item__progress-text">10 days remaining of 14-day cooldown</span><span class="health-label health-label--healthy">Healthy</span></div></div></div></div>
+      <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--campaign">Campaign</span><span class="badge-action badge-action--monitor">Monitor</span></div><div class="act-item__summary"><strong>Device bid cooldown (tablet)</strong> &mdash; reduced to -35% today</div><div class="act-item__started"><span class="material-symbols-outlined">calendar_today</span>Started: 8 Apr 2026, 05:15 AM</div><div class="act-item__progress"><div class="act-item__progress-bar"><div class="act-item__progress-fill" style="width:3%;background:#9aa0a6"></div></div><span class="act-item__progress-text">5 days remaining of 7-day cooldown</span><span class="health-label health-label--neutral">Too early to assess</span></div></div></div></div>
+    </div>
+  </section>
+
+  <!-- Alerts (collapsed) -->
+  <section class="act-section collapsed">
+    <div class="act-section__header"><h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-red)">notifications_active</span>Recent Alerts<span class="act-section__count act-section__count--red" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-red)">1</span></h2><span class="material-symbols-outlined act-section__toggle">expand_more</span></div>
+    <div class="act-section__body" style="padding:0">
+      <div class="act-item" data-priority="alert"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--campaign">Campaign</span><span class="badge-action badge-action--alert">Alert</span><span class="act-item__timestamp">5 Apr 2026</span></div><div class="act-item__summary"><strong>Geo modifier cap reached</strong> &mdash; Scotland at -50% (maximum auto cap). Investigate if this location should be excluded entirely.</div><div class="act-item__meta"><span class="badge-resolution badge-resolution--approved">Acknowledged</span><span style="font-size:12px;color:var(--act-text)">Under review &mdash; pending decision on full exclusion</span></div></div></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ 5. UNIVERSAL LEVERS ═══ -->
+  <div class="section-divider">Universal Levers</div>
+
+  <div class="lever-card collapsed">
+    <div class="lever-card__header"><h4 class="lever-card__title"><span class="material-symbols-outlined">block</span>Negative Keywords</h4><div class="lever-card__summary">142 negatives across 9 lists</div><span class="material-symbols-outlined lever-card__toggle">expand_more</span></div>
+    <div class="lever-card__body"><p style="font-size:14px;color:var(--act-text);margin:0 0 8px">142 negative keywords applied via 9 standardised lists. Last added: 8 Apr 2026.</p><div class="lever-cooldown"><span class="material-symbols-outlined">info</span>Managed at Keyword Level &mdash; ACT adds [exact] match only</div></div>
+  </div>
+
+  <div class="lever-card collapsed">
+    <div class="lever-card__header"><h4 class="lever-card__title"><span class="material-symbols-outlined">devices</span>Device Modifiers</h4><div class="lever-card__summary">Mobile +10%, Desktop +0%, Tablet -35%</div><span class="material-symbols-outlined lever-card__toggle">expand_more</span></div>
+    <div class="lever-card__body">
+      <table class="lever-table"><thead><tr><th>Device</th><th>Modifier</th><th>Last Changed</th><th>Cooldown</th></tr></thead><tbody>
+        <tr><td>Mobile</td><td>+10%</td><td>1 Apr 2026</td><td><span class="cooldown-badge cooldown-badge--ready">Ready</span></td></tr>
+        <tr><td>Desktop</td><td>+0%</td><td>No changes</td><td><span class="cooldown-badge cooldown-badge--ready">Ready</span></td></tr>
+        <tr><td>Tablet</td><td>-35%</td><td>8 Apr 2026</td><td><span class="cooldown-badge cooldown-badge--active">5d remaining</span></td></tr>
+      </tbody></table>
+      <div class="lever-cooldown"><span class="material-symbols-outlined">info</span>Caps: Auto -60% / +30%. Cooldown: 7 days per device. Full exclusion requires approval.</div>
+    </div>
+  </div>
+
+  <div class="lever-card collapsed">
+    <div class="lever-card__header"><h4 class="lever-card__title"><span class="material-symbols-outlined">location_on</span>Geographic Modifiers</h4><div class="lever-card__summary">5 locations, Scotland at -50% (cap)</div><span class="material-symbols-outlined lever-card__toggle">expand_more</span></div>
+    <div class="lever-card__body">
+      <table class="lever-table"><thead><tr><th>Location</th><th>Modifier</th><th>Last Changed</th><th>Cooldown</th></tr></thead><tbody>
+        <tr><td>England</td><td>+0%</td><td>No changes</td><td><span class="cooldown-badge cooldown-badge--ready">Ready</span></td></tr>
+        <tr><td>Wales</td><td>-10%</td><td>15 Mar 2026</td><td><span class="cooldown-badge cooldown-badge--ready">Ready</span></td></tr>
+        <tr><td>Scotland</td><td>-50%</td><td>5 Mar 2026</td><td><span class="cooldown-badge cooldown-badge--ready">Ready</span></td></tr>
+        <tr><td>N. Ireland</td><td>-15%</td><td>20 Mar 2026</td><td><span class="cooldown-badge cooldown-badge--ready">Ready</span></td></tr>
+        <tr><td>London</td><td>+10%</td><td>1 Apr 2026</td><td><span class="cooldown-badge cooldown-badge--ready">Ready</span></td></tr>
+      </tbody></table>
+      <div class="lever-cooldown"><span class="material-symbols-outlined">info</span>Caps: Auto -50% / +30%. Cooldown: 30 days per location.</div>
+    </div>
+  </div>
+
+  <div class="lever-card collapsed">
+    <div class="lever-card__header"><h4 class="lever-card__title"><span class="material-symbols-outlined">schedule</span>Ad Schedule Modifiers</h4><div class="lever-card__summary">Sunday -20%, weekdays +0% to +15%</div><span class="material-symbols-outlined lever-card__toggle">expand_more</span></div>
+    <div class="lever-card__body">
+      <table class="lever-table"><thead><tr><th>Day</th><th>Modifier</th><th>Last Changed</th><th>Cooldown</th></tr></thead><tbody>
+        <tr><td>Monday</td><td>+0% (pending +15%)</td><td>&mdash;</td><td><span class="cooldown-badge cooldown-badge--ready">Ready</span></td></tr>
+        <tr><td>Tue-Fri</td><td>+0%</td><td>No changes</td><td><span class="cooldown-badge cooldown-badge--ready">Ready</span></td></tr>
+        <tr><td>Saturday</td><td>-10%</td><td>22 Mar 2026</td><td><span class="cooldown-badge cooldown-badge--ready">Ready</span></td></tr>
+        <tr><td>Sunday</td><td>-20%</td><td>8 Apr 2026</td><td><span class="cooldown-badge cooldown-badge--active">29d remaining</span></td></tr>
+      </tbody></table>
+      <div class="lever-cooldown"><span class="material-symbols-outlined">info</span>Caps: Auto -50% / +25%. Cooldown: 30 days per slot.</div>
+    </div>
+  </div>
+
+  <div class="lever-card collapsed">
+    <div class="lever-card__header"><h4 class="lever-card__title"><span class="material-symbols-outlined">sort_by_alpha</span>Match Type Distribution</h4><div class="lever-card__summary">Broad 15%, Phrase 45%, Exact 40%</div><span class="material-symbols-outlined lever-card__toggle">expand_more</span></div>
+    <div class="lever-card__body">
+      <div class="match-bar"><div class="match-bar__segment" style="width:15%;background:#ef4444">15%</div><div class="match-bar__segment" style="width:45%;background:#f59e0b">45%</div><div class="match-bar__segment" style="width:40%;background:#10b981">40%</div></div>
+      <div style="display:flex;gap:16px;margin-top:8px;font-size:12px;color:var(--act-text)"><span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:#ef4444"></span>Broad (15%)</span><span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:#f59e0b"></span>Phrase (45%)</span><span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:#10b981"></span>Exact (40%)</span></div>
+      <div class="lever-cooldown"><span class="material-symbols-outlined">info</span>Match type changes always require approval. Managed at Keyword Level.</div>
+    </div>
+  </div>
+
+  <!-- ═══ 6. STRATEGY-SPECIFIC ═══ -->
+  <div class="section-divider">Strategy-Specific</div>
+
+  <div class="acct-section collapsed">
+    <div class="acct-section__header"><h3 class="acct-section__title"><span class="material-symbols-outlined" style="color:#10b981">target</span>tCPA Strategy</h3><span class="material-symbols-outlined acct-section__toggle">expand_more</span></div>
+    <div class="acct-section__body">
+      <div class="strategy-panel">
+        <div class="strategy-panel__current">
+          <div><div style="font-size:12px;font-weight:600;color:var(--act-text);margin-bottom:4px">Current Target CPA</div><div class="strategy-panel__value">&pound;25.00</div></div>
+          <span class="zone-badge zone-badge--outperforming">26% below &mdash; Outperforming</span>
+        </div>
+        <div class="strategy-panel__assessment">Last adjustment: Raised from &pound;23 to &pound;25 on 29 Mar 2026. Next review eligible: 12 Apr 2026 (14-day cooldown).</div>
+        <table class="lever-table"><thead><tr><th>Date</th><th>Change</th><th>Reason</th></tr></thead><tbody>
+          <tr><td>29 Mar 2026</td><td>&pound;23 &rarr; &pound;25 (+8.7%)</td><td>Loosening &mdash; CPA above target, approved</td></tr>
+          <tr><td>15 Mar 2026</td><td>&pound;25 &rarr; &pound;23 (-8%)</td><td>Tightening &mdash; CPA 30% below target, auto</td></tr>
+          <tr><td>28 Feb 2026</td><td>&pound;27 &rarr; &pound;25 (-7.4%)</td><td>Tightening &mdash; CPA 25% below target, auto</td></tr>
+        </tbody></table>
+        <div class="lever-cooldown" style="margin-top:12px"><span class="material-symbols-outlined">info</span>Max 10% per cycle. 14-day cooldown. Loosening requires approval. Tightening auto-executes.</div>
+        <div style="margin-top:16px"><div style="font-size:12px;font-weight:600;color:var(--act-text);margin-bottom:6px">Supported Strategies</div>
+          <div class="strategy-list">
+            <span class="strategy-list__item">Manual CPC</span>
+            <span class="strategy-list__item active">tCPA</span>
+            <span class="strategy-list__item">tROAS</span>
+            <span class="strategy-list__item">Max Conversions</span>
+            <span class="strategy-list__item">Max Clicks</span>
+            <span class="strategy-list__item">PMax</span>
+            <span class="strategy-list__item">Standard Shopping</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 7. GUARDRAILS ═══ -->
+  <div class="acct-section collapsed">
+    <div class="acct-section__header"><h3 class="acct-section__title"><span class="material-symbols-outlined" style="color:#10b981">shield</span>Guardrails</h3><span class="material-symbols-outlined acct-section__toggle">expand_more</span></div>
+    <div class="acct-section__body">
+      <ul class="guardrail-list">
+        <li><span class="material-symbols-outlined">devices</span>Device modifier caps<span class="guardrail-value">-60% / +30%</span></li>
+        <li><span class="material-symbols-outlined">location_on</span>Geo modifier caps<span class="guardrail-value">-50% / +30%</span></li>
+        <li><span class="material-symbols-outlined">schedule</span>Schedule modifier caps<span class="guardrail-value">-50% / +25%</span></li>
+        <li><span class="material-symbols-outlined">target</span>tCPA max single move<span class="guardrail-value">10%</span></li>
+        <li><span class="material-symbols-outlined">timer</span>tCPA cooldown<span class="guardrail-value">14 days</span></li>
+        <li><span class="material-symbols-outlined">timer</span>Device bid cooldown<span class="guardrail-value">7 days</span></li>
+        <li><span class="material-symbols-outlined">timer</span>Geo bid cooldown<span class="guardrail-value">30 days</span></li>
+        <li><span class="material-symbols-outlined">timer</span>Schedule bid cooldown<span class="guardrail-value">30 days</span></li>
+        <li><span class="material-symbols-outlined">sort_by_alpha</span>Match type migration<span class="guardrail-value">Enabled</span></li>
+        <li><span class="material-symbols-outlined">search_off</span>Search Partners check<span class="guardrail-value">Enabled</span></li>
+      </ul>
+    </div>
+  </div>
+
+</main>
+
+<!-- Slide-in -->
+<div class="act-slidein-overlay" id="slideinOverlay"></div>
+<div class="act-slidein" id="slideinPanel">
+  <div class="act-slidein__header"><h3 id="slideinTitle">Decision Details</h3><button class="act-slidein__close" id="slideinClose"><span class="material-symbols-outlined">close</span></button></div>
+  <div class="act-slidein__body" id="slideinBody"></div>
+  <div class="act-slidein__footer" id="slideinFooter"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/campaign-level.js"></script>
+</body>
+</html>

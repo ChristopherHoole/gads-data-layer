@@ -1,0 +1,137 @@
+/* ============================================================================
+   ACT PROTOTYPE — CAMPAIGN LEVEL CSS
+   Extends prototype-v7.css + account-level patterns. Campaign-specific additions.
+   ============================================================================ */
+
+/* Campaign selector */
+.campaign-selector {
+  display: flex; align-items: center; gap: 8px;
+}
+
+.campaign-select {
+  padding: 6px 12px; border: 1px solid var(--act-border); border-radius: 6px;
+  font-size: 14px; font-weight: 600; font-family: inherit;
+  color: var(--act-text); background: var(--act-surface); cursor: pointer;
+}
+
+.campaign-select:focus { outline: none; border-color: #10b981; }
+
+.campaign-info {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 8px;
+}
+
+.campaign-info__item {
+  font-size: 14px; color: var(--act-text);
+  display: flex; align-items: center; gap: 4px;
+}
+
+/* Strategy badge */
+.strategy-badge {
+  font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 4px;
+  background: var(--act-blue-bg); color: #1e40af; display: inline-flex; align-items: center; gap: 4px;
+}
+
+/* Universal lever cards */
+.lever-card {
+  background: var(--act-surface); border: 1px solid var(--act-border-light);
+  border-radius: 8px; margin-bottom: 12px; overflow: hidden;
+}
+
+.lever-card__header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; cursor: pointer; user-select: none;
+}
+
+.lever-card__header:hover { background: var(--act-hover-bg); }
+
+.lever-card__title {
+  font-size: 14px; font-weight: 600; color: var(--act-text);
+  display: flex; align-items: center; gap: 8px; margin: 0;
+}
+
+.lever-card__title .material-symbols-outlined { font-size: 18px; color: #10b981; }
+
+.lever-card__summary {
+  font-size: 12px; color: var(--act-text); opacity: 0.7;
+}
+
+.lever-card__toggle {
+  font-size: 18px; color: var(--act-text); transition: transform 200ms ease;
+}
+
+.lever-card.collapsed .lever-card__toggle { transform: rotate(-90deg); }
+
+.lever-card__body { padding: 0 16px 16px; }
+.lever-card.collapsed .lever-card__body { display: none; }
+
+/* Lever detail tables */
+.lever-table {
+  width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px;
+}
+
+.lever-table th {
+  font-size: 12px; font-weight: 600; color: var(--act-text);
+  padding: 8px 10px; text-align: left; border-bottom: 2px solid var(--act-border-light);
+}
+
+.lever-table td {
+  padding: 8px 10px; border-bottom: 1px solid var(--act-border-light);
+  color: var(--act-text); text-align: left;
+}
+
+.lever-table tr:last-child td { border-bottom: none; }
+
+/* Cooldown inline */
+.lever-cooldown {
+  font-size: 12px; color: var(--act-text); opacity: 0.7;
+  display: flex; align-items: center; gap: 4px; margin-top: 8px;
+}
+
+.lever-cooldown .material-symbols-outlined { font-size: 14px; color: var(--act-amber); }
+
+/* Strategy panel */
+.strategy-panel {
+  padding: 20px; background: var(--act-surface);
+}
+
+.strategy-panel__current {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 16px;
+}
+
+.strategy-panel__value {
+  font-size: 28px; font-weight: 700; color: var(--act-text);
+}
+
+.strategy-panel__assessment {
+  font-size: 14px; color: var(--act-text); margin-bottom: 12px;
+}
+
+.strategy-list {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px;
+}
+
+.strategy-list__item {
+  font-size: 12px; padding: 3px 10px; border-radius: 4px;
+  border: 1px solid var(--act-border-light); color: var(--act-text);
+}
+
+.strategy-list__item.active {
+  background: var(--act-green-bg); color: #065f46; border-color: var(--act-green-border); font-weight: 600;
+}
+
+/* Match type bar */
+.match-bar {
+  display: flex; height: 24px; border-radius: 4px; overflow: hidden; margin-top: 8px;
+  border: 1px solid var(--act-border-light);
+}
+
+.match-bar__segment {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; color: white;
+}
+
+/* Reuse from account-level */
+/* Health cards, sections, data tables, zone badges, role badges, score display,
+   budget vis, trend arrows, guardrail list, chart, pill groups, summary cards,
+   pagination, section dividers, toast — all inherited from prototype-v7.css
+   and account-level patterns */

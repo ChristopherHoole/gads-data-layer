@@ -1,0 +1,872 @@
+{
+  "2025": {
+    "total_spend": 265868.85,
+    "total_conv": 6070.2,
+    "total_cpa": 43.79902639122269,
+    "brand_spend": 7662.79,
+    "brand_conv": 438.93999999999994,
+    "brand_cpa": 17.45748849501071,
+    "nb_spend": 258206.06,
+    "nb_conv": 5631.26,
+    "nb_cpa": 45.85227107254859,
+    "campaigns": {
+      "1- Dental Implant Campaign | New": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "2- All on 4 Implants": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "3- Teeth In A Day": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "All on 4 Max Conv": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Brand": {
+        "spend": 7662.79,
+        "conv": 438.94,
+        "cpa": 17.457488495010708,
+        "type": "Search",
+        "status": "Enabled"
+      },
+      "CALL ONLY / Mobile / Search / Feb '24": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "DBD | General Dentistry": {
+        "spend": 591.14,
+        "conv": 5.0,
+        "cpa": 118.228,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants": {
+        "spend": 14772.66,
+        "conv": 191.0,
+        "cpa": 77.34376963350785,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants #2": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants - Demand Gen": {
+        "spend": 3065.45,
+        "conv": 17.0,
+        "cpa": 180.3205882352941,
+        "type": "Demand Gen",
+        "status": "Enabled"
+      },
+      "Dental Implants - Geo": {
+        "spend": 16027.88,
+        "conv": 222.53000000000003,
+        "cpa": 72.0257043994068,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants - Pmax": {
+        "spend": 67585.84,
+        "conv": 2644.33,
+        "cpa": 25.55877670336153,
+        "type": "Performance Max",
+        "status": "Enabled"
+      },
+      "Dental Implants / Desktop / London / Search '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants / Desktop / Search '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants / GEO-Spec / Search '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants / Mobile / London / Search '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants / Mobile / Search '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants Broad": {
+        "spend": 5113.39,
+        "conv": 87.13,
+        "cpa": 58.68690462527259,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants Google Suggestions": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants Intent": {
+        "spend": 14976.6,
+        "conv": 243.65,
+        "cpa": 61.467679047814485,
+        "type": "Search",
+        "status": "Enabled"
+      },
+      "Dental Implants Target Max Conv": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants | 1.5 Mile | Search '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants | Mobile Only | Search '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants | New '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants | New Site | Desktop | Search '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants | New Site | Mobile | Search '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants | Pure | Google Search | Desktop '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants | Pure | Google Search | Desktop '22 #2": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Removed"
+      },
+      "Dental Implants | Pure | Google Search | Mobile '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants | Pure | Search Partners | Desktop '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants | Pure | Search Partners | Mobile '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dynamic": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Full Arch": {
+        "spend": 19488.309999999998,
+        "conv": 240.25,
+        "cpa": 81.1167950052029,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Invisalign": {
+        "spend": 9712.63,
+        "conv": 116.45,
+        "cpa": 83.40601116358951,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Invisalign - Geo": {
+        "spend": 1518.5900000000001,
+        "conv": 41.33,
+        "cpa": 36.74304379385435,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Invisalign - Pmax": {
+        "spend": 14421.43,
+        "conv": 615.9399999999999,
+        "cpa": 23.413692892164825,
+        "type": "Performance Max",
+        "status": "Paused"
+      },
+      "Invisalign Old": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Invisalign | All Devices | Search '23": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "KMG Dental Implants": {
+        "spend": 86701.03,
+        "conv": 1175.79,
+        "cpa": 73.7385332414802,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "KMG | Dental Implants Max Conv Value": {
+        "spend": 1746.27,
+        "conv": 7.0,
+        "cpa": 249.46714285714285,
+        "type": "Search",
+        "status": "Enabled"
+      },
+      "KMG | Dental Implants | Pmax": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Performance Max",
+        "status": "Paused"
+      },
+      "Leads-Display-1": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Display",
+        "status": "Paused"
+      },
+      "Teeth In A Day": {
+        "spend": 2484.84,
+        "conv": 23.86,
+        "cpa": 104.14249790444259,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Teeth In A Day Old": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Teeth in a Day / Desktop / Search '24": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Teeth in a Day / Mobile / Search '24": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Veneers": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      }
+    },
+    "st_rows": 129752,
+    "st_spend": 182804.31,
+    "st_conv": 4037.9900000000002,
+    "st_zero_rows": 127541,
+    "st_zero_spend": 86726.74,
+    "st_zero_pct": 47.44239345341475,
+    "st_by_type": {
+      "Performance Max": {
+        "spend": 51982.38,
+        "zero_spend": 27330.97,
+        "waste_pct": 52.57737333304093
+      },
+      "Search": {
+        "spend": 130821.92999999998,
+        "zero_spend": 59395.77,
+        "waste_pct": 45.401997967771926
+      }
+    },
+    "devices": {
+      "Computers": {
+        "spend": 31771.36,
+        "conv": 474.54999999999995,
+        "cpa": 66.95050047413339,
+        "cvr": 6.638919977616116
+      },
+      "Mobile Phones": {
+        "spend": 230443.35,
+        "conv": 5512.54,
+        "cpa": 41.803478977023296,
+        "cvr": 6.637935601955543
+      },
+      "TV screens": {
+        "spend": 9.440000000000001,
+        "conv": 0.0,
+        "cpa": 0,
+        "cvr": 0.0
+      },
+      "Tablets": {
+        "spend": 3644.71,
+        "conv": 83.12,
+        "cpa": 43.848772858517805,
+        "cvr": 3.8714485328365162
+      }
+    },
+    "days": {
+      "Friday": {
+        "spend": 142865.27,
+        "conv": 3123.4,
+        "cpa": 45.74030543638342,
+        "cvr": 5.289953255199512
+      },
+      "Monday": {
+        "spend": 176528.5,
+        "conv": 4256.51,
+        "cpa": 41.472591395298025,
+        "cvr": 7.69656806017648
+      },
+      "Saturday": {
+        "spend": 122244.19,
+        "conv": 2864.6,
+        "cpa": 42.674087132583956,
+        "cvr": 6.240414778668526
+      },
+      "Sunday": {
+        "spend": 126264.6,
+        "conv": 2779.02,
+        "cpa": 45.434937495951814,
+        "cvr": 5.798322483725588
+      },
+      "Thursday": {
+        "spend": 157319.91,
+        "conv": 3565.87,
+        "cpa": 44.118240429404324,
+        "cvr": 6.829598559718073
+      },
+      "Tuesday": {
+        "spend": 169303.22,
+        "conv": 3870.0,
+        "cpa": 43.747602067183465,
+        "cvr": 7.051749271137027
+      },
+      "Wednesday": {
+        "spend": 168949.75,
+        "conv": 3821.4700000000003,
+        "cpa": 44.21067023946282,
+        "cvr": 7.063193109566761
+      }
+    },
+    "kw_unique": 1236,
+    "kw_zero_count": 76,
+    "kw_zero_spend": 3295.8199999999997,
+    "kw_high_cpa_count": 12,
+    "kw_high_cpa_spend": 4118.38
+  },
+  "2026": {
+    "total_spend": 175466.78999999998,
+    "total_conv": 2889.16,
+    "total_cpa": 60.73280469063672,
+    "brand_spend": 4132.71,
+    "brand_conv": 229.61,
+    "brand_cpa": 17.998824093027306,
+    "nb_spend": 171334.08,
+    "nb_conv": 2659.5499999999997,
+    "nb_cpa": 64.42220676430223,
+    "campaigns": {
+      "1- Dental Implant Campaign | New": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "2- All on 4 Implants": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "3- Teeth In A Day": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "All on 4 Max Conv": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Brand": {
+        "spend": 4132.71,
+        "conv": 229.61,
+        "cpa": 17.998824093027306,
+        "type": "Search",
+        "status": "Enabled"
+      },
+      "CALL ONLY / Mobile / Search / Feb '24": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "DBD | General Dentistry": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Removed"
+      },
+      "Dental Implants #2": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants - Demand Gen": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Demand Gen",
+        "status": "Enabled"
+      },
+      "Dental Implants - Geo": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants - Pmax": {
+        "spend": 93550.17,
+        "conv": 1791.47,
+        "cpa": 52.21978040380246,
+        "type": "Performance Max",
+        "status": "Enabled"
+      },
+      "Dental Implants / Desktop / London / Search '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants / Desktop / Search '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants / GEO-Spec / Search '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants / Mobile / London / Search '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants / Mobile / Search '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants Broad": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants Google Suggestions": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants Intent": {
+        "spend": 74024.26,
+        "conv": 785.42,
+        "cpa": 94.24799470347075,
+        "type": "Search",
+        "status": "Enabled"
+      },
+      "Dental Implants Target Max Conv": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants | 1.5 Mile | Search '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants | Mobile Only | Search '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants | New '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants | New Site | Desktop | Search '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants | New Site | Mobile | Search '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants | Pure | Google Search | Desktop '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants | Pure | Google Search | Desktop '22 #2": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Removed"
+      },
+      "Dental Implants | Pure | Google Search | Mobile '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants | Pure | Search Partners | Desktop '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dental Implants | Pure | Search Partners | Mobile '22": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Dynamic": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Full Arch": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Invisalign": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Invisalign - Geo": {
+        "spend": 3759.65,
+        "conv": 82.66,
+        "cpa": 45.48330510525042,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Invisalign - Pmax": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Performance Max",
+        "status": "Paused"
+      },
+      "Invisalign Old": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Invisalign | All Devices | Search '23": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "KMG Dental Implants": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "KMG | Dental Implants Max Conv Value": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Enabled"
+      },
+      "KMG | Dental Implants | Pmax": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Performance Max",
+        "status": "Paused"
+      },
+      "Leads-Display-1": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Display",
+        "status": "Paused"
+      },
+      "Teeth In A Day": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Teeth In A Day Old": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Teeth in a Day / Desktop / Search '24": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Teeth in a Day / Mobile / Search '24": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      },
+      "Veneers": {
+        "spend": 0.0,
+        "conv": 0.0,
+        "cpa": 0,
+        "type": "Search",
+        "status": "Paused"
+      }
+    },
+    "st_rows": 61938,
+    "st_spend": 120731.13999999998,
+    "st_conv": 1899.5500000000002,
+    "st_zero_rows": 60958,
+    "st_zero_spend": 59348.92999999999,
+    "st_zero_pct": 49.157930588578886,
+    "st_by_type": {
+      "Performance Max": {
+        "spend": 53320.04,
+        "zero_spend": 32071.660000000007,
+        "waste_pct": 60.149354726665635
+      },
+      "Search": {
+        "spend": 67411.1,
+        "zero_spend": 27277.27,
+        "waste_pct": 40.46406304006313
+      }
+    },
+    "devices": {
+      "Computers": {
+        "spend": 32865.12,
+        "conv": 358.61,
+        "cpa": 91.64585482836507,
+        "cvr": 5.620846394984326
+      },
+      "Mobile Phones": {
+        "spend": 138224.36,
+        "conv": 2470.6,
+        "cpa": 55.94768882052942,
+        "cvr": 4.865876235868752
+      },
+      "TV screens": {
+        "spend": 0.72,
+        "conv": 0.0,
+        "cpa": 0,
+        "cvr": 0.0
+      },
+      "Tablets": {
+        "spend": 4394.84,
+        "conv": 60.29,
+        "cpa": 72.89500746392437,
+        "cvr": 1.5205548549810846
+      }
+    },
+    "days": {
+      "Friday": {
+        "spend": 93829.0,
+        "conv": 1676.56,
+        "cpa": 55.965190628429646,
+        "cvr": 5.806871709614851
+      },
+      "Monday": {
+        "spend": 108144.27,
+        "conv": 1695.17,
+        "cpa": 63.79553083171599,
+        "cvr": 5.718425313722845
+      },
+      "Saturday": {
+        "spend": 78105.85,
+        "conv": 1388.4,
+        "cpa": 56.256014116969176,
+        "cvr": 3.6479243300052553
+      },
+      "Sunday": {
+        "spend": 89867.2,
+        "conv": 1312.8,
+        "cpa": 68.45460085313833,
+        "cvr": 2.492027334851936
+      },
+      "Thursday": {
+        "spend": 103507.28,
+        "conv": 1771.55,
+        "cpa": 58.42752391973131,
+        "cvr": 5.927295235546039
+      },
+      "Tuesday": {
+        "spend": 122604.17,
+        "conv": 1971.79,
+        "cpa": 62.179121508882794,
+        "cvr": 5.642714056776557
+      },
+      "Wednesday": {
+        "spend": 105931.24,
+        "conv": 1741.74,
+        "cpa": 60.819203784721026,
+        "cvr": 5.7279005524861875
+      }
+    },
+    "kw_unique": 1236,
+    "kw_zero_count": 53,
+    "kw_zero_spend": 2402.3199999999993,
+    "kw_high_cpa_count": 17,
+    "kw_high_cpa_spend": 14959.2
+  }
+}

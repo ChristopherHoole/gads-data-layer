@@ -1,0 +1,49 @@
+/* ============================================================================
+   ACT PROTOTYPE — CAMPAIGN LEVEL OPTION C CSS
+   Tabbed: All Campaigns (list) + Campaign Detail (single). Tab bar + both views.
+   ============================================================================ */
+
+/* Tab bar */
+.page-tabs {
+  display: flex; gap: 0; margin-bottom: 20px;
+  background: var(--act-hover-bg); border-radius: 8px; padding: 3px;
+  border: 1px solid var(--act-border-light); width: fit-content;
+}
+
+.page-tab {
+  font-size: 14px; font-weight: 600; padding: 8px 20px;
+  border: none; border-radius: 6px; cursor: pointer;
+  background: transparent; color: var(--act-text);
+  transition: all 120ms ease; display: flex; align-items: center; gap: 6px;
+}
+
+.page-tab:hover { background: rgba(0,0,0,0.04); }
+[data-theme="dark"] .page-tab:hover { background: rgba(255,255,255,0.04); }
+
+.page-tab.active {
+  background: var(--act-surface); box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  color: var(--act-text);
+}
+
+.page-tab .material-symbols-outlined { font-size: 18px; }
+
+/* Tab content panels */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Back link */
+.back-link {
+  font-size: 14px; color: var(--act-primary); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 4px; margin-bottom: 16px;
+  text-decoration: none;
+}
+
+.back-link:hover { text-decoration: underline; }
+.back-link .material-symbols-outlined { font-size: 16px; }
+
+/* Campaign name clickable in table */
+.campaign-name-link {
+  color: var(--act-primary); cursor: pointer; font-weight: 600;
+}
+
+.campaign-name-link:hover { text-decoration: underline; }

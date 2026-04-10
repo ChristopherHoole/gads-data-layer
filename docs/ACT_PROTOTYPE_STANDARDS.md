@@ -1,7 +1,7 @@
 # ACT Prototype — Design Standards
 
 **Created:** 2026-04-06 (Morning Review, Page 1)
-**Updated:** 2026-04-07 (Account Level v7: table alignment standard established)
+**Updated:** 2026-04-08 (Page 4: Campaign Level added — campaign selector, lever cards, strategy panel)
 **Status:** Living document — updated with each new page
 
 ---
@@ -70,7 +70,7 @@ Everything previously at 9px, 10px, 11px is now 12px. Everything at 13px, 15px i
 
 **Rule: No grey text colours anywhere.** Every piece of text is either:
 - `#000000` (light mode) / `#ffffff` (dark mode) for all text
-- A brand colour (blue `#1a73e8`, green `#34a853`, red `#ea4335`, amber `#f9ab00`) for coloured elements
+- A v54 brand colour (blue `#3b82f6`, green `#10b981`, red `#ef4444`, amber `#f59e0b`) for coloured elements
 
 The CSS variables `--act-text-secondary` and `--act-text-muted` have been removed. All text uses `--act-text` which is `#000000` in light mode and `#ffffff` in dark mode. Where reduced emphasis is needed, use `opacity` (e.g., nav labels at `opacity: 0.5`), not grey colours.
 
@@ -458,19 +458,24 @@ Order: Level badge → Action badge → Risk badge → Time waiting indicator �
 - Lightbulb icon + text + Approve/Decline buttons (right-aligned)
 - Same approve/decline pattern as Morning Review
 
-### Level Page Structure (v2 — established on Account Level)
+### Level Page Structure (v9 — established on Account Level)
 Every level page follows this structure top-to-bottom:
-1. **Page header** — level colour accent, title, subtitle, persona badge, key metrics
+1. **Page header** — level colour accent, title, subtitle, persona badge, key metrics, "ACT last ran" green pill (required on every level page)
 2. **ACT health cards** — level-specific health summary (4-column grid)
-3. **Level-specific review sections** — same 4 Morning Review sections (Approval, Executed, Monitoring, Alerts) filtered to that level only. Uses exact same component patterns from Morning Review.
-4. **ACT intelligence sections** — level-specific analysis (budget allocation, signal decomposition, guardrails etc.)
-5. **Familiar data table** — Google Ads-style table with standard columns + ACT-specific additions (Role, Budget Share, Score). Includes summary metric cards, date range selector, status filters, pagination.
+3. **Combined Performance section** (collapsible) — single section containing:
+   - Summary metric cards (7-column grid, 28px values)
+   - Performance timeline chart (Chart.js, dual Y-axis)
+   - Familiar data table (Google Ads columns + ACT additions)
+   - Date range pills in section header control both chart and table
+   - Header context note: "[Section Name] — [count] [items], [N] days"
+4. **Level-specific review sections** — same 4 Morning Review sections (Approval, Executed, Monitoring, Alerts) filtered to that level only. Uses exact same component patterns from Morning Review.
+5. **ACT intelligence sections** (collapsed by default) — level-specific analysis (budget allocation, signal decomposition, guardrails etc.)
 
 This hybrid approach makes the page useful to both ACT users (review sections, intelligence) and Google Ads users (familiar campaign data).
 
-### Summary Metric Cards (above data table)
+### Summary Metric Cards (inside combined section)
 - 7-column grid (collapses at breakpoints)
-- Smaller than health cards: 16px value, 12px label
+- 28px value (same size as health cards), 12px label
 - Change indicator: `summary-card__change--up` (green), `--down` (red), `--flat` (neutral)
 - Shows period-over-period comparison (arrow + percentage)
 
@@ -494,18 +499,119 @@ This hybrid approach makes the page useful to both ACT users (review sections, i
 - Right: page buttons with active state using `var(--act-primary)`
 
 ### Section Dividers
-- Uppercase label (12px, 600 weight, 0.5 opacity) with bottom border
-- Separates major page areas: "Account-Level Review", "Budget Allocation", "Campaign Performance"
-- Uses the sidebar section label exception for uppercase at structural level
+- Title Case label (14px, 600 weight, 0.5 opacity) with bottom border
+- Separates major page areas: "Account-Level Review", "Budget Allocation"
+- No uppercase (fixed in v4)
+
+---
+
+## Performance Timeline Chart (v8-v10)
+
+### Chart Component
+- **Library:** Chart.js 4.4 (CDN, already in ACT stack)
+- **Type:** Line chart, `tension: 0` (straight lines between points, no bezier curves — matches Google Ads style)
+- **Dual Y-axes:** Left axis for metric 1, right axis for metric 2
+- **Two dropdown selectors** above the chart, each with a colour dot indicator
+- **Metric options** (in this exact order):
+  1. Cost
+  2. Impressions
+  3. Clicks
+  4. Avg CPC
+  5. CTR
+  6. Conversions
+  7. CPA (Cost/Conv)
+  8. Conv Rate
+  9. Performance Score
+  10. Budget Utilisation %
+- **Default selection:** Metric 1 = Cost, Metric 2 = Conversions
+- **Line colours:** Metric 1 = level colour (e.g., `#3b82f6` for Account Level). Metric 2 = `#10b981` (green)
+- **Visual:** Light fill under each line, data point markers (radius 3, hover radius 5), clean grid lines
+- **Tooltips:** `interaction.mode: 'index'` — hover shows both metrics. Title = date, body = "Metric: £value" or "Metric: value%"
+- **Axis labels:** Left Y-axis title = metric 1 name (coloured to match line), right Y-axis title = metric 2 name
+- **Chart height:** 280px container, full content width
+- **Dark mode:** Auto-rebuilds on theme toggle. White ticks/text, `rgba(255,255,255,0.06)` grid, `#1e293b` tooltip bg
+
+### Chart Date Range Intervals
+Date range pills control the chart's X-axis intervals:
+
+| Range | Interval | Data Points | Aggregation |
+|-------|----------|-------------|-------------|
+| 7d | Daily | 7 | Raw daily values |
+| 30d (default) | Daily | 30 | Raw daily values |
+| 90d | Weekly | ~13 | SUM for volume metrics (Cost, Impressions, Clicks, Conversions). AVERAGE for rate metrics (CPC, CTR, CPA, Conv Rate, Score, Budget Util %) |
+
+X-axis labels: "D Mon" format (e.g., "15 Mar"). `maxRotation: 0` with `autoSkipPadding: 12` for clean horizontal labels.
+
+### Combined Chart + Table Section Pattern
+A single collapsible section containing summary cards, chart, and data table:
+- **Section header:** `[Section Name] — [count] [items], [N] days` with date range pills and status filter pills right-aligned
+- **Header context note:** Updates dynamically when date range changes (e.g., "4 campaigns, 30 days" → "4 campaigns, 7 days")
+- **Date range pills** control BOTH chart and table — switching range rebuilds the chart AND updates all table cell values + totals row + summary cards
+- **Contents (in order):**
+  1. Summary metric cards (inside `perf-inner` padding wrapper)
+  2. Chart with metric selectors
+  3. Data table with sortable columns
+  4. Totals/averages row at bottom of table
+  5. Pagination bar
+- **Table data per range:** 7d shows ~1/4 of 30d values. 90d shows ~3x of 30d values. Totals row recalculates.
+
+---
+
+## Page 4: Campaign Level — New Patterns
+
+### Campaign Selector
+- Dropdown in page header showing all campaigns in the account
+- `font-size: 14px; font-weight: 600;` styled as a form select
+- Focus border uses level colour (`#10b981` for Campaign)
+- Switching campaigns updates the entire page (prototype shows toast)
+
+### Campaign Info Row
+- Below the campaign selector in the page header
+- Shows: strategy badge, status dot, daily budget, campaign role badge
+- Flex row with 12px gap, wraps on small screens
+
+### Strategy Badge
+- `font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 4px`
+- Blue tint: `var(--act-blue-bg)` / `#1e40af`
+- Shows bid strategy + target: "Maximise Conversions — tCPA £25"
+
+### Universal Lever Cards
+- One card per lever (Negative Keywords, Device, Geo, Schedule, Match Types)
+- Collapsible with expand/collapse toggle — **collapsed by default**
+- Header: icon (green `#10b981`) + lever name + summary text + chevron
+- Body: detail table or visualisation + cooldown info note
+- Tables inside lever cards use `.lever-table` (same left-alignment rules)
+
+### Lever Detail Tables
+- Used inside lever cards for device/geo/schedule modifiers
+- Columns: name, modifier value, last changed date, cooldown status badge
+- Same `cooldown-badge--ready` (green) and `cooldown-badge--active` (amber) patterns
+
+### Match Type Distribution Bar
+- Horizontal stacked bar: Broad (red `#ef4444`), Phrase (amber `#f59e0b`), Exact (green `#10b981`)
+- 24px height, 4px radius, with legend below
+
+### Strategy Panel
+- Shows inside a collapsible section for the active bid strategy
+- Current target value (28px), zone badge, last adjustment, next review date
+- Adjustment history table (date, change, reason)
+- Supported strategies list: 7 pill badges, active one highlighted with green tint
+- Guardrails note at bottom
+
+### Strategy List Pills
+- Flex row of small pill badges (12px, 3px 10px padding, 4px radius)
+- Default: `var(--act-border-light)` border
+- Active: `var(--act-green-bg)` + `#065f46` text + `var(--act-green-border)` border + bold
 
 ---
 
 ## Top Bar Components
 
-### ACT Last Ran (v2, Change 10)
+### ACT Last Ran (v2 Change 10; v4 Change 7 — required on all pages)
 - Green pill with check_circle icon
 - Text: "ACT last ran: Today at 05:17 AM"
 - Positioned in top bar left area, after date
+- **Required on every level page** (Account, Campaign, Ad Group, Keyword, Ad, Shopping) and Morning Review
 - Background: `--act-green-bg`, border: `--act-green-border`
 
 ### Theme Toggle (v2, Change 14)
@@ -604,7 +710,17 @@ act_dashboard/prototypes/
   index-v6.html           Morning Review v6 (date/time, impact, empty states)
   client-config.html      Client Configuration (Page 2)
   account-level.html      Account Level v1 (Page 3)
-  account-level-v2.html   Account Level v2 (reworked with review + campaigns table)
+  account-level-v2.html   Account Level v2 (review sections + campaigns table)
+  account-level-v3.html   Account Level v3 (reordered, score breakdowns, impact/started)
+  account-level-v4.html   Account Level v4 (system font, alignment, totals, title case)
+  account-level-v5.html   Account Level v5 (even column widths)
+  account-level-v6.html   Account Level v6 (equal-width sig/hist tables)
+  account-level-v7.html   Account Level v7 (left-aligned tables, CPA Trend column)
+  account-level-v8.html   Account Level v8 (performance timeline chart)
+  account-level-v9.html   Account Level v9 (combined section, straight lines, shared date range)
+  account-level-v10.html  Account Level v10 (table data per range, 90d weekly aggregates)
+  campaign-level.html     Campaign Level (Page 4)
+  table-test.html         Standalone table alignment test page
   screenshots/            Browser screenshots
   css/
     prototype.css         v1 styles
@@ -616,7 +732,9 @@ act_dashboard/prototypes/
     prototype-v7.css      v7 styles (base for config page)
     client-config.css     Client Configuration page styles
     account-level.css     Account Level v1 styles
-    account-level-v2.css  Account Level v2 styles (+ summary cards, toolbar, pagination)
+    account-level-v2.css  Account Level v2 styles
+    account-level-v3.css  through v10 (incremental changes per version)
+    campaign-level.css    Campaign Level styles (lever cards, strategy panel, match bar)
   js/
     prototype.js          v1 interactions
     prototype-v2.js       v2 interactions
@@ -627,7 +745,8 @@ act_dashboard/prototypes/
     prototype-v7.js       v7 interactions
     client-config.js      Client Configuration interactions
     account-level.js      Account Level v1 interactions
-    account-level-v2.js   Account Level v2 interactions (+ filters, date range, slide-in)
+    account-level-v2.js   through v10 (incremental changes per version)
+    campaign-level.js     Campaign Level interactions (campaign selector, chart, levers)
 ```
 
 ---
