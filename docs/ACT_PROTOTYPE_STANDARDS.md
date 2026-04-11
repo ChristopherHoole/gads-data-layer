@@ -605,6 +605,322 @@ A single collapsible section containing summary cards, chart, and data table:
 
 ---
 
+## Page 5: Ad Group Level — New Patterns
+
+### Ad Group Level Colour
+- Level accent: `#f59e0b` (amber, per v54)
+- Chart metric 1 line: amber
+- `.badge-level--adgroup`: `#fef3c7` background / `#f59e0b` text (light), `rgba(245,158,11,0.12)` / `#f59e0b` (dark)
+
+### Level Differences (vs Campaign Level)
+- **No Universal Levers** — bids live at Campaign and Keyword levels, not Ad Group
+- **No Bid Strategy** — same reason
+- **All actions require approval** — ACT never auto-executes at ad group level (per v54)
+- Chart metric options drop Performance Score and Budget Utilisation (those are campaign-level metrics); drops down to 8 metric options
+- Summary cards are 8-up (Cost, Impressions, Clicks, Avg CPC, CTR, Conversions, Cost/Conv, Conv Rate) — use `.summary-cards--8`
+
+### Ad Group Detail Slide-in (800px)
+- Same width and overall structure as Campaign Level slide-in (`.ag-slidein`, same 800px, overlay, ESC close)
+- Header row shows: status dot + Enabled + parent campaign badge + keyword count + ad count + QS
+- Section order (Approval expanded, all others collapsed):
+  1. Awaiting Approval (flagged items for this ad group)
+  2. Actions Executed Overnight (keyword-level changes affecting this ad group)
+  3. Currently Monitoring
+  4. Recent Alerts
+  5. **Outlier Analysis** (unique to Ad Group Level)
+  6. **Structural Health** (unique to Ad Group Level)
+- Opens via clicking ad group name in the data table OR clicking "See Details" on a main page approval item
+
+### Flag Badges (`.flag-badge`)
+Identify which of the 4 ad group checks raised the flag. Used alongside the action badge row:
+- **Negative Outlier** — `.flag-badge--negative` — red tint (`--act-red-bg` / `#991b1b`)
+- **Positive Outlier** — `.flag-badge--positive` — green tint (`--act-green-bg` / `#065f46`)
+- **Concentration** — `.flag-badge--concentration` — amber tint (`--act-amber-bg` / `#92400e`)
+- **Pause Candidate** — `.flag-badge--pause` — grey tint (neutral, matches Low Risk pattern)
+- 12px, 600 weight, 2px 8px padding, 4px radius, 1px coloured border
+- Also reusable in tables as `.flag-count-badge` with a `flag` icon prefix
+
+### Outlier Analysis Table (`.outlier-table`)
+Unique to Ad Group Level. Compares this ad group's metrics against its campaign average:
+- 4 columns: Metric · This Ad Group · Campaign Average · Delta
+- `table-layout: fixed`, all cells left-aligned (matches Table Alignment Standard)
+- Delta cells use `.outlier-delta--worse` (red `#ef4444`), `.outlier-delta--better` (green `#10b981`), `.outlier-delta--flat` (opacity 0.5)
+- **Specificity rule:** use `.outlier-table td.outlier-delta--*` to override the base `td` colour
+- Explanation note follows the table (`.outlier-note`) — amber info icon + dimmed text explaining why the flag triggered
+- Always shown inside the slide-in `slidein-section` card wrapper
+
+### Structural Health List (`.structural-health`)
+Unique to Ad Group Level. Shows the ad group's structural vitals:
+- `<ul>` with left-aligned label + right-aligned value via `.structural-health__value`
+- Icon (18px) in `var(--act-primary)` blue
+- Rows: Keywords · Ads · Average Quality Score · Days since last change · Days since last conversion · Ad strength
+- 10px 16px per-row padding, 1px bottom border between rows
+- Always shown inside the slide-in `slidein-section` card wrapper
+
+### Word-for-word Text Consistency Rule (reinforced)
+Established in Campaign Level, now also applied at Ad Group Level:
+- Main page summary format: `{Ad Group} in {Campaign}: {Flag Type}. {Description}.`
+- Slide-in summary format: `{Flag Type}. {Description}.` (the entity prefix is dropped because the slide-in header already names it)
+- Stripping `{Ad Group} in {Campaign}: ` from the main page text must produce the exact slide-in text. Recommendation and impact lines must be byte-identical.
+
+---
+
+## Page 6: Keyword Level — New Patterns
+
+### Keyword Level Colour
+- Level accent: `#8b5cf6` (purple, per v54)
+- Chart metric 1 line: purple
+- `.badge-level--keyword`: `#ede9fe` background / `#8b5cf6` text (light), `rgba(139,92,246,0.12)` / `#8b5cf6` (dark)
+
+### Level Characteristics (vs Ad Group Level)
+- **Has bid management** — keyword bids live at this level for Manual CPC campaigns only (10% per cycle, 72h cooldown, 30% 7-day cap per v54)
+- **Auto-execution exists** — bid adjustments, dead keyword auto-pause, search term mining (negatives) all auto-execute
+- **Match type display on every row** — every keyword row shows a Broad/Phrase/Exact badge
+- **Negative keyword management** — 9-list structure referenced in actions ([exact] only, phrase is human-managed)
+- **Most active level** — most Actions Executed Overnight items come from here
+- Summary cards are 8-up (same as Ad Group Level): Cost, Impressions, Clicks, Avg CPC, CTR, Conversions, Cost/Conv, Conv Rate
+
+### Match Type Badges (`.match-badge`)
+Every keyword row in the table and every slide-in header shows a match type badge:
+- **Broad** — `.match-badge--broad` — red tint (`--act-red-bg` / `#991b1b` / red border). Broad is the riskiest match type.
+- **Phrase** — `.match-badge--phrase` — amber tint (`--act-amber-bg` / `#92400e` / amber border).
+- **Exact** — `.match-badge--exact` — green tint (`--act-green-bg` / `#065f46` / green border). Exact is the safest.
+- 12px, 600 weight, 2px 8px padding, 4px radius, 1px coloured border.
+- Matches the Campaign Level match-type stacked-bar colours (red/amber/green).
+
+### Quality Score Badges (`.qs-badge`)
+Colour-coded by score band, rendered in DM Mono to keep the number compact:
+- **Low (QS < 4)** — `.qs-badge--low` — red tint, `#991b1b` text, 700 weight
+- **Mid (QS 4–6)** — `.qs-badge--mid` — amber tint, `#92400e` text
+- **High (QS 7+)** — `.qs-badge--high` — green tint, `#065f46` text
+- 12px, 700 weight, 2px 8px padding, 4px radius, min-width 28px for visual alignment
+- Discovery/pending keywords with no QS yet render as a 0.5-opacity em-dash instead of a badge
+
+### Flag Badges (Keyword-level variants)
+Extends the Ad Group Level flag-badge pattern with keyword-specific flag types:
+- **Pause Candidate** — `.flag-badge--pause` / `.flag-count-badge--pause` — amber tint
+- **Keyword Discovery** — `.flag-badge--discovery` / `.flag-count-badge--discovery` — green tint (positive: new opportunity)
+- **Keyword Conflict** — `.flag-badge--conflict` / `.flag-count-badge--conflict` — red tint (urgent: cannibalisation)
+- **Low QS** — `.flag-badge--qs` / `.flag-count-badge--qs` — amber tint
+- Review-section badges (`flag-badge--*`) and table badges (`flag-count-badge--*`) use identical colour variables per flag type for visual consistency.
+
+### Keyword Detail Slide-in (800px)
+Same structure as Ad Group Level slide-in with keyword-specific unique sections:
+- Header: match type badge + parent campaign badge + parent ad group badge + status
+- 4 health cards: Cost MTD · CPA (with zone badge) · Conversions MTD · Quality Score (colour-coded by score band)
+- Section order (Awaiting Approval expanded, all others collapsed):
+  1. Awaiting Approval
+  2. Actions Executed Overnight
+  3. Currently Monitoring
+  4. Recent Alerts
+  5. **Bid History** (unique to Keyword Level)
+  6. **Search Term Analysis** (unique to Keyword Level)
+  7. **Quality Score Breakdown** (unique to Keyword Level)
+- Empty states always rendered for sections 2–4 when no data
+- Slide-in opens via keyword name click, flag badge click, or Escape/close to dismiss
+
+### Bid History Table (`.bid-history-table`)
+Unique to Keyword Level. Shows the last N bid changes for the keyword:
+- 4 columns: Date · Change (old → new) · Delta · Reason
+- `table-layout: fixed`, all cells left-aligned
+- Delta column uses `.bid-change--up` (green) / `.bid-change--down` (red) with monospace value
+- Change column uses the "→" arrow pattern to match executed-item val-pill convention textually
+- Empty state: `history` icon + "No bid changes recorded." (used for new/discovery keywords)
+
+### Search Term Analysis Table (`.search-term-table`)
+Unique to Keyword Level. Shows the top 10 search terms that triggered this keyword:
+- 4 columns: Search Term · Cost · Conv · CPA
+- Wider first column (search term), narrow fixed-width trailing columns (80/60/80px)
+- Overflow text truncated with ellipsis + title tooltip
+- All cells left-aligned
+
+### Quality Score Breakdown (`.qs-breakdown`)
+Unique to Keyword Level. Shows the 3 QS sub-factors + overall:
+- `<ul>` with icon (18px, primary blue) + factor label + right-aligned `.qs-breakdown__value` badge
+- Factors: Expected CTR · Ad Relevance · Landing Page Experience · Overall Quality Score (separated with 2px top border)
+- Badge colours: `--above` (green), `--average` (amber), `--below` (red)
+- Overall row has `qs-breakdown__overall` class for 2px top divider
+- Label values: "Below Average" / "Average" / "Above Average" — matching Google Ads convention
+
+### Parent Ad Group Badge (`.parent-adgroup-badge`)
+New helper badge used in the keywords table alongside `.parent-campaign-badge`:
+- Amber tint (matches Ad Group level colour)
+- Same dimensions as parent-campaign-badge (12px, 600 weight, 2px 8px padding, 4px radius)
+- Dark mode: translucent amber
+
+---
+
+## Page 7: Ad Level — New Patterns
+
+### Ad Level Colour
+- Level accent: `#ec4899` (pink, per v54)
+- Chart metric 1 line: pink
+- `.badge-level--ad`: `#fce7f3` background / `#ec4899` text (light), `rgba(236,72,153,0.12)` / `#ec4899` (dark)
+
+### Level Characteristics (vs Keyword Level)
+- **No auto-execution at all** — every ad-level action requires approval. ACT cannot write ad copy, create extensions, or edit headlines.
+- **Actions Executed Overnight is permanently empty** — show the empty state on the main page (bedtime icon, "No actions were executed overnight." + hint "ACT cannot auto-execute at Ad Level — every action requires approval."). The slide-in uses the standard empty state too.
+- **Daily scan for disapprovals**, weekly for everything else (per v54).
+- **Fewer health metrics** — health cards focus on creative performance (Impressions, CTR, Conversions, Cost/Conv) rather than bids/QS.
+- Summary cards are 8-up, same as Keyword Level.
+
+### Ad Strength Badges (`.ad-strength-badge`)
+Shown on every ad row in the table and in the slide-in header (after the other meta items):
+- **Excellent** — green tint (`--act-green-bg` / `#065f46`)
+- **Good** — green tint (`--act-green-bg` / `#065f46`) — same as Excellent; Good is the target state
+- **Average** — amber tint (`--act-amber-bg` / `#92400e`)
+- **Poor** — red tint (`--act-red-bg` / `#991b1b`)
+- **Learning** — grey tint (`#f3f4f6` / `#6b7280`) for ads under ~14 days live
+- 12px, 600 weight, 2px 8px padding, 4px radius, 1px coloured border
+
+### Flag Badges (Ad Level — 6 types)
+Extends the established flag-badge pattern with ad-specific flag types:
+- **Disapproval** — red (urgent policy issue, high risk)
+- **Ad Strength** — amber (quality score impact)
+- **Asset Performance** — orange (`#ffedd5`/`#9a3412`, matching the Keyword Level "conflict" orange) — secondary warning
+- **Ad Count** — blue (structural, informational — below minimum ads per ad group)
+- **Performance** — amber (ad-vs-ad-group comparison)
+- **Extensions** — purple (`#ede9fe`/`#5b21b6`) — structural metadata issue
+- Both `.flag-badge--{type}` (review section) and `.flag-count-badge--{type}` (table) use identical colour variables per type for visual consistency.
+
+### Ad Detail Slide-in (800px)
+Same structure as Keyword Level slide-in with ad-specific unique sections:
+- Header: status dot + label → ad type (RSA / Call Only) → campaign → ad group → ad strength badge (only the strength uses a coloured badge; metadata is plain text)
+- 4 health cards: Impressions (MTD) · CTR · Conversions (MTD) · Cost / Conv
+- Section order (Awaiting Approval expanded, rest collapsed):
+  1. Awaiting Approval
+  2. Actions Executed Overnight (**always empty** at Ad Level)
+  3. Currently Monitoring
+  4. Recent Alerts
+  5. **Ad Preview** (unique to Ad Level)
+  6. **Asset Performance** (unique to Ad Level)
+  7. **Extensions Status** (unique to Ad Level)
+- Empty states rendered for all 4 review sections when they have no data (same pattern as Ad Group / Keyword Level).
+
+### Ad Preview (`.ad-preview`)
+Unique to Ad Level. Simplified mock of how Google Ads renders an RSA:
+- Outer wrapper: `var(--act-surface)` background, 1px border, 8px radius, 16px padding
+- `ad-preview__sponsored` — small "Sponsored · {brand}" label
+- `ad-preview__title` — 18px, 400 weight, `var(--act-primary)` blue (ad headline mock)
+- `ad-preview__url` — 13px green `#10b981` (display URL mock)
+- `ad-preview__desc` — 13px body text at 0.85 opacity
+- `<hr class="ad-preview-divider">` divider
+- `ad-preview__heading` — "Headlines (N)" / "Descriptions (N)" label
+- `ad-preview-list` — `<ul>` of headlines / descriptions
+- Each `<li>` shows: position badge (Any / Pos 1 / Pos 2 / …) → headline text (Hn:) → status badge (Pinned / Disapproved / Low / …) → optional warning icon
+- Status badges use the same `var(--act-red-bg)` for flagged/low, `var(--act-blue-bg)` for pinned
+
+### Asset Performance Table (`.asset-perf-table`)
+Unique to Ad Level. 4-column table showing every asset in the RSA with its rating:
+- Columns: Asset · Type · Status · Rating
+- `table-layout: fixed`, all cells left-aligned
+- Rating uses `.asset-perf-rating--{best|good|low|learning|flagged}` pills with same colour tokens as the ad strength badges
+- Flagged assets (policy violations etc.) use `--flagged` (red, 700 weight) and show "Policy Violation" label
+
+### Extensions Status Checklist (`.extensions-status`)
+Unique to Ad Level. Simple `<ul>` checklist with green check / red X per row:
+- 4 rows: Sitelinks · Callouts · Snippets · Call extension
+- `.extensions-status__icon--ok` (green `#10b981`) when the threshold is met
+- `.extensions-status__icon--miss` (red `#ef4444`) when not met
+- Right-aligned count vs requirement in DM Mono (e.g. "4 of 4+ required", "6 of 4+ required", "Active (tracking enabled)")
+- Pulls the thresholds directly from the guardrails so the user sees the rule and the status side by side
+
+### Actions Executed Overnight empty state (main page)
+Matches the slide-in empty-state class `.act-empty-state` (pre-existing) plus new `.act-empty-state__hint` sub-text:
+- `bedtime` icon (28px, 0.4 opacity)
+- Primary text: "No actions were executed overnight."
+- Hint text (12px, 0.5 opacity): "ACT cannot auto-execute at Ad Level — every action requires approval."
+
+---
+
+## Page 8: Shopping Level — New Patterns (final level page)
+
+### Shopping Level Colour
+- Level accent: `#14b8a6` (teal, per v54)
+- Chart metric 1 line: teal
+- `.badge-level--shopping`: `#ccfbf1` background / `#14b8a6` text (light), `rgba(20,184,166,0.12)` / `#14b8a6` (dark)
+
+### Level Characteristics — Ecommerce Persona
+- **First page built for the Ecommerce persona** — ROAS-focused instead of CPA-focused. Health cards, chart defaults, table columns, and slide-in metrics all pivot around ROAS.
+- **Standard Shopping only** — no PMax (which uses different optimization logic and is handled at Campaign Level).
+- **Product-based rows** — the table rows are products (not keywords, ads, or ad groups). Each row has SKU, category, tier, and ROAS.
+- **New sample client** — "Dental Supplies Direct" (fictional ecommerce dental supply store). Client switcher shows this as the active client for the Shopping Level page. The client switcher dropdown includes both Objection Experts and Dental Supplies Direct so users can see how clients with different personas map to different level pages.
+- **Auto-execution exists** — search term mining, bid adjustments, tier promotions all auto-execute.
+- **Unique status filter** — "Excluded" in addition to All / Enabled / Paused.
+- **Unique tier filter** — All tiers / Best Seller / Mid-Range / Underperformer / Loser.
+
+### Chart Defaults (Ecommerce)
+- Default Metric 1: **Cost**
+- Default Metric 2: **ROAS** (instead of Conversions — ROAS is the primary ecommerce metric)
+- New metric options added to the chart dropdowns: `convValue` (Conv. Value £), `roas` (x), `aov` (£)
+- Summary cards are 8-up and reordered to: Cost · Impr · Clicks · Avg CPC · Conversions · Conv. Value · ROAS · AOV (so the ecommerce-specific metrics — Conv. Value, ROAS, AOV — sit in the right-most three positions where the eye naturally lands).
+
+### Tier Badges (`.tier-badge`)
+Unique to Shopping Level. Every product row shows a tier badge representing its position in the multi-window weighted ROAS blend:
+- **Best Seller** — `.tier-badge--best` — green tint (top 20% by ROAS)
+- **Mid-Range** — `.tier-badge--mid` — blue tint (60%)
+- **Underperformer** — `.tier-badge--under` — amber tint (15%)
+- **Loser** — `.tier-badge--loser` — red tint (bottom 5%, exclusion candidates)
+- 12px, 600 weight, 2px 8px padding, 4px radius, 1px coloured border
+- Also rendered in the slide-in header (the only coloured badge in the slide-in meta row, alongside plain-text status / SKU / category)
+
+### ROAS Value Cells (`.roas-value`)
+ROAS numbers in the products table and totals row are colour-coded by performance vs target (4.0x for Dental Supplies Direct):
+- **High** — `.roas-value--high` — green `#10b981` (≥ target)
+- **Mid** — `.roas-value--mid` — amber `#f59e0b` (80–100% of target)
+- **Low** — `.roas-value--low` — red `#ef4444` (< 80% of target)
+- DM Mono at 14px/600 so the number is visually distinct from plain-text cells
+- Thresholds are read from the client's Target ROAS in Client Configuration in the real build; hard-coded to 4.0x in the prototype
+
+### Flag Badges (Shopping-specific, 5 types)
+- **Exclusion Candidate** — `.flag-badge--exclusion` — red (Loser tier, zero converter OR low ROAS)
+- **Budget Opportunity** — `.flag-badge--budget-op` — green (positive: best seller losing IS to budget)
+- **Keyword Discovery** — `.flag-badge--discovery` — green (positive: new keyword from search term mining)
+- **Tier Demotion** — `.flag-badge--tier-demotion` — amber (product transitioning between tiers)
+- **Feed Quality** — `.flag-badge--feed` — purple (alert-only: GTIN missing, Merchant Centre sync issues)
+
+### Product Detail Slide-in (800px)
+Same structure as the other level slide-ins with shopping-specific unique sections:
+- Header: status dot + label → plain-text SKU → plain-text category → tier badge (the only coloured meta element)
+- 4 health cards: Cost (MTD) · ROAS (with zone badge) · Conv. Value (MTD) · AOV
+- Section order (Awaiting Approval expanded, rest collapsed):
+  1. Awaiting Approval
+  2. Actions Executed Overnight
+  3. Currently Monitoring
+  4. Recent Alerts
+  5. **Performance Tier Breakdown** (unique to Shopping Level)
+  6. **Product Group Bid History** (unique to Shopping Level)
+  7. **Product Feed Details** (unique to Shopping Level)
+
+### Performance Tier Breakdown (`.tier-breakdown`)
+Unique to Shopping Level. Shows the multi-window weighted ROAS blend calculation:
+- 4-column table: Window · ROAS · Weight · Weighted
+- Rows for 7-day (50% weight) · 14-day (30%) · 30-day (20%)
+- Final "Weighted score" row highlighted with `.tier-breakdown__weighted` (hover-bg background + bold)
+- Below the table: `.tier-current` card showing "Current tier: {tier badge}"
+- Below that: `.tier-thresholds` list showing all 4 tier thresholds (Best Seller ≥ 5.0x, Mid-Range 3.0x–5.0x, etc.) so the user can see where the weighted score lands without leaving the section
+
+### Product Group Bid History (`.bid-history-table`)
+Unique to Shopping Level (reuses the bid-history-table class pattern from Keyword Level). Shows the last N bid changes for the **product group** the product belongs to (not the individual product — Google Shopping bids are at the product group level):
+- Inner label above the table: "Product group: {hierarchy path}" (e.g., "Implants > Titanium")
+- 4 columns: Date · Change · Delta · Reason
+- Delta uses `.bid-change--up` (green) / `.bid-change--down` (red) with monospace value
+- Can also show tier-promotion entries: "Mid-Range → Best Seller" with a green "Tier ↑" delta
+
+### Product Feed Details (`.product-feed`)
+Unique to Shopping Level. `<ul>` list showing product feed data:
+- Label-value pairs: Title · Description · Image URL · Price · Availability · GTIN · Brand · Merchant ID · Last sync
+- `.product-feed__label` is 140px wide, 12px, 600 weight, 0.7 opacity
+- `.product-feed__value` is 14px body text, or `.product-feed__value--mono` for monospace fields (URLs, IDs, GTIN)
+- GTIN and Availability rows include inline status badges:
+  - `.product-feed__status--ok` — green with `check_circle` icon ("Present", "In stock")
+  - `.product-feed__status--warn` — amber with `warning` icon ("Missing", "Limited stock")
+
+### Summary Card Ordering for Shopping
+Unlike lead-gen pages where the 8 summary cards end with Cost/Conv + Conv Rate, Shopping's cards end with Conv. Value + ROAS + AOV. This puts the ecommerce-specific metrics in the visual sweet spot (right-most cards where users scan for "the bottom line").
+
+---
+
 ## Top Bar Components
 
 ### ACT Last Ran (v2 Change 10; v4 Change 7 — required on all pages)
@@ -720,6 +1036,16 @@ act_dashboard/prototypes/
   account-level-v9.html   Account Level v9 (combined section, straight lines, shared date range)
   account-level-v10.html  Account Level v10 (table data per range, 90d weekly aggregates)
   campaign-level.html     Campaign Level (Page 4)
+  campaign-level-optionD-v10.html  Campaign Level Option D v10 (header decluttered)
+  ad-group-level.html     Ad Group Level v1 (Page 5)
+  ad-group-level-v2.html  Ad Group Level v2 (Main Brand Terms, time waiting, empty states)
+  ad-group-level-v3.html  Ad Group Level v3 (inline See Details, colour-coded table flags)
+  keyword-level.html      Keyword Level v1 (Page 6)
+  keyword-level-v2.html   Keyword Level v2 (15 polish fixes — plain-text meta, rows-per-page, etc.)
+  keyword-level-v3.html   Keyword Level v3 (rows-per-page adds 10, keyword col width priority, chart no fill / no vertical gridlines)
+  ad-level.html           Ad Level v1 (Page 7)
+  ad-level-v2.html        Ad Level v2 (Cost + Avg CPC cols, 12px meta values, chart defaults Cost+Conversions)
+  shopping-level.html     Shopping Level (Page 8 — final level page, ecommerce persona)
   table-test.html         Standalone table alignment test page
   screenshots/            Browser screenshots
   css/
@@ -735,6 +1061,10 @@ act_dashboard/prototypes/
     account-level-v2.css  Account Level v2 styles
     account-level-v3.css  through v10 (incremental changes per version)
     campaign-level.css    Campaign Level styles (lever cards, strategy panel, match bar)
+    ad-group-level.css    Ad Group Level styles (flag badges, outlier table, structural health)
+    keyword-level.css     Keyword Level styles (match badges, QS badges, bid history, search term, QS breakdown)
+    ad-level.css          Ad Level styles (pink accent, ad strength badges, 6 flag types, ad preview, asset performance, extensions status)
+    shopping-level.css    Shopping Level styles (teal accent, tier badges, ROAS colouring, performance tier breakdown, product group bid history, product feed details)
   js/
     prototype.js          v1 interactions
     prototype-v2.js       v2 interactions
@@ -747,6 +1077,10 @@ act_dashboard/prototypes/
     account-level.js      Account Level v1 interactions
     account-level-v2.js   through v10 (incremental changes per version)
     campaign-level.js     Campaign Level interactions (campaign selector, chart, levers)
+    ad-group-level.js     Ad Group Level interactions (chart, table, slide-in, outlier/structural data)
+    keyword-level.js      Keyword Level interactions (chart, table, 4 unique slide-in variants, bid history/search term/QS data)
+    ad-level.js           Ad Level interactions (chart, table, 4 unique slide-in variants, ad preview, asset performance, extensions status)
+    shopping-level.js     Shopping Level interactions (chart, table, tier + status filters, 5 unique slide-in variants, tier breakdown, product group bid history, product feed details)
 ```
 
 ---
@@ -817,3 +1151,32 @@ act_dashboard/prototypes/
 54. **(Page 3 v2) Level-filtered review sections** — same 4 Morning Review sections but filtered to Account Level items only. This means the user can see both the global picture (Morning Review) and the level-specific picture (Account Level page) using identical components.
 55. **(Page 3 v2) Summary metric cards above campaigns table** — Total Cost, Impressions, Clicks, Avg CPC, Conversions, Avg CPA, Conv Rate. Period-over-period change indicators. Matches the Google Ads overview pattern users are familiar with.
 56. **(Page 3 v2) Date range + status filter pills** — 7d/30d/90d date range and All/Enabled/Paused status filter. Compact pill groups in the table header. Immediately recognisable to Google Ads users.
+57. **(Page 5) Drop Universal Levers and Bid Strategy at Ad Group Level** — bids live at Campaign and Keyword levels. Repeating those panels here would be misleading. The Ad Group Level page focuses entirely on monitoring and outlier detection — no levers, no auto-execution. This matches the v54 architecture exactly.
+58. **(Page 5) Flag badges in the action row** — alongside the Action and Risk badges, a Flag badge identifies which of the 4 ad group checks raised the item (Negative Outlier, Positive Outlier, Concentration, Pause Candidate). Lets the user immediately see the kind of issue without reading the summary.
+59. **(Page 5) Outlier Analysis as a dedicated slide-in section** — a 4-column comparison table (Metric · This Ad Group · Campaign Average · Delta) shows exactly how this ad group differs from its siblings. The delta column is colour-coded red/green so the eye lands on the bad rows first. An info note explains *why* the flag triggered.
+60. **(Page 5) Structural Health as a dedicated slide-in section** — keyword count, ad count, average QS, days since last change, days since last conversion, ad strength. These metrics never change at a per-action level, but they're critical context when deciding whether to pause an ad group. Living in their own collapsed section keeps them out of the way until needed.
+61. **(Page 5) See Details on a main-page approval item opens the full ad-group slide-in** — instead of showing a tiny decision-tree popover, the See Details button opens the same 800px slide-in that the table name link opens. The slide-in already contains the decision tree (inside the Awaiting Approval section's See Details inline expand), plus all the surrounding context the user needs to make the decision. One destination for "I want to know more about this ad group", regardless of where the user clicked from. *(Note: corrected in v3 — See Details now expands inline matching Campaign Level pattern. See #62.)*
+62. **(Page 5 v3) See Details expands inline, not slide-in** — the three click targets on the main page now have distinct destinations: (1) keyword/ad-group name → opens the 800px slide-in, (2) flag badge in table → opens the 800px slide-in for that entity, (3) "See Details" button on an Awaiting Approval item → expands the decision tree key-value grid inline below the recommendation line, with the button text toggling to "Hide Details". This matches the Morning Review and Campaign Level pattern exactly. One page, three affordances, three destinations.
+63. **(Page 5 v3) Flag count badges colour-coded per flag type** — table flag badges (`.flag-count-badge--{type}`) use the same v54 category colours as the review-section flag badges (`.flag-badge--{type}`). Negative red, Positive green, Concentration/Pause amber. Visual consistency between the table and the review section means the user's eye immediately maps a flagged row to its review item.
+64. **(Page 6) Match type badges on every keyword row** — Broad (red), Phrase (amber), Exact (green). Colours match the Campaign Level match-type stacked-bar convention. Exact is visually "safest" (green), broad is "riskiest" (red). Users see the risk profile of their keyword portfolio at a glance — a Core Terms ad group full of Exact matches is visually very different from a Testing ad group full of Broad.
+65. **(Page 6) Quality Score badges colour-banded to Google Ads convention** — Low (QS < 4) red, Mid (4–6) amber, High (7+) green. This matches the Google Ads UI convention so users don't have to re-learn the colour scale. DM Mono for the number keeps it visually distinct from other table numerics.
+66. **(Page 6) Bid History is a dedicated slide-in section, not a monitoring item** — Keyword Level is the only level with automatic bid adjustments, so a dedicated history makes sense here. 5–10 rows showing date, old→new, delta%, and reason. Delta column is the only place in the prototype that uses +/− coloured text in a table (green for raise, red for lower), because bid adjustments are one of the few places where "up = good" and "down = bad" is genuinely ambiguous until you see the CPA context.
+67. **(Page 6) Search Term Analysis shows top 10 search terms per keyword** — for match types broader than exact, the keyword triggers many different search queries. Seeing which specific queries drove the bulk of cost and conversions is critical context for any pause/promote/tune decision. The 4 columns (term, cost, conv, CPA) are the minimum viable data to judge each term.
+68. **(Page 6) Quality Score Breakdown surfaces the 3 factors** — Expected CTR, Ad Relevance, Landing Page Experience, each rated Below/Average/Above. This is exactly what Google Ads shows when you hover a QS cell. Surfacing it in the slide-in means the user can diagnose WHY a QS is low without leaving ACT. Overall score gets its own row with a 2px top divider to separate summary from factors.
+69. **(Page 6) Four unique slide-in variants cover all four flag types** — rather than a single template, the slide-in for each flag type (Pause, Discovery, Conflict, Low QS) gets hand-tuned content that reflects the specific scenario. Discovery has no bid history and no QS (it's a new keyword). Conflict includes a recent alert for cross-referencing. Low QS has the most detailed QS breakdown with all three factors "Below Average". Users experiencing one flag type get content tailored to that situation.
+70. **(Page 6) Discovery keyword appears as a "pending" row in the main keywords table** — rather than being invisible until approved, the discovery keyword is shown in the table with its predicted metrics (from search term analysis) and a Discovery flag. This gives the user a click target to explore the full slide-in before approving. QS renders as a dimmed em-dash since a brand-new keyword hasn't been scored yet.
+71. **(Page 7) Actions Executed Overnight is permanently empty at Ad Level** — ACT cannot auto-execute at this level because it cannot write ad copy, create extensions, or edit headlines. Rather than hide the section (which would break the standard 4-review-section pattern), the section is always rendered in its empty state with an extra hint line: "ACT cannot auto-execute at Ad Level — every action requires approval." This makes the constraint explicit to the user every time they visit the page, reinforcing the "ACT flags, human acts" mental model for creative work.
+72. **(Page 7) Ad Strength badges on every row** — Excellent/Good use the same green because "Good" IS the target (anything higher is bonus); Average gets amber (should improve); Poor gets red (must improve); Learning gets grey (too new to rate). This matches Google Ads' own convention and means the user can scan the table for quality issues without needing a legend.
+73. **(Page 7) Ad Preview section mocks the Google Ads RSA preview** — simplified wrapper with blue headline, green URL, body description, then lists of headlines and descriptions. Each headline shows position (Any/Pos 1/Pos 2), headline number, text, and status badge (Pinned/Disapproved/Low). This gives the user the creative context they need to approve/decline a flag without leaving ACT.
+74. **(Page 7) Asset Performance table uses the same rating tokens as Ad Strength** — Best/Good/Low/Learning map to the same colour family so the whole ad-level experience uses a consistent "creative quality" scale. Flagged assets (policy violations) get a distinct red "Policy Violation" pill.
+75. **(Page 7) Extensions Status checklist shows threshold inline** — "4 of 4+ required", "Active (tracking enabled)" — the requirement sits right next to the current count so the user doesn't need to cross-reference the guardrails panel. Green check / red X tells the story at a glance.
+76. **(Page 7) Six distinct flag types spanning 5 colour families** — Disapproval red, Ad Strength amber, Asset Performance orange, Ad Count blue, Performance amber, Extensions purple. The purple Extensions flag is new for Ad Level and reuses the Keyword Level purple tint; Ad Count blue is new and signals "informational/structural" rather than "warning". This gives every flag type its own visual identity in the review queue, making bulk-scanning intuitive.
+77. **(Page 8) Dedicated sample client for Ecommerce persona** — "Dental Supplies Direct" is added to the client switcher so the Shopping Level page has a persona-appropriate client loaded. The switcher dropdown shows both clients (Objection Experts = lead gen, Dental Supplies Direct = ecommerce) so users can see how level pages pivot with client persona. In the real build, Shopping Level would be empty or show "No shopping campaigns" for lead gen clients.
+78. **(Page 8) Chart default Cost + ROAS, not Cost + Conversions** — ROAS is the primary ecommerce metric; conversions alone don't tell the story without tying them to revenue. Every other level page defaults to Cost + Conversions, but Shopping swaps Conversions for ROAS because the user's mental model when looking at a products table is "am I making money on this?" not "how many orders?".
+79. **(Page 8) 8 summary cards reordered to end with ecommerce metrics** — Cost · Impr · Clicks · Avg CPC · Conversions · Conv. Value · ROAS · AOV. The right-most three cards (Conv. Value, ROAS, AOV) are the ecommerce-specific metrics that don't exist on lead gen pages. Putting them on the right means the user's eye lands on them last (which in scan order is where "the bottom line" sits).
+80. **(Page 8) Tier badges are the only coloured meta in the slide-in header** — Everything else (status, SKU, category) is plain text with separator dots. The tier is the product's single most important state because it determines whether ACT raises bids, holds steady, lowers bids, or recommends exclusion. Colour-coding the tier (green/blue/amber/red) makes the product's "ACT status" instantly recognisable without reading any other field.
+81. **(Page 8) ROAS cells are colour-banded to performance vs target** — Green ≥ target, amber 80–100% of target, red < 80%. This matches the tier logic visually: a row of green ROAS values in the table will almost always be Best Sellers, red ROAS values will be Losers. Users who ignore the Tier column still get the performance story from the ROAS column alone.
+82. **(Page 8) Performance Tier Breakdown shows the weighted blend calculation** — 7d ROAS × 50% + 14d ROAS × 30% + 30d ROAS × 20% = weighted score. Making the formula visible (rather than hiding it) lets users understand WHY a product was promoted/demoted and predict future tier changes. The thresholds list below shows where the score needs to be to land in each tier. No black-box recommendations.
+83. **(Page 8) Product Group Bid History, not Product Bid History** — Google Shopping bids are at the product group level, not individual product level. ACT respects this — the bid history section is labelled "Product Group Bid History" and shows the product group hierarchy (e.g., "Implants > Titanium") so users understand which other products share the same bid. This is a common Shopping misconception the UI explicitly corrects.
+84. **(Page 8) Product Feed Details surfaces the Merchant Centre data** — Title, description, image URL, price, availability, GTIN, brand, merchant ID, last sync. GTIN and availability get inline status badges (green check / amber warning) because they're the most common feed-quality issues that cause disapprovals. All other fields are plain text or monospace (for URLs and IDs).
+85. **(Page 8) Final level page — 6 of 6 hybrid level pages complete** — Shopping Level completes the Account → Campaign → Ad Group → Keyword → Ad → Shopping hierarchy. Every level page now follows the same hybrid structure (Google Ads-style data table + ACT review sections + level-specific slide-in) but is tailored to the entity type and (for Shopping) the persona. Users can navigate any level of a Google Ads account inside ACT without re-learning the interface.

@@ -1,0 +1,343 @@
+/* ============================================================================
+   ACT PROTOTYPE — KEYWORD LEVEL (Page 6)
+   Level colour: purple #8b5cf6
+   Unique patterns: match type badges, QS badges, bid history, search term
+   analysis, quality score breakdown
+   ============================================================================ */
+
+/* Keyword level badge (purple) */
+.badge-level--keyword {
+  background: #ede9fe;
+  color: #8b5cf6;
+}
+[data-theme="dark"] .badge-level--keyword {
+  background: rgba(139,92,246,0.12);
+  color: #8b5cf6;
+}
+
+/* ── Match type badges (Broad / Phrase / Exact) ── */
+.match-badge {
+  font-size: 12px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px;
+  display: inline-flex; align-items: center; gap: 4px;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.match-badge--broad  { background: var(--act-red-bg);   color: #991b1b; border-color: var(--act-red-border); }
+.match-badge--phrase { background: var(--act-amber-bg); color: #92400e; border-color: var(--act-amber-border); }
+.match-badge--exact  { background: var(--act-green-bg); color: #065f46; border-color: var(--act-green-border); }
+
+/* ── Quality Score badges — colour-coded by score ── */
+.qs-badge {
+  font-size: 12px; font-weight: 700;
+  padding: 2px 8px; border-radius: 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 28px;
+  border: 1px solid transparent;
+  font-family: var(--act-font-mono);
+}
+.qs-badge--low  { background: var(--act-red-bg);   color: #991b1b; border-color: var(--act-red-border); } /* <4 */
+.qs-badge--mid  { background: var(--act-amber-bg); color: #92400e; border-color: var(--act-amber-border); } /* 4-6 */
+.qs-badge--high { background: var(--act-green-bg); color: #065f46; border-color: var(--act-green-border); } /* 7+ */
+
+/* ── Flag badges (review section + table) — colour-coded per type ── */
+.flag-badge {
+  font-size: 12px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px;
+  display: inline-flex; align-items: center; gap: 4px;
+  border: 1px solid transparent;
+}
+/* v2 Fix 15: differentiated flag colours
+   Discovery = green (positive), Pause = amber, Conflict = orange (distinct), Low QS = red */
+.flag-badge--discovery  { background: var(--act-green-bg); color: #065f46; border-color: var(--act-green-border); }
+.flag-badge--pause      { background: var(--act-amber-bg); color: #92400e; border-color: var(--act-amber-border); }
+.flag-badge--conflict   { background: #ffedd5; color: #9a3412; border-color: #fed7aa; }
+.flag-badge--qs         { background: var(--act-red-bg); color: #991b1b; border-color: var(--act-red-border); }
+[data-theme="dark"] .flag-badge--conflict { background: rgba(249,115,22,0.12); color: #f97316; border-color: rgba(249,115,22,0.25); }
+
+/* Flag count badge inside the keywords data table — clickable, colour-coded */
+.flag-count-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px;
+  background: var(--act-amber-bg); color: #92400e;
+  border: 1px solid var(--act-amber-border);
+  cursor: pointer;
+  transition: opacity 120ms ease;
+  white-space: nowrap;
+}
+.flag-count-badge:hover { opacity: 0.8; }
+.flag-count-badge .material-symbols-outlined { font-size: 12px; }
+.flag-count-badge--discovery  { background: var(--act-green-bg); color: #065f46; border-color: var(--act-green-border); }
+.flag-count-badge--pause      { background: var(--act-amber-bg); color: #92400e; border-color: var(--act-amber-border); }
+.flag-count-badge--conflict   { background: #ffedd5; color: #9a3412; border-color: #fed7aa; }
+.flag-count-badge--qs         { background: var(--act-red-bg); color: #991b1b; border-color: var(--act-red-border); }
+[data-theme="dark"] .flag-count-badge--conflict { background: rgba(249,115,22,0.12); color: #f97316; border-color: rgba(249,115,22,0.25); }
+
+/* Keyword name is clickable (opens slide-in) */
+.keyword-name-link {
+  color: var(--act-primary); cursor: pointer; font-weight: 600;
+}
+.keyword-name-link:hover { text-decoration: underline; }
+
+/* v2 Fix 2: Plain-text table metadata columns (reduce wall of colour).
+   Campaign, ad group, and match type render as regular text, no coloured pill. */
+.kw-meta-text {
+  font-size: 14px; color: var(--act-text); white-space: nowrap;
+}
+.kw-match-text {
+  font-size: 14px; color: var(--act-text);
+}
+
+/* v2 Fix 3: Pending status dot for discovery keywords (not yet active) */
+.status-dot--pending { background: #9ca3af; }
+
+/* v2 Fix 5 + 6: Flag column width + clean empty cells (no dashes) */
+#keywordsTable th:last-child,
+#keywordsTable td:last-child { min-width: 160px; }
+
+/* 8-column summary cards */
+.summary-cards--8 { grid-template-columns: repeat(8, 1fr); }
+@media (max-width: 1400px) { .summary-cards--8 { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 768px)  { .summary-cards--8 { grid-template-columns: repeat(2, 1fr); } }
+
+/* Override inherited table min-width */
+#keywordsTable th:first-child { width: 40px; }
+
+/* ── KEYWORD SLIDE-IN (800px wide) ── */
+.kw-slidein-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(32,33,36,0.45); z-index: 1049; display: none;
+}
+.kw-slidein-overlay.open { display: block; }
+
+.kw-slidein {
+  position: fixed; top: 0; right: 0;
+  width: 800px; max-width: 100%; height: 100vh;
+  background: var(--act-surface);
+  box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+  z-index: 1050; display: none; flex-direction: column;
+}
+.kw-slidein.open { display: flex; }
+
+.kw-slidein__header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 20px 24px 16px; border-bottom: 1px solid var(--act-border);
+  flex-shrink: 0;
+}
+.kw-slidein__header-left { flex: 1; }
+.kw-slidein__name { font-size: 16px; font-weight: 600; color: var(--act-text); margin: 0 0 8px; }
+.kw-slidein__meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+.kw-slidein__close {
+  background: none; border: none; cursor: pointer;
+  color: var(--act-text); padding: 4px; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.kw-slidein__close:hover { background: var(--act-hover-bg); }
+
+.kw-slidein__body {
+  flex: 1; overflow-y: auto; padding: 20px 24px;
+  background: var(--act-page-bg);
+}
+
+/* Health cards (4 in a row, same pattern as ad group level) */
+.kw-health-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px;
+}
+.kw-health-card {
+  background: var(--act-surface); border: 1px solid var(--act-border-light);
+  border-radius: 8px; padding: 8px 12px;
+}
+.kw-health-card__label { font-size: 12px; font-weight: 600; color: var(--act-text); margin-bottom: 2px; }
+.kw-health-card__value { font-size: 28px; font-weight: 700; color: var(--act-text); line-height: 1; margin-bottom: 2px; }
+.kw-health-card__detail { font-size: 12px; color: var(--act-text); }
+
+/* Slide-in collapsible sections (match ad group level pattern) */
+.slidein-section {
+  background: var(--act-surface);
+  border: 1px solid var(--act-border-light);
+  border-radius: var(--act-card-radius);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.slidein-section__header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; cursor: pointer; user-select: none;
+  border-bottom: 1px solid var(--act-border-light);
+}
+.slidein-section__header:hover { opacity: 0.9; }
+.slidein-section__toggle {
+  font-size: 18px; color: var(--act-text); transition: transform 200ms ease;
+  margin-left: auto;
+}
+.slidein-section.collapsed .slidein-section__toggle { transform: rotate(-90deg); }
+.slidein-section.collapsed .slidein-section__header { border-bottom: none; }
+.slidein-section.collapsed .slidein-section__body { display: none; }
+.slidein-section__body { padding: 0; }
+.slidein-section__inner { padding: 16px; }
+
+/* Empty state (matches ad group level) */
+.slidein-empty-state {
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--act-text);
+}
+.slidein-empty-state .material-symbols-outlined {
+  font-size: 28px; display: block; margin: 0 auto 8px; opacity: 0.4;
+}
+.slidein-empty-state__text { font-size: 14px; opacity: 0.7; }
+
+/* See Details inline expand inside slide-in approval items */
+.slidein-detail-expand {
+  display: none; margin-top: 8px; padding: 12px 16px;
+  background: var(--act-hover-bg); border-radius: 6px;
+}
+.slidein-detail-expand.show { display: block; }
+.btn-see-details {
+  background: none; border: none; color: var(--act-primary);
+  font-size: 12px; font-weight: 600; cursor: pointer; padding: 2px 0; margin-top: 4px;
+}
+.btn-see-details:hover { text-decoration: underline; }
+
+/* Reason inline in executed items (matches ad group level pattern) */
+.act-item__reason-inline {
+  font-size: 12px; color: var(--act-text); opacity: 0.7; margin-left: 8px;
+}
+
+/* Started date inline with Monitor badge */
+.act-item__top .act-item__started { margin-top: 0; }
+
+/* Buttons stacked vertically inside approval items */
+.act-item__actions {
+  flex-direction: column; gap: 4px; min-width: 100px;
+}
+.act-item__actions .btn-act {
+  width: 100%; justify-content: center;
+}
+
+/* ── BID HISTORY TABLE (unique to Keyword Level) ── */
+.bid-history-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 14px; table-layout: fixed;
+}
+.bid-history-table th {
+  font-size: 12px; font-weight: 600; color: var(--act-text);
+  padding: 8px 10px; text-align: left;
+  border-bottom: 2px solid var(--act-border-light);
+}
+.bid-history-table td {
+  padding: 8px 10px; text-align: left;
+  border-bottom: 1px solid var(--act-border-light);
+  color: var(--act-text);
+}
+.bid-history-table tr:last-child td { border-bottom: none; }
+.bid-history-table .bid-change {
+  font-family: var(--act-font-mono); font-size: 12px;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.bid-history-table .bid-change--up   { color: #10b981; font-weight: 600; }
+.bid-history-table .bid-change--down { color: #ef4444; font-weight: 600; }
+
+/* ── SEARCH TERM ANALYSIS TABLE (unique to Keyword Level) ── */
+.search-term-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 14px; table-layout: fixed;
+}
+.search-term-table th {
+  font-size: 12px; font-weight: 600; color: var(--act-text);
+  padding: 8px 10px; text-align: left;
+  border-bottom: 2px solid var(--act-border-light);
+}
+.search-term-table td {
+  padding: 8px 10px; text-align: left;
+  border-bottom: 1px solid var(--act-border-light);
+  color: var(--act-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.search-term-table tr:last-child td { border-bottom: none; }
+
+/* ── QUALITY SCORE BREAKDOWN (unique to Keyword Level) ── */
+.qs-breakdown {
+  list-style: none; padding: 0; margin: 0;
+}
+.qs-breakdown li {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; border-bottom: 1px solid var(--act-border-light);
+  font-size: 14px; color: var(--act-text);
+}
+.qs-breakdown li:last-child { border-bottom: none; }
+.qs-breakdown .material-symbols-outlined {
+  font-size: 18px; color: var(--act-primary);
+}
+.qs-breakdown__factor {
+  flex: 1; font-size: 14px; color: var(--act-text);
+}
+.qs-breakdown__value {
+  font-size: 12px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px;
+  display: inline-flex; align-items: center;
+}
+.qs-breakdown__value--above   { background: var(--act-green-bg); color: #065f46; }
+.qs-breakdown__value--average { background: var(--act-amber-bg); color: #92400e; }
+.qs-breakdown__value--below   { background: var(--act-red-bg);   color: #991b1b; }
+.qs-breakdown__overall {
+  border-top: 2px solid var(--act-border-light);
+  font-weight: 600;
+}
+
+/* ── CONFLICT LIST (unique — shown inside Conflict approval slide-in) ── */
+.conflict-list {
+  list-style: none; padding: 0; margin: 0;
+}
+.conflict-list li {
+  padding: 10px 16px; border-bottom: 1px solid var(--act-border-light);
+  font-size: 14px; color: var(--act-text);
+  display: flex; align-items: center; gap: 10px;
+}
+.conflict-list li:last-child { border-bottom: none; }
+.conflict-list .material-symbols-outlined { font-size: 18px; color: var(--act-red); }
+
+/* v2 Fix 1: Rows per page dropdown (pagination footer) */
+.table-pagination__right {
+  display: flex; align-items: center; gap: 16px;
+}
+.rows-per-page {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--act-text);
+}
+.rows-per-page__select {
+  padding: 4px 8px; border: 1px solid var(--act-border); border-radius: 4px;
+  font-size: 12px; font-family: inherit; color: var(--act-text);
+  background: var(--act-surface); cursor: pointer;
+}
+.rows-per-page__select:focus { outline: none; border-color: var(--act-primary); }
+
+/* v2 Fix 14: Bid history empty state hides the table headers and shows only the
+   empty state message centred. Handled via a `.bid-history--empty` wrapper class. */
+.bid-history--empty .bid-history-table { display: none; }
+
+/* v2 Fix 7 + 8: Slide-in header — status first, plain-text meta for match/campaign/ad group */
+.kw-slidein__meta .kw-status-inline {
+  font-size: 14px; color: var(--act-text);
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.kw-slidein__meta .kw-meta-sep {
+  font-size: 14px; color: var(--act-text); opacity: 0.35;
+}
+
+/* v2 Fix 9 + 10 + 11 + 12: Health card subtitle — small supplementary text below the value */
+.kw-health-card__subtitle {
+  font-size: 12px; color: var(--act-text); opacity: 0.6; margin-top: 2px;
+}
+.kw-health-card__value--pending {
+  font-size: 16px; font-weight: 600; color: var(--act-text); opacity: 0.6;
+  line-height: 1.2;
+}
+.zone-badge--projected { background: var(--act-blue-bg); color: #1e40af; }
+[data-theme="dark"] .zone-badge--projected { background: rgba(59,130,246,0.15); color: #60a5fa; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .kw-slidein { width: 100vw; }
+  .kw-health-grid { grid-template-columns: repeat(2, 1fr); }
+}

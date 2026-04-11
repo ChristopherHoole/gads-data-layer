@@ -1,0 +1,390 @@
+/* ============================================================================
+   ACT PROTOTYPE — AD LEVEL (Page 7)
+   Level colour: pink #ec4899
+   Unique patterns: ad strength badges, flag badges (6 types),
+   ad preview, asset performance table, extensions status checklist
+   ============================================================================ */
+
+/* Ad level badge (pink) */
+.badge-level--ad {
+  background: #fce7f3;
+  color: #ec4899;
+}
+[data-theme="dark"] .badge-level--ad {
+  background: rgba(236,72,153,0.12);
+  color: #ec4899;
+}
+
+/* ── Ad Strength badges — colour-coded by level ── */
+.ad-strength-badge {
+  font-size: 12px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px;
+  display: inline-flex; align-items: center; gap: 4px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.ad-strength-badge--excellent { background: var(--act-green-bg); color: #065f46; border-color: var(--act-green-border); }
+.ad-strength-badge--good      { background: var(--act-green-bg); color: #065f46; border-color: var(--act-green-border); }
+.ad-strength-badge--average   { background: var(--act-amber-bg); color: #92400e; border-color: var(--act-amber-border); }
+.ad-strength-badge--poor      { background: var(--act-red-bg);   color: #991b1b; border-color: var(--act-red-border); }
+.ad-strength-badge--learning  { background: #f3f4f6; color: #6b7280; border-color: var(--act-border-light); }
+[data-theme="dark"] .ad-strength-badge--learning { background: #374151; color: #9ca3af; border-color: var(--act-border); }
+
+/* ── Flag badges (review section + table) ── */
+.flag-badge {
+  font-size: 12px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px;
+  display: inline-flex; align-items: center; gap: 4px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.flag-badge--disapproval   { background: var(--act-red-bg);   color: #991b1b; border-color: var(--act-red-border); }
+.flag-badge--ad-strength   { background: var(--act-amber-bg); color: #92400e; border-color: var(--act-amber-border); }
+.flag-badge--asset-perf    { background: #ffedd5; color: #9a3412; border-color: #fed7aa; }
+.flag-badge--ad-count      { background: var(--act-blue-bg);  color: #1e40af; border-color: var(--act-blue-border); }
+.flag-badge--performance   { background: var(--act-amber-bg); color: #92400e; border-color: var(--act-amber-border); }
+.flag-badge--extensions    { background: #ede9fe; color: #5b21b6; border-color: #ddd6fe; }
+[data-theme="dark"] .flag-badge--asset-perf { background: rgba(249,115,22,0.12); color: #f97316; border-color: rgba(249,115,22,0.25); }
+[data-theme="dark"] .flag-badge--extensions { background: rgba(139,92,246,0.12); color: #8b5cf6; border-color: rgba(139,92,246,0.25); }
+
+/* Flag count badge inside the ads data table — clickable, colour-coded */
+.flag-count-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px;
+  background: var(--act-amber-bg); color: #92400e;
+  border: 1px solid var(--act-amber-border);
+  cursor: pointer;
+  transition: opacity 120ms ease;
+  white-space: nowrap;
+}
+.flag-count-badge:hover { opacity: 0.8; }
+.flag-count-badge .material-symbols-outlined { font-size: 12px; }
+.flag-count-badge--disapproval { background: var(--act-red-bg);   color: #991b1b; border-color: var(--act-red-border); }
+.flag-count-badge--ad-strength { background: var(--act-amber-bg); color: #92400e; border-color: var(--act-amber-border); }
+.flag-count-badge--asset-perf  { background: #ffedd5; color: #9a3412; border-color: #fed7aa; }
+.flag-count-badge--ad-count    { background: var(--act-blue-bg);  color: #1e40af; border-color: var(--act-blue-border); }
+.flag-count-badge--performance { background: var(--act-amber-bg); color: #92400e; border-color: var(--act-amber-border); }
+.flag-count-badge--extensions  { background: #ede9fe; color: #5b21b6; border-color: #ddd6fe; }
+[data-theme="dark"] .flag-count-badge--asset-perf { background: rgba(249,115,22,0.12); color: #f97316; border-color: rgba(249,115,22,0.25); }
+[data-theme="dark"] .flag-count-badge--extensions { background: rgba(139,92,246,0.12); color: #8b5cf6; border-color: rgba(139,92,246,0.25); }
+
+/* Ad name is clickable (opens slide-in) */
+.ad-name-link {
+  color: var(--act-primary); cursor: pointer; font-weight: 600;
+}
+.ad-name-link:hover { text-decoration: underline; }
+
+/* Plain-text table metadata columns (no coloured pills for campaign/ad group/type) */
+.ad-meta-text {
+  font-size: 14px; color: var(--act-text);
+  display: block;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+.ad-type-text {
+  font-size: 14px; color: var(--act-text); white-space: nowrap;
+}
+
+/* Pending status dot for disapproved ads (not yet active) */
+.status-dot--disapproved { background: #ef4444; }
+
+/* Column sizing: protect Ad name column, cap metadata columns */
+#adsTable th:first-child { width: 40px; }
+#adsTable th:nth-child(2),
+#adsTable td:nth-child(2) {
+  min-width: 200px;
+  max-width: 280px;
+}
+#adsTable td:nth-child(2) .ad-name-link {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+#adsTable th:nth-child(5),
+#adsTable td:nth-child(5),
+#adsTable th:nth-child(6),
+#adsTable td:nth-child(6) {
+  max-width: 140px;
+}
+/* v2 Fix 2: 12px values in Campaign + Ad Group columns (header stays 12px body,
+   cell values shrink to save horizontal space). */
+#adsTable td:nth-child(5) .ad-meta-text,
+#adsTable td:nth-child(6) .ad-meta-text {
+  font-size: 12px;
+}
+#adsTable th:last-child,
+#adsTable td:last-child { min-width: 160px; }
+
+/* 8-column summary cards */
+.summary-cards--8 { grid-template-columns: repeat(8, 1fr); }
+@media (max-width: 1400px) { .summary-cards--8 { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 768px)  { .summary-cards--8 { grid-template-columns: repeat(2, 1fr); } }
+
+/* Rows per page dropdown (same as keyword level) */
+.table-pagination__right {
+  display: flex; align-items: center; gap: 16px;
+}
+.rows-per-page {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--act-text);
+}
+.rows-per-page__select {
+  padding: 4px 8px; border: 1px solid var(--act-border); border-radius: 4px;
+  font-size: 12px; font-family: inherit; color: var(--act-text);
+  background: var(--act-surface); cursor: pointer;
+}
+.rows-per-page__select:focus { outline: none; border-color: var(--act-primary); }
+
+/* ── Empty state for Actions Executed Overnight (NO auto-execute at Ad Level) ── */
+.act-empty-state {
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--act-text);
+}
+.act-empty-state > .material-symbols-outlined {
+  font-size: 28px; display: block; margin: 0 auto 8px; opacity: 0.4;
+}
+.act-empty-state__text { font-size: 14px; opacity: 0.7; margin-bottom: 4px; }
+.act-empty-state__hint { font-size: 12px; opacity: 0.5; }
+
+/* ── AD SLIDE-IN (800px wide) ── */
+.ad-slidein-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(32,33,36,0.45); z-index: 1049; display: none;
+}
+.ad-slidein-overlay.open { display: block; }
+
+.ad-slidein {
+  position: fixed; top: 0; right: 0;
+  width: 800px; max-width: 100%; height: 100vh;
+  background: var(--act-surface);
+  box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+  z-index: 1050; display: none; flex-direction: column;
+}
+.ad-slidein.open { display: flex; }
+
+.ad-slidein__header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 20px 24px 16px; border-bottom: 1px solid var(--act-border);
+  flex-shrink: 0;
+}
+.ad-slidein__header-left { flex: 1; }
+.ad-slidein__name { font-size: 16px; font-weight: 600; color: var(--act-text); margin: 0 0 8px; }
+.ad-slidein__meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+/* Plain-text slide-in meta (matches keyword level v3 pattern) */
+.ad-slidein__meta .ad-status-inline {
+  font-size: 14px; color: var(--act-text);
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.ad-slidein__meta .ad-meta-sep {
+  font-size: 14px; color: var(--act-text); opacity: 0.35;
+}
+.ad-slidein__meta .ad-meta-text-inline {
+  font-size: 14px; color: var(--act-text);
+}
+
+.ad-slidein__close {
+  background: none; border: none; cursor: pointer;
+  color: var(--act-text); padding: 4px; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ad-slidein__close:hover { background: var(--act-hover-bg); }
+
+.ad-slidein__body {
+  flex: 1; overflow-y: auto; padding: 20px 24px;
+  background: var(--act-page-bg);
+}
+
+/* Health cards (4 in a row) */
+.ad-health-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px;
+}
+.ad-health-card {
+  background: var(--act-surface); border: 1px solid var(--act-border-light);
+  border-radius: 8px; padding: 8px 12px;
+}
+.ad-health-card__label { font-size: 12px; font-weight: 600; color: var(--act-text); margin-bottom: 2px; }
+.ad-health-card__value { font-size: 28px; font-weight: 700; color: var(--act-text); line-height: 1; margin-bottom: 2px; }
+.ad-health-card__detail { font-size: 12px; color: var(--act-text); }
+
+/* Slide-in collapsible sections */
+.slidein-section {
+  background: var(--act-surface);
+  border: 1px solid var(--act-border-light);
+  border-radius: var(--act-card-radius);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.slidein-section__header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; cursor: pointer; user-select: none;
+  border-bottom: 1px solid var(--act-border-light);
+}
+.slidein-section__header:hover { opacity: 0.9; }
+.slidein-section__toggle {
+  font-size: 18px; color: var(--act-text); transition: transform 200ms ease;
+  margin-left: auto;
+}
+.slidein-section.collapsed .slidein-section__toggle { transform: rotate(-90deg); }
+.slidein-section.collapsed .slidein-section__header { border-bottom: none; }
+.slidein-section.collapsed .slidein-section__body { display: none; }
+.slidein-section__body { padding: 0; }
+.slidein-section__inner { padding: 16px; }
+
+/* Empty state inside slide-in sections */
+.slidein-empty-state {
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--act-text);
+}
+.slidein-empty-state .material-symbols-outlined {
+  font-size: 28px; display: block; margin: 0 auto 8px; opacity: 0.4;
+}
+.slidein-empty-state__text { font-size: 14px; opacity: 0.7; }
+
+/* See Details inline expand inside slide-in approval items */
+.slidein-detail-expand {
+  display: none; margin-top: 8px; padding: 12px 16px;
+  background: var(--act-hover-bg); border-radius: 6px;
+}
+.slidein-detail-expand.show { display: block; }
+.btn-see-details {
+  background: none; border: none; color: var(--act-primary);
+  font-size: 12px; font-weight: 600; cursor: pointer; padding: 2px 0; margin-top: 4px;
+}
+.btn-see-details:hover { text-decoration: underline; }
+
+/* Reason inline in executed items */
+.act-item__reason-inline {
+  font-size: 12px; color: var(--act-text); opacity: 0.7; margin-left: 8px;
+}
+.act-item__top .act-item__started { margin-top: 0; }
+
+/* Buttons stacked vertically inside approval items */
+.act-item__actions {
+  flex-direction: column; gap: 4px; min-width: 100px;
+}
+.act-item__actions .btn-act {
+  width: 100%; justify-content: center;
+}
+
+/* ── AD PREVIEW (unique to Ad Level) ── */
+.ad-preview {
+  background: var(--act-surface);
+  border: 1px solid var(--act-border);
+  border-radius: 8px;
+  padding: 16px;
+}
+.ad-preview__label {
+  font-size: 11px; text-transform: none; color: var(--act-text); opacity: 0.5;
+  margin-bottom: 4px; font-weight: 600;
+}
+.ad-preview__sponsored {
+  font-size: 12px; font-weight: 600; color: var(--act-text); margin-bottom: 6px;
+}
+.ad-preview__title {
+  font-size: 18px; font-weight: 400; color: var(--act-primary);
+  line-height: 1.3; margin-bottom: 2px;
+}
+.ad-preview__url {
+  font-size: 13px; color: #10b981; margin-bottom: 6px;
+}
+.ad-preview__desc {
+  font-size: 13px; color: var(--act-text); opacity: 0.85; line-height: 1.4;
+}
+.ad-preview-divider {
+  border: none; border-top: 1px solid var(--act-border-light);
+  margin: 16px 0;
+}
+.ad-preview__heading {
+  font-size: 12px; font-weight: 600; color: var(--act-text);
+  margin-bottom: 8px;
+}
+.ad-preview-list {
+  list-style: none; padding: 0; margin: 0 0 16px;
+}
+.ad-preview-list li {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  margin-bottom: 2px;
+  font-size: 13px; color: var(--act-text);
+}
+.ad-preview-list li:hover { background: var(--act-hover-bg); }
+.ad-preview-list__pos {
+  font-size: 11px; font-weight: 600; color: var(--act-text); opacity: 0.5;
+  font-family: var(--act-font-mono);
+  min-width: 32px;
+}
+.ad-preview-list__text { flex: 1; }
+.ad-preview-list__status {
+  font-size: 11px; font-weight: 600;
+  padding: 1px 6px; border-radius: 3px;
+}
+.ad-preview-list__status--flagged {
+  background: var(--act-red-bg); color: #991b1b;
+}
+.ad-preview-list__status--pinned {
+  background: var(--act-blue-bg); color: #1e40af;
+}
+.ad-preview-list__warning {
+  color: var(--act-red); font-size: 14px;
+}
+
+/* ── ASSET PERFORMANCE TABLE (unique to Ad Level) ── */
+.asset-perf-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 14px; table-layout: fixed;
+}
+.asset-perf-table th {
+  font-size: 12px; font-weight: 600; color: var(--act-text);
+  padding: 8px 10px; text-align: left;
+  border-bottom: 2px solid var(--act-border-light);
+}
+.asset-perf-table td {
+  padding: 8px 10px; text-align: left;
+  border-bottom: 1px solid var(--act-border-light);
+  color: var(--act-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.asset-perf-table tr:last-child td { border-bottom: none; }
+.asset-perf-rating {
+  font-size: 12px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px;
+  display: inline-flex; align-items: center;
+}
+.asset-perf-rating--best     { background: var(--act-green-bg); color: #065f46; }
+.asset-perf-rating--good     { background: var(--act-green-bg); color: #065f46; }
+.asset-perf-rating--low      { background: var(--act-red-bg); color: #991b1b; }
+.asset-perf-rating--learning { background: #f3f4f6; color: #6b7280; }
+[data-theme="dark"] .asset-perf-rating--learning { background: #374151; color: #9ca3af; }
+.asset-perf-rating--flagged  { background: var(--act-red-bg); color: #991b1b; font-weight: 700; }
+
+/* ── EXTENSIONS STATUS CHECKLIST (unique to Ad Level) ── */
+.extensions-status {
+  list-style: none; padding: 0; margin: 0;
+}
+.extensions-status li {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; border-bottom: 1px solid var(--act-border-light);
+  font-size: 14px; color: var(--act-text);
+}
+.extensions-status li:last-child { border-bottom: none; }
+.extensions-status__icon--ok   { color: #10b981; font-size: 18px; }
+.extensions-status__icon--miss { color: #ef4444; font-size: 18px; }
+.extensions-status__label { flex: 1; font-size: 14px; color: var(--act-text); }
+.extensions-status__value {
+  font-family: var(--act-font-mono); font-size: 12px;
+  color: var(--act-text); opacity: 0.7;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .ad-slidein { width: 100vw; }
+  .ad-health-grid { grid-template-columns: repeat(2, 1fr); }
+}

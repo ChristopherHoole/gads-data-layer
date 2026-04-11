@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACT — Keyword Level (v2)</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/prototype-v7.css">
+  <link rel="stylesheet" href="css/campaign-level-optA.css">
+  <link rel="stylesheet" href="css/keyword-level-v2.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="act-sidebar">
+  <div class="act-brand"><svg class="act-brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="41" fill="none" stroke="#4285F4" stroke-width="10"/><circle cx="50" cy="50" r="29" fill="none" stroke="#EA4335" stroke-width="10"/><circle cx="50" cy="50" r="17" fill="none" stroke="#FBBC05" stroke-width="10"/><circle cx="50" cy="50" r="10" fill="#34A853"/></svg><div class="act-brand-text">Ads Control Tower<span>Optimization Engine</span></div></div>
+  <div class="act-nav">
+    <div class="act-nav-section"><div class="act-nav-label">Review</div><a href="index-v7.html" class="act-nav-item"><span class="material-symbols-outlined">wb_sunny</span>Morning Review</a></div>
+    <div class="act-nav-section"><div class="act-nav-label">Optimization</div>
+      <a href="account-level-v10.html" class="act-nav-item"><span class="material-symbols-outlined">account_balance</span>Account Level</a>
+      <a href="campaign-level-optionD-v10.html" class="act-nav-item"><span class="material-symbols-outlined">campaign</span>Campaign Level</a>
+      <a href="ad-group-level-v3.html" class="act-nav-item"><span class="material-symbols-outlined">folder</span>Ad Group Level</a>
+      <a href="keyword-level-v2.html" class="act-nav-item active"><span class="material-symbols-outlined">search</span>Keyword Level</a>
+      <a href="#" class="act-nav-item"><span class="material-symbols-outlined">article</span>Ad Level</a>
+      <a href="#" class="act-nav-item"><span class="material-symbols-outlined">shopping_cart</span>Shopping Level</a>
+    </div>
+    <div class="act-nav-divider"></div>
+    <div class="act-nav-section"><div class="act-nav-label">Settings</div><a href="client-config.html" class="act-nav-item"><span class="material-symbols-outlined">tune</span>Client Config</a></div>
+    <div class="act-nav-divider"></div>
+    <div class="act-nav-section"><a href="#" class="act-nav-item"><span class="material-symbols-outlined">work</span>Jobs</a><a href="#" class="act-nav-item"><span class="material-symbols-outlined">send</span>Outreach</a><a href="#" class="act-nav-item"><span class="material-symbols-outlined">history</span>Changes</a></div>
+  </div>
+</nav>
+
+<!-- TOP BAR -->
+<header class="act-topbar">
+  <div class="act-topbar-left">
+    <h1 class="act-topbar-title">Keyword Level</h1>
+    <span class="act-date">Tuesday, 8 April 2026</span>
+    <span class="act-last-ran"><span class="material-symbols-outlined">check_circle</span>ACT last ran: Today at 05:17 AM</span>
+  </div>
+  <div class="act-topbar-right">
+    <div style="position:relative"><button class="act-client-switcher" id="clientSwitcher"><span class="act-client-dot"></span><span class="client-name">Objection Experts</span><span class="material-symbols-outlined" style="font-size:18px">expand_more</span></button><div class="dropdown-menu" id="clientMenu" style="position:absolute;right:0;top:100%;margin-top:4px;min-width:200px"><a class="dropdown-item active" href="#">Objection Experts</a><a class="dropdown-item" href="#">Demo Client 2</a></div></div>
+    <div class="theme-toggle" title="Toggle theme"><div class="sky"><div class="stars"><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div></div><div class="horizon"></div></div><div class="sun"></div><div class="moon"></div></div>
+    <div class="act-user-avatar" title="Christopher Hoole">CH</div>
+  </div>
+</header>
+
+<main class="act-main">
+
+  <!-- 1. PAGE HEADER -->
+  <div class="acct-header">
+    <div class="acct-header__top" style="border-top-color:#8b5cf6">
+      <div>
+        <h2 class="acct-header__title">Performance, Bids, Search Terms &amp; Quality</h2>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. HEALTH SUMMARY CARDS -->
+  <div class="health-cards">
+    <div class="health-card"><div class="health-card__label">Total Keywords</div><div class="health-card__value">142</div><div class="health-card__detail">across all campaigns</div></div>
+    <div class="health-card"><div class="health-card__label">Avg CPA</div><div class="health-card__value" style="color:#10b981">&pound;19.80</div><div class="health-card__detail">Target: &pound;25 <span class="zone-badge zone-badge--outperforming">21% below &mdash; Outperforming</span></div></div>
+    <div class="health-card"><div class="health-card__label">Avg Quality Score</div><div class="health-card__value">6.2<span style="font-size:14px;opacity:0.5"> / 10</span></div><div class="health-card__detail">Healthy range</div></div>
+    <div class="health-card"><div class="health-card__label">Flagged Keywords</div><div class="health-card__value" style="color:#f59e0b">12</div><div class="health-card__detail">across 4 check types</div></div>
+  </div>
+
+  <!-- 3. KEYWORD PERFORMANCE (combined section) -->
+  <div class="acct-section" id="perfSection">
+    <div class="acct-section__header">
+      <h3 class="acct-section__title"><span class="material-symbols-outlined" style="color:#8b5cf6">table_chart</span>Keyword Performance<span class="acct-section__context" id="perfContext">&mdash; 142 keywords, 30 days</span></h3>
+      <div style="display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">
+        <div class="pill-group" id="dateRangePills"><button class="pill-btn" data-range="7d">7d</button><button class="pill-btn active" data-range="30d">30d</button><button class="pill-btn" data-range="90d">90d</button></div>
+        <div class="pill-group"><button class="pill-btn active" data-filter="all">All</button><button class="pill-btn" data-filter="enabled">Enabled</button><button class="pill-btn" data-filter="paused">Paused</button></div>
+        <span class="material-symbols-outlined acct-section__toggle" style="margin-left:8px;cursor:pointer">expand_more</span>
+      </div>
+    </div>
+    <div class="acct-section__body" style="padding:0">
+      <div class="perf-inner">
+        <div class="summary-cards summary-cards--8">
+          <div class="summary-card"><div class="summary-card__label">Total Cost</div><div class="summary-card__value">&pound;823</div><div class="summary-card__change summary-card__change--up">&uarr; 8%</div></div>
+          <div class="summary-card"><div class="summary-card__label">Impressions</div><div class="summary-card__value">18,420</div><div class="summary-card__change summary-card__change--up">&uarr; 12%</div></div>
+          <div class="summary-card"><div class="summary-card__label">Clicks</div><div class="summary-card__value">1,284</div><div class="summary-card__change summary-card__change--up">&uarr; 5%</div></div>
+          <div class="summary-card"><div class="summary-card__label">Avg CPC</div><div class="summary-card__value">&pound;0.64</div><div class="summary-card__change summary-card__change--down">&darr; 3%</div></div>
+          <div class="summary-card"><div class="summary-card__label">CTR</div><div class="summary-card__value">6.97%</div><div class="summary-card__change summary-card__change--up">&uarr; 4%</div></div>
+          <div class="summary-card"><div class="summary-card__label">Conversions</div><div class="summary-card__value">42</div><div class="summary-card__change summary-card__change--up">&uarr; 15%</div></div>
+          <div class="summary-card"><div class="summary-card__label">Cost/Conv</div><div class="summary-card__value">&pound;19.60</div><div class="summary-card__change summary-card__change--down">&darr; 6%</div></div>
+          <div class="summary-card"><div class="summary-card__label">Conv Rate</div><div class="summary-card__value">3.27%</div><div class="summary-card__change summary-card__change--up">&uarr; 9%</div></div>
+        </div>
+        <div class="chart-section">
+          <div class="chart-toolbar">
+            <div class="chart-select-group"><span class="chart-dot" style="background:#8b5cf6"></span><select class="chart-select" id="chartMetric1"><option value="cost" selected>Cost</option><option value="impressions">Impressions</option><option value="clicks">Clicks</option><option value="avgCpc">Avg CPC</option><option value="ctr">CTR</option><option value="conversions">Conversions</option><option value="cpa">CPA (Cost/Conv)</option><option value="convRate">Conv Rate</option></select></div>
+            <span style="font-size:14px;color:var(--act-text);opacity:0.4">vs</span>
+            <div class="chart-select-group"><span class="chart-dot" style="background:#10b981"></span><select class="chart-select" id="chartMetric2"><option value="cost">Cost</option><option value="impressions">Impressions</option><option value="clicks">Clicks</option><option value="avgCpc">Avg CPC</option><option value="ctr">CTR</option><option value="conversions" selected>Conversions</option><option value="cpa">CPA (Cost/Conv)</option><option value="convRate">Conv Rate</option></select></div>
+          </div>
+          <div class="chart-container"><canvas id="performanceChart"></canvas></div>
+        </div>
+      </div>
+      <!-- Keywords table -->
+      <div style="overflow-x:auto">
+        <table class="data-table" id="keywordsTable">
+          <thead><tr>
+            <th data-sort="status">Status</th>
+            <th data-sort="keyword">Keyword<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="match">Match</th>
+            <th data-sort="campaign">Campaign</th>
+            <th data-sort="adgroup">Ad Group</th>
+            <th data-sort="maxcpc">Max CPC<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="qs">QS<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="cost">Cost<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="impr">Impr.<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="clicks">Clicks<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="cpc">Avg CPC<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="ctr">CTR<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="conv">Conv.<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="costconv">Cost/Conv<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="cvr">Conv Rate<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="flags">Flags<span class="material-symbols-outlined">unfold_more</span></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="table-pagination">
+        <div id="paginationInfo">Showing 1-20 of 142 keywords</div>
+        <div class="table-pagination__right">
+          <div class="rows-per-page">
+            <label for="rowsPerPage">Rows per page:</label>
+            <select id="rowsPerPage" class="rows-per-page__select">
+              <option value="20" selected>20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="200">200</option>
+            </select>
+          </div>
+          <div class="table-pagination__controls" id="pageButtons"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. KEYWORD-LEVEL REVIEW (grouped by campaign) -->
+  <div class="section-divider">Keyword-Level Review</div>
+
+  <!-- Awaiting Approval (6 items) -->
+  <section class="act-section" id="sectionApproval">
+    <div class="act-section__header"><h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-amber)">pending_actions</span>Awaiting Approval<span class="act-section__count act-section__count--amber" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-amber)">6</span></h2><span class="material-symbols-outlined act-section__toggle">expand_more</span></div>
+    <div class="act-section__body" style="padding:0">
+
+      <!-- GLO Campaign — Core (4 items) -->
+      <div class="act-group">
+        <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span><span class="badge-level badge-level--campaign">GLO Campaign &mdash; Core</span><span class="act-group__count">4</span></div>
+        <div class="act-group__body">
+
+          <!-- Keyword Discovery: dental implant clinic london -->
+          <div class="act-item" data-priority="investigate" data-kw="dental implant clinic london">
+            <div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--investigate">Investigate</span><span class="badge-risk badge-risk--low">Low Risk</span><span class="flag-badge flag-badge--discovery">Keyword Discovery</span><span class="act-item__waiting"><span class="material-symbols-outlined">schedule</span>Identified 4 hours ago</span><span class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>Estimated: +8 conversions/month at &pound;18 CPA</span></div><div class="act-item__summary"><strong>Add &ldquo;dental implant clinic london&rdquo; as phrase match to Dental Implants ad group.</strong> Discovered from search terms with 8 conversions at &pound;18 CPA over 30 days.</div><div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>ACT recommends: Add as phrase match keyword to capture this traffic intentionally.</div></div><div class="act-item__actions"><button class="btn-act btn-act--approve" data-action="approve">Approve</button><button class="btn-act btn-act--decline" data-action="decline">Decline</button><button class="btn-act btn-act--details" data-action="details">See Details</button></div></div>
+          </div>
+
+          <!-- Keyword Conflict: dental implants -->
+          <div class="act-item" data-priority="investigate" data-kw="dental implants">
+            <div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--investigate">Investigate</span><span class="badge-risk badge-risk--medium">Medium Risk</span><span class="flag-badge flag-badge--conflict">Keyword Conflict</span><span class="act-item__waiting"><span class="material-symbols-outlined">schedule</span>Identified 1 day ago</span><span class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>Resolve cannibalisation across 2 ad groups</span></div><div class="act-item__summary"><strong>&ldquo;dental implants&rdquo; running in 2 ad groups &mdash; Dental Implants and Cosmetic Dentistry.</strong> Cannibalising impressions across ad groups.</div><div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>ACT recommends: Consolidate into one ad group and add as negative in the other to resolve conflict.</div></div><div class="act-item__actions"><button class="btn-act btn-act--approve" data-action="approve">Approve</button><button class="btn-act btn-act--decline" data-action="decline">Decline</button><button class="btn-act btn-act--details" data-action="details">See Details</button></div></div>
+          </div>
+
+          <!-- Quality Score Investigation: tooth replacement cost -->
+          <div class="act-item" data-priority="investigate" data-kw="tooth replacement cost">
+            <div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--investigate">Investigate</span><span class="badge-risk badge-risk--medium">Medium Risk</span><span class="flag-badge flag-badge--qs">Low QS</span><span class="act-item__waiting"><span class="material-symbols-outlined">schedule</span>Identified 2 days ago</span><span class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>Restore QS to reduce CPC by ~15%</span></div><div class="act-item__summary"><strong>&ldquo;tooth replacement cost&rdquo; QS dropped from 6 to 3 in 7 days.</strong> Investigate ad relevance and landing page experience.</div><div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>ACT recommends: Review ad copy for keyword relevance and check landing page load speed and content alignment.</div></div><div class="act-item__actions"><button class="btn-act btn-act--approve" data-action="approve">Approve</button><button class="btn-act btn-act--decline" data-action="decline">Decline</button><button class="btn-act btn-act--details" data-action="details">See Details</button></div></div>
+          </div>
+
+          <!-- Keyword Pause — Zero Converting: crown dental cost -->
+          <div class="act-item" data-priority="investigate" data-kw="crown dental cost">
+            <div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--investigate">Investigate</span><span class="badge-risk badge-risk--medium">Medium Risk</span><span class="flag-badge flag-badge--pause">Pause Candidate</span><span class="act-item__waiting"><span class="material-symbols-outlined">schedule</span>Identified 6 hours ago</span><span class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>Saves &pound;28/month if paused</span></div><div class="act-item__summary"><strong>Pause &ldquo;crown dental cost&rdquo; &mdash; 0 conversions in 18 days at &pound;68 spend (1.5x target CPA).</strong></div><div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>ACT recommends: Pause and reallocate budget to converting keywords in the same ad group.</div></div><div class="act-item__actions"><button class="btn-act btn-act--approve" data-action="approve">Approve</button><button class="btn-act btn-act--decline" data-action="decline">Decline</button><button class="btn-act btn-act--details" data-action="details">See Details</button></div></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- GLO Campaign — Retargeting (1 item) -->
+      <div class="act-group">
+        <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span><span class="badge-level badge-level--campaign">GLO Campaign &mdash; Retargeting</span><span class="act-group__count">1</span></div>
+        <div class="act-group__body">
+
+          <!-- Keyword Discovery: emergency dental care -->
+          <div class="act-item" data-priority="investigate" data-kw="emergency dental care">
+            <div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--investigate">Investigate</span><span class="badge-risk badge-risk--low">Low Risk</span><span class="flag-badge flag-badge--discovery">Keyword Discovery</span><span class="act-item__waiting"><span class="material-symbols-outlined">schedule</span>Identified 5 hours ago</span><span class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>Estimated: +5 conversions/month at &pound;22 CPA</span></div><div class="act-item__summary"><strong>Add &ldquo;emergency dental care&rdquo; as phrase match to Emergency Dental ad group.</strong> Discovered from search terms with 5 conversions at &pound;22 CPA over 30 days.</div><div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>ACT recommends: Add as phrase match keyword to capture this traffic intentionally.</div></div><div class="act-item__actions"><button class="btn-act btn-act--approve" data-action="approve">Approve</button><button class="btn-act btn-act--decline" data-action="decline">Decline</button><button class="btn-act btn-act--details" data-action="details">See Details</button></div></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Testing — New Keywords (1 item) -->
+      <div class="act-group">
+        <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span><span class="badge-level badge-level--campaign">Testing &mdash; New Keywords</span><span class="act-group__count">1</span></div>
+        <div class="act-group__body">
+
+          <!-- Keyword Pause — Dead 60+ days: dental consultation free -->
+          <div class="act-item" data-priority="investigate" data-kw="dental consultation free">
+            <div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--investigate">Investigate</span><span class="badge-risk badge-risk--medium">Medium Risk</span><span class="flag-badge flag-badge--pause">Pause Candidate</span><span class="act-item__waiting"><span class="material-symbols-outlined">schedule</span>Identified 2 hours ago</span><span class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>Saves &pound;52/month if paused</span></div><div class="act-item__summary"><strong>Pause &ldquo;dental consultation free&rdquo; &mdash; 0 conversions in 72 days.</strong></div><div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>ACT recommends: Pause and consolidate budget to performing keywords in this ad group.</div></div><div class="act-item__actions"><button class="btn-act btn-act--approve" data-action="approve">Approve</button><button class="btn-act btn-act--decline" data-action="decline">Decline</button><button class="btn-act btn-act--details" data-action="details">See Details</button></div></div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Actions Executed Overnight (8 items, collapsed) -->
+  <section class="act-section collapsed">
+    <div class="act-section__header"><h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-green)">check_circle</span>Actions Executed Overnight<span class="act-section__count act-section__count--green" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-green)">8</span></h2><span class="material-symbols-outlined act-section__toggle">expand_more</span></div>
+    <div class="act-section__body" style="padding:0">
+
+      <div class="act-group">
+        <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span><span class="badge-level badge-level--campaign">GLO Campaign &mdash; Core</span><span class="act-group__count">6</span></div>
+        <div class="act-group__body">
+          <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--act">Act</span><span class="act-item__timestamp">8 Apr, 05:14 AM</span></div><div class="act-item__summary"><strong>Added &ldquo;dental veneers price uk&rdquo; to negative keyword list &ldquo;3 WORDS [exact]&rdquo;</strong><span class="act-item__reason-inline">Search term mining &mdash; 0 conversions, &pound;15 spend</span></div></div><div class="act-item__actions"><button class="btn-act btn-act--undo" data-action="undo">Undo</button></div></div></div>
+          <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--act">Act</span><span class="act-item__timestamp">8 Apr, 05:14 AM</span></div><div class="act-item__summary"><strong>Added &ldquo;how to become a dentist&rdquo; to negative keyword list &ldquo;5+ WORDS [exact]&rdquo;</strong><span class="act-item__reason-inline">Search term mining &mdash; irrelevant intent</span></div></div><div class="act-item__actions"><button class="btn-act btn-act--undo" data-action="undo">Undo</button></div></div></div>
+          <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--act">Act</span><span class="act-item__timestamp">8 Apr, 05:14 AM</span></div><div class="act-item__summary"><strong>Added &ldquo;nhs dentist free&rdquo; to negative keyword list &ldquo;3 WORDS [exact]&rdquo;</strong><span class="act-item__reason-inline">Search term mining &mdash; wrong service</span></div></div><div class="act-item__actions"><button class="btn-act btn-act--undo" data-action="undo">Undo</button></div></div></div>
+          <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--act">Act</span><span class="act-item__timestamp">8 Apr, 05:15 AM</span></div><div class="act-item__summary"><strong>Paused keyword &ldquo;dental school london&rdquo;</strong><span class="act-item__reason-inline">0 conversions in 14 days, &pound;48 spend</span></div></div><div class="act-item__actions"><button class="btn-act btn-act--undo" data-action="undo">Undo</button></div></div></div>
+          <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--act">Act</span><span class="act-item__timestamp">8 Apr, 05:15 AM</span></div><div class="act-item__summary"><strong>Reduced bid on &ldquo;cosmetic dentist london&rdquo;</strong> <span class="act-item__values"><span class="val-pill val-pill--old">&pound;4.80</span><span class="arrow">&rarr;</span><span class="val-pill val-pill--new-negative">&pound;4.32</span></span><span class="act-item__reason-inline">-10% &mdash; CPA 25% above target, 72hr cooldown applies</span></div></div><div class="act-item__actions"><button class="btn-act btn-act--undo" data-action="undo">Undo</button></div></div></div>
+          <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--act">Act</span><span class="act-item__timestamp">8 Apr, 05:16 AM</span></div><div class="act-item__summary"><strong>Increased bid on &ldquo;planning objection expert&rdquo;</strong> <span class="act-item__values"><span class="val-pill val-pill--old">&pound;3.20</span><span class="arrow">&rarr;</span><span class="val-pill val-pill--new-positive">&pound;3.52</span></span><span class="act-item__reason-inline">+10% &mdash; outperforming, 72hr cooldown</span></div></div><div class="act-item__actions"><button class="btn-act btn-act--undo" data-action="undo">Undo</button></div></div></div>
+        </div>
+      </div>
+
+      <div class="act-group">
+        <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span><span class="badge-level badge-level--campaign">Testing &mdash; New Keywords</span><span class="act-group__count">2</span></div>
+        <div class="act-group__body">
+          <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--act">Act</span><span class="act-item__timestamp">8 Apr, 05:15 AM</span></div><div class="act-item__summary"><strong>Paused keyword &ldquo;oral hygiene products&rdquo;</strong><span class="act-item__reason-inline">0 conversions in 16 days, &pound;32 spend</span></div></div><div class="act-item__actions"><button class="btn-act btn-act--undo" data-action="undo">Undo</button></div></div></div>
+          <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--act">Act</span><span class="act-item__timestamp">8 Apr, 05:14 AM</span></div><div class="act-item__summary"><strong>Added &ldquo;dental phobia&rdquo; to negative keyword list &ldquo;2 WORDS [exact]&rdquo;</strong><span class="act-item__reason-inline">Irrelevant intent</span></div></div><div class="act-item__actions"><button class="btn-act btn-act--undo" data-action="undo">Undo</button></div></div></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Currently Monitoring (3 items, collapsed) -->
+  <section class="act-section collapsed">
+    <div class="act-section__header"><h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-blue)">visibility</span>Currently Monitoring<span class="act-section__count act-section__count--blue" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-blue)">3</span></h2><span class="material-symbols-outlined act-section__toggle">expand_more</span></div>
+    <div class="act-section__body" style="padding:0">
+
+      <div class="act-group">
+        <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span><span class="badge-level badge-level--campaign">GLO Campaign &mdash; Core</span><span class="act-group__count">3</span></div>
+        <div class="act-group__body">
+          <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--monitor">Monitor</span><span class="act-item__started"><span class="material-symbols-outlined">calendar_today</span>Started: 8 Apr 2026, 05:15 AM</span></div><div class="act-item__summary"><strong>Bid cooldown: &ldquo;cosmetic dentist london&rdquo; reduced from &pound;4.80 to &pound;4.32.</strong></div><div class="act-item__progress"><div class="act-item__progress-bar"><div class="act-item__progress-fill" style="width:8%;background:var(--act-green)"></div></div><span class="act-item__progress-text">66h remaining of 72h cooldown</span><span class="health-label health-label--healthy">Healthy</span></div></div></div></div>
+          <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--monitor">Monitor</span><span class="act-item__started"><span class="material-symbols-outlined">calendar_today</span>Started: 8 Apr 2026, 05:16 AM</span></div><div class="act-item__summary"><strong>Bid cooldown: &ldquo;planning objection expert&rdquo; increased from &pound;3.20 to &pound;3.52.</strong></div><div class="act-item__progress"><div class="act-item__progress-bar"><div class="act-item__progress-fill" style="width:8%;background:var(--act-green)"></div></div><span class="act-item__progress-text">66h remaining of 72h cooldown</span><span class="health-label health-label--healthy">Healthy</span></div></div></div></div>
+          <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--monitor">Monitor</span><span class="act-item__started"><span class="material-symbols-outlined">calendar_today</span>Started: 28 Mar 2026, 05:12 AM</span></div><div class="act-item__summary"><strong>Pause watch: &ldquo;veneers near me&rdquo; approaching pause threshold.</strong> 11 days zero conversions.</div><div class="act-item__progress"><div class="act-item__progress-bar"><div class="act-item__progress-fill" style="width:79%;background:var(--act-amber)"></div></div><span class="act-item__progress-text">3 days remaining until threshold</span><span class="health-label health-label--warning">Trending Down</span></div></div></div></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Recent Alerts (2 items, collapsed) -->
+  <section class="act-section collapsed">
+    <div class="act-section__header"><h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-red)">notifications_active</span>Recent Alerts<span class="act-section__count act-section__count--red" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-red)">2</span></h2><span class="material-symbols-outlined act-section__toggle">expand_more</span></div>
+    <div class="act-section__body" style="padding:0">
+
+      <div class="act-group">
+        <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span><span class="badge-level badge-level--campaign">GLO Campaign &mdash; Core</span><span class="act-group__count">2</span></div>
+        <div class="act-group__body">
+          <div class="act-item" data-priority="alert"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--alert">Alert</span><span class="flag-badge flag-badge--conflict">Keyword Conflict</span><span class="act-item__timestamp">2 Apr 2026</span></div><div class="act-item__summary"><strong>Keyword cannibalisation detected: &ldquo;dental implants&rdquo; running in 2 ad groups.</strong></div><div class="act-item__meta"><span class="badge-resolution badge-resolution--approved">Under review</span><span style="font-size:12px;color:var(--act-text)">Flagged 2 Apr</span></div></div></div></div>
+          <div class="act-item" data-priority="alert"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--keyword">Keyword</span><span class="badge-action badge-action--alert">Alert</span><span class="flag-badge flag-badge--qs">Low QS</span><span class="act-item__timestamp">3 Apr 2026</span></div><div class="act-item__summary"><strong>QS drop alert: &ldquo;best dentist london&rdquo; QS dropped to 4.</strong></div><div class="act-item__meta"><span class="badge-resolution badge-resolution--approved">Acknowledged</span><span style="font-size:12px;color:var(--act-text)">Flagged 3 Apr</span></div></div></div></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 5. GUARDRAILS (collapsed) -->
+  <div class="acct-section collapsed">
+    <div class="acct-section__header"><h3 class="acct-section__title"><span class="material-symbols-outlined" style="color:#8b5cf6">shield</span>Guardrails</h3><span class="material-symbols-outlined acct-section__toggle">expand_more</span></div>
+    <div class="acct-section__body">
+      <ul class="guardrail-list">
+        <li><span class="material-symbols-outlined">pause_circle</span>Auto-pause spend threshold<span class="guardrail-value">1x target CPA</span></li>
+        <li><span class="material-symbols-outlined">pause_circle</span>Auto-pause days threshold<span class="guardrail-value">14 days zero conversions</span></li>
+        <li><span class="material-symbols-outlined">trending_up</span>Keyword bid adjustment per cycle<span class="guardrail-value">10%</span></li>
+        <li><span class="material-symbols-outlined">timer</span>Keyword bid cooldown<span class="guardrail-value">72 hours</span></li>
+        <li><span class="material-symbols-outlined">data_usage</span>Keyword bid 7-day cap<span class="guardrail-value">30%</span></li>
+        <li><span class="material-symbols-outlined">star</span>Quality Score alert threshold<span class="guardrail-value">QS &lt; 4</span></li>
+        <li><span class="material-symbols-outlined">block</span>Dead keyword threshold<span class="guardrail-value">60 days zero impressions</span></li>
+        <li><span class="material-symbols-outlined">sort_by_alpha</span>Negative keyword structure<span class="guardrail-value">9 lists by word count + match type</span></li>
+        <li><span class="material-symbols-outlined">rule</span>Negative keyword match type<span class="guardrail-value">[exact] only &mdash; phrase is human-managed</span></li>
+        <li><span class="material-symbols-outlined">merge_type</span>Conflict detection<span class="guardrail-value">Same ad group OK, different ad groups flagged</span></li>
+      </ul>
+    </div>
+  </div>
+
+</main>
+
+<!-- Keyword Detail Slide-in (800px) -->
+<div class="kw-slidein-overlay" id="kwSlideinOverlay"></div>
+<div class="kw-slidein" id="kwSlidein">
+  <div class="kw-slidein__header">
+    <div class="kw-slidein__header-left">
+      <h3 class="kw-slidein__name" id="kwSlideinName">Keyword</h3>
+      <div class="kw-slidein__meta" id="kwSlideinMeta"></div>
+    </div>
+    <button class="kw-slidein__close" id="kwSlideinClose"><span class="material-symbols-outlined">close</span></button>
+  </div>
+  <div class="kw-slidein__body" id="kwSlideinBody"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/keyword-level-v2.js"></script>
+</body>
+</html>

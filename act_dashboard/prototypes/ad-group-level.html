@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACT — Ad Group Level</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/prototype-v7.css">
+  <link rel="stylesheet" href="css/campaign-level-optA.css">
+  <link rel="stylesheet" href="css/ad-group-level.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="act-sidebar">
+  <div class="act-brand"><svg class="act-brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="41" fill="none" stroke="#4285F4" stroke-width="10"/><circle cx="50" cy="50" r="29" fill="none" stroke="#EA4335" stroke-width="10"/><circle cx="50" cy="50" r="17" fill="none" stroke="#FBBC05" stroke-width="10"/><circle cx="50" cy="50" r="10" fill="#34A853"/></svg><div class="act-brand-text">Ads Control Tower<span>Optimization Engine</span></div></div>
+  <div class="act-nav">
+    <div class="act-nav-section"><div class="act-nav-label">Review</div><a href="index-v7.html" class="act-nav-item"><span class="material-symbols-outlined">wb_sunny</span>Morning Review</a></div>
+    <div class="act-nav-section"><div class="act-nav-label">Optimization</div>
+      <a href="account-level-v10.html" class="act-nav-item"><span class="material-symbols-outlined">account_balance</span>Account Level</a>
+      <a href="campaign-level-optionD-v10.html" class="act-nav-item"><span class="material-symbols-outlined">campaign</span>Campaign Level</a>
+      <a href="ad-group-level.html" class="act-nav-item active"><span class="material-symbols-outlined">folder</span>Ad Group Level</a>
+      <a href="#" class="act-nav-item"><span class="material-symbols-outlined">search</span>Keyword Level</a>
+      <a href="#" class="act-nav-item"><span class="material-symbols-outlined">article</span>Ad Level</a>
+      <a href="#" class="act-nav-item"><span class="material-symbols-outlined">shopping_cart</span>Shopping Level</a>
+    </div>
+    <div class="act-nav-divider"></div>
+    <div class="act-nav-section"><div class="act-nav-label">Settings</div><a href="client-config.html" class="act-nav-item"><span class="material-symbols-outlined">tune</span>Client Config</a></div>
+    <div class="act-nav-divider"></div>
+    <div class="act-nav-section"><a href="#" class="act-nav-item"><span class="material-symbols-outlined">work</span>Jobs</a><a href="#" class="act-nav-item"><span class="material-symbols-outlined">send</span>Outreach</a><a href="#" class="act-nav-item"><span class="material-symbols-outlined">history</span>Changes</a></div>
+  </div>
+</nav>
+
+<!-- TOP BAR -->
+<header class="act-topbar">
+  <div class="act-topbar-left">
+    <h1 class="act-topbar-title">Ad Group Level</h1>
+    <span class="act-date">Tuesday, 8 April 2026</span>
+    <span class="act-last-ran"><span class="material-symbols-outlined">check_circle</span>ACT last ran: Today at 05:17 AM</span>
+  </div>
+  <div class="act-topbar-right">
+    <div style="position:relative"><button class="act-client-switcher" id="clientSwitcher"><span class="act-client-dot"></span><span class="client-name">Objection Experts</span><span class="material-symbols-outlined" style="font-size:18px">expand_more</span></button><div class="dropdown-menu" id="clientMenu" style="position:absolute;right:0;top:100%;margin-top:4px;min-width:200px"><a class="dropdown-item active" href="#">Objection Experts</a><a class="dropdown-item" href="#">Demo Client 2</a></div></div>
+    <div class="theme-toggle" title="Toggle theme"><div class="sky"><div class="stars"><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div></div><div class="horizon"></div></div><div class="sun"></div><div class="moon"></div></div>
+    <div class="act-user-avatar" title="Christopher Hoole">CH</div>
+  </div>
+</header>
+
+<main class="act-main">
+
+  <!-- 1. PAGE HEADER -->
+  <div class="acct-header">
+    <div class="acct-header__top" style="border-top-color:#f59e0b">
+      <div>
+        <h2 class="acct-header__title">Outlier Detection &amp; Structural Health</h2>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. HEALTH SUMMARY CARDS -->
+  <div class="health-cards">
+    <div class="health-card"><div class="health-card__label">Total Ad Groups</div><div class="health-card__value">18</div><div class="health-card__detail">across 4 campaigns</div></div>
+    <div class="health-card"><div class="health-card__label">Avg CPA</div><div class="health-card__value" style="color:#10b981">&pound;22.10</div><div class="health-card__detail">Target: &pound;25 <span class="zone-badge zone-badge--outperforming">12% below &mdash; Outperforming</span></div></div>
+    <div class="health-card"><div class="health-card__label">Flagged Ad Groups</div><div class="health-card__value" style="color:#f59e0b">3</div><div class="health-card__detail">require review</div></div>
+    <div class="health-card"><div class="health-card__label">Concentration Alerts</div><div class="health-card__value" style="color:#f59e0b">1</div><div class="health-card__detail">1 ad group consumes 95% of campaign spend</div></div>
+  </div>
+
+  <!-- 3. AD GROUP PERFORMANCE (combined section) -->
+  <div class="acct-section" id="perfSection">
+    <div class="acct-section__header">
+      <h3 class="acct-section__title"><span class="material-symbols-outlined" style="color:#f59e0b">table_chart</span>Ad Group Performance<span class="acct-section__context" id="perfContext">&mdash; 18 ad groups, 30 days</span></h3>
+      <div style="display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">
+        <div class="pill-group" id="dateRangePills"><button class="pill-btn" data-range="7d">7d</button><button class="pill-btn active" data-range="30d">30d</button><button class="pill-btn" data-range="90d">90d</button></div>
+        <div class="pill-group"><button class="pill-btn active" data-filter="all">All</button><button class="pill-btn" data-filter="enabled">Enabled</button><button class="pill-btn" data-filter="paused">Paused</button></div>
+        <span class="material-symbols-outlined acct-section__toggle" style="margin-left:8px;cursor:pointer">expand_more</span>
+      </div>
+    </div>
+    <div class="acct-section__body" style="padding:0">
+      <div class="perf-inner">
+        <div class="summary-cards summary-cards--8">
+          <div class="summary-card"><div class="summary-card__label">Total Cost</div><div class="summary-card__value">&pound;823</div><div class="summary-card__change summary-card__change--up">&uarr; 8%</div></div>
+          <div class="summary-card"><div class="summary-card__label">Impressions</div><div class="summary-card__value">18,420</div><div class="summary-card__change summary-card__change--up">&uarr; 12%</div></div>
+          <div class="summary-card"><div class="summary-card__label">Clicks</div><div class="summary-card__value">1,284</div><div class="summary-card__change summary-card__change--up">&uarr; 5%</div></div>
+          <div class="summary-card"><div class="summary-card__label">Avg CPC</div><div class="summary-card__value">&pound;0.64</div><div class="summary-card__change summary-card__change--down">&darr; 3%</div></div>
+          <div class="summary-card"><div class="summary-card__label">CTR</div><div class="summary-card__value">6.97%</div><div class="summary-card__change summary-card__change--up">&uarr; 4%</div></div>
+          <div class="summary-card"><div class="summary-card__label">Conversions</div><div class="summary-card__value">42</div><div class="summary-card__change summary-card__change--up">&uarr; 15%</div></div>
+          <div class="summary-card"><div class="summary-card__label">Cost/Conv</div><div class="summary-card__value">&pound;19.60</div><div class="summary-card__change summary-card__change--down">&darr; 6%</div></div>
+          <div class="summary-card"><div class="summary-card__label">Conv Rate</div><div class="summary-card__value">3.27%</div><div class="summary-card__change summary-card__change--up">&uarr; 9%</div></div>
+        </div>
+        <div class="chart-section">
+          <div class="chart-toolbar">
+            <div class="chart-select-group"><span class="chart-dot" style="background:#f59e0b"></span><select class="chart-select" id="chartMetric1"><option value="cost" selected>Cost</option><option value="impressions">Impressions</option><option value="clicks">Clicks</option><option value="avgCpc">Avg CPC</option><option value="ctr">CTR</option><option value="conversions">Conversions</option><option value="cpa">CPA (Cost/Conv)</option><option value="convRate">Conv Rate</option></select></div>
+            <span style="font-size:14px;color:var(--act-text);opacity:0.4">vs</span>
+            <div class="chart-select-group"><span class="chart-dot" style="background:#10b981"></span><select class="chart-select" id="chartMetric2"><option value="cost">Cost</option><option value="impressions">Impressions</option><option value="clicks">Clicks</option><option value="avgCpc">Avg CPC</option><option value="ctr">CTR</option><option value="conversions" selected>Conversions</option><option value="cpa">CPA (Cost/Conv)</option><option value="convRate">Conv Rate</option></select></div>
+          </div>
+          <div class="chart-container"><canvas id="performanceChart"></canvas></div>
+        </div>
+      </div>
+      <!-- Ad groups table -->
+      <div style="overflow-x:auto">
+        <table class="data-table" id="adGroupsTable">
+          <thead><tr>
+            <th data-sort="status">Status</th>
+            <th data-sort="name">Ad Group<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="campaign">Campaign</th>
+            <th data-sort="kw">Keywords<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="ads">Ads<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="cost">Cost<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="impr">Impr.<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="clicks">Clicks<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="cpc">Avg CPC<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="ctr">CTR<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="conv">Conv.<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="costconv">Cost/Conv<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="cvr">Conv Rate<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="flags">Flags<span class="material-symbols-outlined">unfold_more</span></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="table-pagination"><div id="paginationInfo">Showing 1-18 of 18 ad groups</div><div class="table-pagination__controls"><button class="page-btn" disabled>&laquo;</button><button class="page-btn active">1</button><button class="page-btn" disabled>&raquo;</button></div></div>
+    </div>
+  </div>
+
+  <!-- 4. AD GROUP-LEVEL REVIEW (grouped by campaign name) -->
+  <div class="section-divider">Ad Group-Level Review</div>
+
+  <!-- Awaiting Approval — grouped by campaign -->
+  <section class="act-section" id="sectionApproval">
+    <div class="act-section__header"><h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-amber)">pending_actions</span>Awaiting Approval<span class="act-section__count act-section__count--amber" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-amber)">3</span></h2><span class="material-symbols-outlined act-section__toggle">expand_more</span></div>
+    <div class="act-section__body" style="padding:0">
+      <!-- GLO Campaign — Core (2 items) -->
+      <div class="act-group">
+        <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span><span class="badge-level badge-level--campaign">GLO Campaign &mdash; Core</span><span class="act-group__count">2</span></div>
+        <div class="act-group__body">
+          <div class="act-item" data-priority="investigate" data-ag="Competitor Terms">
+            <div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--adgroup">Ad Group</span><span class="badge-action badge-action--investigate">Investigate</span><span class="badge-risk badge-risk--medium">Medium Risk</span><span class="flag-badge flag-badge--negative">Negative Outlier</span><span class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>Potential saving: &pound;80/month</span></div><div class="act-item__summary"><strong>Competitor Terms in GLO Campaign &mdash; Core:</strong> Negative performance outlier. This ad group consumes 15% of campaign spend at &pound;35 CPA vs &pound;22 campaign avg (60% worse).</div><div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>ACT recommends: Investigate keyword selection and ad copy. Consider pausing underperforming keywords or reducing bids.</div></div><div class="act-item__actions"><button class="btn-act btn-act--approve" data-action="approve">Approve</button><button class="btn-act btn-act--decline" data-action="decline">Decline</button><button class="btn-act btn-act--details" data-action="details">See Details</button></div></div>
+          </div>
+          <div class="act-item" data-priority="investigate" data-ag="Long Tail">
+            <div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--adgroup">Ad Group</span><span class="badge-action badge-action--investigate">Investigate</span><span class="badge-risk badge-risk--low">Low Risk</span><span class="flag-badge flag-badge--positive">Positive Outlier</span><span class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>Estimated: +3-5 conversions/week if promoted</span></div><div class="act-item__summary"><strong>Long Tail in GLO Campaign &mdash; Core:</strong> Positive performance outlier. 45% better CPA than campaign average. Consider promoting to standalone campaign.</div><div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>ACT recommends: Promote to standalone campaign so it can receive independent budget allocation.</div></div><div class="act-item__actions"><button class="btn-act btn-act--approve" data-action="approve">Approve</button><button class="btn-act btn-act--decline" data-action="decline">Decline</button><button class="btn-act btn-act--details" data-action="details">See Details</button></div></div>
+          </div>
+        </div>
+      </div>
+      <!-- Testing — New Keywords (1 item) -->
+      <div class="act-group">
+        <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span><span class="badge-level badge-level--campaign">Testing &mdash; New Keywords</span><span class="act-group__count">1</span></div>
+        <div class="act-group__body">
+          <div class="act-item" data-priority="investigate" data-ag="Test Batch 3">
+            <div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--adgroup">Ad Group</span><span class="badge-action badge-action--investigate">Investigate</span><span class="badge-risk badge-risk--medium">Medium Risk</span><span class="flag-badge flag-badge--pause">Pause Candidate</span><span class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>Estimated saving: &pound;15/week if paused</span></div><div class="act-item__summary"><strong>Test Batch 3 in Testing &mdash; New Keywords:</strong> Pause recommendation. 21 days with zero conversions despite &pound;45 spend.</div><div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>ACT recommends: Pause this ad group and reallocate budget to better-performing ad groups.</div></div><div class="act-item__actions"><button class="btn-act btn-act--approve" data-action="approve">Approve</button><button class="btn-act btn-act--decline" data-action="decline">Decline</button><button class="btn-act btn-act--details" data-action="details">See Details</button></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Actions Executed (collapsed) -->
+  <section class="act-section collapsed">
+    <div class="act-section__header"><h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-green)">check_circle</span>Actions Executed Overnight<span class="act-section__count act-section__count--green" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-green)">2</span></h2><span class="material-symbols-outlined act-section__toggle">expand_more</span></div>
+    <div class="act-section__body" style="padding:0">
+      <div class="act-group">
+        <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span><span class="badge-level badge-level--campaign">GLO Campaign &mdash; Core</span><span class="act-group__count">1</span></div>
+        <div class="act-group__body">
+          <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--adgroup">Ad Group</span><span class="badge-action badge-action--act">Act</span><span class="act-item__timestamp">8 Apr, 05:14 AM</span></div><div class="act-item__summary"><strong>Added 3 negative keywords to Competitor Terms ad group</strong><span class="act-item__reason-inline">Search terms with spend above target CPA and 0 conversions</span></div></div><div class="act-item__actions"><button class="btn-act btn-act--undo" data-action="undo">Undo</button></div></div></div>
+        </div>
+      </div>
+      <div class="act-group">
+        <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span><span class="badge-level badge-level--campaign">Testing &mdash; New Keywords</span><span class="act-group__count">1</span></div>
+        <div class="act-group__body">
+          <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--adgroup">Ad Group</span><span class="badge-action badge-action--act">Act</span><span class="act-item__timestamp">8 Apr, 05:15 AM</span></div><div class="act-item__summary"><strong>Paused 2 keywords in Test Batch 3 ad group</strong><span class="act-item__reason-inline">0 conversions in 21 days</span></div></div><div class="act-item__actions"><button class="btn-act btn-act--undo" data-action="undo">Undo</button></div></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Monitoring (collapsed) -->
+  <section class="act-section collapsed">
+    <div class="act-section__header"><h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-blue)">visibility</span>Currently Monitoring<span class="act-section__count act-section__count--blue" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-blue)">2</span></h2><span class="material-symbols-outlined act-section__toggle">expand_more</span></div>
+    <div class="act-section__body" style="padding:0">
+      <div class="act-group">
+        <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span><span class="badge-level badge-level--campaign">Brand &mdash; Objection Experts</span><span class="act-group__count">1</span></div>
+        <div class="act-group__body">
+          <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--adgroup">Ad Group</span><span class="badge-action badge-action--monitor">Monitor</span><span class="act-item__started"><span class="material-symbols-outlined">calendar_today</span>Started: 14 Mar 2026, 05:10 AM</span></div><div class="act-item__summary"><strong>Brand Misspellings in Brand &mdash; Objection Experts:</strong> Monitoring for pause candidate status. 25 days zero conversions. 5 days until threshold.</div><div class="act-item__progress"><div class="act-item__progress-bar"><div class="act-item__progress-fill" style="width:83%;background:var(--act-amber)"></div></div><span class="act-item__progress-text">25 of 30 days</span><span class="health-label health-label--warning">Trending Down</span></div></div></div></div>
+        </div>
+      </div>
+      <div class="act-group">
+        <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span><span class="badge-level badge-level--campaign">GLO Campaign &mdash; Core</span><span class="act-group__count">1</span></div>
+        <div class="act-group__body">
+          <div class="act-item"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--adgroup">Ad Group</span><span class="badge-action badge-action--monitor">Monitor</span><span class="act-item__started"><span class="material-symbols-outlined">calendar_today</span>Started: 5 Apr 2026, 05:12 AM</span></div><div class="act-item__summary"><strong>Competitor Terms negative outlier flag:</strong> Monitoring performance after negative keyword additions. 3 days into 7-day observation.</div><div class="act-item__progress"><div class="act-item__progress-bar"><div class="act-item__progress-fill" style="width:43%;background:var(--act-green)"></div></div><span class="act-item__progress-text">3 of 7 days</span><span class="health-label health-label--healthy">Healthy</span></div></div></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Alerts (collapsed) -->
+  <section class="act-section collapsed">
+    <div class="act-section__header"><h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-red)">notifications_active</span>Recent Alerts<span class="act-section__count act-section__count--red" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-red)">1</span></h2><span class="material-symbols-outlined act-section__toggle">expand_more</span></div>
+    <div class="act-section__body" style="padding:0">
+      <div class="act-group">
+        <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span><span class="badge-level badge-level--campaign">Brand &mdash; Objection Experts</span><span class="act-group__count">1</span></div>
+        <div class="act-group__body">
+          <div class="act-item" data-priority="alert"><div class="act-item__row"><div class="act-item__content"><div class="act-item__top"><span class="badge-level badge-level--adgroup">Ad Group</span><span class="badge-action badge-action--alert">Alert</span><span class="flag-badge flag-badge--concentration">Concentration</span><span class="act-item__timestamp">5 Apr 2026</span></div><div class="act-item__summary"><strong>Main Brand Terms in Brand &mdash; Objection Experts:</strong> Concentration alert &mdash; consumes 70% of campaign spend.</div><div class="act-item__meta"><span class="badge-resolution badge-resolution--approved">Acknowledged</span><span style="font-size:12px;color:var(--act-text)">Under review</span></div></div></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. GUARDRAILS (collapsed) -->
+  <div class="acct-section collapsed">
+    <div class="acct-section__header"><h3 class="acct-section__title"><span class="material-symbols-outlined" style="color:#f59e0b">shield</span>Guardrails</h3><span class="material-symbols-outlined acct-section__toggle">expand_more</span></div>
+    <div class="acct-section__body">
+      <ul class="guardrail-list">
+        <li><span class="material-symbols-outlined">trending_down</span>Negative outlier spend threshold<span class="guardrail-value">30% of campaign spend</span></li>
+        <li><span class="material-symbols-outlined">trending_down</span>Negative outlier performance threshold<span class="guardrail-value">50% worse than campaign average</span></li>
+        <li><span class="material-symbols-outlined">trending_up</span>Positive outlier performance threshold<span class="guardrail-value">40% better than campaign average</span></li>
+        <li><span class="material-symbols-outlined">pause_circle</span>Pause recommendation: zero conversions threshold<span class="guardrail-value">21 days</span></li>
+        <li><span class="material-symbols-outlined">pause_circle</span>Pause recommendation: inactive threshold<span class="guardrail-value">30 days</span></li>
+        <li><span class="material-symbols-outlined">pie_chart</span>Concentration alert: 1 ad group trigger<span class="guardrail-value">&gt;90% of spend</span></li>
+        <li><span class="material-symbols-outlined">pie_chart</span>Concentration alert: 2 ad groups trigger<span class="guardrail-value">1 with &gt;80% of spend</span></li>
+        <li><span class="material-symbols-outlined">pie_chart</span>Concentration alert: 3+ ad groups trigger<span class="guardrail-value">1 with &gt;70% of spend</span></li>
+      </ul>
+    </div>
+  </div>
+
+</main>
+
+<!-- Slide-in for See Details (approval decision tree) -->
+<div class="act-slidein-overlay" id="slideinOverlay"></div>
+<div class="act-slidein" id="slideinPanel">
+  <div class="act-slidein__header"><h3 id="slideinTitle">Decision Details</h3><button class="act-slidein__close" id="slideinClose"><span class="material-symbols-outlined">close</span></button></div>
+  <div class="act-slidein__body" id="slideinBody"></div>
+  <div class="act-slidein__footer" id="slideinFooter"></div>
+</div>
+
+<!-- Ad Group Detail Slide-in (800px) -->
+<div class="ag-slidein-overlay" id="agSlideinOverlay"></div>
+<div class="ag-slidein" id="agSlidein">
+  <div class="ag-slidein__header">
+    <div class="ag-slidein__header-left">
+      <h3 class="ag-slidein__name" id="agSlideinName">Ad Group Name</h3>
+      <div class="ag-slidein__meta" id="agSlideinMeta"></div>
+    </div>
+    <button class="ag-slidein__close" id="agSlideinClose"><span class="material-symbols-outlined">close</span></button>
+  </div>
+  <div class="ag-slidein__body" id="agSlideinBody"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/ad-group-level.js"></script>
+</body>
+</html>
