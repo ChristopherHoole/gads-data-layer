@@ -36,6 +36,8 @@ EXPECTED_TABLES = {
     'act_v2_executed_actions': 15,
     'act_v2_monitoring': 13,
     'act_v2_alerts': 11,
+    'act_v2_search_terms': 20,
+    'act_v2_campaign_segments': 17,
 }
 
 EXPECTED_SEQUENCES = [
@@ -44,6 +46,8 @@ EXPECTED_SEQUENCES = [
     'seq_act_v2_executed_actions',
     'seq_act_v2_monitoring',
     'seq_act_v2_alerts',
+    'seq_act_v2_search_terms',
+    'seq_act_v2_campaign_segments',
 ]
 
 EXPECTED_INDEXES = [
@@ -52,6 +56,8 @@ EXPECTED_INDEXES = [
     'idx_act_v2_actions_client_date',
     'idx_act_v2_monitoring_active',
     'idx_act_v2_alerts_client',
+    'idx_act_v2_search_terms_lookup',
+    'idx_act_v2_segments_lookup',
 ]
 
 

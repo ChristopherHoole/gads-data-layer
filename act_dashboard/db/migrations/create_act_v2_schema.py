@@ -43,7 +43,7 @@ file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
 # ---------------------------------------------------------------------------
-# SQL: Sequences (5)
+# SQL: Sequences (7)
 # ---------------------------------------------------------------------------
 SEQUENCES = [
     'seq_act_v2_snapshots',
@@ -51,6 +51,8 @@ SEQUENCES = [
     'seq_act_v2_executed_actions',
     'seq_act_v2_monitoring',
     'seq_act_v2_alerts',
+    'seq_act_v2_search_terms',
+    'seq_act_v2_campaign_segments',
 ]
 
 # ---------------------------------------------------------------------------
@@ -271,6 +273,60 @@ TABLE_SQL = [
         );
         """,
     ),
+    # --- A2 additions: search terms and campaign segments ---
+    (
+        'act_v2_search_terms',
+        """
+        CREATE TABLE IF NOT EXISTS act_v2_search_terms (
+            search_term_id BIGINT PRIMARY KEY DEFAULT nextval('seq_act_v2_search_terms'),
+            client_id VARCHAR NOT NULL,
+            snapshot_date DATE NOT NULL,
+            campaign_id VARCHAR(30) NOT NULL,
+            campaign_name VARCHAR(500),
+            ad_group_id VARCHAR(30) NOT NULL,
+            ad_group_name VARCHAR(500),
+            search_term VARCHAR NOT NULL,
+            match_type VARCHAR(20),
+            keyword_text VARCHAR,
+            keyword_id VARCHAR(100),
+            cost DECIMAL(18,2),
+            impressions INTEGER,
+            clicks INTEGER,
+            conversions DECIMAL(10,2),
+            conversion_value DECIMAL(18,2),
+            ctr DECIMAL(10,4),
+            avg_cpc DECIMAL(10,2),
+            cost_per_conversion DECIMAL(10,2),
+            conversion_rate DECIMAL(10,4),
+            FOREIGN KEY (client_id) REFERENCES act_v2_clients(client_id)
+        );
+        """,
+    ),
+    (
+        'act_v2_campaign_segments',
+        """
+        CREATE TABLE IF NOT EXISTS act_v2_campaign_segments (
+            segment_id BIGINT PRIMARY KEY DEFAULT nextval('seq_act_v2_campaign_segments'),
+            client_id VARCHAR NOT NULL,
+            snapshot_date DATE NOT NULL,
+            campaign_id VARCHAR(30) NOT NULL,
+            campaign_name VARCHAR(500),
+            segment_type VARCHAR(20) NOT NULL CHECK (segment_type IN ('device', 'geo', 'ad_schedule', 'day_of_week')),
+            segment_value VARCHAR(200) NOT NULL,
+            cost DECIMAL(18,2),
+            impressions INTEGER,
+            clicks INTEGER,
+            conversions DECIMAL(10,2),
+            conversion_value DECIMAL(18,2),
+            ctr DECIMAL(10,4),
+            avg_cpc DECIMAL(10,2),
+            cost_per_conversion DECIMAL(10,2),
+            conversion_rate DECIMAL(10,4),
+            bid_modifier DECIMAL(10,2),
+            FOREIGN KEY (client_id) REFERENCES act_v2_clients(client_id)
+        );
+        """,
+    ),
 ]
 
 # ---------------------------------------------------------------------------
@@ -301,6 +357,16 @@ INDEX_SQL = [
         'idx_act_v2_alerts_client',
         """CREATE INDEX idx_act_v2_alerts_client
            ON act_v2_alerts(client_id, resolved_at, raised_at);""",
+    ),
+    (
+        'idx_act_v2_search_terms_lookup',
+        """CREATE INDEX idx_act_v2_search_terms_lookup
+           ON act_v2_search_terms(client_id, snapshot_date, campaign_id);""",
+    ),
+    (
+        'idx_act_v2_segments_lookup',
+        """CREATE INDEX idx_act_v2_segments_lookup
+           ON act_v2_campaign_segments(client_id, snapshot_date, campaign_id, segment_type);""",
     ),
 ]
 

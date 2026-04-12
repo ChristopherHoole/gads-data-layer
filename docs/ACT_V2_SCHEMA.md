@@ -22,10 +22,12 @@ All tables are prefixed `act_v2_` to coexist with the existing tables. The old e
 | `act_v2_campaign_roles` | Campaign role assignments (BD / CP / RT / PR / TS) |
 | `act_v2_negative_keyword_lists` | 9 standardized negative keyword lists per client |
 
-### Data Ingestion (1 table)
+### Data Ingestion (3 tables)
 | Table | Purpose |
 |-------|---------|
 | `act_v2_snapshots` | Daily snapshots of Google Ads data at all entity levels |
+| `act_v2_search_terms` | Search term performance data per campaign per date |
+| `act_v2_campaign_segments` | Campaign performance by device, geo, and ad schedule segments |
 
 ### Engine Reference (1 table)
 | Table | Purpose |
@@ -185,6 +187,61 @@ Daily snapshots of Google Ads data. `metrics_json` stores level-specific metrics
 | created_at | TIMESTAMP | NOT NULL | CURRENT_TIMESTAMP | Record creation time |
 
 **Index:** `idx_act_v2_snapshots_lookup` on (client_id, snapshot_date, level, entity_id)
+
+### act_v2_search_terms
+
+Search term performance data. Too high-volume to store as JSON inside campaign snapshots.
+
+| Column | Type | Constraints | Default | Purpose |
+|--------|------|-------------|---------|---------|
+| search_term_id | BIGINT | PK | nextval(seq) | Auto-incrementing ID |
+| client_id | VARCHAR | NOT NULL, FK→clients | — | Client reference |
+| snapshot_date | DATE | NOT NULL | — | Date of the data |
+| campaign_id | VARCHAR(30) | NOT NULL | — | Google Ads campaign ID |
+| campaign_name | VARCHAR(500) | — | — | Campaign display name |
+| ad_group_id | VARCHAR(30) | NOT NULL | — | Google Ads ad group ID |
+| ad_group_name | VARCHAR(500) | — | — | Ad group display name |
+| search_term | VARCHAR | NOT NULL | — | The actual search query |
+| match_type | VARCHAR(20) | — | — | Keyword match type |
+| keyword_text | VARCHAR | — | — | Matched keyword text |
+| keyword_id | VARCHAR(100) | — | — | Matched keyword ID |
+| cost | DECIMAL(18,2) | — | — | Cost in GBP |
+| impressions | INTEGER | — | — | Impression count |
+| clicks | INTEGER | — | — | Click count |
+| conversions | DECIMAL(10,2) | — | — | Conversion count |
+| conversion_value | DECIMAL(18,2) | — | — | Conversion value in GBP |
+| ctr | DECIMAL(10,4) | — | — | Click-through rate |
+| avg_cpc | DECIMAL(10,2) | — | — | Average CPC in GBP |
+| cost_per_conversion | DECIMAL(10,2) | — | — | Cost per conversion in GBP |
+| conversion_rate | DECIMAL(10,4) | — | — | Conversion rate (conversions/clicks) |
+
+**Index:** `idx_act_v2_search_terms_lookup` on (client_id, snapshot_date, campaign_id)
+
+### act_v2_campaign_segments
+
+Campaign performance by device, geo, and ad schedule segments. Needed for universal lever checks.
+
+| Column | Type | Constraints | Default | Purpose |
+|--------|------|-------------|---------|---------|
+| segment_id | BIGINT | PK | nextval(seq) | Auto-incrementing ID |
+| client_id | VARCHAR | NOT NULL, FK→clients | — | Client reference |
+| snapshot_date | DATE | NOT NULL | — | Date of the data |
+| campaign_id | VARCHAR(30) | NOT NULL | — | Google Ads campaign ID |
+| campaign_name | VARCHAR(500) | — | — | Campaign display name |
+| segment_type | VARCHAR(20) | NOT NULL, CHECK | — | device/geo/ad_schedule/day_of_week |
+| segment_value | VARCHAR(200) | NOT NULL | — | Segment identifier (e.g. MOBILE, country_2826) |
+| cost | DECIMAL(18,2) | — | — | Cost in GBP |
+| impressions | INTEGER | — | — | Impression count |
+| clicks | INTEGER | — | — | Click count |
+| conversions | DECIMAL(10,2) | — | — | Conversion count |
+| conversion_value | DECIMAL(18,2) | — | — | Conversion value in GBP |
+| ctr | DECIMAL(10,4) | — | — | Click-through rate |
+| avg_cpc | DECIMAL(10,2) | — | — | Average CPC in GBP |
+| cost_per_conversion | DECIMAL(10,2) | — | — | Cost per conversion in GBP |
+| conversion_rate | DECIMAL(10,4) | — | — | Conversion rate |
+| bid_modifier | DECIMAL(10,2) | — | — | Current bid modifier (NULL until populated) |
+
+**Index:** `idx_act_v2_segments_lookup` on (client_id, snapshot_date, campaign_id, segment_type)
 
 ### act_v2_checks
 

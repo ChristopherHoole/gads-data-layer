@@ -1,0 +1,632 @@
+"""
+ACT v2 Google Ads Data Ingestion
+
+Pulls data from Google Ads API and stores in act_v2_* tables.
+Handles campaigns, ad groups, keywords, ads, search terms, and campaign segments.
+
+All monetary values converted from micros to GBP (divide by 1,000,000).
+"""
+
+import json
+import logging
+import os
+import sys
+import time
+from datetime import datetime, timedelta
+from pathlib import Path
+
+import duckdb
+from google.ads.googleads.client import GoogleAdsClient
+from google.ads.googleads.errors import GoogleAdsException
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent.parent
+YAML_PATH = str(PROJECT_ROOT / "secrets" / "google-ads.yaml")
+DB_PATH = str(PROJECT_ROOT / "warehouse.duckdb")
+LOG_PATH = str(SCRIPT_DIR / "ingestion.log")
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+logger = logging.getLogger('act_v2_ingestion')
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+
+if not logger.handlers:
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+
+    file_handler = logging.FileHandler(LOG_PATH, mode='a', encoding='utf-8')
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+MICROS = 1_000_000
+
+
+def _safe_div(numerator, denominator):
+    """Safe division, returns 0.0 on zero denominator."""
+    if not denominator:
+        return 0.0
+    return numerator / denominator
+
+
+class GoogleAdsDataPipeline:
+    def __init__(self, client_id: str, customer_id: str):
+        """
+        client_id: ACT internal client ID (e.g., 'oe001')
+        customer_id: Google Ads customer ID (e.g., '8530211223')
+        """
+        self.client_id = client_id
+        self.customer_id = customer_id
+        self.google_ads_client = self._load_client()
+        self.ga_service = self.google_ads_client.get_service("GoogleAdsService")
+        self.db = self._connect_db()
+        self.stats = {}
+
+    def _load_client(self) -> GoogleAdsClient:
+        """Load Google Ads client from secrets/google-ads.yaml"""
+        return GoogleAdsClient.load_from_storage(YAML_PATH)
+
+    def _connect_db(self):
+        """Connect to warehouse.duckdb"""
+        try:
+            return duckdb.connect(DB_PATH)
+        except duckdb.IOException:
+            logger.error("Database is locked. Stop the Flask app first:")
+            logger.error("  taskkill /IM python.exe /F")
+            sys.exit(1)
+
+    def _query(self, query: str):
+        """Run a GAQL query and return the response iterator."""
+        return self.ga_service.search(customer_id=self.customer_id, query=query)
+
+    # -----------------------------------------------------------------------
+    # Snapshot storage (idempotent: delete-then-insert)
+    # -----------------------------------------------------------------------
+    def _store_snapshot(self, date, level, entity_id, entity_name, parent_entity_id, metrics_dict):
+        """Store a single entity snapshot."""
+        self.db.execute(
+            "DELETE FROM act_v2_snapshots WHERE client_id = ? AND snapshot_date = ? AND level = ? AND entity_id = ?",
+            [self.client_id, date, level, str(entity_id)]
+        )
+        self.db.execute(
+            """INSERT INTO act_v2_snapshots
+               (client_id, snapshot_date, level, entity_id, entity_name, parent_entity_id, metrics_json)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            [self.client_id, date, level, str(entity_id), entity_name,
+             str(parent_entity_id) if parent_entity_id else None,
+             json.dumps(metrics_dict)]
+        )
+
+    # -----------------------------------------------------------------------
+    # Ingest orchestration
+    # -----------------------------------------------------------------------
+    def ingest_date(self, date: str):
+        """Pull all data for a single date and store in act_v2_* tables."""
+        logger.info(f"Ingesting {date} for {self.client_id}...")
+
+        c = self.ingest_campaigns(date)
+        ag = self.ingest_ad_groups(date)
+        kw = self.ingest_keywords(date)
+        ad = self.ingest_ads(date)
+        st = self.ingest_search_terms(date)
+        seg = self.ingest_campaign_segments(date)
+        self.ingest_account(date)
+
+        logger.info(f"  {date}: campaigns={c}, ad_groups={ag}, keywords={kw}, ads={ad}, search_terms={st}, segments={seg}")
+        return {'campaigns': c, 'ad_groups': ag, 'keywords': kw, 'ads': ad, 'search_terms': st, 'segments': seg}
+
+    def ingest_date_range(self, start_date: str, end_date: str):
+        """Pull data for a range of dates (for backfill)."""
+        start = datetime.strptime(start_date, '%Y-%m-%d')
+        end = datetime.strptime(end_date, '%Y-%m-%d')
+        total_days = (end - start).days + 1
+
+        logger.info(f"Backfill: {start_date} to {end_date} ({total_days} days)")
+
+        current = start
+        day_num = 0
+        while current <= end:
+            day_num += 1
+            date_str = current.strftime('%Y-%m-%d')
+            try:
+                result = self.ingest_date(date_str)
+                for key, val in result.items():
+                    self.stats[key] = self.stats.get(key, 0) + val
+            except GoogleAdsException as e:
+                logger.error(f"  API error on {date_str}: {e.failure.errors[0].message if e.failure.errors else e}")
+            except Exception as e:
+                logger.error(f"  Error on {date_str}: {e}")
+
+            if day_num % 10 == 0:
+                logger.info(f"  Progress: {day_num}/{total_days} days")
+
+            current += timedelta(days=1)
+            time.sleep(0.5)  # Avoid API rate limits
+
+        logger.info(f"Backfill complete: {day_num} days processed")
+
+    # -----------------------------------------------------------------------
+    # Campaign ingestion
+    # -----------------------------------------------------------------------
+    def ingest_campaigns(self, date: str) -> int:
+        query = f"""
+            SELECT
+                campaign.id,
+                campaign.name,
+                campaign.status,
+                campaign.advertising_channel_type,
+                campaign_budget.amount_micros,
+                campaign.bidding_strategy_type,
+                metrics.cost_micros,
+                metrics.impressions,
+                metrics.clicks,
+                metrics.conversions,
+                metrics.conversions_value,
+                metrics.ctr,
+                metrics.average_cpc,
+                metrics.cost_per_conversion,
+                metrics.search_impression_share,
+                metrics.search_budget_lost_impression_share,
+                metrics.search_rank_lost_impression_share,
+                segments.date
+            FROM campaign
+            WHERE segments.date = '{date}'
+                AND campaign.status != 'REMOVED'
+        """
+        count = 0
+        for row in self._query(query):
+            cost = row.metrics.cost_micros / MICROS
+            metrics = {
+                "cost": round(cost, 2),
+                "impressions": row.metrics.impressions,
+                "clicks": row.metrics.clicks,
+                "conversions": round(row.metrics.conversions, 2),
+                "conversion_value": round(row.metrics.conversions_value, 2),
+                "ctr": round(row.metrics.ctr, 6),
+                "avg_cpc": round(row.metrics.average_cpc / MICROS, 2),
+                "cost_per_conversion": round(row.metrics.cost_per_conversion / MICROS, 2),
+                "conversion_rate": round(_safe_div(row.metrics.conversions, row.metrics.clicks), 4),
+                "budget_amount": round(row.campaign_budget.amount_micros / MICROS, 2),
+                "bid_strategy_type": row.campaign.bidding_strategy_type.name,
+                "target_cpa": None,
+                "target_roas": None,
+                "campaign_status": row.campaign.status.name,
+                "campaign_type": row.campaign.advertising_channel_type.name,
+                "search_impression_share": round(row.metrics.search_impression_share, 4) if row.metrics.search_impression_share else None,
+                "search_lost_is_budget": round(row.metrics.search_budget_lost_impression_share, 4) if row.metrics.search_budget_lost_impression_share else None,
+                "search_lost_is_rank": round(row.metrics.search_rank_lost_impression_share, 4) if row.metrics.search_rank_lost_impression_share else None,
+            }
+            self._store_snapshot(date, 'campaign', row.campaign.id, row.campaign.name, None, metrics)
+            count += 1
+        return count
+
+    # -----------------------------------------------------------------------
+    # Ad Group ingestion
+    # -----------------------------------------------------------------------
+    def ingest_ad_groups(self, date: str) -> int:
+        query = f"""
+            SELECT
+                ad_group.id,
+                ad_group.name,
+                ad_group.status,
+                campaign.id,
+                campaign.name,
+                metrics.cost_micros,
+                metrics.impressions,
+                metrics.clicks,
+                metrics.conversions,
+                metrics.conversions_value,
+                metrics.ctr,
+                metrics.average_cpc,
+                metrics.cost_per_conversion,
+                segments.date
+            FROM ad_group
+            WHERE segments.date = '{date}'
+                AND campaign.status != 'REMOVED'
+                AND ad_group.status != 'REMOVED'
+        """
+        count = 0
+        for row in self._query(query):
+            metrics = {
+                "cost": round(row.metrics.cost_micros / MICROS, 2),
+                "impressions": row.metrics.impressions,
+                "clicks": row.metrics.clicks,
+                "conversions": round(row.metrics.conversions, 2),
+                "conversion_value": round(row.metrics.conversions_value, 2),
+                "ctr": round(row.metrics.ctr, 6),
+                "avg_cpc": round(row.metrics.average_cpc / MICROS, 2),
+                "cost_per_conversion": round(row.metrics.cost_per_conversion / MICROS, 2),
+                "conversion_rate": round(_safe_div(row.metrics.conversions, row.metrics.clicks), 4),
+                "ad_group_status": row.ad_group.status.name,
+            }
+            self._store_snapshot(date, 'ad_group', row.ad_group.id, row.ad_group.name,
+                                row.campaign.id, metrics)
+            count += 1
+        return count
+
+    # -----------------------------------------------------------------------
+    # Keyword ingestion
+    # -----------------------------------------------------------------------
+    def ingest_keywords(self, date: str) -> int:
+        query = f"""
+            SELECT
+                ad_group_criterion.criterion_id,
+                ad_group_criterion.keyword.text,
+                ad_group_criterion.keyword.match_type,
+                ad_group_criterion.status,
+                ad_group_criterion.quality_info.quality_score,
+                ad_group_criterion.quality_info.creative_quality_score,
+                ad_group_criterion.quality_info.search_predicted_ctr,
+                ad_group_criterion.quality_info.post_click_quality_score,
+                ad_group_criterion.effective_cpc_bid_micros,
+                ad_group.id,
+                ad_group.name,
+                campaign.id,
+                campaign.name,
+                metrics.cost_micros,
+                metrics.impressions,
+                metrics.clicks,
+                metrics.conversions,
+                metrics.conversions_value,
+                metrics.ctr,
+                metrics.average_cpc,
+                metrics.cost_per_conversion,
+                segments.date
+            FROM keyword_view
+            WHERE segments.date = '{date}'
+                AND campaign.status != 'REMOVED'
+                AND ad_group.status != 'REMOVED'
+        """
+        count = 0
+        for row in self._query(query):
+            # Quality info fields may be 0 (UNSPECIFIED) if not available
+            qs = row.ad_group_criterion.quality_info.quality_score
+            quality_score = qs if qs > 0 else None
+
+            creative_qs = row.ad_group_criterion.quality_info.creative_quality_score
+            predicted_ctr = row.ad_group_criterion.quality_info.search_predicted_ctr
+            landing_page = row.ad_group_criterion.quality_info.post_click_quality_score
+
+            metrics = {
+                "cost": round(row.metrics.cost_micros / MICROS, 2),
+                "impressions": row.metrics.impressions,
+                "clicks": row.metrics.clicks,
+                "conversions": round(row.metrics.conversions, 2),
+                "conversion_value": round(row.metrics.conversions_value, 2),
+                "ctr": round(row.metrics.ctr, 6),
+                "avg_cpc": round(row.metrics.average_cpc / MICROS, 2),
+                "cost_per_conversion": round(row.metrics.cost_per_conversion / MICROS, 2),
+                "conversion_rate": round(_safe_div(row.metrics.conversions, row.metrics.clicks), 4),
+                "keyword_text": row.ad_group_criterion.keyword.text,
+                "match_type": row.ad_group_criterion.keyword.match_type.name,
+                "keyword_status": row.ad_group_criterion.status.name,
+                "quality_score": quality_score,
+                "expected_ctr": predicted_ctr.name if predicted_ctr else None,
+                "ad_relevance": creative_qs.name if creative_qs else None,
+                "landing_page_experience": landing_page.name if landing_page else None,
+                "max_cpc_bid": round(row.ad_group_criterion.effective_cpc_bid_micros / MICROS, 2) if row.ad_group_criterion.effective_cpc_bid_micros else None,
+            }
+            # Use campaign_id as parent for keyword (ad_group_id stored in entity hierarchy)
+            entity_id = f"{row.ad_group.id}_{row.ad_group_criterion.criterion_id}"
+            self._store_snapshot(date, 'keyword', entity_id,
+                                row.ad_group_criterion.keyword.text,
+                                row.ad_group.id, metrics)
+            count += 1
+        return count
+
+    # -----------------------------------------------------------------------
+    # Ad ingestion
+    # -----------------------------------------------------------------------
+    def ingest_ads(self, date: str) -> int:
+        query = f"""
+            SELECT
+                ad_group_ad.ad.id,
+                ad_group_ad.ad.type,
+                ad_group_ad.ad.name,
+                ad_group_ad.ad.final_urls,
+                ad_group_ad.status,
+                ad_group_ad.ad_strength,
+                ad_group.id,
+                ad_group.name,
+                campaign.id,
+                campaign.name,
+                metrics.cost_micros,
+                metrics.impressions,
+                metrics.clicks,
+                metrics.conversions,
+                metrics.conversions_value,
+                metrics.ctr,
+                metrics.average_cpc,
+                metrics.cost_per_conversion,
+                segments.date
+            FROM ad_group_ad
+            WHERE segments.date = '{date}'
+                AND campaign.status != 'REMOVED'
+                AND ad_group.status != 'REMOVED'
+                AND ad_group_ad.status != 'REMOVED'
+        """
+        count = 0
+        for row in self._query(query):
+            final_urls = list(row.ad_group_ad.ad.final_urls) if row.ad_group_ad.ad.final_urls else []
+
+            metrics = {
+                "cost": round(row.metrics.cost_micros / MICROS, 2),
+                "impressions": row.metrics.impressions,
+                "clicks": row.metrics.clicks,
+                "conversions": round(row.metrics.conversions, 2),
+                "conversion_value": round(row.metrics.conversions_value, 2),
+                "ctr": round(row.metrics.ctr, 6),
+                "avg_cpc": round(row.metrics.average_cpc / MICROS, 2),
+                "cost_per_conversion": round(row.metrics.cost_per_conversion / MICROS, 2),
+                "conversion_rate": round(_safe_div(row.metrics.conversions, row.metrics.clicks), 4),
+                "ad_type": row.ad_group_ad.ad.type_.name,
+                "ad_status": row.ad_group_ad.status.name,
+                "ad_strength": row.ad_group_ad.ad_strength.name if row.ad_group_ad.ad_strength else None,
+                "final_urls": final_urls,
+            }
+            ad_name = row.ad_group_ad.ad.name or f"Ad {row.ad_group_ad.ad.id}"
+            self._store_snapshot(date, 'ad', row.ad_group_ad.ad.id, ad_name,
+                                row.ad_group.id, metrics)
+            count += 1
+        return count
+
+    # -----------------------------------------------------------------------
+    # Search terms ingestion
+    # -----------------------------------------------------------------------
+    def ingest_search_terms(self, date: str) -> int:
+        query = f"""
+            SELECT
+                search_term_view.search_term,
+                search_term_view.status,
+                ad_group.id,
+                ad_group.name,
+                campaign.id,
+                campaign.name,
+                segments.keyword.info.text,
+                segments.keyword.info.match_type,
+                segments.keyword.ad_group_criterion,
+                metrics.cost_micros,
+                metrics.impressions,
+                metrics.clicks,
+                metrics.conversions,
+                metrics.conversions_value,
+                metrics.ctr,
+                metrics.average_cpc,
+                metrics.cost_per_conversion,
+                segments.date
+            FROM search_term_view
+            WHERE segments.date = '{date}'
+                AND campaign.status != 'REMOVED'
+        """
+        # Delete existing search terms for this date (bulk idempotency)
+        self.db.execute(
+            "DELETE FROM act_v2_search_terms WHERE client_id = ? AND snapshot_date = ?",
+            [self.client_id, date]
+        )
+
+        count = 0
+        try:
+            for row in self._query(query):
+                cost = row.metrics.cost_micros / MICROS
+                clicks = row.metrics.clicks
+                conversions = row.metrics.conversions
+
+                # Extract keyword_id from resource name if available
+                kw_criterion = row.segments.keyword.ad_group_criterion
+                keyword_id = kw_criterion.split('/')[-1] if kw_criterion else None
+
+                self.db.execute(
+                    """INSERT INTO act_v2_search_terms
+                       (client_id, snapshot_date, campaign_id, campaign_name,
+                        ad_group_id, ad_group_name, search_term, match_type,
+                        keyword_text, keyword_id, cost, impressions, clicks,
+                        conversions, conversion_value, ctr, avg_cpc,
+                        cost_per_conversion, conversion_rate)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    [self.client_id, date,
+                     str(row.campaign.id), row.campaign.name,
+                     str(row.ad_group.id), row.ad_group.name,
+                     row.search_term_view.search_term,
+                     row.segments.keyword.info.match_type.name if row.segments.keyword.info.match_type else None,
+                     row.segments.keyword.info.text if row.segments.keyword.info.text else None,
+                     keyword_id,
+                     round(cost, 2),
+                     row.metrics.impressions,
+                     clicks,
+                     round(conversions, 2),
+                     round(row.metrics.conversions_value, 2),
+                     round(row.metrics.ctr, 6),
+                     round(row.metrics.average_cpc / MICROS, 2),
+                     round(row.metrics.cost_per_conversion / MICROS, 2),
+                     round(_safe_div(conversions, clicks), 4)]
+                )
+                count += 1
+        except GoogleAdsException as e:
+            # Search terms may not be available for all campaign types (e.g., PMax)
+            err_msg = e.failure.errors[0].message if e.failure.errors else str(e)
+            if 'not supported' in err_msg.lower() or 'not compatible' in err_msg.lower():
+                logger.warning(f"  Search terms not available for {date}: {err_msg}")
+            else:
+                raise
+        return count
+
+    # -----------------------------------------------------------------------
+    # Campaign segments ingestion (device, geo, ad schedule)
+    # -----------------------------------------------------------------------
+    def ingest_campaign_segments(self, date: str) -> int:
+        # Delete existing segments for this date (bulk idempotency)
+        self.db.execute(
+            "DELETE FROM act_v2_campaign_segments WHERE client_id = ? AND snapshot_date = ?",
+            [self.client_id, date]
+        )
+
+        total = 0
+        total += self._ingest_device_segments(date)
+        total += self._ingest_geo_segments(date)
+        total += self._ingest_schedule_segments(date)
+        return total
+
+    def _ingest_device_segments(self, date: str) -> int:
+        query = f"""
+            SELECT
+                campaign.id,
+                campaign.name,
+                segments.device,
+                metrics.cost_micros,
+                metrics.impressions,
+                metrics.clicks,
+                metrics.conversions,
+                metrics.conversions_value,
+                metrics.ctr,
+                metrics.average_cpc,
+                metrics.cost_per_conversion,
+                segments.date
+            FROM campaign
+            WHERE segments.date = '{date}'
+                AND campaign.status != 'REMOVED'
+        """
+        count = 0
+        for row in self._query(query):
+            self._store_segment(date, row.campaign.id, row.campaign.name,
+                               'device', row.segments.device.name, row)
+            count += 1
+        return count
+
+    def _ingest_geo_segments(self, date: str) -> int:
+        query = f"""
+            SELECT
+                campaign.id,
+                campaign.name,
+                campaign.status,
+                geographic_view.country_criterion_id,
+                geographic_view.location_type,
+                metrics.cost_micros,
+                metrics.impressions,
+                metrics.clicks,
+                metrics.conversions,
+                metrics.conversions_value,
+                metrics.ctr,
+                metrics.average_cpc,
+                metrics.cost_per_conversion,
+                segments.date
+            FROM geographic_view
+            WHERE segments.date = '{date}'
+                AND campaign.status != 'REMOVED'
+        """
+        count = 0
+        try:
+            for row in self._query(query):
+                geo_value = f"country_{row.geographic_view.country_criterion_id}"
+                self._store_segment(date, row.campaign.id, row.campaign.name,
+                                   'geo', geo_value, row)
+                count += 1
+        except GoogleAdsException as e:
+            err_msg = e.failure.errors[0].message if e.failure.errors else str(e)
+            logger.warning(f"  Geo segments not available for {date}: {err_msg}")
+        return count
+
+    def _ingest_schedule_segments(self, date: str) -> int:
+        query = f"""
+            SELECT
+                campaign.id,
+                campaign.name,
+                segments.hour,
+                segments.day_of_week,
+                metrics.cost_micros,
+                metrics.impressions,
+                metrics.clicks,
+                metrics.conversions,
+                metrics.conversions_value,
+                metrics.ctr,
+                metrics.average_cpc,
+                metrics.cost_per_conversion,
+                segments.date
+            FROM campaign
+            WHERE segments.date = '{date}'
+                AND campaign.status != 'REMOVED'
+        """
+        count = 0
+        for row in self._query(query):
+            schedule_value = f"{row.segments.day_of_week.name}_h{row.segments.hour}"
+            self._store_segment(date, row.campaign.id, row.campaign.name,
+                               'ad_schedule', schedule_value, row)
+            count += 1
+        return count
+
+    def _store_segment(self, date, campaign_id, campaign_name, segment_type, segment_value, row):
+        """Store a single campaign segment row."""
+        cost = row.metrics.cost_micros / MICROS
+        clicks = row.metrics.clicks
+        conversions = row.metrics.conversions
+
+        self.db.execute(
+            """INSERT INTO act_v2_campaign_segments
+               (client_id, snapshot_date, campaign_id, campaign_name,
+                segment_type, segment_value, cost, impressions, clicks,
+                conversions, conversion_value, ctr, avg_cpc,
+                cost_per_conversion, conversion_rate, bid_modifier)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)""",
+            [self.client_id, date,
+             str(campaign_id), campaign_name,
+             segment_type, segment_value,
+             round(cost, 2),
+             row.metrics.impressions,
+             clicks,
+             round(conversions, 2),
+             round(row.metrics.conversions_value, 2),
+             round(row.metrics.ctr, 6),
+             round(row.metrics.average_cpc / MICROS, 2),
+             round(row.metrics.cost_per_conversion / MICROS, 2),
+             round(_safe_div(conversions, clicks), 4)]
+        )
+
+    # -----------------------------------------------------------------------
+    # Account-level snapshot (aggregated from campaigns, not a separate API call)
+    # -----------------------------------------------------------------------
+    def ingest_account(self, date: str):
+        """Compute account-level snapshot by aggregating campaign snapshots for this date."""
+        rows = self.db.execute(
+            """SELECT metrics_json FROM act_v2_snapshots
+               WHERE client_id = ? AND snapshot_date = ? AND level = 'campaign'""",
+            [self.client_id, date]
+        ).fetchall()
+
+        if not rows:
+            return
+
+        total_cost = 0.0
+        total_impressions = 0
+        total_clicks = 0
+        total_conversions = 0.0
+        total_conversion_value = 0.0
+
+        for (metrics_str,) in rows:
+            m = json.loads(metrics_str) if isinstance(metrics_str, str) else metrics_str
+            total_cost += m.get("cost", 0)
+            total_impressions += m.get("impressions", 0)
+            total_clicks += m.get("clicks", 0)
+            total_conversions += m.get("conversions", 0)
+            total_conversion_value += m.get("conversion_value", 0)
+
+        account_metrics = {
+            "cost": round(total_cost, 2),
+            "impressions": total_impressions,
+            "clicks": total_clicks,
+            "conversions": round(total_conversions, 2),
+            "conversion_value": round(total_conversion_value, 2),
+            "ctr": round(_safe_div(total_clicks, total_impressions), 6),
+            "avg_cpc": round(_safe_div(total_cost, total_clicks), 2),
+            "cost_per_conversion": round(_safe_div(total_cost, total_conversions), 2),
+            "conversion_rate": round(_safe_div(total_conversions, total_clicks), 4),
+        }
+        self._store_snapshot(date, 'account', self.customer_id, 'Account Total', None, account_metrics)
+
+    def close(self):
+        """Close the database connection."""
+        if self.db:
+            self.db.close()

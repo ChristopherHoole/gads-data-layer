@@ -46,6 +46,8 @@ TABLES_DROP_ORDER = [
     'act_v2_executed_actions',
     'act_v2_recommendations',
     'act_v2_alerts',
+    'act_v2_search_terms',
+    'act_v2_campaign_segments',
     'act_v2_snapshots',
     'act_v2_negative_keyword_lists',
     'act_v2_campaign_roles',
@@ -61,6 +63,8 @@ SEQUENCES = [
     'seq_act_v2_executed_actions',
     'seq_act_v2_monitoring',
     'seq_act_v2_alerts',
+    'seq_act_v2_search_terms',
+    'seq_act_v2_campaign_segments',
 ]
 
 
