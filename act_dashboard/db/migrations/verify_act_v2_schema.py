@@ -133,7 +133,7 @@ def main():
         settings_count = con.execute(
             "SELECT COUNT(*) FROM act_v2_client_settings WHERE client_id = 'oe001'"
         ).fetchone()[0]
-        check(f'45 settings seeded (got {settings_count})', settings_count == 45)
+        check(f'71 settings seeded (got {settings_count})', settings_count == 71)
 
         nkl_count = con.execute(
             "SELECT COUNT(*) FROM act_v2_negative_keyword_lists WHERE client_id = 'oe001'"
