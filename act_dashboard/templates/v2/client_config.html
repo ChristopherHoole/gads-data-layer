@@ -1,0 +1,524 @@
+{% extends "v2/base_v2.html" %}
+
+{% block title %}Client Configuration{% endblock %}
+{% block page_title %}Client Configuration{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/v2_client_config.css') }}">
+{% endblock %}
+
+{% macro s(key) %}{{ settings[key].value if settings.get(key) and settings[key].value is not none else '' }}{% endmacro %}
+{% macro toggle_class(key) %}config-toggle{% if settings.get(key) and settings[key].value == 'true' %} on{% endif %}{% endmacro %}
+
+{% block content %}
+<div data-client-id="{{ client.id }}">
+
+  <!-- Page Header -->
+  <div class="config-header">
+    <div class="config-header__left">
+      <h2 class="config-header__title">Client Configuration</h2>
+      <p class="config-header__sub">Settings for {{ client.name }}</p>
+      <div class="config-header__saved"><span class="material-symbols-outlined">schedule</span>Last saved: {{ last_saved or 'Never' }}</div>
+    </div>
+    <div class="config-header__actions">
+      <button class="btn-reset" id="btnReset">Reset to Defaults</button>
+      <button class="btn-save btn-save--disabled" id="btnSave"><span class="material-symbols-outlined" style="font-size:16px">save</span>Save Changes</button>
+    </div>
+  </div>
+
+  <!-- Layout: Tabs + Content -->
+  <div class="config-layout">
+
+    <!-- Vertical Tabs -->
+    <nav class="config-tabs">
+      <div class="config-tab active" data-tab="account"><span class="material-symbols-outlined">account_balance</span>Account</div>
+      <div class="config-tab" data-tab="campaign"><span class="material-symbols-outlined">campaign</span>Campaign</div>
+      <div class="config-tab" data-tab="adgroup"><span class="material-symbols-outlined">folder</span>Ad Group</div>
+      <div class="config-tab" data-tab="keyword"><span class="material-symbols-outlined">search</span>Keyword</div>
+      <div class="config-tab" data-tab="ad"><span class="material-symbols-outlined">article</span>Ad</div>
+      <div class="config-tab" data-tab="shopping"><span class="material-symbols-outlined">shopping_cart</span>Shopping</div>
+      <div class="config-tab" data-tab="onboarding"><span class="material-symbols-outlined">checklist</span>Onboarding</div>
+    </nav>
+
+    <!-- Content Panels -->
+    <div class="config-content">
+
+      <!-- ============ ACCOUNT SETTINGS ============ -->
+      <div class="config-panel active" id="panel-account">
+        <h3 class="config-panel__title">Account Settings</h3>
+
+        <!-- Optimization Levels -->
+        <div class="levels-section">
+          <div class="levels-section__header">
+            <h4 class="levels-section__title">Optimization Levels</h4>
+            <span class="levels-section__updated">Last updated: <span id="levelsLastUpdated">Never (default settings)</span></span>
+          </div>
+          <div class="levels-note">
+            <span class="material-symbols-outlined">info</span>
+            <span>ACT starts in safe mode &mdash; all levels off. Enable levels progressively: start with Monitor Only to see what ACT would do, then switch to Active when you&rsquo;re confident.</span>
+          </div>
+
+          <ul class="levels-list">
+            {% set level_config = [
+              ('account', '#3b82f6', 'account_balance', 'Account Level'),
+              ('campaign', '#10b981', 'campaign', 'Campaign Level'),
+              ('ad_group', '#f59e0b', 'folder', 'Ad Group Level'),
+              ('keyword', '#8b5cf6', 'search', 'Keyword Level'),
+              ('ad', '#ec4899', 'article', 'Ad Level'),
+              ('shopping', '#14b8a6', 'shopping_cart', 'Shopping Level')
+            ] %}
+            {% for lvl_key, lvl_colour, lvl_icon, lvl_name in level_config %}
+            {% set state = level_states.get(lvl_key, 'off') %}
+            {% set state_short = 'monitor' if state == 'monitor_only' else state %}
+            <li class="level-row" data-level="{{ 'adgroup' if lvl_key == 'ad_group' else lvl_key }}" data-colour="{{ lvl_colour }}" data-initial-state="{{ state_short }}">
+              <span class="material-symbols-outlined level-row__icon">{{ lvl_icon }}</span>
+              <div class="level-row__info">
+                <div class="level-row__name">{{ lvl_name }}</div>
+                <div class="level-row__state" data-state-label>{{ 'Monitor Only' if state == 'monitor_only' else state|capitalize }}</div>
+              </div>
+              <div class="level-toggle" role="radiogroup" aria-label="{{ lvl_name }} state">
+                <button type="button" class="level-toggle__opt{% if state_short == 'off' %} active{% endif %}" data-state="off">Off</button>
+                <button type="button" class="level-toggle__opt{% if state_short == 'monitor' %} active{% endif %}" data-state="monitor">Monitor Only</button>
+                <button type="button" class="level-toggle__opt{% if state_short == 'active' %} active{% endif %}" data-state="active">Active</button>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Client Persona</p><p class="setting-desc">Determines primary KPI and signal decomposition model. Lead Gen optimises for CPA, Ecommerce for ROAS.</p></div>
+          <div class="setting-control">
+            <select class="config-select" id="settingPersona" data-key="persona">
+              <option value="lead_gen_cpa" {% if client.persona == 'lead_gen_cpa' %}selected{% endif %}>Lead Gen (CPA)</option>
+              <option value="ecommerce_roas" {% if client.persona == 'ecommerce_roas' %}selected{% endif %}>Ecommerce (ROAS)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting-row" id="rowTargetCpa" {% if client.persona != 'lead_gen_cpa' %}style="display:none"{% endif %}>
+          <div class="setting-info"><p class="setting-name">Target CPA</p><p class="setting-desc">Target cost per acquisition. Creates three zones: Outperforming, On Target, Underperforming.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="target_cpa" value="{{ client.target_cpa or '' }}" min="1"><span class="input-group__suffix">&pound;</span></div></div>
+        </div>
+
+        <div class="setting-row" id="rowTargetRoas" {% if client.persona != 'ecommerce_roas' %}style="display:none"{% endif %}>
+          <div class="setting-info"><p class="setting-name">Target ROAS</p><p class="setting-desc">Target return on ad spend. Creates three zones: Outperforming, On Target, Underperforming.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="target_roas" value="{{ client.target_roas or '' }}" min="0.1" step="0.1"><span class="input-group__suffix">x</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Monthly Budget</p><p class="setting-desc">Total monthly ad spend across all campaigns.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="monthly_budget" value="{{ client.monthly_budget|int }}" min="1"><span class="input-group__suffix">&pound;/month</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Budget Allocation Mode</p><p class="setting-desc">Automatic lets ACT shift budget between campaigns within bands. Manual requires approval for all shifts.</p></div>
+          <div class="setting-control"><div class="{{ toggle_class('budget_allocation_mode') }}" data-key="budget_allocation_mode"><div class="config-toggle__knob"></div></div><span style="font-size:12px;margin-left:8px;color:var(--act-text)">Automatic</span></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Deviation Threshold</p><p class="setting-desc">% beyond target range before ACT triggers deeper investigation.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="deviation_threshold_pct" value="{{ s('deviation_threshold_pct') }}" min="1" max="50"><span class="input-group__suffix">%</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Budget Shift Cooldown</p><p class="setting-desc">Wait time between budget adjustments on the same campaign.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="budget_shift_cooldown_hours" value="{{ s('budget_shift_cooldown_hours') }}" min="1"><span class="input-group__suffix">hours</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Max Overnight Budget Move</p><p class="setting-desc">Maximum % of daily budget ACT can shift in one overnight cycle.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="max_overnight_budget_move_pct" value="{{ s('max_overnight_budget_move_pct') }}" min="1" max="50"><span class="input-group__suffix">%</span></div></div>
+        </div>
+
+        <!-- Budget Bands table -->
+        <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--act-border-light)">
+          <p class="setting-name" style="margin-bottom:4px">Budget Bands</p>
+          <p class="setting-desc" style="margin-bottom:12px">Min/max % of total budget per campaign role. ACT moves budget freely within these bands.</p>
+          <table class="caps-table">
+            <thead><tr><th>Role</th><th>Min %</th><th>Max %</th></tr></thead>
+            <tbody>
+              {% for role, label in [('bd', 'BD (Brand Defence)'), ('cp', 'CP (Core Performance)'), ('rt', 'RT (Retargeting)'), ('pr', 'PR (Prospecting)'), ('ts', 'TS (Testing)')] %}
+              <tr>
+                <td>{{ label }}</td>
+                <td><div class="input-group"><input type="number" class="config-input" data-key="budget_band_{{ role }}_min_pct" value="{{ s('budget_band_' ~ role ~ '_min_pct') }}" min="0" max="100"><span class="input-group__suffix">%</span></div></td>
+                <td><div class="input-group"><input type="number" class="config-input" data-key="budget_band_{{ role }}_max_pct" value="{{ s('budget_band_' ~ role ~ '_max_pct') }}" min="0" max="100"><span class="input-group__suffix">%</span></div></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Performance Scoring Weights</p><p class="setting-desc">Weighted blend of 7-day, 14-day, and 30-day performance windows. Must sum to 100%.</p></div>
+          <div class="setting-control">
+            <div>
+              <div class="multi-input">
+                <label>7d</label><input type="number" class="config-input" id="weight7d" data-key="performance_scoring_weight_7d" value="{{ s('performance_scoring_weight_7d') }}" min="0" max="100">
+                <label>14d</label><input type="number" class="config-input" id="weight14d" data-key="performance_scoring_weight_14d" value="{{ s('performance_scoring_weight_14d') }}" min="0" max="100">
+                <label>30d</label><input type="number" class="config-input" id="weight30d" data-key="performance_scoring_weight_30d" value="{{ s('performance_scoring_weight_30d') }}" min="0" max="100">
+              </div>
+              <div class="validation-msg" id="weightValidation"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Signal Detection Windows</p><p class="setting-desc">Number of days for each signal detection window.</p></div>
+          <div class="setting-control">
+            <div class="multi-input">
+              <label>CPC</label><input type="number" class="config-input" data-key="signal_window_cpc_days" value="{{ s('signal_window_cpc_days') }}" min="1">
+              <label>CVR</label><input type="number" class="config-input" data-key="signal_window_cvr_days" value="{{ s('signal_window_cvr_days') }}" min="1">
+              <label>AOV</label><input type="number" class="config-input" data-key="signal_window_aov_days" value="{{ s('signal_window_aov_days') }}" min="1">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ CAMPAIGN SETTINGS ============ -->
+      <div class="config-panel" id="panel-campaign">
+        <h3 class="config-panel__title">Campaign Settings</h3>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">CPC Absolute Floor</p><p class="setting-desc">Minimum CPC &mdash; ACT will never bid below this.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="cpc_absolute_floor" value="{{ s('cpc_absolute_floor') }}" min="0.01" step="0.01"><span class="input-group__suffix">&pound;</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">CPC Absolute Ceiling</p><p class="setting-desc">Maximum CPC &mdash; ACT will never bid above this.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="cpc_absolute_ceiling" value="{{ s('cpc_absolute_ceiling') }}" min="0.01" step="0.01"><span class="input-group__suffix">&pound;</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">tCPA Absolute Floor</p><p class="setting-desc">Minimum tCPA target ACT can set.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="tcpa_absolute_floor" value="{{ s('tcpa_absolute_floor') }}" placeholder="Client-specific" min="0.01" step="0.01"><span class="input-group__suffix">&pound;</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">tCPA Absolute Ceiling</p><p class="setting-desc">Maximum tCPA target ACT can set.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="tcpa_absolute_ceiling" value="{{ s('tcpa_absolute_ceiling') }}" placeholder="Client-specific" min="0.01" step="0.01"><span class="input-group__suffix">&pound;</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">tROAS Absolute Floor</p><p class="setting-desc">Minimum tROAS target ACT can set.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="troas_absolute_floor" value="{{ s('troas_absolute_floor') }}" placeholder="Client-specific" min="0.1" step="0.1"><span class="input-group__suffix">x</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">tROAS Absolute Ceiling</p><p class="setting-desc">Maximum tROAS target ACT can set.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="troas_absolute_ceiling" value="{{ s('troas_absolute_ceiling') }}" placeholder="Client-specific" min="0.1" step="0.1"><span class="input-group__suffix">x</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Per-Cycle Bid/Modifier Change</p><p class="setting-desc">Max % any bid or modifier can change in a single overnight cycle.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="per_cycle_bid_modifier_change_pct" value="{{ s('per_cycle_bid_modifier_change_pct') }}" min="1" max="50"><span class="input-group__suffix">%</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">7-Day Max Bid Change</p><p class="setting-desc">Max total % a bid can move in any 7-day period.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="seven_day_max_bid_change_pct" value="{{ s('seven_day_max_bid_change_pct') }}" min="1" max="100"><span class="input-group__suffix">%</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">tCPA/tROAS Target Cooldown</p><p class="setting-desc">Wait time between target changes.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="tcpa_troas_target_cooldown_days" value="{{ s('tcpa_troas_target_cooldown_days') }}" min="1"><span class="input-group__suffix">days</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Max CPC Cap Cooldown</p><p class="setting-desc">Wait time between CPC cap changes on Max Clicks campaigns.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="max_cpc_cap_cooldown_days" value="{{ s('max_cpc_cap_cooldown_days') }}" min="1"><span class="input-group__suffix">days</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Match Type Migration</p><p class="setting-desc">Enable automatic match type broadening recommendations.</p></div>
+          <div class="setting-control"><div class="{{ toggle_class('match_type_migration_enabled') }}" data-key="match_type_migration_enabled"><div class="config-toggle__knob"></div></div><span style="font-size:12px;margin-left:8px;color:var(--act-text)">Enabled</span></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Search Partners Opt-Out Check</p><p class="setting-desc">ACT checks whether Search Partners is enabled and flags if performance is poor.</p></div>
+          <div class="setting-control"><div class="{{ toggle_class('search_partners_optout_check_enabled') }}" data-key="search_partners_optout_check_enabled"><div class="config-toggle__knob"></div></div><span style="font-size:12px;margin-left:8px;color:var(--act-text)">Enabled</span></div>
+        </div>
+
+        <!-- Modifier Caps Table -->
+        <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--act-border-light)">
+          <p class="setting-name" style="margin-bottom:4px">Modifier Caps</p>
+          <p class="setting-desc" style="margin-bottom:12px">Auto-execute limits and approval thresholds for device, geo, and ad schedule modifiers.</p>
+          <table class="caps-table">
+            <thead><tr><th>Modifier</th><th>Auto Max Negative</th><th>Auto Max Positive</th><th>Approval Max</th><th>Cooldown</th><th>Never Without Approval</th></tr></thead>
+            <tbody>
+              <tr><td>Device</td>
+                <td><div class="input-group"><input type="number" class="config-input" data-key="device_mod_min_pct" value="{{ s('device_mod_min_pct') }}"><span class="input-group__suffix">%</span></div></td>
+                <td><div class="input-group"><input type="number" class="config-input" data-key="device_mod_max_pct" value="{{ s('device_mod_max_pct') }}"><span class="input-group__suffix">%</span></div></td>
+                <td style="font-size:12px;color:var(--act-text)">-100% / +50%</td>
+                <td><div class="input-group"><input type="number" class="config-input" data-key="device_bid_cooldown_days" value="{{ s('device_bid_cooldown_days') }}"><span class="input-group__suffix">days</span></div></td>
+                <td style="font-size:12px;color:var(--act-text)">Full exclusion (-100%)</td></tr>
+              <tr><td>Geo</td>
+                <td><div class="input-group"><input type="number" class="config-input" data-key="geo_mod_min_pct" value="{{ s('geo_mod_min_pct') }}"><span class="input-group__suffix">%</span></div></td>
+                <td><div class="input-group"><input type="number" class="config-input" data-key="geo_mod_max_pct" value="{{ s('geo_mod_max_pct') }}"><span class="input-group__suffix">%</span></div></td>
+                <td style="font-size:12px;color:var(--act-text)">-90% / +50%</td>
+                <td><div class="input-group"><input type="number" class="config-input" data-key="geo_bid_cooldown_days" value="{{ s('geo_bid_cooldown_days') }}"><span class="input-group__suffix">days</span></div></td>
+                <td style="font-size:12px;color:var(--act-text)">Full exclusion</td></tr>
+              <tr><td>Ad Schedule</td>
+                <td><div class="input-group"><input type="number" class="config-input" data-key="schedule_mod_min_pct" value="{{ s('schedule_mod_min_pct') }}"><span class="input-group__suffix">%</span></div></td>
+                <td><div class="input-group"><input type="number" class="config-input" data-key="schedule_mod_max_pct" value="{{ s('schedule_mod_max_pct') }}"><span class="input-group__suffix">%</span></div></td>
+                <td style="font-size:12px;color:var(--act-text)">-80% / +40%</td>
+                <td><div class="input-group"><input type="number" class="config-input" data-key="schedule_bid_cooldown_days" value="{{ s('schedule_bid_cooldown_days') }}"><span class="input-group__suffix">days</span></div></td>
+                <td style="font-size:12px;color:var(--act-text)">Pausing a slot</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ============ AD GROUP SETTINGS ============ -->
+      <div class="config-panel" id="panel-adgroup">
+        <h3 class="config-panel__title">Ad Group Settings</h3>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Negative Outlier Spend Threshold</p><p class="setting-desc">% of campaign spend an ad group must consume before being flagged as a negative outlier.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="negative_outlier_spend_pct" value="{{ s('negative_outlier_spend_pct') }}" min="1" max="100"><span class="input-group__suffix">%</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Positive Outlier Performance Threshold</p><p class="setting-desc">% better than campaign average before flagging as a promotion candidate.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="positive_outlier_performance_pct" value="{{ s('positive_outlier_performance_pct') }}" min="1" max="100"><span class="input-group__suffix">%</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Budget Concentration Threshold (2 ad groups)</p><p class="setting-desc">% of campaign spend one ad group must consume before flagging when there are 2 active ad groups.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="budget_concentration_threshold_2ag_pct" value="{{ s('budget_concentration_threshold_2ag_pct') }}" min="50" max="100"><span class="input-group__suffix">%</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Budget Concentration Threshold (3+ ad groups)</p><p class="setting-desc">% of campaign spend one ad group must consume before flagging when there are 3+ active ad groups.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="budget_concentration_threshold_3ag_pct" value="{{ s('budget_concentration_threshold_3ag_pct') }}" min="20" max="100"><span class="input-group__suffix">%</span></div></div>
+        </div>
+      </div>
+
+      <!-- ============ KEYWORD SETTINGS ============ -->
+      <div class="config-panel" id="panel-keyword">
+        <h3 class="config-panel__title">Keyword Settings</h3>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Keyword Bid Cooldown</p><p class="setting-desc">Wait time between bid adjustments on the same keyword. Manual CPC only.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="keyword_bid_cooldown_hours" value="{{ s('keyword_bid_cooldown_hours') }}" min="1"><span class="input-group__suffix">hours</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Dead Keyword Threshold</p><p class="setting-desc">Days with 0 impressions before ACT auto-pauses a keyword.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="dead_keyword_days_threshold" value="{{ s('dead_keyword_days_threshold') }}" min="1"><span class="input-group__suffix">days</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Zero-Converting Spend Threshold</p><p class="setting-desc">Spend multiplier relative to target CPA before auto-pausing a zero-converting keyword.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="auto_pause_spend_multiplier" value="{{ s('auto_pause_spend_multiplier') }}" min="0.5" step="0.5"><span class="input-group__suffix">x CPA</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Quality Score Scan Frequency</p><p class="setting-desc">How often ACT scans keyword quality scores.</p></div>
+          <div class="setting-control">
+            <select class="config-select" data-key="quality_score_scan_frequency">
+              <option value="weekly" {% if s('quality_score_scan_frequency') == 'weekly' %}selected{% endif %}>Weekly</option>
+              <option value="14" {% if s('quality_score_scan_frequency') == '14' %}selected{% endif %}>Every 14 days</option>
+              <option value="30" {% if s('quality_score_scan_frequency') == '30' %}selected{% endif %}>Every 30 days</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Quality Score Alert Threshold</p><p class="setting-desc">Flag keywords with Quality Score below this value.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="quality_score_alert_threshold" value="{{ s('quality_score_alert_threshold') }}" min="1" max="10"><span class="input-group__suffix">/10</span></div></div>
+        </div>
+      </div>
+
+      <!-- ============ AD SETTINGS ============ -->
+      <div class="config-panel" id="panel-ad">
+        <h3 class="config-panel__title">Ad Settings</h3>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Ad Scan Frequency</p><p class="setting-desc">How often ACT scans ad strength, RSA assets, ad count, performance, and extensions.</p></div>
+          <div class="setting-control">
+            <select class="config-select" data-key="ad_scan_frequency">
+              <option value="weekly" {% if s('ad_scan_frequency') == 'weekly' %}selected{% endif %}>Weekly</option>
+              <option value="daily" {% if s('ad_scan_frequency') == 'daily' %}selected{% endif %}>Daily</option>
+              <option value="14" {% if s('ad_scan_frequency') == '14' %}selected{% endif %}>Every 14 days</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Minimum Live Ads per Ad Group</p><p class="setting-desc">Minimum number of enabled ads required in each ad group.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="min_ads_per_ad_group" value="{{ s('min_ads_per_ad_group') }}" min="1" max="10"><span class="input-group__suffix">ads</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">RSA Asset Low-Rated Threshold</p><p class="setting-desc">Days a "Low" rated RSA asset must be live before ACT flags it.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="rsa_asset_low_rated_days_threshold" value="{{ s('rsa_asset_low_rated_days_threshold') }}" min="7"><span class="input-group__suffix">days</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Ad Performance Comparison Threshold</p><p class="setting-desc">% difference in CTR/CVR between best and worst ad before flagging.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="ad_performance_comparison_pct" value="{{ s('ad_performance_comparison_pct') }}" min="10" max="100"><span class="input-group__suffix">%</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Ad Minimum Days Live</p><p class="setting-desc">Minimum days an ad must be live before performance comparison applies.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="ad_minimum_days_live" value="{{ s('ad_minimum_days_live') }}" min="7"><span class="input-group__suffix">days</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Extension Minimums</p><p class="setting-desc">Minimum counts for ad extensions.</p></div>
+          <div class="setting-control">
+            <div class="multi-input">
+              <label>Sitelinks</label><input type="number" class="config-input" data-key="min_sitelinks" value="{{ s('min_sitelinks') }}" min="0">
+              <label>Callouts</label><input type="number" class="config-input" data-key="min_callout_extensions" value="{{ s('min_callout_extensions') }}" min="0">
+              <label>Snippets</label><input type="number" class="config-input" data-key="min_structured_snippets" value="{{ s('min_structured_snippets') }}" min="0">
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Require Call Extension</p><p class="setting-desc">Whether ACT flags missing call extensions.</p></div>
+          <div class="setting-control"><div class="{{ toggle_class('require_call_extension') }}" data-key="require_call_extension"><div class="config-toggle__knob"></div></div><span style="font-size:12px;margin-left:8px;color:var(--act-text)">Enabled</span></div>
+        </div>
+      </div>
+
+      <!-- ============ SHOPPING SETTINGS ============ -->
+      <div class="config-panel" id="panel-shopping">
+        <h3 class="config-panel__title">Shopping Settings</h3>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Product Spend Threshold</p><p class="setting-desc">Absolute spend amount that defines a "loser" product.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="product_spend_threshold" value="{{ s('product_spend_threshold') }}" min="1"><span class="input-group__suffix">&pound;</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Product Bid Adjustment per Cycle</p><p class="setting-desc">Max % a product group bid can change in a single overnight cycle.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="product_bid_adjustment_per_cycle_pct" value="{{ s('product_bid_adjustment_per_cycle_pct') }}" min="1" max="50"><span class="input-group__suffix">%</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Product Bid Cooldown</p><p class="setting-desc">Wait time between bid adjustments on the same product group.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="product_bid_cooldown_hours" value="{{ s('product_bid_cooldown_hours') }}" min="1"><span class="input-group__suffix">hours</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Product Bid 7-Day Cap</p><p class="setting-desc">Max total % a product group bid can move in any 7-day period.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="product_bid_7day_cap_pct" value="{{ s('product_bid_7day_cap_pct') }}" min="1" max="100"><span class="input-group__suffix">%</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Best Seller Tier Percentage</p><p class="setting-desc">Top X% of products by revenue classified as best sellers.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="best_seller_tier_pct" value="{{ s('best_seller_tier_pct') }}" min="1" max="100"><span class="input-group__suffix">%</span></div></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info"><p class="setting-name">Underperformer ROAS Threshold</p><p class="setting-desc">% below client&rsquo;s target ROAS before classifying as underperformer.</p></div>
+          <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="underperformer_roas_threshold_pct" value="{{ s('underperformer_roas_threshold_pct') }}" min="1" max="100"><span class="input-group__suffix">%</span></div></div>
+        </div>
+      </div>
+
+      <!-- ============ ONBOARDING CHECKLIST ============ -->
+      <div class="config-panel" id="panel-onboarding">
+        <h3 class="config-panel__title">Onboarding Checklist</h3>
+
+        <div class="checklist-item">
+          <div class="checklist-icon checklist-icon--done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
+          <div class="checklist-content">
+            <p class="checklist-title">Client persona selected</p>
+            <p class="checklist-status">{{ 'Lead Gen (CPA)' if client.persona == 'lead_gen_cpa' else 'Ecommerce (ROAS)' }}</p>
+          </div>
+        </div>
+
+        <div class="checklist-item">
+          <div class="checklist-icon checklist-icon--{% if client.target_cpa or client.target_roas %}done{% else %}pending{% endif %}"><span class="material-symbols-outlined" style="font-size:14px">{% if client.target_cpa or client.target_roas %}check{% else %}pending{% endif %}</span></div>
+          <div class="checklist-content">
+            <p class="checklist-title">Target {{ 'CPA' if client.persona == 'lead_gen_cpa' else 'ROAS' }} set</p>
+            <p class="checklist-status">{% if client.persona == 'lead_gen_cpa' %}&pound;{{ client.target_cpa|int if client.target_cpa else 'Not set' }}{% else %}{{ client.target_roas }}x{% endif %}</p>
+          </div>
+        </div>
+
+        <div class="checklist-item">
+          <div class="checklist-icon checklist-icon--done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
+          <div class="checklist-content">
+            <p class="checklist-title">Monthly budget set</p>
+            <p class="checklist-status">&pound;{{ '{:,.0f}'.format(client.monthly_budget) }}/month</p>
+          </div>
+        </div>
+
+        <div class="checklist-item">
+          <div class="checklist-icon checklist-icon--{% if campaign_roles %}done{% else %}pending{% endif %}"><span class="material-symbols-outlined" style="font-size:14px">{% if campaign_roles %}check{% else %}pending{% endif %}</span></div>
+          <div class="checklist-content">
+            <p class="checklist-title">Campaign roles assigned</p>
+            <p class="checklist-status">{{ campaign_roles|length }} of {{ campaign_count }} campaigns mapped{% if not campaign_roles %} &mdash; awaiting assignment{% endif %}</p>
+            {% if campaign_count > 0 %}
+            <div class="checklist-details">
+              <ul>
+                {% for role in campaign_roles %}
+                <li class="done">{{ role.campaign_name }} &mdash; [{{ role.role }}]</li>
+                {% endfor %}
+                {% if campaign_roles|length < campaign_count %}
+                <li class="pending">{{ campaign_count - campaign_roles|length }} campaign(s) not yet assigned</li>
+                {% endif %}
+              </ul>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="checklist-item">
+          <div class="checklist-icon checklist-icon--{% if neg_keyword_lists|length == 9 %}done{% else %}pending{% endif %}"><span class="material-symbols-outlined" style="font-size:14px">{% if neg_keyword_lists|length == 9 %}check{% else %}pending{% endif %}</span></div>
+          <div class="checklist-content">
+            <p class="checklist-title">{{ neg_keyword_lists|length }} negative keyword lists created</p>
+            <p class="checklist-status">{% if neg_keyword_lists|length == 9 %}All 9 lists active{% else %}{{ neg_keyword_lists|length }}/9 lists{% endif %}</p>
+            {% if neg_keyword_lists %}
+            <div class="checklist-details">
+              <ul>
+                {% for nkl in neg_keyword_lists %}
+                <li class="done">{{ nkl.list_name }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="checklist-item">
+          <div class="checklist-icon checklist-icon--done"><span class="material-symbols-outlined" style="font-size:14px">check</span></div>
+          <div class="checklist-content">
+            <p class="checklist-title">Default settings applied</p>
+            <p class="checklist-status">All {{ settings|length }} settings initialised</p>
+          </div>
+        </div>
+
+        <div class="checklist-item">
+          <div class="checklist-icon checklist-icon--{% if api_connected %}done{% else %}pending{% endif %}"><span class="material-symbols-outlined" style="font-size:14px">{% if api_connected %}check{% else %}pending{% endif %}</span></div>
+          <div class="checklist-content">
+            <p class="checklist-title">Google Ads API connected</p>
+            <p class="checklist-status">{% if api_connected %}Account {{ client.customer_id[:3] }}-{{ client.customer_id[3:6] }}-{{ client.customer_id[6:] }} connected{% else %}Not yet connected{% endif %}</p>
+          </div>
+        </div>
+
+        <button class="btn-onboard" id="btnOnboard"><span class="material-symbols-outlined">rocket_launch</span>Run Onboarding</button>
+      </div>
+
+    </div>
+  </div>
+
+<!-- Reset Confirmation Dialog -->
+<div class="config-confirm-overlay" id="resetOverlay">
+  <div class="config-confirm-dialog">
+    <h4>Reset to Defaults?</h4>
+    <p>This will reset all settings for {{ client.name }} to their default values. Level states (Off/Monitor/Active) will NOT be changed. This cannot be undone.</p>
+    <div class="config-confirm-actions">
+      <button class="btn-reset" id="resetCancel">Cancel</button>
+      <button class="btn-save" id="resetConfirm" style="background:var(--act-red)">Reset All Settings</button>
+    </div>
+  </div>
+</div>
+</div>
+
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/v2_client_config.js') }}"></script>
+{% endblock %}

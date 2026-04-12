@@ -526,6 +526,18 @@ def create_app():
         else:
             print(f"⚠️  [Chat 115] Route not found (skipping): {route_name}")
 
+    # Session A3: ACT v2 Client Configuration — JSON API endpoints
+    v2_config_routes = [
+        'v2_config.save_settings',
+        'v2_config.reset_settings',
+    ]
+    for route_name in v2_config_routes:
+        if route_name in app.view_functions:
+            csrf.exempt(app.view_functions[route_name])
+            print(f"[OK] [A3] CSRF exempted: {route_name}")
+        else:
+            print(f"[WARN] [A3] Route not found (skipping): {route_name}")
+
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
     def csrf_error(reason):
