@@ -1,0 +1,370 @@
+{% extends "v2/base_v2.html" %}
+{% block title %}Account Level{% endblock %}
+{% block page_title %}Account Level{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/v2_account_level.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="acct-header">
+  <div class="acct-header__top">
+    <div>
+      <h2 class="acct-header__title">Budget Allocation &amp; Health</h2>
+      <p class="acct-header__sub">{{ client.name }} <span class="badge-level badge-level--account">{{ 'Lead Gen (CPA)' if client.persona == 'lead_gen_cpa' else 'Ecommerce (ROAS)' }}</span></p>
+    </div>
+    <div class="acct-header__meta">
+      {% if last_ran %}
+      <div class="act-last-ran"><span class="material-symbols-outlined">schedule</span>ACT last ran: {{ last_ran }}</div>
+      {% else %}
+      <div class="act-last-ran" style="background:var(--act-amber-bg);border-color:var(--act-amber-border)"><span class="material-symbols-outlined" style="color:var(--act-amber)">schedule</span>ACT has not run yet</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Health Summary Cards -->
+<div class="health-cards">
+  <div class="health-card">
+    <div class="health-card__label">Monthly Budget</div>
+    <div class="health-card__value">&pound;{{ '{:,.0f}'.format(health.monthly_budget) }}</div>
+    <div class="health-card__detail">&pound;{{ '{:,.2f}'.format(health.daily_budget) }}/day</div>
+  </div>
+  <div class="health-card">
+    <div class="health-card__label">Current CPA</div>
+    {% if health.current_cpa %}
+    <div class="health-card__value" style="color:{% if health.cpa_zone == 'outperforming' %}var(--act-green){% elif health.cpa_zone == 'underperforming' %}var(--act-red){% else %}var(--act-text){% endif %}">&pound;{{ '{:,.2f}'.format(health.current_cpa) }}</div>
+    <div class="health-card__detail">
+      {% if health.cpa_zone == 'outperforming' %}<span class="zone-badge zone-badge--outperforming">Outperforming</span>
+      {% elif health.cpa_zone == 'underperforming' %}<span class="zone-badge zone-badge--underperforming">Underperforming</span>
+      {% elif health.cpa_zone == 'ontarget' %}<span class="zone-badge zone-badge--ontarget">On Target</span>
+      {% endif %}
+      vs target &pound;{{ '{:,.2f}'.format(client.target_cpa) }}
+    </div>
+    {% else %}
+    <div class="health-card__value">&mdash;</div>
+    <div class="health-card__detail">No conversions yet</div>
+    {% endif %}
+  </div>
+  <div class="health-card">
+    <div class="health-card__label">Budget Used (MTD)</div>
+    <div class="health-card__value">&pound;{{ '{:,.0f}'.format(health.mtd_cost) }}</div>
+    <div class="health-card__detail">{{ health.mtd_budget_pct }}% of &pound;{{ '{:,.0f}'.format(health.monthly_budget) }}</div>
+    <div class="health-card__bar"><div class="health-card__bar-fill" style="width:{{ [health.mtd_budget_pct, 100]|min }}%"></div></div>
+  </div>
+  <div class="health-card">
+    <div class="health-card__label">Conversions (MTD)</div>
+    <div class="health-card__value">{{ '{:,.0f}'.format(health.mtd_conversions) }}</div>
+    <div class="health-card__detail">This month</div>
+  </div>
+</div>
+
+<!-- Campaign Performance Section -->
+<div class="acct-section">
+  <div class="acct-section__header">
+    <div style="display:flex;align-items:center;gap:12px;flex:1">
+      <h3 class="acct-section__title">Campaign Performance</h3>
+      <span class="acct-section__context" id="perfContext">&mdash; {{ campaigns|length }} campaign(s), {{ days }} days</span>
+    </div>
+    <div class="table-toolbar" style="display:flex;gap:8px;align-items:center">
+      <div class="pill-group">
+        <button class="pill-btn {% if days == 7 %}active{% endif %}" data-range="7d">7d</button>
+        <button class="pill-btn {% if days == 30 %}active{% endif %}" data-range="30d">30d</button>
+        <button class="pill-btn {% if days == 90 %}active{% endif %}" data-range="90d">90d</button>
+      </div>
+      <div class="pill-group">
+        <button class="pill-btn active" data-filter="all">All</button>
+        <button class="pill-btn" data-filter="enabled">Enabled</button>
+        <button class="pill-btn" data-filter="paused">Paused</button>
+      </div>
+    </div>
+    <span class="material-symbols-outlined acct-section__toggle">expand_more</span>
+  </div>
+  <div class="acct-section__body">
+    <div class="perf-inner">
+
+      <!-- Summary Cards -->
+      <div class="summary-cards">
+        <div class="summary-card"><div class="summary-card__label">Total Cost</div><div class="summary-card__value">&pound;{{ '{:,.2f}'.format(summary.cost) }}</div></div>
+        <div class="summary-card"><div class="summary-card__label">Impressions</div><div class="summary-card__value">{{ '{:,.0f}'.format(summary.impressions) }}</div></div>
+        <div class="summary-card"><div class="summary-card__label">Clicks</div><div class="summary-card__value">{{ '{:,.0f}'.format(summary.clicks) }}</div></div>
+        <div class="summary-card"><div class="summary-card__label">Avg CPC</div><div class="summary-card__value">&pound;{{ '{:,.2f}'.format(summary.avg_cpc) }}</div></div>
+        <div class="summary-card"><div class="summary-card__label">Conversions</div><div class="summary-card__value">{{ '{:,.0f}'.format(summary.conversions) }}</div></div>
+        <div class="summary-card"><div class="summary-card__label">Avg CPA</div><div class="summary-card__value">{% if summary.cost_per_conv %}&pound;{{ '{:,.2f}'.format(summary.cost_per_conv) }}{% else %}&mdash;{% endif %}</div></div>
+        <div class="summary-card"><div class="summary-card__label">Conv Rate</div><div class="summary-card__value">{{ summary.conv_rate }}%</div></div>
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-section">
+        <div class="chart-toolbar">
+          <div class="chart-select-group">
+            <span class="chart-dot" style="background:#3b82f6"></span>
+            <select class="chart-select" id="chartMetric1">
+              {% for key, def in [('cost','Cost'),('impressions','Impressions'),('clicks','Clicks'),('avgCpc','Avg CPC'),('ctr','CTR'),('conversions','Conversions'),('cpa','CPA'),('convRate','Conv Rate'),('score','Performance Score'),('budgetUtil','Budget Util %')] %}
+              <option value="{{ key }}" {% if key == 'cost' %}selected{% endif %}>{{ def }}</option>
+              {% endfor %}
+            </select>
+            <span style="font-size:12px;color:var(--act-text);opacity:0.5">vs</span>
+            <span class="chart-dot" style="background:#10b981"></span>
+            <select class="chart-select" id="chartMetric2">
+              {% for key, def in [('cost','Cost'),('impressions','Impressions'),('clicks','Clicks'),('avgCpc','Avg CPC'),('ctr','CTR'),('conversions','Conversions'),('cpa','CPA'),('convRate','Conv Rate'),('score','Performance Score'),('budgetUtil','Budget Util %')] %}
+              <option value="{{ key }}" {% if key == 'conversions' %}selected{% endif %}>{{ def }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="performanceChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Campaigns Table -->
+      <table class="data-table" id="campaignsTable">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th data-sort>Campaign <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;opacity:0.3">unfold_more</span></th>
+            <th>Role</th>
+            <th data-sort>Budget</th>
+            <th data-sort>Share</th>
+            <th data-sort>Cost</th>
+            <th data-sort>Impr.</th>
+            <th data-sort>Clicks</th>
+            <th data-sort>Avg CPC</th>
+            <th data-sort>CTR</th>
+            <th data-sort>Conv.</th>
+            <th data-sort>Cost/Conv</th>
+            <th data-sort>Conv Rate</th>
+            <th data-sort>Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in campaigns %}
+          <tr data-status="{{ c.status }}">
+            <td><span class="status-dot status-dot--{{ c.status }}"></span></td>
+            <td><strong>{{ c.name }}</strong></td>
+            <td>{% if c.role %}<span class="role-badge role-badge--{{ c.role|lower }}">{{ c.role }}</span>{% else %}&mdash;{% endif %}</td>
+            <td class="num">&pound;{{ '{:,.0f}'.format(c.budget) }}/d</td>
+            <td class="num">{{ c.share }}%</td>
+            <td class="num">&pound;{{ '{:,.2f}'.format(c.cost) }}</td>
+            <td class="num">{{ '{:,.0f}'.format(c.impressions) }}</td>
+            <td class="num">{{ '{:,.0f}'.format(c.clicks) }}</td>
+            <td class="num">&pound;{{ '{:,.2f}'.format(c.avg_cpc) }}</td>
+            <td class="num">{{ c.ctr }}%</td>
+            <td class="num">{{ '{:,.0f}'.format(c.conversions) }}</td>
+            <td class="num">{% if c.cost_per_conv %}&pound;{{ '{:,.2f}'.format(c.cost_per_conv) }}{% else %}&mdash;{% endif %}</td>
+            <td class="num">{{ c.conv_rate }}%</td>
+            <td class="num">{% if c.status == 'enabled' %}<span class="score-display">&mdash;</span>{% else %}&mdash;{% endif %}</td>
+          </tr>
+          {% endfor %}
+          <!-- Totals row -->
+          <tr class="totals-row">
+            <td></td>
+            <td>Total / Average</td>
+            <td></td>
+            <td class="num">&pound;{{ '{:,.0f}'.format(campaigns|sum(attribute='budget')) }}/d</td>
+            <td class="num">100%</td>
+            <td class="num">&pound;{{ '{:,.2f}'.format(summary.cost) }}</td>
+            <td class="num">{{ '{:,.0f}'.format(summary.impressions) }}</td>
+            <td class="num">{{ '{:,.0f}'.format(summary.clicks) }}</td>
+            <td class="num">&pound;{{ '{:,.2f}'.format(summary.avg_cpc) }}</td>
+            <td class="num">&mdash;</td>
+            <td class="num">{{ '{:,.0f}'.format(summary.conversions) }}</td>
+            <td class="num">{% if summary.cost_per_conv %}&pound;{{ '{:,.2f}'.format(summary.cost_per_conv) }}{% else %}&mdash;{% endif %}</td>
+            <td class="num">{{ summary.conv_rate }}%</td>
+            <td class="num">&mdash;</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Section Divider: Account-Level Review -->
+<div class="section-divider"><span class="material-symbols-outlined">account_balance</span>Account-Level Review</div>
+
+<!-- Awaiting Approval -->
+<div class="act-section">
+  <div class="act-section__header">
+    <span class="material-symbols-outlined" style="color:var(--act-amber)">pending_actions</span>
+    <h3 class="act-section__title">Awaiting Approval</h3>
+    <span class="act-section__count" style="background:var(--act-amber-bg);color:var(--act-amber)">{{ awaiting_approval|length }}</span>
+    <span class="material-symbols-outlined act-section__toggle">expand_more</span>
+  </div>
+  <div class="act-section__body">
+    {% if awaiting_approval %}
+      {% for rec in awaiting_approval %}
+      <div class="act-item">
+        <div class="act-item__row">
+          <div class="act-item__content">
+            <div class="act-item__top">
+              <span class="badge-level badge-level--account">Account</span>
+              <span class="badge-action badge-action--{{ rec.action_category }}">{{ rec.action_category|capitalize }}</span>
+              <span class="badge-risk badge-risk--{{ rec.risk_level }}">{{ rec.risk_level|capitalize }}</span>
+            </div>
+            <div class="act-item__summary"><strong>{{ rec.entity_name }}</strong> &mdash; {{ rec.summary }}</div>
+            {% if rec.recommendation_text %}
+            <div class="act-item__recommendation"><span class="material-symbols-outlined" style="font-size:16px">lightbulb</span>{{ rec.recommendation_text }}</div>
+            {% endif %}
+            {% if rec.estimated_impact %}
+            <div class="act-item__impact"><span class="material-symbols-outlined" style="font-size:16px">trending_up</span>{{ rec.estimated_impact }}</div>
+            {% endif %}
+            <div class="act-item__actions">
+              <button class="btn-act btn-act--approve" data-action="approve" data-rec-id="{{ rec.id }}"><span class="material-symbols-outlined" style="font-size:16px">check</span>Approve</button>
+              <button class="btn-act btn-act--decline" data-action="decline" data-rec-id="{{ rec.id }}"><span class="material-symbols-outlined" style="font-size:16px">close</span>Decline</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty-state"><span class="material-symbols-outlined" style="font-size:24px;opacity:0.3">check_circle</span><p>All clear &mdash; no actions need your review today</p></div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Actions Executed Overnight -->
+<div class="act-section collapsed">
+  <div class="act-section__header">
+    <span class="material-symbols-outlined" style="color:var(--act-green)">check_circle</span>
+    <h3 class="act-section__title">Actions Executed Overnight</h3>
+    <span class="act-section__count" style="background:var(--act-green-bg);color:var(--act-green)">{{ executed_actions|length }}</span>
+    <span class="material-symbols-outlined act-section__toggle">expand_more</span>
+  </div>
+  <div class="act-section__body">
+    {% if executed_actions %}
+      {% for action in executed_actions %}
+      <div class="act-item">
+        <div class="act-item__summary"><strong>{{ action.entity_name }}</strong> &mdash; {{ action.action_type }}: {{ action.reason or '' }}</div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty-state"><span class="material-symbols-outlined" style="font-size:24px;opacity:0.3">check_circle</span><p>No actions were executed overnight</p></div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Currently Monitoring -->
+<div class="act-section collapsed">
+  <div class="act-section__header">
+    <span class="material-symbols-outlined" style="color:var(--act-primary)">visibility</span>
+    <h3 class="act-section__title">Currently Monitoring</h3>
+    <span class="act-section__count" style="background:var(--act-blue-bg);color:var(--act-primary)">{{ monitoring|length }}</span>
+    <span class="material-symbols-outlined act-section__toggle">expand_more</span>
+  </div>
+  <div class="act-section__body">
+    {% if monitoring %}
+      {% for mon in monitoring %}
+      <div class="act-item">
+        <div class="act-item__summary"><strong>{{ mon.entity_id }}</strong> &mdash; {{ mon.type }}, health: {{ mon.health }}</div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty-state"><span class="material-symbols-outlined" style="font-size:24px;opacity:0.3">visibility</span><p>No active monitoring entries</p></div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Recent Alerts -->
+<div class="act-section collapsed">
+  <div class="act-section__header">
+    <span class="material-symbols-outlined" style="color:var(--act-red)">notifications_active</span>
+    <h3 class="act-section__title">Recent Alerts</h3>
+    <span class="act-section__count" style="background:var(--act-red-bg);color:var(--act-red)">{{ alerts|length }}</span>
+    <span class="material-symbols-outlined act-section__toggle">expand_more</span>
+  </div>
+  <div class="act-section__body">
+    {% if alerts %}
+      {% for alert in alerts %}
+      <div class="act-item">
+        <div class="act-item__summary"><strong>{{ alert.title }}</strong> &mdash; {{ alert.description or '' }}</div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty-state"><span class="material-symbols-outlined" style="font-size:24px;opacity:0.3">notifications_none</span><p>No recent alerts</p></div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Section Divider: Budget Allocation -->
+<div class="section-divider"><span class="material-symbols-outlined">account_balance</span>Budget Allocation</div>
+
+<!-- Budget Visualization -->
+<div class="acct-section collapsed">
+  <div class="acct-section__header">
+    <h3 class="acct-section__title">Budget Distribution</h3>
+    <span class="material-symbols-outlined acct-section__toggle">expand_more</span>
+  </div>
+  <div class="acct-section__body">
+    <div class="budget-vis">
+      <div class="budget-bar">
+        {% for c in campaigns if c.status == 'enabled' %}
+        <div class="budget-bar__segment" style="width:{{ c.share }}%;background:{% if c.role == 'CP' %}#10b981{% elif c.role == 'RT' %}#ec4899{% elif c.role == 'BD' %}#3b82f6{% elif c.role == 'TS' %}#f59e0b{% else %}#6b7280{% endif %}">
+          <div class="budget-bar__tooltip">{{ c.name }}: &pound;{{ '{:,.0f}'.format(c.budget) }}/d ({{ c.share }}%)</div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="budget-legend">
+        {% for c in campaigns if c.status == 'enabled' %}
+        <div class="budget-legend__item">
+          <span class="budget-legend__dot" style="background:{% if c.role == 'CP' %}#10b981{% elif c.role == 'RT' %}#ec4899{% elif c.role == 'BD' %}#3b82f6{% elif c.role == 'TS' %}#f59e0b{% else %}#6b7280{% endif %}"></span>
+          {{ c.name }} ({{ c.share }}%)
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Signal Decomposition -->
+<div class="acct-section collapsed">
+  <div class="acct-section__header">
+    <h3 class="acct-section__title">Signal Decomposition</h3>
+    <span class="material-symbols-outlined acct-section__toggle">expand_more</span>
+  </div>
+  <div class="acct-section__body">
+    <table class="data-table data-table--sig">
+      <thead><tr><th>Campaign</th><th>CPC (7d)</th><th>CVR (14d)</th><th>CPA</th><th>CPA vs Target</th></tr></thead>
+      <tbody>
+        {% for sig in signals %}
+        <tr>
+          <td>{{ sig.name }}</td>
+          <td>&pound;{{ '{:,.2f}'.format(sig.cpc_7d) }}</td>
+          <td>{{ sig.cvr_14d }}%</td>
+          <td>{% if sig.cpa %}&pound;{{ '{:,.2f}'.format(sig.cpa) }}{% else %}&mdash;{% endif %}</td>
+          <td>{% if sig.zone %}<span class="zone-badge zone-badge--{{ sig.zone }}">{{ sig.zone|capitalize }}</span>{% else %}&mdash;{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Guardrails -->
+<div class="acct-section collapsed">
+  <div class="acct-section__header">
+    <h3 class="acct-section__title">Guardrails</h3>
+    <span class="material-symbols-outlined acct-section__toggle">expand_more</span>
+  </div>
+  <div class="acct-section__body">
+    <ul class="guardrail-list">
+      {% for g in guardrails %}
+      <li><span class="material-symbols-outlined" style="font-size:18px;color:var(--act-primary)">verified_user</span>{{ g.label }}<span class="guardrail-value">{{ g.value }}</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<!-- Chart data for JS -->
+<script>
+  const chartData = {{ chart_data | tojson }};
+</script>
+
+{% endblock %}
+
+{% block page_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/v2_account_level.js') }}"></script>
+{% endblock %}

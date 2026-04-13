@@ -28,7 +28,7 @@
     <div class="act-nav-section">
       <div class="act-nav-label">Optimization</div>
       {% for level in [('account', 'account_balance', 'Account Level'), ('campaign', 'campaign', 'Campaign Level'), ('adgroup', 'folder', 'Ad Group Level'), ('keyword', 'search', 'Keyword Level'), ('ad', 'article', 'Ad Level'), ('shopping', 'shopping_cart', 'Shopping Level')] %}
-      <a href="/v2/{{ level[0] }}" class="act-nav-item {% if active_page == level[0] %}active{% endif %}" style="{% if active_page != level[0] %}opacity:0.5;pointer-events:none{% endif %}">
+      <a href="/v2/{{ level[0] }}{% if client %}?client={{ client.id }}{% endif %}" class="act-nav-item {% if active_page == level[0] %}active{% endif %}" style="{% if active_page != level[0] and level[0] != 'account' %}opacity:0.5;pointer-events:none{% endif %}">
         <span class="material-symbols-outlined">{{ level[1] }}</span>{{ level[2] }}
       </a>
       {% endfor %}
