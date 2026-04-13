@@ -130,14 +130,14 @@
    ============================================================================ */
 
 /* Summary metric cards row */
-.summary-cards { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-bottom: 20px; }
+.summary-cards { display: grid; grid-template-columns: repeat(8, 1fr); gap: 12px; margin-bottom: 20px; }
 
 .summary-card {
   background: var(--act-surface); border-radius: var(--act-card-radius);
   padding: 12px 16px; border: 1px solid var(--act-border-light); box-shadow: var(--act-card-shadow);
 }
 .summary-card__label { font-size: 12px; font-weight: 600; color: var(--act-text); margin-bottom: 2px; }
-.summary-card__value { font-size: 28px; font-weight: 700; color: var(--act-text); margin-bottom: 4px; line-height: 1; }
+.summary-card__value { font-size: 22px; font-weight: 700; color: var(--act-text); margin-bottom: 4px; line-height: 1; }
 .summary-card__change { font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 2px; }
 .summary-card__change--up { color: #10b981; }
 .summary-card__change--down { color: #ef4444; }

@@ -165,6 +165,30 @@ def account_level():
         # Sort: enabled first, then by cost desc
         campaigns_table.sort(key=lambda c: (0 if c['status'] == 'enabled' else 1, -c['cost']))
 
+        # 4b. Score campaigns using engine logic
+        from act_dashboard.engine.account_level import AccountLevelEngine
+        engine = AccountLevelEngine(client_id)
+        try:
+            engine_campaigns = [
+                {'entity_id': c['entity_id'], 'name': c['name'], 'metrics': c}
+                for c in campaigns_table if c['status'] == 'enabled'
+            ]
+            if engine_campaigns:
+                scored = engine._score_campaigns(engine_campaigns, end_str)
+                score_map = {s['entity_id']: s for s in scored}
+                for c in campaigns_table:
+                    sc = score_map.get(c['entity_id'])
+                    if sc:
+                        c['score'] = round(sc['score'])
+                        c['score_7d'] = round(sc.get('score_7d', 0))
+                        c['score_14d'] = round(sc.get('score_14d', 0))
+                        c['score_30d'] = round(sc.get('score_30d', 0))
+                        c['cpa_7d'] = round(sc.get('cpa_7d', 0), 2) if sc.get('cpa_7d') != float('inf') else None
+                        c['cpa_14d'] = round(sc.get('cpa_14d', 0), 2) if sc.get('cpa_14d') != float('inf') else None
+                        c['cpa_30d'] = round(sc.get('cpa_30d', 0), 2) if sc.get('cpa_30d') != float('inf') else None
+        finally:
+            engine.close()
+
         # 5. Summary totals
         enabled_camps = [c for c in campaigns_table if c['status'] == 'enabled']
         summary = {
@@ -183,6 +207,44 @@ def account_level():
         total_conv = summary['conversions']
         if total_conv > 0:
             summary['cost_per_conv'] = round(summary['cost'] / total_conv, 2)
+
+        # 5b. Previous period comparison for change indicators
+        prev_start = start_date - timedelta(days=days)
+        prev_end = start_date - timedelta(days=1)
+        prev_snaps = con.execute(
+            """SELECT entity_id, metrics_json FROM act_v2_snapshots
+               WHERE client_id = ? AND level = 'campaign'
+               AND snapshot_date BETWEEN CAST(? AS DATE) AND CAST(? AS DATE)""",
+            [client_id, str(prev_start), str(prev_end)]
+        ).fetchall()
+
+        if prev_snaps:
+            prev_cost = sum(_parse_metrics(r[1]).get('cost', 0) for r in prev_snaps)
+            prev_impr = sum(_parse_metrics(r[1]).get('impressions', 0) for r in prev_snaps)
+            prev_clicks = sum(_parse_metrics(r[1]).get('clicks', 0) for r in prev_snaps)
+            prev_conv = sum(_parse_metrics(r[1]).get('conversions', 0) for r in prev_snaps)
+
+            def _pct_change(curr, prev):
+                if not prev:
+                    return None
+                return round((curr - prev) / prev * 100)
+
+            summary['cost_change'] = _pct_change(summary['cost'], prev_cost)
+            summary['impressions_change'] = _pct_change(summary['impressions'], prev_impr)
+            summary['clicks_change'] = _pct_change(summary['clicks'], prev_clicks)
+            summary['ctr_change'] = _pct_change(summary['ctr'],
+                                                round(_safe_div(prev_clicks, prev_impr) * 100, 2)) if prev_impr else None
+            summary['avg_cpc_change'] = _pct_change(summary['avg_cpc'],
+                                                    round(_safe_div(prev_cost, prev_clicks), 2)) if prev_clicks else None
+            summary['conversions_change'] = _pct_change(summary['conversions'], prev_conv)
+            prev_cpa = _safe_div(prev_cost, prev_conv) if prev_conv > 0 else None
+            summary['cpa_change'] = _pct_change(summary['cost_per_conv'], prev_cpa) if summary['cost_per_conv'] and prev_cpa else None
+            prev_cvr = _safe_div(prev_conv, prev_clicks) * 100 if prev_clicks else None
+            summary['conv_rate_change'] = _pct_change(summary['conv_rate'], prev_cvr) if prev_cvr else None
+        else:
+            for k in ['cost_change', 'impressions_change', 'clicks_change', 'ctr_change',
+                       'avg_cpc_change', 'conversions_change', 'cpa_change', 'conv_rate_change']:
+                summary[k] = None
 
         # 6. Health cards — MTD data
         mtd_snaps = [s for s in all_snaps if s['date'] >= str(mtd_start)]

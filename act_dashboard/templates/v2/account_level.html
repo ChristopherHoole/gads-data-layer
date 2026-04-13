@@ -65,11 +65,12 @@
 <!-- Campaign Performance Section -->
 <div class="acct-section">
   <div class="acct-section__header">
-    <div style="display:flex;align-items:center;gap:12px;flex:1">
-      <h3 class="acct-section__title">Campaign Performance</h3>
+    <h3 class="acct-section__title">
+      <span class="material-symbols-outlined" style="color:#3b82f6">table_chart</span>
+      Campaign Performance
       <span class="acct-section__context" id="perfContext">&mdash; {{ campaigns|length }} campaign(s), {{ days }} days</span>
-    </div>
-    <div class="table-toolbar" style="display:flex;gap:8px;align-items:center">
+    </h3>
+    <div style="display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">
       <div class="pill-group">
         <button class="pill-btn {% if days == 7 %}active{% endif %}" data-range="7d">7d</button>
         <button class="pill-btn {% if days == 30 %}active{% endif %}" data-range="30d">30d</button>
@@ -80,21 +81,30 @@
         <button class="pill-btn" data-filter="enabled">Enabled</button>
         <button class="pill-btn" data-filter="paused">Paused</button>
       </div>
+      <span class="material-symbols-outlined acct-section__toggle" style="margin-left:8px;cursor:pointer">expand_more</span>
     </div>
-    <span class="material-symbols-outlined acct-section__toggle">expand_more</span>
   </div>
-  <div class="acct-section__body">
+  <div class="acct-section__body" style="padding:0">
     <div class="perf-inner">
+
+      {% macro change_indicator(val) %}
+      {% if val is not none %}
+      <div class="summary-card__change summary-card__change--{{ 'up' if val > 0 else 'down' if val < 0 else 'flat' }}">
+        {{ '↑' if val > 0 else '↓' if val < 0 else '→' }} {{ val|abs }}%
+      </div>
+      {% endif %}
+      {% endmacro %}
 
       <!-- Summary Cards -->
       <div class="summary-cards">
-        <div class="summary-card"><div class="summary-card__label">Total Cost</div><div class="summary-card__value">&pound;{{ '{:,.2f}'.format(summary.cost) }}</div></div>
-        <div class="summary-card"><div class="summary-card__label">Impressions</div><div class="summary-card__value">{{ '{:,.0f}'.format(summary.impressions) }}</div></div>
-        <div class="summary-card"><div class="summary-card__label">Clicks</div><div class="summary-card__value">{{ '{:,.0f}'.format(summary.clicks) }}</div></div>
-        <div class="summary-card"><div class="summary-card__label">Avg CPC</div><div class="summary-card__value">&pound;{{ '{:,.2f}'.format(summary.avg_cpc) }}</div></div>
-        <div class="summary-card"><div class="summary-card__label">Conversions</div><div class="summary-card__value">{{ '{:,.0f}'.format(summary.conversions) }}</div></div>
-        <div class="summary-card"><div class="summary-card__label">Avg CPA</div><div class="summary-card__value">{% if summary.cost_per_conv %}&pound;{{ '{:,.2f}'.format(summary.cost_per_conv) }}{% else %}&mdash;{% endif %}</div></div>
-        <div class="summary-card"><div class="summary-card__label">Conv Rate</div><div class="summary-card__value">{{ summary.conv_rate }}%</div></div>
+        <div class="summary-card"><div class="summary-card__label">Total Cost</div><div class="summary-card__value">&pound;{{ '{:,.2f}'.format(summary.cost) }}</div>{{ change_indicator(summary.cost_change) }}</div>
+        <div class="summary-card"><div class="summary-card__label">Impressions</div><div class="summary-card__value">{{ '{:,.0f}'.format(summary.impressions) }}</div>{{ change_indicator(summary.impressions_change) }}</div>
+        <div class="summary-card"><div class="summary-card__label">Clicks</div><div class="summary-card__value">{{ '{:,.0f}'.format(summary.clicks) }}</div>{{ change_indicator(summary.clicks_change) }}</div>
+        <div class="summary-card"><div class="summary-card__label">Avg CPC</div><div class="summary-card__value">&pound;{{ '{:,.2f}'.format(summary.avg_cpc) }}</div>{{ change_indicator(summary.avg_cpc_change) }}</div>
+        <div class="summary-card"><div class="summary-card__label">CTR</div><div class="summary-card__value">{{ summary.ctr }}%</div>{{ change_indicator(summary.ctr_change) }}</div>
+        <div class="summary-card"><div class="summary-card__label">Conversions</div><div class="summary-card__value">{{ '{:,.0f}'.format(summary.conversions) }}</div>{{ change_indicator(summary.conversions_change) }}</div>
+        <div class="summary-card"><div class="summary-card__label">Avg CPA</div><div class="summary-card__value">{% if summary.cost_per_conv %}&pound;{{ '{:,.2f}'.format(summary.cost_per_conv) }}{% else %}&mdash;{% endif %}</div>{{ change_indicator(summary.cpa_change) }}</div>
+        <div class="summary-card"><div class="summary-card__label">Conv Rate</div><div class="summary-card__value">{{ summary.conv_rate }}%</div>{{ change_indicator(summary.conv_rate_change) }}</div>
       </div>
 
       <!-- Chart -->
@@ -107,7 +117,9 @@
               <option value="{{ key }}" {% if key == 'cost' %}selected{% endif %}>{{ def }}</option>
               {% endfor %}
             </select>
-            <span style="font-size:12px;color:var(--act-text);opacity:0.5">vs</span>
+          </div>
+          <span style="font-size:14px;color:var(--act-text);opacity:0.4">vs</span>
+          <div class="chart-select-group">
             <span class="chart-dot" style="background:#10b981"></span>
             <select class="chart-select" id="chartMetric2">
               {% for key, def in [('cost','Cost'),('impressions','Impressions'),('clicks','Clicks'),('avgCpc','Avg CPC'),('ctr','CTR'),('conversions','Conversions'),('cpa','CPA'),('convRate','Conv Rate'),('score','Performance Score'),('budgetUtil','Budget Util %')] %}
@@ -121,24 +133,27 @@
         </div>
       </div>
 
-      <!-- Campaigns Table -->
+    </div>
+
+    <!-- Campaigns Table (outside perf-inner for full-width) -->
+    <div style="overflow-x:auto">
       <table class="data-table" id="campaignsTable">
         <thead>
           <tr>
-            <th>Status</th>
-            <th data-sort>Campaign <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;opacity:0.3">unfold_more</span></th>
-            <th>Role</th>
-            <th data-sort>Budget</th>
-            <th data-sort>Share</th>
-            <th data-sort>Cost</th>
-            <th data-sort>Impr.</th>
-            <th data-sort>Clicks</th>
-            <th data-sort>Avg CPC</th>
-            <th data-sort>CTR</th>
-            <th data-sort>Conv.</th>
-            <th data-sort>Cost/Conv</th>
-            <th data-sort>Conv Rate</th>
-            <th data-sort>Score</th>
+            <th data-sort="status">Status</th>
+            <th data-sort="name">Campaign<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="role">Role</th>
+            <th data-sort="budget" class="num">Budget<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="share" class="num">Share<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="cost" class="num">Cost<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="impr" class="num">Impr.<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="clicks" class="num">Clicks<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="cpc" class="num">Avg CPC<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="ctr" class="num">CTR<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="conv" class="num">Conv.<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="costconv" class="num">Cost/Conv<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="cvr" class="num">Conv Rate<span class="material-symbols-outlined">unfold_more</span></th>
+            <th data-sort="score" class="num">Score<span class="material-symbols-outlined">unfold_more</span></th>
           </tr>
         </thead>
         <tbody>
@@ -157,10 +172,46 @@
             <td class="num">{{ '{:,.0f}'.format(c.conversions) }}</td>
             <td class="num">{% if c.cost_per_conv %}&pound;{{ '{:,.2f}'.format(c.cost_per_conv) }}{% else %}&mdash;{% endif %}</td>
             <td class="num">{{ c.conv_rate }}%</td>
-            <td class="num">{% if c.status == 'enabled' %}<span class="score-display">&mdash;</span>{% else %}&mdash;{% endif %}</td>
+            <td class="num">
+              {% if c.score is defined and c.score is not none %}
+              <span class="score-display {{ 'score--high' if c.score >= 70 else 'score--mid' if c.score >= 40 else 'score--low' }}"
+                    data-action="expand-score" style="cursor:pointer" title="Click to expand">{{ c.score }}</span>
+              {% else %}&mdash;{% endif %}
+            </td>
+          </tr>
+          <tr class="score-breakdown-row" style="display:none">
+            <td colspan="14">
+              <div class="score-breakdown show">
+                {% if c.score is defined and c.score is not none %}
+                <div class="score-breakdown__row">
+                  <span class="score-breakdown__label">7-day</span>
+                  <span>{% if c.cpa_7d %}&pound;{{ '{:,.2f}'.format(c.cpa_7d) }}{% else %}&mdash;{% endif %}</span>
+                  <div class="score-breakdown__bar">
+                    <div class="score-breakdown__fill" style="width:{{ [c.score_7d|abs, 100]|min }}%;background:{{ '#10b981' if c.score_7d >= 0 else '#ef4444' }}"></div>
+                  </div>
+                  <span class="score-breakdown__pts">{{ c.score_7d }} pts</span>
+                </div>
+                <div class="score-breakdown__row">
+                  <span class="score-breakdown__label">14-day</span>
+                  <span>{% if c.cpa_14d %}&pound;{{ '{:,.2f}'.format(c.cpa_14d) }}{% else %}&mdash;{% endif %}</span>
+                  <div class="score-breakdown__bar">
+                    <div class="score-breakdown__fill" style="width:{{ [c.score_14d|abs, 100]|min }}%;background:{{ '#10b981' if c.score_14d >= 0 else '#ef4444' }}"></div>
+                  </div>
+                  <span class="score-breakdown__pts">{{ c.score_14d }} pts</span>
+                </div>
+                <div class="score-breakdown__row">
+                  <span class="score-breakdown__label">30-day</span>
+                  <span>{% if c.cpa_30d %}&pound;{{ '{:,.2f}'.format(c.cpa_30d) }}{% else %}&mdash;{% endif %}</span>
+                  <div class="score-breakdown__bar">
+                    <div class="score-breakdown__fill" style="width:{{ [c.score_30d|abs, 100]|min }}%;background:{{ '#10b981' if c.score_30d >= 0 else '#ef4444' }}"></div>
+                  </div>
+                  <span class="score-breakdown__pts">{{ c.score_30d }} pts</span>
+                </div>
+                {% endif %}
+              </div>
+            </td>
           </tr>
           {% endfor %}
-          <!-- Totals row -->
           <tr class="totals-row">
             <td></td>
             <td>Total / Average</td>
@@ -179,6 +230,14 @@
           </tr>
         </tbody>
       </table>
+    </div>
+    <div class="table-pagination">
+      <div>Showing 1-{{ campaigns|length }} of {{ campaigns|length }} campaigns</div>
+      <div class="table-pagination__controls">
+        <button class="page-btn" disabled>&laquo;</button>
+        <button class="page-btn active">1</button>
+        <button class="page-btn" disabled>&raquo;</button>
+      </div>
     </div>
   </div>
 </div>

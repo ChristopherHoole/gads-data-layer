@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         scales: {
           x: {
-            grid: { color: c.grid },
+            grid: { display: false },
             ticks: { color: c.text, font: { size: 12 }, maxRotation: 0, autoSkipPadding: 12 },
             border: { color: c.border }
           },
