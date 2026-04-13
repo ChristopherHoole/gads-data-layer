@@ -246,10 +246,15 @@ def account_level():
                        'avg_cpc_change', 'conversions_change', 'cpa_change', 'conv_rate_change']:
                 summary[k] = None
 
-        # 6. Health cards — MTD data
-        mtd_snaps = [s for s in all_snaps if s['date'] >= str(mtd_start)]
-        mtd_cost = sum(s['metrics'].get('cost', 0) for s in mtd_snaps)
-        mtd_conv = sum(s['metrics'].get('conversions', 0) for s in mtd_snaps)
+        # 6. Health cards — MTD data (always full month, independent of date range)
+        mtd_snaps_rows = con.execute(
+            """SELECT metrics_json FROM act_v2_snapshots
+               WHERE client_id = ? AND level = 'campaign'
+               AND snapshot_date >= CAST(? AS DATE) AND snapshot_date <= CAST(? AS DATE)""",
+            [client_id, str(mtd_start), end_str]
+        ).fetchall()
+        mtd_cost = sum(_parse_metrics(r[0]).get('cost', 0) for r in mtd_snaps_rows)
+        mtd_conv = sum(_parse_metrics(r[0]).get('conversions', 0) for r in mtd_snaps_rows)
 
         # Current CPA from MTD aggregate (not single-day snapshot)
         current_cpa = None

@@ -87,9 +87,10 @@
   <div class="acct-section__body" style="padding:0">
     <div class="perf-inner">
 
-      {% macro change_indicator(val) %}
+      {% macro change_indicator(val, invert=false) %}
       {% if val is not none %}
-      <div class="summary-card__change summary-card__change--{{ 'up' if val > 0 else 'down' if val < 0 else 'flat' }}">
+      {% set is_good = (val < 0 if invert else val > 0) %}
+      <div class="summary-card__change summary-card__change--{{ 'up' if is_good else 'down' if val != 0 else 'flat' }}">
         {{ '↑' if val > 0 else '↓' if val < 0 else '→' }} {{ val|abs }}%
       </div>
       {% endif %}
@@ -97,13 +98,13 @@
 
       <!-- Summary Cards -->
       <div class="summary-cards">
-        <div class="summary-card"><div class="summary-card__label">Total Cost</div><div class="summary-card__value">&pound;{{ '{:,.2f}'.format(summary.cost) }}</div>{{ change_indicator(summary.cost_change) }}</div>
+        <div class="summary-card"><div class="summary-card__label">Total Cost</div><div class="summary-card__value">&pound;{{ '{:,.2f}'.format(summary.cost) }}</div>{{ change_indicator(summary.cost_change, invert=true) }}</div>
         <div class="summary-card"><div class="summary-card__label">Impressions</div><div class="summary-card__value">{{ '{:,.0f}'.format(summary.impressions) }}</div>{{ change_indicator(summary.impressions_change) }}</div>
         <div class="summary-card"><div class="summary-card__label">Clicks</div><div class="summary-card__value">{{ '{:,.0f}'.format(summary.clicks) }}</div>{{ change_indicator(summary.clicks_change) }}</div>
-        <div class="summary-card"><div class="summary-card__label">Avg CPC</div><div class="summary-card__value">&pound;{{ '{:,.2f}'.format(summary.avg_cpc) }}</div>{{ change_indicator(summary.avg_cpc_change) }}</div>
+        <div class="summary-card"><div class="summary-card__label">Avg CPC</div><div class="summary-card__value">&pound;{{ '{:,.2f}'.format(summary.avg_cpc) }}</div>{{ change_indicator(summary.avg_cpc_change, invert=true) }}</div>
         <div class="summary-card"><div class="summary-card__label">CTR</div><div class="summary-card__value">{{ summary.ctr }}%</div>{{ change_indicator(summary.ctr_change) }}</div>
         <div class="summary-card"><div class="summary-card__label">Conversions</div><div class="summary-card__value">{{ '{:,.0f}'.format(summary.conversions) }}</div>{{ change_indicator(summary.conversions_change) }}</div>
-        <div class="summary-card"><div class="summary-card__label">Avg CPA</div><div class="summary-card__value">{% if summary.cost_per_conv %}&pound;{{ '{:,.2f}'.format(summary.cost_per_conv) }}{% else %}&mdash;{% endif %}</div>{{ change_indicator(summary.cpa_change) }}</div>
+        <div class="summary-card"><div class="summary-card__label">Avg CPA</div><div class="summary-card__value">{% if summary.cost_per_conv %}&pound;{{ '{:,.2f}'.format(summary.cost_per_conv) }}{% else %}&mdash;{% endif %}</div>{{ change_indicator(summary.cpa_change, invert=true) }}</div>
         <div class="summary-card"><div class="summary-card__label">Conv Rate</div><div class="summary-card__value">{{ summary.conv_rate }}%</div>{{ change_indicator(summary.conv_rate_change) }}</div>
       </div>
 
