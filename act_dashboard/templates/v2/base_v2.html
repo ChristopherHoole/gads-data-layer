@@ -53,6 +53,8 @@
 <header class="act-topbar">
   <div class="act-topbar-left">
     <h1 class="act-topbar-title">{% block page_title %}{% endblock %}</h1>
+    <span class="act-date">{{ today_date }}</span>
+    {% block topbar_extras %}{% endblock %}
   </div>
   <div class="act-topbar-right">
     <div style="position:relative">

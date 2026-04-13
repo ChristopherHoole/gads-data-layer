@@ -6,6 +6,14 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/v2_account_level.css') }}">
 {% endblock %}
 
+{% block topbar_extras %}
+  {% if last_ran %}
+  <span class="act-last-ran"><span class="material-symbols-outlined">check_circle</span>ACT last ran: {{ last_ran }}</span>
+  {% else %}
+  <span class="act-last-ran" style="background:var(--act-amber-bg);border:1px solid var(--act-amber-border)"><span class="material-symbols-outlined" style="color:var(--act-amber)">schedule</span>ACT has not run yet</span>
+  {% endif %}
+{% endblock %}
+
 {% block content %}
 
 <!-- Page Header -->
@@ -14,13 +22,6 @@
     <div>
       <h2 class="acct-header__title">Budget Allocation &amp; Health</h2>
       <p class="acct-header__sub">{{ client.name }} <span class="badge-level badge-level--account">{{ 'Lead Gen (CPA)' if client.persona == 'lead_gen_cpa' else 'Ecommerce (ROAS)' }}</span></p>
-    </div>
-    <div class="acct-header__meta">
-      {% if last_ran %}
-      <div class="act-last-ran"><span class="material-symbols-outlined">schedule</span>ACT last ran: {{ last_ran }}</div>
-      {% else %}
-      <div class="act-last-ran" style="background:var(--act-amber-bg);border-color:var(--act-amber-border)"><span class="material-symbols-outlined" style="color:var(--act-amber)">schedule</span>ACT has not run yet</div>
-      {% endif %}
     </div>
   </div>
 </div>

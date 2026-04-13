@@ -141,6 +141,11 @@ def create_app():
     # Register all route blueprints (Phase 1 complete - all 16 routes migrated)
     register_blueprints(app)
 
+    @app.context_processor
+    def inject_today_date():
+        from datetime import datetime
+        return {'today_date': datetime.now().strftime('%A, %#d %B %Y')}
+
     # Import for error handlers and CSRF handler (Chat 36)
     from flask import jsonify, render_template, request
 
