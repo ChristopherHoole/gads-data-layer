@@ -244,17 +244,15 @@
 </div>
 
 <!-- Section Divider: Account-Level Review -->
-<div class="section-divider"><span class="material-symbols-outlined">account_balance</span>Account-Level Review</div>
+<div class="section-divider">Account-Level Review</div>
 
 <!-- Awaiting Approval -->
-<div class="act-section">
+<section class="act-section">
   <div class="act-section__header">
-    <span class="material-symbols-outlined" style="color:var(--act-amber)">pending_actions</span>
-    <h3 class="act-section__title">Awaiting Approval</h3>
-    <span class="act-section__count" style="background:var(--act-amber-bg);color:var(--act-amber)">{{ awaiting_approval|length }}</span>
+    <h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-amber)">pending_actions</span>Awaiting Approval<span class="act-section__count act-section__count--amber" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-amber)">{{ awaiting_approval|length }}</span></h2>
     <span class="material-symbols-outlined act-section__toggle">expand_more</span>
   </div>
-  <div class="act-section__body">
+  <div class="act-section__body" style="padding:0">
     {% if awaiting_approval %}
       {% for rec in awaiting_approval %}
       <div class="act-item">
@@ -273,28 +271,27 @@
             <div class="act-item__impact"><span class="material-symbols-outlined" style="font-size:16px">trending_up</span>{{ rec.estimated_impact }}</div>
             {% endif %}
             <div class="act-item__actions">
-              <button class="btn-act btn-act--approve" data-action="approve" data-rec-id="{{ rec.id }}"><span class="material-symbols-outlined" style="font-size:16px">check</span>Approve</button>
-              <button class="btn-act btn-act--decline" data-action="decline" data-rec-id="{{ rec.id }}"><span class="material-symbols-outlined" style="font-size:16px">close</span>Decline</button>
+              <button class="btn-act btn-act--details" data-action="details">View Details</button>
+              <button class="btn-act btn-act--approve" data-action="approve" data-rec-id="{{ rec.id }}">Approve</button>
+              <button class="btn-act btn-act--decline" data-action="decline" data-rec-id="{{ rec.id }}">Decline</button>
             </div>
           </div>
         </div>
       </div>
       {% endfor %}
     {% else %}
-    <div class="empty-state"><span class="material-symbols-outlined" style="font-size:24px;opacity:0.3">check_circle</span><p>All clear &mdash; no actions need your review today</p></div>
+    <div class="empty-state" style="padding:20px"><span class="material-symbols-outlined" style="font-size:24px;opacity:0.3">check_circle</span><p>All clear &mdash; no actions need your review today</p></div>
     {% endif %}
   </div>
-</div>
+</section>
 
 <!-- Actions Executed Overnight -->
-<div class="act-section collapsed">
+<section class="act-section collapsed">
   <div class="act-section__header">
-    <span class="material-symbols-outlined" style="color:var(--act-green)">check_circle</span>
-    <h3 class="act-section__title">Actions Executed Overnight</h3>
-    <span class="act-section__count" style="background:var(--act-green-bg);color:var(--act-green)">{{ executed_actions|length }}</span>
+    <h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-green)">check_circle</span>Actions Executed Overnight<span class="act-section__count act-section__count--green" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-green)">{{ executed_actions|length }}</span></h2>
     <span class="material-symbols-outlined act-section__toggle">expand_more</span>
   </div>
-  <div class="act-section__body">
+  <div class="act-section__body" style="padding:0">
     {% if executed_actions %}
       {% for action in executed_actions %}
       <div class="act-item">
@@ -302,20 +299,18 @@
       </div>
       {% endfor %}
     {% else %}
-    <div class="empty-state"><span class="material-symbols-outlined" style="font-size:24px;opacity:0.3">check_circle</span><p>No actions were executed overnight</p></div>
+    <div class="empty-state" style="padding:20px"><span class="material-symbols-outlined" style="font-size:24px;opacity:0.3">check_circle</span><p>No actions were executed overnight</p></div>
     {% endif %}
   </div>
-</div>
+</section>
 
 <!-- Currently Monitoring -->
-<div class="act-section collapsed">
+<section class="act-section collapsed">
   <div class="act-section__header">
-    <span class="material-symbols-outlined" style="color:var(--act-primary)">visibility</span>
-    <h3 class="act-section__title">Currently Monitoring</h3>
-    <span class="act-section__count" style="background:var(--act-blue-bg);color:var(--act-primary)">{{ monitoring|length }}</span>
+    <h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-blue)">visibility</span>Currently Monitoring<span class="act-section__count act-section__count--blue" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-blue)">{{ monitoring|length }}</span></h2>
     <span class="material-symbols-outlined act-section__toggle">expand_more</span>
   </div>
-  <div class="act-section__body">
+  <div class="act-section__body" style="padding:0">
     {% if monitoring %}
       {% for mon in monitoring %}
       <div class="act-item">
@@ -323,20 +318,18 @@
       </div>
       {% endfor %}
     {% else %}
-    <div class="empty-state"><span class="material-symbols-outlined" style="font-size:24px;opacity:0.3">visibility</span><p>No active monitoring entries</p></div>
+    <div class="empty-state" style="padding:20px"><span class="material-symbols-outlined" style="font-size:24px;opacity:0.3">visibility</span><p>No active monitoring entries</p></div>
     {% endif %}
   </div>
-</div>
+</section>
 
 <!-- Recent Alerts -->
-<div class="act-section collapsed">
+<section class="act-section collapsed">
   <div class="act-section__header">
-    <span class="material-symbols-outlined" style="color:var(--act-red)">notifications_active</span>
-    <h3 class="act-section__title">Recent Alerts</h3>
-    <span class="act-section__count" style="background:var(--act-red-bg);color:var(--act-red)">{{ alerts|length }}</span>
+    <h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-red)">notifications_active</span>Recent Alerts<span class="act-section__count act-section__count--red" style="font-size:12px;padding:2px 8px;border-radius:10px;color:white;background:var(--act-red)">{{ alerts|length }}</span></h2>
     <span class="material-symbols-outlined act-section__toggle">expand_more</span>
   </div>
-  <div class="act-section__body">
+  <div class="act-section__body" style="padding:0">
     {% if alerts %}
       {% for alert in alerts %}
       <div class="act-item">
@@ -344,13 +337,13 @@
       </div>
       {% endfor %}
     {% else %}
-    <div class="empty-state"><span class="material-symbols-outlined" style="font-size:24px;opacity:0.3">notifications_none</span><p>No recent alerts</p></div>
+    <div class="empty-state" style="padding:20px"><span class="material-symbols-outlined" style="font-size:24px;opacity:0.3">notifications_none</span><p>No recent alerts</p></div>
     {% endif %}
   </div>
-</div>
+</section>
 
 <!-- Section Divider: Budget Allocation -->
-<div class="section-divider"><span class="material-symbols-outlined">account_balance</span>Budget Allocation</div>
+<div class="section-divider">Budget Allocation</div>
 
 <!-- Budget Visualization -->
 <div class="acct-section collapsed">
