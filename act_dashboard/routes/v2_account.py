@@ -189,23 +189,18 @@ def account_level():
         mtd_cost = sum(s['metrics'].get('cost', 0) for s in mtd_snaps)
         mtd_conv = sum(s['metrics'].get('conversions', 0) for s in mtd_snaps)
 
-        # Current CPA from latest account snapshot
-        latest_account = con.execute(
-            """SELECT metrics_json FROM act_v2_snapshots
-               WHERE client_id = ? AND level = 'account' AND snapshot_date = CAST(? AS DATE)""",
-            [client_id, end_str]
-        ).fetchone()
+        # Current CPA from MTD aggregate (not single-day snapshot)
         current_cpa = None
-        if latest_account:
-            am = _parse_metrics(latest_account[0])
-            if am.get('conversions', 0) > 0:
-                current_cpa = am.get('cost_per_conversion', 0)
+        if mtd_conv > 0:
+            current_cpa = mtd_cost / mtd_conv
 
         # CPA zone
         cpa_zone = None
+        cpa_deviation_pct = None
         if current_cpa and current_cpa > 0 and client['target_cpa']:
             target = client['target_cpa']
             dev = deviation_threshold / 100
+            cpa_deviation_pct = round(abs(current_cpa - target) / target * 100, 0)
             if current_cpa < target * (1 - dev):
                 cpa_zone = 'outperforming'
             elif current_cpa > target * (1 + dev):
@@ -213,14 +208,22 @@ def account_level():
             else:
                 cpa_zone = 'ontarget'
 
+        # Projection: (conversions so far / days elapsed) * days in month
+        from calendar import monthrange
+        days_in_month = monthrange(end_date.year, end_date.month)[1]
+        days_elapsed = (end_date - mtd_start).days + 1
+        projected_conv = round(mtd_conv / days_elapsed * days_in_month) if days_elapsed > 0 and mtd_conv > 0 else None
+
         health = {
             'monthly_budget': client['monthly_budget'],
             'daily_budget': round(client['monthly_budget'] / 30, 2),
             'current_cpa': round(current_cpa, 2) if current_cpa else None,
             'cpa_zone': cpa_zone,
+            'cpa_deviation_pct': cpa_deviation_pct,
             'mtd_cost': round(mtd_cost, 2),
             'mtd_budget_pct': round(_safe_div(mtd_cost, client['monthly_budget']) * 100, 1),
             'mtd_conversions': round(mtd_conv, 1),
+            'projected_conv': projected_conv,
         }
 
         # 7. Chart data — daily account-level metrics

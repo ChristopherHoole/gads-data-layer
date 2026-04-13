@@ -38,8 +38,8 @@
     {% if health.current_cpa %}
     <div class="health-card__value" style="color:{% if health.cpa_zone == 'outperforming' %}var(--act-green){% elif health.cpa_zone == 'underperforming' %}var(--act-red){% else %}var(--act-text){% endif %}">&pound;{{ '{:,.2f}'.format(health.current_cpa) }}</div>
     <div class="health-card__detail">
-      {% if health.cpa_zone == 'outperforming' %}<span class="zone-badge zone-badge--outperforming">Outperforming</span>
-      {% elif health.cpa_zone == 'underperforming' %}<span class="zone-badge zone-badge--underperforming">Underperforming</span>
+      {% if health.cpa_zone == 'outperforming' %}<span class="zone-badge zone-badge--outperforming">{{ health.cpa_deviation_pct|int }}% below &mdash; Outperforming</span>
+      {% elif health.cpa_zone == 'underperforming' %}<span class="zone-badge zone-badge--underperforming">{{ health.cpa_deviation_pct|int }}% above &mdash; Underperforming</span>
       {% elif health.cpa_zone == 'ontarget' %}<span class="zone-badge zone-badge--ontarget">On Target</span>
       {% endif %}
       vs target &pound;{{ '{:,.2f}'.format(client.target_cpa) }}
@@ -53,12 +53,12 @@
     <div class="health-card__label">Budget Used (MTD)</div>
     <div class="health-card__value">&pound;{{ '{:,.0f}'.format(health.mtd_cost) }}</div>
     <div class="health-card__detail">{{ health.mtd_budget_pct }}% of &pound;{{ '{:,.0f}'.format(health.monthly_budget) }}</div>
-    <div class="health-card__bar"><div class="health-card__bar-fill" style="width:{{ [health.mtd_budget_pct, 100]|min }}%"></div></div>
+    <div class="health-card__bar"><div class="health-card__bar-fill" style="width:{{ [health.mtd_budget_pct, 100]|min }}%;background:#3b82f6"></div></div>
   </div>
   <div class="health-card">
     <div class="health-card__label">Conversions (MTD)</div>
     <div class="health-card__value">{{ '{:,.0f}'.format(health.mtd_conversions) }}</div>
-    <div class="health-card__detail">This month</div>
+    <div class="health-card__detail">{% if health.projected_conv %}Projected: {{ health.projected_conv }} at current rate{% else %}This month{% endif %}</div>
   </div>
 </div>
 
