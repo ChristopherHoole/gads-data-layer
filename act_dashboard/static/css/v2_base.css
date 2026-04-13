@@ -73,6 +73,34 @@
   --act-rec-text: #ffffff;
 }
 
+/* Smooth theme transition — sunrise/sunset feel */
+body,
+.act-sidebar,
+.act-topbar,
+.act-main,
+.act-nav-item,
+.health-card,
+.summary-card,
+.acct-header,
+.acct-section,
+.acct-section__header,
+.acct-section__body,
+.act-section,
+.act-section__header,
+.act-section__body,
+.data-table,
+.data-table th,
+.data-table td,
+.chart-container,
+.budget-vis,
+.guardrail-list,
+.act-item,
+.section-divider,
+.empty-state,
+.table-pagination {
+  transition: background-color 0.8s ease, color 0.8s ease, border-color 0.8s ease;
+}
+
 /* ----------------------------------------------------------------------------
    GLOBAL
    ---------------------------------------------------------------------------- */
