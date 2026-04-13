@@ -48,14 +48,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Date range pills — full page reload preserving client param
+  function getClientParam() {
+    return new URL(window.location.href).searchParams.get('client') || 'oe001';
+  }
+
   document.querySelectorAll('.pill-group').forEach(group => {
     group.querySelectorAll('.pill-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         if (btn.dataset.range) {
-          const url = new URL(window.location.href);
-          const daysMap = { '7d': '7', '30d': '30', '90d': '90' };
-          url.searchParams.set('days', daysMap[btn.dataset.range] || '30');
-          window.location.href = url.toString();
+          const daysMap = { '7d': '7', '14d': '14', '30d': '30', '90d': '90' };
+          const d = daysMap[btn.dataset.range];
+          if (d) window.location.href = '?client=' + getClientParam() + '&days=' + d;
         }
         if (btn.dataset.filter) {
           group.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
@@ -65,6 +68,146 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   });
+
+  // -------------------------------------------------------------------------
+  // DATE PICKER — calendar with presets
+  // -------------------------------------------------------------------------
+  const dpEl = document.getElementById('datePicker');
+  const dpLeftCal = document.getElementById('dpLeftCal');
+  const dpRightCal = document.getElementById('dpRightCal');
+  const dpLeftLbl = document.getElementById('dpLeftLabel');
+  const dpRightLbl = document.getElementById('dpRightLabel');
+  const dpRangeText = document.getElementById('dpRangeText');
+  const dpApply = document.getElementById('dpApply');
+  const dpCancel = document.getElementById('dpCancel');
+  const customBtn = document.getElementById('customRangeBtn');
+
+  if (dpEl && customBtn) {
+    const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const DAY_HDRS = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+    const today = new Date();
+
+    let viewMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    let rangeStart = null;
+    let rangeEnd = null;
+
+    function fmtDate(d) {
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+    function fmtShort(d) {
+      return d.getDate() + ' ' + MONTHS[d.getMonth()].substring(0,3);
+    }
+    function sameDay(a, b) { return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+    function inRange(d) {
+      if (!rangeStart || !rangeEnd) return false;
+      return d > rangeStart && d < rangeEnd;
+    }
+
+    function renderCal(container, year, month) {
+      const first = new Date(year, month, 1);
+      const startDay = (first.getDay() + 6) % 7; // Monday = 0
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      let html = '<table><thead><tr>' + DAY_HDRS.map(h => '<th>' + h + '</th>').join('') + '</tr></thead><tbody><tr>';
+      for (let i = 0; i < startDay; i++) html += '<td></td>';
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(year, month, d);
+        let cls = 'date-picker__day';
+        if (sameDay(date, today)) cls += ' date-picker__day--today';
+        if (sameDay(date, rangeStart)) cls += ' date-picker__day--start';
+        if (sameDay(date, rangeEnd)) cls += ' date-picker__day--end';
+        if (inRange(date)) cls += ' date-picker__day--in-range';
+        html += '<td><span class="' + cls + '" data-date="' + fmtDate(date) + '">' + d + '</span></td>';
+        if ((startDay + d) % 7 === 0 && d < daysInMonth) html += '</tr><tr>';
+      }
+      html += '</tr></tbody></table>';
+      container.innerHTML = html;
+
+      container.querySelectorAll('.date-picker__day').forEach(el => {
+        el.addEventListener('click', () => {
+          const clicked = new Date(el.dataset.date + 'T00:00:00');
+          if (!rangeStart || rangeEnd) { rangeStart = clicked; rangeEnd = null; }
+          else if (clicked < rangeStart) { rangeEnd = rangeStart; rangeStart = clicked; }
+          else { rangeEnd = clicked; }
+          dpPresets.querySelectorAll('.dp-preset').forEach(p => p.classList.remove('active'));
+          renderCalendars();
+          updateRangeText();
+        });
+      });
+    }
+
+    function renderCalendars() {
+      const ly = viewMonth.getFullYear(), lm = viewMonth.getMonth();
+      renderCal(dpLeftCal, ly, lm);
+      const rm = lm + 1, ry = rm > 11 ? ly + 1 : ly;
+      renderCal(dpRightCal, ry, rm % 12);
+      dpLeftLbl.textContent = MONTHS[lm] + ' ' + ly;
+      dpRightLbl.textContent = MONTHS[rm % 12] + ' ' + ry;
+    }
+
+    function updateRangeText() {
+      if (rangeStart && rangeEnd) {
+        dpRangeText.textContent = fmtShort(rangeStart) + ' \u2014 ' + fmtShort(rangeEnd);
+        dpApply.disabled = false;
+      } else if (rangeStart) {
+        dpRangeText.textContent = fmtShort(rangeStart) + ' \u2014 select end date';
+        dpApply.disabled = true;
+      } else {
+        dpRangeText.textContent = 'Select start and end dates';
+        dpApply.disabled = true;
+      }
+    }
+
+    // Presets (dynamic dates)
+    const dpPresets = document.getElementById('dpPresets');
+    const PRESETS = {
+      today: () => [new Date(today), new Date(today)],
+      yesterday: () => { const d = new Date(today); d.setDate(d.getDate()-1); return [d, d]; },
+      thisWeek: () => { const d = new Date(today); const dow = (d.getDay()+6)%7; const mon = new Date(d); mon.setDate(d.getDate()-dow); return [mon, new Date(today)]; },
+      lastWeek: () => { const d = new Date(today); const dow = (d.getDay()+6)%7; const sun = new Date(d); sun.setDate(d.getDate()-dow-1); const mon = new Date(sun); mon.setDate(sun.getDate()-6); return [mon, sun]; },
+      thisMonth: () => [new Date(today.getFullYear(), today.getMonth(), 1), new Date(today)],
+      lastMonth: () => [new Date(today.getFullYear(), today.getMonth()-1, 1), new Date(today.getFullYear(), today.getMonth(), 0)],
+      thisQuarter: () => { const q = Math.floor(today.getMonth()/3)*3; return [new Date(today.getFullYear(), q, 1), new Date(today)]; },
+      lastQuarter: () => { const q = Math.floor(today.getMonth()/3)*3; return [new Date(today.getFullYear(), q-3, 1), new Date(today.getFullYear(), q, 0)]; },
+      thisYear: () => [new Date(today.getFullYear(), 0, 1), new Date(today)],
+    };
+
+    dpPresets.querySelectorAll('.dp-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const [s, e] = PRESETS[btn.dataset.preset]();
+        rangeStart = s; rangeEnd = e;
+        viewMonth = new Date(s.getFullYear(), s.getMonth(), 1);
+        dpPresets.querySelectorAll('.dp-preset').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        renderCalendars();
+        updateRangeText();
+      });
+    });
+
+    // Open/close
+    customBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dpEl.classList.toggle('open');
+      if (dpEl.classList.contains('open')) renderCalendars();
+    });
+
+    document.getElementById('dpPrevMonth').addEventListener('click', () => { viewMonth.setMonth(viewMonth.getMonth() - 1); renderCalendars(); });
+    document.getElementById('dpNextMonth').addEventListener('click', () => { viewMonth.setMonth(viewMonth.getMonth() + 1); renderCalendars(); });
+
+    dpCancel.addEventListener('click', () => { dpEl.classList.remove('open'); });
+
+    dpApply.addEventListener('click', () => {
+      if (!rangeStart || !rangeEnd) return;
+      window.location.href = '?client=' + getClientParam() + '&start=' + fmtDate(rangeStart) + '&end=' + fmtDate(rangeEnd);
+    });
+
+    // Close on click outside
+    document.addEventListener('click', (e) => {
+      if (dpEl.classList.contains('open') && !dpEl.contains(e.target) && e.target !== customBtn) {
+        dpEl.classList.remove('open');
+      }
+    });
+    dpEl.addEventListener('click', (e) => e.stopPropagation());
+  }
 
   function filterCampaigns(filter) {
     document.querySelectorAll('#campaignsTable tbody tr').forEach(row => {

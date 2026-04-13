@@ -40,7 +40,9 @@ def _safe_div(num, den):
 def account_level():
     """Render the Account Level page."""
     client_id = request.args.get('client', 'oe001')
-    days = int(request.args.get('days', '30'))
+    days_param = request.args.get('days')
+    start_param = request.args.get('start')
+    end_param = request.args.get('end')
 
     con = _get_db()
     try:
@@ -76,19 +78,29 @@ def account_level():
             deviation_threshold = int(setting_row[0])
 
         # 2. Determine date range
-        # Find the latest snapshot date
         latest_row = con.execute(
             "SELECT MAX(snapshot_date) FROM act_v2_snapshots WHERE client_id = ? AND level = 'campaign'",
             [client_id]
         ).fetchone()
+        latest_date = None
         if latest_row and latest_row[0]:
-            end_date = latest_row[0]
-            if isinstance(end_date, str):
-                end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-        else:
-            end_date = datetime.now().date() - timedelta(days=1)
+            latest_date = latest_row[0]
+            if isinstance(latest_date, str):
+                latest_date = datetime.strptime(latest_date, '%Y-%m-%d').date()
 
-        start_date = end_date - timedelta(days=days)
+        custom_range = False
+        if start_param and end_param:
+            start_date = datetime.strptime(start_param, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_param, '%Y-%m-%d').date()
+            if latest_date:
+                end_date = min(end_date, latest_date)
+            days = (end_date - start_date).days
+            custom_range = True
+        else:
+            days = int(days_param) if days_param else 30
+            end_date = latest_date or (datetime.now().date() - timedelta(days=1))
+            start_date = end_date - timedelta(days=days)
+
         end_str = str(end_date)
         start_str = str(start_date)
 
@@ -591,4 +603,7 @@ def account_level():
                            budget_shifts=budget_shifts,
                            last_ran=last_ran,
                            days=days,
+                           custom_range=custom_range,
+                           start_str=start_str,
+                           end_str=end_str,
                            active_page='account')

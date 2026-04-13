@@ -68,13 +68,54 @@
     <h3 class="acct-section__title">
       <span class="material-symbols-outlined" style="color:#3b82f6">table_chart</span>
       Campaign Performance
+      {% if custom_range %}
+      <span class="acct-section__context">&mdash; {{ campaigns|length }} campaign(s), {{ start_str }} to {{ end_str }}</span>
+      {% else %}
       <span class="acct-section__context" id="perfContext">&mdash; {{ campaigns|length }} campaign(s), {{ days }} days</span>
+      {% endif %}
     </h3>
     <div style="display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">
-      <div class="pill-group">
-        <button class="pill-btn {% if days == 7 %}active{% endif %}" data-range="7d">7d</button>
-        <button class="pill-btn {% if days == 30 %}active{% endif %}" data-range="30d">30d</button>
-        <button class="pill-btn {% if days == 90 %}active{% endif %}" data-range="90d">90d</button>
+      <div class="pill-group" id="dateRangePills" style="position:relative">
+        <button class="pill-btn {% if not custom_range and days == 7 %}active{% endif %}" data-range="7d">7d</button>
+        <button class="pill-btn {% if not custom_range and days == 14 %}active{% endif %}" data-range="14d">14d</button>
+        <button class="pill-btn {% if not custom_range and days == 30 %}active{% endif %}" data-range="30d">30d</button>
+        <button class="pill-btn {% if not custom_range and days == 90 %}active{% endif %}" data-range="90d">90d</button>
+        <button class="pill-btn {% if custom_range %}active{% endif %}" id="customRangeBtn">{% if custom_range %}{{ start_str[8:] }}/{{ start_str[5:7] }} &mdash; {{ end_str[8:] }}/{{ end_str[5:7] }}{% else %}Custom{% endif %}</button>
+        <!-- Calendar date picker dropdown -->
+        <div class="date-picker" id="datePicker">
+          <div class="date-picker__layout">
+            <div class="date-picker__presets" id="dpPresets">
+              <button class="dp-preset" data-preset="today">Today</button>
+              <button class="dp-preset" data-preset="yesterday">Yesterday</button>
+              <button class="dp-preset" data-preset="thisWeek">This week</button>
+              <button class="dp-preset" data-preset="lastWeek">Last week</button>
+              <button class="dp-preset" data-preset="thisMonth">This month</button>
+              <button class="dp-preset" data-preset="lastMonth">Last month</button>
+              <button class="dp-preset" data-preset="thisQuarter">This quarter</button>
+              <button class="dp-preset" data-preset="lastQuarter">Last quarter</button>
+              <button class="dp-preset" data-preset="thisYear">This year</button>
+            </div>
+            <div class="date-picker__right">
+              <div class="date-picker__header">
+                <button class="date-picker__nav" id="dpPrevMonth"><span class="material-symbols-outlined">chevron_left</span></button>
+                <div class="date-picker__months">
+                  <span class="date-picker__month-label" id="dpLeftLabel"></span>
+                  <span class="date-picker__month-label" id="dpRightLabel"></span>
+                </div>
+                <button class="date-picker__nav" id="dpNextMonth"><span class="material-symbols-outlined">chevron_right</span></button>
+              </div>
+              <div class="date-picker__body">
+                <div class="date-picker__cal" id="dpLeftCal"></div>
+                <div class="date-picker__cal" id="dpRightCal"></div>
+              </div>
+            </div>
+          </div>
+          <div class="date-picker__range" id="dpRangeText">Select start and end dates</div>
+          <div class="date-picker__footer">
+            <button class="btn-act btn-act--decline" id="dpCancel">Cancel</button>
+            <button class="btn-act btn-act--approve" id="dpApply" disabled>Apply</button>
+          </div>
+        </div>
       </div>
       <div class="pill-group">
         <button class="pill-btn active" data-filter="all">All</button>
