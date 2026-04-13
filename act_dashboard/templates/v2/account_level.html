@@ -345,17 +345,21 @@
 <!-- Section Divider: Budget Allocation -->
 <div class="section-divider">Budget Allocation</div>
 
-<!-- Budget Visualization -->
+{% set role_names = {'CP': 'Core Performance', 'RT': 'Retargeting', 'BD': 'Brand Defence', 'TS': 'Testing', 'PR': 'Prospecting'} %}
+{% set role_colours = {'CP': '#10b981', 'RT': '#ec4899', 'BD': '#3b82f6', 'TS': '#f59e0b', 'PR': '#8b5cf6'} %}
+
+<!-- Budget Allocation -->
 <div class="acct-section collapsed">
   <div class="acct-section__header">
-    <h3 class="acct-section__title">Budget Distribution</h3>
+    <h3 class="acct-section__title"><span class="material-symbols-outlined" style="color:#3b82f6">bar_chart</span>Budget Allocation</h3>
     <span class="material-symbols-outlined acct-section__toggle">expand_more</span>
   </div>
   <div class="acct-section__body">
     <div class="budget-vis">
       <div class="budget-bar">
         {% for c in campaigns if c.status == 'enabled' %}
-        <div class="budget-bar__segment" style="width:{{ c.share }}%;background:{% if c.role == 'CP' %}#10b981{% elif c.role == 'RT' %}#ec4899{% elif c.role == 'BD' %}#3b82f6{% elif c.role == 'TS' %}#f59e0b{% else %}#6b7280{% endif %}">
+        <div class="budget-bar__segment" style="width:{{ c.share }}%;background:{{ role_colours.get(c.role, '#6b7280') }}">
+          {{ c.share }}% {{ role_names.get(c.role, c.name[:8]) }}
           <div class="budget-bar__tooltip">{{ c.name }}: &pound;{{ '{:,.0f}'.format(c.budget) }}/d ({{ c.share }}%)</div>
         </div>
         {% endfor %}
@@ -363,8 +367,8 @@
       <div class="budget-legend">
         {% for c in campaigns if c.status == 'enabled' %}
         <div class="budget-legend__item">
-          <span class="budget-legend__dot" style="background:{% if c.role == 'CP' %}#10b981{% elif c.role == 'RT' %}#ec4899{% elif c.role == 'BD' %}#3b82f6{% elif c.role == 'TS' %}#f59e0b{% else %}#6b7280{% endif %}"></span>
-          {{ c.name }} ({{ c.share }}%)
+          <div class="budget-legend__dot" style="background:{{ role_colours.get(c.role, '#6b7280') }}"></div>
+          {{ role_names.get(c.role, c.name) }} ({{ c.share }}%)
         </div>
         {% endfor %}
       </div>
@@ -375,20 +379,23 @@
 <!-- Signal Decomposition -->
 <div class="acct-section collapsed">
   <div class="acct-section__header">
-    <h3 class="acct-section__title">Signal Decomposition</h3>
+    <h3 class="acct-section__title"><span class="material-symbols-outlined" style="color:#3b82f6">analytics</span>Signal Decomposition</h3>
     <span class="material-symbols-outlined acct-section__toggle">expand_more</span>
   </div>
   <div class="acct-section__body">
     <table class="data-table data-table--sig">
-      <thead><tr><th>Campaign</th><th>CPC (7d)</th><th>CVR (14d)</th><th>CPA</th><th>CPA vs Target</th></tr></thead>
+      <thead><tr><th>Campaign</th><th>CPC (7d)</th><th>CPC Trend (7d)</th><th>CVR (14d)</th><th>CVR Trend (14d)</th><th>CPA (14d)</th><th>CPA Trend (14d)</th><th>CPA vs Target</th></tr></thead>
       <tbody>
         {% for sig in signals %}
         <tr>
           <td>{{ sig.name }}</td>
           <td>&pound;{{ '{:,.2f}'.format(sig.cpc_7d) }}</td>
+          <td>{% if sig.cpc_trend is not none %}<span class="trend-arrow trend-arrow--{{ 'good' if sig.cpc_trend <= 0 else 'bad' if sig.cpc_trend > 5 else 'flat' }}">{{ '↓' if sig.cpc_trend < 0 else '↑' if sig.cpc_trend > 0 else '→' }} {{ sig.cpc_trend|abs }}%</span>{% else %}&mdash;{% endif %}</td>
           <td>{{ sig.cvr_14d }}%</td>
+          <td>{% if sig.cvr_trend is not none %}<span class="trend-arrow trend-arrow--{{ 'good' if sig.cvr_trend >= 0 else 'bad' if sig.cvr_trend < -5 else 'flat' }}">{{ '↑' if sig.cvr_trend > 0 else '↓' if sig.cvr_trend < 0 else '→' }} {{ sig.cvr_trend|abs }}%</span>{% else %}&mdash;{% endif %}</td>
           <td>{% if sig.cpa %}&pound;{{ '{:,.2f}'.format(sig.cpa) }}{% else %}&mdash;{% endif %}</td>
-          <td>{% if sig.zone %}<span class="zone-badge zone-badge--{{ sig.zone }}">{{ sig.zone|capitalize }}</span>{% else %}&mdash;{% endif %}</td>
+          <td>{% if sig.cpa_trend is not none %}<span class="trend-arrow trend-arrow--{{ 'good' if sig.cpa_trend <= 0 else 'bad' if sig.cpa_trend > 5 else 'flat' }}">{{ '↓' if sig.cpa_trend < 0 else '↑' if sig.cpa_trend > 0 else '→' }} {{ sig.cpa_trend|abs }}%</span>{% else %}&mdash;{% endif %}</td>
+          <td>{% if sig.zone %}<span class="zone-badge zone-badge--{{ sig.zone }}">{{ sig.cpa_vs_target_pct }}% {{ 'below' if sig.zone == 'outperforming' else 'above' if sig.zone == 'underperforming' else '' }}</span>{% else %}&mdash;{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -396,19 +403,57 @@
   </div>
 </div>
 
+<!-- Budget Shift History -->
+<div class="acct-section collapsed">
+  <div class="acct-section__header">
+    <h3 class="acct-section__title"><span class="material-symbols-outlined" style="color:#3b82f6">history</span>Budget Shift History</h3>
+    <span class="material-symbols-outlined acct-section__toggle">expand_more</span>
+  </div>
+  <div class="acct-section__body">
+    {% if budget_shifts %}
+    <table class="data-table data-table--hist">
+      <thead><tr><th>Date</th><th>Campaign</th><th>Change</th><th>Reason</th></tr></thead>
+      <tbody>
+        {% for shift in budget_shifts %}
+        <tr>
+          <td>{{ shift.date }}</td>
+          <td>{{ shift.campaign }}</td>
+          <td>{{ shift.change }}</td>
+          <td>{{ shift.reason }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state" style="padding:20px"><span class="material-symbols-outlined" style="font-size:24px;opacity:0.3">history</span><p>No budget shifts executed yet</p></div>
+    {% endif %}
+  </div>
+</div>
+
 <!-- Guardrails -->
 <div class="acct-section collapsed">
   <div class="acct-section__header">
-    <h3 class="acct-section__title">Guardrails</h3>
+    <h3 class="acct-section__title"><span class="material-symbols-outlined" style="color:#3b82f6">shield</span>Guardrails</h3>
     <span class="material-symbols-outlined acct-section__toggle">expand_more</span>
   </div>
   <div class="acct-section__body">
     <ul class="guardrail-list">
       {% for g in guardrails %}
-      <li><span class="material-symbols-outlined" style="font-size:18px;color:var(--act-primary)">verified_user</span>{{ g.label }}<span class="guardrail-value">{{ g.value }}</span></li>
+      <li><span class="material-symbols-outlined">{{ g.icon }}</span>{{ g.label }}<span class="guardrail-value">{{ g.value }}</span></li>
       {% endfor %}
     </ul>
   </div>
+</div>
+
+<!-- Slide-in panel -->
+<div class="act-slidein-overlay" id="slideinOverlay"></div>
+<div class="act-slidein" id="slideinPanel">
+  <div class="act-slidein__header">
+    <h3 id="slideinTitle">Decision Details</h3>
+    <button class="act-slidein__close" id="slideinClose"><span class="material-symbols-outlined">close</span></button>
+  </div>
+  <div class="act-slidein__body" id="slideinBody"></div>
+  <div class="act-slidein__footer" id="slideinFooter"></div>
 </div>
 
 <!-- Chart data for JS -->

@@ -427,33 +427,64 @@ def account_level():
                        for r in alerts]
 
         # 9. Signal decomposition — CPC/CVR trends per campaign
+        # Query 30d of snapshots for trend comparison (need prev 7d and prev 14d)
+        sig_snaps = con.execute(
+            """SELECT snapshot_date, entity_id, metrics_json FROM act_v2_snapshots
+               WHERE client_id = ? AND level = 'campaign'
+               AND snapshot_date BETWEEN CAST(? AS DATE) AND CAST(? AS DATE)
+               ORDER BY snapshot_date""",
+            [client_id, str(end_date - timedelta(days=30)), end_str]
+        ).fetchall()
+        sig_all = []
+        for row in sig_snaps:
+            sig_all.append({
+                'date': str(row[0]),
+                'entity_id': str(row[1]),
+                'metrics': _parse_metrics(row[2]),
+            })
+
         signals = []
         for c in [c for c in campaigns_table if c['status'] == 'enabled']:
             cid = c['entity_id']
-            # Get 7d and 14d data
-            snaps_7d = [s for s in all_snaps if s['entity_id'] == cid
-                        and s['date'] > str(end_date - timedelta(days=7))]
-            snaps_14d = [s for s in all_snaps if s['entity_id'] == cid
-                         and s['date'] > str(end_date - timedelta(days=14))]
+            d7 = str(end_date - timedelta(days=7))
+            d14 = str(end_date - timedelta(days=14))
+            d21 = str(end_date - timedelta(days=21))
+            d28 = str(end_date - timedelta(days=28))
 
-            cpc_7d = _safe_div(
-                sum(s['metrics'].get('cost', 0) for s in snaps_7d),
-                sum(s['metrics'].get('clicks', 0) for s in snaps_7d)
-            )
-            cvr_14d = _safe_div(
-                sum(s['metrics'].get('conversions', 0) for s in snaps_14d),
-                sum(s['metrics'].get('clicks', 0) for s in snaps_14d)
-            ) * 100
+            # Current windows
+            snaps_7d = [s for s in sig_all if s['entity_id'] == cid and s['date'] > d7]
+            snaps_14d = [s for s in sig_all if s['entity_id'] == cid and s['date'] > d14]
+            # Previous windows
+            snaps_prev_7d = [s for s in sig_all if s['entity_id'] == cid and d14 < s['date'] <= d7]
+            snaps_prev_14d = [s for s in sig_all if s['entity_id'] == cid and d28 < s['date'] <= d14]
+
+            cpc_7d = _safe_div(sum(s['metrics'].get('cost', 0) for s in snaps_7d),
+                               sum(s['metrics'].get('clicks', 0) for s in snaps_7d))
+            prev_cpc_7d = _safe_div(sum(s['metrics'].get('cost', 0) for s in snaps_prev_7d),
+                                    sum(s['metrics'].get('clicks', 0) for s in snaps_prev_7d))
+            cpc_trend = round((cpc_7d - prev_cpc_7d) / prev_cpc_7d * 100) if prev_cpc_7d > 0 else None
+
+            cvr_clicks = sum(s['metrics'].get('clicks', 0) for s in snaps_14d)
+            cvr_14d = _safe_div(sum(s['metrics'].get('conversions', 0) for s in snaps_14d), cvr_clicks) * 100
+            prev_cvr_clicks = sum(s['metrics'].get('clicks', 0) for s in snaps_prev_14d)
+            prev_cvr = _safe_div(sum(s['metrics'].get('conversions', 0) for s in snaps_prev_14d), prev_cvr_clicks) * 100
+            cvr_trend = round((cvr_14d - prev_cvr) / prev_cvr * 100) if prev_cvr > 0 else None
 
             cost_total = sum(s['metrics'].get('cost', 0) for s in snaps_14d)
             conv_total = sum(s['metrics'].get('conversions', 0) for s in snaps_14d)
             cpa = _safe_div(cost_total, conv_total) if conv_total > 0 else None
 
-            # Zone
+            prev_cost = sum(s['metrics'].get('cost', 0) for s in snaps_prev_14d)
+            prev_conv = sum(s['metrics'].get('conversions', 0) for s in snaps_prev_14d)
+            prev_cpa = _safe_div(prev_cost, prev_conv) if prev_conv > 0 else None
+            cpa_trend = round((cpa - prev_cpa) / prev_cpa * 100) if cpa and prev_cpa else None
+
             zone = None
+            cpa_vs_target_pct = None
             if cpa and client['target_cpa']:
                 target = client['target_cpa']
                 dev = deviation_threshold / 100
+                cpa_vs_target_pct = round(abs(cpa - target) / target * 100)
                 if cpa < target * (1 - dev):
                     zone = 'outperforming'
                 elif cpa > target * (1 + dev):
@@ -463,26 +494,69 @@ def account_level():
 
             signals.append({
                 'name': c['name'], 'cpc_7d': round(cpc_7d, 2),
+                'cpc_trend': cpc_trend,
                 'cvr_14d': round(cvr_14d, 2),
+                'cvr_trend': cvr_trend,
                 'cpa': round(cpa, 2) if cpa else None,
+                'cpa_trend': cpa_trend,
                 'zone': zone,
+                'cpa_vs_target_pct': cpa_vs_target_pct,
             })
 
         # 10. Guardrails from settings
-        guardrails_keys = [
-            ('max_overnight_budget_move_pct', 'Max Overnight Budget Move', '%'),
-            ('budget_shift_cooldown_hours', 'Budget Shift Cooldown', ' hours'),
-            ('deviation_threshold_pct', 'Deviation Threshold', '%'),
+        guardrails_data = [
+            ('max_overnight_budget_move_pct', 'Max overnight budget move', 'speed', '%'),
+            ('budget_shift_cooldown_hours', 'Budget shift cooldown', 'timer', ' hours'),
         ]
         guardrails = []
-        for key, label, suffix in guardrails_keys:
+        for key, label, icon, suffix in guardrails_data:
             val_row = con.execute(
                 "SELECT setting_value FROM act_v2_client_settings WHERE client_id = ? AND setting_key = ?",
                 [client_id, key]
             ).fetchone()
-            guardrails.append({
-                'label': label,
-                'value': (val_row[0] if val_row else '—') + suffix,
+            guardrails.append({'label': label, 'value': (val_row[0] if val_row else '—') + suffix, 'icon': icon})
+
+        band_roles = [
+            ('bd', 'Brand Defence'), ('cp', 'Core Performance'),
+            ('rt', 'Retargeting'), ('pr', 'Prospecting'), ('ts', 'Testing')
+        ]
+        # Static business rule guardrails
+        guardrails.insert(2, {'label': 'Best performer cap', 'value': '50% of role allocation', 'icon': 'vertical_align_center'})
+        guardrails.insert(3, {'label': 'Testing campaign budget', 'value': 'Fixed — never auto-increased', 'icon': 'lock'})
+
+        for role_code, role_name in band_roles:
+            min_row = con.execute(
+                "SELECT setting_value FROM act_v2_client_settings WHERE client_id = ? AND setting_key = ?",
+                [client_id, f'budget_band_{role_code}_min_pct']
+            ).fetchone()
+            max_row = con.execute(
+                "SELECT setting_value FROM act_v2_client_settings WHERE client_id = ? AND setting_key = ?",
+                [client_id, f'budget_band_{role_code}_max_pct']
+            ).fetchone()
+            if min_row and max_row:
+                guardrails.append({
+                    'label': f'Budget bands — {role_name}',
+                    'value': f'{min_row[0]}–{max_row[0]}%',
+                    'icon': 'tune'
+                })
+
+        # 10b. Budget shift history
+        budget_shifts_rows = con.execute(
+            """SELECT executed_at, entity_name, before_value_json, after_value_json, reason
+               FROM act_v2_executed_actions
+               WHERE client_id = ? AND level = 'account'
+               ORDER BY executed_at DESC LIMIT 10""",
+            [client_id]
+        ).fetchall()
+        budget_shifts = []
+        for r in budget_shifts_rows:
+            before = _parse_metrics(r[2]) if r[2] else {}
+            after = _parse_metrics(r[3]) if r[3] else {}
+            budget_shifts.append({
+                'date': r[0].strftime('%d %b %Y') if hasattr(r[0], 'strftime') else str(r[0]),
+                'campaign': r[1],
+                'change': f"£{before.get('budget', '?')} → £{after.get('budget', '?')}",
+                'reason': r[4] or '',
             })
 
         # ACT last ran
@@ -514,6 +588,7 @@ def account_level():
                            alerts=alerts_list,
                            signals=signals,
                            guardrails=guardrails,
+                           budget_shifts=budget_shifts,
                            last_ran=last_ran,
                            days=days,
                            active_page='account')
