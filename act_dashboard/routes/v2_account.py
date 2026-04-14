@@ -104,8 +104,9 @@ def account_level():
         end_str = str(end_date)
         start_str = str(start_date)
 
-        # MTD dates
-        mtd_start = end_date.replace(day=1)
+        # MTD always uses the latest snapshot month, regardless of selected date range
+        mtd_end_date = latest_date or datetime.now().date()
+        mtd_start = mtd_end_date.replace(day=1)
 
         # 3. Campaign snapshots for date range
         campaign_snaps = con.execute(
@@ -263,7 +264,7 @@ def account_level():
             """SELECT metrics_json FROM act_v2_snapshots
                WHERE client_id = ? AND level = 'campaign'
                AND snapshot_date >= CAST(? AS DATE) AND snapshot_date <= CAST(? AS DATE)""",
-            [client_id, str(mtd_start), end_str]
+            [client_id, str(mtd_start), str(mtd_end_date)]
         ).fetchall()
         mtd_cost = sum(_parse_metrics(r[0]).get('cost', 0) for r in mtd_snaps_rows)
         mtd_conv = sum(_parse_metrics(r[0]).get('conversions', 0) for r in mtd_snaps_rows)
@@ -289,8 +290,8 @@ def account_level():
 
         # Projection: (conversions so far / days elapsed) * days in month
         from calendar import monthrange
-        days_in_month = monthrange(end_date.year, end_date.month)[1]
-        days_elapsed = (end_date - mtd_start).days + 1
+        days_in_month = monthrange(mtd_end_date.year, mtd_end_date.month)[1]
+        days_elapsed = (mtd_end_date - mtd_start).days + 1
         projected_conv = round(mtd_conv / days_elapsed * days_in_month) if days_elapsed > 0 and mtd_conv > 0 else None
 
         health = {
