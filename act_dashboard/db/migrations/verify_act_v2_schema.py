@@ -38,6 +38,7 @@ EXPECTED_TABLES = {
     'act_v2_alerts': 11,
     'act_v2_search_terms': 20,
     'act_v2_campaign_segments': 17,
+    'act_v2_scheduler_runs': 9,
 }
 
 EXPECTED_SEQUENCES = [
@@ -48,6 +49,7 @@ EXPECTED_SEQUENCES = [
     'seq_act_v2_alerts',
     'seq_act_v2_search_terms',
     'seq_act_v2_campaign_segments',
+    'seq_act_v2_scheduler_runs',
 ]
 
 EXPECTED_INDEXES = [
