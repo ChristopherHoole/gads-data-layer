@@ -33,7 +33,7 @@ EXPECTED_TABLES = {
     'act_v2_snapshots': 9,
     'act_v2_checks': 8,
     'act_v2_recommendations': 20,
-    'act_v2_executed_actions': 15,
+    'act_v2_executed_actions': 16,
     'act_v2_monitoring': 13,
     'act_v2_alerts': 11,
     'act_v2_search_terms': 20,

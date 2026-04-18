@@ -21,7 +21,7 @@
   <div class="act-nav">
     <div class="act-nav-section">
       <div class="act-nav-label">Review</div>
-      <a href="/v2/morning-review" class="act-nav-item {% if active_page == 'morning-review' %}active{% endif %}" style="{% if active_page != 'morning-review' %}opacity:0.5;pointer-events:none{% endif %}">
+      <a href="/v2/morning-review{% if client and client.id != 'all' %}?client={{ client.id }}{% endif %}" class="act-nav-item {% if active_page == 'morning-review' %}active{% endif %}">
         <span class="material-symbols-outlined">wb_sunny</span>Morning Review
       </a>
     </div>
@@ -64,6 +64,9 @@
         <span class="material-symbols-outlined" style="font-size:18px">expand_more</span>
       </button>
       <div class="dropdown-menu" id="clientMenu" style="position:absolute;right:0;top:100%;margin-top:4px;min-width:200px">
+        {% if active_page == 'morning-review' %}
+        <a class="dropdown-item {% if client and client.id == 'all' %}active{% endif %}" href="#" data-client-id="all">All Clients</a>
+        {% endif %}
         {% for c in clients %}
         <a class="dropdown-item {% if client and c.id == client.id %}active{% endif %}" href="#" data-client-id="{{ c.id }}">{{ c.name }}</a>
         {% endfor %}

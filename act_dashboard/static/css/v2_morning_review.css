@@ -1,0 +1,42 @@
+/* ============================================================================
+   ACT v2 — Morning Review Page CSS
+   Page-specific styles on top of v2_base.css (which has act-section, status-card,
+   badges, act-item, slide-in from prototype-v7 copy).
+   ============================================================================ */
+
+/* Client badge — shown in each item when viewing "All Clients" */
+.badge-client {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--act-hover-bg);
+  color: var(--act-text);
+  border: 1px solid var(--act-border-light);
+  white-space: nowrap;
+}
+
+/* Scheduler status banner (running/failed) */
+.scheduler-banner {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; border-radius: 6px;
+  font-size: 13px; margin-bottom: 16px;
+}
+.scheduler-banner--running {
+  background: var(--act-blue-bg); border: 1px solid var(--act-blue-border);
+  color: var(--act-primary);
+}
+.scheduler-banner--failed {
+  background: var(--act-red-bg); border: 1px solid var(--act-red-border);
+  color: var(--act-red);
+}
+.scheduler-banner .material-symbols-outlined { font-size: 20px; }
+
+/* Undo-requested state */
+.undo-requested {
+  font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 10px;
+  background: var(--act-amber-bg);
+  color: var(--act-amber);
+  border: 1px solid var(--act-amber-border);
+}

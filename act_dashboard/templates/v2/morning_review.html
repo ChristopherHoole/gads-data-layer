@@ -1,0 +1,283 @@
+{% extends "v2/base_v2.html" %}
+
+{% block title %}Morning Review{% endblock %}
+{% block page_title %}Morning Review{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/v2_morning_review.css') }}">
+{% endblock %}
+
+{% block topbar_extras %}
+  {% if any_running %}
+  <span class="act-last-ran" style="background:var(--act-blue-bg);border:1px solid var(--act-blue-border)"><span class="material-symbols-outlined" style="color:var(--act-primary)">sync</span>ACT running now</span>
+  {% elif last_ran %}
+  <span class="act-last-ran"><span class="material-symbols-outlined">check_circle</span>ACT last ran: {{ last_ran }}</span>
+  {% else %}
+  <span class="act-last-ran" style="background:var(--act-amber-bg);border:1px solid var(--act-amber-border)"><span class="material-symbols-outlined" style="color:var(--act-amber)">schedule</span>ACT has not run yet</span>
+  {% endif %}
+{% endblock %}
+
+{# ---- Macros ---- #}
+{% macro client_badge(rec) %}
+  {% if client.id == 'all' %}<span class="badge-client">{{ rec.client_name }}</span>{% endif %}
+{% endmacro %}
+
+{% macro level_badge(level) %}
+  {% set ldisp = {'account': 'Account', 'campaign': 'Campaign', 'ad_group': 'Ad Group', 'keyword': 'Keyword', 'ad': 'Ad', 'shopping': 'Shopping'} %}
+  {% set lclass = {'ad_group': 'adgroup'} %}
+  <span class="badge-level badge-level--{{ lclass.get(level, level) }}">{{ ldisp.get(level, level|capitalize) }}</span>
+{% endmacro %}
+
+{% block content %}
+
+{# ---- Scheduler status banners (failed / running) ---- #}
+{% if any_failed %}
+<div class="scheduler-banner scheduler-banner--failed">
+  <span class="material-symbols-outlined">error</span>
+  <span>Overnight run had failures. Check scheduler log for details.</span>
+</div>
+{% endif %}
+
+{# ---- Overnight impact summary ---- #}
+<div class="act-impact-summary">
+  <span class="material-symbols-outlined">savings</span>
+  {% if impact_total_actions > 0 %}
+  ACT executed {{ impact_total_actions }} action(s) overnight across all active clients. Review the details in "Actions Executed Overnight" below.
+  {% else %}
+  No actions were executed overnight. All {{ stats.awaiting_count }} pending recommendations are awaiting your approval.
+  {% endif %}
+</div>
+
+{# ---- Status cards ---- #}
+<div class="status-cards">
+  <div class="status-card status-card--amber" data-colour="amber">
+    <div class="status-card__count">{{ stats.awaiting_count }}</div>
+    <div class="status-card__label">Awaiting Approval</div>
+    <div class="status-card__sub">Needs your review</div>
+  </div>
+  <div class="status-card status-card--red" data-colour="red">
+    <div class="status-card__count">{{ stats.alerts_count }}</div>
+    <div class="status-card__label">Alerts</div>
+    <div class="status-card__sub">Last 7 days</div>
+  </div>
+  <div class="status-card status-card--green" data-colour="green">
+    <div class="status-card__count">{{ stats.executed_count }}</div>
+    <div class="status-card__label">Actions Executed</div>
+    <div class="status-card__sub">Overnight auto-applied</div>
+  </div>
+  <div class="status-card status-card--blue" data-colour="blue">
+    <div class="status-card__count">{{ stats.monitoring_count }}</div>
+    <div class="status-card__label">Monitoring</div>
+    <div class="status-card__sub">In cooldown / watching</div>
+  </div>
+</div>
+
+{# ============ AWAITING APPROVAL ============ #}
+<section class="act-section" id="sectionApproval">
+  <div class="act-section__header">
+    <h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-amber)">pending_actions</span>Awaiting Approval<span class="act-section__count act-section__count--amber">{{ stats.awaiting_count }}</span></h2>
+    <span class="material-symbols-outlined act-section__toggle">expand_more</span>
+  </div>
+  {% if awaiting %}
+  <div class="act-bulk-bar" onclick="event.stopPropagation()">
+    <input type="checkbox" class="form-check-input" id="bulkSelectAll">
+    <label for="bulkSelectAll" style="cursor:pointer">Select all</label>
+    <button class="btn-act btn-act--bulk" id="bulkApproveBtn" disabled><span id="bulkLabel">Approve Selected (0)</span></button>
+  </div>
+  {% endif %}
+  <div class="act-section__body">
+    {% if awaiting %}
+      {% for level, recs in awaiting_by_level.items() %}
+      <div class="act-group">
+        <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span>{{ level_badge(level) }}<span class="act-group__count">{{ recs|length }}</span></div>
+        <div class="act-group__body">
+          {% for rec in recs %}
+          <div class="act-item" data-rec-id="{{ rec.id }}" data-priority="{{ rec.action_category }}" data-risk="{{ rec.risk_level }}" data-details='{{ rec.decision_tree|tojson if rec.decision_tree else "{}" }}'>
+            <div class="act-item__row">
+              <div class="act-item__check"><input type="checkbox" class="form-check-input"></div>
+              <div class="act-item__content">
+                <div class="act-item__top">
+                  {{ client_badge(rec) }}
+                  {{ level_badge(rec.level) }}
+                  <span class="badge-action badge-action--{{ rec.action_category }}">{{ rec.action_category|capitalize }}</span>
+                  <span class="badge-risk badge-risk--{{ rec.risk_level }}">{{ rec.risk_level|capitalize }} Risk</span>
+                </div>
+                <div class="act-item__summary"><strong>{{ rec.entity_name }}:</strong> {{ rec.summary }}</div>
+                {% if rec.recommendation_text %}
+                <div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>{{ rec.recommendation_text }}</div>
+                {% endif %}
+                {% if rec.estimated_impact %}
+                <div class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>{{ rec.estimated_impact }}</div>
+                {% endif %}
+              </div>
+              <div class="act-item__actions">
+                <button class="btn-act btn-act--details" data-action="details">View Details</button>
+                <button class="btn-act btn-act--approve" data-action="approve" data-rec-id="{{ rec.id }}">Approve</button>
+                <button class="btn-act btn-act--decline" data-action="decline" data-rec-id="{{ rec.id }}">Decline</button>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="act-empty-state" style="padding:40px;text-align:center;color:var(--act-text);opacity:0.7">
+      <span class="material-symbols-outlined" style="font-size:48px;color:var(--act-green)">check_circle</span>
+      <p style="margin-top:12px;font-size:14px">All clear &mdash; no actions need your review today</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{# ============ ACTIONS EXECUTED OVERNIGHT ============ #}
+<section class="act-section collapsed" id="sectionExecuted">
+  <div class="act-section__header">
+    <h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-green)">check_circle</span>Actions Executed Overnight<span class="act-section__count act-section__count--green">{{ stats.executed_count }}</span></h2>
+    <span class="material-symbols-outlined act-section__toggle">expand_more</span>
+  </div>
+  <div class="act-section__body">
+    {% if executed %}
+      {% for level, actions in executed_by_level.items() %}
+      <div class="act-group">
+        <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span>{{ level_badge(level) }}<span class="act-group__count">{{ actions|length }}</span></div>
+        <div class="act-group__body">
+          {% for a in actions %}
+          <div class="act-item" data-action-id="{{ a.id }}">
+            <div class="act-item__row">
+              <div class="act-item__content">
+                <div class="act-item__top">
+                  {{ client_badge(a) }}
+                  {{ level_badge(a.level) }}
+                  <span class="badge-action badge-action--act">Act</span>
+                  <span class="act-item__timestamp">{{ a.executed_at.strftime('%d %b, %H:%M') if a.executed_at else '' }}</span>
+                  {% if a.undo_requested_at %}<span class="undo-requested">Undo requested</span>{% endif %}
+                </div>
+                <div class="act-item__summary"><strong>{{ a.entity_name }}:</strong> {{ a.action_type }}{% if a.reason %} &mdash; {{ a.reason }}{% endif %}</div>
+              </div>
+              <div class="act-item__actions">
+                <button class="btn-act btn-act--undo" data-action="undo" data-action-id="{{ a.id }}"
+                        {% if a.undo_requested_at %}disabled{% endif %}
+                        title="Marks the action as undo-requested. Actual Google Ads API revert lands with the G-series execution layer.">
+                  {% if a.undo_requested_at %}Undo requested{% else %}Undo{% endif %}
+                </button>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="act-empty-state" style="padding:40px;text-align:center;color:var(--act-text);opacity:0.7">
+      <span class="material-symbols-outlined" style="font-size:48px;opacity:0.4">history</span>
+      <p style="margin-top:12px;font-size:14px">No actions executed in the last 24 hours</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{# ============ CURRENTLY MONITORING ============ #}
+<section class="act-section collapsed" id="sectionMonitoring">
+  <div class="act-section__header">
+    <h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-blue)">visibility</span>Currently Monitoring<span class="act-section__count act-section__count--blue">{{ stats.monitoring_count }}</span></h2>
+    <span class="material-symbols-outlined act-section__toggle">expand_more</span>
+  </div>
+  <div class="act-section__body">
+    {% if monitoring %}
+      {% for level, items in monitoring_by_level.items() %}
+      <div class="act-group">
+        <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span>{{ level_badge(level) }}<span class="act-group__count">{{ items|length }}</span></div>
+        <div class="act-group__body">
+          {% for m in items %}
+          <div class="act-item">
+            <div class="act-item__row">
+              <div class="act-item__content">
+                <div class="act-item__top">
+                  {{ client_badge(m) }}
+                  {{ level_badge(m.level) }}
+                  <span class="badge-action badge-action--monitor">Monitor</span>
+                </div>
+                <div class="act-item__summary"><strong>{{ m.entity_id }}:</strong> {{ m.type|replace('_', ' ')|capitalize }}</div>
+                {% if m.started_at %}
+                <div class="act-item__started"><span class="material-symbols-outlined">calendar_today</span>Started: {{ m.started_at.strftime('%d %b %Y, %H:%M') if m.started_at.strftime else m.started_at }}</div>
+                {% endif %}
+                <div class="act-item__progress">
+                  <div class="act-item__progress-bar"><div class="act-item__progress-fill" style="width:{{ m.progress_pct }}%;background:{% if m.health == 'healthy' %}var(--act-green){% elif m.health == 'trending_down' %}var(--act-amber){% else %}#9aa0a6{% endif %}"></div></div>
+                  <span class="act-item__progress-text">{{ m.time_remaining }}</span>
+                  <span class="health-label health-label--{{ 'healthy' if m.health == 'healthy' else 'warning' if m.health == 'trending_down' else 'neutral' }}">
+                    {% if m.health == 'healthy' %}Healthy{% elif m.health == 'trending_down' %}Trending Down{% else %}Too early to assess{% endif %}
+                  </span>
+                  {% if m.stable_days and m.stable_days > 0 %}<span class="act-item__streak">for {{ m.stable_days }} consecutive days</span>{% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="act-empty-state" style="padding:40px;text-align:center;color:var(--act-text);opacity:0.7">
+      <span class="material-symbols-outlined" style="font-size:48px;opacity:0.4">visibility</span>
+      <p style="margin-top:12px;font-size:14px">No active monitoring entries</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{# ============ RECENT ALERTS ============ #}
+<section class="act-section collapsed" id="sectionAlerts">
+  <div class="act-section__header">
+    <h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-red)">notifications_active</span>Recent Alerts<span class="act-section__count act-section__count--red">{{ stats.alerts_count }}</span><span style="font-size:12px;color:var(--act-text);font-weight:400;margin-left:4px">Last 7 days</span></h2>
+    <span class="material-symbols-outlined act-section__toggle">expand_more</span>
+  </div>
+  <div class="act-section__body">
+    {% if alerts %}
+      {% for level, items in alerts_by_level.items() %}
+      <div class="act-group">
+        <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span>{{ level_badge(level) }}<span class="act-group__count">{{ items|length }}</span></div>
+        <div class="act-group__body">
+          {% for a in items %}
+          <div class="act-item">
+            <div class="act-item__row">
+              <div class="act-item__content">
+                <div class="act-item__top">
+                  {{ client_badge(a) }}
+                  {{ level_badge(a.level) }}
+                  <span class="badge-action badge-action--alert">Alert</span>
+                  <span class="act-item__timestamp">{{ a.raised_at.strftime('%d %b %Y') if a.raised_at.strftime else a.raised_at }}</span>
+                </div>
+                <div class="act-item__summary"><strong>{{ a.title }}</strong>{% if a.description %} &mdash; {{ a.description }}{% endif %}</div>
+                {% if a.resolution %}
+                <div class="act-item__meta"><span class="badge-resolution badge-resolution--{{ a.resolution }}">{{ a.resolution|replace('_', ' ')|capitalize }}</span></div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="act-empty-state" style="padding:40px;text-align:center;color:var(--act-text);opacity:0.7">
+      <span class="material-symbols-outlined" style="font-size:48px;opacity:0.4">notifications_none</span>
+      <p style="margin-top:12px;font-size:14px">No alerts in the last 7 days</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{# ---- Slide-in panel ---- #}
+<div class="act-slidein-overlay" id="slideinOverlay"></div>
+<div class="act-slidein" id="slideinPanel">
+  <div class="act-slidein__header"><h3 id="slideinTitle">Decision Details</h3><button class="act-slidein__close" id="slideinClose"><span class="material-symbols-outlined">close</span></button></div>
+  <div class="act-slidein__body" id="slideinBody"></div>
+  <div class="act-slidein__footer" id="slideinFooter"></div>
+</div>
+
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/v2_morning_review.js') }}"></script>
+{% endblock %}

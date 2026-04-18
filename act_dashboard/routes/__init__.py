@@ -80,6 +80,10 @@ def register_blueprints(app: Flask):
     app.register_blueprint(v2_account_bp)
     app.register_blueprint(v2_api_bp)
 
+    # Session F2: ACT v2 Morning Review
+    from act_dashboard.routes.v2_morning import v2_morning_bp
+    app.register_blueprint(v2_morning_bp)
+
     print("[OK] [Phase 1a] Registered auth blueprint (login, logout, switch-client)")
     print("[OK] [Phase 1b] Registered api blueprint (execute, batch, status, approve, reject)")
     print("[OK] [Phase 1c] Registered page blueprints (keywords, ads, shopping)")
@@ -94,3 +98,4 @@ def register_blueprints(app: Flask):
     print("[OK] [A3] Registered v2_config blueprint (/v2/config)")
     print("[OK] [B2] Registered v2_account blueprint (/v2/account)")
     print("[OK] [B2] Registered v2_api blueprint (/v2/api)")
+    print("[OK] [F2] Registered v2_morning blueprint (/v2/morning-review)")

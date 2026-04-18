@@ -547,6 +547,8 @@ def create_app():
     v2_api_routes = [
         'v2_api.approve_recommendation',
         'v2_api.decline_recommendation',
+        'v2_api.bulk_approve_recommendations',
+        'v2_api.undo_request_action',
     ]
     for route_name in v2_api_routes:
         if route_name in app.view_functions:

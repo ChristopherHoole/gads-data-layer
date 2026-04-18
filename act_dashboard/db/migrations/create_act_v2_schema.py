@@ -244,6 +244,7 @@ TABLE_SQL = [
             error_message VARCHAR,
             executed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             google_ads_api_response JSON,
+            undo_requested_at TIMESTAMP,
             FOREIGN KEY (client_id) REFERENCES act_v2_clients(client_id),
             FOREIGN KEY (check_id) REFERENCES act_v2_checks(check_id),
             FOREIGN KEY (recommendation_id) REFERENCES act_v2_recommendations(recommendation_id)
