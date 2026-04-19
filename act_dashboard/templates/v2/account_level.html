@@ -304,18 +304,18 @@
               <span class="badge-action badge-action--{{ rec.action_category }}">{{ rec.action_category|capitalize }}</span>
               <span class="badge-risk badge-risk--{{ rec.risk_level }}">{{ rec.risk_level|capitalize }}</span>
             </div>
-            <div class="act-item__summary"><strong>{{ rec.entity_name }}</strong> &mdash; {{ rec.summary }}</div>
+            <div class="act-item__summary"><strong>{{ rec.entity_name }}:</strong> {{ rec.summary }}</div>
             {% if rec.recommendation_text %}
-            <div class="act-item__recommendation"><span class="material-symbols-outlined" style="font-size:16px">lightbulb</span>{{ rec.recommendation_text }}</div>
+            <div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>{{ rec.recommendation_text }}</div>
             {% endif %}
             {% if rec.estimated_impact %}
-            <div class="act-item__impact"><span class="material-symbols-outlined" style="font-size:16px">trending_up</span>{{ rec.estimated_impact }}</div>
+            <div class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>{{ rec.estimated_impact }}</div>
             {% endif %}
-            <div class="act-item__actions">
-              <button class="btn-act btn-act--details" data-action="details">View Details</button>
-              <button class="btn-act btn-act--approve" data-action="approve" data-rec-id="{{ rec.id }}">Approve</button>
-              <button class="btn-act btn-act--decline" data-action="decline" data-rec-id="{{ rec.id }}">Decline</button>
-            </div>
+          </div>
+          <div class="act-item__actions">
+            <button class="btn-act btn-act--details" data-action="details">View Details</button>
+            <button class="btn-act btn-act--approve" data-action="approve" data-rec-id="{{ rec.id }}">Approve</button>
+            <button class="btn-act btn-act--decline" data-action="decline" data-rec-id="{{ rec.id }}">Decline</button>
           </div>
         </div>
       </div>
