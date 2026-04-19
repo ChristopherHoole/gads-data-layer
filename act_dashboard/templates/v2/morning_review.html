@@ -102,7 +102,7 @@
                   <span class="badge-action badge-action--{{ rec.action_category }}">{{ rec.action_category|capitalize }}</span>
                   <span class="badge-risk badge-risk--{{ rec.risk_level }}">{{ rec.risk_level|capitalize }} Risk</span>
                   {% if rec.estimated_impact %}
-                  <span class="act-item__impact" style="margin-left:auto"><span class="material-symbols-outlined">trending_up</span>{{ rec.estimated_impact }}</span>
+                  <span class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>{{ rec.estimated_impact }}</span>
                   {% endif %}
                 </div>
                 <div class="act-item__summary"><strong>{{ rec.entity_name }}:</strong> {{ rec.summary }}</div>

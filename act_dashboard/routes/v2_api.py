@@ -420,10 +420,12 @@ def campaign_slidein_data(client_id, campaign_id):
                     proj_status = 'in_band'
                 budget_proposed = {'mtd': round(proj_mtd, 0), 'pct': proj_pct, 'status': proj_status}
 
-        # If this campaign is only a counterparty (not the primary entity), surface the perspective
-        if pending_shift is None and awaiting:
+        # Prefer the perspective-framed line for the Budget Position "Pending:"
+        # text whenever any awaiting rec has a perspective for this campaign
+        # (covers both primary entity and counterparty).
+        if awaiting:
             first = awaiting[0]
-            pending_shift = first.get('perspective') or first.get('summary')
+            pending_shift = first.get('perspective') or pending_shift or first.get('summary')
 
         executed_rows = fetch_recs("""
             SELECT action_id, action_type, reason, executed_at

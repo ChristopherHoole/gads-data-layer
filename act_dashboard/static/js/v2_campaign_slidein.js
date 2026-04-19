@@ -175,7 +175,7 @@
   function fmtApproval(a) {
     const summary = a.perspective || a.summary;
     const impactInline = a.estimated_impact
-      ? `<span class="act-item__impact" style="margin-left:auto"><span class="material-symbols-outlined">trending_up</span>${a.estimated_impact}</span>`
+      ? `<span class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>${a.estimated_impact}</span>`
       : '';
     // Pack data-* attrs so View Details can open shared Decision Details panel
     const dt = JSON.stringify(a.decision_tree || {}).replace(/'/g, '&#39;');
