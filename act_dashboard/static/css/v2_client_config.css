@@ -514,3 +514,19 @@
   .level-row { flex-wrap: wrap; }
   .level-toggle { width: 100%; justify-content: space-between; }
 }
+
+/* Campaign role assignment table (inside onboarding checklist) */
+.role-assign-list { margin-top: 10px; }
+.role-assign-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.role-assign-table thead th {
+  text-align: left; padding: 6px 8px; font-weight: 600; color: var(--text-muted, #6b7280);
+  border-bottom: 1px solid var(--border, #e5e7eb); text-transform: uppercase; font-size: 10px; letter-spacing: 0.04em;
+}
+.role-assign-table tbody td { padding: 6px 8px; border-bottom: 1px solid var(--border-subtle, #f3f4f6); vertical-align: middle; }
+.role-assign-table tbody tr:last-child td { border-bottom: none; }
+.role-assign-name { font-weight: 500; color: var(--text, #111827); }
+.role-assign-select {
+  width: 100%; padding: 5px 8px; font-size: 12px; border: 1px solid var(--border, #d1d5db);
+  border-radius: 5px; background: var(--surface, #fff); color: var(--text, #111827); cursor: pointer;
+}
+.role-assign-select:focus { outline: 2px solid #3b82f6; outline-offset: -1px; border-color: #3b82f6; }

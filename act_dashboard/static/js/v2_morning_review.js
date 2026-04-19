@@ -21,48 +21,40 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // --- Approve (individual) ---
-  document.querySelectorAll('[data-action="approve"]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const recId = btn.dataset.recId;
-      const item = btn.closest('.act-item');
-      if (!recId) return;
-      fetch('/v2/api/recommendations/' + recId + '/approve', { method: 'POST' })
-        .then(r => r.json())
-        .then(res => {
-          if (res.success) {
-            markActioned(item, 'approved', 'Approved');
-            showToast('Approved — change will be applied in next cycle', 'success');
-            decrementCount('sectionApproval');
-          } else {
-            showToast('Approve failed: ' + (res.error || 'unknown'), 'error');
-          }
-        })
-        .catch(err => showToast('Approve failed: ' + err.message, 'error'));
-    });
-  });
+  // --- Approve / Decline (guarded against double-click) ---
+  function handleMRAction(btn, action, label, toastMsg, toastKind) {
+    if (btn.classList.contains('btn-act--pending')) return;
+    const recId = btn.dataset.recId;
+    const item = btn.closest('.act-item');
+    if (!recId) return;
+    btn.classList.add('btn-act--pending');
+    btn.disabled = true;
+    if (item) item.querySelectorAll('.btn-act--approve, .btn-act--decline').forEach(b => { b.disabled = true; });
+    fetch('/v2/api/recommendations/' + recId + '/' + action, { method: 'POST' })
+      .then(r => r.json())
+      .then(res => {
+        if (res && res.success) {
+          markActioned(item, label, label.charAt(0).toUpperCase() + label.slice(1));
+          showToast(toastMsg, toastKind);
+          decrementCount('sectionApproval');
+        } else {
+          showToast(action + ' failed: ' + ((res && res.error) || 'unknown'), 'error');
+          btn.classList.remove('btn-act--pending'); btn.disabled = false;
+          if (item) item.querySelectorAll('.btn-act--approve, .btn-act--decline').forEach(b => { b.disabled = false; });
+        }
+      })
+      .catch(err => {
+        showToast(action + ' failed: ' + err.message, 'error');
+        btn.classList.remove('btn-act--pending'); btn.disabled = false;
+        if (item) item.querySelectorAll('.btn-act--approve, .btn-act--decline').forEach(b => { b.disabled = false; });
+      });
+  }
 
-  // --- Decline ---
+  document.querySelectorAll('[data-action="approve"]').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.stopPropagation(); handleMRAction(btn, 'approve', 'approved', 'Approved — change will be applied in next cycle', 'success'); });
+  });
   document.querySelectorAll('[data-action="decline"]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const recId = btn.dataset.recId;
-      const item = btn.closest('.act-item');
-      if (!recId) return;
-      fetch('/v2/api/recommendations/' + recId + '/decline', { method: 'POST' })
-        .then(r => r.json())
-        .then(res => {
-          if (res.success) {
-            markActioned(item, 'declined', 'Declined');
-            showToast('Declined — no changes will be made', 'info');
-            decrementCount('sectionApproval');
-          } else {
-            showToast('Decline failed: ' + (res.error || 'unknown'), 'error');
-          }
-        })
-        .catch(err => showToast('Decline failed: ' + err.message, 'error'));
-    });
+    btn.addEventListener('click', (e) => { e.stopPropagation(); handleMRAction(btn, 'decline', 'declined', 'Declined — no changes will be made', 'info'); });
   });
 
   // --- Bulk approve ---
@@ -91,9 +83,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (bulkBtn) {
     bulkBtn.addEventListener('click', () => {
+      if (bulkBtn.classList.contains('btn-act--pending')) return;
       const checked = Array.from(document.querySelectorAll('#sectionApproval .act-item__check input:checked'));
       const ids = checked.map(cb => cb.closest('.act-item').dataset.recId).filter(Boolean);
       if (!ids.length) return;
+      bulkBtn.classList.add('btn-act--pending');
+      bulkBtn.disabled = true;
       fetch('/v2/api/recommendations/bulk-approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -117,11 +112,18 @@ document.addEventListener('DOMContentLoaded', () => {
           if (selectAll) selectAll.checked = false;
           updateBulkLabel();
           showToast(ok + ' recommendations approved', 'success');
+          bulkBtn.classList.remove('btn-act--pending');
         } else {
           showToast('Bulk approve failed: ' + (res.error || 'unknown'), 'error');
+          bulkBtn.classList.remove('btn-act--pending');
+          bulkBtn.disabled = false;
         }
       })
-      .catch(err => showToast('Bulk approve failed: ' + err.message, 'error'));
+      .catch(err => {
+        showToast('Bulk approve failed: ' + err.message, 'error');
+        bulkBtn.classList.remove('btn-act--pending');
+        bulkBtn.disabled = false;
+      });
     });
   }
 

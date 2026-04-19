@@ -218,44 +218,111 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Approve/Decline (AJAX to backend)
+  // --- Approve / Decline (guarded; disable on first click) ---
+  function handleAction(btn, action, successToast, toastKind) {
+    if (btn.classList.contains('btn-act--pending')) return;
+    const recId = btn.dataset.recId;
+    const item = btn.closest('.act-item');
+    if (!recId) return;
+    btn.classList.add('btn-act--pending');
+    btn.disabled = true;
+    // Disable sibling buttons too
+    if (item) item.querySelectorAll('.btn-act--approve, .btn-act--decline').forEach(b => { b.disabled = true; });
+    fetch('/v2/api/recommendations/' + recId + '/' + action, { method: 'POST' })
+      .then(r => r.json())
+      .then(res => {
+        if (res && res.success) {
+          if (item) { item.style.opacity = '0.4'; item.style.pointerEvents = 'none'; setTimeout(() => item.remove(), 400); }
+          showToast(successToast, toastKind);
+        } else {
+          showToast(action + ' failed: ' + ((res && res.error) || 'unknown'), 'error');
+          btn.classList.remove('btn-act--pending'); btn.disabled = false;
+          if (item) item.querySelectorAll('.btn-act--approve, .btn-act--decline').forEach(b => { b.disabled = false; });
+        }
+      })
+      .catch(err => {
+        showToast(action + ' failed: ' + err.message, 'error');
+        btn.classList.remove('btn-act--pending'); btn.disabled = false;
+        if (item) item.querySelectorAll('.btn-act--approve, .btn-act--decline').forEach(b => { b.disabled = false; });
+      });
+  }
+
   document.querySelectorAll('[data-action="approve"]').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.stopPropagation(); handleAction(btn, 'approve', 'Approved', 'success'); });
+  });
+  document.querySelectorAll('[data-action="decline"]').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.stopPropagation(); handleAction(btn, 'decline', 'Declined', 'info'); });
+  });
+
+  // --- View Details slide-in ---
+  const slideinOverlay = document.getElementById('slideinOverlay');
+  const slideinPanel = document.getElementById('slideinPanel');
+  const slideinBody = document.getElementById('slideinBody');
+  const slideinTitle = document.getElementById('slideinTitle');
+
+  function parseJSONAttr(s) {
+    if (!s) return null;
+    try { return JSON.parse(s); } catch (e) { return null; }
+  }
+
+  function renderKV(obj) {
+    if (!obj || typeof obj !== 'object' || !Object.keys(obj).length) return '';
+    let html = '<dl class="act-detail-grid">';
+    for (const [k, v] of Object.entries(obj)) {
+      const val = (typeof v === 'object') ? JSON.stringify(v, null, 2) : v;
+      html += '<dt>' + k + '</dt><dd>' + val + '</dd>';
+    }
+    html += '</dl>';
+    return html;
+  }
+
+  document.querySelectorAll('[data-action="details"]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const recId = btn.dataset.recId;
       const item = btn.closest('.act-item');
-      if (recId) {
-        fetch('/v2/api/recommendations/' + recId + '/approve', { method: 'POST' })
-          .then(r => r.json())
-          .then(res => {
-            if (res.success && item) { item.style.opacity = '0.4'; item.style.pointerEvents = 'none'; }
-            showToast('Approved', 'success');
-          });
-      } else {
-        if (item) { item.style.opacity = '0.4'; item.style.pointerEvents = 'none'; }
-        showToast('Approved', 'success');
+      if (!item || !slideinPanel || !slideinBody) return;
+      const d = item.dataset;
+      const decision = parseJSONAttr(d.decisionTree);
+      const current = parseJSONAttr(d.currentValue);
+      const proposed = parseJSONAttr(d.proposedValue);
+
+      if (slideinTitle) slideinTitle.textContent = d.entityName || 'Decision Details';
+
+      let html = '';
+      html += '<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">';
+      html += '<span class="badge-level badge-level--account">Account</span>';
+      if (d.actionCategory) html += '<span class="badge-action badge-action--' + d.actionCategory + '">' + d.actionCategory.charAt(0).toUpperCase() + d.actionCategory.slice(1) + '</span>';
+      if (d.risk) html += '<span class="badge-risk badge-risk--' + d.risk + '">' + d.risk.charAt(0).toUpperCase() + d.risk.slice(1) + ' Risk</span>';
+      html += '</div>';
+
+      if (d.summary) html += '<div style="font-size:14px;line-height:1.6;margin-bottom:12px"><strong>' + (d.entityName || '') + '</strong> &mdash; ' + d.summary + '</div>';
+      if (d.recommendationText) html += '<div style="padding:10px;background:var(--act-blue-bg);border-left:3px solid var(--act-primary);margin-bottom:12px;font-size:13px">' + d.recommendationText + '</div>';
+      if (d.estimatedImpact) html += '<div style="font-size:13px;color:var(--act-green);margin-bottom:16px">' + d.estimatedImpact + '</div>';
+
+      if (decision && Object.keys(decision).length) {
+        html += '<h4 style="margin:16px 0 8px;font-size:13px;font-weight:600">Decision Reasoning</h4>' + renderKV(decision);
       }
+      if (current && Object.keys(current).length) {
+        html += '<h4 style="margin:16px 0 8px;font-size:13px;font-weight:600">Current Values</h4>' + renderKV(current);
+      }
+      if (proposed && Object.keys(proposed).length) {
+        html += '<h4 style="margin:16px 0 8px;font-size:13px;font-weight:600">Proposed Values</h4>' + renderKV(proposed);
+      }
+
+      slideinBody.innerHTML = html;
+      slideinOverlay.classList.add('open');
+      slideinPanel.classList.add('open');
     });
   });
 
-  document.querySelectorAll('[data-action="decline"]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const recId = btn.dataset.recId;
-      const item = btn.closest('.act-item');
-      if (recId) {
-        fetch('/v2/api/recommendations/' + recId + '/decline', { method: 'POST' })
-          .then(r => r.json())
-          .then(res => {
-            if (res.success && item) { item.style.opacity = '0.4'; item.style.pointerEvents = 'none'; }
-            showToast('Declined', 'info');
-          });
-      } else {
-        if (item) { item.style.opacity = '0.4'; item.style.pointerEvents = 'none'; }
-        showToast('Declined', 'info');
-      }
-    });
-  });
+  window.closeSlidein = function() {
+    slideinOverlay && slideinOverlay.classList.remove('open');
+    slideinPanel && slideinPanel.classList.remove('open');
+  };
+  slideinOverlay && slideinOverlay.addEventListener('click', window.closeSlidein);
+  const sc = document.getElementById('slideinClose');
+  sc && sc.addEventListener('click', window.closeSlidein);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.closeSlidein(); });
 
   // -------------------------------------------------------------------------
   // CHART.JS — Dual-axis timeline with real data

@@ -1,0 +1,166 @@
+
+Facing the camera, Matthew Gallagher stands in a clearing with his hands in his jeans pockets. 
+Matthew Gallagher, 41, built his start-up, Medvi, with artificial intelligence and few humans.Credit...Maggie Shannon for The New York Times
+Skip to contentSkip to site indexSection Navigation
+
+Account
+How A.I. Helped One Man (and His Brother) Build a $1.8 Billion Company
+Who needs more than two employees when artificial intelligence can do so many corporate tasks? It’s super efficient — and a little bit lonely.
+
+Matthew Gallagher, 41, built his start-up, Medvi, with artificial intelligence and few humans.Credit...Maggie Shannon for The New York Times
+
+
+Listen · 13:09 min
+Share full article
+
+
+Erin Griffith
+By Erin Griffith
+Reporting from Los Angeles
+
+April 2, 2026
+Matthew Gallagher took just two months, $20,000 and more than a dozen artificial intelligence tools to get his start-up off the ground.
+
+From his house in Los Angeles, Mr. Gallagher, 41, used A.I. to write the code for the software that powers his company, produce the website copy, generate the images and videos for ads and handle customer service. He created A.I. systems to analyze his business’s performance. And he outsourced the other stuff he couldn’t do himself.
+
+His start-up, Medvi, a telehealth provider of GLP-1 weight-loss drugs, got 300 customers in its first month. In its second month, it gained 1,000 more. In 2025, Medvi’s first full year in business, the company generated $401 million in sales.
+
+Mr. Gallagher then hired his only employee, his younger brother, Elliot. This year, they are on track to do $1.8 billion in sales.
+
+A $1.8 billion company with just two employees? In the age of A.I., it’s increasingly possible.
+
+Sam Altman, the chief executive of OpenAI, predicted the rise of a new breed of superefficient company in 2024. A one-person business worth $1 billion “would have been unimaginable without A.I.,” he said on a podcast, “and now it will happen.”
+
+Now as A.I. tools spread, entrepreneurs are harnessing the technology to expand their start-ups to an enormous scale at breathtaking speed with very few humans. Big companies, especially in tech, are getting in on the disruption, too. Pinterest, Block and others have cut thousands of workers in recent months, citing efficiencies enabled by A.I.
+
+Mr. Gallagher, who formerly ran a start-up that sold wristwatches, said he thought Mr. Altman’s prophecy of a one-person $1 billion company would be a firm that built A.I. He was excited when he realized he may have done it, taking an old idea — being a middleman for weight-loss drugs — and using A.I. to turbocharge it.
+
+“It’s not an A.I. company, but I did it with A.I.,” he said.
+
+In an email, Mr. Altman said that it appeared he had won a bet with his tech C.E.O. friends over when such a company would appear, and that he “would like to meet the guy” who had done it.
+
+Medvi is technically not a one-person $1 billion company, since Mr. Gallagher hired his brother and has some contractors. The start-up, which has not raised outside funding, also has no official valuation. But many highly valued tech companies can only dream of hitting $1 billion in revenue with so few workers. Medvi is also profitable, Mr. Gallagher said.
+
+Editors’ Picks
+
+When Stars’ Plastic Surgery Is Played for Your Entertainment
+
+What You Need to Know About the ‘Summer House’ Scandal
+
+Don’t Call Them Retirement Communities
+SKIP ADVERTISEMENT
+The New York Times was given access to Medvi’s financials to verify its revenue and profits and interviewed Mr. Gallagher’s business partners.
+
+On a recent afternoon at the Soho House club in Los Angeles, Mr. Gallagher, sporting unkempt curly hair, a baggy T-shirt and tattoos on his arms and hands, said the last 18 months had been a whirlwind.
+
+He works on Medvi from his house basically anytime he’s not showering, sleeping or spending time with his two children, he said during a two-hour conversation. He even made an A.I. clone of his voice to help manage his personal life, using it to call and schedule appointments so he would have more time to work.
+
+Not everyone can build such an A.I.-enabled company, though many may try. Mr. Gallagher is suited to the moment because he knows marketing and how to use cutting-edge A.I., said Kobie Fuller, an investor at the venture capital firm Upfront Ventures who has advised him.
+
+“Those folks that have those skills, it’s kind of like their superpower,” Mr. Fuller said. “This is an extreme example, but I don’t think it’s going to be the last by any stretch.”
+
+Mr. Gallagher has told hardly anyone about his company, which he said was raking in more than $3 million a day. He was nervous to talk publicly about it, he said.
+
+“I mean, it’s crazy, right?” he asked, before answering himself. “It’s crazy.”
+
+Spotting Opportunity
+Mr. Gallagher had an itinerant childhood, living out of motels and cars for a time before landing in Cincinnati when he was 12. That was where his uncle gave him a laptop, which he used to teach himself to code so he could make a Weird Al Yankovic fan page.
+
+As a teenager, Mr. Gallagher began building websites for local businesses. He always had a hustle, including selling candles and Samurai swords on eBay. At 18, after building a web hosting business, he sold it for $6,000.
+
+Mr. Gallagher briefly attended the University of Cincinnati and Northern Kentucky University but did not graduate. In 2010, he moved to Los Angeles to become an actor. He eventually returned to coding, bouncing between tech jobs.
+
+In 2016, he built Watch Gang, a start-up that sold wristwatches via subscription. It had fans but never turned a profit, even as Mr. Gallagher chased revenue growth and hired 60 people.
+
+OpenAI’s release of ChatGPT in 2022 inspired Mr. Gallagher to start tinkering with A.I. Two years later, he met Jiten Chhabra, a co-founder of CareValidate, a medical start-up in Atlanta.
+
+CareValidate offers what is essentially a telehealth-in-a-box kit. Companies, employers or retailers that want to sell customers prescription drugs can use CareValidate’s technology and network of online doctors to set up a business. The company’s software connects patients with doctors and pharmacies, which write, fulfill and ship the prescriptions. CareValidate charges fees for its software.
+
+Mr. Gallagher saw an opportunity for his own telehealth business. He could use A.I. to do the branding and marketing and let CareValidate and a similar platform, OpenLoop Health, handle the doctors, pharmacies, shipping and compliance. He planned to start with GLP-1s.
+
+He was entering an established market. For nearly a decade, Hims & Hers Health, Ro and other companies have sold drugs for erectile dysfunction and hair loss online, using an online network of doctors to write the prescriptions. Hims, which went public in 2021, has 2,442 employees and generated $2.4 billion in revenue last year.
+
+Hims and Ro had already expanded into GLP-1 drugs, but Mr. Gallagher thought he could do the same thing faster and more efficiently with A.I. and the doctor-on-demand platforms.
+
+He used many A.I. tools to build Medvi’s website, including ChatGPT, Claude and Grok. He created custom tools, including A.I. agents, or bots that perform tasks on their own, to get his software systems to communicate with one another. He tested A.I. voice tools from ElevenLabs and others for communicating with customers. And he used the image and video generators Midjourney and Runway to create media for his website and ads.
+
+Altogether, he spent $20,000 on the software and the first month of marketing.
+
+Medvi’s initial website featured photos of smiling models who looked A.I.-generated and before-and-after weight-loss photos from around the web with the faces changed. Some of its ads were A.I. slop. A scrolling ticker of mainstream media logos made it look as if Medvi had been featured in Bloomberg and The Times when it had merely advertised there.
+
+But Mr. Gallagher was most concerned with getting Medvi’s checkout to work smoothly and making sure his A.I. customer service system stuck to the task at hand. He tested it by asking the system for lasagna recipes; it took some tweaking to get it to stop supplying them, he said.
+
+Medvi opened for business in September 2024. It was perfectly timed. Americans wanted cheap GLP-1s, delivered without going to a doctor’s office. The start-up charged as little as $179 for the first month’s supply of the drugs, in line with competitors.
+
+ImageMr. Gallagher faces the camera while sitting at a picnic table. He is leaning on the top of the table with his right arm. Green trees fill the background. 
+To build Medvi, Mr. Gallagher used A.I. tools including ChatGPT, Claude, Grok, Midjourney and Runway.Credit...Maggie Shannon for The New York Times
+The Sky’s the Limit?
+From the beginning, “growth was insane,” Mr. Gallagher said.
+
+Medvi quickly became one of CareValidate’s and OpenLoop’s top clients. The companies said they were blown away by the start-up's speed and scale.
+
+“You’re like, ‘Do you have an army of people behind you somewhere?’ And he’s like, ‘Nope,’” CareValidate’s Mr. Chhabra said of Mr. Gallagher.
+
+Dr. Jon Lensing, OpenLoop’s chief executive, said Mr. Gallagher had started sharing tech tips with his company. “Matthew’s native tongue seems to be A.I.,” he said.
+
+There were snags. Medvi’s customer service chatbot sometimes made up prices for the drugs. (Mr. Gallagher honored those.) Or it hallucinated, claiming Medvi sold hair-loss drugs when it didn’t.
+
+If customers wanted to talk to a person, Medvi’s customer service chatbot had been trained to transfer them to Mr. Gallagher’s cellphone. That led to more than 1,000 customer service calls, he recalled.
+
+To manage the onslaught, he integrated programs from OpenLoop and CareValidate that fielded customer service calls. Mr. Gallagher soon graduated from using the online legal site LegalZoom to using a law firm, and from using A.I. accounting tools to using an accounting firm. He also hired media agencies to help buy ads to entice customers.
+
+As sales took off, Mr. Gallagher asked Mr. Fuller, the venture capital investor, if he should raise venture funding. Mr. Fuller told him that if he didn’t need the money, he shouldn’t raise it.
+
+“You should just keep building,” Mr. Fuller said he had told Mr. Gallagher. Mr. Gallagher later thanked him for the advice.
+
+In March last year, Mr. Gallagher changed something minor on Medvi’s website and then went on a hike. From the trail, he got a call from one of his media agencies asking whether it was odd that there had been no orders for the last hour.
+
+Mr. Gallagher realized that his update must have broken something. With no one to fix it, he sprinted home. The downtime lost him around 200 potential customers, he said.
+
+Still, he was hesitant to hire anybody. At Watch Gang, having 60 employees had not helped the company grow.
+
+“It just increased my costs, and then it delayed my decision-making because I had more people to deal with,” he said. Medvi’s biggest advantage was his ability to move quickly, he said.
+
+Mr. Gallagher added two engineers on contract and decided to hire only Elliot, his 36-year-old brother in Cincinnati in April. Elliot’s job includes intercepting and filtering communication so Matthew can focus on his priorities.
+
+“I just helped take a lot of the weight off of him,” Elliot Gallagher said in an interview.
+
+That gave Matthew Gallagher breathing room to fix some shortcuts he had initially taken, like swapping out the before-and-after weight-loss photos for ones from real customers. Some photos on Medvi’s homepage remain A.I.-generated.
+
+By the end of last year, Medvi had reached $401 million in annual sales and amassed 250,000 customers. It produced 16.2 percent in net profit, or $65 million, with spending going to the fees for telehealth platforms, marketing and then software. Hims, by contrast, had a net profit of 5.5 percent last year.
+
+Mr. Gallagher is reinvesting some of Medvi’s profits into expansion. He considered buying companies that provide other health products, but decided it was just as easy to build himself.
+
+In February, Medvi started selling men’s health products, including erectile dysfunction drugs. That business hit 50,000 customers in the first month and is on track to eclipse the GLP-1 business in four months, Mr. Gallagher said.
+
+Last month, Medvi added healthy meal delivery plans, which OpenLoop handles. Next up is women’s health, including hormone therapy drugs. Hair-growth drugs, supplements and skin care products are also on the agenda.
+
+Medvi’s total profit of $70 million to $80 million so far has made Mr. Gallagher emotional, given his upbringing.
+
+“For the first time, I’m not in survival mode,” he said.
+
+Last year, he set up a foundation with $1 million and donated to a Los Angeles cat rescue organization, with plans to also donate to a nonprofit that helps young people experiencing homelessness. His goal is to run most of Medvi’s profits through the foundation. For fun, he invests in films and buys historical items, including a pocket watch from the 1700s.
+
+Mr. Gallagher does not anticipate hiring more people. He said he just didn’t see how it would help Medvi, though he misses the camaraderie of colleagues.
+
+“At this point, I kind of want to hire people because I’m lonely,” he said.
+
+But some human touch is still needed.
+
+In September, Medvi began assigning human account managers to a subset of customers. When those customers call, text or email with a question, they connect to the same account manager. The idea is that the account managers will get to know clients and remember details like birthdays or children’s names, creating higher customer satisfaction.
+
+Medvi’s seven account managers, all hired on contract, now have several hundred clients each. To manage that many relationships, they are using A.I.
+
+Erin Griffith covers tech companies, start-ups and the culture of Silicon Valley from San Francisco.
+
+Share full article
+
+
+Related Content
+Advertisement
+
+SKIP ADVERTISEMENT
+Site Index
+Site Information Navigation
+© 2026 The New York Times Company
+NYTCoContact UsAccessibilityWork with usAdvertiseT Brand StudioPrivacy PolicyCookie PolicyTerms of ServiceTerms of SaleSite MapHelpSubscriptionsManage Privacy Preferences

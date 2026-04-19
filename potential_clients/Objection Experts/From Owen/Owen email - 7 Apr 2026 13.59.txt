@@ -1,0 +1,346 @@
+
+Chris H
+Attachments
+Tue 7 Apr, 13:51 (6 days ago)
+Hi Owen, Quick update on today's session and a few things for you to look at. Solicitor issue — resolved: I've paused "planning objection solicitor" as a keywor
+
+owen@objectionexperts.com
+Tue 7 Apr, 14:12 (6 days ago)
+to me
+
+Thanks Chris, I’ll look over this today.
+
+
+owen@objectionexperts.com
+Tue 7 Apr, 18:19 (6 days ago)
+to me
+
+Hi Chris,
+
+ 
+
+Made a sale from the conversion today – that’s 3 sales from the 4 conversions we’ve had. I asked the client what they searched to find me and they said “object planning application” – worth adding as a standalone keyword or does the phrase match capture it successfully?
+
+ 
+
+Note that the object planning permission phrase match has a 1/10 quality score so would be good to bump this up.
+
+ 
+
+Cheers,
+
+Owen
+
+ 
+
+From: Chris H <chris@christopherhoole.com>
+Sent: 07 April 2026 13:52
+To: Owen Hoare <owen@objectionexperts.com>
+Subject: Today's work + landing page draft for your review
+
+ 
+
+Hi Owen,
+
+
+Chris H <chris@christopherhoole.com>
+Tue 7 Apr, 18:31 (6 days ago)
+to owen
+
+Hi Owen,
+
+Good news. 
+It must be a combination of decent leads and your ability to close. Closing is much harder than generating leads, so well done. 
+Yeah, I'll plan in this for next Monday's session. 
+If there's anything else you want me to cover in the next session, just let me know and I'll log everything and complete it all in that same session. 
+
+Once we start building new landing pages, that will be the biggest lever for improving QS. 
+
+Owen Hoare
+Tue 7 Apr, 18:41 (6 days ago)
+to me
+
+I think a landing page for the “how to” queries is going to be huge.
+
+ 
+
+What do I need to do for landing page – just open vercel and github accounts? I will look over it tonight.
+
+...
+
+[Message clipped]  View entire message
+
+Owen Hoare
+Tue 7 Apr, 18:45 (6 days ago)
+to me
+
+I think a landing page for the “how to” queries is going to be massive.
+
+ 
+
+What do I need to do for landing page – just open vercel and github accounts?
+
+ 
+
+Cheers,
+
+Owen
+
+From: Chris H <chris@christopherhoole.com>
+Date: Tuesday, 7 April 2026 at 18:31
+To: owen@objectionexperts.com <owen@objectionexperts.com>
+
+...
+
+[Message clipped]  View entire message
+
+Owen Hoare
+Tue 7 Apr, 19:46 (6 days ago)
+to me
+
+Also, just noticed appeal isn’t in negatives (seen a few searches containing appeal today) -  are you happy for me to add as phrase negative?
+
+ 
+
+Cheers,
+
+Owen
+
+ 
+
+From: Owen Hoare <owen@objectionexperts.com>
+Date: Tuesday, 7 April 2026 at 18:45
+To: Chris H <chris@christopherhoole.com>
+Subject: Re: Today's work + landing page draft for your review
+
+I think a landing page for the “how to” queries is going to be massive.
+
+ 
+
+What do I need to do for landing page – just open vercel and github accounts?
+
+ 
+
+Cheers,
+
+...
+
+[Message clipped]  View entire message
+
+owen@objectionexperts.com
+Thu 9 Apr, 15:30 (4 days ago)
+to me
+
+Thanks for the landing page mockup – a few notes below:
+
+ 
+
+Can we have a floating CTA in bottom right corner, same as at present?
+
+ 
+
+I don’t like the “Limited Availability” part – can we do something about how you only have 21 days to object and create urgency that way?
+
+ 
+
+When someone submits a form, do they get an automated response? This is important for me as I’m not always near the computer.
+
+ 
+
+Trust images (rtpi, trustpilot, google reviews) not centred correctly.
+
+ 
+
+Can we do a 4 box form, like on my current page? People often don’t have all the info next to them when they submit, don’t want to put them off ofr just sending a quick form so I can give them a call. Is it also worth a whatsapp option for people to just shoot a quick message?
+
+ 
+
+Can we say I’ll usually respond same working day?
+
+ 
+
+Can we mention 5 star trustpilot and google reviews ratings explicitly in text?
+
+ 
+
+Do you think I need an updated picture, this is from when I was much younger!
+
+ 
+
+Can we remove em dashes and replace with hyphens – for me personally, it really reads as AI written when I see an em dash and makes me trust the company less.
+
+ 
+
+In trust section, can we say RTPI Chartered Town Planner instead of qualification.
+
+ 
+
+Any more FAQs you can suggest?
+
+ 
+
+Cheers!
+
+Owen
+
+ 
+
+From: Chris H <chris@christopherhoole.com>
+Sent: 07 April 2026 13:52
+To: Owen Hoare <owen@objectionexperts.com>
+Subject: Today's work + landing page draft for your review
+
+ 
+
+Hi Owen,
+
+
+Chris H <chris@christopherhoole.com>
+Thu 9 Apr, 15:45 (4 days ago)
+to owen
+
+Hi Owen,
+
+Thanks for the feedback.
+Ill implement this during Monday's session and send you the new mockup. 
+
+Just FYI, this was just a structural mockup, the content will be completely changed to fit whatever Ad group we build the first page for. 
+
+Owen Hoare
+Thu 9 Apr, 15:47 (4 days ago)
+to me
+
+Of course! 
+
+One important thing is ensuring a quick response to the email, are we going to be able to do an automated response?
+
+Sent from Outlook for Android
+From: Chris H <chris@christopherhoole.com>
+Sent: Thursday, April 9, 2026 3:45:19 PM
+To: owen@objectionexperts.com <owen@objectionexperts.com>
+Subject: Re: Today's work + landing page draft for your review
+ 
+...
+
+[Message clipped]  View entire message
+
+Chris H <chris@christopherhoole.com>
+Thu 9 Apr, 16:01 (4 days ago)
+to Owen
+
+Hi Owen,
+
+What autormated response do you have setup at the moment? 
+
+owen@objectionexperts.com
+Thu 9 Apr, 16:03 (4 days ago)
+to me
+
+It says:
+
+ 
+
+Hello {NAME}
+
+Thank you for getting in touch regarding your planning objection.
+
+To help me understand your situation and provide a free initial consultation, please complete the details below where possible. If you have already provided this information, there is no need to repeat it.
+
+-Local Planning Authority
+-Planning application reference number
+-A brief outline of your concerns
+
+Once I have the relevant information, I will review the proposal and let you know whether there are reasonable grounds for objection. We can then discuss the next steps and I can provide a quote for preparing a full planning objection letter if required.
+
+If you would prefer to speak by phone instead, please let me know and we can arrange a call.
+
+Kind regards,
+Owen Hoare MRTPI
+Objection Experts
+
+
+Chris H <chris@christopherhoole.com>
+Thu 9 Apr, 16:11 (4 days ago)
+to owen
+
+Hi Owen, 
+
+Sorry, I meant what triggers this auto-responder? 
+I remember you saying that you just get an email in your inbox right? So what triggers this responder? 
+
+owen@objectionexperts.com
+Thu 9 Apr, 16:15 (4 days ago)
+to me
+
+It’s a plugin on my wordpress site.
+
+
+Chris H <chris@christopherhoole.com>
+Thu 9 Apr, 16:32 (4 days ago)
+to owen
+
+Ok got it. 
+So, I'm guessing the form on your current site is the WordPress form? 
+If it is, we can just embed the same form on the new LPs. Or make another wordpress form with different details etc... and embed that. 
+This way nothing from your end will change. 
+
+owen@objectionexperts.com
+Thu 9 Apr, 16:35 (4 days ago)
+to me
+
+Cool. When the form on the new site is filled by a client, will it come to my email or a different place?
+
+
+Chris H <chris@christopherhoole.com>
+Thu 9 Apr, 16:37 (4 days ago)
+to owen
+
+Everything will be exactly the same if we embed the same WordPress form or another one. Nothing at all will change other than the page the form is on (the new LP). 
+
+owen@objectionexperts.com
+Thu 9 Apr, 16:38 (4 days ago)
+to me
+
+Also, just as an aside, had a very expensive click today that lead to a conversion, but it wasn’t a good lead. Someone looking for advice on a permission that had already been granted. Might be a keyword to keep an eye on if the clicks continue being that expensive!
+
+ 
+
+Cheers,
+
+Owen
+
+ 
+
+From: Chris H <chris@christopherhoole.com>
+Sent: 09 April 2026 16:32
+
+
+Chris H <chris@christopherhoole.com>
+Thu 9 Apr, 17:01 (4 days ago)
+to owen
+
+Hi Owen,
+
+Yeah, I saw that £19 click. It came from the call ad that is setup. Im leaning towards turning that call ad off next week. 
+
+owen@objectionexperts.com
+Thu 9 Apr, 17:04 (4 days ago)
+to me
+
+Yeah, happy for it to be turned off anyway - I think it’s got a lot of bad leads because people just click to call without knowing what I actually offer! It also looks shit.
+
+
+owen@objectionexperts.com
+Sat 11 Apr, 08:21 (2 days ago)
+to me
+
+Morning, just to let you know I’ve added “appeal” to the 1 word phrase list.
+
+
+Chris H <chris@christopherhoole.com>
+Sat 11 Apr, 12:27 (2 days ago)
+to owen
+
+Hi Owen,
+
+Ok thanks for letting me know. 

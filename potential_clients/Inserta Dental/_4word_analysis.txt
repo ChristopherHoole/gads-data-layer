@@ -1,0 +1,224 @@
+=== TOP UNKNOWN SINGLE WORDS (appear 3+ times) ===
+ 59  clinic
+ 45  practice
+ 26  street
+ 23  dentures
+ 23  care
+ 22  surgery
+ 20  road
+ 15  reviews
+ 15  centre
+ 14  green
+ 12  missing
+ 11  harley
+ 11  hill
+ 11  banning
+ 10  studio
+ 10  house
+  9  east
+  7  denture
+  7  albans
+  7  park
+  7  suite
+  6  lane
+  6  braces
+  5  options
+  5  fixed
+  5  cheapest
+  5  repair
+  5  heath
+  5  bupa
+  5  full
+  5  brighton
+  5  high
+  5  hospital
+  5  tanner
+  5  yorkshire
+  4  garden
+  4  back
+  4  treatment
+  4  maryland
+  4  village
+  4  gums
+  4  replacement
+  4  white
+  4  specialist
+  4  life
+  4  group
+  4  all
+  4  design
+  4  truly
+  4  prices
+  3  disease
+  3  snap
+  3  art
+  3  affordable
+  3  swiss
+  3  broken
+  3  loss
+  3  filling
+  3  front
+  3  turkish
+  3  zirconia
+  3  north
+  3  love
+  3  mouth
+  3  consultation
+  3  town
+  3  hurt
+  3  darwood
+  3  removal
+  3  end
+  3  crouch
+  3  boutique
+  3  beauty
+  3  kent
+  3  root
+  3  forum
+  3  monthly
+  3  iconic
+  3  manchester
+  3  universal
+  3  false
+  3  adults
+
+=== TOP BIGRAMS (appear 2+ times) ===
+ 45  dental practice
+ 39  dental clinic
+ 20  dental care
+ 20  dental surgery
+ 11  banning dental
+ 10  missing teeth
+ 10  harley street
+ 10  implant centre
+  9  implant clinic
+  8  road dental
+  7  st albans
+  7  house dental
+  7  dental suite
+  6  street dental
+  6  clinic london
+  5  green dental
+  5  and tanner
+  5  yorkshire dental
+  4  dentures cost
+  4  garden dental
+  4  dental treatment
+  4  high street
+  4  brighton implant
+  4  hill dental
+  4  street dentist
+  4  truly dental
+  3  for missing
+  3  implant dentures
+  3  snap on
+  3  dental art
+  3  cheapest dental
+  3  smile clinic
+  3  dental studio
+  3  tooth repair
+  3  lane dental
+  3  turkish dentist
+  3  albans dental
+  3  maryland bridge
+  3  east village
+  3  tooth replacement
+  3  love teeth
+  3  bupa dental
+  3  dental hospital
+  3  darwood and
+  3  dental group
+  3  co uk
+  3  dental beauty
+  3  dental design
+  3  design studio
+  3  clinic near
+  3  new life
+  3  life teeth
+  3  surgery london
+  3  iconic smiles
+  3  false teeth
+  3  village dental
+  2  dentures in
+  2  options for
+  2  fixed dentures
+  2  milton keynes
+  2  london road
+  2  upper denture
+  2  teeth whitening
+  2  affordable dental
+  2  uk reviews
+  2  centre reviews
+  2  dental harley
+  2  swiss dental
+  2  dentures vs
+  2  vs implants
+  2  practice london
+  2  front teeth
+  2  partial dentures
+  2  covent garden
+  2  grow teeth
+  2  dentures uk
+  2  teeth done
+  2  tooth loss
+  2  receding gums
+  2  white house
+  2  bupa dentist
+  2  clinic in
+  2  golders green
+  2  lateral incisors
+  2  dental gallery
+  2  full mouth
+  2  perfect smile
+  2  smile white
+  2  specialist near
+  2  clapham junction
+  2  hospital london
+  2  of dentures
+  2  full set
+  2  periodontal disease
+  2  teeth removal
+  2  removal and
+  2  implant specialist
+  2  teeth options
+  2  options uk
+  2  buckingham gate
+  2  care centre
+  2  dental centre
+  2  implant retained
+  2  retained dentures
+  2  potters bar
+  2  care dental
+  2  hospital dental
+  2  crouch end
+  2  dental plan
+  2  inspire dental
+  2  is dentaprime
+  2  in kent
+  2  palmers green
+  2  price list
+  2  in st
+  2  forum uk
+  2  dental canning
+  2  canning town
+  2  pay monthly
+  2  teeth regeneration
+  2  dental manchester
+  2  universal credit
+  2  braces for
+  2  road dentist
+  2  park dental
+  2  mill hill
+  2  west green
+  2  heath dental
+  2  wood green
+  2  pall mall
+  2  mall dental
+  2  muswell hill
+  2  college dental
+  2  smile studio
+  2  dent plus
+  2  thornton heath
+  2  gold tooth
+  2  dawood and
+  2  tanner dentist

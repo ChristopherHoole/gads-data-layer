@@ -1,0 +1,149 @@
+Google Ads - Progress update + quick questions before I rebuild campaigns
+External
+Inbox
+
+Chris H <chris@christopherhoole.com>
+Thu 16 Apr, 12:18 (2 days ago)
+to Tommaso, eddy, Giulio
+
+Hi Giulio and Tommaso,
+
+Hope you're well. 
+Here is a quick update on my work, early results and a few questions that need answering before I push the next round of changes live.
+
+EARLY RESULTS (first 36 hours)
+Brand campaign: CPC dropped from £3.18 average to £1.61 on day 1. CPA at £11.29. Impression share at 92%.
+PMax: CPA dropped from £67 (30-day average) to £25.18 on day 1. Zero junk NHS/free-seeker traffic in yesterday's search terms, so the negative keywords are working.
+Dental Implants Intent: too early to judge (only 2 conversions on day 1), but the new bid strategy needs 5-7 days to stabilise. I'm rebuilding this campaign's ad group structure and keywords today.
+
+QUESTIONS
+I need to clarify a few things before I push the new campaigns live. 
+I've grouped them by urgency.
+
+Urgent - affects ads running right now
+Is the consultation free or £95? The website shows a £95 consultation fee, but all the Google Ads currently say "Free Consultation" and "Free In-Clinic Consultation". Which is correct? If it's £95 I need to update every ad immediately.
+The ads currently say "25+ Years of Expertise" but the clinic was founded in 2010 (16 years). Some of the senior dentists have 20-24 years of individual experience. Should I say "20+ Years of Expertise" referring to the team, or "Est. 2010"?
+Claims verification: Need backup for Google Ads compliance
+"Best Implant Clinic in the UK 2024" - this was awarded by the Association of Dental Implantology? Do you have the certificate or announcement link? Google may ask for proof if the ad is challenged.
+"99.12% implant success rate" - what data is this based on? Internal tracking, published study, or something else? I need to be able to defend it if Google asks.
+"Save 60% compared to average UK practice" - what's the benchmark source for this? Industry body data, competitor price comparison, or internal estimate?
+"Top 10 Implant Provider in Europe" - awarded by whom and when?
+Total implants placed across the whole clinic - Dr El-Ali alone has done 4,000+. What's the clinic total? Can I use a number like "5,000+ implants placed" or similar?
+Business data - for targeting and budget allocation
+What percentage of form-fill leads actually become paying patients? A rough estimate is fine. I'm trying to understand the real cost per patient booking, not just cost per form fill.
+What are your top 3 services by revenue?
+Is the "Same Day Smile Makeover" from £2,400 a separate service or is it the Vivo Bridge rebranded for cosmetic positioning?
+Are there any upcoming promotions, seasonal offers, or new services launching in the next 3 months?
+What's the typical patient journey from first contact to treatment? E.g. form fill, phone call, consultation, treatment plan, payment, procedure. How long does each stage typically take?
+Which services generate the most enquiries by volume (not revenue)?
+If you could reply to questions 1 and 2 first that would be great as they affect ads running right now. 
+The rest can wait a few days.
+
+
+I'll send a full end-of-week wrap up report on Friday detailing performance data, all changes made, and next week's plan.
+So you'll have full visibility on where things stand by the end of the week.
+
+Regards
+Christopher Hoole
+Google Ads Specialist | 16 Years Experience
++44 7451 252857
+chris@christopherhoole.com
+christopherhoole.com
+
+Giulio
+Fri 17 Apr, 16:47 (21 hours ago)
+to me, Tommaso, eddy@dentalbydesign.co.uk
+
+
+Hi
+
+See responses below
+
+Giulio
+
+From: Chris H <chris@christopherhoole.com>
+Sent: Thursday, April 16, 2026 12:18 PM
+To: Tommaso Grassi <tommaso@inserta-dental.com>; eddy@dentalbydesign.co.uk <eddy@dentalbydesign.co.uk>; Giulio <Giulio@inserta-dental.com>
+Subject: Google Ads - Progress update + quick questions before I rebuild campaigns
+ 
+Hi Giulio and Tommaso,
+
+Hope you're well. 
+Here is a quick update on my work, early results and a few questions that need answering before I push the next round of changes live.
+
+EARLY RESULTS (first 36 hours)
+Brand campaign: CPC dropped from £3.18 average to £1.61 on day 1. CPA at £11.29. Impression share at 92%.
+PMax: CPA dropped from £67 (30-day average) to £25.18 on day 1. Zero junk NHS/free-seeker traffic in yesterday's search terms, so the negative keywords are working.
+Dental Implants Intent: too early to judge (only 2 conversions on day 1), but the new bid strategy needs 5-7 days to stabilise. I'm rebuilding this campaign's ad group structure and keywords today.
+
+QUESTIONS
+I need to clarify a few things before I push the new campaigns live. 
+I've grouped them by urgency.
+
+Urgent - affects ads running right now
+Is the consultation free or £95? The website shows a £95 consultation fee, but all the Google Ads currently say "Free Consultation" and "Free In-Clinic Consultation". Which is correct? If it's £95 I need to update every ad immediately.
+
+Consultation is free, we just take a £25 booking deposit
+
+The ads currently say "25+ Years of Expertise" but the clinic was founded in 2010 (16 years). Some of the senior dentists have 20-24 years of individual experience. Should I say "20+ Years of Expertise" referring to the team, or "Est. 2010"?
+
+We say 25 years of expertise in general in the dental fields, from other ventures as well
+Claims verification: Need backup for Google Ads compliance
+"Best Implant Clinic in the UK 2024" - this was awarded by the Association of Dental Implantology? Do you have the certificate or announcement link? Google may ask for proof if the ad is challenged.
+
+I think we were finalist, I dont think google will ask proof
+
+"99.12% implant success rate" - what data is this based on? Internal tracking, published study, or something else? I need to be able to defend it if Google asks.
+
+This is based on failed implants, it's more an estimate, we used a specific number so it sound better
+
+"Save 60% compared to average UK practice" - what's the benchmark source for this? Industry body data, competitor price comparison, or internal estimate?
+
+This is an estimate, but overall the prices in London average 15k per arch
+
+"Top 10 Implant Provider in Europe" - awarded by whom and when?
+
+This is not an award this is a claim based on the size of our lab and implants companies
+
+Total implants placed across the whole clinic - Dr El-Ali alone has done 4,000+. What's the clinic total? Can I use a number like "5,000+ implants placed" or similar?
+
+We have around 10k patients, so it's going to be way more than 5k implants placed, more like 20k+
+Business data - for targeting and budget allocation
+What percentage of form-fill leads actually become paying patients? A rough estimate is fine. I'm trying to understand the real cost per patient booking, not just cost per form fill.
+
+Lead to booking is around 13%
+
+Booking to starting treatment around 35%
+
+What are your top 3 services by revenue?
+
+We only focus on dental implants: single and double arches
+
+Is the "Same Day Smile Makeover" from £2,400 a separate service or is it the Vivo Bridge rebranded for cosmetic positioning?
+
+This was confusing, I removed it
+
+Are there any upcoming promotions, seasonal offers, or new services launching in the next 3 months?
+
+See https://github.com/dentalbydesignuk/dentalbydesign/blob/main/apps/api/src/routes/api/v1/offers.ts#L25
+
+What's the typical patient journey from first contact to treatment? E.g. form fill, phone call, consultation, treatment plan, payment, procedure. How long does each stage typically take?
+
+Fill form -> Get contacted (10 min to 2hours) -> Book consultation (~3 weeks) -> Treatment plan (After consultation) -> Payment immediately or finance -> Start treatment (~2-3 weeks)
+
+Which services generate the most enquiries by volume (not revenue)?
+
+We only advertise dental implants, single and double arches
+...
+
+[Message clipped]  View entire message
+
+Chris H <chris@christopherhoole.com>
+Fri 17 Apr, 17:02 (21 hours ago)
+to Giulio, Tommaso, eddy@dentalbydesign.co.uk
+
+Hi Giulio,
+
+Thanks very much for all the information, i will adjust everything based on your answers. 
+
+Thank you. 

@@ -1,0 +1,759 @@
+
+### 1_word (23) ###
+[banningdental]
+[dentafly]
+[dentale]
+[dentalprime]
+[dentern]
+[dentmex]
+[dentordu]
+[denturly]
+[dentuvo]
+[evodental]
+[implant]
+[implantologist]
+[implants]
+[inplants]
+[londonsmile]
+[orthodontist]
+[prosthodontist]
+[smiledent]
+[syncdental]
+[teeth]
+[timedental]
+[tooth]
+[ukdental]
+
+### 2_word (111) ###
+[18 dental]
+[180 dental]
+[21 d]
+[21d clinical]
+[21d dental]
+[72 dental]
+[artisan implants]
+[banning dental]
+[banstead dentist]
+[bluebell dentist]
+[bluebell dentistry]
+[bond dental]
+[brighton implant]
+[castelnau dentists]
+[cero dental]
+[chiswick smiles]
+[crete dental]
+[cronos dental]
+[dakatra dental]
+[dantu implantai]
+[darwood tanner]
+[dawood tanner]
+[dentafly london]
+[dentakay london]
+[dentakay reviews]
+[dental c]
+[dental design]
+[dental hub]
+[dental prime]
+[dental prosthesis]
+[dental rooms]
+[dental silver]
+[dental spa]
+[dental specialist]
+[dental treatment]
+[dentaliving ilford]
+[dentaprime london]
+[dentaprime prices]
+[dentaprime reviews]
+[dentaprime stratford]
+[dentaprime uk]
+[dentist belvedere]
+[dentist maidenhead]
+[dentplus uk]
+[denture implants]
+[denture stabilization]
+[dentures horsham]
+[dentures windsor]
+[derngate dental]
+[dr dinga]
+[dr rohan]
+[elias boukhari]
+[eugene dentist]
+[evo dental]
+[evodental bristol]
+[evodental prices]
+[fixt dental]
+[fox dentistry]
+[hassan adi]
+[hungary dentists]
+[ice dental]
+[implant specialist]
+[implanted dentures]
+[implantes subperiósticos]
+[implantly reviews]
+[implantly uk]
+[ivory dental]
+[jax implants]
+[love teeth]
+[megagen implant]
+[missing teeth]
+[nanodent uk]
+[ndi implant]
+[ndi implants]
+[nhs dentist]
+[nobel biocare]
+[novadente odontologia]
+[oral surgeons]
+[osstem implant]
+[perfect smile]
+[pershore dentist]
+[prem dent]
+[prosthodontics london]
+[prosthodontist london]
+[pterygoid implants]
+[pure smiles]
+[regrow teeth]
+[reigate smiles]
+[restorative dentistry]
+[restore dental]
+[ridgeway dental]
+[sam jethwa]
+[sandford dentist]
+[sapphire dent]
+[silsoe dentist]
+[smile savers]
+[smilewell dental]
+[space dent]
+[space dental]
+[spry smiles]
+[straumann implant]
+[straumann implants]
+[straumann uk]
+[teeth restoration]
+[together dental]
+[tooth restoration]
+[truly dental]
+[truly dentist]
+[value dent]
+[vitrin clinic]
+[york dentist]
+
+### 3_word (166) ###
+[381 uxbridge road]
+[89 hammersmith grove]
+[advanced dental care]
+[aesthetica dental implants]
+[all in 4]
+[all on 4]
+[all on 4s]
+[ashtead dental practice]
+[asya dental clinic]
+[banning dental croydon]
+[banning dental greenwich]
+[banning dental group]
+[banning dental kingston]
+[banning dental reviews]
+[banning dental wembley]
+[be dental clinic]
+[best dentist epsom]
+[bexleyheath dental practice]
+[black hills dental]
+[bone graft dental]
+[bounty road dental]
+[bradford dental clinic]
+[brighter image lab]
+[brighton dental clinic]
+[brighton dental implants]
+[brighton implant centre]
+[brighton implant clinic]
+[bupa approved dentists]
+[cheap dental implants]
+[cheap implants london]
+[cheap implants uk]
+[cheapest implants uk]
+[chiswick dental care]
+[chiswick dental clinic]
+[clinica dental londres]
+[clinica dentara londra]
+[clip on dentures]
+[complete dental care]
+[complete dental implant]
+[complete smiles harrow]
+[cosmetic dentist maidstone]
+[cosmetic dentistry cyprus]
+[dental arts clinic]
+[dental by design]
+[dental clinic identity]
+[dental implant clinic]
+[dental implant maidstone]
+[dental implant specialists]
+[dental implants hampstead]
+[dental implants life]
+[dental implants maidstone]
+[dental implants material]
+[dental implants neath]
+[dental implants newcastle]
+[dental implants pictures]
+[dental implants recommendations]
+[dental implants rickmansworth]
+[dental implants timeline]
+[dental implants treatments]
+[dental implants watford]
+[dental pearl clinic]
+[dental prime stratford]
+[dentaprime bad reviews]
+[dentaprime london reviews]
+[dentaprime near me]
+[dentaprime prices uk]
+[dentaprime uk photos]
+[dentaprime uk reviews]
+[dentist chancery lane]
+[dentist clapham junction]
+[dentist high wycombe]
+[denture prime uk]
+[digital smile studio]
+[dr ashok sethi]
+[dreams dental clinic]
+[estherian dental clinic]
+[evo dental dartford]
+[evo dental heathrow]
+[excel dental care]
+[feather veneers cost]
+[fixed teeth solutions]
+[flapless dental implant]
+[full denture implants]
+[fusion dental implants]
+[goldhawk dental practice]
+[green street dentist]
+[haldent dental clinic]
+[hammersmith smile dentist]
+[harley street dentist]
+[herne hill dentist]
+[hungarian dentist london]
+[hungary dental implant]
+[immediate implant placement]
+[imperial dental care]
+[implant dental clinic]
+[implant supported overdentures]
+[implantly uk reviews]
+[implants or dentures]
+[implanty zębów cena]
+[infinity dental implants]
+[is dentaprime safe]
+[jd implants uk]
+[kensington dental practice]
+[kew dental suite]
+[kingston dental clinic]
+[klinika dentystyczna uk]
+[kreativ dental clinic]
+[leicester dental implants]
+[limitless dental photos]
+[london dental specialists]
+[love teeth dental]
+[luks dental clinic]
+[maryland bridge dental]
+[maryland bridge implant]
+[marylebone implant centre]
+[marylebone smile clinic]
+[molesey dental practice]
+[new life teeth]
+[nhs dental implant]
+[nhs dental implants]
+[nhs dentists uxbridge]
+[nhs implant cost]
+[nhs teeth implants]
+[nhs tooth implant]
+[ninova dental clinic]
+[nobel biocare implants]
+[northumberland dental practice]
+[perfect smile battersea]
+[perfect smile richmond]
+[pimlico dental practice]
+[premolar tooth implant]
+[private dental care]
+[professional dental implants]
+[root canal specialist]
+[ruh dental london]
+[screwless dental implants]
+[sevil smile studio]
+[sherman dental clinic]
+[smile again dental]
+[smile clinic london]
+[smileco dental clinic]
+[smilewell dental borehamwood]
+[smilewell dental reviews]
+[space dental london]
+[specialist dental clinic]
+[stockport implant centre]
+[stratford dental clinic]
+[straumann dental implants]
+[swiss dental implants]
+[sync dental wimbledon]
+[synergy dental bolton]
+[tdc dental clinic]
+[teeth implants edinburgh]
+[the implant center]
+[the tooth spa]
+[tooth implants nhs]
+[toronto bridge implant]
+[truly dental london]
+[truly dental manchester]
+[uk dental specialists]
+[vital europe reviews]
+[white oaks dental]
+[wimpole dental clinic]
+[windsor dental implants]
+[yorkshire dental clinic]
+[yorkshire dental suite]
+
+### 4_word (105) ###
+[21d co uk reviews]
+[21d reviews complaints forum]
+[4 on all implants]
+[abc dental near me]
+[all in 6 implants]
+[all in dental clinic]
+[all in one implants]
+[all on 4 dental]
+[all on 4 dentist]
+[all on 4 implants]
+[all on 4 regrets]
+[angel dental implant centre]
+[banning dental canning town]
+[banning dental finance options]
+[banning dental implant cost]
+[benenden health dental implants]
+[best dental clinic london]
+[best dentist in kent]
+[best nhs dentist watford]
+[bond dental london mayfair]
+[bounty road dental practice]
+[broken tooth crown cost]
+[cheap implants near me]
+[cheap tooth implants uk]
+[cheap uk dental implants]
+[cheapest dental implants uk]
+[complex smile implant centre]
+[composite bonding free consultation]
+[crystal dental clinic macclesfield]
+[darwood and tanner costs]
+[darwood and tanner dental]
+[deals on dental implants]
+[dental art harley street]
+[dental beauty south croydon]
+[dental clinic in london]
+[dental clinic near me]
+[dental implant dentures cost]
+[dental implant east village]
+[dental implant installment plan]
+[dental implant procedure timeline]
+[dental implant uk nhs]
+[dental implants for pensioners]
+[dental implants gum disease]
+[dental implants in croatia]
+[dental implants milton keynes]
+[dental implants near you]
+[dental implants payment plan]
+[dental implants surrey uk]
+[dental practice mill hill]
+[dental wellness mill hill]
+[dentist fulham palace road]
+[dentist in alton hampshire]
+[dentist in harley street]
+[dentist near me nhs]
+[denture and implant clinic]
+[denture clinics near me]
+[dentures in a day]
+[drill free dental implants]
+[eb dental worcester park]
+[fixed upper denture cost]
+[free dental implants uk]
+[full mouth implants coventry]
+[full set implant teeth]
+[gentle dental care croydon]
+[green street dental practice]
+[harley street dental clinic]
+[harley street implant centre]
+[immediate delayed implant placement]
+[implant retained dentures overdentures]
+[implants on the nhs]
+[individual teeth implants cost]
+[inspire dental care rickmansworth]
+[king's college dental institute]
+[london road dental practice]
+[made in london dental]
+[maltepe dental clinic london]
+[medical implants near me]
+[missing teeth replacement options]
+[new life teeth manchester]
+[nhs dental practice watford]
+[nhs dentist near me]
+[nhs tooth implant cost]
+[open and affordable dental]
+[pure dental aesthetic clinic]
+[rejuvagum lift near me]
+[smiles by the river]
+[specialist prosthodontist near me]
+[st albans dental implants]
+[straumann dental implants price]
+[stunning smile dental clinic]
+[teeth transplant near me]
+[the dental implant group]
+[the implant experts maidstone]
+[the rickmansworth dental centre]
+[tooth implants on nhs]
+[total dental care dover]
+[truly dental london reviews]
+[truly dental nine elms]
+[turkish dentist in uk]
+[waldron dental clinic reviews]
+[what are fixed dentures]
+[york house dental practice]
+[yorkshire dental suite birmingham]
+[yorkshire dental suite chelsea]
+[yorkshire dental suite wakefield]
+
+### 5plus_word (140) ###
+[3 step smiles dental practice glasgow]
+[all in 4 dental implants]
+[all on 4 dental implants]
+[all on 4 dental implants cost]
+[all on 4 dental implants cost uk]
+[all on 4 dental implants uk]
+[all on 4 dental implants uk cost]
+[all on 4 dental implants uk price]
+[all on 4 dental implants upper and lower]
+[all on 4 implants uk cost]
+[all on 6 dental implants]
+[all on 6 dental implants uk price]
+[all on 6 dental implants uk price nhs]
+[all on six dental implants]
+[all on six dental implants cost]
+[alternative to dentures with gum disease]
+[angle house orthodontics near me]
+[ash lane dental suite reviews]
+[average cost dental implant uk]
+[average cost of implant tooth]
+[bespoke dental and implant clinic]
+[best country for dental tourism]
+[best dental clinic in the world]
+[best dental implant clinic uk]
+[best place for tooth implants]
+[best replacement for missing teeth]
+[best time to get implant after tooth extraction]
+[can dentures be fixed permanently]
+[can i get a bridge if i have periodontal disease]
+[can i get a dental implant on the nhs]
+[can i get implants if i have bone loss]
+[can i get implants if i have gum disease]
+[can implants be done in one day]
+[can you get all your teeth removed and replaced]
+[can you get implants if you have bone loss]
+[can you replace all your teeth with implants]
+[cheap dental clinic near me]
+[cheap dental implants full mouth]
+[cheapest all on 4 dental implants uk]
+[cheapest dental implants near me]
+[cheapest full mouth dental implants uk]
+[chiswick dental and implant clinic]
+[clayhall dental care cosmetic & implant dentistry]
+[cost of 2 dental implants with bone grafting uk]
+[cost of full bottom implants]
+[dartford dental and implant centre]
+[dental art implant clinic balham]
+[dental bridge for missing tooth]
+[dental design studio near me]
+[dental implant clinic near me]
+[dental implant specialists near me]
+[dental implant surgeons near me]
+[dental implants all on 4 cost]
+[dental implants in london cheapest]
+[dental implants on the nhs]
+[dental school implants near me]
+[dentist that does implants near me]
+[dentures that you can wear all the time]
+[do all implants require bone grafts]
+[free dental consultation near me]
+[free dental implants dental school uk]
+[free government grants for dental implants uk]
+[free implant consultation near me]
+[free orthodontic consultation near me]
+[full mouth bone grafting cost]
+[full mouth dental implant surgery]
+[full mouth dental implants cost nhs]
+[full set dental implants cost uk]
+[full set of dental implants]
+[full set of new teeth]
+[full set of teeth implants]
+[full set of teeth implants cost]
+[full set of veneers cost uk]
+[garden dental and implant clinic]
+[government grants for dental implants uk]
+[guy's dental hospital free treatment]
+[harley street smile clinic reviews]
+[holistic alternatives to dental implants]
+[how long do dental implants last]
+[how long do dental implants take]
+[how long does dental implants take]
+[how long does it take for implants]
+[how long does it take to get teeth implants]
+[how long does swelling last after dental implant]
+[how much do screwless dental implants cost]
+[how much does it cost for full dental implants]
+[how much does it cost to get a tooth replaced]
+[how much does it cost to have a dental implant]
+[how much for a full set of dental implants]
+[how much for a full set of implants]
+[how much for fixed dentures]
+[how much is a full set of dental implants uk]
+[how much is a full set of teeth]
+[how much is it to get a full set of dental implants]
+[how much would it cost to replace all your teeth with implants]
+[how to fix artificial teeth permanently]
+[how to fix missing teeth without implants]
+[how to get help with dental implants for free]
+[i have bad teeth what are my options]
+[i have really bad teeth what are my options uk]
+[i have really bad teeth what are my options uk nhs]
+[implant retained dentures cost uk]
+[implants for severe gum disease uk]
+[london dental arts forest hill]
+[london periodontics implants and dentistry]
+[low cost dental implants uk]
+[marlow dental & implant clinic]
+[mini dental implants cost uk]
+[nhs dental charges for pensioners]
+[nhs dental implants for over 60s]
+[nhs dentists taking new patients near me]
+[on all 4 dental implants]
+[payment plan for dental implants]
+[perio and implant dental referral centre]
+[private dental hospital near me]
+[rheumatoid arthritis and dental implants]
+[sinus lift and bone graft]
+[snap in dentures before and after]
+[south coast implant & cosmetic dentist]
+[teeth contouring before and after]
+[the implant centre haywards heath]
+[tooth implant bone graft cost]
+[tooth implant cost uk nhs]
+[top dentures without palate uk]
+[what are screwless dental implants]
+[what are some options for missing teeth]
+[what does all on four dental implants mean]
+[what is a sinus lift]
+[what is all on 4 dental implants]
+[what is all on four]
+[what is an all on 4 dental implant]
+[what is basal dental implant]
+[what is the average price for a tooth implant]
+[what is the average price for dental implants]
+[what is the best dental implant brand]
+[what is the cost of all on 4 implants]
+[what is the warranty on dental implants]
+[what to do about loose teeth]
+[which benefits entitle you to free dental treatment]
+[which is better all on 4 or all on 6 dental implants]
+
+### KEPT (202) ###
+[2 front teeth veneers cost uk]  (keep_allowlist)
+[2 tooth implant cost uk]  (keep_allowlist)
+[21d]  (keep_allowlist)
+[21d teeth]  (keep_allowlist)
+[3 on 6 implant]  (keep_allowlist)
+[3 tooth bridge cost uk]  (keep_allowlist)
+[4 tooth bridge cost uk]  (keep_allowlist)
+[6 in one dental implant]  (keep_allowlist)
+[alternative to dental implant for one tooth]  (keep_allowlist)
+[alternative to implant tooth]  (keep_allowlist)
+[alternatives to implants]  (keep_allowlist)
+[back teeth implants cost]  (keep_allowlist)
+[best dental implants london]  (keep_allowlist)
+[best dentist for implants near me]  (keep_allowlist)
+[best dentist in hammersmith]  (keep_allowlist)
+[best dentist london]  (keep_allowlist)
+[best implant dentist uk]  (keep_allowlist)
+[best teeth implants near me]  (keep_allowlist)
+[bexley dental implants]  (keep_allowlist)
+[bridges on implants]  (keep_allowlist)
+[cosmetic teeth]  (keep_allowlist)
+[cost for dental implant one tooth]  (keep_allowlist)
+[cost of 4 on 4 dental implants]  (keep_allowlist)
+[cost of dental implants]  (keep_allowlist)
+[cost of dental implants uk]  (keep_allowlist)
+[cost of dental implants uk private]  (keep_allowlist)
+[cost of one dental implant]  (keep_allowlist)
+[cost of tooth implants uk]  (keep_allowlist)
+[crown and bridge teeth]  (keep_allowlist)
+[crown dentist near me]  (keep_allowlist)
+[dental aesthetics]  (keep_allowlist)
+[dental bridge]  (keep_allowlist)
+[dental bridge cost]  (keep_allowlist)
+[dental bridge cost uk]  (keep_allowlist)
+[dental cosmetic near me]  (keep_allowlist)
+[dental crowns]  (keep_allowlist)
+[dental hammersmith]  (keep_allowlist)
+[dental implant]  (keep_allowlist)
+[dental implant alternative]  (keep_allowlist)
+[dental implant cost]  (keep_allowlist)
+[dental implant cost london]  (keep_allowlist)
+[dental implant cost near me]  (keep_allowlist)
+[dental implant cost uk]  (keep_allowlist)
+[dental implant in london]  (keep_allowlist)
+[dental implant london]  (keep_allowlist)
+[dental implant near me]  (keep_allowlist)
+[dental implant orpington]  (keep_allowlist)
+[dental implant procedure]  (keep_allowlist)
+[dental implant reviews near me]  (keep_allowlist)
+[dental implant screw cost]  (keep_allowlist)
+[dental implant uk]  (keep_allowlist)
+[dental implants]  (keep_allowlist)
+[dental implants balham]  (keep_allowlist)
+[dental implants bromley]  (keep_allowlist)
+[dental implants chingford]  (keep_allowlist)
+[dental implants cost]  (keep_allowlist)
+[dental implants cost uk]  (keep_allowlist)
+[dental implants cost uk full mouth]  (keep_allowlist)
+[dental implants costs]  (keep_allowlist)
+[dental implants croydon]  (keep_allowlist)
+[dental implants hornchurch]  (keep_allowlist)
+[dental implants london]  (keep_allowlist)
+[dental implants london cost]  (keep_allowlist)
+[dental implants london prices]  (keep_allowlist)
+[dental implants near me]  (keep_allowlist)
+[dental implants or veneers]  (keep_allowlist)
+[dental implants price]  (keep_allowlist)
+[dental implants prices near me]  (keep_allowlist)
+[dental implants stratford]  (keep_allowlist)
+[dental implants tottenham]  (keep_allowlist)
+[dental implants uk]  (keep_allowlist)
+[dental implants uk cost]  (keep_allowlist)
+[dental implants uxbridge]  (keep_allowlist)
+[dental london]  (keep_allowlist)
+[dental veneers cost]  (keep_allowlist)
+[dentist chislehurst]  (keep_allowlist)
+[dentist chiswick]  (keep_allowlist)
+[dentist finchley]  (keep_allowlist)
+[dentist for implants]  (keep_allowlist)
+[dentist harrow on the hill]  (keep_allowlist)
+[dentist lewisham]  (keep_allowlist)
+[dentist london]  (keep_allowlist)
+[dentist near me]  (keep_allowlist)
+[dentist uk]  (keep_allowlist)
+[dentists putney]  (keep_allowlist)
+[fix my teeth]  (keep_allowlist)
+[fp1 implant]  (keep_allowlist)
+[fp1 implants]  (keep_allowlist)
+[front tooth implant]  (keep_allowlist)
+[front tooth implant crown]  (keep_allowlist)
+[full dental implants]  (keep_allowlist)
+[full jaw dental implants]  (keep_allowlist)
+[full mouth dental implants]  (keep_allowlist)
+[full mouth dental implants finance]  (keep_allowlist)
+[full mouth dental implants price]  (keep_allowlist)
+[full mouth dental implants uk]  (keep_allowlist)
+[full mouth implants]  (keep_allowlist)
+[full mouth of implants]  (keep_allowlist)
+[full teeth implants cost uk]  (keep_allowlist)
+[full top teeth implants cost]  (keep_allowlist)
+[get new teeth]  (keep_allowlist)
+[hammersmith dentist]  (keep_allowlist)
+[how do dental implants work]  (keep_allowlist)
+[how much a tooth implant cost]  (keep_allowlist)
+[how much are dental implants]  (keep_allowlist)
+[how much are dental implants uk]  (keep_allowlist)
+[how much are full dental implants]  (keep_allowlist)
+[how much are teeth implants]  (keep_allowlist)
+[how much do dental implants cost]  (keep_allowlist)
+[how much do implants cost uk]  (keep_allowlist)
+[how much do teeth implants cost]  (keep_allowlist)
+[how much does a 1 tooth bridge cost]  (keep_allowlist)
+[how much does a 4 tooth bridge cost]  (keep_allowlist)
+[how much does a dental implant cost]  (keep_allowlist)
+[how much does a implant tooth cost]  (keep_allowlist)
+[how much does an implant cost uk]  (keep_allowlist)
+[how much does dental implant cost in uk]  (keep_allowlist)
+[how much does full teeth replacement cost]  (keep_allowlist)
+[how much is a dental implant]  (keep_allowlist)
+[how much is a dental implant uk]  (keep_allowlist)
+[how much is a implant tooth]  (keep_allowlist)
+[how much is a molar implant]  (keep_allowlist)
+[how much is a single tooth implant]  (keep_allowlist)
+[how much is a single tooth implant uk]  (keep_allowlist)
+[how much is a tooth implant]  (keep_allowlist)
+[how much is a tooth implant in the uk]  (keep_allowlist)
+[how much is an implant]  (keep_allowlist)
+[how much is an implant for one tooth]  (keep_allowlist)
+[how much is an implant in uk]  (keep_allowlist)
+[how much is one implant tooth uk]  (keep_allowlist)
+[how to bridge teeth]  (keep_allowlist)
+[how to do teeth implant]  (keep_allowlist)
+[how to get help with dental implants]  (keep_allowlist)
+[implant cost]  (keep_allowlist)
+[implant cost uk]  (keep_allowlist)
+[implant dental]  (keep_allowlist)
+[implant near me]  (keep_allowlist)
+[implant procedure]  (keep_allowlist)
+[implant smile]  (keep_allowlist)
+[implant teeth]  (keep_allowlist)
+[implants dentist near me]  (keep_allowlist)
+[implants london]  (keep_allowlist)
+[implants london prices]  (keep_allowlist)
+[implants teeth]  (keep_allowlist)
+[invisalign pay monthly near me]  (keep_allowlist)
+[molar dental implant]  (keep_allowlist)
+[molar implant cost]  (keep_allowlist)
+[new teeth]  (keep_allowlist)
+[new teeth implants]  (keep_allowlist)
+[one day dental]  (keep_allowlist)
+[one dental implant cost uk]  (keep_allowlist)
+[pay monthly dental implants uk]  (keep_allowlist)
+[permanent teeth]  (keep_allowlist)
+[price of dental implants uk]  (keep_allowlist)
+[price of new teeth]  (keep_allowlist)
+[price of tooth implant]  (keep_allowlist)
+[replace back teeth]  (keep_allowlist)
+[replacing my teeth]  (keep_allowlist)
+[same day dental implants]  (keep_allowlist)
+[same day teeth]  (keep_allowlist)
+[single implant]  (keep_allowlist)
+[single tooth implant]  (keep_allowlist)
+[single tooth implant cost]  (keep_allowlist)
+[smile dental implants]  (keep_allowlist)
+[smile dental implants worcester park]  (keep_allowlist)
+[smile dentist london]  (keep_allowlist)
+[smile in a day dental implants]  (keep_allowlist)
+[smile kensington]  (keep_allowlist)
+[smile uk]  (keep_allowlist)
+[teeth implant]  (keep_allowlist)
+[teeth implants]  (keep_allowlist)
+[teeth implants cost]  (keep_allowlist)
+[teeth implants cost full mouth]  (keep_allowlist)
+[teeth implants cost uk]  (keep_allowlist)
+[teeth implants near me]  (keep_allowlist)
+[teeth implants uk cost]  (keep_allowlist)
+[teeth in a day]  (keep_allowlist)
+[teeth in a day london]  (keep_allowlist)
+[teeth in a day near me]  (keep_allowlist)
+[teeth replacement]  (keep_allowlist)
+[teeth replacement cost]  (keep_allowlist)
+[temporary dental implants]  (keep_allowlist)
+[the dental implant procedure]  (keep_allowlist)
+[tooth implant]  (keep_allowlist)
+[tooth implant cost]  (keep_allowlist)
+[tooth implant cost uk]  (keep_allowlist)
+[tooth implant near me]  (keep_allowlist)
+[tooth implant procedure]  (keep_allowlist)
+[tooth implant process]  (keep_allowlist)
+[tooth implants cost]  (keep_allowlist)
+[tooth replacement]  (keep_allowlist)
+[tooth replacement options]  (keep_allowlist)
+[twickenham dentist]  (keep_allowlist)
+[types of tooth implants]  (keep_allowlist)
+[uk smiles stratford]  (keep_allowlist)
+[up tooth]  (keep_allowlist)
+[upper and lower dental arches]  (keep_allowlist)
+[upper jaw dental implants]  (keep_allowlist)
+[what is the cost of full mouth dental implants]  (keep_allowlist)
+[zirconia arch]  (keep_allowlist)
+[zirconia bridge price]  (keep_allowlist)
+[zygomatic implants]  (keep_allowlist)

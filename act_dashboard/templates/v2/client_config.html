@@ -11,7 +11,7 @@
 {% macro toggle_class(key) %}config-toggle{% if settings.get(key) and settings[key].value == 'true' %} on{% endif %}{% endmacro %}
 
 {% block content %}
-<div data-client-id="{{ client.id }}">
+<div id="configRoot" data-client-id="{{ client.id }}">
 
   <!-- Page Header -->
   <div class="config-header">
@@ -446,20 +446,34 @@
         </div>
 
         <div class="checklist-item">
-          <div class="checklist-icon checklist-icon--{% if campaign_roles %}done{% else %}pending{% endif %}"><span class="material-symbols-outlined" style="font-size:14px">{% if campaign_roles %}check{% else %}pending{% endif %}</span></div>
+          <div class="checklist-icon checklist-icon--{% if campaign_roles|length == campaign_count and campaign_count > 0 %}done{% else %}pending{% endif %}"><span class="material-symbols-outlined" style="font-size:14px">{% if campaign_roles|length == campaign_count and campaign_count > 0 %}check{% else %}pending{% endif %}</span></div>
           <div class="checklist-content">
             <p class="checklist-title">Campaign roles assigned</p>
-            <p class="checklist-status">{{ campaign_roles|length }} of {{ campaign_count }} campaigns mapped{% if not campaign_roles %} &mdash; awaiting assignment{% endif %}</p>
-            {% if campaign_count > 0 %}
-            <div class="checklist-details">
-              <ul>
-                {% for role in campaign_roles %}
-                <li class="done">{{ role.campaign_name }} &mdash; [{{ role.role }}]</li>
+            <p class="checklist-status" id="roleStatusText">{{ campaign_roles|length }} of {{ campaign_count }} campaigns mapped{% if campaign_roles|length < campaign_count %} &mdash; awaiting assignment{% endif %}</p>
+            {% if all_campaigns %}
+            <div class="checklist-details role-assign-list">
+              <table class="role-assign-table">
+                <thead>
+                  <tr><th>Campaign</th><th>Role</th></tr>
+                </thead>
+                <tbody>
+                {% for c in all_campaigns %}
+                  <tr data-campaign-id="{{ c.campaign_id }}" data-campaign-name="{{ c.campaign_name }}">
+                    <td class="role-assign-name">{{ c.campaign_name }}</td>
+                    <td>
+                      <select class="role-assign-select">
+                        <option value="" {% if not c.role %}selected{% endif %}>— Unassigned —</option>
+                        <option value="BD" {% if c.role == 'BD' %}selected{% endif %}>BD — Brand Defence</option>
+                        <option value="CP" {% if c.role == 'CP' %}selected{% endif %}>CP — Core Performance</option>
+                        <option value="RT" {% if c.role == 'RT' %}selected{% endif %}>RT — Retargeting</option>
+                        <option value="PR" {% if c.role == 'PR' %}selected{% endif %}>PR — Prospecting</option>
+                        <option value="TS" {% if c.role == 'TS' %}selected{% endif %}>TS — Testing</option>
+                      </select>
+                    </td>
+                  </tr>
                 {% endfor %}
-                {% if campaign_roles|length < campaign_count %}
-                <li class="pending">{{ campaign_count - campaign_roles|length }} campaign(s) not yet assigned</li>
-                {% endif %}
-              </ul>
+                </tbody>
+              </table>
             </div>
             {% endif %}
           </div>

@@ -535,6 +535,7 @@ def create_app():
     v2_config_routes = [
         'v2_config.save_settings',
         'v2_config.reset_settings',
+        'v2_config.save_campaign_role',
     ]
     for route_name in v2_config_routes:
         if route_name in app.view_functions:

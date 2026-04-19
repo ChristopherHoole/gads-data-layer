@@ -6,7 +6,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
   const btnSave = document.getElementById('btnSave');
-  const CLIENT_ID = document.querySelector('[data-client-id]')?.dataset.clientId;
+  const CLIENT_ID = document.getElementById('configRoot')?.dataset.clientId;
 
   // -------------------------------------------------------------------------
   // VERTICAL TAB SWITCHING
@@ -309,6 +309,58 @@ document.addEventListener('DOMContentLoaded', () => {
         const levelName = row.querySelector('.level-row__name')?.textContent || 'Level';
         showToast(levelName + ': ' + STATE_LABELS[newState], newState === 'active' ? 'success' : 'info');
       });
+    });
+  });
+
+  // Campaign role assignment dropdowns (auto-save on change)
+  function refreshRoleStatus() {
+    const rows = document.querySelectorAll('.role-assign-table tbody tr');
+    const total = rows.length;
+    let assigned = 0;
+    rows.forEach(r => { if (r.querySelector('.role-assign-select').value) assigned++; });
+    const status = document.getElementById('roleStatusText');
+    if (status) {
+      status.textContent = assigned + ' of ' + total + ' campaigns mapped' +
+        (assigned < total ? ' — awaiting assignment' : '');
+    }
+    const icon = status?.closest('.checklist-item')?.querySelector('.checklist-icon');
+    if (icon) {
+      const done = (assigned === total && total > 0);
+      icon.classList.toggle('checklist-icon--done', done);
+      icon.classList.toggle('checklist-icon--pending', !done);
+      const iconSpan = icon.querySelector('.material-symbols-outlined');
+      if (iconSpan) iconSpan.textContent = done ? 'check' : 'pending';
+    }
+  }
+
+  document.querySelectorAll('.role-assign-select').forEach(select => {
+    select.addEventListener('change', async (e) => {
+      const row = e.target.closest('tr');
+      const payload = {
+        client_id: CLIENT_ID,
+        campaign_id: row.dataset.campaignId,
+        campaign_name: row.dataset.campaignName,
+        role: e.target.value,
+      };
+      try {
+        const res = await fetch('/v2/config/roles/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const result = await res.json();
+        if (result.success) {
+          showToast(
+            payload.campaign_name + ' → ' + (payload.role || 'Unassigned'),
+            payload.role ? 'success' : 'info'
+          );
+          refreshRoleStatus();
+        } else {
+          showToast('Role save failed: ' + (result.error || 'Unknown'), 'error');
+        }
+      } catch (err) {
+        showToast('Role save failed: ' + err.message, 'error');
+      }
     });
   });
 

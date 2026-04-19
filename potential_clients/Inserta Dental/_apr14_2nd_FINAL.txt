@@ -1,0 +1,45 @@
+### 1_word (0) ###
+
+### 2_word (0) ###
+
+### 3_word (15) ###
+[complete dental implant]
+[dental implants hampstead]
+[dental implants life]
+[dental implants material]
+[dental implants pictures]
+[dental implants recommendations]
+[dental implants timeline]
+[dental implants treatments]
+[flapless dental implant]
+[fusion dental implants]
+[herne hill dentist]
+[implants or dentures]
+[pimlico dental practice]
+[premolar tooth implant]
+[professional dental implants]
+
+### 4_word (10) ###
+[best dentist in kent]
+[deals on dental implants]
+[dental implant dentures cost]
+[dental implant installment plan]
+[dental implant procedure timeline]
+[dental implants near you]
+[dentist in alton hampshire]
+[dentures in a day]
+[individual teeth implants cost]
+[missing teeth replacement options]
+
+### 5plus_word (9) ###
+[cheap dental implants full mouth]
+[cost of full bottom implants]
+[dental bridge for missing tooth]
+[how long does dental implants take]
+[how long does it take for implants]
+[how long does it take to get teeth implants]
+[low cost dental implants uk]
+[teeth contouring before and after]
+[what is a sinus lift]
+
+TOTAL: 34

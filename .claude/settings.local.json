@@ -4,7 +4,31 @@
       "Bash(pkill:*)",
       "Bash(curl:*)",
       "Bash(python:*)",
-      "Bash(.venv/Scripts/python.exe:*)"
+      "Bash(.venv/Scripts/python.exe:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(.venv/Scripts/python.exe -c \":*)",
+      "Bash(.venv/Scripts/pip.exe install:*)",
+      "Bash(PYTHONIOENCODING=utf-8 python << 'PYEOF':*)",
+      "Bash(ls C:/Users/User/Desktop/act-website/*.jpg C:/Users/User/Desktop/act-website/*.png)",
+      "Read(//tmp/**)",
+      "Read(//c/Users/User/Desktop/gads-data-layer/$TEMP/**)",
+      "Read(//c/Users/User/AppData/Local/Temp/**)",
+      "Bash(PYTHONIOENCODING=utf-8 python -c \":*)",
+      "WebSearch",
+      "WebFetch(domain:developer.adzuna.com)",
+      "WebFetch(domain:rapidapi.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(find /c/Users/User/Desktop/act-website/components/archive -type f -name *.tsx)",
+      "Bash(pip install:*)",
+      "Bash(where python *)",
+      "Bash(venv/Scripts/python.exe -c \"import google.ads; print\\('VENV_PLAIN has google.ads'\\)\")",
+      "Bash(taskkill /F /IM python.exe)",
+      "Bash(.venv/Scripts/python.exe -m flask --app act_dashboard.app run --port 5000)",
+      "Bash(tasklist)",
+      "Bash(findstr python.exe)",
+      "Bash(sleep 5 curl -s http://localhost:5000/v2/config?client=dbd001)",
+      "Bash(cmd //c \"taskkill /F /IM python.exe\")",
+      "Bash(sleep 5 curl -s -o nul -w \"HTTP:%{http_code}\\\\n\" http://localhost:5000/v2/config?client=dbd001 echo \"--- dropdown count ---\" curl -s http://localhost:5000/v2/config?client=dbd001)"
     ]
   }
 }

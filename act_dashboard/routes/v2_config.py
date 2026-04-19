@@ -74,12 +74,30 @@ def client_config():
         for r in setting_rows:
             settings[r[0]] = {'value': r[1], 'type': r[2], 'level': r[3]}
 
-        # Get campaign roles
+        # Get campaign roles (existing assignments)
         role_rows = con.execute(
             "SELECT google_ads_campaign_id, campaign_name, role FROM act_v2_campaign_roles WHERE client_id = ?",
             [client_id]
         ).fetchall()
         campaign_roles = [{'campaign_id': r[0], 'campaign_name': r[1], 'role': r[2]} for r in role_rows]
+        roles_by_id = {r['campaign_id']: r['role'] for r in campaign_roles}
+
+        # Get ALL campaigns from latest snapshot (for the role assignment form)
+        campaign_rows = con.execute(
+            """SELECT DISTINCT entity_id, entity_name
+               FROM act_v2_snapshots
+               WHERE client_id = ? AND level = 'campaign'
+                 AND snapshot_date = (
+                   SELECT MAX(snapshot_date) FROM act_v2_snapshots
+                   WHERE client_id = ? AND level = 'campaign'
+                 )
+               ORDER BY entity_name""",
+            [client_id, client_id]
+        ).fetchall()
+        all_campaigns = [
+            {'campaign_id': r[0], 'campaign_name': r[1], 'role': roles_by_id.get(r[0], '')}
+            for r in campaign_rows
+        ]
 
         # Get negative keyword lists
         nkl_rows = con.execute(
@@ -124,6 +142,7 @@ def client_config():
                            level_states=level_states,
                            settings=settings,
                            campaign_roles=campaign_roles,
+                           all_campaigns=all_campaigns,
                            neg_keyword_lists=neg_keyword_lists,
                            last_saved=last_saved,
                            api_connected=api_connected,
@@ -186,6 +205,43 @@ def save_settings():
         now = datetime.utcnow().strftime('%#d %b %Y, %I:%M %p')
         return jsonify({'success': True, 'saved_at': now})
 
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        con.close()
+
+
+@v2_config_bp.route('/config/roles/save', methods=['POST'])
+def save_campaign_role():
+    """Upsert a single campaign role assignment."""
+    data = request.get_json() or {}
+    client_id = data.get('client_id')
+    campaign_id = data.get('campaign_id')
+    campaign_name = data.get('campaign_name')
+    role = (data.get('role') or '').strip()
+
+    if not (client_id and campaign_id and campaign_name):
+        return jsonify({'success': False, 'error': 'client_id, campaign_id, campaign_name required'}), 400
+
+    valid_roles = {'BD', 'CP', 'RT', 'PR', 'TS'}
+    if role and role not in valid_roles:
+        return jsonify({'success': False, 'error': f'role must be one of {sorted(valid_roles)} or empty'}), 400
+
+    con = _get_db()
+    try:
+        # Always delete first (DuckDB-safe upsert pattern)
+        con.execute(
+            "DELETE FROM act_v2_campaign_roles WHERE client_id = ? AND google_ads_campaign_id = ?",
+            [client_id, campaign_id]
+        )
+        if role:
+            con.execute(
+                """INSERT INTO act_v2_campaign_roles
+                   (client_id, google_ads_campaign_id, campaign_name, role, role_assigned_by, updated_at)
+                   VALUES (?, ?, ?, ?, 'user', CURRENT_TIMESTAMP)""",
+                [client_id, campaign_id, campaign_name, role]
+            )
+        return jsonify({'success': True, 'role': role or None})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
     finally:

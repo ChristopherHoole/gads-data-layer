@@ -1,0 +1,391 @@
+=== UNKNOWN WORDS (3+ occurrences, excluding DBD-safe words) ===
+117  dentures
+ 45  denture
+ 41  reviews
+ 38  treatment
+ 37  turkey
+ 32  street
+ 27  beauty
+ 26  banning
+ 22  bupa
+ 22  road
+ 19  prices
+ 19  false
+ 18  harley
+ 18  missing
+ 16  replacement
+ 15  fake
+ 15  perfect
+ 15  dentaprime
+ 14  hill
+ 14  whitening
+ 14  affordable
+ 13  manchester
+ 13  green
+ 12  white
+ 12  park
+ 12  cheapest
+ 12  house
+ 12  insurance
+ 12  brighton
+ 12  swiss
+ 12  group
+ 12  hospital
+ 11  evo
+ 11  leeds
+ 11  essex
+ 10  gum
+  9  glasgow
+  9  blue
+  9  porcelain
+  9  invisalign
+  9  gold
+  9  spa
+  9  dent
+  9  specialists
+  9  poland
+  9  yorkshire
+  9  edinburgh
+  8  clip
+  8  club
+  8  bristol
+  8  watford
+  8  partial
+  8  truly
+  7  online
+  7  east
+  7  hungary
+  7  com
+  7  surrey
+  7  implanty
+  7  windsor
+  7  plans
+  7  cross
+  7  bone
+  7  kent
+  6  flexible
+  6  prime
+  6  plan
+  6  cleaning
+  6  filling
+  6  loughton
+  6  straumann
+  6  nobel
+  6  clinica
+  6  groupon
+  6  complete
+  6  options
+  6  permanent
+  6  lane
+  6  turkish
+  6  orthodontist
+  6  west
+  6  clips
+  6  periodontal
+  6  21d
+  6  birmingham
+  5  horsham
+  5  graft
+  5  norwich
+  5  pearl
+  5  maidstone
+  5  plymouth
+  5  londra
+  5  snap
+  5  hertfordshire
+  5  abbey
+  5  kings
+  5  broadway
+  5  albania
+  5  crawley
+  5  tanner
+  5  woking
+  5  sevenoaks
+  5  front
+  5  single
+  5  cena
+  5  hygienist
+  5  gravesend
+  5  basal
+  5  dentakay
+  5  hollywood
+  5  extraction
+  5  newcastle
+  4  services
+  4  zirconium
+  4  village
+  4  cardiff
+  4  cavity
+  4  beaconsfield
+  4  bulgaria
+  4  ipswich
+  4  victoria
+  4  valplast
+  4  life
+  4  wharf
+  4  all
+  4  abroad
+  4  bradford
+  4  restoration
+  4  magyar
+  4  work
+  4  david
+  4  grafting
+  4  solutions
+  4  art
+  4  impress
+  4  studios
+  4  vale
+  4  synergy
+  4  silicone
+  4  ali
+  4  space
+  4  camberley
+  4  temporary
+  4  grove
+  4  straightening
+  4  forest
+  4  modern
+  4  bush
+  4  braces
+  4  mint
+  4  europe
+  4  advance
+  4  silver
+  4  supported
+  4  love
+  4  simply
+  4  infinity
+  4  set
+  4  sheffield
+  4  guildford
+  4  retained
+  4  fixed
+  4  mini
+  4  bond
+  3  market
+  3  repair
+  3  root
+  3  pret
+  3  queens
+  3  lancaster
+  3  deals
+  3  fix
+  3  platinum
+  3  klinika
+  3  londone
+  3  cirencester
+  3  hungarian
+  3  southampton
+  3  molesey
+  3  polish
+  3  epsom
+  3  croatia
+  3  canary
+  3  city
+  3  one
+  3  tdc
+  3  lounge
+  3  belfast
+  3  nottingham
+  3  archway
+  3  fogorvos
+  3  bottom
+  3  reading
+  3  health
+  3  digital
+  3  walton
+  3  staines
+  3  luton
+  3  north
+  3  zental
+  3  hanwell
+  3  dentara
+  3  preston
+  3  sethi
+  3  wallace
+  3  chertsey
+  3  devonshire
+  3  exeter
+  3  cap
+  3  hertford
+  3  bright
+  3  holiday
+  3  packages
+  3  biocare
+  3  southgate
+  3  post
+  3  removal
+  3  pinner
+  3  transplant
+  3  brentwood
+  3  wellness
+  3  wood
+  3  pure
+  3  royal
+  3  simon
+  3  andrew
+  3  dawood
+  3  kit
+  3  langley
+  3  sinus
+  3  laser
+  3  aligners
+  3  therapy
+  3  abc
+  3  laboratory
+  3  berkshire
+  3  advanced
+  3  aesthetica
+  3  bath
+  3  true
+  3  prep
+  3  northwood
+  3  sussex
+  3  clinics
+  3  well
+  3  trustpilot
+  3  direct
+  3  borehamwood
+  3  aesthetics
+  3  patel
+  3  photos
+  3  denta
+  3  attelia
+  3  hair
+  3  mouth
+  3  dorset
+  3  wimpole
+  3  eastbourne
+  3  coventry
+
+=== BIGRAMS (3+ occurrences, unusual combinations) ===
+ 26  dental beauty
+ 24  banning dental
+ 19  dental treatment
+ 17  dentures cost
+ 16  harley street
+ 15  false teeth
+ 13  fake teeth
+ 12  perfect smile
+ 12  teeth whitening
+ 12  dental reviews
+ 11  bupa dental
+ 11  evo dental
+ 11  dentures uk
+ 10  turkey teeth
+ 10  dental group
+  9  road dentist
+  9  dental specialists
+  9  dental hospital
+  8  dental insurance
+  8  tooth club
+  8  missing teeth
+  7  street dental
+  7  dental prices
+  7  house dental
+  7  teeth replacement
+  7  denture clinic
+  7  truly dental
+  6  street dentist
+  6  green dental
+  6  tooth replacement
+  6  yorkshire dental
+  6  denture cost
+  5  flexible dentures
+  5  implant dentures
+  5  teeth treatment
+  5  porcelain veneers
+  5  road dental
+  5  turkey dental
+  5  dental spa
+  5  full dentures
+  5  dental plans
+  5  park dental
+  5  single tooth
+  5  in dentures
+  5  hill dentist
+  5  smile white
+  5  tooth extraction
+  5  missing tooth
+  5  for dentures
+  4  dentures price
+  4  dental services
+  4  dental prime
+  4  white dental
+  4  pearl dental
+  4  teeth cleaning
+  4  dentaprime uk
+  4  uk reviews
+  4  clip in
+  4  dental work
+  4  dental art
+  4  kings dental
+  4  synergy dental
+  4  space dental
+  4  in turkey
+  4  teeth straightening
+  4  affordable dentist
+  4  mint dental
+  4  dental leeds
+  4  implant supported
+  4  cross dentist
+  4  simply teeth
+  4  infinity dental
+  4  hollywood smile
+  4  treatment cost
+  4  21d dental
+  4  dentures london
+  4  dental birmingham
+  4  dentures reviews
+  4  clip on
+  4  partial dentures
+  4  bond dental
+  3  manchester dental
+  3  dental plan
+  3  park dentist
+  3  false tooth
+  3  brighton dental
+  3  gold tooth
+  3  filling cost
+  3  canary wharf
+  3  dental com
+  3  dental lounge
+  3  magyar fogorvos
+  3  straumann implant
+  3  implanty z
+  3  denture implant
+  3  dental studios
+  3  swiss dental
+  3  hill dental
+  3  vale dental
+  3  clinica dentara
+  3  complete smiles
+  3  ali dentist
+  3  silicone dentures
+  3  dentist watford
+  3  teeth dentures
+  3  brighton implant
+  3  surrey dental
+  3  nobel biocare
+  3  dental hygienist
+  3  hungary dental
+  3  advance dental
+  3  dental wellness
+  3  love teeth
+  3  bone graft
+  3  dental clips
+  3  teeth clips
+  3  dentures in
+  3  abc dental
+  3  dental laboratory
+  3  front tooth
+  3  prep veneers
+  3  dental clinics
+  3  smile well
+  3  swiss implant
+  3  com dental
+  3  affordable dental
+  3  denture implants
+  3  implant denture
+  3  dentist guildford

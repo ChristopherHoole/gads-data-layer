@@ -361,7 +361,7 @@ INDEX_SQL = [
     (
         'idx_act_v2_recs_client_status',
         """CREATE INDEX idx_act_v2_recs_client_status
-           ON act_v2_recommendations(client_id, status, identified_at);""",
+           ON act_v2_recommendations(client_id, identified_at);""",
     ),
     (
         'idx_act_v2_actions_client_date',

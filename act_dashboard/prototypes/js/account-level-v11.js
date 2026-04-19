@@ -1,0 +1,747 @@
+/* ============================================================================
+   ACT PROTOTYPE — ACCOUNT LEVEL v10 INTERACTIONS
+   v10: Table data updates per date range, 90d chart shows weekly aggregates
+   ============================================================================ */
+
+document.addEventListener('DOMContentLoaded', () => {
+
+  // Theme toggle
+  const themeToggle = document.querySelector('.theme-toggle');
+  if (themeToggle) {
+    if (document.documentElement.getAttribute('data-theme') === 'dark') themeToggle.classList.add('night');
+    themeToggle.addEventListener('click', () => {
+      const html = document.documentElement;
+      const goingDark = html.getAttribute('data-theme') === 'light';
+      themeToggle.classList.add('transitioning');
+      if (goingDark) themeToggle.classList.add('night'); else themeToggle.classList.remove('night');
+      setTimeout(() => html.setAttribute('data-theme', goingDark ? 'dark' : 'light'), 400);
+      setTimeout(() => themeToggle.classList.remove('transitioning'), 1000);
+    });
+  }
+
+  // Client switcher
+  const clientBtn = document.getElementById('clientSwitcher');
+  const clientMenu = document.getElementById('clientMenu');
+  if (clientBtn && clientMenu) {
+    clientBtn.addEventListener('click', (e) => { e.stopPropagation(); clientMenu.classList.toggle('show'); });
+    document.addEventListener('click', () => clientMenu.classList.remove('show'));
+    clientMenu.querySelectorAll('.dropdown-item').forEach(item => {
+      item.addEventListener('click', () => {
+        clientBtn.querySelector('.client-name').textContent = item.textContent.trim();
+        clientMenu.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        clientMenu.classList.remove('show');
+        showToast(`Switched to ${item.textContent.trim()}`, 'info');
+      });
+    });
+  }
+
+  // Section collapse (both acct-section and act-section patterns)
+  document.querySelectorAll('.acct-section__header, .act-section__header').forEach(header => {
+    header.addEventListener('click', (e) => {
+      if (e.target.closest('.act-bulk-bar') || e.target.closest('.table-toolbar')) return;
+      const section = header.closest('.acct-section') || header.closest('.act-section');
+      if (section) section.classList.toggle('collapsed');
+    });
+  });
+
+  // Group collapse
+  document.querySelectorAll('.act-group__header').forEach(header => {
+    header.addEventListener('click', (e) => { e.stopPropagation(); header.closest('.act-group').classList.toggle('collapsed'); });
+  });
+
+  // Table sorting
+  document.querySelectorAll('.data-table th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+      const table = th.closest('table');
+      const tbody = table.querySelector('tbody');
+      const rows = Array.from(tbody.querySelectorAll('tr:not(.score-breakdown-row)'));
+      const idx = Array.from(th.parentElement.children).indexOf(th);
+      const asc = th.dataset.dir !== 'asc';
+      th.dataset.dir = asc ? 'asc' : 'desc';
+      table.querySelectorAll('th').forEach(h => { if (h !== th) delete h.dataset.dir; });
+      rows.sort((a, b) => {
+        let va = a.children[idx]?.textContent.trim().replace(/[£%,]/g, '') || '';
+        let vb = b.children[idx]?.textContent.trim().replace(/[£%,]/g, '') || '';
+        const na = parseFloat(va), nb = parseFloat(vb);
+        if (!isNaN(na) && !isNaN(nb)) return asc ? na - nb : nb - na;
+        return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+      });
+      rows.forEach(r => tbody.appendChild(r));
+    });
+  });
+
+  // Score breakdown expand
+  document.querySelectorAll('[data-action="expand-score"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const row = btn.closest('tr');
+      const breakdown = row.nextElementSibling;
+      if (breakdown && breakdown.classList.contains('score-breakdown-row')) {
+        breakdown.style.display = breakdown.style.display === 'none' ? '' : 'none';
+      }
+    });
+  });
+
+  // v11: Pill group buttons (date range + status filter) — now handles 14d + custom
+  document.querySelectorAll('.pill-group').forEach(group => {
+    group.querySelectorAll('.pill-btn').forEach(btn => {
+      // Skip the Custom button — it has its own handler
+      if (btn.id === 'customRangeBtn') return;
+      btn.addEventListener('click', () => {
+        group.querySelectorAll('.pill-btn').forEach(b => {
+          b.classList.remove('active');
+          b.classList.remove('pill-btn--custom-active');
+        });
+        // Reset Custom button text if a preset is clicked
+        const customBtn = document.getElementById('customRangeBtn');
+        if (customBtn) customBtn.textContent = 'Custom';
+        // Close date picker if open
+        document.getElementById('datePicker')?.classList.remove('open');
+
+        btn.classList.add('active');
+        if (btn.dataset.range) {
+          currentRange = btn.dataset.range;
+          const days = { '7d': '7', '14d': '14', '30d': '30', '90d': '90' }[currentRange] || '30';
+          const ctx = document.getElementById('perfContext');
+          if (ctx) ctx.textContent = `\u2014 4 campaigns, ${days} days`;
+          buildChart();
+          updateTable(currentRange);
+          showToast(`Showing ${btn.textContent.trim()} data`, 'info');
+        }
+        if (btn.dataset.filter) filterCampaigns(btn.dataset.filter);
+      });
+    });
+  });
+
+  function filterCampaigns(filter) {
+    document.querySelectorAll('#campaignsTable tbody tr').forEach(row => {
+      // Skip score breakdown rows — they're controlled by score click only
+      if (row.classList.contains('score-breakdown-row')) return;
+      if (row.classList.contains('totals-row')) return;
+      if (filter === 'all') { row.style.display = ''; return; }
+      const status = row.dataset.status;
+      row.style.display = (status === filter) ? '' : 'none';
+      // Also hide the associated breakdown row
+      const next = row.nextElementSibling;
+      if (next && next.classList.contains('score-breakdown-row') && status !== filter) {
+        next.style.display = 'none';
+      }
+    });
+  }
+
+  // Approve/Decline
+  document.querySelectorAll('[data-action="approve"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const item = btn.closest('.act-item') || btn.closest('.acct-rec');
+      if (item) { item.style.opacity = '0.4'; item.style.pointerEvents = 'none'; }
+      showToast('Approved — change will be applied in next cycle', 'success');
+    });
+  });
+
+  document.querySelectorAll('[data-action="decline"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const item = btn.closest('.act-item') || btn.closest('.acct-rec');
+      if (item) { item.style.opacity = '0.4'; item.style.pointerEvents = 'none'; }
+      showToast('Declined — no changes will be made', 'info');
+    });
+  });
+
+  document.querySelectorAll('[data-action="undo"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const item = btn.closest('.act-item');
+      if (item) { item.style.opacity = '0.4'; item.style.pointerEvents = 'none'; }
+      showToast('Undo queued — will be reverted in next cycle', 'warning');
+    });
+  });
+
+  // Slide-in for View Details
+  const slideinOverlay = document.getElementById('slideinOverlay');
+  const slideinPanel = document.getElementById('slideinPanel');
+  const slideinBody = document.getElementById('slideinBody');
+
+  document.querySelectorAll('[data-action="details"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const item = btn.closest('.act-item');
+      if (!item || !slideinPanel || !slideinBody) return;
+      const summary = item.querySelector('.act-item__summary')?.innerHTML || '';
+      const badges = item.querySelector('.act-item__top')?.innerHTML || '';
+      const detailData = item.dataset.details ? JSON.parse(item.dataset.details) : null;
+      let html = `<div style="margin-bottom:12px">${badges}</div><div style="font-size:14px;line-height:1.6;margin-bottom:16px">${summary}</div>`;
+      if (detailData) {
+        html += '<dl class="act-detail-grid">';
+        for (const [key, val] of Object.entries(detailData)) html += `<dt>${key}</dt><dd>${val}</dd>`;
+        html += '</dl>';
+      }
+      slideinBody.innerHTML = html;
+      slideinOverlay?.classList.add('open');
+      slideinPanel?.classList.add('open');
+    });
+  });
+
+  window.closeSlidein = function() { slideinOverlay?.classList.remove('open'); slideinPanel?.classList.remove('open'); };
+  slideinOverlay?.addEventListener('click', closeSlidein);
+  document.getElementById('slideinClose')?.addEventListener('click', closeSlidein);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSlidein(); });
+
+  // -------------------------------------------------------------------------
+  // v9: PERFORMANCE TIMELINE CHART — multi-range data
+  // -------------------------------------------------------------------------
+  let currentRange = '30d';
+
+  // Generate date labels
+  function makeDailyLabels(days) {
+    const labels = [];
+    const d = new Date(2026, 3, 6); // 6 Apr 2026
+    for (let i = days - 1; i >= 0; i--) {
+      const dt = new Date(d); dt.setDate(d.getDate() - i);
+      labels.push(dt.getDate() + ' ' + ['Jan','Feb','Mar','Apr','May'][dt.getMonth()]);
+    }
+    return labels;
+  }
+  function makeWeeklyLabels(weeks) {
+    const labels = [];
+    const d = new Date(2026, 3, 6);
+    for (let i = weeks - 1; i >= 0; i--) {
+      const dt = new Date(d); dt.setDate(d.getDate() - i * 7);
+      labels.push(dt.getDate() + ' ' + ['Jan','Feb','Mar','Apr','May'][dt.getMonth()]);
+    }
+    return labels;
+  }
+
+  // Seeded random for consistent data
+  function seededData(base, variance, count, round) {
+    const data = [];
+    let v = base;
+    for (let i = 0; i < count; i++) {
+      v = base + (Math.sin(i * 1.7 + base * 0.1) * variance);
+      data.push(round ? Math.round(v) : Math.round(v * 100) / 100);
+    }
+    return data;
+  }
+
+  const METRIC_DEFS = {
+    cost:        { label: 'Cost',               prefix: '£', suffix: '' },
+    impressions: { label: 'Impressions',         prefix: '',  suffix: '' },
+    clicks:      { label: 'Clicks',              prefix: '',  suffix: '' },
+    avgCpc:      { label: 'Avg CPC',             prefix: '£', suffix: '' },
+    ctr:         { label: 'CTR',                 prefix: '',  suffix: '%' },
+    conversions: { label: 'Conversions',         prefix: '',  suffix: '' },
+    cpa:         { label: 'CPA',                 prefix: '£', suffix: '' },
+    convRate:    { label: 'Conv Rate',           prefix: '',  suffix: '%' },
+    score:       { label: 'Performance Score',   prefix: '',  suffix: '' },
+    budgetUtil:  { label: 'Budget Util %',       prefix: '',  suffix: '%' },
+  };
+
+  function getChartData(range) {
+    if (range === '90d') {
+      // 90d = 13 weekly points, aggregated (sums for volume, averages for rates)
+      const n = 13;
+      const labels = makeWeeklyLabels(n);
+      const dailyCost = seededData(27, 8, 91, true);
+      const dailyImpr = seededData(620, 120, 91, true);
+      const dailyClicks = seededData(43, 10, 91, true);
+      const dailyConv = seededData(1.4, 0.8, 91, true);
+      const dailyCpc = seededData(0.63, 0.12, 91, false);
+      const dailyCtr = seededData(6.9, 0.8, 91, false);
+      const dailyCpa = seededData(19.5, 5, 91, false);
+      const dailyCvr = seededData(3.3, 0.6, 91, false);
+      const dailyScore = seededData(78, 12, 91, true);
+      const dailyUtil = seededData(90, 8, 91, true);
+
+      function weeklySum(arr) { const r = []; for (let w = 0; w < n; w++) { let s = 0; for (let d = 0; d < 7 && w*7+d < arr.length; d++) s += arr[w*7+d]; r.push(Math.round(s)); } return r; }
+      function weeklyAvg(arr) { const r = []; for (let w = 0; w < n; w++) { let s = 0, c = 0; for (let d = 0; d < 7 && w*7+d < arr.length; d++) { s += arr[w*7+d]; c++; } r.push(Math.round(s/c*100)/100); } return r; }
+
+      return {
+        labels,
+        metrics: {
+          cost: weeklySum(dailyCost), impressions: weeklySum(dailyImpr),
+          clicks: weeklySum(dailyClicks), conversions: weeklySum(dailyConv),
+          avgCpc: weeklyAvg(dailyCpc), ctr: weeklyAvg(dailyCtr),
+          cpa: weeklyAvg(dailyCpa), convRate: weeklyAvg(dailyCvr),
+          score: weeklyAvg(dailyScore), budgetUtil: weeklyAvg(dailyUtil),
+        }
+      };
+    }
+    // 7d, 14d, or 30d = daily points
+    const n = range === '7d' ? 7 : range === '14d' ? 14 : 30;
+    const labels = makeDailyLabels(n);
+    return {
+      labels,
+      metrics: {
+        cost:        seededData(27, 8, n, true),
+        impressions: seededData(620, 120, n, true),
+        clicks:      seededData(43, 10, n, true),
+        avgCpc:      seededData(0.63, 0.12, n, false),
+        ctr:         seededData(6.9, 0.8, n, false),
+        conversions: seededData(1.4, 0.8, n, true),
+        cpa:         seededData(19.5, 5, n, false),
+        convRate:    seededData(3.3, 0.6, n, false),
+        score:       seededData(78, 12, n, true),
+        budgetUtil:  seededData(90, 8, n, true),
+      }
+    };
+  }
+
+  // ── TABLE DATA PER DATE RANGE (v11: added 14d) ──
+  const TABLE_DATA = {
+    '7d': [
+      { name: 'GLO Campaign — Core',     role: 'cp', status: 'enabled', budget: '£30/d', share: '60%', cost: '£125.40', impr: '2,680', clicks: '192', cpc: '£0.65', ctr: '7.16%', conv: '7', costconv: '£17.91', cvr: '3.65%', score: '82' },
+      { name: 'GLO Campaign — Retargeting', role: 'rt', status: 'enabled', budget: '£10/d', share: '20%', cost: '£41.80', impr: '810', clicks: '62', cpc: '£0.67', ctr: '7.65%', conv: '3', costconv: '£13.93', cvr: '4.84%', score: '91' },
+      { name: 'Brand — Objection Experts', role: 'bd', status: 'enabled', budget: '£5/d', share: '10%', cost: '£17.50', impr: '720', clicks: '50', cpc: '£0.35', ctr: '6.94%', conv: '1', costconv: '£17.50', cvr: '2.00%', score: '95' },
+      { name: 'Testing — New Keywords',   role: 'ts', status: 'enabled', budget: '£5/d', share: '10%', cost: '£26.30', impr: '390', clicks: '16', cpc: '£1.64', ctr: '4.10%', conv: '0', costconv: '—', cvr: '0.00%', score: '38' },
+    ],
+    '14d': [
+      { name: 'GLO Campaign — Core',     role: 'cp', status: 'enabled', budget: '£30/d', share: '60%', cost: '£248.60', impr: '5,280', clicks: '382', cpc: '£0.65', ctr: '7.23%', conv: '13', costconv: '£19.12', cvr: '3.40%', score: '82' },
+      { name: 'GLO Campaign — Retargeting', role: 'rt', status: 'enabled', budget: '£10/d', share: '20%', cost: '£82.80', impr: '1,580', clicks: '122', cpc: '£0.68', ctr: '7.72%', conv: '6', costconv: '£13.80', cvr: '4.92%', score: '91' },
+      { name: 'Brand — Objection Experts', role: 'bd', status: 'enabled', budget: '£5/d', share: '10%', cost: '£34.50', impr: '1,420', clicks: '98', cpc: '£0.35', ctr: '6.90%', conv: '2', costconv: '£17.25', cvr: '2.04%', score: '95' },
+      { name: 'Testing — New Keywords',   role: 'ts', status: 'enabled', budget: '£5/d', share: '10%', cost: '£51.80', impr: '780', clicks: '32', cpc: '£1.62', ctr: '4.10%', conv: '0', costconv: '—', cvr: '0.00%', score: '38' },
+    ],
+    '30d': [
+      { name: 'GLO Campaign — Core',     role: 'cp', status: 'enabled', budget: '£30/d', share: '60%', cost: '£487.20', impr: '10,850', clicks: '780', cpc: '£0.62', ctr: '7.19%', conv: '26', costconv: '£18.74', cvr: '3.33%', score: '82' },
+      { name: 'GLO Campaign — Retargeting', role: 'rt', status: 'enabled', budget: '£10/d', share: '20%', cost: '£164.40', impr: '3,200', clicks: '245', cpc: '£0.67', ctr: '7.66%', conv: '12', costconv: '£13.70', cvr: '4.90%', score: '91' },
+      { name: 'Brand — Objection Experts', role: 'bd', status: 'enabled', budget: '£5/d', share: '10%', cost: '£68.50', impr: '2,800', clicks: '195', cpc: '£0.35', ctr: '6.96%', conv: '3', costconv: '£22.83', cvr: '1.54%', score: '95' },
+      { name: 'Testing — New Keywords',   role: 'ts', status: 'enabled', budget: '£5/d', share: '10%', cost: '£102.90', impr: '1,570', clicks: '64', cpc: '£1.61', ctr: '4.08%', conv: '1', costconv: '£102.90', cvr: '1.56%', score: '38' },
+    ],
+    '90d': [
+      { name: 'GLO Campaign — Core',     role: 'cp', status: 'enabled', budget: '£30/d', share: '60%', cost: '£1,461.60', impr: '32,550', clicks: '2,340', cpc: '£0.62', ctr: '7.19%', conv: '78', costconv: '£18.74', cvr: '3.33%', score: '82' },
+      { name: 'GLO Campaign — Retargeting', role: 'rt', status: 'enabled', budget: '£10/d', share: '20%', cost: '£493.20', impr: '9,600', clicks: '735', cpc: '£0.67', ctr: '7.66%', conv: '36', costconv: '£13.70', cvr: '4.90%', score: '91' },
+      { name: 'Brand — Objection Experts', role: 'bd', status: 'enabled', budget: '£5/d', share: '10%', cost: '£205.50', impr: '8,400', clicks: '585', cpc: '£0.35', ctr: '6.96%', conv: '9', costconv: '£22.83', cvr: '1.54%', score: '95' },
+      { name: 'Testing — New Keywords',   role: 'ts', status: 'enabled', budget: '£5/d', share: '10%', cost: '£308.70', impr: '4,710', clicks: '192', cpc: '£1.61', ctr: '4.08%', conv: '3', costconv: '£102.90', cvr: '1.56%', score: '38' },
+    ]
+  };
+
+  const SUMMARY_DATA = {
+    '7d':  { cost: '£211', impr: '4,600', clicks: '320', cpc: '£0.66', ctr: '6.96%', conv: '11', cpa: '£19.18', cvr: '3.44%', costChg: '↑ 8%', imprChg: '↑ 12%', clicksChg: '↑ 5%', cpcChg: '↓ 3%', ctrChg: '↑ 4%', convChg: '↑ 15%', cpaChg: '↓ 6%', cvrChg: '↑ 9%' },
+    '14d': { cost: '£418', impr: '9,060', clicks: '634', cpc: '£0.66', ctr: '7.00%', conv: '21', cpa: '£19.90', cvr: '3.31%', costChg: '↑ 7%', imprChg: '↑ 10%', clicksChg: '↑ 4%', cpcChg: '↓ 2%', ctrChg: '↑ 3%', convChg: '↑ 12%', cpaChg: '↓ 5%', cvrChg: '↑ 7%' },
+    '30d': { cost: '£823', impr: '18,420', clicks: '1,284', cpc: '£0.64', ctr: '6.97%', conv: '42', cpa: '£19.60', cvr: '3.27%', costChg: '↑ 8%', imprChg: '↑ 12%', clicksChg: '↑ 5%', cpcChg: '↓ 3%', ctrChg: '↑ 4%', convChg: '↑ 15%', cpaChg: '↓ 6%', cvrChg: '↑ 9%' },
+    '90d': { cost: '£2,469', impr: '55,260', clicks: '3,852', cpc: '£0.64', ctr: '6.97%', conv: '126', cpa: '£19.60', cvr: '3.27%', costChg: '↑ 11%', imprChg: '↑ 14%', clicksChg: '↑ 8%', cpcChg: '↓ 2%', ctrChg: '↑ 5%', convChg: '↑ 18%', cpaChg: '↓ 8%', cvrChg: '↑ 12%' },
+  };
+
+  function updateTable(range) {
+    const rows = TABLE_DATA[range];
+    const tbody = document.querySelector('#campaignsTable tbody');
+    if (!tbody || !rows) return;
+
+    // Remove existing data rows and breakdown rows (keep structure)
+    tbody.querySelectorAll('tr').forEach(r => r.remove());
+
+    const scoreClasses = { '82': 'score--high', '91': 'score--high', '95': 'score--high', '38': 'score--low' };
+
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.dataset.status = r.status;
+      tr.innerHTML = `
+        <td><span class="status-dot status-dot--${r.status}"></span></td>
+        <td><strong>${r.name}</strong></td>
+        <td><span class="role-badge role-badge--${r.role}">${r.role.toUpperCase()}</span></td>
+        <td class="num">${r.budget}</td><td class="num">${r.share}</td>
+        <td class="num">${r.cost}</td><td class="num">${r.impr}</td><td class="num">${r.clicks}</td>
+        <td class="num">${r.cpc}</td><td class="num">${r.ctr}</td><td class="num">${r.conv}</td>
+        <td class="num">${r.costconv}</td><td class="num">${r.cvr}</td>
+        <td class="num"><span class="score-display ${scoreClasses[r.score] || 'score--mid'}">${r.score}</span></td>`;
+      tbody.appendChild(tr);
+    });
+
+    // Totals row
+    const totals = document.createElement('tr');
+    totals.className = 'totals-row';
+    const s = SUMMARY_DATA[range];
+    totals.innerHTML = `<td></td><td>Total / Average</td><td></td>
+      <td class="num">£50/d</td><td class="num">100%</td>
+      <td class="num">${s.cost}</td><td class="num">${s.impr}</td><td class="num">${s.clicks}</td>
+      <td class="num">${s.cpc}</td><td class="num">—</td><td class="num">${s.conv}</td>
+      <td class="num">${s.cpa}</td><td class="num">${s.cvr}</td><td class="num">—</td>`;
+    tbody.appendChild(totals);
+
+    // Update summary cards — v11: 8 cards (added CTR)
+    const cards = document.querySelectorAll('.perf-inner .summary-card');
+    const vals = [s.cost, s.impr, s.clicks, s.cpc, s.ctr, s.conv, s.cpa, s.cvr];
+    const chgs = [s.costChg, s.imprChg, s.clicksChg, s.cpcChg, s.ctrChg, s.convChg, s.cpaChg, s.cvrChg];
+    cards.forEach((card, i) => {
+      if (vals[i]) card.querySelector('.summary-card__value').textContent = vals[i];
+      if (chgs[i]) {
+        const chgEl = card.querySelector('.summary-card__change');
+        chgEl.textContent = chgs[i];
+        chgEl.className = 'summary-card__change summary-card__change--' + (chgs[i].startsWith('↑') ? 'up' : chgs[i].startsWith('↓') ? 'down' : 'flat');
+      }
+    });
+  }
+
+  const chartCanvas = document.getElementById('performanceChart');
+  let perfChart = null;
+
+  function isDark() { return document.documentElement.getAttribute('data-theme') === 'dark'; }
+
+  function getChartColors() {
+    const dark = isDark();
+    return {
+      line1: '#3b82f6',
+      line2: '#10b981',
+      fill1: dark ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.08)',
+      fill2: dark ? 'rgba(16,185,129,0.08)' : 'rgba(16,185,129,0.08)',
+      grid: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+      text: dark ? '#ffffff' : '#000000',
+      border: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+    };
+  }
+
+  function buildChart() {
+    if (!chartCanvas) return;
+    const m1Key = document.getElementById('chartMetric1').value;
+    const m2Key = document.getElementById('chartMetric2').value;
+    const m1Def = METRIC_DEFS[m1Key];
+    const m2Def = METRIC_DEFS[m2Key];
+    const chartData = getChartData(currentRange);
+    const m1Data = chartData.metrics[m1Key];
+    const m2Data = chartData.metrics[m2Key];
+    const c = getChartColors();
+
+    if (perfChart) perfChart.destroy();
+
+    perfChart = new Chart(chartCanvas, {
+      type: 'line',
+      data: {
+        labels: chartData.labels,
+        datasets: [
+          // v11: no fill
+          {
+            label: m1Def.label,
+            data: m1Data,
+            borderColor: c.line1,
+            fill: false,
+            tension: 0,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            pointBackgroundColor: c.line1,
+            pointBorderColor: c.line1,
+            borderWidth: 2,
+            yAxisID: 'y1',
+          },
+          {
+            label: m2Def.label,
+            data: m2Data,
+            borderColor: c.line2,
+            fill: false,
+            tension: 0,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            pointBackgroundColor: c.line2,
+            pointBorderColor: c.line2,
+            borderWidth: 2,
+            yAxisID: 'y2',
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: isDark() ? '#1e293b' : '#ffffff',
+            titleColor: c.text,
+            bodyColor: c.text,
+            borderColor: c.border,
+            borderWidth: 1,
+            padding: 10,
+            callbacks: {
+              title: function(items) { return items[0]?.label || ''; },
+              label: function(ctx) {
+                const def = ctx.datasetIndex === 0 ? m1Def : m2Def;
+                return `${def.label}: ${def.prefix}${ctx.parsed.y}${def.suffix}`;
+              }
+            }
+          }
+        },
+        scales: {
+          // v11: no vertical gridlines
+          x: {
+            grid: { display: false },
+            ticks: { color: c.text, font: { size: 12 }, maxRotation: 0, autoSkipPadding: 12 },
+            border: { color: c.border }
+          },
+          y1: {
+            position: 'left',
+            title: { display: true, text: m1Def.label, color: c.line1, font: { size: 12, weight: 600 } },
+            grid: { color: c.grid },
+            ticks: {
+              color: c.text, font: { size: 12 },
+              callback: function(v) { return m1Def.prefix + v + m1Def.suffix; }
+            },
+            border: { color: c.border }
+          },
+          y2: {
+            position: 'right',
+            title: { display: true, text: m2Def.label, color: c.line2, font: { size: 12, weight: 600 } },
+            grid: { drawOnChartArea: false },
+            ticks: {
+              color: c.text, font: { size: 12 },
+              callback: function(v) { return m2Def.prefix + v + m2Def.suffix; }
+            },
+            border: { color: c.border }
+          }
+        }
+      }
+    });
+  }
+
+  // Build on load
+  buildChart();
+
+  // Rebuild on metric change
+  document.getElementById('chartMetric1')?.addEventListener('change', buildChart);
+  document.getElementById('chartMetric2')?.addEventListener('change', buildChart);
+
+  // Rebuild on theme change to update colours
+  const origThemeClick = themeToggle?.onclick;
+  if (themeToggle) {
+    const existingListeners = themeToggle.cloneNode(true);
+    // Watch for data-theme attribute change instead
+    new MutationObserver(() => { setTimeout(buildChart, 50); })
+      .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  }
+
+  // Toast
+  function showToast(message, type = 'info') {
+    document.querySelectorAll('.act-toast').forEach(t => t.remove());
+    const toast = document.createElement('div');
+    toast.className = `act-toast act-toast--${type}`;
+    toast.innerHTML = `<span class="material-symbols-outlined" style="font-size:18px">${
+      type === 'success' ? 'check_circle' : type === 'warning' ? 'undo' : type === 'error' ? 'error' : 'info'
+    }</span>${message}`;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => { requestAnimationFrame(() => toast.classList.add('show')); });
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // v11: CALENDAR DATE PICKER
+  // ═════════════════════════════════════════════════════════════════════════
+
+  const dpEl       = document.getElementById('datePicker');
+  const dpLeftCal  = document.getElementById('dpLeftCal');
+  const dpRightCal = document.getElementById('dpRightCal');
+  const dpLeftLbl  = document.getElementById('dpLeftLabel');
+  const dpRightLbl = document.getElementById('dpRightLabel');
+  const dpRangeText = document.getElementById('dpRangeText');
+  const dpApply    = document.getElementById('dpApply');
+  const dpCancel   = document.getElementById('dpCancel');
+  const customBtn  = document.getElementById('customRangeBtn');
+
+  if (dpEl && customBtn) {
+    const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const DAY_HDRS = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+    const today = new Date(2026, 3, 6); // 6 Apr 2026 (prototype date)
+
+    let viewMonth = new Date(2026, 2, 1); // left calendar starts Mar 2026
+    let rangeStart = null;
+    let rangeEnd = null;
+
+    function fmtDate(d) {
+      return d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0, 3);
+    }
+    function sameDay(a, b) {
+      return a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    }
+    function inRange(d) {
+      if (!rangeStart || !rangeEnd) return false;
+      return d > rangeStart && d < rangeEnd;
+    }
+
+    function renderCal(container, year, month) {
+      const firstDay = new Date(year, month, 1);
+      let startWeekday = firstDay.getDay(); // 0=Sun
+      if (startWeekday === 0) startWeekday = 7; // make Mon=1
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      let html = '<table><thead><tr>' + DAY_HDRS.map(d => `<th>${d}</th>`).join('') + '</tr></thead><tbody><tr>';
+
+      // Padding before first day
+      for (let p = 1; p < startWeekday; p++) html += '<td></td>';
+
+      let dayOfWeek = startWeekday;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dt = new Date(year, month, d);
+        const isToday = sameDay(dt, today);
+        const isStart = sameDay(dt, rangeStart);
+        const isEnd = sameDay(dt, rangeEnd);
+        const isInRange = inRange(dt);
+
+        let cls = 'date-picker__day';
+        if (isToday) cls += ' date-picker__day--today';
+        if (isStart) cls += ' date-picker__day--start';
+        if (isEnd) cls += ' date-picker__day--end';
+        if (isInRange) cls += ' date-picker__day--in-range';
+
+        html += `<td><span class="${cls}" data-date="${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}">${d}</span></td>`;
+
+        if (dayOfWeek === 7 && d < daysInMonth) { html += '</tr><tr>'; dayOfWeek = 0; }
+        dayOfWeek++;
+      }
+      // Pad end of last row
+      while (dayOfWeek <= 7 && dayOfWeek > 1) { html += '<td></td>'; dayOfWeek++; }
+      html += '</tr></tbody></table>';
+      container.innerHTML = html;
+
+      // Bind clicks on day cells
+      container.querySelectorAll('.date-picker__day').forEach(el => {
+        el.addEventListener('click', () => onDayClick(el.dataset.date));
+      });
+    }
+
+    function renderBoth() {
+      const leftY = viewMonth.getFullYear(), leftM = viewMonth.getMonth();
+      const rightM = leftM + 1;
+      const rightY = rightM > 11 ? leftY + 1 : leftY;
+      dpLeftLbl.textContent = `${MONTHS[leftM]} ${leftY}`;
+      dpRightLbl.textContent = `${MONTHS[rightM % 12]} ${rightY}`;
+      renderCal(dpLeftCal, leftY, leftM);
+      renderCal(dpRightCal, rightY, rightM % 12);
+      updateRangeText();
+    }
+
+    function clearPresetHighlight() {
+      document.querySelectorAll('.dp-preset').forEach(p => p.classList.remove('active'));
+    }
+
+    function onDayClick(dateStr) {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const clicked = new Date(y, m - 1, d);
+      clearPresetHighlight(); // manual click clears preset selection
+      if (!rangeStart || (rangeStart && rangeEnd)) {
+        rangeStart = clicked;
+        rangeEnd = null;
+        dpApply.disabled = true;
+      } else {
+        if (clicked < rangeStart) {
+          rangeEnd = rangeStart;
+          rangeStart = clicked;
+        } else {
+          rangeEnd = clicked;
+        }
+        dpApply.disabled = false;
+      }
+      renderBoth();
+    }
+
+    function updateRangeText() {
+      if (rangeStart && rangeEnd) {
+        dpRangeText.textContent = `${fmtDate(rangeStart)} \u2014 ${fmtDate(rangeEnd)}`;
+      } else if (rangeStart) {
+        dpRangeText.textContent = `${fmtDate(rangeStart)} \u2014 select end date`;
+      } else {
+        dpRangeText.textContent = 'Select start and end dates';
+      }
+    }
+
+    // ── Preset date ranges ──────────────────────────────────────────────
+    // Prototype date is 6 Apr 2026 (Sunday)
+    const PRESETS = {
+      today:       () => [new Date(2026,3,6), new Date(2026,3,6)],
+      yesterday:   () => [new Date(2026,3,5), new Date(2026,3,5)],
+      thisWeek:    () => [new Date(2026,3,6 - 6), new Date(2026,3,6)], // Mon 30 Mar → Sun 6 Apr
+      lastWeek:    () => [new Date(2026,2,23), new Date(2026,2,29)], // Mon 23 Mar → Sun 29 Mar
+      thisMonth:   () => [new Date(2026,3,1), new Date(2026,3,6)], // 1 Apr → 6 Apr
+      lastMonth:   () => [new Date(2026,2,1), new Date(2026,2,31)], // 1 Mar → 31 Mar
+      thisQuarter: () => [new Date(2026,3,1), new Date(2026,3,6)], // Q2 starts 1 Apr
+      lastQuarter: () => [new Date(2026,0,1), new Date(2026,2,31)], // Q1: 1 Jan → 31 Mar
+      thisYear:    () => [new Date(2026,0,1), new Date(2026,3,6)], // 1 Jan → 6 Apr
+    };
+
+    function applyPreset(key) {
+      const [start, end] = PRESETS[key]();
+      rangeStart = start;
+      rangeEnd = end;
+      dpApply.disabled = false;
+      clearPresetHighlight();
+      const btn = document.querySelector(`.dp-preset[data-preset="${key}"]`);
+      if (btn) btn.classList.add('active');
+      // Navigate calendars so the range is visible
+      viewMonth = new Date(start.getFullYear(), start.getMonth(), 1);
+      renderBoth();
+    }
+
+    document.querySelectorAll('.dp-preset').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        applyPreset(btn.dataset.preset);
+      });
+    });
+
+    // Open picker
+    customBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = dpEl.classList.contains('open');
+      if (isOpen) {
+        dpEl.classList.remove('open');
+      } else {
+        // Deactivate all preset pills
+        document.querySelectorAll('#dateRangePills .pill-btn').forEach(b => b.classList.remove('active'));
+        customBtn.classList.add('active');
+        renderBoth();
+        dpEl.classList.add('open');
+      }
+    });
+
+    // Navigate months
+    document.getElementById('dpPrevMonth').addEventListener('click', (e) => {
+      e.stopPropagation();
+      viewMonth.setMonth(viewMonth.getMonth() - 1);
+      renderBoth();
+    });
+    document.getElementById('dpNextMonth').addEventListener('click', (e) => {
+      e.stopPropagation();
+      viewMonth.setMonth(viewMonth.getMonth() + 1);
+      renderBoth();
+    });
+
+    // Apply
+    dpApply.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!rangeStart || !rangeEnd) return;
+      dpEl.classList.remove('open');
+      // Show range in the Custom pill
+      const label = `${fmtDate(rangeStart)} \u2014 ${fmtDate(rangeEnd)}`;
+      customBtn.textContent = label;
+      customBtn.classList.add('active', 'pill-btn--custom-active');
+      // Calculate days
+      const diffDays = Math.round((rangeEnd - rangeStart) / (1000 * 60 * 60 * 24));
+      const ctx = document.getElementById('perfContext');
+      if (ctx) ctx.textContent = `\u2014 4 campaigns, ${diffDays} days (custom)`;
+      // Use 30d data as proxy for custom ranges
+      currentRange = '30d';
+      buildChart();
+      updateTable('30d');
+      showToast(`Custom range: ${label}`, 'info');
+    });
+
+    // Cancel
+    dpCancel.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dpEl.classList.remove('open');
+      // Re-activate the last preset
+      if (!customBtn.classList.contains('pill-btn--custom-active')) {
+        const defaultPill = document.querySelector('#dateRangePills [data-range="30d"]');
+        if (defaultPill) defaultPill.classList.add('active');
+        customBtn.classList.remove('active');
+      }
+    });
+
+    // Close picker when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!dpEl.contains(e.target) && e.target !== customBtn) {
+        dpEl.classList.remove('open');
+      }
+    });
+
+    // Prevent picker clicks from bubbling to document click-outside handler
+    dpEl.addEventListener('click', (e) => e.stopPropagation());
+  }
+
+});
