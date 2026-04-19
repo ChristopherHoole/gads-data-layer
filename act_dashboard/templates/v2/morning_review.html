@@ -92,7 +92,7 @@
         <div class="act-group__header"><span class="material-symbols-outlined">expand_more</span>{{ level_badge(level) }}<span class="act-group__count">{{ recs|length }}</span></div>
         <div class="act-group__body">
           {% for rec in recs %}
-          <div class="act-item" data-rec-id="{{ rec.id }}" data-priority="{{ rec.action_category }}" data-risk="{{ rec.risk_level }}" data-details='{{ rec.decision_tree|tojson if rec.decision_tree else "{}" }}'>
+          <div class="act-item" data-rec-id="{{ rec.id }}" data-priority="{{ rec.action_category }}" data-risk="{{ rec.risk_level }}" data-action-category="{{ rec.action_category }}" data-entity-name="{{ rec.entity_name }}" data-level="{{ rec.level }}" data-summary="{{ rec.summary|e }}" data-recommendation-text="{{ (rec.recommendation_text or '')|e }}" data-estimated-impact="{{ (rec.estimated_impact or '')|e }}" data-current-value='{{ (rec.current_value|tojson if rec.current_value else "{}")|e }}' data-proposed-value='{{ (rec.proposed_value|tojson if rec.proposed_value else "{}")|e }}' data-decision-tree='{{ (rec.decision_tree|tojson if rec.decision_tree else "{}")|e }}'>
             <div class="act-item__row">
               <div class="act-item__check"><input type="checkbox" class="form-check-input"></div>
               <div class="act-item__content">
@@ -269,15 +269,11 @@
 </section>
 
 {# ---- Slide-in panel ---- #}
-<div class="act-slidein-overlay" id="slideinOverlay"></div>
-<div class="act-slidein" id="slideinPanel">
-  <div class="act-slidein__header"><h3 id="slideinTitle">Decision Details</h3><button class="act-slidein__close" id="slideinClose"><span class="material-symbols-outlined">close</span></button></div>
-  <div class="act-slidein__body" id="slideinBody"></div>
-  <div class="act-slidein__footer" id="slideinFooter"></div>
-</div>
+{% include 'v2/_decision_details.html' %}
 
 {% endblock %}
 
 {% block page_js %}
+<script src="{{ url_for('static', filename='js/v2_decision_details.js') }}"></script>
 <script src="{{ url_for('static', filename='js/v2_morning_review.js') }}"></script>
 {% endblock %}

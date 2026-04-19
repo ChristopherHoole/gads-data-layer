@@ -87,7 +87,8 @@ def morning_review():
         rec_rows = con.execute(f"""
             SELECT r.recommendation_id, r.client_id, r.level, r.entity_name,
                    r.action_category, r.risk_level, r.summary, r.recommendation_text,
-                   r.estimated_impact, r.decision_tree_json, r.identified_at
+                   r.estimated_impact, r.decision_tree_json, r.identified_at,
+                   r.current_value_json, r.proposed_value_json
             FROM act_v2_recommendations r
             WHERE r.status = 'pending' {client_clause}
             ORDER BY r.identified_at DESC
@@ -108,6 +109,8 @@ def morning_review():
                 'estimated_impact': r[8],
                 'decision_tree': _parse_json(r[9]),
                 'identified_at': r[10],
+                'current_value': _parse_json(r[11]),
+                'proposed_value': _parse_json(r[12]),
             })
 
         # Group by level

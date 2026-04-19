@@ -296,7 +296,7 @@
   <div class="act-section__body" style="padding:0">
     {% if awaiting_approval %}
       {% for rec in awaiting_approval %}
-      <div class="act-item" data-rec-id="{{ rec.id }}" data-entity-name="{{ rec.entity_name }}" data-risk="{{ rec.risk_level }}" data-action-category="{{ rec.action_category }}" data-summary="{{ rec.summary|e }}" data-recommendation-text="{{ (rec.recommendation_text or '')|e }}" data-estimated-impact="{{ (rec.estimated_impact or '')|e }}" data-current-value='{{ (rec.current_value|tojson if rec.current_value else "{}")|e }}' data-proposed-value='{{ (rec.proposed_value|tojson if rec.proposed_value else "{}")|e }}' data-decision-tree='{{ (rec.decision_tree|tojson if rec.decision_tree else "{}")|e }}'>
+      <div class="act-item" data-rec-id="{{ rec.id }}" data-entity-name="{{ rec.entity_name }}" data-level="account" data-risk="{{ rec.risk_level }}" data-action-category="{{ rec.action_category }}" data-summary="{{ rec.summary|e }}" data-recommendation-text="{{ (rec.recommendation_text or '')|e }}" data-estimated-impact="{{ (rec.estimated_impact or '')|e }}" data-current-value='{{ (rec.current_value|tojson if rec.current_value else "{}")|e }}' data-proposed-value='{{ (rec.proposed_value|tojson if rec.proposed_value else "{}")|e }}' data-decision-tree='{{ (rec.decision_tree|tojson if rec.decision_tree else "{}")|e }}'>
         <div class="act-item__row">
           <div class="act-item__content">
             <div class="act-item__top">
@@ -486,16 +486,7 @@
   </div>
 </div>
 
-<!-- Slide-in panel -->
-<div class="act-slidein-overlay" id="slideinOverlay"></div>
-<div class="act-slidein" id="slideinPanel">
-  <div class="act-slidein__header">
-    <h3 id="slideinTitle">Decision Details</h3>
-    <button class="act-slidein__close" id="slideinClose"><span class="material-symbols-outlined">close</span></button>
-  </div>
-  <div class="act-slidein__body" id="slideinBody"></div>
-  <div class="act-slidein__footer" id="slideinFooter"></div>
-</div>
+{% include 'v2/_decision_details.html' %}
 
 <!-- Chart data for JS -->
 <script>
@@ -506,5 +497,6 @@
 
 {% block page_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/v2_decision_details.js') }}"></script>
 <script src="{{ url_for('static', filename='js/v2_account_level.js') }}"></script>
 {% endblock %}

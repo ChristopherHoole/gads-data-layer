@@ -154,43 +154,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // --- Slide-in panel ---
-  const slideinOverlay = document.getElementById('slideinOverlay');
-  const slideinPanel = document.getElementById('slideinPanel');
-  const slideinBody = document.getElementById('slideinBody');
-  const slideinFooter = document.getElementById('slideinFooter');
-
-  document.querySelectorAll('[data-action="details"]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const item = btn.closest('.act-item');
-      if (!item || !slideinPanel || !slideinBody) return;
-      const summary = item.querySelector('.act-item__summary')?.innerHTML || '';
-      const badges = item.querySelector('.act-item__top')?.innerHTML || '';
-      const decisionTree = item.dataset.details ? JSON.parse(item.dataset.details) : null;
-      let html = '<div style="margin-bottom:12px">' + badges + '</div>';
-      html += '<div style="font-size:14px;line-height:1.6;margin-bottom:16px">' + summary + '</div>';
-      if (decisionTree) {
-        html += '<dl class="act-detail-grid">';
-        for (const [key, val] of Object.entries(decisionTree)) {
-          html += '<dt>' + key + '</dt><dd>' + val + '</dd>';
-        }
-        html += '</dl>';
-      }
-      slideinBody.innerHTML = html;
-      if (slideinFooter) slideinFooter.innerHTML = '';
-      slideinOverlay?.classList.add('open');
-      slideinPanel?.classList.add('open');
-    });
-  });
-
-  window.closeSlidein = function() {
-    slideinOverlay?.classList.remove('open');
-    slideinPanel?.classList.remove('open');
-  };
-  slideinOverlay?.addEventListener('click', closeSlidein);
-  document.getElementById('slideinClose')?.addEventListener('click', closeSlidein);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSlidein(); });
+  // Slide-in panel handled by shared v2_decision_details.js
+  // (auto-wires [data-action="details"] clicks and Escape/overlay close).
 
   // --- Helpers ---
   function markActioned(item, cssStatus, label) {
