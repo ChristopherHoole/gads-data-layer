@@ -300,23 +300,23 @@
       <div class="act-item" data-rec-id="{{ rec.id }}" data-entity-name="{{ rec.entity_name }}" data-level="account" data-risk="{{ rec.risk_level }}" data-action-category="{{ rec.action_category }}" data-summary="{{ rec.summary|e }}" data-recommendation-text="{{ (rec.recommendation_text or '')|e }}" data-estimated-impact="{{ (rec.estimated_impact or '')|e }}" data-current-value='{{ (rec.current_value|tojson if rec.current_value else "{}")|e }}' data-proposed-value='{{ (rec.proposed_value|tojson if rec.proposed_value else "{}")|e }}' data-decision-tree='{{ (rec.decision_tree|tojson if rec.decision_tree else "{}")|e }}'>
         <div class="act-item__row">
           <div class="act-item__content">
-            <div class="act-item__top">
+            <div class="act-item__top" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
               <span class="badge-level badge-level--account">Account</span>
               <span class="badge-action badge-action--{{ rec.action_category }}">{{ rec.action_category|capitalize }}</span>
               <span class="badge-risk badge-risk--{{ rec.risk_level }}">{{ rec.risk_level|capitalize }}</span>
+              {% if rec.estimated_impact %}
+              <span class="act-item__impact" style="margin-left:auto"><span class="material-symbols-outlined">trending_up</span>{{ rec.estimated_impact }}</span>
+              {% endif %}
             </div>
             <div class="act-item__summary"><strong>{{ rec.entity_name }}:</strong> {{ rec.summary }}</div>
             {% if rec.recommendation_text %}
             <div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>{{ rec.recommendation_text }}</div>
             {% endif %}
-            {% if rec.estimated_impact %}
-            <div class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>{{ rec.estimated_impact }}</div>
-            {% endif %}
           </div>
           <div class="act-item__actions">
-            <button class="btn-act btn-act--details" data-action="details">View Details</button>
             <button class="btn-act btn-act--approve" data-action="approve" data-rec-id="{{ rec.id }}">Approve</button>
             <button class="btn-act btn-act--decline" data-action="decline" data-rec-id="{{ rec.id }}">Decline</button>
+            <button class="btn-act btn-act--details" data-action="details">View Details</button>
           </div>
         </div>
       </div>

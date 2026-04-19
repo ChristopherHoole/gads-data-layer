@@ -121,7 +121,7 @@
   function renderTrendSection() {
     return `<div class="slidein-section">
       <div class="slidein-section__header"><span class="material-symbols-outlined" style="font-size:20px;color:#3b82f6">trending_up</span><span style="font-size:16px;font-weight:600">8-Week Trend</span><span class="material-symbols-outlined slidein-section__toggle">expand_more</span></div>
-      <div class="slidein-section__body"><div style="padding:14px 20px">
+      <div class="slidein-section__body"><div style="padding:14px 10px">
         <div style="height:200px"><canvas id="campTrendChart"></canvas></div>
       </div></div>
     </div>`;
@@ -174,16 +174,34 @@
 
   function fmtApproval(a) {
     const summary = a.perspective || a.summary;
-    return `<div class="act-item" data-rec-id="${a.id}"><div class="act-item__row"><div class="act-item__content">
-      <div class="act-item__top"><span class="badge-action badge-action--${a.action_category}">${a.action_category.charAt(0).toUpperCase() + a.action_category.slice(1)}</span><span class="badge-risk badge-risk--${a.risk_level}">${a.risk_level.charAt(0).toUpperCase() + a.risk_level.slice(1)} Risk</span></div>
-      <div class="act-item__summary">${summary}</div>
-      ${a.recommendation_text ? `<div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>${a.recommendation_text}</div>` : ''}
-      ${a.estimated_impact ? `<div class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>${a.estimated_impact}</div>` : ''}
-    </div>
-    <div class="act-item__actions">
-      <button class="btn-act btn-act--approve" data-action="approve" data-rec-id="${a.id}">Approve</button>
-      <button class="btn-act btn-act--decline" data-action="decline" data-rec-id="${a.id}">Decline</button>
-    </div></div></div>`;
+    const impactInline = a.estimated_impact
+      ? `<span class="act-item__impact" style="margin-left:auto"><span class="material-symbols-outlined">trending_up</span>${a.estimated_impact}</span>`
+      : '';
+    // Pack data-* attrs so View Details can open shared Decision Details panel
+    const dt = JSON.stringify(a.decision_tree || {}).replace(/'/g, '&#39;');
+    const cv = JSON.stringify(a.current_value || {}).replace(/'/g, '&#39;');
+    const pv = JSON.stringify(a.proposed_value || {}).replace(/'/g, '&#39;');
+    const esc = s => (s || '').replace(/"/g, '&quot;');
+    return `<div class="act-item" data-rec-id="${a.id}"
+      data-entity-name="${esc(a.entity_name)}" data-level="${a.level || 'account'}"
+      data-risk="${a.risk_level}" data-action-category="${a.action_category}"
+      data-summary="${esc(a.summary)}" data-recommendation-text="${esc(a.recommendation_text)}"
+      data-estimated-impact="${esc(a.estimated_impact)}"
+      data-current-value='${cv}' data-proposed-value='${pv}' data-decision-tree='${dt}'>
+      <div class="act-item__row"><div class="act-item__content">
+        <div class="act-item__top" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span class="badge-action badge-action--${a.action_category}">${a.action_category.charAt(0).toUpperCase() + a.action_category.slice(1)}</span>
+          <span class="badge-risk badge-risk--${a.risk_level}">${a.risk_level.charAt(0).toUpperCase() + a.risk_level.slice(1)} Risk</span>
+          ${impactInline}
+        </div>
+        <div class="act-item__summary">${summary}</div>
+        ${a.recommendation_text ? `<div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>${a.recommendation_text}</div>` : ''}
+      </div>
+      <div class="act-item__actions">
+        <button class="btn-act btn-act--approve" data-action="approve" data-rec-id="${a.id}">Approve</button>
+        <button class="btn-act btn-act--decline" data-action="decline" data-rec-id="${a.id}">Decline</button>
+        <button class="btn-act btn-act--details" data-action="details">View Details</button>
+      </div></div></div>`;
   }
 
   function fmtExecuted(e) {
@@ -337,6 +355,41 @@
     // Lever row expand (click header toggles detail)
     body.querySelectorAll('.lever-summary-row__header').forEach(h => {
       h.addEventListener('click', () => h.closest('.lever-summary-row').classList.toggle('expanded'));
+    });
+
+    // Approve / Decline — guarded, same pattern as main page
+    body.querySelectorAll('[data-action="approve"], [data-action="decline"]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (btn.classList.contains('btn-act--pending')) return;
+        const action = btn.dataset.action;
+        const recId = btn.dataset.recId;
+        const item = btn.closest('.act-item');
+        btn.classList.add('btn-act--pending'); btn.disabled = true;
+        if (item) item.querySelectorAll('[data-action="approve"],[data-action="decline"]').forEach(b => b.disabled = true);
+        fetch('/v2/api/recommendations/' + recId + '/' + action, { method: 'POST' })
+          .then(r => r.json())
+          .then(res => {
+            if (res && res.success) {
+              if (item) { item.style.opacity = '0.4'; item.style.pointerEvents = 'none'; setTimeout(() => item.remove(), 400); }
+            } else {
+              btn.classList.remove('btn-act--pending'); btn.disabled = false;
+              if (item) item.querySelectorAll('[data-action="approve"],[data-action="decline"]').forEach(b => b.disabled = false);
+            }
+          })
+          .catch(() => {
+            btn.classList.remove('btn-act--pending'); btn.disabled = false;
+            if (item) item.querySelectorAll('[data-action="approve"],[data-action="decline"]').forEach(b => b.disabled = false);
+          });
+      });
+    });
+
+    // View Details — open shared Decision Details panel using attached data-*
+    body.querySelectorAll('[data-action="details"]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (window.openDecisionDetails) window.openDecisionDetails(btn.closest('.act-item'));
+      });
     });
   }
 

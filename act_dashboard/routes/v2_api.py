@@ -364,7 +364,7 @@ def campaign_slidein_data(client_id, campaign_id):
         all_pending = con.execute("""
             SELECT recommendation_id, entity_id, entity_name, action_category, risk_level,
                    summary, recommendation_text, estimated_impact,
-                   current_value_json, proposed_value_json
+                   current_value_json, proposed_value_json, decision_tree_json
             FROM act_v2_recommendations
             WHERE client_id=? AND status='pending'
             ORDER BY identified_at DESC
@@ -372,28 +372,34 @@ def campaign_slidein_data(client_id, campaign_id):
         awaiting = []
         budget_proposed = None
         for r in all_pending:
-            rid, ent_id, ent_name, cat, risk, summary, rec_txt, impact, cv_raw, pv_raw = r
+            rid, ent_id, ent_name, cat, risk, summary, rec_txt, impact, cv_raw, pv_raw, dt_raw = r
             cv = _parse_metrics(cv_raw) if cv_raw else {}
             pv = _parse_metrics(pv_raw) if pv_raw else {}
             is_primary = (ent_id == campaign_id)
             involved_as_name = campaign_name in cv or campaign_name in pv
             if not is_primary and not involved_as_name:
                 continue
-            # Build perspective from the campaign's own view
+            # Build perspective from the campaign's own view (works for both
+            # primary entity and counterparty when a budget shift is involved).
             perspective = None
-            if not is_primary and involved_as_name and isinstance(cv.get(campaign_name), dict) and isinstance(pv.get(campaign_name), dict):
-                curr_b = cv[campaign_name].get('daily_budget')
-                prop_b = pv[campaign_name].get('daily_budget')
-                if curr_b is not None and prop_b is not None:
-                    delta = prop_b - curr_b
-                    sign = '+' if delta > 0 else '−'
-                    counterparty = ent_name  # the rec's primary entity is the counterparty from this campaign's POV
+            this_cv_d = cv.get(campaign_name) if isinstance(cv.get(campaign_name), dict) else None
+            this_pv_d = pv.get(campaign_name) if isinstance(pv.get(campaign_name), dict) else None
+            if this_cv_d and this_pv_d and 'daily_budget' in this_cv_d and 'daily_budget' in this_pv_d:
+                delta = this_pv_d['daily_budget'] - this_cv_d['daily_budget']
+                if delta != 0:
+                    sign = '+' if delta > 0 else '\u2212'
                     direction = 'incoming from' if delta > 0 else 'outgoing to'
-                    perspective = f"{sign}£{abs(delta):.0f}/day {direction} {counterparty}"
+                    # Counterparty = the OTHER key in cv/pv
+                    others = [k for k in set(list(cv.keys()) + list(pv.keys())) if k != campaign_name]
+                    counterparty = others[0] if others else ent_name
+                    perspective = f"{sign}\u00a3{abs(delta):.0f}/day {direction} {counterparty}"
             awaiting.append({
                 'id': rid, 'action_category': cat, 'risk_level': risk,
                 'summary': summary, 'recommendation_text': rec_txt, 'estimated_impact': impact,
                 'perspective': perspective,
+                'entity_name': ent_name, 'level': 'account',
+                'decision_tree': _parse_metrics(dt_raw) if dt_raw else {},
+                'current_value': cv, 'proposed_value': pv,
             })
             # If this campaign is referenced in the shift, compute projected Budget Position
             this_cv = cv.get(campaign_name) if isinstance(cv.get(campaign_name), dict) else None
