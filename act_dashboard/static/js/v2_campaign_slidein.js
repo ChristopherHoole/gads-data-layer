@@ -53,62 +53,77 @@
   function renderScore(s) {
     const colour = s.current > 0 ? '#10b981' : s.current < 0 ? '#ef4444' : 'var(--act-text)';
     const sign = s.current > 0 ? '+' : '';
+    const WINDOW_LABEL = { '7d': '7-day', '14d': '14-day', '30d': '30-day' };
     let rowsHtml = '';
     s.breakdown.forEach(row => {
-      const pSign = row.points > 0 ? '+' : '';
-      const pColour = row.points > 0 ? '#10b981' : row.points < 0 ? '#ef4444' : 'var(--act-text)';
-      const metric = row.metric != null ? ` (${row.metric_unit === '£' ? '£' : ''}${row.metric}${row.metric_unit === 'x' ? 'x' : ''})` : '';
-      rowsHtml += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--act-border-light);font-size:13px">
-        <span>${row.label} <span style="opacity:0.6">· weight ${row.weight_pct}%</span>${metric}</span>
-        <span style="font-weight:600;color:${pColour}">${pSign}${row.points}</span>
+      const pts = row.points;
+      const pSign = pts > 0 ? '+' : '';
+      const barColour = pts >= 0 ? '#10b981' : '#ef4444';
+      const barWidth = Math.min(Math.abs(pts), 100);
+      const windowKey = row.window || (row.label.match(/(\d+)-day/) || [])[1];
+      const winLabel = (row.label.match(/(\d+-day)/) || ['', ''])[1] || row.label;
+      const metric = row.metric != null ? (row.metric_unit === '£' ? '£' + row.metric : row.metric + row.metric_unit) : '—';
+      rowsHtml += `<div class="score-breakdown__row" style="padding:6px 0">
+        <span class="score-breakdown__label">${winLabel}</span>
+        <span style="font-size:12px;color:var(--act-text);min-width:60px">${metric}</span>
+        <div class="score-breakdown__bar"><div class="score-breakdown__fill" style="width:${barWidth}%;background:${barColour}"></div></div>
+        <span class="score-breakdown__pts" style="color:${pts > 0 ? '#10b981' : pts < 0 ? '#ef4444' : 'var(--act-text)'}">${pSign}${pts} pts</span>
       </div>`;
     });
     return `<div class="slidein-section">
       <div class="slidein-section__header"><span class="material-symbols-outlined" style="font-size:20px;color:#3b82f6">scoreboard</span><span style="font-size:16px;font-weight:600">Score Breakdown</span><span class="material-symbols-outlined slidein-section__toggle">expand_more</span></div>
-      <div class="slidein-section__body">
+      <div class="slidein-section__body"><div style="padding:14px 20px">
         <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:12px">
           <div style="font-size:32px;font-weight:700;color:${colour}">${sign}${s.current}</div>
           <div style="font-size:13px;color:var(--act-text);opacity:0.8">${s.interpretation}</div>
         </div>
         ${rowsHtml}
-      </div>
+      </div></div>
     </div>`;
   }
 
-  function renderBudgetPosition(b, pendingShift) {
+  function renderBudgetPosition(b, pendingShift, proposed) {
     if (!b) {
       return `<div class="slidein-section collapsed">
         <div class="slidein-section__header"><span class="material-symbols-outlined" style="font-size:20px;color:#3b82f6">account_balance</span><span style="font-size:16px;font-weight:600">Budget Position</span><span class="material-symbols-outlined slidein-section__toggle">expand_more</span></div>
-        <div class="slidein-section__body"><div style="padding:12px;font-size:13px;color:var(--act-text);opacity:0.7">No role assigned — budget bands not applied.</div></div>
+        <div class="slidein-section__body"><div style="padding:14px 20px;font-size:13px;color:var(--act-text);opacity:0.7">No role assigned — budget bands not applied.</div></div>
       </div>`;
     }
-    const statusLabel = b.status === 'in_band' ? 'Within band' : b.status === 'over_band' ? 'Over band' : 'Under band';
-    const statusColour = b.status === 'in_band' ? '#10b981' : b.status === 'over_band' ? '#ef4444' : '#f59e0b';
-    // Bar: show band from min_pct to max_pct on a 0-100 scale; dot at current_pct
+    const statusLabel = s => s === 'in_band' ? 'Within band' : s === 'over_band' ? 'Over band' : 'Under band';
+    const statusColour = s => s === 'in_band' ? '#10b981' : s === 'over_band' ? '#ef4444' : '#f59e0b';
     const dotPos = Math.max(0, Math.min(100, b.current_pct));
+    const propPos = proposed ? Math.max(0, Math.min(100, proposed.pct)) : null;
+    const proposedRow = proposed ? `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:14px"><strong>If approved: ${fmtGBP(proposed.mtd)}</strong> MTD (${proposed.pct}% of total)</div>
+        <span style="font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;color:white;background:${statusColour(proposed.status)}">${statusLabel(proposed.status)}</span>
+      </div>` : '';
+    const ghostMarker = propPos != null ? `<div style="position:absolute;left:${propPos}%;top:-3px;width:16px;height:16px;border-radius:50%;background:transparent;border:2px dashed ${statusColour(proposed.status)};transform:translateX(-50%)" title="If approved"></div>` : '';
     return `<div class="slidein-section">
       <div class="slidein-section__header"><span class="material-symbols-outlined" style="font-size:20px;color:#3b82f6">account_balance</span><span style="font-size:16px;font-weight:600">Budget Position</span><span class="material-symbols-outlined slidein-section__toggle">expand_more</span></div>
-      <div class="slidein-section__body">
+      <div class="slidein-section__body"><div style="padding:14px 20px">
         <div style="font-size:13px;margin-bottom:8px"><strong>${b.role} (${b.role_label}):</strong> ${b.band_min_pct}–${b.band_max_pct}% of ${fmtGBP(b.monthly_budget_total)}/mo = ${fmtGBP(b.band_min_abs)}–${fmtGBP(b.band_max_abs)}/mo</div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div style="font-size:14px"><strong>${fmtGBP(b.current_mtd)}</strong> MTD (${b.current_pct}% of total)</div>
-          <span style="font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;color:white;background:${statusColour}">${statusLabel}</span>
+          <div style="font-size:14px"><strong>Current: ${fmtGBP(b.current_mtd)}</strong> MTD (${b.current_pct}% of total)</div>
+          <span style="font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;color:white;background:${statusColour(b.status)}">${statusLabel(b.status)}</span>
         </div>
+        ${proposedRow}
         <div style="position:relative;height:10px;background:var(--act-border-light);border-radius:5px;margin-bottom:8px">
           <div style="position:absolute;left:${b.band_min_pct}%;width:${b.band_max_pct - b.band_min_pct}%;top:0;bottom:0;background:var(--act-blue-bg);border-radius:5px"></div>
-          <div style="position:absolute;left:${dotPos}%;top:-3px;width:16px;height:16px;border-radius:50%;background:${statusColour};transform:translateX(-50%);border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.2)"></div>
+          <div style="position:absolute;left:${dotPos}%;top:-3px;width:16px;height:16px;border-radius:50%;background:${statusColour(b.status)};transform:translateX(-50%);border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.2)"></div>
+          ${ghostMarker}
         </div>
         ${pendingShift ? `<div style="padding:10px;background:var(--act-blue-bg);border-left:3px solid var(--act-primary);font-size:13px;margin-top:8px"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">lightbulb</span> Pending: ${pendingShift}</div>` : ''}
-      </div>
+      </div></div>
     </div>`;
   }
 
   function renderTrendSection() {
     return `<div class="slidein-section">
       <div class="slidein-section__header"><span class="material-symbols-outlined" style="font-size:20px;color:#3b82f6">trending_up</span><span style="font-size:16px;font-weight:600">8-Week Trend</span><span class="material-symbols-outlined slidein-section__toggle">expand_more</span></div>
-      <div class="slidein-section__body">
-        <div style="height:240px"><canvas id="campTrendChart"></canvas></div>
-      </div>
+      <div class="slidein-section__body"><div style="padding:14px 20px">
+        <div style="height:200px"><canvas id="campTrendChart"></canvas></div>
+      </div></div>
     </div>`;
   }
 
@@ -131,7 +146,7 @@
       options: {
         responsive: true, maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { display: true, labels: { color: textColor, font: { size: 11 } } } },
+        plugins: { legend: { display: false } },
         scales: {
           x: { grid: { display: false }, ticks: { color: textColor, font: { size: 11 } } },
           y1: { position: 'left', title: { display: true, text: 'Cost (£)', color: '#3b82f6' }, grid: { color: gridColor }, ticks: { color: textColor, callback: v => '£' + v } },
@@ -158,9 +173,10 @@
   }
 
   function fmtApproval(a) {
+    const summary = a.perspective || a.summary;
     return `<div class="act-item" data-rec-id="${a.id}"><div class="act-item__row"><div class="act-item__content">
       <div class="act-item__top"><span class="badge-action badge-action--${a.action_category}">${a.action_category.charAt(0).toUpperCase() + a.action_category.slice(1)}</span><span class="badge-risk badge-risk--${a.risk_level}">${a.risk_level.charAt(0).toUpperCase() + a.risk_level.slice(1)} Risk</span></div>
-      <div class="act-item__summary">${a.summary}</div>
+      <div class="act-item__summary">${summary}</div>
       ${a.recommendation_text ? `<div class="act-item__recommendation"><span class="material-symbols-outlined">lightbulb</span>${a.recommendation_text}</div>` : ''}
       ${a.estimated_impact ? `<div class="act-item__impact"><span class="material-symbols-outlined">trending_up</span>${a.estimated_impact}</div>` : ''}
     </div>
@@ -196,18 +212,78 @@
     </div></div></div>`;
   }
 
+  function leverRow(icon, name, status, detailHtml, guardrail) {
+    const guardHtml = guardrail ? `<div class="lever-guardrail-note"><span class="material-symbols-outlined">shield</span><span class="lever-guardrail-note__text">${guardrail}</span></div>` : '';
+    return `<div class="lever-summary-row">
+      <div class="lever-summary-row__header">
+        <span class="material-symbols-outlined">${icon}</span>
+        <div style="flex:1"><div class="lever-summary__name">${name}</div><div class="lever-summary__status">${status}</div></div>
+        <span class="material-symbols-outlined lever-summary__chevron">chevron_right</span>
+      </div>
+      <div class="lever-summary__detail">${detailHtml}${guardHtml}</div>
+    </div>`;
+  }
+
+  function miniTable(cols, rows) {
+    if (!rows || !rows.length) return '<div style="font-size:13px;color:var(--act-text);opacity:0.6;padding:8px 0">No data yet.</div>';
+    const head = '<thead><tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr></thead>';
+    const body = '<tbody>' + rows.map(r => '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>').join('') + '</tbody>';
+    return `<table class="lever-mini-table">${head}${body}</table>`;
+  }
+
+  function matchBar(dist) {
+    if (!dist || (!dist.BROAD && !dist.PHRASE && !dist.EXACT)) {
+      return '<div style="font-size:13px;color:var(--act-text);opacity:0.6;padding:8px 0">No match-type data.</div>';
+    }
+    const total = (dist.BROAD || 0) + (dist.PHRASE || 0) + (dist.EXACT || 0);
+    const pct = v => total > 0 ? Math.round(v / total * 100) : 0;
+    const b = pct(dist.BROAD || 0), p = pct(dist.PHRASE || 0), e = pct(dist.EXACT || 0);
+    return `<div class="slidein-match-bar">
+      ${b > 0 ? `<div class="slidein-match-bar__segment" style="width:${b}%;background:#ef4444">${b}%</div>` : ''}
+      ${p > 0 ? `<div class="slidein-match-bar__segment" style="width:${p}%;background:#f59e0b">${p}%</div>` : ''}
+      ${e > 0 ? `<div class="slidein-match-bar__segment" style="width:${e}%;background:#10b981">${e}%</div>` : ''}
+    </div>
+    <div class="slidein-match-legend">
+      <span><span class="slidein-match-legend__dot" style="background:#ef4444"></span>Broad (${b}%)</span>
+      <span><span class="slidein-match-legend__dot" style="background:#f59e0b"></span>Phrase (${p}%)</span>
+      <span><span class="slidein-match-legend__dot" style="background:#10b981"></span>Exact (${e}%)</span>
+    </div>`;
+  }
+
   function renderLevers(levers) {
+    const dev = levers.device || {};
+    const geo = levers.geo || {};
+    const sched = levers.schedule || {};
+    const devGuard = `Caps: ${levers.device_caps?.min ?? '—'}% / +${levers.device_caps?.max ?? '—'}% · Cooldown: ${levers.device_caps?.cooldown ?? '—'} days`;
+    const geoGuard = `Caps: ${levers.geo_caps?.min ?? '—'}% / +${levers.geo_caps?.max ?? '—'}% · Cooldown: ${levers.geo_caps?.cooldown ?? '—'} days`;
+    const schedGuard = `Caps: ${levers.schedule_caps?.min ?? '—'}% / +${levers.schedule_caps?.max ?? '—'}% · Cooldown: ${levers.schedule_caps?.cooldown ?? '—'} days`;
+
+    const devRows = (dev.rows || []).map(r => [r.device, fmtGBP(r.cost), r.cpa != null ? fmtGBP(r.cpa) : '—', r.conv, r.ctr + '%']);
+    const geoRows = (geo.rows || []).map(r => [r.location, fmtGBP(r.cost), r.cpa != null ? fmtGBP(r.cpa) : '—', r.conv]);
+    const schedRows = (sched.rows || []).map(r => [r.slot, fmtGBP(r.cost), r.cpa != null ? fmtGBP(r.cpa) : '—', r.conv]);
+
+    const devStatus = (dev.rows?.length || 0) + ' devices';
+    const geoStatus = (geo.rows?.length || 0) + ' locations';
+    const schedStatus = (sched.rows?.length || 0) + ' time slots';
+
+    const negTotal = (levers.negatives?.total || 0);
+    const negLists = (levers.negatives?.lists || 0);
+    const negStatus = negTotal + ' across ' + negLists + ' lists';
+    const negDetail = `<div style="font-size:14px;color:var(--act-text);padding:8px 0">${negTotal} negative keywords across ${negLists} standardised lists. ACT adds <strong>[exact]</strong> match only. Phrase match is human-managed. Managed at Keyword Level.</div>`;
+
+    const md = levers.match_dist || {};
+    const mdTotal = (md.BROAD || 0) + (md.PHRASE || 0) + (md.EXACT || 0);
+    const mdStatus = mdTotal > 0
+      ? `Broad ${Math.round((md.BROAD||0)/mdTotal*100)}% · Phrase ${Math.round((md.PHRASE||0)/mdTotal*100)}% · Exact ${Math.round((md.EXACT||0)/mdTotal*100)}%`
+      : 'No data';
+
     let rows = '';
-    Object.entries(levers).forEach(([key, v]) => {
-      const def = LEVER_NAMES[key] || { label: key, icon: 'tune' };
-      const range = (v.min != null && v.max != null) ? `${v.min}% to ${v.max}%` : 'Not configured';
-      const cooldown = v.cooldown ? ` · ${v.cooldown}-day cooldown` : '';
-      rows += `<div class="lever-summary-row">
-        <div class="lever-summary-row__header"><span class="material-symbols-outlined">${def.icon}</span>
-        <div style="flex:1"><div class="lever-summary__name">${def.label}</div>
-        <div class="lever-summary__status">Auto-adjust range ${range}${cooldown}</div></div></div>
-      </div>`;
-    });
+    rows += leverRow('devices', 'Device Modifiers', devStatus, miniTable(['Device', 'Cost', 'CPA', 'Conv', 'CTR'], devRows), devGuard);
+    rows += leverRow('location_on', 'Geographic Modifiers', geoStatus, miniTable(['Location', 'Cost', 'CPA', 'Conv'], geoRows), geoGuard);
+    rows += leverRow('schedule', 'Ad Schedule', schedStatus, miniTable(['Day/Hour', 'Cost', 'CPA', 'Conv'], schedRows), schedGuard);
+    rows += leverRow('block', 'Negative Keywords', negStatus, negDetail, 'ACT adds [exact] match only · Phrase match is human-managed');
+    rows += leverRow('sort_by_alpha', 'Match Types', mdStatus, matchBar(md), 'Changes require approval · Managed at Keyword Level');
+
     return `<div class="slidein-section collapsed">
       <div class="slidein-section__header"><span class="material-symbols-outlined" style="font-size:20px;color:#10b981">tune</span><span style="font-size:16px;font-weight:600">Universal Levers</span><span class="material-symbols-outlined slidein-section__toggle">expand_more</span></div>
       <div class="slidein-section__body"><div class="lever-summary">${rows}</div></div>
@@ -233,9 +309,8 @@
     if (!body) return;
 
     let html = '';
+    // Section order: state → performance → reviews → budget → knobs
     html += renderHealth(data.health);
-    html += renderScore(data.score);
-    html += renderBudgetPosition(data.budget_position, data.pending_shift);
     html += renderTrendSection();
     html += renderList('Awaiting Approval', 'pending_actions', 'var(--act-amber)', 'var(--act-amber)',
                       data.awaiting, 'No pending recommendations for this campaign.', fmtApproval, false);
@@ -245,6 +320,8 @@
                       data.monitoring, 'No active monitoring.', fmtMonitoring, true);
     html += renderList('Recent Alerts', 'notifications_active', 'var(--act-red)', 'var(--act-red)',
                       data.alerts, 'No alerts in last 7 days.', fmtAlert, true);
+    html += renderScore(data.score);
+    html += renderBudgetPosition(data.budget_position, data.pending_shift, data.budget_proposed);
     html += renderLevers(data.levers);
     html += renderBidStrategy(data.campaign, data.health);
 
@@ -255,6 +332,11 @@
     // Collapse toggles
     body.querySelectorAll('.slidein-section__header').forEach(h => {
       h.addEventListener('click', () => h.closest('.slidein-section').classList.toggle('collapsed'));
+    });
+
+    // Lever row expand (click header toggles detail)
+    body.querySelectorAll('.lever-summary-row__header').forEach(h => {
+      h.addEventListener('click', () => h.closest('.lever-summary-row').classList.toggle('expanded'));
     });
   }
 

@@ -326,7 +326,8 @@ def campaign_slidein_data(client_id, campaign_id):
                     'status': band_status,
                 }
 
-        # Pending shift recommendation for this campaign
+        # Pending shift recommendation for this campaign (as primary entity OR as
+        # a counterparty in a budget-shift current_value/proposed_value pair).
         pending_shift = None
         prow = con.execute(
             """SELECT summary FROM act_v2_recommendations
@@ -358,14 +359,65 @@ def campaign_slidein_data(client_id, campaign_id):
         def fetch_recs(query, extra=[]):
             return con.execute(query, [client_id, campaign_id] + extra).fetchall()
 
-        awaiting_rows = fetch_recs("""
-            SELECT recommendation_id, action_category, risk_level, summary, recommendation_text, estimated_impact
+        # All pending recs for this client — filter in Python to include
+        # counterparty shifts (campaign name appears in current_value_json keys).
+        all_pending = con.execute("""
+            SELECT recommendation_id, entity_id, entity_name, action_category, risk_level,
+                   summary, recommendation_text, estimated_impact,
+                   current_value_json, proposed_value_json
             FROM act_v2_recommendations
-            WHERE client_id=? AND entity_id=? AND status='pending'
+            WHERE client_id=? AND status='pending'
             ORDER BY identified_at DESC
-        """)
-        awaiting = [{'id': r[0], 'action_category': r[1], 'risk_level': r[2], 'summary': r[3],
-                     'recommendation_text': r[4], 'estimated_impact': r[5]} for r in awaiting_rows]
+        """, [client_id]).fetchall()
+        awaiting = []
+        budget_proposed = None
+        for r in all_pending:
+            rid, ent_id, ent_name, cat, risk, summary, rec_txt, impact, cv_raw, pv_raw = r
+            cv = _parse_metrics(cv_raw) if cv_raw else {}
+            pv = _parse_metrics(pv_raw) if pv_raw else {}
+            is_primary = (ent_id == campaign_id)
+            involved_as_name = campaign_name in cv or campaign_name in pv
+            if not is_primary and not involved_as_name:
+                continue
+            # Build perspective from the campaign's own view
+            perspective = None
+            if not is_primary and involved_as_name and isinstance(cv.get(campaign_name), dict) and isinstance(pv.get(campaign_name), dict):
+                curr_b = cv[campaign_name].get('daily_budget')
+                prop_b = pv[campaign_name].get('daily_budget')
+                if curr_b is not None and prop_b is not None:
+                    delta = prop_b - curr_b
+                    sign = '+' if delta > 0 else '−'
+                    counterparty = ent_name  # the rec's primary entity is the counterparty from this campaign's POV
+                    direction = 'incoming from' if delta > 0 else 'outgoing to'
+                    perspective = f"{sign}£{abs(delta):.0f}/day {direction} {counterparty}"
+            awaiting.append({
+                'id': rid, 'action_category': cat, 'risk_level': risk,
+                'summary': summary, 'recommendation_text': rec_txt, 'estimated_impact': impact,
+                'perspective': perspective,
+            })
+            # If this campaign is referenced in the shift, compute projected Budget Position
+            this_cv = cv.get(campaign_name) if isinstance(cv.get(campaign_name), dict) else None
+            this_pv = pv.get(campaign_name) if isinstance(pv.get(campaign_name), dict) else None
+            if budget_proposed is None and band and this_pv and 'daily_budget' in this_pv:
+                prop_daily = this_pv['daily_budget']
+                curr_daily = this_cv.get('daily_budget') if this_cv else daily_budget
+                # Projected MTD = current MTD + (proposed - current) * days_elapsed
+                delta_daily = prop_daily - curr_daily
+                proj_mtd = mtd_cost + delta_daily * days_elapsed
+                mtd_baseline = monthly_budget * days_elapsed / days_in_month if monthly_budget else 0
+                proj_pct = round(proj_mtd / mtd_baseline * 100, 1) if mtd_baseline > 0 else 0
+                if proj_pct < band['band_min_pct']:
+                    proj_status = 'under_band'
+                elif proj_pct > band['band_max_pct']:
+                    proj_status = 'over_band'
+                else:
+                    proj_status = 'in_band'
+                budget_proposed = {'mtd': round(proj_mtd, 0), 'pct': proj_pct, 'status': proj_status}
+
+        # If this campaign is only a counterparty (not the primary entity), surface the perspective
+        if pending_shift is None and awaiting:
+            first = awaiting[0]
+            pending_shift = first.get('perspective') or first.get('summary')
 
         executed_rows = fetch_recs("""
             SELECT action_id, action_type, reason, executed_at
@@ -397,10 +449,60 @@ def campaign_slidein_data(client_id, campaign_id):
             row = con.execute("SELECT setting_value FROM act_v2_client_settings WHERE client_id=? AND setting_key=?", [client_id, key]).fetchone()
             return row[0] if row and row[0] else default
 
+        # Last 30 days of segment data for this campaign, aggregated per segment_value
+        seg_cutoff = str(latest - _td(days=30))
+        seg_rows = con.execute("""
+            SELECT segment_type, segment_value,
+                   SUM(cost) as cost, SUM(conversions) as conv,
+                   SUM(clicks) as clicks, SUM(impressions) as impr
+            FROM act_v2_campaign_segments
+            WHERE client_id=? AND campaign_id=? AND snapshot_date >= CAST(? AS DATE)
+            GROUP BY segment_type, segment_value
+            ORDER BY segment_type, cost DESC
+        """, [client_id, campaign_id, seg_cutoff]).fetchall()
+        dev_rows, geo_rows, sched_rows = [], [], []
+        for st, sv, cost, conv, clicks, impr in seg_rows:
+            cpa = float(cost) / float(conv) if conv and conv > 0 else None
+            ctr = round(float(clicks) / float(impr) * 100, 2) if impr and impr > 0 else 0
+            if st == 'device':
+                dev_rows.append({'device': sv.title(), 'cost': round(float(cost), 2),
+                                 'cpa': round(cpa, 2) if cpa else None, 'conv': int(conv or 0), 'ctr': ctr})
+            elif st == 'geo':
+                geo_rows.append({'location': sv, 'cost': round(float(cost), 2),
+                                 'cpa': round(cpa, 2) if cpa else None, 'conv': int(conv or 0)})
+            elif st == 'ad_schedule':
+                sched_rows.append({'slot': sv.replace('_h', ' h'), 'cost': round(float(cost), 2),
+                                   'cpa': round(cpa, 2) if cpa else None, 'conv': int(conv or 0)})
+        # Cap geo/schedule lists (they can be huge)
+        geo_rows = geo_rows[:10]
+        sched_rows = sched_rows[:10]
+
+        # Negative keyword lists (client-level)
+        neg_rows = con.execute(
+            "SELECT COUNT(*), COALESCE(SUM(keyword_count), 0) FROM act_v2_negative_keyword_lists WHERE client_id=?",
+            [client_id]
+        ).fetchone()
+        negatives = {'lists': neg_rows[0] or 0, 'total': int(neg_rows[1] or 0)}
+
+        # Match-type distribution — approximate via search_terms for this campaign (last 30d)
+        mt_rows = con.execute("""
+            SELECT match_type, COUNT(*)
+            FROM act_v2_search_terms
+            WHERE client_id=? AND campaign_id=? AND snapshot_date >= CAST(? AS DATE)
+            AND match_type IS NOT NULL
+            GROUP BY match_type
+        """, [client_id, campaign_id, seg_cutoff]).fetchall()
+        match_dist = {mt: cnt for mt, cnt in mt_rows}
+
         levers = {
-            'device_mod': {'min': s('device_mod_min_pct'), 'max': s('device_mod_max_pct'), 'cooldown': s('device_bid_cooldown_days')},
-            'geo_mod': {'min': s('geo_mod_min_pct'), 'max': s('geo_mod_max_pct'), 'cooldown': s('geo_bid_cooldown_days')},
-            'schedule_mod': {'min': s('schedule_mod_min_pct'), 'max': s('schedule_mod_max_pct'), 'cooldown': s('schedule_bid_cooldown_days')},
+            'device': {'rows': dev_rows},
+            'geo': {'rows': geo_rows},
+            'schedule': {'rows': sched_rows},
+            'device_caps': {'min': s('device_mod_min_pct'), 'max': s('device_mod_max_pct'), 'cooldown': s('device_bid_cooldown_days')},
+            'geo_caps': {'min': s('geo_mod_min_pct'), 'max': s('geo_mod_max_pct'), 'cooldown': s('geo_bid_cooldown_days')},
+            'schedule_caps': {'min': s('schedule_mod_min_pct'), 'max': s('schedule_mod_max_pct'), 'cooldown': s('schedule_bid_cooldown_days')},
+            'negatives': negatives,
+            'match_dist': match_dist,
         }
 
         # Bid Strategy formatted
@@ -420,6 +522,7 @@ def campaign_slidein_data(client_id, campaign_id):
             'health': health,
             'score': score,
             'budget_position': band,
+            'budget_proposed': budget_proposed,
             'pending_shift': pending_shift,
             'trend': trend,
             'awaiting': awaiting,
