@@ -4,6 +4,7 @@
 
 {% block page_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/v2_account_level.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/v2_campaign_slidein.css') }}">
 {% endblock %}
 
 {% block topbar_extras %}
@@ -200,9 +201,9 @@
         </thead>
         <tbody>
           {% for c in campaigns %}
-          <tr data-status="{{ c.status }}">
+          <tr data-status="{{ c.status }}" data-campaign-id="{{ c.entity_id }}">
             <td><span class="status-dot status-dot--{{ c.status }}"></span></td>
-            <td><strong>{{ c.name }}</strong></td>
+            <td><strong class="campaign-name-link" data-campaign-id="{{ c.entity_id }}" style="cursor:pointer;color:var(--act-primary);text-decoration:none">{{ c.name }}</strong></td>
             <td>{% if c.role %}<span class="role-badge role-badge--{{ c.role|lower }}">{{ c.role }}</span>{% else %}&mdash;{% endif %}</td>
             <td class="num">&pound;{{ '{:,.0f}'.format(c.budget) }}/d</td>
             <td class="num">{{ c.share }}%</td>
@@ -487,6 +488,7 @@
 </div>
 
 {% include 'v2/_decision_details.html' %}
+{% include 'v2/_campaign_slidein.html' %}
 
 <!-- Chart data for JS -->
 <script>
@@ -498,5 +500,6 @@
 {% block page_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="{{ url_for('static', filename='js/v2_decision_details.js') }}"></script>
+<script src="{{ url_for('static', filename='js/v2_campaign_slidein.js') }}"></script>
 <script src="{{ url_for('static', filename='js/v2_account_level.js') }}"></script>
 {% endblock %}

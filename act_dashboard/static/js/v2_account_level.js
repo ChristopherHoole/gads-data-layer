@@ -262,6 +262,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // --- Campaign name → campaign slide-in ---
+  const clientId = new URL(window.location.href).searchParams.get('client') || 'oe001';
+  document.querySelectorAll('.campaign-name-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cid = link.dataset.campaignId;
+      if (cid && window.openCampaignSlidein) window.openCampaignSlidein(clientId, cid);
+    });
+  });
+
   // -------------------------------------------------------------------------
   // CHART.JS — Dual-axis timeline with real data
   // -------------------------------------------------------------------------
