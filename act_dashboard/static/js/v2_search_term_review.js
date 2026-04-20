@@ -30,7 +30,7 @@
     location_outside_service_area:  'Outside service area',
     service_not_advertised:         'Not advertised',
     advertised_service_match:       'Advertised service',
-    contains_neg_vocabulary:        'Contains negged word',
+    contains_neg_vocabulary:        'Contains negative word',
     ambiguous:                      'Needs review',
     client_not_configured:          'Not configured',
     empty_term:                     'Empty term',

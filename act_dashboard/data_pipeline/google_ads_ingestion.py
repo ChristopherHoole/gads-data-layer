@@ -10,6 +10,7 @@ All monetary values converted from micros to GBP (divide by 1,000,000).
 import json
 import logging
 import os
+import re
 import sys
 import time
 from datetime import datetime, timedelta
@@ -18,6 +19,32 @@ from pathlib import Path
 import duckdb
 from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
+
+
+# Wave C3 — negative-list name -> list_role resolver patterns.
+# First pattern that .search()-es wins. The lambda form defers building the
+# role code until we know the digit captured from the name.
+_LIST_ROLE_PATTERNS: list[tuple[re.Pattern, object]] = [
+    # Location family
+    (re.compile(r'^\s*(?:loc(?:ation)?)\b.*1\s*word\+?\s*\[(?:ex(?:act)?)\]', re.I),
+     'location_exact'),
+    (re.compile(r'^\s*(?:loc(?:ation)?)\b.*1\s*word\b.*["\u201c\u201d]ph(?:rase)?["\u201c\u201d]?', re.I),
+     'location_phrase'),
+    # Competitor family (both "Competitors & Brands" and "Comp & Brands")
+    (re.compile(r'^\s*comp(?:etitors?)?\s*&\s*brands?\s*\[(?:ex(?:act)?)\]', re.I),
+     'competitor_exact'),
+    (re.compile(r'^\s*comp(?:etitors?)?\s*&\s*brands?\b.*["\u201c\u201d]ph(?:rase)?["\u201c\u201d]?', re.I),
+     'competitor_phrase'),
+    # 5+ WORDS [exact]  (takes a bucket name like "5+ WORDS [ex]")
+    (re.compile(r'^\s*5\+?\s*words?\s*\[(?:ex(?:act)?)\]', re.I),
+     '5plus_word_exact'),
+    # N WORDS [exact] for 1..4
+    (re.compile(r'^\s*(\d)\s*words?\+?\s*\[(?:ex(?:act)?)\]', re.I),
+     lambda m: f'{m.group(1)}_word_exact'),
+    # N WORDS "phrase" for 1..4
+    (re.compile(r'^\s*(\d)\s*words?\b.*["\u201c\u201d]ph(?:rase)?["\u201c\u201d]?', re.I),
+     lambda m: f'{m.group(1)}_word_phrase'),
+]
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -761,56 +788,24 @@ class GoogleAdsDataPipeline:
     def _resolve_list_role(self, name: str) -> str | None:
         """Map a Google Ads shared-set NAME to one of the 13 list_role enum values.
 
-        Tolerance rules (brief N1a Q2):
-        - case-insensitive
-        - 'WORD' / 'WORDS' interchangeable
-        - '1 WORD+' == '1 WORD' ('+' is semantic noise)
-        - 'Competitors & Brands' canonical competitor prefix
-        - '"phrase"' (quoted) vs '[exact]' (bracketed) identify match type
+        Wave C3: regex-based matcher tolerates both long and abbreviated naming
+        conventions:
+          - "phrase" | "ph"           -> phrase match
+          - [exact]  | [ex]           -> exact match
+          - Competitors & Brands | Comp & Brands
+          - Location | Loc
+          - WORD | WORDS + optional '+' after number or word
 
-        Returns None when the list name doesn't fit any known role (caller logs
-        a WARNING; typical in-the-wild misses are free-form lists like
-        'DBD Negs' or 'KMG | Invisalign' which keep list_role = NULL).
+        First matching pattern wins. Returns None for free-form list names
+        (DBD Negs, KMG | Invisalign, etc.) — caller logs WARNING and the row
+        keeps list_role = NULL.
         """
         if not name:
             return None
-        n = name.lower().strip()
-
-        # Identify match type token first
-        has_exact = '[exact]' in n
-        has_phrase = '"phrase"' in n
-
-        # Strip the match-type tokens so the rest of the parser can look at the prefix
-        core = n.replace('[exact]', '').replace('"phrase"', '').replace('  ', ' ').strip()
-
-        # Competitor family (named 'Competitors & Brands ...')
-        if core.startswith('competitors & brands'):
-            if has_exact:
-                return 'competitor_exact'
-            if has_phrase:
-                return 'competitor_phrase'
-            return None
-
-        # Location family ('Location 1 WORD ...' / 'Location 1 WORD+ ...')
-        if core.startswith('location'):
-            if has_exact:
-                return 'location_exact'
-            if has_phrase:
-                return 'location_phrase'
-            return None
-
-        # N-WORD / N-WORDS family — accept '1 word', '2 words', ..., '5+ words'
-        import re
-        m = re.match(r'^(\d)\+?\s+words?\+?$', core)
-        if m:
-            n_words = int(m.group(1))
-            if n_words >= 5 and has_exact:
-                return '5plus_word_exact'
-            if 1 <= n_words <= 4:
-                if has_exact:
-                    return f'{n_words}_word_exact'
-                if has_phrase:
-                    return f'{n_words}_word_phrase'
+        for rx, target in _LIST_ROLE_PATTERNS:
+            m = rx.search(name)
+            if m:
+                return target(m) if callable(target) else target
         return None
 
     def ingest_negative_lists(self, date: str) -> dict:
