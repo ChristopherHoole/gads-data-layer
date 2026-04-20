@@ -46,6 +46,21 @@
   const humanReason = r => REASON_LABELS[r] || (r || '');
   const humanRole   = r => ROLE_LABELS[r] || (r || '—');
 
+  // Wave B Gate C: search_term_view.status humanised for display
+  const STATUS_LABELS = {
+    NONE:            'None',
+    ADDED:           'Added',
+    EXCLUDED:        'Excluded',
+    ADDED_EXCLUDED:  'Added & Excluded',
+    UNKNOWN:         'Unknown',
+  };
+  // For comma-joined statuses coming back from SQL STRING_AGG, humanise each
+  // token individually so "NONE, ADDED" -> "None, Added".
+  function humanStatuses(s) {
+    if (!s) return '';
+    return s.split(',').map(x => STATUS_LABELS[x.trim()] || x.trim()).join(', ');
+  }
+
   const STATUS_CHIP_ORDER = [
     {key: 'all',      label: 'All'},
     {key: 'block',    label: 'Block'},
@@ -164,6 +179,40 @@
     });
   }
 
+  // -------------------- PMax Other-bucket transparency banner --------
+  function renderPmaxOtherBanner(bucket) {
+    const el = document.getElementById('stPmaxOtherBanner');
+    const txt = document.getElementById('stPmaxOtherText');
+    if (!el || !bucket) {
+      if (el) el.style.display = 'none';
+      return;
+    }
+    const date = bucket.snapshot_date || analysisDate;
+    const impr = bucket.impressions != null ? bucket.impressions.toLocaleString() : null;
+    const cost = bucket.cost != null ? fmtMoney(bucket.cost) : null;
+    const n    = bucket.distinct_term_count;
+    // Phrasing adapts to which fields Google surfaced:
+    //  - If distinct_term_count present: "N additional PMax queries ..."
+    //  - Else: lead with impressions
+    //  - Cost clause dropped when null
+    let lead;
+    if (n != null) {
+      lead = `${n.toLocaleString()} additional PMax ${n === 1 ? 'query' : 'queries'}`;
+    } else if (impr != null) {
+      lead = `Additional PMax queries (${impr} impressions)`;
+    } else {
+      lead = 'Additional PMax queries';
+    }
+    const parts = [lead, `aggregated into Google's "Other search terms" bucket for ${date}`];
+    const metrics = [];
+    if (n != null && impr != null) metrics.push(`${impr} impr`);
+    if (cost) metrics.push(`${cost} cost`);
+    let detail = '';
+    if (metrics.length) detail = ` (${metrics.join(', ')})`;
+    txt.textContent = `Note: ${parts.join(' ')}${detail}. Individual terms not available via the API — review in Google Ads UI for full PMax coverage.`;
+    el.style.display = '';
+  }
+
   function renderP3StatusChips() {
     const bar = document.getElementById('stFilterBarP3');
     bar.querySelectorAll('.st-chip').forEach(el => el.remove());
@@ -183,7 +232,7 @@
     });
   }
 
-  // -------------------- Row rendering (Pass 1/2) ---------------------
+  // -------------------- Row rendering (Pass 1/2 — 19 cols) -----------
   function renderRow(item) {
     const canEdit = item.pass1_status === 'block' || item.pass1_status === 'review';
     const checked = item.pass1_status === 'block' ? 'checked' : '';
@@ -194,16 +243,28 @@
     const reviewed = item.review_status !== 'pending'
       ? ` · <span class="st-status st-status--${item.review_status}">${item.review_status}</span>`
       : '';
+    const pct = v => (v == null) ? '' : (Number(v) * 100).toFixed(2) + '%';
+    const num2 = v => (v == null) ? '' : Number(v).toFixed(2);
     return `<tr data-id="${item.id}" data-pass1="${item.pass1_status}">
-      <td ${hideChk}><input type="checkbox" class="st-chk" ${checked} ${canEdit ? '' : 'disabled'}></td>
-      <td class="st-table__term">${escapeHtml(item.search_term)}</td>
-      <td class="num">${fmtNum(item.total_impressions)}</td>
-      <td class="num">${fmtNum(item.total_clicks)}</td>
-      <td class="num">${fmtMoney(item.total_cost)}</td>
-      <td class="num">${fmtNum(item.total_conversions)}</td>
+      <td class="st-col-check st-frozen-0" ${hideChk}><input type="checkbox" class="st-chk" ${checked} ${canEdit ? '' : 'disabled'}></td>
+      <td class="st-col-term  st-frozen-1" title="${escapeHtml(item.search_term)}">${escapeHtml(item.search_term)}</td>
       <td><span class="${statusClass}">${item.pass1_status}</span>${reviewed}</td>
       <td>${escapeHtml(humanReason(item.pass1_reason))}</td>
       <td>${roleSel}</td>
+      <td>${escapeHtml(item.match_types || '')}</td>
+      <td>${escapeHtml(humanStatuses(item.statuses))}</td>
+      <td title="${escapeHtml(item.campaigns || '')}">${escapeHtml(item.campaigns || '')}</td>
+      <td>${escapeHtml(item.campaign_types || '')}</td>
+      <td title="${escapeHtml(item.ad_groups || '')}">${escapeHtml(item.ad_groups || '')}</td>
+      <td title="${escapeHtml(item.keywords || '')}">${escapeHtml(item.keywords || '')}</td>
+      <td class="num">${fmtMoney(item.total_cost)}</td>
+      <td class="num">${fmtNum(item.total_impressions)}</td>
+      <td class="num">${fmtNum(item.total_clicks)}</td>
+      <td class="num">${fmtMoney(item.avg_cpc)}</td>
+      <td class="num">${pct(item.ctr)}</td>
+      <td class="num">${fmtNum(item.total_conversions)}</td>
+      <td class="num">${fmtMoney(item.cost_per_conversion)}</td>
+      <td class="num">${pct(item.conversion_rate)}</td>
       <td>${pushErr}</td>
     </tr>`;
   }
@@ -275,6 +336,7 @@
     if (currentTab === 'pass12') {
       if (data.counts) renderStatusChips(data.counts);
       if (data.reason_counts) renderReasonChips(data.reason_counts);
+      renderPmaxOtherBanner(data.pmax_other_bucket);
     }
 
     if (currentTab === 'pass12') {
@@ -384,6 +446,9 @@
     document.getElementById('stStatusBar').style.display = tab === 'pass12' ? '' : 'none';
     document.getElementById('stReasonBar').style.display = tab === 'pass12' ? '' : 'none';
     document.getElementById('stFilterBarP3').style.display = tab === 'pass3' ? '' : 'none';
+    // Banner is Pass 1/2 scoped — hide when switching to Pass 3
+    const banner = document.getElementById('stPmaxOtherBanner');
+    if (banner && tab === 'pass3') banner.style.display = 'none';
     stTable.style.display = tab === 'pass12' ? '' : 'none';
     stP3Table.style.display = tab === 'pass3' ? '' : 'none';
     if (tab === 'pass3') renderP3StatusChips();

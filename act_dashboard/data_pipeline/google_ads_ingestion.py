@@ -511,6 +511,13 @@ class GoogleAdsDataPipeline:
         if not pmax_campaigns:
             return 0
 
+        # Wave B: refresh Other-bucket rows for this client+date; individual
+        # campaign UPSERTs below via INSERT OR REPLACE on the UNIQUE key.
+        self.db.execute(
+            "DELETE FROM act_v2_pmax_other_bucket WHERE client_id = ? AND snapshot_date = ?",
+            [self.client_id, date],
+        )
+
         count = 0
         for campaign_id, campaign_name in pmax_campaigns:
             query = f"""
@@ -536,7 +543,19 @@ class GoogleAdsDataPipeline:
             for row in rows:
                 term = row.campaign_search_term_insight.category_label
                 if not term:
-                    # Google's aggregated "Other search terms" bucket — skip
+                    # Wave B: capture Google's aggregated "Other search terms"
+                    # bucket row per campaign/date so the UI can surface it as
+                    # a transparency banner. Fields the insight resource
+                    # doesn't expose (cost, distinct_term_count) stay NULL.
+                    self.db.execute(
+                        """INSERT INTO act_v2_pmax_other_bucket
+                           (client_id, snapshot_date, campaign_id, campaign_name,
+                            impressions, clicks, cost, conversions, distinct_term_count)
+                           VALUES (?, ?, ?, ?, ?, ?, NULL, ?, NULL)""",
+                        [self.client_id, date, str(campaign_id), campaign_name,
+                         row.metrics.impressions, row.metrics.clicks,
+                         round(row.metrics.conversions, 2)],
+                    )
                     continue
                 clicks = row.metrics.clicks
                 conversions = row.metrics.conversions

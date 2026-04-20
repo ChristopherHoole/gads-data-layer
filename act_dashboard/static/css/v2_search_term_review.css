@@ -83,26 +83,60 @@
 }
 .st-action-bar label { font-size: 13px; color: var(--act-text); }
 
-/* Table */
-.st-table-wrap { overflow-x: auto; }
+/* Table — outer wrapper handles horizontal scroll for the wide Pass 1/2 table.
+   Keep .st-table-wrap free of overflow so sticky thead positions against the
+   page viewport (not the inner scroll container). */
+.st-hscroll { overflow-x: auto; }
+.st-table-wrap { /* no overflow here — sticky thead positions against <body> */ }
 .st-table {
   width: 100%; border-collapse: collapse; font-size: 13px;
   background: var(--act-surface);
 }
+/* Wide Pass 1/2 variant allows the 19 columns to expand beyond viewport */
+.st-table--wide { min-width: max-content; width: max-content; }
 .st-table th, .st-table td {
   padding: 8px 10px; border-bottom: 1px solid var(--act-border-light);
   text-align: left; vertical-align: top;
+  white-space: nowrap;
 }
-/* Wave A patch 2: sticky header needs opaque fill + higher z-index so
-   table body rows don't bleed through. --act-hover-bg is translucent in
-   some themes; use --act-surface which is the opaque card background. */
+.st-table--wide td { max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
+.st-table--wide td.st-col-term { max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
+
+/* Wave B Gate C: sticky header — FIX for the Wave A bleed-through.
+   Previous attempt set `opacity: 0.9` on <th> which made the element
+   semi-transparent (CSS opacity applies to the whole element including
+   its background). Now: fully opaque background + muted color on a child
+   span; z-index above body rows; top pinned to the action-bar bottom edge. */
 .st-table th {
   font-weight: 600; font-size: 12px; text-transform: uppercase;
-  letter-spacing: 0.3px; color: var(--act-text); opacity: 0.9;
+  letter-spacing: 0.3px; color: var(--act-text);
   background: var(--act-surface);
   position: sticky; top: 44px; z-index: 10;
-  box-shadow: inset 0 -1px 0 var(--act-border);  /* preserves header underline */
+  box-shadow: inset 0 -1px 0 var(--act-border);
 }
+
+/* Frozen-left columns (checkbox + Search Term).
+   Each frozen cell keeps its opaque background so body rows scrolling
+   under it don't show through. z-index: 11 for th-frozen so it beats
+   both the sticky header (10) and the body frozen cells. */
+.st-table--wide .st-frozen-0 {
+  position: sticky; left: 0; z-index: 6;
+  background: var(--act-surface);
+  box-shadow: 1px 0 0 var(--act-border-light);
+}
+.st-table--wide .st-frozen-1 {
+  position: sticky; left: 44px; z-index: 6;
+  background: var(--act-surface);
+  box-shadow: 1px 0 0 var(--act-border-light);
+}
+.st-table--wide thead .st-frozen-0 { z-index: 12; }
+.st-table--wide thead .st-frozen-1 { z-index: 12; }
+.st-col-check { width: 44px; min-width: 44px; }
+.st-col-term  { min-width: 260px; }
+/* Hover: tr:hover already highlights the body cells; frozen cells need the
+   same hover bg or they look mismatched. */
+.st-table--wide tbody tr:hover .st-frozen-0,
+.st-table--wide tbody tr:hover .st-frozen-1 { background: var(--act-hover-bg); }
 .st-table td.num, .st-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .st-table tr:hover td { background: var(--act-hover-bg); }
 .st-loading { padding: 40px; text-align: center; opacity: 0.6; }

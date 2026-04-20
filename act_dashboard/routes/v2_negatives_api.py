@@ -101,17 +101,64 @@ def list_search_term_reviews(client_id):
             f"SELECT COUNT(*) FROM act_v2_search_term_reviews WHERE {where}",
             params,
         ).fetchone()[0]
+        # Wave B Gate C: join to act_v2_search_terms on
+        # (client_id, search_term, snapshot_date = last_seen_date) to pull
+        # per-term context aggregates. A term may hit multiple campaigns/
+        # ad_groups/keywords on the same date — collapse with string_agg
+        # (DISTINCT) so frontend renders as comma-sep; frontend truncates
+        # as needed.
         rows = con.execute(
-            f"""SELECT id, search_term, analysis_date,
-                       first_seen_date, last_seen_date,
-                       total_impressions, total_clicks, total_cost, total_conversions,
-                       pass1_status, pass1_reason, pass2_target_list_role,
-                       review_status, reviewed_at, reviewed_by,
-                       pushed_to_ads_at, pushed_google_ads_criterion_id, push_error
-                FROM act_v2_search_term_reviews
-                WHERE {where}
-                ORDER BY total_cost DESC NULLS LAST, id
-                LIMIT ? OFFSET ?""",
+            f"""
+            WITH base AS (
+              SELECT id, search_term, analysis_date, last_seen_date
+              FROM act_v2_search_term_reviews
+              WHERE {where}
+              ORDER BY total_cost DESC NULLS LAST, id
+              LIMIT ? OFFSET ?
+            )
+            SELECT r.id, r.search_term, r.analysis_date,
+                   r.first_seen_date, r.last_seen_date,
+                   r.total_impressions, r.total_clicks, r.total_cost,
+                   r.total_conversions,
+                   r.pass1_status, r.pass1_reason, r.pass2_target_list_role,
+                   r.review_status, r.reviewed_at, r.reviewed_by,
+                   r.pushed_to_ads_at, r.pushed_google_ads_criterion_id,
+                   r.push_error,
+                   -- Wave B Gate C context aggregates
+                   STRING_AGG(DISTINCT st.campaign_name, ', ')        AS campaigns,
+                   STRING_AGG(DISTINCT st.campaign_type, ', ')        AS campaign_types,
+                   STRING_AGG(DISTINCT st.ad_group_name, ', ')        AS ad_groups,
+                   STRING_AGG(DISTINCT st.keyword_text, ', ')         AS keywords,
+                   STRING_AGG(DISTINCT st.match_type, ', ')           AS match_types,
+                   STRING_AGG(DISTINCT st.status, ', ')               AS statuses,
+                   -- weighted-ish aggregates: clicks/impr from SUM; cpc/ctr/rate
+                   -- computed from sums (not averaging the per-row ratios)
+                   CASE WHEN SUM(st.clicks) > 0
+                        THEN SUM(st.cost) / SUM(st.clicks) ELSE NULL END   AS agg_avg_cpc,
+                   CASE WHEN SUM(st.impressions) > 0
+                        THEN SUM(st.clicks)::DOUBLE / SUM(st.impressions)
+                        ELSE NULL END                                      AS agg_ctr,
+                   CASE WHEN SUM(st.conversions) > 0
+                        THEN SUM(st.cost) / SUM(st.conversions) ELSE NULL END AS agg_cost_per_conv,
+                   CASE WHEN SUM(st.clicks) > 0
+                        THEN SUM(st.conversions)::DOUBLE / SUM(st.clicks)
+                        ELSE NULL END                                      AS agg_conv_rate
+            FROM base b
+            JOIN act_v2_search_term_reviews r ON r.id = b.id
+            LEFT JOIN act_v2_search_terms st
+                   ON st.client_id = r.client_id
+                  AND st.search_term = r.search_term
+                  AND st.snapshot_date = r.last_seen_date
+            GROUP BY r.id, r.search_term, r.analysis_date,
+                     r.first_seen_date, r.last_seen_date,
+                     r.total_impressions, r.total_clicks, r.total_cost,
+                     r.total_conversions,
+                     r.pass1_status, r.pass1_reason, r.pass2_target_list_role,
+                     r.review_status, r.reviewed_at, r.reviewed_by,
+                     r.pushed_to_ads_at, r.pushed_google_ads_criterion_id,
+                     r.push_error, r.total_cost
+            ORDER BY r.total_cost DESC NULLS LAST, r.id
+            """,
             params + [page_size, offset],
         ).fetchall()
 
@@ -149,6 +196,37 @@ def list_search_term_reviews(client_id):
             [client_id, analysis_date],
         ).fetchall()
         reason_counts = {(r[0] or 'unknown'): int(r[1]) for r in reason_rows}
+
+        # Wave B Gate C: PMax "Other search terms" bucket aggregated across
+        # all PMax campaigns for this client on analysis_date. Always computed
+        # from the latest snapshot_date the reviews reference (last_seen_date),
+        # which for the narrowed 1-day window = yesterday's ingestion.
+        # Returns None when no Other-bucket row exists (no PMax or bucket
+        # wasn't populated for that date).
+        st_latest = con.execute(
+            """SELECT MAX(last_seen_date) FROM act_v2_search_term_reviews
+               WHERE client_id = ? AND analysis_date = ?""",
+            [client_id, analysis_date],
+        ).fetchone()[0]
+        pmax_other = None
+        if st_latest is not None:
+            bucket_row = con.execute(
+                """SELECT SUM(impressions), SUM(clicks), SUM(cost),
+                          SUM(conversions), SUM(distinct_term_count),
+                          MIN(snapshot_date)
+                   FROM act_v2_pmax_other_bucket
+                   WHERE client_id = ? AND snapshot_date = ?""",
+                [client_id, st_latest],
+            ).fetchone()
+            if bucket_row and bucket_row[0] is not None:
+                pmax_other = {
+                    'snapshot_date':         bucket_row[5].isoformat() if bucket_row[5] else None,
+                    'impressions':           int(bucket_row[0] or 0),
+                    'clicks':                int(bucket_row[1] or 0),
+                    'cost':                  float(bucket_row[2]) if bucket_row[2] is not None else None,
+                    'conversions':           float(bucket_row[3]) if bucket_row[3] is not None else None,
+                    'distinct_term_count':   int(bucket_row[4]) if bucket_row[4] is not None else None,
+                }
     finally:
         con.close()
 
@@ -170,6 +248,17 @@ def list_search_term_reviews(client_id):
             'pushed_to_ads_at': r[15].isoformat() if r[15] else None,
             'pushed_google_ads_criterion_id': r[16],
             'push_error': r[17],
+            # Wave B Gate C context aggregates (comma-sep strings)
+            'campaigns':      r[18],
+            'campaign_types': r[19],
+            'ad_groups':      r[20],
+            'keywords':       r[21],
+            'match_types':    r[22],
+            'statuses':       r[23],
+            'avg_cpc':             float(r[24]) if r[24] is not None else None,
+            'ctr':                 float(r[25]) if r[25] is not None else None,
+            'cost_per_conversion': float(r[26]) if r[26] is not None else None,
+            'conversion_rate':     float(r[27]) if r[27] is not None else None,
         })
     return jsonify({
         'items': items, 'total': int(total),
@@ -178,6 +267,7 @@ def list_search_term_reviews(client_id):
         'counts': counts,
         'reason_counts': reason_counts,
         'reasons_filter': reasons,
+        'pmax_other_bucket': pmax_other,
     })
 
 

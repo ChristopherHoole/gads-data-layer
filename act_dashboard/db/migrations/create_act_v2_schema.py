@@ -59,6 +59,8 @@ SEQUENCES = [
     'seq_act_v2_st_reviews',
     # N1b — Negatives engine
     'seq_act_v2_phrase_suggestions',
+    # N1b Wave B — PMax "Other search terms" bucket transparency
+    'seq_act_v2_pmax_other',
 ]
 
 # ---------------------------------------------------------------------------
@@ -408,6 +410,26 @@ TABLE_SQL = [
             pushed_google_ads_criterion_id VARCHAR,
             push_error VARCHAR,
             UNIQUE(client_id, search_term, analysis_date),
+            FOREIGN KEY (client_id) REFERENCES act_v2_clients(client_id)
+        );
+        """,
+    ),
+    (
+        'act_v2_pmax_other_bucket',
+        """
+        CREATE TABLE IF NOT EXISTS act_v2_pmax_other_bucket (
+            id BIGINT PRIMARY KEY DEFAULT nextval('seq_act_v2_pmax_other'),
+            client_id VARCHAR NOT NULL,
+            snapshot_date DATE NOT NULL,
+            campaign_id VARCHAR NOT NULL,
+            campaign_name VARCHAR,
+            impressions INTEGER,
+            clicks INTEGER,
+            cost DECIMAL(18,2),
+            conversions DECIMAL(10,2),
+            distinct_term_count INTEGER,
+            ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(client_id, campaign_id, snapshot_date),
             FOREIGN KEY (client_id) REFERENCES act_v2_clients(client_id)
         );
         """,

@@ -39,16 +39,37 @@ def _has_column(con, table, col):
 
 def main():
     logger.info('=' * 50)
-    logger.info('Wave B schema migration — act_v2_search_terms')
+    logger.info('Wave B schema migration — act_v2_search_terms + pmax_other_bucket')
     logger.info('=' * 50)
     con = duckdb.connect(DB_PATH)
     try:
         for col in ('status', 'campaign_type'):
             if _has_column(con, 'act_v2_search_terms', col):
-                logger.info(f'  {col} (already exists)')
+                logger.info(f'  search_terms.{col} (already exists)')
             else:
                 con.execute(f'ALTER TABLE act_v2_search_terms ADD COLUMN {col} VARCHAR;')
-                logger.info(f'  {col} (added)')
+                logger.info(f'  search_terms.{col} (added)')
+
+        # Wave B addition: Other-bucket transparency for PMax
+        con.execute('CREATE SEQUENCE IF NOT EXISTS seq_act_v2_pmax_other;')
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS act_v2_pmax_other_bucket (
+                id BIGINT PRIMARY KEY DEFAULT nextval('seq_act_v2_pmax_other'),
+                client_id VARCHAR NOT NULL,
+                snapshot_date DATE NOT NULL,
+                campaign_id VARCHAR NOT NULL,
+                campaign_name VARCHAR,
+                impressions INTEGER,
+                clicks INTEGER,
+                cost DECIMAL(18,2),
+                conversions DECIMAL(10,2),
+                distinct_term_count INTEGER,
+                ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(client_id, campaign_id, snapshot_date),
+                FOREIGN KEY (client_id) REFERENCES act_v2_clients(client_id)
+            );
+        """)
+        logger.info('  seq_act_v2_pmax_other + act_v2_pmax_other_bucket (ensured)')
         logger.info('=' * 50)
     finally:
         con.close()

@@ -23,6 +23,12 @@
     <div class="status-card" style="border-left-color:#9aa0a6"><div class="status-card__count" id="cntExpired">{{ counts.expired }}</div><div class="status-card__label">Expired</div></div>
   </div>
 
+  {# ---- PMax "Other search terms" transparency banner — hidden until JS fills it ---- #}
+  <div class="act-impact-summary" id="stPmaxOtherBanner" style="display:none">
+    <span class="material-symbols-outlined">info</span>
+    <span id="stPmaxOtherText"></span>
+  </div>
+
   {# ---- Tabs ---- #}
   <div class="st-tabs">
     <button class="st-tab active" data-tab="pass12">Pass 1/2 Review</button>
@@ -57,25 +63,38 @@
     </div>
   </div>
 
-  {# ---- Table area ---- #}
+  {# ---- Table area — outer wrap keeps NO overflow; the wide Pass 1/2
+       table scrolls horizontally inside its own .st-hscroll wrapper so
+       sticky thead can pin to the page viewport. ---- #}
+  <div class="st-hscroll" id="stHScroll">
   <div class="st-table-wrap">
-    <table class="st-table" id="stTable">
+    <table class="st-table st-table--wide" id="stTable">
       <thead>
         <tr>
-          <th style="width:34px"></th>
-          <th>Search term</th>
-          <th class="num">Impr</th>
-          <th class="num">Clicks</th>
-          <th class="num">Cost</th>
-          <th class="num">Conv</th>
+          <th class="st-col-check st-frozen-0">&nbsp;</th>
+          <th class="st-col-term  st-frozen-1">Search Term</th>
           <th>Status</th>
           <th>Reason</th>
-          <th>Target list</th>
-          <th>Push error</th>
+          <th>Target List</th>
+          <th>Match Type</th>
+          <th>Added/Excluded</th>
+          <th>Campaign</th>
+          <th>Campaign Type</th>
+          <th>Ad Group</th>
+          <th>Keyword</th>
+          <th class="num">Cost</th>
+          <th class="num">Impr</th>
+          <th class="num">Clicks</th>
+          <th class="num">Avg CPC</th>
+          <th class="num">CTR</th>
+          <th class="num">Conv</th>
+          <th class="num">Cost/Conv</th>
+          <th class="num">Conv Rate</th>
+          <th>Push Error</th>
         </tr>
       </thead>
       <tbody id="stTbody">
-        <tr><td colspan="10" class="st-loading">Loading…</td></tr>
+        <tr><td colspan="20" class="st-loading">Loading…</td></tr>
       </tbody>
     </table>
 
@@ -98,6 +117,7 @@
         <tr><td colspan="9" class="st-loading">Run Pass 3 to generate suggestions</td></tr>
       </tbody>
     </table>
+  </div>
   </div>
 
   {# ---- Pagination ---- #}
