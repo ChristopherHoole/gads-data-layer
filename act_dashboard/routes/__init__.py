@@ -84,6 +84,11 @@ def register_blueprints(app: Flask):
     from act_dashboard.routes.v2_morning import v2_morning_bp
     app.register_blueprint(v2_morning_bp)
 
+    # N1b: ACT v2 Negatives Module — Pass 1/2/3 + approve/push API
+    from act_dashboard.routes.v2_negatives_api import v2_negatives_api_bp
+    app.register_blueprint(v2_negatives_api_bp)
+    print("[OK] [N1b] Registered v2_negatives_api blueprint (/v2/api/negatives)")
+
     print("[OK] [Phase 1a] Registered auth blueprint (login, logout, switch-client)")
     print("[OK] [Phase 1b] Registered api blueprint (execute, batch, status, approve, reject)")
     print("[OK] [Phase 1c] Registered page blueprints (keywords, ads, shopping)")

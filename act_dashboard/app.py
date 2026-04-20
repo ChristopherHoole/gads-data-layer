@@ -558,6 +558,21 @@ def create_app():
         else:
             print(f"[WARN] [B2] Route not found (skipping): {route_name}")
 
+    # N1b: Negatives Module — all POST endpoints need CSRF exempt
+    v2_negatives_api_routes = [
+        'v2_negatives_api.bulk_update_search_term_reviews',
+        'v2_negatives_api.push_approved_search_terms',
+        'v2_negatives_api.run_pass3_endpoint',
+        'v2_negatives_api.bulk_update_phrase_suggestions',
+        'v2_negatives_api.push_phrase_suggestions',
+    ]
+    for route_name in v2_negatives_api_routes:
+        if route_name in app.view_functions:
+            csrf.exempt(app.view_functions[route_name])
+            print(f"[OK] [N1b] CSRF exempted: {route_name}")
+        else:
+            print(f"[WARN] [N1b] Route not found (skipping): {route_name}")
+
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
     def csrf_error(reason):
