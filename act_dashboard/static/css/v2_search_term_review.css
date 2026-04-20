@@ -71,11 +71,17 @@
   background: var(--act-primary); color: white;
 }
 
-/* Sticky action bar */
+/* Sticky action bar — pins BELOW the fixed topbar (which is z:900).
+   Height is stable at 44px (8px padding top + 28px button + 8px padding
+   bottom), captured in --act-action-bar-height so thead can offset
+   correctly below it. */
+:root { --act-action-bar-height: 44px; }
 .st-action-bar {
-  position: sticky; top: 0; z-index: 5;
+  position: sticky; top: var(--act-topbar-height); z-index: 25;
   display: flex; justify-content: space-between; align-items: center;
   gap: 12px; padding: 8px 0; margin-bottom: 8px;
+  height: var(--act-action-bar-height);
+  box-sizing: border-box;
   background: var(--act-bg); border-bottom: 1px solid var(--act-border-light);
 }
 .st-action-bar__left, .st-action-bar__right {
@@ -119,11 +125,16 @@
   font-weight: 600; font-size: 12px;
   color: var(--act-text);
   background: var(--act-surface);
-  position: sticky; top: 56px; z-index: 20;
+  /* Wave C5 surgical fix: pin below fixed topbar (52px) + sticky action
+     bar (44px) — was top:56px, which left a 4px band under the topbar
+     where row 1 ghosted through during vertical scroll. */
+  position: sticky;
+  top: calc(var(--act-topbar-height) + var(--act-action-bar-height));
+  z-index: 20;
   border-bottom: 1px solid var(--act-border);
   white-space: normal;
   word-wrap: break-word;
-  vertical-align: middle;   /* Wave C4: consistent alignment for 1- vs 2-line headers */
+  vertical-align: middle;
   min-height: 40px;
 }
 
