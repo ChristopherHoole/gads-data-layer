@@ -116,9 +116,13 @@ class GoogleAdsDataPipeline:
         st = self.ingest_search_terms(date)
         seg = self.ingest_campaign_segments(date)
         self.ingest_account(date)
+        # N1a — negative-keyword lists are a point-in-time snapshot of current state,
+        # not per-historical-date. We re-run on every ingest_date call and overwrite.
+        nl = self.ingest_negative_lists(date)
 
-        logger.info(f"  {date}: campaigns={c}, ad_groups={ag}, keywords={kw}, ads={ad}, search_terms={st}, segments={seg}")
-        return {'campaigns': c, 'ad_groups': ag, 'keywords': kw, 'ads': ad, 'search_terms': st, 'segments': seg}
+        logger.info(f"  {date}: campaigns={c}, ad_groups={ag}, keywords={kw}, ads={ad}, search_terms={st}, segments={seg}, neg_lists={nl['lists']}/{nl['keywords']}kw")
+        return {'campaigns': c, 'ad_groups': ag, 'keywords': kw, 'ads': ad, 'search_terms': st, 'segments': seg,
+                'neg_lists': nl['lists'], 'neg_keywords': nl['keywords']}
 
     def ingest_date_range(self, start_date: str, end_date: str):
         """Pull data for a range of dates (for backfill)."""
@@ -625,6 +629,181 @@ class GoogleAdsDataPipeline:
             "conversion_rate": round(_safe_div(total_conversions, total_clicks), 4),
         }
         self._store_snapshot(date, 'account', self.customer_id, 'Account Total', None, account_metrics)
+
+    # -----------------------------------------------------------------------
+    # N1a — Negative keyword lists ingestion
+    # -----------------------------------------------------------------------
+    def _resolve_list_role(self, name: str) -> str | None:
+        """Map a Google Ads shared-set NAME to one of the 13 list_role enum values.
+
+        Tolerance rules (brief N1a Q2):
+        - case-insensitive
+        - 'WORD' / 'WORDS' interchangeable
+        - '1 WORD+' == '1 WORD' ('+' is semantic noise)
+        - 'Competitors & Brands' canonical competitor prefix
+        - '"phrase"' (quoted) vs '[exact]' (bracketed) identify match type
+
+        Returns None when the list name doesn't fit any known role (caller logs
+        a WARNING; typical in-the-wild misses are free-form lists like
+        'DBD Negs' or 'KMG | Invisalign' which keep list_role = NULL).
+        """
+        if not name:
+            return None
+        n = name.lower().strip()
+
+        # Identify match type token first
+        has_exact = '[exact]' in n
+        has_phrase = '"phrase"' in n
+
+        # Strip the match-type tokens so the rest of the parser can look at the prefix
+        core = n.replace('[exact]', '').replace('"phrase"', '').replace('  ', ' ').strip()
+
+        # Competitor family (named 'Competitors & Brands ...')
+        if core.startswith('competitors & brands'):
+            if has_exact:
+                return 'competitor_exact'
+            if has_phrase:
+                return 'competitor_phrase'
+            return None
+
+        # Location family ('Location 1 WORD ...' / 'Location 1 WORD+ ...')
+        if core.startswith('location'):
+            if has_exact:
+                return 'location_exact'
+            if has_phrase:
+                return 'location_phrase'
+            return None
+
+        # N-WORD / N-WORDS family — accept '1 word', '2 words', ..., '5+ words'
+        import re
+        m = re.match(r'^(\d)\+?\s+words?\+?$', core)
+        if m:
+            n_words = int(m.group(1))
+            if n_words >= 5 and has_exact:
+                return '5plus_word_exact'
+            if 1 <= n_words <= 4:
+                if has_exact:
+                    return f'{n_words}_word_exact'
+                if has_phrase:
+                    return f'{n_words}_word_phrase'
+        return None
+
+    def ingest_negative_lists(self, date: str) -> dict:
+        """Snapshot current state of negative-keyword lists + individual keywords
+        + campaign link status for this client. Called once per ingest_date.
+
+        delete-then-insert pattern by (client_id, snapshot_date) for keywords
+        and full overwrite for list rows (they represent current state).
+
+        Returns dict(lists, keywords, unmatched_names).
+        """
+        # -------------------------------------------------------------------
+        # 1. Fetch shared_set rows (negative-keyword lists), ENABLED only
+        # -------------------------------------------------------------------
+        sets_query = """
+            SELECT shared_set.id, shared_set.name, shared_set.status,
+                   shared_set.member_count, shared_set.reference_count,
+                   shared_set.resource_name
+            FROM shared_set
+            WHERE shared_set.type = 'NEGATIVE_KEYWORDS'
+              AND shared_set.status = 'ENABLED'
+        """
+        sets = list(self._query(sets_query))
+
+        # -------------------------------------------------------------------
+        # 2. Fetch campaign_shared_set links → determine is_linked_to_campaign
+        # -------------------------------------------------------------------
+        links_query = """
+            SELECT campaign.status, campaign_shared_set.status, shared_set.id
+            FROM campaign_shared_set
+            WHERE shared_set.type = 'NEGATIVE_KEYWORDS'
+        """
+        linked_set_ids: set[str] = set()
+        for row in self._query(links_query):
+            # A list is "linked" if at least one ENABLED campaign has an
+            # ENABLED link to it (drops REMOVED both sides).
+            if (row.campaign.status.name == 'ENABLED'
+                    and row.campaign_shared_set.status.name == 'ENABLED'):
+                linked_set_ids.add(str(row.shared_set.id))
+
+        # -------------------------------------------------------------------
+        # 3. Upsert list rows
+        # -------------------------------------------------------------------
+        unmatched_names: list[str] = []
+        list_count = 0
+        # Full-refresh of this client's lists (they are current-state, not dated)
+        self.db.execute(
+            "DELETE FROM act_v2_negative_keyword_lists WHERE client_id = ?",
+            [self.client_id],
+        )
+        for s in sets:
+            ss = s.shared_set
+            google_id = str(ss.id)
+            list_id = f"{self.client_id}-gal-{google_id}"  # gal = google-ads-list
+            role = self._resolve_list_role(ss.name)
+            if role is None:
+                unmatched_names.append(ss.name)
+                logger.warning(f"  [neg-list] No list_role match for '{ss.name}' (id={google_id}) — left NULL")
+            self.db.execute(
+                """INSERT INTO act_v2_negative_keyword_lists
+                   (list_id, client_id, google_ads_list_id, list_name,
+                    word_count, match_type, list_role, keyword_count,
+                    added_manually_count, added_by_act_count,
+                    is_linked_to_campaign, last_synced_at)
+                   VALUES (?, ?, ?, ?, NULL, NULL, ?, 0, 0, 0, ?, CURRENT_TIMESTAMP)""",
+                [list_id, self.client_id, google_id, ss.name,
+                 role, google_id in linked_set_ids],
+            )
+            list_count += 1
+
+        # -------------------------------------------------------------------
+        # 4. Fetch + upsert individual negative keywords for each list
+        # -------------------------------------------------------------------
+        # delete-then-insert pattern for this client + snapshot_date
+        self.db.execute(
+            "DELETE FROM act_v2_negative_list_keywords WHERE client_id = ? AND snapshot_date = ?",
+            [self.client_id, date],
+        )
+        kw_count = 0
+        for s in sets:
+            google_id = str(s.shared_set.id)
+            list_id = f"{self.client_id}-gal-{google_id}"
+            crit_query = f"""
+                SELECT shared_criterion.criterion_id,
+                       shared_criterion.type,
+                       shared_criterion.keyword.text,
+                       shared_criterion.keyword.match_type
+                FROM shared_criterion
+                WHERE shared_set.id = {google_id}
+            """
+            members = 0
+            for row in self._query(crit_query):
+                if row.shared_criterion.type_.name != 'KEYWORD':
+                    continue
+                match_type = row.shared_criterion.keyword.match_type.name  # EXACT/PHRASE/BROAD
+                self.db.execute(
+                    """INSERT INTO act_v2_negative_list_keywords
+                       (list_id, client_id, keyword_text, match_type,
+                        google_ads_criterion_id, added_at, added_by, snapshot_date)
+                       VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'unknown', ?)""",
+                    [list_id, self.client_id,
+                     row.shared_criterion.keyword.text, match_type,
+                     str(row.shared_criterion.criterion_id), date],
+                )
+                members += 1
+                kw_count += 1
+            # Update keyword_count on the list row
+            self.db.execute(
+                "UPDATE act_v2_negative_keyword_lists SET keyword_count = ? WHERE list_id = ?",
+                [members, list_id],
+            )
+
+        logger.info(
+            f"  [neg-list] {list_count} lists, {kw_count} keywords, "
+            f"{len(linked_set_ids)} linked to active campaigns, "
+            f"{len(unmatched_names)} unmatched names"
+        )
+        return {'lists': list_count, 'keywords': kw_count, 'unmatched_names': unmatched_names}
 
     def close(self):
         """Close the database connection."""
