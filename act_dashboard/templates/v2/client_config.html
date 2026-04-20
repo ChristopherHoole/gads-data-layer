@@ -161,6 +161,18 @@
           <div class="setting-control"><div class="{{ toggle_class('budget_allocation_mode') }}" data-key="budget_allocation_mode"><div class="config-toggle__knob"></div></div><span style="font-size:12px;margin-left:8px;color:var(--act-text)">Automatic</span></div>
         </div>
 
+        {# N1b Wave C9 — Negatives engine Rule 5 behaviour #}
+        <div class="setting-row">
+          <div class="setting-info">
+            <p class="setting-name">Auto-block services offered but not advertised</p>
+            <p class="setting-desc">When ON, search terms matching services you offer but don't currently advertise (e.g. veneers for an implants-only scope) get blocked automatically. When OFF, they go to Review for manual decision.</p>
+          </div>
+          <div class="setting-control">
+            <div class="{{ toggle_class('block_offered_not_advertised') }}" data-key="block_offered_not_advertised"><div class="config-toggle__knob"></div></div>
+            <span style="font-size:12px;margin-left:8px;color:var(--act-text)">Auto-block</span>
+          </div>
+        </div>
+
         <div class="setting-row">
           <div class="setting-info"><p class="setting-name">Deviation Threshold</p><p class="setting-desc">% beyond target range before ACT triggers deeper investigation.</p></div>
           <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="deviation_threshold_pct" value="{{ s('deviation_threshold_pct') }}" min="1" max="50"><span class="input-group__suffix">%</span></div></div>

@@ -23,15 +23,17 @@
   let liveTargetListLabels = {};           // Wave C4: {role: live_name} from API
 
   // ---------- Wave A humanization maps (display only; DB stores codes) ----
+  // Wave C9: relabelled for clearer semantics. "Leak —" prefix makes
+  // Rule 2/3 hits obviously distinct from advertising-intent classifications.
   const REASON_LABELS = {
-    brand_protection:               'Brand protected',
-    existing_exact_neg_match:       'Already blocked (exact)',
-    existing_phrase_neg_match:      'Already blocked (phrase)',
-    existing_multiword_neg_match:   'Already blocked (multi-word)',
+    brand_protection:               'Brand search',
+    existing_exact_neg_match:       'Leak — on exact neg list',
+    existing_phrase_neg_match:      'Leak — on phrase neg list',
+    existing_multiword_neg_match:   'Leak — on multi-word neg list',
     location_outside_service_area:  'Outside service area',
-    service_not_advertised:         'Not advertised',
+    service_not_advertised:         'Offered, not advertised',
     advertised_service_match:       'Advertised service',
-    contains_neg_vocabulary:        'Contains negative word',
+    contains_neg_vocabulary:        'Contains excluded term',
     ambiguous:                      'Needs review',
     client_not_configured:          'Not configured',
     empty_term:                     'Empty term',
@@ -53,6 +55,9 @@
     'location_exact':   'Loc 1 WRD+ [ex]',
     'competitor_phrase':'Com & Bran "ph"',
     'competitor_exact': 'Com & Bran [ex]',
+    // Wave C9
+    'offered_not_advertised_exact':  'Off Not Adv [ex]',
+    'offered_not_advertised_phrase': 'Off Not Adv "ph"',
   };
   const humanReason = r => REASON_LABELS[r] || (r || '');
   const humanRole   = r => ROLE_LABELS[r] || (r || '—');
