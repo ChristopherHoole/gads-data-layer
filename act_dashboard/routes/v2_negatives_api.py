@@ -92,8 +92,30 @@ def list_search_term_reviews(client_id):
                     "campaign_source must be one of all|search|pmax")
 
     offset = (page - 1) * page_size
-    where_clauses = [f"client_id = ?", f"analysis_date = ?", _ST_VIEW_FILTERS[view]]
-    params = [client_id, analysis_date]
+
+    # Build WHERE clauses in two qualified forms side-by-side so that:
+    #  - standalone queries (total / counts / reason_counts) use unqualified
+    #    columns on act_v2_search_term_reviews,
+    #  - the rows query, which LEFT JOINs act_v2_search_terms, uses
+    #    r.client_id / r.analysis_date / r.id to stay unambiguous post-join.
+    # Both forms share the same parameter list (positional bindings).
+    where_clauses: list[str] = []
+    where_clauses_r: list[str] = []
+    params: list = []
+
+    where_clauses.append("client_id = ?")
+    where_clauses_r.append("r.client_id = ?")
+    params.append(client_id)
+
+    where_clauses.append("analysis_date = ?")
+    where_clauses_r.append("r.analysis_date = ?")
+    params.append(analysis_date)
+
+    # view filter (e.g. 1=1 for 'all'); columns like pass1_status/
+    # review_status exist only on act_v2_search_term_reviews so they're
+    # unambiguous in both contexts — reuse verbatim.
+    where_clauses.append(_ST_VIEW_FILTERS[view])
+    where_clauses_r.append(_ST_VIEW_FILTERS[view])
 
     # Wave A: optional reasons= CSV param (AND with view, OR among reasons)
     reasons_raw = request.args.get('reasons') or ''
@@ -101,16 +123,19 @@ def list_search_term_reviews(client_id):
     if reasons:
         placeholders = ','.join(['?'] * len(reasons))
         where_clauses.append(f"pass1_reason IN ({placeholders})")
+        where_clauses_r.append(f"r.pass1_reason IN ({placeholders})")
         params.extend(reasons)
 
-    # Wave C10: build source_ids subquery fragment. For source != 'all',
-    # restricts review rows to those with at least one matching-type source
-    # row (impr>0 or clicks>0). Empty fragment when source='all'.
-    source_ids_subquery = ''
+    # Wave C10: source-ids subquery restricts review rows to those with at
+    # least one matching-type source row (impr>0 or clicks>0). The
+    # subquery itself is identical in both forms (inner r2.* references
+    # are unaffected by the outer alias); only the outer `id` column needs
+    # qualification.
     source_ids_params: list = []
+    source_ids_subquery_body = ''
     if campaign_source != 'all':
         ct = 'SEARCH' if campaign_source == 'search' else 'PERFORMANCE_MAX'
-        source_ids_subquery = """ AND id IN (
+        source_ids_subquery_body = """ IN (
             SELECT r2.id FROM act_v2_search_term_reviews r2
             JOIN act_v2_search_terms st2
               ON st2.client_id   = r2.client_id
@@ -124,10 +149,12 @@ def list_search_term_reviews(client_id):
                 OR COALESCE(SUM(st2.clicks),0) > 0
         )"""
         source_ids_params = [client_id, analysis_date, ct]
-    where_clauses.append(f"1=1{source_ids_subquery}")
-    params.extend(source_ids_params)
+        where_clauses.append(f"id{source_ids_subquery_body}")
+        where_clauses_r.append(f"r.id{source_ids_subquery_body}")
+        params.extend(source_ids_params)
 
-    where = ' AND '.join(where_clauses)
+    where      = ' AND '.join(where_clauses)
+    where_rows = ' AND '.join(where_clauses_r)
 
     con = _db()
     try:
@@ -135,11 +162,12 @@ def list_search_term_reviews(client_id):
             f"SELECT COUNT(*) FROM act_v2_search_term_reviews WHERE {where}",
             params,
         ).fetchone()[0]
-        # Wave C10: rows query now always re-aggregates metrics from the
-        # JOIN (no reliance on stored r.total_*), so a campaign_type
-        # filter yields per-source metrics naturally. When source='all',
-        # no type filter is applied and SUM covers all source rows -
-        # matches the stored r.total_* produced by pass1.
+        # Wave C11: aggregate FIRST over the full filtered set, then sort +
+        # LIMIT/OFFSET. Previous version (Wave C10) put LIMIT/OFFSET inside
+        # a base CTE that sliced review rows BEFORE the JOIN+SUM ran, so
+        # pagination with small page_size returned arbitrary rows instead
+        # of the highest-impression ones. Tie-break on total_clicks then
+        # r.id so ordering is stable across pages.
         st_type_filter = ''
         st_type_filter_params: list = []
         if campaign_source != 'all':
@@ -149,55 +177,62 @@ def list_search_term_reviews(client_id):
 
         rows = con.execute(
             f"""
-            WITH base AS (
-              SELECT id, search_term, analysis_date,
-                     first_seen_date, last_seen_date
-              FROM act_v2_search_term_reviews
-              WHERE {where}
-              LIMIT ? OFFSET ?
-            )
-            SELECT r.id, r.search_term, r.analysis_date,
-                   r.first_seen_date, r.last_seen_date,
-                   COALESCE(SUM(st.impressions), 0)  AS total_impressions,
-                   COALESCE(SUM(st.clicks), 0)       AS total_clicks,
-                   SUM(st.cost)                      AS total_cost,
-                   COALESCE(SUM(st.conversions), 0)  AS total_conversions,
-                   r.pass1_status, r.pass1_reason, r.pass2_target_list_role,
-                   r.review_status, r.reviewed_at, r.reviewed_by,
-                   r.pushed_to_ads_at, r.pushed_google_ads_criterion_id,
-                   r.push_error,
-                   STRING_AGG(DISTINCT st.campaign_name, ', ')        AS campaigns,
-                   STRING_AGG(DISTINCT st.campaign_type, ', ')        AS campaign_types,
-                   STRING_AGG(DISTINCT st.ad_group_name, ', ')        AS ad_groups,
-                   STRING_AGG(DISTINCT st.keyword_text, ', ')         AS keywords,
-                   STRING_AGG(DISTINCT st.match_type, ', ')           AS match_types,
-                   STRING_AGG(DISTINCT st.status, ', ')               AS statuses,
-                   CASE WHEN SUM(st.clicks) > 0
-                        THEN SUM(st.cost) / SUM(st.clicks) ELSE NULL END AS agg_avg_cpc,
-                   CASE WHEN SUM(st.impressions) > 0
-                        THEN SUM(st.clicks)::DOUBLE / SUM(st.impressions)
-                        ELSE NULL END                                    AS agg_ctr,
-                   CASE WHEN SUM(st.conversions) > 0
-                        THEN SUM(st.cost) / SUM(st.conversions) ELSE NULL END AS agg_cost_per_conv,
-                   CASE WHEN SUM(st.clicks) > 0
-                        THEN SUM(st.conversions)::DOUBLE / SUM(st.clicks)
-                        ELSE NULL END                                    AS agg_conv_rate
-            FROM base b
-            JOIN act_v2_search_term_reviews r ON r.id = b.id
-            LEFT JOIN act_v2_search_terms st
-                   ON st.client_id   = r.client_id
-                  AND st.search_term = r.search_term
-                  AND st.snapshot_date BETWEEN r.first_seen_date AND r.last_seen_date
-                  {st_type_filter}
-            GROUP BY r.id, r.search_term, r.analysis_date,
+            WITH source_agg AS (
+              SELECT r.id, r.search_term, r.analysis_date,
                      r.first_seen_date, r.last_seen_date,
+                     COALESCE(SUM(st.impressions), 0)  AS total_impressions,
+                     COALESCE(SUM(st.clicks), 0)       AS total_clicks,
+                     SUM(st.cost)                      AS total_cost,
+                     COALESCE(SUM(st.conversions), 0)  AS total_conversions,
                      r.pass1_status, r.pass1_reason, r.pass2_target_list_role,
                      r.review_status, r.reviewed_at, r.reviewed_by,
                      r.pushed_to_ads_at, r.pushed_google_ads_criterion_id,
-                     r.push_error
-            ORDER BY total_impressions DESC NULLS LAST, r.id
+                     r.push_error,
+                     STRING_AGG(DISTINCT st.campaign_name, ', ') AS campaigns,
+                     STRING_AGG(DISTINCT st.campaign_type, ', ') AS campaign_types,
+                     STRING_AGG(DISTINCT st.ad_group_name, ', ') AS ad_groups,
+                     STRING_AGG(DISTINCT st.keyword_text, ', ')  AS keywords,
+                     STRING_AGG(DISTINCT st.match_type, ', ')    AS match_types,
+                     STRING_AGG(DISTINCT st.status, ', ')        AS statuses,
+                     CASE WHEN SUM(st.clicks) > 0
+                          THEN SUM(st.cost) / SUM(st.clicks) ELSE NULL END AS agg_avg_cpc,
+                     CASE WHEN SUM(st.impressions) > 0
+                          THEN SUM(st.clicks)::DOUBLE / SUM(st.impressions)
+                          ELSE NULL END                                    AS agg_ctr,
+                     CASE WHEN SUM(st.conversions) > 0
+                          THEN SUM(st.cost) / SUM(st.conversions) ELSE NULL END AS agg_cost_per_conv,
+                     CASE WHEN SUM(st.clicks) > 0
+                          THEN SUM(st.conversions)::DOUBLE / SUM(st.clicks)
+                          ELSE NULL END                                    AS agg_conv_rate
+              FROM act_v2_search_term_reviews r
+              LEFT JOIN act_v2_search_terms st
+                     ON st.client_id   = r.client_id
+                    AND st.search_term = r.search_term
+                    AND st.snapshot_date BETWEEN r.first_seen_date AND r.last_seen_date
+                    {st_type_filter}
+              WHERE {where_rows}
+              GROUP BY r.id, r.search_term, r.analysis_date,
+                       r.first_seen_date, r.last_seen_date,
+                       r.pass1_status, r.pass1_reason, r.pass2_target_list_role,
+                       r.review_status, r.reviewed_at, r.reviewed_by,
+                       r.pushed_to_ads_at, r.pushed_google_ads_criterion_id,
+                       r.push_error
+            )
+            SELECT id, search_term, analysis_date,
+                   first_seen_date, last_seen_date,
+                   total_impressions, total_clicks, total_cost, total_conversions,
+                   pass1_status, pass1_reason, pass2_target_list_role,
+                   review_status, reviewed_at, reviewed_by,
+                   pushed_to_ads_at, pushed_google_ads_criterion_id, push_error,
+                   campaigns, campaign_types, ad_groups, keywords, match_types, statuses,
+                   agg_avg_cpc, agg_ctr, agg_cost_per_conv, agg_conv_rate
+            FROM source_agg
+            ORDER BY total_impressions DESC NULLS LAST,
+                     total_clicks DESC NULLS LAST,
+                     id ASC
+            LIMIT ? OFFSET ?
             """,
-            params + [page_size, offset] + st_type_filter_params,
+            st_type_filter_params + params + [page_size, offset],
         ).fetchall()
 
         # Wave C10: status + reason counts recomputed WITHIN the current
@@ -214,7 +249,7 @@ def list_search_term_reviews(client_id):
                  COUNT(*) FILTER (WHERE review_status='expired')                           AS expired,
                  COUNT(*)                                                                   AS total
                FROM act_v2_search_term_reviews
-               WHERE client_id = ? AND analysis_date = ?{source_ids_subquery}""",
+               WHERE client_id = ? AND analysis_date = ?{(' AND id' + source_ids_subquery_body) if source_ids_subquery_body else ''}""",
             [client_id, analysis_date] + source_ids_params,
         ).fetchone()
         counts = {
@@ -230,7 +265,7 @@ def list_search_term_reviews(client_id):
         reason_rows = con.execute(
             f"""SELECT pass1_reason, COUNT(*)
                FROM act_v2_search_term_reviews
-               WHERE client_id = ? AND analysis_date = ?{source_ids_subquery}
+               WHERE client_id = ? AND analysis_date = ?{(' AND id' + source_ids_subquery_body) if source_ids_subquery_body else ''}
                GROUP BY pass1_reason""",
             [client_id, analysis_date] + source_ids_params,
         ).fetchall()
