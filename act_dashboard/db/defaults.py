@@ -108,6 +108,9 @@ NEG_ENGINE_SETTINGS = [
     ('neg_pass3_threshold_2word',  '3',    'int',    'account'),
     ('neg_pass3_threshold_3word',  '2',    'int',    'account'),
     ('neg_pass3_stopwords',        NEG_PASS3_DEFAULT_STOPWORDS, 'string', 'account'),
+    # Wave C9: Rule 5 behaviour toggle. TRUE -> auto-block, FALSE -> route
+    # to review for manual decision.
+    ('block_offered_not_advertised', 'true', 'bool', 'account'),
 ]
 
 # Extend DEFAULT_SETTINGS so reset endpoint + fresh seeds include them

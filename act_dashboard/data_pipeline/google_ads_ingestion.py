@@ -34,6 +34,12 @@ _QUOTE = r'["\'\u201c\u201d]'
 _EX    = r'\[ex(?:act)?\]'
 _BRAND = r'bran(?:ds?)?'
 _LIST_ROLE_PATTERNS: list[tuple[re.Pattern, object]] = [
+    # Wave C9: Offered-not-advertised (Rule 5 dedicated target). Match early
+    # so these don't fall through to the generic N-word patterns.
+    (re.compile(rf'^\s*off(?:ered)?\s*not\s*adv(?:ertised)?\b.*{_QUOTE}ph(?:rase)?{_QUOTE}?', re.I),
+     'offered_not_advertised_phrase'),
+    (re.compile(rf'^\s*off(?:ered)?\s*not\s*adv(?:ertised)?\b.*{_EX}', re.I),
+     'offered_not_advertised_exact'),
     # Location family
     (re.compile(rf'^\s*loc(?:ation)?\b.*1\s*{_WORDS}\+?\s*{_EX}', re.I),
      'location_exact'),
