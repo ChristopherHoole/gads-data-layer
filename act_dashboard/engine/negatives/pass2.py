@@ -26,6 +26,10 @@ logger.setLevel(logging.INFO)
 
 
 def _route(pass1_reason: str, search_term: str) -> str:
+    # Wave C9: service_not_advertised gets its own dedicated list so user
+    # can audit + reverse as a cohort if scope expands.
+    if pass1_reason == 'service_not_advertised':
+        return 'offered_not_advertised_exact'
     if pass1_reason == 'location_outside_service_area':
         return 'location_exact'
     wc = len(tokenize(search_term))

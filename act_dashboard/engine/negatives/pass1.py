@@ -118,6 +118,15 @@ def _load_client_config(con, client_id: str) -> dict:
         if n:
             phrase_neg_phrases.add(n)
 
+    # Wave C9: Rule 5 toggle — block vs review.
+    toggle_row = con.execute(
+        """SELECT setting_value FROM act_v2_client_settings
+           WHERE client_id = ? AND setting_key = 'block_offered_not_advertised'""",
+        [client_id],
+    ).fetchone()
+    block_offered_not_advertised = (toggle_row is None
+                                    or (toggle_row[0] or '').lower() == 'true')
+
     return {
         'brand_phrases': brand_phrases,
         'exact_neg_phrases': exact_neg_phrases,            # Rule 2 (equality)
@@ -127,6 +136,7 @@ def _load_client_config(con, client_id: str) -> dict:
         'all_services_phrases': all_services_phrases,
         'denylist_phrases': denylist_phrases,
         'service_locations_set': service_locations_set,
+        'block_offered_not_advertised': block_offered_not_advertised,
     }
 
 
@@ -170,7 +180,9 @@ def classify_term(search_term: str, cfg: dict) -> tuple[str, str]:
 
     # Rule 5 — denylist (service we do but don't advertise)
     if phrase_appears_in(cfg['denylist_phrases'], t_norm):
-        return ('block', 'service_not_advertised')
+        # Wave C9: configurable — toggle OFF sends these to review instead.
+        status = 'block' if cfg['block_offered_not_advertised'] else 'review'
+        return (status, 'service_not_advertised')
 
     # Rule 6 — advertised service match (must beat Rule 7 so advertised
     # services with incidental neg-vocabulary tokens stay as keep)

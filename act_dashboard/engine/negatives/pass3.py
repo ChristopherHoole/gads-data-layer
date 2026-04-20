@@ -78,6 +78,21 @@ def _load_protected_words(con, client_id: str, stopwords: str) -> set[str]:
     return protected
 
 
+def _load_denylist_tokens(con, client_id: str) -> set[str]:
+    """Wave C9: tokens unique to all-services but NOT to services-advertised.
+    Used so Pass 3 can route fragments containing those tokens to the
+    dedicated offered_not_advertised_phrase list."""
+    row = con.execute(
+        """SELECT services_all, services_advertised
+           FROM act_v2_clients WHERE client_id = ?""",
+        [client_id],
+    ).fetchone()
+    if not row:
+        return set()
+    all_raw, adv_raw = row
+    return tokenize_set(all_raw) - tokenize_set(adv_raw)
+
+
 def _load_existing_negs_normalized(con, client_id: str) -> set[str]:
     """All normalized keyword_text across LINKED neg lists (any role, any
     match type). Used for dedup so we never re-suggest what's already there."""
@@ -140,6 +155,7 @@ def run_pass3(client_id: str, db_path: str,
     try:
         settings = _load_client_settings(con, client_id)
         protected = _load_protected_words(con, client_id, settings['stopwords'])
+        denylist_tokens = _load_denylist_tokens(con, client_id)
         existing = _load_existing_negs_normalized(con, client_id)
         pushed_terms = _load_pushed_terms(con, client_id, analysis_date)
 
@@ -180,7 +196,14 @@ def run_pass3(client_id: str, db_path: str,
                 skipped_dedup += 1
                 continue
 
-            target_role = f'{wc}_word_phrase'
+            # Wave C9: fragments that contain a denylist token route to
+            # the dedicated Off-Not-Adv phrase list regardless of word
+            # count — cleaner audit trail vs scattering across N-word lists.
+            frag_tokens = frag.split()
+            if any(tk in denylist_tokens for tk in frag_tokens):
+                target_role = 'offered_not_advertised_phrase'
+            else:
+                target_role = f'{wc}_word_phrase'
             risk = _risk_for(wc)
             sources = sorted(info['source_terms'])
             con.execute(
