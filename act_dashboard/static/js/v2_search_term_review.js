@@ -10,6 +10,65 @@
   let currentPage = 1;
   const PAGE_SIZE = 100;
   let lastItems = [];                      // items currently rendered
+  let statusView = 'all';                  // single-select status chip
+  let selectedReasons = new Set();         // multi-select reason chips
+  let p3View = 'pending';                  // Pass 3 tab single-select
+
+  // ---------- Wave A humanization maps (display only; DB stores codes) ----
+  const REASON_LABELS = {
+    brand_protection:               'Brand protected',
+    existing_exact_neg_match:       'Already blocked (exact)',
+    existing_phrase_neg_match:      'Already blocked (phrase)',
+    existing_multiword_neg_match:   'Already blocked (multi-word)',
+    location_outside_service_area:  'Outside service area',
+    service_not_advertised:         'Not advertised',
+    advertised_service_match:       'Advertised service',
+    contains_neg_vocabulary:        'Contains negged word',
+    ambiguous:                      'Needs review',
+    client_not_configured:          'Not configured',
+    empty_term:                     'Empty term',
+  };
+  const ROLE_LABELS = {
+    '1_word_exact':     '1 WORD [exact]',
+    '2_word_exact':     '2 WORDS [exact]',
+    '3_word_exact':     '3 WORDS [exact]',
+    '4_word_exact':     '4 WORDS [exact]',
+    '5plus_word_exact': '5+ WORDS [exact]',
+    '1_word_phrase':    '1 WORD "phrase"',
+    '2_word_phrase':    '2 WORDS "phrase"',
+    '3_word_phrase':    '3 WORDS "phrase"',
+    '4_word_phrase':    '4 WORDS "phrase"',
+    'location_phrase':  'Location 1 WORD "phrase"',
+    'location_exact':   'Location 1 WORD+ [exact]',
+    'competitor_phrase':'Competitors & Brands "phrase"',
+    'competitor_exact': 'Competitors & Brands [exact]',
+  };
+  const humanReason = r => REASON_LABELS[r] || (r || '');
+  const humanRole   = r => ROLE_LABELS[r] || (r || '—');
+
+  const STATUS_CHIP_ORDER = [
+    {key: 'all',      label: 'All'},
+    {key: 'block',    label: 'Block'},
+    {key: 'review',   label: 'Review'},
+    {key: 'keep',     label: 'Keep'},
+    {key: 'approved', label: 'Approved'},
+    {key: 'pushed',   label: 'Pushed'},
+    {key: 'rejected', label: 'Rejected'},
+    {key: 'expired',  label: 'Expired'},
+  ];
+  // Display order for reason chips — matches brief
+  const REASON_CHIP_ORDER = [
+    'brand_protection',
+    'existing_exact_neg_match',
+    'existing_phrase_neg_match',
+    'existing_multiword_neg_match',
+    'location_outside_service_area',
+    'service_not_advertised',
+    'advertised_service_match',
+    'contains_neg_vocabulary',
+    'ambiguous',
+    'client_not_configured',
+  ];
 
   const tbody = document.getElementById('stTbody');
   const p3body = document.getElementById('stP3Tbody');
@@ -45,12 +104,83 @@
   function fmtNum(n) { return n == null ? '' : Number(n).toLocaleString(); }
   function fmtMoney(n) { return n == null ? '' : '£' + Number(n).toFixed(2); }
 
-  // -------------------- View selection -------------------------------
-  function getActiveViews(tab) {
-    const bar = tab === 'pass12' ? document.getElementById('stFilterBar')
-                                 : document.getElementById('stFilterBarP3');
-    return Array.from(bar.querySelectorAll('input[data-view]:checked'))
-      .map(el => el.dataset.view);
+  // -------------------- Chip rendering + interaction -----------------
+  function renderStatusChips(counts) {
+    const bar = document.getElementById('stStatusBar');
+    // Preserve the label span; remove any previous chips
+    bar.querySelectorAll('.st-chip').forEach(el => el.remove());
+    STATUS_CHIP_ORDER.forEach(({key, label}) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'st-chip' + (statusView === key ? ' active' : '');
+      btn.dataset.status = key;
+      btn.innerHTML = `${label} <span class="st-chip__count">${counts[key] ?? 0}</span>`;
+      btn.addEventListener('click', () => {
+        if (statusView === key) return;
+        statusView = key;
+        currentPage = 1;
+        reload();
+      });
+      bar.appendChild(btn);
+    });
+  }
+
+  function renderReasonChips(reasonCounts) {
+    const bar = document.getElementById('stReasonBar');
+    bar.querySelectorAll('.st-chip').forEach(el => el.remove());
+    REASON_CHIP_ORDER.forEach(code => {
+      const n = reasonCounts[code] || 0;
+      if (n === 0) return;  // hide zero-count reasons per brief
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'st-chip' + (selectedReasons.has(code) ? ' active' : '');
+      btn.dataset.reason = code;
+      btn.innerHTML = `${humanReason(code)} <span class="st-chip__count">${n}</span>`;
+      btn.addEventListener('click', () => {
+        if (selectedReasons.has(code)) selectedReasons.delete(code);
+        else selectedReasons.add(code);
+        currentPage = 1;
+        reload();
+      });
+      bar.appendChild(btn);
+    });
+    // If any other reason codes appear in data that aren't in the known
+    // order, append them so they're never invisible.
+    Object.keys(reasonCounts).forEach(code => {
+      if (REASON_CHIP_ORDER.includes(code)) return;
+      if (!reasonCounts[code]) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'st-chip' + (selectedReasons.has(code) ? ' active' : '');
+      btn.dataset.reason = code;
+      btn.innerHTML = `${humanReason(code)} <span class="st-chip__count">${reasonCounts[code]}</span>`;
+      btn.addEventListener('click', () => {
+        if (selectedReasons.has(code)) selectedReasons.delete(code);
+        else selectedReasons.add(code);
+        currentPage = 1;
+        reload();
+      });
+      bar.appendChild(btn);
+    });
+  }
+
+  function renderP3StatusChips() {
+    const bar = document.getElementById('stFilterBarP3');
+    bar.querySelectorAll('.st-chip').forEach(el => el.remove());
+    ['pending', 'approved', 'pushed', 'rejected'].forEach(key => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'st-chip' + (p3View === key ? ' active' : '');
+      btn.dataset.status = key;
+      btn.textContent = key.charAt(0).toUpperCase() + key.slice(1);
+      btn.addEventListener('click', () => {
+        if (p3View === key) return;
+        p3View = key;
+        currentPage = 1;
+        reload();
+      });
+      bar.appendChild(btn);
+    });
   }
 
   // -------------------- Row rendering (Pass 1/2) ---------------------
@@ -72,7 +202,7 @@
       <td class="num">${fmtMoney(item.total_cost)}</td>
       <td class="num">${fmtNum(item.total_conversions)}</td>
       <td><span class="${statusClass}">${item.pass1_status}</span>${reviewed}</td>
-      <td>${escapeHtml(item.pass1_reason || '')}</td>
+      <td>${escapeHtml(humanReason(item.pass1_reason))}</td>
       <td>${roleSel}</td>
       <td>${pushErr}</td>
     </tr>`;
@@ -101,8 +231,9 @@
   }
 
   function roleDropdown(current, options, rowId) {
+    // Humanize labels (values stay as role codes — DB sees raw codes)
     const opts = options.map(r =>
-      `<option value="${r}" ${r === current ? 'selected' : ''}>${r}</option>`
+      `<option value="${r}" ${r === current ? 'selected' : ''}>${escapeHtml(humanRole(r))}</option>`
     ).join('');
     return `<select class="st-target-select" data-row-id="${rowId}">${opts}</select>`;
   }
@@ -115,35 +246,36 @@
 
   // -------------------- Load + render --------------------------------
   async function reload() {
-    const views = getActiveViews(currentTab);
-    if (views.length === 0) {
-      if (currentTab === 'pass12') tbody.innerHTML = '<tr><td colspan="10" class="st-loading">Select at least one filter</td></tr>';
-      else p3body.innerHTML = '<tr><td colspan="9" class="st-loading">Select at least one filter</td></tr>';
-      lastItems = [];
-      updateButtons();
-      return;
+    let url, view;
+    if (currentTab === 'pass12') {
+      view = statusView;
+      const reasonsParam = selectedReasons.size
+        ? `&reasons=${encodeURIComponent([...selectedReasons].join(','))}`
+        : '';
+      url = `/v2/api/negatives/search-term-review/${CLIENT}`
+          + `?view=${encodeURIComponent(view)}&date=${analysisDate}`
+          + `&page=${currentPage}&page_size=${PAGE_SIZE}${reasonsParam}`;
+    } else {
+      view = p3View;
+      url = `/v2/api/negatives/phrase-suggestions/${CLIENT}`
+          + `?view=${encodeURIComponent(view)}&date=${analysisDate}`
+          + `&page=${currentPage}&page_size=${PAGE_SIZE}`;
     }
-    // Single view = single request; multiple = merge results.
-    const urlBase = currentTab === 'pass12'
-      ? `/v2/api/negatives/search-term-review/${CLIENT}`
-      : `/v2/api/negatives/phrase-suggestions/${CLIENT}`;
-    let merged = [];
-    let total = 0;
+
+    let data;
     try {
-      for (const v of views) {
-        const data = await apiGet(
-          `${urlBase}?view=${v}&date=${analysisDate}&page=${currentPage}&page_size=${PAGE_SIZE}`
-        );
-        merged = merged.concat(data.items);
-        total += data.total;
-      }
+      data = await apiGet(url);
     } catch (e) {
       toast(`Load failed: ${e.message}`, 'error');
       return;
     }
-    // Dedup by id if multiple views overlap (shouldn't, but safe)
-    const seen = new Set();
-    lastItems = merged.filter(x => { if (seen.has(x.id)) return false; seen.add(x.id); return true; });
+    lastItems = data.items || [];
+
+    // Repaint chips from server-side counts (Pass 1/2 only)
+    if (currentTab === 'pass12') {
+      if (data.counts) renderStatusChips(data.counts);
+      if (data.reason_counts) renderReasonChips(data.reason_counts);
+    }
 
     if (currentTab === 'pass12') {
       tbody.innerHTML = lastItems.length
@@ -156,9 +288,10 @@
     }
 
     document.getElementById('stPagerLabel').textContent =
-      `Page ${currentPage} · ${lastItems.length} of ${total}`;
+      `Page ${currentPage} · ${lastItems.length} of ${data.total}`;
     document.getElementById('stPrev').disabled = currentPage <= 1;
-    document.getElementById('stNext').disabled = lastItems.length < PAGE_SIZE;
+    document.getElementById('stNext').disabled = lastItems.length < PAGE_SIZE
+      || (currentPage * PAGE_SIZE) >= data.total;
     updateButtons();
   }
 
@@ -248,10 +381,12 @@
     document.querySelectorAll('.st-tab').forEach(el => {
       el.classList.toggle('active', el.dataset.tab === tab);
     });
-    document.getElementById('stFilterBar').style.display = tab === 'pass12' ? '' : 'none';
+    document.getElementById('stStatusBar').style.display = tab === 'pass12' ? '' : 'none';
+    document.getElementById('stReasonBar').style.display = tab === 'pass12' ? '' : 'none';
     document.getElementById('stFilterBarP3').style.display = tab === 'pass3' ? '' : 'none';
     stTable.style.display = tab === 'pass12' ? '' : 'none';
     stP3Table.style.display = tab === 'pass3' ? '' : 'none';
+    if (tab === 'pass3') renderP3StatusChips();
     reload();
   }
 
@@ -261,9 +396,8 @@
       if (!el.disabled) switchTab(el.dataset.tab);
     });
   });
-  document.querySelectorAll('.st-filter-bar input[data-view]').forEach(el => {
-    el.addEventListener('change', () => { currentPage = 1; reload(); });
-  });
+  // Chip interaction is now attached inside renderStatusChips /
+  // renderReasonChips / renderP3StatusChips (per-button listener).
   document.getElementById('stSelectAll').addEventListener('change', e => {
     const chks = (currentTab === 'pass12' ? tbody : p3body)
       .querySelectorAll('input.st-chk:not(:disabled)');

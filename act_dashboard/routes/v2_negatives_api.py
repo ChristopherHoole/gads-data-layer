@@ -51,12 +51,19 @@ def _parse_date(raw: str | None) -> date:
 # ---------------------------------------------------------------------------
 # GET /search-term-review/<client_id>?date=YYYY-MM-DD&view=pending&page=1
 # ---------------------------------------------------------------------------
+# Wave A: 'all' returns unrestricted; 'block'/'review' split the pending bucket;
+# 'keep' is unrestricted on review_status (keep rows stay pending forever);
+# status-only buckets filter review_status. 'pending' kept for backwards-compat.
 _ST_VIEW_FILTERS = {
+    'all':      "1=1",
     'pending':  "pass1_status IN ('block','review') AND review_status='pending'",
+    'block':    "pass1_status='block' AND review_status='pending'",
+    'review':   "pass1_status='review' AND review_status='pending'",
+    'keep':     "pass1_status='keep'",
     'approved': "review_status='approved'",
     'pushed':   "review_status='pushed'",
     'rejected': "review_status='rejected'",
-    'keep':     "pass1_status='keep'",
+    'expired':  "review_status='expired'",
 }
 
 
@@ -76,13 +83,23 @@ def list_search_term_reviews(client_id):
         return _err('bad_paging', "page / page_size must be integers")
 
     offset = (page - 1) * page_size
-    where = f"client_id = ? AND analysis_date = ? AND {_ST_VIEW_FILTERS[view]}"
+    where_clauses = [f"client_id = ?", f"analysis_date = ?", _ST_VIEW_FILTERS[view]]
+    params = [client_id, analysis_date]
+
+    # Wave A: optional reasons= CSV param (AND with view, OR among reasons)
+    reasons_raw = request.args.get('reasons') or ''
+    reasons = [r.strip() for r in reasons_raw.split(',') if r.strip()]
+    if reasons:
+        placeholders = ','.join(['?'] * len(reasons))
+        where_clauses.append(f"pass1_reason IN ({placeholders})")
+        params.extend(reasons)
+    where = ' AND '.join(where_clauses)
 
     con = _db()
     try:
         total = con.execute(
             f"SELECT COUNT(*) FROM act_v2_search_term_reviews WHERE {where}",
-            [client_id, analysis_date],
+            params,
         ).fetchone()[0]
         rows = con.execute(
             f"""SELECT id, search_term, analysis_date,
@@ -95,8 +112,43 @@ def list_search_term_reviews(client_id):
                 WHERE {where}
                 ORDER BY total_cost DESC NULLS LAST, id
                 LIMIT ? OFFSET ?""",
-            [client_id, analysis_date, page_size, offset],
+            params + [page_size, offset],
         ).fetchall()
+
+        # Wave A: compute status-chip counts + per-reason counts in one shot
+        # (unfiltered by view/reasons — these are stable navigation aids)
+        counts_row = con.execute(
+            """SELECT
+                 COUNT(*) FILTER (WHERE review_status='pending' AND pass1_status='block')  AS block,
+                 COUNT(*) FILTER (WHERE review_status='pending' AND pass1_status='review') AS review,
+                 COUNT(*) FILTER (WHERE pass1_status='keep')                               AS keep,
+                 COUNT(*) FILTER (WHERE review_status='approved')                          AS approved,
+                 COUNT(*) FILTER (WHERE review_status='pushed')                            AS pushed,
+                 COUNT(*) FILTER (WHERE review_status='rejected')                          AS rejected,
+                 COUNT(*) FILTER (WHERE review_status='expired')                           AS expired,
+                 COUNT(*)                                                                   AS total
+               FROM act_v2_search_term_reviews
+               WHERE client_id = ? AND analysis_date = ?""",
+            [client_id, analysis_date],
+        ).fetchone()
+        counts = {
+            'all':      int(counts_row[7] or 0),
+            'block':    int(counts_row[0] or 0),
+            'review':   int(counts_row[1] or 0),
+            'keep':     int(counts_row[2] or 0),
+            'approved': int(counts_row[3] or 0),
+            'pushed':   int(counts_row[4] or 0),
+            'rejected': int(counts_row[5] or 0),
+            'expired':  int(counts_row[6] or 0),
+        }
+        reason_rows = con.execute(
+            """SELECT pass1_reason, COUNT(*)
+               FROM act_v2_search_term_reviews
+               WHERE client_id = ? AND analysis_date = ?
+               GROUP BY pass1_reason""",
+            [client_id, analysis_date],
+        ).fetchall()
+        reason_counts = {(r[0] or 'unknown'): int(r[1]) for r in reason_rows}
     finally:
         con.close()
 
@@ -123,6 +175,9 @@ def list_search_term_reviews(client_id):
         'items': items, 'total': int(total),
         'page': page, 'page_size': page_size,
         'view': view, 'analysis_date': analysis_date.isoformat(),
+        'counts': counts,
+        'reason_counts': reason_counts,
+        'reasons_filter': reasons,
     })
 
 

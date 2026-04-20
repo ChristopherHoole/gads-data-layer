@@ -10,6 +10,16 @@
   color: var(--act-text);
 }
 
+/* Wave A patch 1: force 5 summary cards on one row (overrides the v2_base
+   default of repeat(4, 1fr)) */
+.st-page .status-cards { grid-template-columns: repeat(5, 1fr); }
+@media (max-width: 1200px) {
+  .st-page .status-cards { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 768px) {
+  .st-page .status-cards { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* Tabs */
 .st-tabs { display: flex; gap: 4px; margin: 16px 0 0; border-bottom: 1px solid var(--act-border-light); }
 .st-tab {
@@ -27,16 +37,39 @@
   font-size: 11px; padding: 1px 6px; border-radius: 8px;
 }
 
-/* Filter chips — plain labelled checkboxes */
-.st-filter-bar { display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 0; }
+/* Wave A patches 4+5: two chip rows.
+   Row 1 = status (single-select, default=all, buttons).
+   Row 2 = reason (multi-select, default=none, toggle buttons). */
+.st-filter-bar {
+  display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 0;
+  align-items: center;
+}
+.st-filter-bar__label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px;
+  color: var(--act-text); opacity: 0.55; margin-right: 6px; min-width: 56px;
+}
 .st-chip {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 4px 10px; border: 1px solid var(--act-border);
   border-radius: 14px; font-size: 12px; cursor: pointer;
-  background: var(--act-surface); user-select: none;
+  background: var(--act-surface); color: var(--act-text);
+  user-select: none; transition: background 120ms ease, border-color 120ms ease;
 }
-.st-chip:has(input:checked) { background: var(--act-blue-bg); border-color: var(--act-primary); }
-.st-chip input { margin: 0; }
+.st-chip:hover { background: var(--act-hover-bg); }
+.st-chip.active {
+  background: var(--act-blue-bg);
+  border-color: var(--act-primary);
+  color: var(--act-primary);
+  font-weight: 500;
+}
+.st-chip__count {
+  background: rgba(0,0,0,0.08); color: inherit;
+  padding: 1px 6px; border-radius: 8px; font-size: 11px;
+  font-weight: 500;
+}
+.st-chip.active .st-chip__count {
+  background: var(--act-primary); color: white;
+}
 
 /* Sticky action bar */
 .st-action-bar {
@@ -60,10 +93,15 @@
   padding: 8px 10px; border-bottom: 1px solid var(--act-border-light);
   text-align: left; vertical-align: top;
 }
+/* Wave A patch 2: sticky header needs opaque fill + higher z-index so
+   table body rows don't bleed through. --act-hover-bg is translucent in
+   some themes; use --act-surface which is the opaque card background. */
 .st-table th {
   font-weight: 600; font-size: 12px; text-transform: uppercase;
-  letter-spacing: 0.3px; color: var(--act-text); opacity: 0.7;
-  background: var(--act-hover-bg); position: sticky; top: 44px;
+  letter-spacing: 0.3px; color: var(--act-text); opacity: 0.9;
+  background: var(--act-surface);
+  position: sticky; top: 44px; z-index: 10;
+  box-shadow: inset 0 -1px 0 var(--act-border);  /* preserves header underline */
 }
 .st-table td.num, .st-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .st-table tr:hover td { background: var(--act-hover-bg); }

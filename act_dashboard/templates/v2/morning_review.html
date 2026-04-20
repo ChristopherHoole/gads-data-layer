@@ -140,12 +140,12 @@
     </h2>
   </div>
   <div class="act-section__body" style="display:block">
-    {% if pending_search_term_count > 0 %}
+    {% if classified_search_term_count > 0 %}
     <div class="act-item">
       <div class="act-item__row">
         <div class="act-item__content">
           <div class="act-item__summary">
-            Today's search terms — classified overnight. Review and push to Google Ads.
+            <strong>{{ pending_search_term_count }} actionable</strong> of {{ classified_search_term_count }} classified &mdash; today's search terms, classified overnight. Review and push to Google Ads.
           </div>
         </div>
         <div class="act-item__actions">

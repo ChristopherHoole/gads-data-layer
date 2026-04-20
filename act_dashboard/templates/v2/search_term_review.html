@@ -31,19 +31,17 @@
     </button>
   </div>
 
-  {# ---- Filter chips (view selector for Pass 1/2) ---- #}
-  <div class="st-filter-bar" id="stFilterBar" data-for="pass12">
-    <label class="st-chip"><input type="checkbox" data-view="pending" checked>Block / Review (Pending)</label>
-    <label class="st-chip"><input type="checkbox" data-view="keep">Keep</label>
-    <label class="st-chip"><input type="checkbox" data-view="approved">Approved</label>
-    <label class="st-chip"><input type="checkbox" data-view="pushed">Pushed</label>
-    <label class="st-chip"><input type="checkbox" data-view="rejected">Rejected</label>
+  {# ---- Status filter chips (single-select) — populated by JS ---- #}
+  <div class="st-filter-bar" id="stStatusBar" data-for="pass12">
+    <span class="st-filter-bar__label">Status</span>
   </div>
+  {# ---- Reason filter chips (multi-select) — populated by JS ---- #}
+  <div class="st-filter-bar" id="stReasonBar" data-for="pass12">
+    <span class="st-filter-bar__label">Reason</span>
+  </div>
+  {# ---- Pass 3 filter chips (single-select status) ---- #}
   <div class="st-filter-bar" id="stFilterBarP3" data-for="pass3" style="display:none">
-    <label class="st-chip"><input type="checkbox" data-view="pending" checked>Pending</label>
-    <label class="st-chip"><input type="checkbox" data-view="approved">Approved</label>
-    <label class="st-chip"><input type="checkbox" data-view="pushed">Pushed</label>
-    <label class="st-chip"><input type="checkbox" data-view="rejected">Rejected</label>
+    <span class="st-filter-bar__label">Status</span>
   </div>
 
   {# ---- Sticky action bar ---- #}

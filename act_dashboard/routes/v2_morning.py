@@ -264,6 +264,11 @@ def morning_review():
               AND review_status = 'pending'
               {st_clause}
         """, st_params).fetchone()[0]
+        classified_search_term_count = con.execute(f"""
+            SELECT COUNT(*) FROM act_v2_search_term_reviews
+            WHERE analysis_date = CURRENT_DATE
+              {st_clause}
+        """, st_params).fetchone()[0]
 
         # --------------------------------------------------------------
         # 6. Scheduler status — "ACT last ran" + any failures today
@@ -329,5 +334,6 @@ def morning_review():
         any_failed=any_failed,
         impact_total_actions=impact_total_actions,
         pending_search_term_count=pending_search_term_count,
+        classified_search_term_count=classified_search_term_count,
         active_page='morning-review',
     )
