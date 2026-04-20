@@ -68,6 +68,24 @@
     return s.split(',').map(x => STATUS_LABELS[x.trim()] || x.trim()).join(', ');
   }
 
+  // Wave C2: campaign_type enum -> display label
+  const CAMPAIGN_TYPE_LABELS = {
+    SEARCH:          'Search',
+    PERFORMANCE_MAX: 'PMax',
+    SHOPPING:        'Shopping',
+    DISPLAY:         'Display',
+    VIDEO:           'Video',
+  };
+  function humanCampaignType(s) {
+    if (!s) return '';
+    return s.split(',').map(x => {
+      const t = x.trim();
+      if (CAMPAIGN_TYPE_LABELS[t]) return CAMPAIGN_TYPE_LABELS[t];
+      // Unknown value — title-case fallback
+      return t ? t.charAt(0) + t.slice(1).toLowerCase().replace(/_/g, ' ') : '';
+    }).join(', ');
+  }
+
   const STATUS_CHIP_ORDER = [
     {key: 'all',      label: 'All'},
     {key: 'block',    label: 'Block'},
@@ -261,8 +279,7 @@
       <td>${escapeHtml(item.match_types || '')}</td>
       <td>${escapeHtml(humanStatuses(item.statuses))}</td>
       <td title="${escapeHtml(item.campaigns || '')}">${escapeHtml(item.campaigns || '')}</td>
-      <td>${escapeHtml(item.campaign_types || '')}</td>
-      <td title="${escapeHtml(item.ad_groups || '')}">${escapeHtml(item.ad_groups || '')}</td>
+      <td title="${escapeHtml(item.campaign_types || '')}">${escapeHtml(humanCampaignType(item.campaign_types))}</td>
       <td title="${escapeHtml(item.keywords || '')}">${escapeHtml(item.keywords || '')}</td>
       <td class="num">${fmtMoney(item.total_cost)}</td>
       <td class="num">${fmtNum(item.total_impressions)}</td>

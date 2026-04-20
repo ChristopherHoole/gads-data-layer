@@ -130,14 +130,14 @@
   box-shadow: 1px 0 0 var(--act-border-light);
 }
 .st-table--wide .st-frozen-1 {
-  position: sticky; left: 44px; z-index: 6;
+  position: sticky; left: 30px; z-index: 6;
   background: var(--act-surface);
   box-shadow: 1px 0 0 var(--act-border-light);
 }
 .st-table--wide thead .st-frozen-0 { z-index: 12; }
 .st-table--wide thead .st-frozen-1 { z-index: 12; }
-.st-col-check { width: 36px; min-width: 36px; text-align: center; }
-.st-col-term  { min-width: 180px; max-width: 320px;
+.st-col-check { width: 30px; min-width: 30px; text-align: center; }
+.st-col-term  { min-width: 120px; max-width: 220px;
                 white-space: normal; word-wrap: break-word; }
 
 /* Hover: tr:hover already highlights the body cells; frozen cells need the
@@ -161,28 +161,26 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Wave C — per-column min/max widths for the 20-col Pass 1/2 table.
-   Frozen cols (1 checkbox, 2 term) are handled above via .st-col-check /
-   .st-col-term; the rest target nth-child so we don't have to rename any
-   existing classes. */
-.st-table--wide th:nth-child(3),  .st-table--wide td:nth-child(3)  { min-width:  70px; max-width:  90px; }                    /* Status */
-.st-table--wide th:nth-child(4),  .st-table--wide td:nth-child(4)  { min-width: 120px; max-width: 160px; white-space: normal; word-wrap: break-word; } /* Reason */
-.st-table--wide th:nth-child(5),  .st-table--wide td:nth-child(5)  { min-width: 140px; max-width: 180px; }                    /* Target list (dropdown) */
-.st-table--wide th:nth-child(6),  .st-table--wide td:nth-child(6)  { min-width:  70px; max-width: 100px; white-space: normal; word-wrap: break-word; } /* Match type */
-.st-table--wide th:nth-child(7),  .st-table--wide td:nth-child(7)  { min-width:  80px; max-width: 110px; white-space: normal; word-wrap: break-word; } /* Added / Excluded */
-.st-table--wide th:nth-child(8),  .st-table--wide td:nth-child(8)  { min-width: 120px; max-width: 180px; white-space: normal; word-wrap: break-word; } /* Campaign */
-.st-table--wide th:nth-child(9),  .st-table--wide td:nth-child(9)  { min-width:  90px; max-width: 120px; white-space: normal; word-wrap: break-word; } /* Campaign type */
-.st-table--wide th:nth-child(10), .st-table--wide td:nth-child(10) { min-width: 120px; max-width: 180px; white-space: normal; word-wrap: break-word; } /* Ad group */
-.st-table--wide th:nth-child(11), .st-table--wide td:nth-child(11) { min-width: 120px; max-width: 180px; white-space: normal; word-wrap: break-word; } /* Keyword */
-.st-table--wide th:nth-child(12), .st-table--wide td:nth-child(12) { min-width:  70px; max-width:  90px; }                    /* Cost */
-.st-table--wide th:nth-child(13), .st-table--wide td:nth-child(13) { min-width:  60px; max-width:  80px; }                    /* Impr */
-.st-table--wide th:nth-child(14), .st-table--wide td:nth-child(14) { min-width:  60px; max-width:  80px; }                    /* Clicks */
-.st-table--wide th:nth-child(15), .st-table--wide td:nth-child(15) { min-width:  70px; max-width:  90px; }                    /* Avg CPC */
-.st-table--wide th:nth-child(16), .st-table--wide td:nth-child(16) { min-width:  60px; max-width:  80px; }                    /* CTR */
-.st-table--wide th:nth-child(17), .st-table--wide td:nth-child(17) { min-width:  60px; max-width:  80px; }                    /* Conv */
-.st-table--wide th:nth-child(18), .st-table--wide td:nth-child(18) { min-width:  80px; max-width: 100px; }                    /* Cost/conv */
-.st-table--wide th:nth-child(19), .st-table--wide td:nth-child(19) { min-width:  70px; max-width:  90px; }                    /* Conv rate */
-.st-table--wide th:nth-child(20), .st-table--wide td:nth-child(20) { min-width:  80px; max-width: 180px; white-space: normal; word-wrap: break-word; } /* Push error */
+/* Wave C2 — per-column min/max widths for the 19-col Pass 1/2 table.
+   Ad group column dropped; remaining text columns tightened. Frozen cols
+   (1 checkbox, 2 term) are handled above via .st-col-check / .st-col-term. */
+.st-table--wide th:nth-child(3),  .st-table--wide td:nth-child(3)  { min-width:  60px; max-width:  80px; }                    /* Status */
+.st-table--wide th:nth-child(4),  .st-table--wide td:nth-child(4)  { min-width: 100px; max-width: 140px; white-space: normal; word-wrap: break-word; } /* Reason */
+.st-table--wide th:nth-child(5),  .st-table--wide td:nth-child(5)  { min-width: 100px; max-width: 140px; }                    /* Target list (dropdown) */
+.st-table--wide th:nth-child(6),  .st-table--wide td:nth-child(6)  { min-width:  60px; max-width:  80px; white-space: normal; word-wrap: break-word; } /* Match type */
+.st-table--wide th:nth-child(7),  .st-table--wide td:nth-child(7)  { min-width:  60px; max-width:  80px; white-space: normal; word-wrap: break-word; } /* Added / Excluded */
+.st-table--wide th:nth-child(8),  .st-table--wide td:nth-child(8)  { min-width: 100px; max-width: 140px; white-space: normal; word-wrap: break-word; } /* Campaign */
+.st-table--wide th:nth-child(9),  .st-table--wide td:nth-child(9)  { min-width:  80px; max-width: 100px; white-space: normal; word-wrap: break-word; } /* Campaign type */
+.st-table--wide th:nth-child(10), .st-table--wide td:nth-child(10) { min-width: 100px; max-width: 140px; white-space: normal; word-wrap: break-word; } /* Keyword */
+.st-table--wide th:nth-child(11), .st-table--wide td:nth-child(11) { min-width:  60px; max-width:  80px; }                    /* Cost */
+.st-table--wide th:nth-child(12), .st-table--wide td:nth-child(12) { min-width:  60px; max-width:  80px; }                    /* Impr */
+.st-table--wide th:nth-child(13), .st-table--wide td:nth-child(13) { min-width:  60px; max-width:  80px; }                    /* Clicks */
+.st-table--wide th:nth-child(14), .st-table--wide td:nth-child(14) { min-width:  60px; max-width:  80px; }                    /* Avg CPC */
+.st-table--wide th:nth-child(15), .st-table--wide td:nth-child(15) { min-width:  60px; max-width:  80px; }                    /* CTR */
+.st-table--wide th:nth-child(16), .st-table--wide td:nth-child(16) { min-width:  60px; max-width:  80px; }                    /* Conv */
+.st-table--wide th:nth-child(17), .st-table--wide td:nth-child(17) { min-width:  60px; max-width:  80px; }                    /* Cost/conv */
+.st-table--wide th:nth-child(18), .st-table--wide td:nth-child(18) { min-width:  60px; max-width:  80px; }                    /* Conv rate */
+.st-table--wide th:nth-child(19), .st-table--wide td:nth-child(19) { min-width: 100px; max-width: 140px; white-space: normal; word-wrap: break-word; } /* Push error */
 
 /* Wave C — rows-per-page control */
 .st-pager label { font-size: 12px; color: var(--act-text); opacity: 0.7; margin-right: 4px; }
