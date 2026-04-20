@@ -93,6 +93,27 @@ DEFAULT_SETTINGS = [
     ('underperformer_roas_threshold_pct', '50', 'int', 'shopping'),
 ]
 
+# N1b — Negatives engine settings (account-level). Seeded for every client
+# by migrate_n1b_negatives_engine.py and re-applied by the reset endpoint.
+NEG_PASS3_DEFAULT_STOPWORDS = (
+    "how, much, for, is, are, the, a, an, of, to, in, on, at, near, me, my, "
+    "cheap, best, top, good, great, quality, affordable, price, cost, fee, fees, "
+    "today, now, urgent, emergency, quick, fast, same day, find, looking, "
+    "vs, versus, or, and, with, without, which, what, where, when, who, why"
+)
+
+NEG_ENGINE_SETTINGS = [
+    ('neg_pass1_enabled',          'true', 'bool',   'account'),
+    ('neg_pass3_threshold_1word',  '5',    'int',    'account'),
+    ('neg_pass3_threshold_2word',  '3',    'int',    'account'),
+    ('neg_pass3_threshold_3word',  '2',    'int',    'account'),
+    ('neg_pass3_stopwords',        NEG_PASS3_DEFAULT_STOPWORDS, 'string', 'account'),
+]
+
+# Extend DEFAULT_SETTINGS so reset endpoint + fresh seeds include them
+DEFAULT_SETTINGS.extend(NEG_ENGINE_SETTINGS)
+
+
 # Deprecated settings to clean up when re-seeding
 DEPRECATED_SETTINGS = [
     'max_single_tcpa_move_pct',

@@ -57,6 +57,8 @@ SEQUENCES = [
     # N1a — Negatives Module
     'seq_act_v2_neg_list_kw',
     'seq_act_v2_st_reviews',
+    # N1b — Negatives engine
+    'seq_act_v2_phrase_suggestions',
 ]
 
 # ---------------------------------------------------------------------------
@@ -384,6 +386,7 @@ TABLE_SQL = [
             id BIGINT PRIMARY KEY DEFAULT nextval('seq_act_v2_st_reviews'),
             client_id VARCHAR NOT NULL,
             search_term VARCHAR NOT NULL,
+            analysis_date DATE NOT NULL,
             first_seen_date DATE NOT NULL,
             last_seen_date DATE NOT NULL,
             total_impressions INTEGER,
@@ -393,12 +396,37 @@ TABLE_SQL = [
             pass1_status VARCHAR,
             pass1_reason VARCHAR,
             pass2_target_list_role VARCHAR,
-            pass3_phrase_suggestions JSON,
             review_status VARCHAR DEFAULT 'pending',
             reviewed_at TIMESTAMP,
             reviewed_by VARCHAR,
             pushed_to_ads_at TIMESTAMP,
-            UNIQUE(client_id, search_term),
+            pushed_google_ads_criterion_id VARCHAR,
+            push_error VARCHAR,
+            UNIQUE(client_id, search_term, analysis_date),
+            FOREIGN KEY (client_id) REFERENCES act_v2_clients(client_id)
+        );
+        """,
+    ),
+    (
+        'act_v2_phrase_suggestions',
+        """
+        CREATE TABLE IF NOT EXISTS act_v2_phrase_suggestions (
+            id BIGINT PRIMARY KEY DEFAULT nextval('seq_act_v2_phrase_suggestions'),
+            client_id VARCHAR NOT NULL,
+            analysis_date DATE NOT NULL,
+            fragment VARCHAR NOT NULL,
+            word_count INTEGER NOT NULL,
+            target_list_role VARCHAR NOT NULL,
+            source_search_terms JSON NOT NULL,
+            occurrence_count INTEGER NOT NULL,
+            risk_level VARCHAR NOT NULL,
+            review_status VARCHAR DEFAULT 'pending',
+            reviewed_at TIMESTAMP,
+            reviewed_by VARCHAR,
+            pushed_to_ads_at TIMESTAMP,
+            pushed_google_ads_criterion_id VARCHAR,
+            push_error VARCHAR,
+            UNIQUE(client_id, analysis_date, fragment, target_list_role),
             FOREIGN KEY (client_id) REFERENCES act_v2_clients(client_id)
         );
         """,
@@ -456,14 +484,14 @@ INDEX_SQL = [
            ON act_v2_negative_list_keywords(client_id, snapshot_date);""",
     ),
     (
-        'idx_st_review_client',
-        """CREATE INDEX idx_st_review_client
-           ON act_v2_search_term_reviews(client_id);""",
-    ),
-    (
         'idx_st_review_client_date',
         """CREATE INDEX idx_st_review_client_date
-           ON act_v2_search_term_reviews(client_id, last_seen_date);""",
+           ON act_v2_search_term_reviews(client_id, analysis_date);""",
+    ),
+    (
+        'idx_phrase_sugg_client_date',
+        """CREATE INDEX idx_phrase_sugg_client_date
+           ON act_v2_phrase_suggestions(client_id, analysis_date);""",
     ),
 ]
 
