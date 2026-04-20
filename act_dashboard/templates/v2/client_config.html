@@ -111,6 +111,51 @@
           <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="monthly_budget" value="{{ client.monthly_budget|int }}" min="1"><span class="input-group__suffix">&pound;/month</span></div></div>
         </div>
 
+        {# N1a — Client Profile fields (feed the Negatives Module) #}
+        <div class="setting-row setting-row--textarea">
+          <div class="setting-info">
+            <p class="setting-name">Services Offered (All)</p>
+            <p class="setting-desc">Everything this client does &mdash; the full service catalogue. Lowercase, comma-separated.</p>
+          </div>
+          <div class="setting-control setting-control--full">
+            <textarea class="config-input config-input--textarea" data-key="services_all" rows="3"
+                      placeholder="comma-separated, lowercase">{{ client.services_all }}</textarea>
+          </div>
+        </div>
+
+        <div class="setting-row setting-row--textarea">
+          <div class="setting-info">
+            <p class="setting-name">Services Advertised (Ad Scope)</p>
+            <p class="setting-desc">Subset of services currently being advertised. Used as the Pass 1 allowlist for the Negatives Module.</p>
+          </div>
+          <div class="setting-control setting-control--full">
+            <textarea class="config-input config-input--textarea" data-key="services_advertised" rows="3"
+                      placeholder="comma-separated, lowercase">{{ client.services_advertised }}</textarea>
+          </div>
+        </div>
+
+        <div class="setting-row setting-row--textarea">
+          <div class="setting-info">
+            <p class="setting-name">Service Locations</p>
+            <p class="setting-desc">Postcodes, named areas, and placenames covered by the business. Searches matching any of these are protected from location negatives.</p>
+          </div>
+          <div class="setting-control setting-control--full">
+            <textarea class="config-input config-input--textarea" data-key="service_locations" rows="5"
+                      placeholder="comma-separated, lowercase">{{ client.service_locations }}</textarea>
+          </div>
+        </div>
+
+        <div class="setting-row setting-row--textarea">
+          <div class="setting-info">
+            <p class="setting-name">Brand Terms (Protect)</p>
+            <p class="setting-desc">Client-owned brand variants. Searches containing these are protected from competitor/generic negatives.</p>
+          </div>
+          <div class="setting-control setting-control--full">
+            <textarea class="config-input config-input--textarea" data-key="client_brand_terms" rows="2"
+                      placeholder="comma-separated, lowercase">{{ client.client_brand_terms }}</textarea>
+          </div>
+        </div>
+
         <div class="setting-row">
           <div class="setting-info"><p class="setting-name">Budget Allocation Mode</p><p class="setting-desc">Automatic lets ACT shift budget between campaigns within bands. Manual requires approval for all shifts.</p></div>
           <div class="setting-control"><div class="{{ toggle_class('budget_allocation_mode') }}" data-key="budget_allocation_mode"><div class="config-toggle__knob"></div></div><span style="font-size:12px;margin-left:8px;color:var(--act-text)">Automatic</span></div>

@@ -33,7 +33,8 @@ def client_config():
         # Get client
         client_row = con.execute(
             """SELECT client_id, client_name, google_ads_customer_id, persona,
-                      monthly_budget, target_cpa, target_roas, active, created_at, updated_at
+                      monthly_budget, target_cpa, target_roas, active, created_at, updated_at,
+                      services_all, services_advertised, service_locations, client_brand_terms
                FROM act_v2_clients WHERE client_id = ?""",
             [client_id]
         ).fetchone()
@@ -50,6 +51,11 @@ def client_config():
             'target_cpa': float(client_row[5]) if client_row[5] else None,
             'target_roas': float(client_row[6]) if client_row[6] else None,
             'active': client_row[7],
+            # N1a — client profile fields (lowercase, comma-separated)
+            'services_all': client_row[10] or '',
+            'services_advertised': client_row[11] or '',
+            'service_locations': client_row[12] or '',
+            'client_brand_terms': client_row[13] or '',
         }
 
         # Get all clients for switcher
@@ -171,12 +177,28 @@ def save_settings():
             target_cpa = client_data.get('target_cpa')
             target_roas = client_data.get('target_roas')
 
+            # N1a — 4 profile fields; lowercase + strip on save, empty => NULL
+            def _norm(v):
+                if v is None:
+                    return None
+                s = str(v).strip().lower()
+                return s if s else None
+
+            services_all = _norm(client_data.get('services_all'))
+            services_advertised = _norm(client_data.get('services_advertised'))
+            service_locations = _norm(client_data.get('service_locations'))
+            client_brand_terms = _norm(client_data.get('client_brand_terms'))
+
             con.execute("""
                 UPDATE act_v2_clients SET
                     persona = ?, monthly_budget = ?, target_cpa = ?, target_roas = ?,
+                    services_all = ?, services_advertised = ?,
+                    service_locations = ?, client_brand_terms = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE client_id = ?
-            """, [persona, monthly_budget, target_cpa, target_roas, client_id])
+            """, [persona, monthly_budget, target_cpa, target_roas,
+                  services_all, services_advertised, service_locations, client_brand_terms,
+                  client_id])
 
         # Update level states
         level_states = data.get('level_states', {})

@@ -183,6 +183,13 @@ document.addEventListener('DOMContentLoaded', () => {
       data.client.target_roas = parseFloat(document.querySelector('[data-key="target_roas"]')?.value) || null;
     }
 
+    // N1a — client profile textareas (lowercase + trim on client; server re-normalises)
+    const PROFILE_FIELDS = ['services_all', 'services_advertised', 'service_locations', 'client_brand_terms'];
+    PROFILE_FIELDS.forEach(k => {
+      const el = document.querySelector(`textarea[data-key="${k}"]`);
+      data.client[k] = el ? el.value.trim().toLowerCase() : '';
+    });
+
     // Level states
     document.querySelectorAll('.level-row').forEach(row => {
       const level = row.dataset.level;
@@ -197,8 +204,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Settings from data-key inputs
     document.querySelectorAll('[data-key]').forEach(el => {
       const key = el.dataset.key;
-      // Skip client-level fields
-      if (['monthly_budget', 'target_cpa', 'target_roas'].includes(key)) return;
+      // Skip client-level fields (handled in data.client above)
+      if (['monthly_budget', 'target_cpa', 'target_roas',
+           'services_all', 'services_advertised',
+           'service_locations', 'client_brand_terms'].includes(key)) return;
 
       let value;
       if (el.classList.contains('config-toggle')) {

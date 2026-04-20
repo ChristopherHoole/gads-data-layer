@@ -342,6 +342,25 @@
   .setting-control { justify-content: flex-start; }
 }
 
+/* N1a — full-width textarea rows for client profile fields */
+.setting-row--textarea { grid-template-columns: 1fr; gap: 8px; }
+.setting-control--full { width: 100%; justify-content: stretch; }
+.config-input--textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+  border: 1px solid var(--act-border);
+  border-radius: 6px;
+  background: var(--act-surface);
+  color: var(--act-text);
+  box-sizing: border-box;
+}
+.config-input--textarea:focus { outline: none; border-color: var(--act-primary); }
+
 /* ============================================================================
    v2: OPTIMIZATION LEVELS SECTION (top of Account Settings)
    6 level rows each with a 3-state toggle: Off / Monitor Only / Active
