@@ -54,6 +54,9 @@ SEQUENCES = [
     'seq_act_v2_search_terms',
     'seq_act_v2_campaign_segments',
     'seq_act_v2_scheduler_runs',
+    # N1a — Negatives Module
+    'seq_act_v2_neg_list_kw',
+    'seq_act_v2_st_reviews',
 ]
 
 # ---------------------------------------------------------------------------
@@ -73,6 +76,11 @@ TABLE_SQL = [
             target_cpa DECIMAL(10,2),
             target_roas DECIMAL(10,2),
             active BOOLEAN NOT NULL DEFAULT TRUE,
+            -- N1a: client profile fields (comma-separated, lowercase on save)
+            services_all TEXT,
+            services_advertised TEXT,
+            service_locations TEXT,
+            client_brand_terms TEXT,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CHECK (
@@ -149,10 +157,14 @@ TABLE_SQL = [
             list_id VARCHAR PRIMARY KEY,
             client_id VARCHAR NOT NULL,
             google_ads_list_id VARCHAR(30),
-            list_name VARCHAR(100) NOT NULL,
-            word_count INTEGER NOT NULL CHECK (word_count IN (1, 2, 3, 4, 5)),
-            match_type VARCHAR(20) NOT NULL CHECK (match_type IN ('exact', 'phrase')),
+            list_name VARCHAR(200) NOT NULL,
+            word_count INTEGER,                 -- N1a: nullable (Competitor/Location lists)
+            match_type VARCHAR(20),             -- N1a: nullable; no CHECK constraint
+            list_role VARCHAR(40),              -- N1a: one of 13 enum values or NULL
             keyword_count INTEGER NOT NULL DEFAULT 0,
+            added_manually_count INTEGER NOT NULL DEFAULT 0,
+            added_by_act_count INTEGER NOT NULL DEFAULT 0,
+            is_linked_to_campaign BOOLEAN NOT NULL DEFAULT FALSE,
             last_synced_at TIMESTAMP,
             FOREIGN KEY (client_id) REFERENCES act_v2_clients(client_id)
         );
@@ -347,6 +359,50 @@ TABLE_SQL = [
         );
         """,
     ),
+    # --- N1a: Negatives Module individual keywords + classified search terms ---
+    (
+        'act_v2_negative_list_keywords',
+        """
+        CREATE TABLE IF NOT EXISTS act_v2_negative_list_keywords (
+            id BIGINT PRIMARY KEY DEFAULT nextval('seq_act_v2_neg_list_kw'),
+            list_id VARCHAR NOT NULL,
+            client_id VARCHAR NOT NULL,
+            keyword_text VARCHAR NOT NULL,
+            match_type VARCHAR NOT NULL,
+            google_ads_criterion_id VARCHAR,
+            added_at TIMESTAMP,
+            added_by VARCHAR DEFAULT 'unknown',
+            snapshot_date DATE NOT NULL,
+            FOREIGN KEY (list_id) REFERENCES act_v2_negative_keyword_lists(list_id)
+        );
+        """,
+    ),
+    (
+        'act_v2_search_term_reviews',
+        """
+        CREATE TABLE IF NOT EXISTS act_v2_search_term_reviews (
+            id BIGINT PRIMARY KEY DEFAULT nextval('seq_act_v2_st_reviews'),
+            client_id VARCHAR NOT NULL,
+            search_term VARCHAR NOT NULL,
+            first_seen_date DATE NOT NULL,
+            last_seen_date DATE NOT NULL,
+            total_impressions INTEGER,
+            total_clicks INTEGER,
+            total_cost DECIMAL(10,2),
+            total_conversions DECIMAL(10,2),
+            pass1_status VARCHAR,
+            pass1_reason VARCHAR,
+            pass2_target_list_role VARCHAR,
+            pass3_phrase_suggestions JSON,
+            review_status VARCHAR DEFAULT 'pending',
+            reviewed_at TIMESTAMP,
+            reviewed_by VARCHAR,
+            pushed_to_ads_at TIMESTAMP,
+            UNIQUE(client_id, search_term),
+            FOREIGN KEY (client_id) REFERENCES act_v2_clients(client_id)
+        );
+        """,
+    ),
 ]
 
 # ---------------------------------------------------------------------------
@@ -387,6 +443,27 @@ INDEX_SQL = [
         'idx_act_v2_segments_lookup',
         """CREATE INDEX idx_act_v2_segments_lookup
            ON act_v2_campaign_segments(client_id, snapshot_date, campaign_id, segment_type);""",
+    ),
+    # N1a — safe indexes (no column here is UPDATEd after insert)
+    (
+        'idx_neg_list_kw_list',
+        """CREATE INDEX idx_neg_list_kw_list
+           ON act_v2_negative_list_keywords(list_id);""",
+    ),
+    (
+        'idx_neg_list_kw_client_date',
+        """CREATE INDEX idx_neg_list_kw_client_date
+           ON act_v2_negative_list_keywords(client_id, snapshot_date);""",
+    ),
+    (
+        'idx_st_review_client',
+        """CREATE INDEX idx_st_review_client
+           ON act_v2_search_term_reviews(client_id);""",
+    ),
+    (
+        'idx_st_review_client_date',
+        """CREATE INDEX idx_st_review_client_date
+           ON act_v2_search_term_reviews(client_id, last_seen_date);""",
     ),
 ]
 
