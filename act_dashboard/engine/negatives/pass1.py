@@ -192,17 +192,30 @@ def classify_term(search_term: str, cfg: dict) -> tuple[str, str]:
 # Term loader — pull today's distinct search terms for client
 # ---------------------------------------------------------------------------
 def _load_terms_for_today(con, client_id: str, analysis_date: date,
-                          lookback_days: int = 7) -> list[dict]:
+                          lookback_days: int | None = None) -> list[dict]:
     """Return the distinct search terms to classify for this client on this
-    analysis run. Uses last `lookback_days` days from act_v2_search_terms,
-    aggregated; first_seen / last_seen derived from that window.
+    analysis run.
 
-    A 7-day lookback lets us catch low-volume terms (which might not appear on
-    any single day but matter cumulatively) without letting ancient history
-    drown out the signal.
+    Wave B: narrowed from a 7-day rolling union to "most recent snapshot_date
+    for this client strictly before analysis_date". Matches the user's
+    'review yesterday's terms' mental model. Rows for the same term across
+    different contexts (campaign/ad_group/keyword) still aggregate.
+
+    The `lookback_days` kwarg is retained for backwards compatibility with
+    older callers but is ignored; supply None (default) for current behaviour.
     """
-    from datetime import timedelta
-    start = analysis_date - timedelta(days=lookback_days - 1)
+    # Find the latest snapshot_date for this client strictly before the
+    # analysis_date (so Pass 1 running on the morning of day N classifies
+    # day N-1 data, which is what the overnight ingestion landed).
+    latest_row = con.execute(
+        """SELECT MAX(snapshot_date) FROM act_v2_search_terms
+           WHERE client_id = ? AND snapshot_date < ?""",
+        [client_id, analysis_date],
+    ).fetchone()
+    latest = latest_row[0] if latest_row else None
+    if latest is None:
+        return []
+
     rows = con.execute(
         """SELECT search_term,
                   MIN(snapshot_date) AS first_seen,
@@ -213,10 +226,10 @@ def _load_terms_for_today(con, client_id: str, analysis_date: date,
                   SUM(COALESCE(conversions, 0))   AS conv
            FROM act_v2_search_terms
            WHERE client_id = ?
-             AND snapshot_date BETWEEN ? AND ?
+             AND snapshot_date = ?
              AND search_term IS NOT NULL AND LENGTH(TRIM(search_term)) > 0
            GROUP BY search_term""",
-        [client_id, start, analysis_date],
+        [client_id, latest],
     ).fetchall()
     return [
         {

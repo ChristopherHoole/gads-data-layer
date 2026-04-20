@@ -299,10 +299,12 @@ TABLE_SQL = [
             snapshot_date DATE NOT NULL,
             campaign_id VARCHAR(30) NOT NULL,
             campaign_name VARCHAR(500),
+            campaign_type VARCHAR,          -- Wave B: SEARCH / PERFORMANCE_MAX / SHOPPING / ...
             ad_group_id VARCHAR(30) NOT NULL,
             ad_group_name VARCHAR(500),
             search_term VARCHAR NOT NULL,
-            match_type VARCHAR(20),
+            match_type VARCHAR(20),         -- Wave B: includes synthetic 'PMAX' for PMax rows
+            status VARCHAR,                 -- Wave B: NONE / ADDED / EXCLUDED / ADDED_EXCLUDED / UNKNOWN
             keyword_text VARCHAR,
             keyword_id VARCHAR(100),
             cost DECIMAL(18,2),

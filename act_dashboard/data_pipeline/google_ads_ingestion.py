@@ -114,14 +114,19 @@ class GoogleAdsDataPipeline:
         kw = self.ingest_keywords(date)
         ad = self.ingest_ads(date)
         st = self.ingest_search_terms(date)
+        # Wave B — PMax terms from campaign_search_term_insight; must run after
+        # ingest_search_terms (which clears the day) and after ingest_campaigns
+        # (which populates act_v2_snapshots with campaign_type metadata we read).
+        pst = self.ingest_pmax_search_terms(date)
         seg = self.ingest_campaign_segments(date)
         self.ingest_account(date)
         # N1a — negative-keyword lists are a point-in-time snapshot of current state,
         # not per-historical-date. We re-run on every ingest_date call and overwrite.
         nl = self.ingest_negative_lists(date)
 
-        logger.info(f"  {date}: campaigns={c}, ad_groups={ag}, keywords={kw}, ads={ad}, search_terms={st}, segments={seg}, neg_lists={nl['lists']}/{nl['keywords']}kw")
-        return {'campaigns': c, 'ad_groups': ag, 'keywords': kw, 'ads': ad, 'search_terms': st, 'segments': seg,
+        logger.info(f"  {date}: campaigns={c}, ad_groups={ag}, keywords={kw}, ads={ad}, search_terms={st}+pmax={pst}, segments={seg}, neg_lists={nl['lists']}/{nl['keywords']}kw")
+        return {'campaigns': c, 'ad_groups': ag, 'keywords': kw, 'ads': ad,
+                'search_terms': st, 'pmax_search_terms': pst, 'segments': seg,
                 'neg_lists': nl['lists'], 'neg_keywords': nl['keywords']}
 
     def ingest_date_range(self, start_date: str, end_date: str):
@@ -383,6 +388,8 @@ class GoogleAdsDataPipeline:
     # Search terms ingestion
     # -----------------------------------------------------------------------
     def ingest_search_terms(self, date: str) -> int:
+        """Search/Shopping campaign search terms via search_term_view.
+        PMax terms come from ingest_pmax_search_terms (separate resource)."""
         query = f"""
             SELECT
                 search_term_view.search_term,
@@ -391,6 +398,7 @@ class GoogleAdsDataPipeline:
                 ad_group.name,
                 campaign.id,
                 campaign.name,
+                campaign.advertising_channel_type,
                 segments.keyword.info.text,
                 segments.keyword.info.match_type,
                 segments.keyword.ad_group_criterion,
@@ -407,7 +415,8 @@ class GoogleAdsDataPipeline:
             WHERE segments.date = '{date}'
                 AND campaign.status != 'REMOVED'
         """
-        # Delete existing search terms for this date (bulk idempotency)
+        # Delete existing search terms for this date (bulk idempotency;
+        # covers both Search and PMax inserts below)
         self.db.execute(
             "DELETE FROM act_v2_search_terms WHERE client_id = ? AND snapshot_date = ?",
             [self.client_id, date]
@@ -420,23 +429,24 @@ class GoogleAdsDataPipeline:
                 clicks = row.metrics.clicks
                 conversions = row.metrics.conversions
 
-                # Extract keyword_id from resource name if available
                 kw_criterion = row.segments.keyword.ad_group_criterion
                 keyword_id = kw_criterion.split('/')[-1] if kw_criterion else None
 
                 self.db.execute(
                     """INSERT INTO act_v2_search_terms
                        (client_id, snapshot_date, campaign_id, campaign_name,
-                        ad_group_id, ad_group_name, search_term, match_type,
-                        keyword_text, keyword_id, cost, impressions, clicks,
-                        conversions, conversion_value, ctr, avg_cpc,
-                        cost_per_conversion, conversion_rate)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        campaign_type, ad_group_id, ad_group_name, search_term,
+                        match_type, status, keyword_text, keyword_id,
+                        cost, impressions, clicks, conversions, conversion_value,
+                        ctr, avg_cpc, cost_per_conversion, conversion_rate)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     [self.client_id, date,
                      str(row.campaign.id), row.campaign.name,
+                     row.campaign.advertising_channel_type.name,
                      str(row.ad_group.id), row.ad_group.name,
                      row.search_term_view.search_term,
                      row.segments.keyword.info.match_type.name if row.segments.keyword.info.match_type else None,
+                     row.search_term_view.status.name if row.search_term_view.status else None,
                      row.segments.keyword.info.text if row.segments.keyword.info.text else None,
                      keyword_id,
                      round(cost, 2),
@@ -457,6 +467,102 @@ class GoogleAdsDataPipeline:
                 logger.warning(f"  Search terms not available for {date}: {err_msg}")
             else:
                 raise
+        return count
+
+    # -----------------------------------------------------------------------
+    # PMax search-term ingestion (campaign_search_term_insight resource)
+    # -----------------------------------------------------------------------
+    def ingest_pmax_search_terms(self, date: str) -> int:
+        """Ingest Performance Max search terms via campaign_search_term_insight.
+
+        Must be called AFTER ingest_search_terms (which clears the day's rows
+        in act_v2_search_terms via its delete-then-insert pattern). Per-row
+        shape diverges from search_term_view:
+          - per PMax campaign, terms come back as category_label (= the term)
+          - no ad_group context; store ad_group_id/name = 'PMAX_ASSET_GROUP'
+          - no keyword context; keyword_text/keyword_id = NULL
+          - synthetic match_type = 'PMAX'
+          - cost_micros is PROHIBITED on this resource -> cost = NULL
+          - status not surfaced -> NULL
+          - category_label='' represents Google's aggregated low-volume
+            bucket; skip it (not actionable)
+
+        GAQL quirk: segments.date can only appear when filtering by a single
+        campaign_search_term_insight.id. Workaround: filter by campaign_id +
+        segments.date without selecting segments.date. Tested working for
+        DBD 2026-04-19 on API v23.
+        """
+        # 1. Find active PMax campaigns for this client on this date
+        pmax_rows = self.db.execute(
+            """SELECT entity_id, entity_name, metrics_json
+               FROM act_v2_snapshots
+               WHERE client_id = ? AND snapshot_date = ? AND level = 'campaign'""",
+            [self.client_id, date],
+        ).fetchall()
+        pmax_campaigns = []
+        for eid, name, mjson in pmax_rows:
+            try:
+                meta = json.loads(mjson) if isinstance(mjson, str) else mjson
+            except Exception:  # noqa: BLE001
+                continue
+            if meta.get('campaign_type') == 'PERFORMANCE_MAX' and meta.get('campaign_status') != 'REMOVED':
+                pmax_campaigns.append((eid, name))
+
+        if not pmax_campaigns:
+            return 0
+
+        count = 0
+        for campaign_id, campaign_name in pmax_campaigns:
+            query = f"""
+                SELECT
+                    campaign_search_term_insight.category_label,
+                    campaign_search_term_insight.id,
+                    metrics.impressions,
+                    metrics.clicks,
+                    metrics.conversions,
+                    metrics.conversions_value,
+                    metrics.ctr
+                FROM campaign_search_term_insight
+                WHERE campaign_search_term_insight.campaign_id = '{campaign_id}'
+                  AND segments.date = '{date}'
+            """
+            try:
+                rows = list(self._query(query))
+            except GoogleAdsException as e:
+                err = e.failure.errors[0].message if e.failure.errors else str(e)
+                logger.warning(f"  [pmax-st] skip campaign={campaign_id}: {err[:200]}")
+                continue
+
+            for row in rows:
+                term = row.campaign_search_term_insight.category_label
+                if not term:
+                    # Google's aggregated "Other search terms" bucket — skip
+                    continue
+                clicks = row.metrics.clicks
+                conversions = row.metrics.conversions
+                self.db.execute(
+                    """INSERT INTO act_v2_search_terms
+                       (client_id, snapshot_date, campaign_id, campaign_name,
+                        campaign_type, ad_group_id, ad_group_name, search_term,
+                        match_type, status, keyword_text, keyword_id,
+                        cost, impressions, clicks, conversions, conversion_value,
+                        ctr, avg_cpc, cost_per_conversion, conversion_rate)
+                       VALUES (?, ?, ?, ?, 'PERFORMANCE_MAX',
+                               'PMAX_ASSET_GROUP', 'PMAX_ASSET_GROUP', ?,
+                               'PMAX', NULL, NULL, NULL,
+                               NULL, ?, ?, ?, ?, ?, NULL, NULL, ?)""",
+                    [self.client_id, date,
+                     str(campaign_id), campaign_name,
+                     term,
+                     row.metrics.impressions,
+                     clicks,
+                     round(conversions, 2),
+                     round(row.metrics.conversions_value, 2),
+                     round(row.metrics.ctr, 6),
+                     round(_safe_div(conversions, clicks), 4)],
+                )
+                count += 1
+            logger.info(f"  [pmax-st] {campaign_name}: {len(rows)} rows returned")
         return count
 
     # -----------------------------------------------------------------------
