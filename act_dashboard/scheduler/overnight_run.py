@@ -189,6 +189,74 @@ def run_ingestion_phase(client, eval_date):
         pipeline.close()
 
 
+def run_neg_stale_cleanup_phase(client, eval_date):
+    """Expire any PRIOR-DATE pending search-term reviews for this client.
+
+    Edge-case: only rows with analysis_date < today get expired, so a same-day
+    re-run of the scheduler leaves today's freshly-written pending rows alone
+    and just lets Pass 1 DELETE+re-INSERT them.
+
+    Returns (ok, err, details).
+    """
+    from datetime import datetime as _dt
+    con = duckdb.connect(DB_PATH)
+    try:
+        today_iso = _dt.now().strftime('%Y-%m-%d')
+        n = con.execute(
+            """UPDATE act_v2_search_term_reviews
+               SET review_status = 'expired'
+               WHERE client_id = ?
+                 AND review_status = 'pending'
+                 AND analysis_date < ?""",
+            [client['client_id'], today_iso],
+        ).fetchone()
+        # DuckDB UPDATE returns a (rowcount,) tuple
+        expired = int(n[0]) if n else 0
+        logger.info(f"  [NEG-CLEAN] {client['client_name']}: expired {expired} prior-date pending rows")
+        return True, None, {'expired': expired}
+    except Exception as e:
+        err = str(e)[:500]
+        logger.error(f"  [NEG-CLEAN] Failed: {err}")
+        return False, err, None
+    finally:
+        con.close()
+
+
+def run_neg_pass1_phase(client, eval_date):
+    """Pass 1 classifier for today's search terms (analysis_date = today)."""
+    from datetime import date as _date
+    from act_dashboard.engine.negatives.pass1 import run_pass1
+    try:
+        summary = run_pass1(client['client_id'], DB_PATH, _date.today())
+        logger.info(
+            f"  [NEG-PASS1] {client['client_name']}: "
+            f"{summary['terms_classified']} terms, "
+            f"status={summary['status_counts']}, configured={summary['configured']}"
+        )
+        return True, None, summary
+    except Exception as e:
+        err = str(e)[:500]
+        logger.error(f"  [NEG-PASS1] Failed: {err}")
+        return False, err, None
+
+
+def run_neg_pass2_phase(client, eval_date):
+    """Pass 2 routing (target list_role) for today's block rows."""
+    from datetime import date as _date
+    from act_dashboard.engine.negatives.pass2 import run_pass2
+    try:
+        summary = run_pass2(client['client_id'], DB_PATH, _date.today())
+        logger.info(
+            f"  [NEG-PASS2] {client['client_name']}: "
+            f"routed {summary['routed']} blocks"
+        )
+        return True, None, summary
+    except Exception as e:
+        err = str(e)[:500]
+        logger.error(f"  [NEG-PASS2] Failed: {err}")
+        return False, err, None
+
+
 def run_engine_phase(client, eval_date):
     """Run all enabled engine levels for a single client."""
     enabled = _get_enabled_levels(client['client_id'])
@@ -262,6 +330,25 @@ def run_client_cycle(client, eval_date):
     _write_status_end(run_id, status, err, details)
     summary['engine_status'] = status
 
+    # -------------------------------------------------------------------
+    # N1b — Negatives engine phases (run regardless of engine status;
+    # classification depends only on the data just ingested).
+    # -------------------------------------------------------------------
+    for phase_name, runner, key in (
+        ('neg_stale_cleanup', run_neg_stale_cleanup_phase, 'neg_stale_cleanup_status'),
+        ('neg_pass1',         run_neg_pass1_phase,          'neg_pass1_status'),
+        ('neg_pass2',         run_neg_pass2_phase,          'neg_pass2_status'),
+    ):
+        run_id = _write_status_start(client['client_id'], eval_date, phase_name)
+        try:
+            ok_n, err_n, details_n = runner(client, eval_date)
+        except Exception as e:
+            ok_n, err_n, details_n = False, str(e)[:500], None
+        _write_status_end(run_id,
+                          'success' if ok_n else 'failed',
+                          err_n, details_n)
+        summary[key] = 'success' if ok_n else 'failed'
+
     return summary
 
 
@@ -273,6 +360,9 @@ def main():
     parser.add_argument('--date', help='Evaluation date YYYY-MM-DD (default: yesterday)')
     parser.add_argument('--force', action='store_true',
                         help='Force run even if today already succeeded')
+    parser.add_argument('--client', help='Run only for this client_id (e.g. dbd001). '
+                                         'Still records to act_v2_scheduler_runs; other '
+                                         "clients' runs for today aren't touched.")
     args = parser.parse_args()
 
     eval_date = args.date or (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
@@ -283,8 +373,9 @@ def main():
     logger.info(f'Evaluation date: {eval_date}')
     logger.info('=' * 60)
 
-    # Idempotent re-run protection
-    if not args.force and _check_today_succeeded():
+    # Idempotent re-run protection (skip when --client is set: the caller
+    # is being explicit about wanting this client run again).
+    if not args.force and not args.client and _check_today_succeeded():
         logger.info('All active clients already have successful runs today. Exiting.')
         logger.info('(Use --force to re-run anyway.)')
         return 0
@@ -294,6 +385,13 @@ def main():
     if not clients:
         logger.warning('No active clients found. Exiting.')
         return 0
+
+    if args.client:
+        clients = [c for c in clients if c['client_id'] == args.client]
+        if not clients:
+            logger.error(f"No active client with client_id={args.client!r}. Exiting.")
+            return 1
+        logger.info(f'Single-client mode: {args.client}')
 
     logger.info(f'Active clients: {len(clients)}')
     summaries = []
