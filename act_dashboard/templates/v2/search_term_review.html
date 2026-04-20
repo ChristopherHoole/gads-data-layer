@@ -72,15 +72,15 @@
       <thead>
         <tr>
           <th class="st-col-check st-frozen-0">&nbsp;</th>
-          <th class="st-col-term  st-frozen-1">Search Term</th>
+          <th class="st-col-term  st-frozen-1">Search term</th>
           <th>Status</th>
           <th>Reason</th>
-          <th>Target List</th>
-          <th>Match Type</th>
-          <th>Added/Excluded</th>
+          <th>Target list</th>
+          <th>Match type</th>
+          <th>Added / Excluded</th>
           <th>Campaign</th>
-          <th>Campaign Type</th>
-          <th>Ad Group</th>
+          <th>Campaign type</th>
+          <th>Ad group</th>
           <th>Keyword</th>
           <th class="num">Cost</th>
           <th class="num">Impr</th>
@@ -88,9 +88,9 @@
           <th class="num">Avg CPC</th>
           <th class="num">CTR</th>
           <th class="num">Conv</th>
-          <th class="num">Cost/Conv</th>
-          <th class="num">Conv Rate</th>
-          <th>Push Error</th>
+          <th class="num">Cost/conv</th>
+          <th class="num">Conv rate</th>
+          <th>Push error</th>
         </tr>
       </thead>
       <tbody id="stTbody">
@@ -112,7 +112,7 @@
           <th>Source terms</th>
           <th>Push error</th>
         </tr>
-      </thead>
+      </thead>{# Pass 3 headers already sentence-case #}
       <tbody id="stP3Tbody">
         <tr><td colspan="9" class="st-loading">Run Pass 3 to generate suggestions</td></tr>
       </tbody>
@@ -122,6 +122,14 @@
 
   {# ---- Pagination ---- #}
   <div class="st-pager">
+    <label for="stPageSize">Rows per page:</label>
+    <select id="stPageSize">
+      <option value="10">10</option>
+      <option value="25">25</option>
+      <option value="50" selected>50</option>
+      <option value="100">100</option>
+      <option value="250">250</option>
+    </select>
     <button id="stPrev" disabled>Prev</button>
     <span id="stPagerLabel">Page 1</span>
     <button id="stNext" disabled>Next</button>

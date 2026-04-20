@@ -8,7 +8,14 @@
   let analysisDate = cfg.analysis_date;
   let currentTab = 'pass12';              // pass12 | pass3
   let currentPage = 1;
-  const PAGE_SIZE = 100;
+  // Wave C: page size configurable + persisted in localStorage
+  const PAGE_SIZE_KEY = 'st_rows_per_page';
+  const ALLOWED_PAGE_SIZES = [10, 25, 50, 100, 250];
+  function loadPageSize() {
+    const raw = parseInt(localStorage.getItem(PAGE_SIZE_KEY) || '', 10);
+    return ALLOWED_PAGE_SIZES.includes(raw) ? raw : 50;
+  }
+  let PAGE_SIZE = loadPageSize();
   let lastItems = [];                      // items currently rendered
   let statusView = 'all';                  // single-select status chip
   let selectedReasons = new Set();         // multi-select reason chips
@@ -487,6 +494,19 @@
   document.getElementById('stNext').addEventListener('click', () => {
     currentPage++; reload();
   });
+  // Wave C: rows-per-page — sync dropdown with localStorage, wire change handler
+  const pageSizeSel = document.getElementById('stPageSize');
+  if (pageSizeSel) {
+    pageSizeSel.value = String(PAGE_SIZE);
+    pageSizeSel.addEventListener('change', () => {
+      const n = parseInt(pageSizeSel.value, 10);
+      if (!ALLOWED_PAGE_SIZES.includes(n)) return;
+      PAGE_SIZE = n;
+      localStorage.setItem(PAGE_SIZE_KEY, String(n));
+      currentPage = 1;
+      reload();
+    });
+  }
 
   // Initial load
   reload();
