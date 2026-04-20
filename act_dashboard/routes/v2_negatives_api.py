@@ -197,6 +197,20 @@ def list_search_term_reviews(client_id):
         ).fetchall()
         reason_counts = {(r[0] or 'unknown'): int(r[1]) for r in reason_rows}
 
+        # Wave C4: live target-list labels — read current names from the
+        # ingested negative-keyword lists so the dropdown stays in sync
+        # when user renames lists in Google Ads (next ingestion refreshes
+        # this map, page reload picks it up). Only LINKED lists.
+        tl_rows = con.execute(
+            """SELECT list_role, list_name
+               FROM act_v2_negative_keyword_lists
+               WHERE client_id = ?
+                 AND list_role IS NOT NULL
+                 AND is_linked_to_campaign = TRUE""",
+            [client_id],
+        ).fetchall()
+        target_list_labels = {r[0]: r[1] for r in tl_rows}
+
         # Wave B Gate C: PMax "Other search terms" bucket aggregated across
         # all PMax campaigns for this client on analysis_date. Always computed
         # from the latest snapshot_date the reviews reference (last_seen_date),
@@ -268,6 +282,7 @@ def list_search_term_reviews(client_id):
         'reason_counts': reason_counts,
         'reasons_filter': reasons,
         'pmax_other_bucket': pmax_other,
+        'target_list_labels': target_list_labels,
     })
 
 

@@ -20,6 +20,7 @@
   let statusView = 'all';                  // single-select status chip
   let selectedReasons = new Set();         // multi-select reason chips
   let p3View = 'pending';                  // Pass 3 tab single-select
+  let liveTargetListLabels = {};           // Wave C4: {role: live_name} from API
 
   // ---------- Wave A humanization maps (display only; DB stores codes) ----
   const REASON_LABELS = {
@@ -316,10 +317,13 @@
   }
 
   function roleDropdown(current, options, rowId) {
-    // Humanize labels (values stay as role codes — DB sees raw codes)
-    const opts = options.map(r =>
-      `<option value="${r}" ${r === current ? 'selected' : ''}>${escapeHtml(humanRole(r))}</option>`
-    ).join('');
+    // Wave C4: prefer the live DB name for this client (refreshed every
+    // ingestion); fall back to the static humanised map when the role
+    // has no currently-linked list.
+    const opts = options.map(r => {
+      const label = liveTargetListLabels[r] || humanRole(r);
+      return `<option value="${r}" ${r === current ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+    }).join('');
     return `<select class="st-target-select" data-row-id="${rowId}">${opts}</select>`;
   }
 
@@ -361,6 +365,8 @@
       if (data.counts) renderStatusChips(data.counts);
       if (data.reason_counts) renderReasonChips(data.reason_counts);
       renderPmaxOtherBanner(data.pmax_other_bucket);
+      // Wave C4: cache live target-list labels for the dropdown
+      liveTargetListLabels = data.target_list_labels || {};
     }
 
     if (currentTab === 'pass12') {
