@@ -6,12 +6,23 @@ act_v2_search_term_reviews with analysis_date=today.
 
 Rule order (first match wins):
     1. brand_protection           -> keep
-    2. existing_exact_neg_match   -> block
-    3. existing_multiword_neg_match -> block
+    2. existing_exact_neg_match   -> block   (EQUALITY vs any exact-match neg)
+    3. existing_phrase_neg_match  -> block   (SUBSTRING vs any phrase-match neg)
     4. location_outside_service_area -> block
     5. service_not_advertised     -> block
     6. advertised_service_match   -> keep
-    7. (fallthrough)              -> review  (reason='ambiguous')
+    7. contains_neg_vocabulary    -> block   (SOFT: any token in single-word
+                                              exact neg vocabulary)
+    8. (fallthrough)              -> review  (reason='ambiguous')
+
+Rules 2+3 are the "leak detector" — terms that Google Ads already blocks.
+They should rarely fire; most serving still lets queries through.
+
+Rule 7 is a soft semantic signal, weaker than "already blocked": the client's
+single-word exact-match neg list is treated as a vocabulary of known-bad
+tokens, but only applied AFTER rule 6 gives advertised services a chance.
+So "dental implants" keeps on rule 6 (advertised), never hits rule 7, even
+if "dental" and "implants" both live in the 1-word exact neg list.
 
 Client precheck: if service_locations is empty AND both services_advertised
 and services_all are empty, we can't classify meaningfully -> mark every
@@ -62,8 +73,10 @@ def _load_client_config(con, client_id: str) -> dict:
     # "Denylist" = services the client DOES but is NOT advertising = shouldn't match ads.
     denylist_phrases = all_services_phrases - advertised_phrases
 
-    # Exact-match single-word negatives from LINKED exact-match lists
-    exact_single_rows = con.execute(
+    # All keyword_texts from LINKED exact-match lists (any word count).
+    # Rule 2 checks equality against this whole set; Rule 7 uses only the
+    # single-token subset.
+    exact_rows = con.execute(
         """SELECT DISTINCT kw.keyword_text
            FROM act_v2_negative_list_keywords kw
            JOIN act_v2_negative_keyword_lists l ON kw.list_id = l.list_id
@@ -76,18 +89,17 @@ def _load_client_config(con, client_id: str) -> dict:
              AND kw.match_type = 'EXACT'""",
         [client_id],
     ).fetchall()
+    exact_neg_phrases: set[str] = set()
     exact_neg_single_words: set[str] = set()
-    multiword_neg_phrases: set[str] = set()
-    for (kw_text,) in exact_single_rows:
+    for (kw_text,) in exact_rows:
         n = normalize(kw_text)
         if not n:
             continue
-        if ' ' in n:
-            multiword_neg_phrases.add(n)
-        else:
+        exact_neg_phrases.add(n)
+        if ' ' not in n:
             exact_neg_single_words.add(n)
 
-    # All keywords (any length) from LINKED phrase-match lists → multiword phrase set
+    # All keywords (any length) from LINKED phrase-match lists — Rule 3 substring set.
     phrase_rows = con.execute(
         """SELECT DISTINCT kw.keyword_text
            FROM act_v2_negative_list_keywords kw
@@ -100,15 +112,17 @@ def _load_client_config(con, client_id: str) -> dict:
              )""",
         [client_id],
     ).fetchall()
+    phrase_neg_phrases: set[str] = set()
     for (kw_text,) in phrase_rows:
         n = normalize(kw_text)
         if n:
-            multiword_neg_phrases.add(n)
+            phrase_neg_phrases.add(n)
 
     return {
         'brand_phrases': brand_phrases,
-        'exact_neg_single_words': exact_neg_single_words,
-        'multiword_neg_phrases': multiword_neg_phrases,
+        'exact_neg_phrases': exact_neg_phrases,            # Rule 2 (equality)
+        'phrase_neg_phrases': phrase_neg_phrases,          # Rule 3 (substring)
+        'exact_neg_single_words': exact_neg_single_words,  # Rule 7 (soft token signal)
         'advertised_phrases': advertised_phrases,
         'all_services_phrases': all_services_phrases,
         'denylist_phrases': denylist_phrases,
@@ -129,7 +143,7 @@ def _is_client_configured(cfg: dict) -> bool:
 # Rule evaluation — first match wins
 # ---------------------------------------------------------------------------
 def classify_term(search_term: str, cfg: dict) -> tuple[str, str]:
-    """Return (pass1_status, pass1_reason). Rules 1–7 in order."""
+    """Return (pass1_status, pass1_reason). Rules 1–8 in order, first match wins."""
     t_norm = normalize(search_term)
     if not t_norm:
         return ('review', 'empty_term')
@@ -140,13 +154,13 @@ def classify_term(search_term: str, cfg: dict) -> tuple[str, str]:
     if phrase_appears_in(cfg['brand_phrases'], t_norm):
         return ('keep', 'brand_protection')
 
-    # Rule 2 — any single-word exact negative appears as a token
-    if t_token_set & cfg['exact_neg_single_words']:
+    # Rule 2 — EQUALITY match against any exact-match neg (Google Ads semantics)
+    if t_norm in cfg['exact_neg_phrases']:
         return ('block', 'existing_exact_neg_match')
 
-    # Rule 3 — multi-word negative phrase substring-match
-    if phrase_appears_in(cfg['multiword_neg_phrases'], t_norm):
-        return ('block', 'existing_multiword_neg_match')
+    # Rule 3 — SUBSTRING match against any phrase-match neg (Google Ads semantics)
+    if phrase_appears_in(cfg['phrase_neg_phrases'], t_norm):
+        return ('block', 'existing_phrase_neg_match')
 
     # Rule 4 — any location-shaped token NOT in service area
     locs = cfg['service_locations_set']
@@ -158,11 +172,19 @@ def classify_term(search_term: str, cfg: dict) -> tuple[str, str]:
     if phrase_appears_in(cfg['denylist_phrases'], t_norm):
         return ('block', 'service_not_advertised')
 
-    # Rule 6 — advertised service match
+    # Rule 6 — advertised service match (must beat Rule 7 so advertised
+    # services with incidental neg-vocabulary tokens stay as keep)
     if phrase_appears_in(cfg['advertised_phrases'], t_norm):
         return ('keep', 'advertised_service_match')
 
-    # Rule 7 — fallthrough
+    # Rule 7 — SOFT signal: any token is in the client's single-word
+    # exact-neg vocabulary. Rules 2/3 handle true already-blocked terms;
+    # this catches semantically-similar queries the user's own neg list
+    # says are unwanted.
+    if t_token_set & cfg['exact_neg_single_words']:
+        return ('block', 'contains_neg_vocabulary')
+
+    # Rule 8 — fallthrough
     return ('review', 'ambiguous')
 
 
