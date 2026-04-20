@@ -181,18 +181,20 @@
 .st-table--wide th:nth-child(18), .st-table--wide td:nth-child(18) { min-width:  50px; max-width:  70px; }                    /* Conv rate */
 .st-table--wide th:nth-child(19), .st-table--wide td:nth-child(19) { min-width:  80px; max-width: 120px; white-space: normal; word-wrap: break-word; } /* Push error */
 
-/* Wave C4: 2-line clamp for Keyword (col 10) and Campaign (col 8) with a
-   hard max-height so line 3 can't peek regardless of how -webkit-line-clamp
-   renders. line-height is 1.3 (see .st-table td rule above); ceiling
-   = 1.3em × 2 + 2px fudge. */
-.st-table--wide td:nth-child(8),
-.st-table--wide td:nth-child(10) {
+/* Wave C7: 2-line clamp now lives on an INNER <div class="clamp-2"> inside
+   Keyword / Campaign cells, NOT on the <td> itself. Putting -webkit-box
+   on the td breaks display: table-cell, which broke row-height calc and
+   staggered the grey borders across columns. Title tooltip on the td
+   still exposes the full text on hover. */
+.clamp-2 {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   overflow: hidden;
   text-overflow: ellipsis;
+  word-wrap: break-word;
+  line-height: 1.3;
   max-height: calc(1.3em * 2 + 2px);
 }
 

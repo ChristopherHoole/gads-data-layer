@@ -21,28 +21,37 @@ from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
 
 
-# Wave C3 — negative-list name -> list_role resolver patterns.
-# First pattern that .search()-es wins. The lambda form defers building the
-# role code until we know the digit captured from the name.
+# Wave C7 — negative-list name -> list_role resolver patterns.
+# Tolerant of multiple naming conventions seen across DBD's renames:
+#   WORD(S)   | WRD(S)         (words? | wrds?)
+#   phrase    | ph             ("ph" substring match)
+#   exact     | ex             ([ex] / [exact])
+#   Competitors & Brands | Competitor & Brand | Comp & Bran
+#   Location  | Loc
+# First pattern that .search()-es wins. Straight/curly quotes both OK.
+_WORDS = r'(?:words?|wrds?)'
+_QUOTE = r'["\'\u201c\u201d]'
+_EX    = r'\[ex(?:act)?\]'
+_BRAND = r'bran(?:ds?)?'
 _LIST_ROLE_PATTERNS: list[tuple[re.Pattern, object]] = [
     # Location family
-    (re.compile(r'^\s*(?:loc(?:ation)?)\b.*1\s*word\+?\s*\[(?:ex(?:act)?)\]', re.I),
+    (re.compile(rf'^\s*loc(?:ation)?\b.*1\s*{_WORDS}\+?\s*{_EX}', re.I),
      'location_exact'),
-    (re.compile(r'^\s*(?:loc(?:ation)?)\b.*1\s*word\b.*["\u201c\u201d]ph(?:rase)?["\u201c\u201d]?', re.I),
+    (re.compile(rf'^\s*loc(?:ation)?\b.*1\s*{_WORDS}\b.*{_QUOTE}ph(?:rase)?{_QUOTE}?', re.I),
      'location_phrase'),
-    # Competitor family (both "Competitors & Brands" and "Comp & Brands")
-    (re.compile(r'^\s*comp(?:etitors?)?\s*&\s*brands?\s*\[(?:ex(?:act)?)\]', re.I),
+    # Competitor family (Competitors & Brands / Comp & Bran / etc.)
+    (re.compile(rf'^\s*com(?:p(?:etitors?)?)?\s*&\s*{_BRAND}\s*{_EX}', re.I),
      'competitor_exact'),
-    (re.compile(r'^\s*comp(?:etitors?)?\s*&\s*brands?\b.*["\u201c\u201d]ph(?:rase)?["\u201c\u201d]?', re.I),
+    (re.compile(rf'^\s*com(?:p(?:etitors?)?)?\s*&\s*{_BRAND}\b.*{_QUOTE}ph(?:rase)?{_QUOTE}?', re.I),
      'competitor_phrase'),
-    # 5+ WORDS [exact]  (takes a bucket name like "5+ WORDS [ex]")
-    (re.compile(r'^\s*5\+?\s*words?\s*\[(?:ex(?:act)?)\]', re.I),
+    # 5+ WORDS / 5+ WRDS [exact]
+    (re.compile(rf'^\s*5\+?\s*{_WORDS}\s*{_EX}', re.I),
      '5plus_word_exact'),
-    # N WORDS [exact] for 1..4
-    (re.compile(r'^\s*(\d)\s*words?\+?\s*\[(?:ex(?:act)?)\]', re.I),
+    # N WORDS / N WRDS [exact] for 1..4
+    (re.compile(rf'^\s*(\d)\s*{_WORDS}\+?\s*{_EX}', re.I),
      lambda m: f'{m.group(1)}_word_exact'),
-    # N WORDS "phrase" for 1..4
-    (re.compile(r'^\s*(\d)\s*words?\b.*["\u201c\u201d]ph(?:rase)?["\u201c\u201d]?', re.I),
+    # N WORDS / N WRDS "phrase" for 1..4
+    (re.compile(rf'^\s*(\d)\s*{_WORDS}\b.*{_QUOTE}ph(?:rase)?{_QUOTE}?', re.I),
      lambda m: f'{m.group(1)}_word_phrase'),
 ]
 

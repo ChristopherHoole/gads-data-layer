@@ -36,24 +36,23 @@
     client_not_configured:          'Not configured',
     empty_term:                     'Empty term',
   };
-  // Wave C6: fallback labels match the user's abbreviated Google Ads names.
-  // Used only when the live target_list_labels map (from the API) doesn't
-  // have a row for a given role — e.g. unlinked lists such as
-  // 4_word_phrase or location_exact for DBD right now.
+  // Wave C7: fallback labels track the latest DBD naming convention
+  // (WRD/WRDS, Com & Bran, Loc). Used when live target_list_labels lacks
+  // a role (e.g. unlinked 4_word_phrase / location_exact).
   const ROLE_LABELS = {
-    '1_word_exact':     '1 WORD [ex]',
-    '2_word_exact':     '2 WORDS [ex]',
-    '3_word_exact':     '3 WORDS [ex]',
-    '4_word_exact':     '4 WORDS [ex]',
-    '5plus_word_exact': '5+ WORDS [ex]',
-    '1_word_phrase':    '1 WORD "ph"',
-    '2_word_phrase':    '2 WORDS "ph"',
-    '3_word_phrase':    '3 WORDS "ph"',
-    '4_word_phrase':    '4 WORDS "ph"',
-    'location_phrase':  'Loc 1 WORD "ph"',
-    'location_exact':   'Loc 1 WORD+ [ex]',
-    'competitor_phrase':'Comp & Brands "ph"',
-    'competitor_exact': 'Comp & Brands [ex]',
+    '1_word_exact':     '1 WRD [ex]',
+    '2_word_exact':     '2 WRDS [ex]',
+    '3_word_exact':     '3 WRDS [ex]',
+    '4_word_exact':     '4 WRDS [ex]',
+    '5plus_word_exact': '5+ WRDS [ex]',
+    '1_word_phrase':    '1 WRD "ph"',
+    '2_word_phrase':    '2 WRDS "ph"',
+    '3_word_phrase':    '3 WRDS "ph"',
+    '4_word_phrase':    '4 WRDS "ph"',
+    'location_phrase':  'Loc 1 WRD "ph"',
+    'location_exact':   'Loc 1 WRD+ [ex]',
+    'competitor_phrase':'Com & Bran "ph"',
+    'competitor_exact': 'Com & Bran [ex]',
   };
   const humanReason = r => REASON_LABELS[r] || (r || '');
   const humanRole   = r => ROLE_LABELS[r] || (r || '—');
@@ -283,9 +282,9 @@
       <td>${roleSel}</td>
       <td>${escapeHtml(item.match_types || '')}</td>
       <td>${escapeHtml(humanStatuses(item.statuses))}</td>
-      <td title="${escapeHtml(item.campaigns || '')}">${escapeHtml(item.campaigns || '')}</td>
+      <td title="${escapeHtml(item.campaigns || '')}"><div class="clamp-2">${escapeHtml(item.campaigns || '')}</div></td>
       <td title="${escapeHtml(item.campaign_types || '')}">${escapeHtml(humanCampaignType(item.campaign_types))}</td>
-      <td title="${escapeHtml(item.keywords || '')}">${escapeHtml(item.keywords || '')}</td>
+      <td title="${escapeHtml(item.keywords || '')}"><div class="clamp-2">${escapeHtml(item.keywords || '')}</div></td>
       <td class="num">${fmtMoney(item.total_cost)}</td>
       <td class="num">${fmtNum(item.total_impressions)}</td>
       <td class="num">${fmtNum(item.total_clicks)}</td>
