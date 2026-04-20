@@ -21,6 +21,7 @@
   let selectedReasons = new Set();         // multi-select reason chips
   let p3View = 'pending';                  // Pass 3 tab single-select
   let liveTargetListLabels = {};           // Wave C4: {role: live_name} from API
+  let campaignSource = 'all';              // Wave C10: all | search | pmax
 
   // ---------- Wave A humanization maps (display only; DB stores codes) ----
   // Wave C9: relabelled for clearer semantics. "Leak —" prefix makes
@@ -150,10 +151,39 @@
     toast._t = setTimeout(() => { toastEl.style.display = 'none'; }, 4000);
   }
 
-  function fmtNum(n) { return n == null ? '' : Number(n).toLocaleString(); }
-  function fmtMoney(n) { return n == null ? '' : '£' + Number(n).toFixed(2); }
+  // Wave C10: null -> "—" so PMax rows (cost/CPC/Cost-per-conv) display
+  // as em-dash, clearly distinct from "£0.00". Same for percent fmt below.
+  const EMDASH = '—';
+  function fmtNum(n) { return n == null ? EMDASH : Number(n).toLocaleString(); }
+  function fmtMoney(n) { return n == null ? EMDASH : '£' + Number(n).toFixed(2); }
 
   // -------------------- Chip rendering + interaction -----------------
+  // Wave C10: Campaign Type chip row (single-select, default All).
+  const SOURCE_CHIP_ORDER = [
+    {key: 'all',    label: 'All'},
+    {key: 'search', label: 'Search'},
+    {key: 'pmax',   label: 'PMax'},
+  ];
+  function renderSourceChips(counts) {
+    const bar = document.getElementById('stSourceBar');
+    if (!bar) return;
+    bar.querySelectorAll('.st-chip').forEach(el => el.remove());
+    SOURCE_CHIP_ORDER.forEach(({key, label}) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'st-chip' + (campaignSource === key ? ' active' : '');
+      btn.dataset.source = key;
+      btn.innerHTML = `${label} <span class="st-chip__count">${counts[key] ?? 0}</span>`;
+      btn.addEventListener('click', () => {
+        if (campaignSource === key) return;
+        campaignSource = key;
+        currentPage = 1;                // reset pagination on source change
+        reload();
+      });
+      bar.appendChild(btn);
+    });
+  }
+
   function renderStatusChips(counts) {
     const bar = document.getElementById('stStatusBar');
     // Preserve the label span; remove any previous chips
@@ -277,8 +307,8 @@
     const reviewed = item.review_status !== 'pending'
       ? ` · <span class="st-status st-status--${item.review_status}">${item.review_status}</span>`
       : '';
-    const pct = v => (v == null) ? '' : (Number(v) * 100).toFixed(2) + '%';
-    const num2 = v => (v == null) ? '' : Number(v).toFixed(2);
+    const pct = v => (v == null) ? EMDASH : (Number(v) * 100).toFixed(2) + '%';
+    const num2 = v => (v == null) ? EMDASH : Number(v).toFixed(2);
     return `<tr data-id="${item.id}" data-pass1="${item.pass1_status}">
       <td class="st-col-check st-frozen-0" ${hideChk}><input type="checkbox" class="st-chk" ${checked} ${canEdit ? '' : 'disabled'}></td>
       <td class="st-col-term  st-frozen-1" title="${escapeHtml(item.search_term)}">${escapeHtml(item.search_term)}</td>
@@ -349,9 +379,10 @@
       const reasonsParam = selectedReasons.size
         ? `&reasons=${encodeURIComponent([...selectedReasons].join(','))}`
         : '';
+      const sourceParam = `&campaign_source=${encodeURIComponent(campaignSource)}`;
       url = `/v2/api/negatives/search-term-review/${CLIENT}`
           + `?view=${encodeURIComponent(view)}&date=${analysisDate}`
-          + `&page=${currentPage}&page_size=${PAGE_SIZE}${reasonsParam}`;
+          + `&page=${currentPage}&page_size=${PAGE_SIZE}${reasonsParam}${sourceParam}`;
     } else {
       view = p3View;
       url = `/v2/api/negatives/phrase-suggestions/${CLIENT}`
@@ -370,6 +401,7 @@
 
     // Repaint chips from server-side counts (Pass 1/2 only)
     if (currentTab === 'pass12') {
+      if (data.campaign_source_counts) renderSourceChips(data.campaign_source_counts);
       if (data.counts) renderStatusChips(data.counts);
       if (data.reason_counts) renderReasonChips(data.reason_counts);
       renderPmaxOtherBanner(data.pmax_other_bucket);
@@ -481,6 +513,9 @@
     document.querySelectorAll('.st-tab').forEach(el => {
       el.classList.toggle('active', el.dataset.tab === tab);
     });
+    document.getElementById('stSourceBar').style.display = tab === 'pass12' ? '' : 'none';
+    const srcNote = document.getElementById('stSourceNote');
+    if (srcNote) srcNote.style.display = tab === 'pass12' ? '' : 'none';
     document.getElementById('stStatusBar').style.display = tab === 'pass12' ? '' : 'none';
     document.getElementById('stReasonBar').style.display = tab === 'pass12' ? '' : 'none';
     document.getElementById('stFilterBarP3').style.display = tab === 'pass3' ? '' : 'none';

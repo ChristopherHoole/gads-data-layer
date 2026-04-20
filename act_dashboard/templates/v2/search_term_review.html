@@ -37,6 +37,15 @@
     </button>
   </div>
 
+  {# ---- Wave C10: Campaign Type chip row (single-select) ---- #}
+  <div class="st-filter-bar" id="stSourceBar" data-for="pass12">
+    <span class="st-filter-bar__label">Campaign&nbsp;type</span>
+  </div>
+  <p class="st-source-note" id="stSourceNote">
+    Metrics split per source. Search data aligns with Google Ads UI's Search-term report &mdash; cross-validate there.
+    PMax data from Google's <code>campaign_search_term_insight</code> API has known inconsistencies with the UI.
+  </p>
+
   {# ---- Status filter chips (single-select) — populated by JS ---- #}
   <div class="st-filter-bar" id="stStatusBar" data-for="pass12">
     <span class="st-filter-bar__label">Status</span>
