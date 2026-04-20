@@ -731,11 +731,9 @@ class GoogleAdsDataPipeline:
         # -------------------------------------------------------------------
         unmatched_names: list[str] = []
         list_count = 0
-        # Full-refresh of this client's lists (they are current-state, not dated)
-        self.db.execute(
-            "DELETE FROM act_v2_negative_keyword_lists WHERE client_id = ?",
-            [self.client_id],
-        )
+        # Upsert list rows (do NOT delete: historical keyword snapshots in
+        # act_v2_negative_list_keywords FK to list_id; deterministic list_id
+        # means we can overwrite in place).
         for s in sets:
             ss = s.shared_set
             google_id = str(ss.id)
@@ -745,7 +743,7 @@ class GoogleAdsDataPipeline:
                 unmatched_names.append(ss.name)
                 logger.warning(f"  [neg-list] No list_role match for '{ss.name}' (id={google_id}) — left NULL")
             self.db.execute(
-                """INSERT INTO act_v2_negative_keyword_lists
+                """INSERT OR REPLACE INTO act_v2_negative_keyword_lists
                    (list_id, client_id, google_ads_list_id, list_name,
                     word_count, match_type, list_role, keyword_count,
                     added_manually_count, added_by_act_count,
