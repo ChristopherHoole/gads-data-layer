@@ -165,7 +165,14 @@
    get 2-line clamp (full text available via title="" tooltip). */
 .st-table--wide th:nth-child(3),  .st-table--wide td:nth-child(3)  { min-width:  70px; max-width:  90px; }                    /* Status */
 .st-table--wide th:nth-child(4),  .st-table--wide td:nth-child(4)  { min-width:  80px; max-width: 120px; white-space: normal; word-wrap: break-word; } /* Reason */
-.st-table--wide th:nth-child(5),  .st-table--wide td:nth-child(5)  { min-width:  80px; max-width: 120px; }                    /* Target list (dropdown) */
+/* Wave C8: widen + tighten padding so the longest Target list value
+   (e.g. 'Com & Bran "ph"', 15 chars) fits the closed dropdown without
+   overflowing into Match type. */
+.st-table--wide th:nth-child(5),
+.st-table--wide td:nth-child(5) {
+  min-width: 95px; max-width: 140px;
+  padding-left: 4px; padding-right: 4px;
+}
 .st-table--wide th:nth-child(6),  .st-table--wide td:nth-child(6)  { min-width:  50px; max-width:  70px; white-space: normal; word-wrap: break-word; } /* Match type */
 .st-table--wide th:nth-child(7),  .st-table--wide td:nth-child(7)  { min-width:  50px; max-width:  70px; white-space: normal; word-wrap: break-word; } /* Added / Excluded */
 .st-table--wide th:nth-child(8),  .st-table--wide td:nth-child(8)  { min-width:  80px; max-width: 120px; white-space: normal; word-wrap: break-word; } /* Campaign */
@@ -232,7 +239,9 @@
 .st-risk--low { background: #f3f4f6; color: #6b7280; }
 
 .st-target-select {
-  font-size: 12px; padding: 3px 6px;
+  width: 100%;
+  font-size: 12px; padding: 2px 4px; line-height: 1.2;
+  box-sizing: border-box;
   border: 1px solid var(--act-border); border-radius: 4px;
   background: var(--act-surface); color: var(--act-text);
 }
