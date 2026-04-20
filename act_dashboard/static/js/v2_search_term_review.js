@@ -36,20 +36,24 @@
     client_not_configured:          'Not configured',
     empty_term:                     'Empty term',
   };
+  // Wave C6: fallback labels match the user's abbreviated Google Ads names.
+  // Used only when the live target_list_labels map (from the API) doesn't
+  // have a row for a given role — e.g. unlinked lists such as
+  // 4_word_phrase or location_exact for DBD right now.
   const ROLE_LABELS = {
-    '1_word_exact':     '1 WORD [exact]',
-    '2_word_exact':     '2 WORDS [exact]',
-    '3_word_exact':     '3 WORDS [exact]',
-    '4_word_exact':     '4 WORDS [exact]',
-    '5plus_word_exact': '5+ WORDS [exact]',
-    '1_word_phrase':    '1 WORD "phrase"',
-    '2_word_phrase':    '2 WORDS "phrase"',
-    '3_word_phrase':    '3 WORDS "phrase"',
-    '4_word_phrase':    '4 WORDS "phrase"',
-    'location_phrase':  'Location 1 WORD "phrase"',
-    'location_exact':   'Location 1 WORD+ [exact]',
-    'competitor_phrase':'Competitors & Brands "phrase"',
-    'competitor_exact': 'Competitors & Brands [exact]',
+    '1_word_exact':     '1 WORD [ex]',
+    '2_word_exact':     '2 WORDS [ex]',
+    '3_word_exact':     '3 WORDS [ex]',
+    '4_word_exact':     '4 WORDS [ex]',
+    '5plus_word_exact': '5+ WORDS [ex]',
+    '1_word_phrase':    '1 WORD "ph"',
+    '2_word_phrase':    '2 WORDS "ph"',
+    '3_word_phrase':    '3 WORDS "ph"',
+    '4_word_phrase':    '4 WORDS "ph"',
+    'location_phrase':  'Loc 1 WORD "ph"',
+    'location_exact':   'Loc 1 WORD+ [ex]',
+    'competitor_phrase':'Comp & Brands "ph"',
+    'competitor_exact': 'Comp & Brands [ex]',
   };
   const humanReason = r => REASON_LABELS[r] || (r || '');
   const humanRole   = r => ROLE_LABELS[r] || (r || '—');

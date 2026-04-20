@@ -71,34 +71,33 @@
   background: var(--act-primary); color: white;
 }
 
-/* Sticky action bar — pins BELOW the fixed topbar (which is z:900).
-   Height is stable at 44px (8px padding top + 28px button + 8px padding
-   bottom), captured in --act-action-bar-height so thead can offset
-   correctly below it. */
-:root { --act-action-bar-height: 44px; }
+/* Sticky action bar — pins below fixed topbar (z:900) on vertical scroll.
+   z:25 puts it above any body content. Opaque bg covers rows behind it. */
 .st-action-bar {
   position: sticky; top: var(--act-topbar-height); z-index: 25;
   display: flex; justify-content: space-between; align-items: center;
   gap: 12px; padding: 8px 0; margin-bottom: 8px;
-  height: var(--act-action-bar-height);
-  box-sizing: border-box;
-  background: var(--act-bg); border-bottom: 1px solid var(--act-border-light);
+  background: var(--act-surface);
+  border-bottom: 1px solid var(--act-border-light);
 }
 .st-action-bar__left, .st-action-bar__right {
   display: flex; align-items: center; gap: 10px;
 }
 .st-action-bar label { font-size: 13px; color: var(--act-text); }
 
-/* Wave C4: restore horizontal scroll with EXPLICIT overflow-y: visible.
-   Modern browsers (Chrome 111+, Firefox 120+, Safari 16+) respect this
-   and do NOT promote overflow-y to auto — so sticky thead continues to
-   pin against the page viewport while narrow viewports still get a
-   horizontal scrollbar on the wrapper. */
-.st-hscroll { overflow-x: auto; overflow-y: visible; }
+/* Wave C6: sticky thead removed entirely — we fought it through Waves B,
+   C3, C4, C5 and still had visual glitches (row 1 appearing above header,
+   ghost bands, frozen-col interactions). Cutting losses: plain thead that
+   scrolls off the top normally. The sticky action bar above stays pinned
+   and is where quick bulk-actions live during scroll.
+
+   Simple horizontal scroll wrapper — no sticky interactions to worry about
+   now that thead isn't sticky, so a plain overflow-x: auto is safe. */
+.st-hscroll { overflow-x: auto; }
 .st-table-wrap { /* no overflow */ }
 .st-table {
-  width: 100%; border-collapse: collapse; font-size: 13px;
-  background: var(--act-surface);
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  font-size: 13px; background: var(--act-surface);
 }
 /* Wide Pass 1/2 variant allows the 19 columns to expand beyond viewport */
 .st-table--wide { min-width: max-content; width: max-content; }
@@ -107,41 +106,21 @@
   text-align: left; vertical-align: top;
   line-height: 1.3;
 }
-/* Wave C: default to nowrap; wrap-cell opts in per column */
-.st-table td { white-space: nowrap; }
-
-/* Wave C3 — sticky header, final:
-   1. border-collapse: separate (see .st-table above's expansion below)
-      lets the th's own background paint fully; collapse mode lets row 1
-      borders leak into the header band and looks like bleed-through.
-   2. Opaque background (no opacity on the element — that was the Wave A bug).
-   3. z-index: 20 beats every body stacking context.
-   4. top: 56px accommodates the 2-line header variant + the ~48px sticky
-      action bar above.
-   5. min-height ensures both single-line and wrapped headers render the
-      same bar height. */
-.st-table { border-collapse: separate; border-spacing: 0; }
+.st-table td { white-space: nowrap; }  /* wrap-cell / nth-child wraps opt in */
 .st-table th {
   font-weight: 600; font-size: 12px;
   color: var(--act-text);
   background: var(--act-surface);
-  /* Wave C5 surgical fix: pin below fixed topbar (52px) + sticky action
-     bar (44px) — was top:56px, which left a 4px band under the topbar
-     where row 1 ghosted through during vertical scroll. */
-  position: sticky;
-  top: calc(var(--act-topbar-height) + var(--act-action-bar-height));
-  z-index: 20;
   border-bottom: 1px solid var(--act-border);
   white-space: normal;
   word-wrap: break-word;
   vertical-align: middle;
-  min-height: 40px;
 }
 
-/* Frozen-left columns (checkbox + Search Term).
-   Each frozen cell keeps its opaque background so body rows scrolling
-   under it don't show through. z-index: 11 for th-frozen so it beats
-   both the sticky header (10) and the body frozen cells. */
+/* Frozen-left columns (checkbox + Search term) — horizontal-sticky only,
+   independent of sticky thead. Opaque bg so body rows scrolling under them
+   don't show through. z-index 6 for body cells, 10 for thead frozen so
+   thead frozen beats body frozen during horizontal scroll. */
 .st-table--wide .st-frozen-0 {
   position: sticky; left: 0; z-index: 6;
   background: var(--act-surface);
@@ -152,10 +131,8 @@
   background: var(--act-surface);
   box-shadow: 1px 0 0 var(--act-border-light);
 }
-/* Wave C3: thead frozen cells must beat both the sticky-header z (20) and
-   the body frozen z (6) during horizontal scroll. */
 .st-table--wide thead .st-frozen-0,
-.st-table--wide thead .st-frozen-1 { z-index: 30; }
+.st-table--wide thead .st-frozen-1 { z-index: 10; }
 .st-col-check { width: 25px; min-width: 25px; text-align: center; }
 .st-col-term  { min-width: 100px; max-width: 180px;
                 white-space: normal !important;
