@@ -249,6 +249,23 @@ def morning_review():
         }
 
         # --------------------------------------------------------------
+        # 5b. N1b — Search-term review pending count (today's classifier)
+        # --------------------------------------------------------------
+        if client_filter == 'all':
+            st_params = []
+            st_clause = ''
+        else:
+            st_params = [client_filter]
+            st_clause = ' AND client_id = ?'
+        pending_search_term_count = con.execute(f"""
+            SELECT COUNT(*) FROM act_v2_search_term_reviews
+            WHERE analysis_date = CURRENT_DATE
+              AND pass1_status IN ('block','review')
+              AND review_status = 'pending'
+              {st_clause}
+        """, st_params).fetchone()[0]
+
+        # --------------------------------------------------------------
         # 6. Scheduler status — "ACT last ran" + any failures today
         # --------------------------------------------------------------
         last_ran_row = con.execute("""
@@ -311,5 +328,6 @@ def morning_review():
         any_running=any_running,
         any_failed=any_failed,
         impact_total_actions=impact_total_actions,
+        pending_search_term_count=pending_search_term_count,
         active_page='morning-review',
     )

@@ -1,0 +1,118 @@
+/* N1b Gate 5 — Search Term Review page (reuses v2_base + Morning Review
+   classes where possible; only genuinely new patterns defined here). */
+
+.act-date-picker {
+  background: var(--act-surface);
+  border: 1px solid var(--act-border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+  color: var(--act-text);
+}
+
+/* Tabs */
+.st-tabs { display: flex; gap: 4px; margin: 16px 0 0; border-bottom: 1px solid var(--act-border-light); }
+.st-tab {
+  background: transparent; border: none;
+  padding: 10px 14px; font-size: 13px; font-weight: 500;
+  color: var(--act-text); opacity: 0.65; cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.st-tab:hover:not(:disabled) { opacity: 1; }
+.st-tab.active { opacity: 1; border-bottom-color: var(--act-primary); }
+.st-tab:disabled { opacity: 0.3; cursor: not-allowed; }
+.st-tab__badge {
+  display: inline-block; margin-left: 4px;
+  background: var(--act-hover-bg); color: var(--act-text);
+  font-size: 11px; padding: 1px 6px; border-radius: 8px;
+}
+
+/* Filter chips — plain labelled checkboxes */
+.st-filter-bar { display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 0; }
+.st-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border: 1px solid var(--act-border);
+  border-radius: 14px; font-size: 12px; cursor: pointer;
+  background: var(--act-surface); user-select: none;
+}
+.st-chip:has(input:checked) { background: var(--act-blue-bg); border-color: var(--act-primary); }
+.st-chip input { margin: 0; }
+
+/* Sticky action bar */
+.st-action-bar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; padding: 8px 0; margin-bottom: 8px;
+  background: var(--act-bg); border-bottom: 1px solid var(--act-border-light);
+}
+.st-action-bar__left, .st-action-bar__right {
+  display: flex; align-items: center; gap: 10px;
+}
+.st-action-bar label { font-size: 13px; color: var(--act-text); }
+
+/* Table */
+.st-table-wrap { overflow-x: auto; }
+.st-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+  background: var(--act-surface);
+}
+.st-table th, .st-table td {
+  padding: 8px 10px; border-bottom: 1px solid var(--act-border-light);
+  text-align: left; vertical-align: top;
+}
+.st-table th {
+  font-weight: 600; font-size: 12px; text-transform: uppercase;
+  letter-spacing: 0.3px; color: var(--act-text); opacity: 0.7;
+  background: var(--act-hover-bg); position: sticky; top: 44px;
+}
+.st-table td.num, .st-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.st-table tr:hover td { background: var(--act-hover-bg); }
+.st-loading { padding: 40px; text-align: center; opacity: 0.6; }
+.st-table__term { font-weight: 500; }
+.st-table__sources {
+  font-size: 11px; color: var(--act-text); opacity: 0.7;
+  max-width: 320px; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.st-table__sources:hover { white-space: normal; }
+
+/* Reuse existing badge visual style */
+.st-status { display: inline-block; font-size: 11px; font-weight: 500;
+  padding: 2px 8px; border-radius: 10px; }
+.st-status--block { background: var(--act-red-bg); color: #991b1b; }
+.st-status--review { background: var(--act-amber-bg); color: #854d0e; }
+.st-status--keep { background: var(--act-green-bg); color: #166534; }
+.st-status--pushed { background: var(--act-blue-bg); color: #1e40af; }
+.st-status--approved { background: var(--act-green-bg); color: #166534; }
+.st-status--rejected { background: #f3f4f6; color: #6b7280; }
+.st-status--expired { background: #f3f4f6; color: #9aa0a6; }
+
+.st-risk { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+.st-risk--high { background: var(--act-red-bg); color: #991b1b; }
+.st-risk--medium { background: var(--act-amber-bg); color: #854d0e; }
+.st-risk--low { background: #f3f4f6; color: #6b7280; }
+
+.st-target-select {
+  font-size: 12px; padding: 3px 6px;
+  border: 1px solid var(--act-border); border-radius: 4px;
+  background: var(--act-surface); color: var(--act-text);
+}
+
+.st-push-error { color: #991b1b; font-size: 11px; max-width: 260px; }
+
+/* Pagination */
+.st-pager { display: flex; align-items: center; gap: 12px; padding: 12px 0; justify-content: flex-end; }
+.st-pager button {
+  background: var(--act-surface); border: 1px solid var(--act-border);
+  padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;
+}
+.st-pager button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Toast */
+.st-toast {
+  position: fixed; right: 24px; bottom: 24px;
+  background: var(--act-text); color: white; padding: 10px 16px;
+  border-radius: 6px; font-size: 13px; z-index: 50;
+  max-width: 420px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.st-toast--error { background: #991b1b; }

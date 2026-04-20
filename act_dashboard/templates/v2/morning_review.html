@@ -130,6 +130,38 @@
   </div>
 </section>
 
+{# ============ N1b — SEARCH TERMS AWAITING REVIEW ============ #}
+<section class="act-section" id="sectionSearchTermReview">
+  <div class="act-section__header" style="cursor:default">
+    <h2 class="act-section__title">
+      <span class="material-symbols-outlined" style="color:var(--act-blue)">filter_alt</span>
+      Search Terms Awaiting Review
+      <span class="act-section__count act-section__count--blue">{{ pending_search_term_count }}</span>
+    </h2>
+  </div>
+  <div class="act-section__body" style="display:block">
+    {% if pending_search_term_count > 0 %}
+    <div class="act-item">
+      <div class="act-item__row">
+        <div class="act-item__content">
+          <div class="act-item__summary">
+            Today's search terms — classified overnight. Review and push to Google Ads.
+          </div>
+        </div>
+        <div class="act-item__actions">
+          <a href="/v2/search-term-review?client={{ client.id }}" class="btn-act btn-act--approve">Review {{ pending_search_term_count }} terms →</a>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="act-empty-state" style="padding:28px;text-align:center;color:var(--act-text);opacity:0.7">
+      <span class="material-symbols-outlined" style="font-size:40px;color:var(--act-green)">check_circle</span>
+      <p style="margin-top:10px;font-size:14px">No search terms awaiting review today</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
 {# ============ ACTIONS EXECUTED OVERNIGHT ============ #}
 <section class="act-section collapsed" id="sectionExecuted">
   <div class="act-section__header">

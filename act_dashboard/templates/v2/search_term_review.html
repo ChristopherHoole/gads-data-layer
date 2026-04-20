@@ -1,0 +1,139 @@
+{% extends "v2/base_v2.html" %}
+
+{% block title %}Search Term Review{% endblock %}
+{% block page_title %}Search Term Review{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/v2_search_term_review.css') }}">
+{% endblock %}
+
+{% block topbar_extras %}
+  <input type="date" id="stDate" value="{{ analysis_date }}" class="act-date-picker">
+{% endblock %}
+
+{% block content %}
+<div class="st-page" data-client-id="{{ client.id }}" data-analysis-date="{{ analysis_date }}">
+
+  {# ---- 5 summary badges ---- #}
+  <div class="status-cards">
+    <div class="status-card status-card--amber"><div class="status-card__count" id="cntPending">{{ counts.pending_block_review }}</div><div class="status-card__label">Pending</div></div>
+    <div class="status-card status-card--green"><div class="status-card__count" id="cntApproved">{{ counts.approved }}</div><div class="status-card__label">Approved</div></div>
+    <div class="status-card status-card--red"><div class="status-card__count" id="cntRejected">{{ counts.rejected }}</div><div class="status-card__label">Rejected</div></div>
+    <div class="status-card status-card--blue"><div class="status-card__count" id="cntPushed">{{ counts.pushed }}</div><div class="status-card__label">Pushed</div></div>
+    <div class="status-card" style="border-left-color:#9aa0a6"><div class="status-card__count" id="cntExpired">{{ counts.expired }}</div><div class="status-card__label">Expired</div></div>
+  </div>
+
+  {# ---- Tabs ---- #}
+  <div class="st-tabs">
+    <button class="st-tab active" data-tab="pass12">Pass 1/2 Review</button>
+    <button class="st-tab" data-tab="pass3" {% if not pushed_today and phrase_suggestions_count == 0 %}disabled title="Run Pass 3 after pushing today's approved terms"{% endif %}>
+      Pass 3 Suggestions <span class="st-tab__badge" id="cntSugg">{{ phrase_suggestions_count }}</span>
+    </button>
+  </div>
+
+  {# ---- Filter chips (view selector for Pass 1/2) ---- #}
+  <div class="st-filter-bar" id="stFilterBar" data-for="pass12">
+    <label class="st-chip"><input type="checkbox" data-view="pending" checked>Block / Review (Pending)</label>
+    <label class="st-chip"><input type="checkbox" data-view="keep">Keep</label>
+    <label class="st-chip"><input type="checkbox" data-view="approved">Approved</label>
+    <label class="st-chip"><input type="checkbox" data-view="pushed">Pushed</label>
+    <label class="st-chip"><input type="checkbox" data-view="rejected">Rejected</label>
+  </div>
+  <div class="st-filter-bar" id="stFilterBarP3" data-for="pass3" style="display:none">
+    <label class="st-chip"><input type="checkbox" data-view="pending" checked>Pending</label>
+    <label class="st-chip"><input type="checkbox" data-view="approved">Approved</label>
+    <label class="st-chip"><input type="checkbox" data-view="pushed">Pushed</label>
+    <label class="st-chip"><input type="checkbox" data-view="rejected">Rejected</label>
+  </div>
+
+  {# ---- Sticky action bar ---- #}
+  <div class="st-action-bar">
+    <div class="st-action-bar__left">
+      <label><input type="checkbox" id="stSelectAll"> Select all on page</label>
+      <button class="btn-act btn-act--approve" id="stBulkApprove" disabled>Approve selected (<span id="lblApprove">0</span>)</button>
+      <button class="btn-act btn-act--decline" id="stBulkReject" disabled>Reject selected (<span id="lblReject">0</span>)</button>
+    </div>
+    <div class="st-action-bar__right">
+      <button class="btn-act btn-act--approve" id="stPushApproved" disabled>Push approved to Google Ads</button>
+      <button class="btn-act btn-act--details" id="stRunPass3">Run Pass 3</button>
+    </div>
+  </div>
+
+  {# ---- Table area ---- #}
+  <div class="st-table-wrap">
+    <table class="st-table" id="stTable">
+      <thead>
+        <tr>
+          <th style="width:34px"></th>
+          <th>Search term</th>
+          <th class="num">Impr</th>
+          <th class="num">Clicks</th>
+          <th class="num">Cost</th>
+          <th class="num">Conv</th>
+          <th>Status</th>
+          <th>Reason</th>
+          <th>Target list</th>
+          <th>Push error</th>
+        </tr>
+      </thead>
+      <tbody id="stTbody">
+        <tr><td colspan="10" class="st-loading">Loading…</td></tr>
+      </tbody>
+    </table>
+
+    {# Pass 3 table (hidden until tab-switch) #}
+    <table class="st-table" id="stP3Table" style="display:none">
+      <thead>
+        <tr>
+          <th style="width:34px"></th>
+          <th>Fragment</th>
+          <th class="num">Words</th>
+          <th>Target list</th>
+          <th class="num">Occ</th>
+          <th>Risk</th>
+          <th>Status</th>
+          <th>Source terms</th>
+          <th>Push error</th>
+        </tr>
+      </thead>
+      <tbody id="stP3Tbody">
+        <tr><td colspan="9" class="st-loading">Run Pass 3 to generate suggestions</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  {# ---- Pagination ---- #}
+  <div class="st-pager">
+    <button id="stPrev" disabled>Prev</button>
+    <span id="stPagerLabel">Page 1</span>
+    <button id="stNext" disabled>Next</button>
+  </div>
+
+  {# ---- Toast host ---- #}
+  <div id="stToast" class="st-toast" style="display:none"></div>
+
+</div>
+
+{# Data for JS #}
+<script id="stConfig" type="application/json">
+{
+  "client_id": "{{ client.id }}",
+  "analysis_date": "{{ analysis_date }}",
+  "list_roles": [
+    "1_word_exact","1_word_phrase","2_word_exact","2_word_phrase",
+    "3_word_exact","3_word_phrase","4_word_exact","4_word_phrase",
+    "5plus_word_exact","location_exact","location_phrase",
+    "competitor_exact","competitor_phrase"
+  ],
+  "phrase_roles": [
+    "1_word_phrase","2_word_phrase","3_word_phrase","4_word_phrase",
+    "location_phrase","competitor_phrase"
+  ]
+}
+</script>
+
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/v2_search_term_review.js') }}"></script>
+{% endblock %}

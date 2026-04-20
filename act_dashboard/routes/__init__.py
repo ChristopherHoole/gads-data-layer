@@ -89,6 +89,11 @@ def register_blueprints(app: Flask):
     app.register_blueprint(v2_negatives_api_bp)
     print("[OK] [N1b] Registered v2_negatives_api blueprint (/v2/api/negatives)")
 
+    # N1b Gate 5: Search-term review page
+    from act_dashboard.routes.v2_search_term_review import v2_search_term_review_bp
+    app.register_blueprint(v2_search_term_review_bp)
+    print("[OK] [N1b] Registered v2_search_term_review blueprint (/v2/search-term-review)")
+
     print("[OK] [Phase 1a] Registered auth blueprint (login, logout, switch-client)")
     print("[OK] [Phase 1b] Registered api blueprint (execute, batch, status, approve, reject)")
     print("[OK] [Phase 1c] Registered page blueprints (keywords, ads, shopping)")
