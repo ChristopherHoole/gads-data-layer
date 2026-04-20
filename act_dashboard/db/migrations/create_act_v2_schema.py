@@ -351,7 +351,10 @@ TABLE_SQL = [
             run_id BIGINT PRIMARY KEY DEFAULT nextval('seq_act_v2_scheduler_runs'),
             client_id VARCHAR NOT NULL,
             run_date DATE NOT NULL,
-            phase VARCHAR(20) NOT NULL CHECK (phase IN ('ingestion', 'engine')),
+            phase VARCHAR(30) NOT NULL CHECK (phase IN (
+                'ingestion', 'engine',
+                'neg_stale_cleanup', 'neg_pass1', 'neg_pass2', 'neg_pass3'
+            )),
             status VARCHAR(20) NOT NULL CHECK (status IN ('running', 'success', 'failed', 'skipped')),
             started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             completed_at TIMESTAMP,

@@ -135,6 +135,55 @@ def main():
         logger.info('  table + idx_phrase_sugg_client_date(client_id, analysis_date)')
 
         # -------------------------------------------------------------------
+        # 3b. Widen act_v2_scheduler_runs.phase CHECK to accept N1b phases
+        # -------------------------------------------------------------------
+        logger.info('--- act_v2_scheduler_runs: widen phase CHECK ---')
+        # Detect whether migration already applied (constraint already wide)
+        try:
+            con.execute(
+                """INSERT INTO act_v2_scheduler_runs
+                   (client_id, run_date, phase, status, started_at)
+                   VALUES ('__probe__', CURRENT_DATE, 'neg_pass1', 'success', CURRENT_TIMESTAMP)"""
+            )
+            con.execute(
+                "DELETE FROM act_v2_scheduler_runs WHERE client_id = '__probe__'"
+            )
+            logger.info('  phase CHECK already widened (no-op)')
+        except duckdb.ConstraintException:
+            # Rebuild table with widened CHECK, preserving rows
+            logger.info('  rebuilding act_v2_scheduler_runs to widen phase CHECK...')
+            con.execute("CREATE TABLE act_v2_scheduler_runs_new AS SELECT * FROM act_v2_scheduler_runs;")
+            con.execute('DROP TABLE act_v2_scheduler_runs;')
+            con.execute("""
+                CREATE TABLE act_v2_scheduler_runs (
+                    run_id BIGINT PRIMARY KEY DEFAULT nextval('seq_act_v2_scheduler_runs'),
+                    client_id VARCHAR NOT NULL,
+                    run_date DATE NOT NULL,
+                    phase VARCHAR(30) NOT NULL CHECK (phase IN (
+                        'ingestion', 'engine',
+                        'neg_stale_cleanup', 'neg_pass1', 'neg_pass2', 'neg_pass3'
+                    )),
+                    status VARCHAR(20) NOT NULL CHECK (status IN ('running', 'success', 'failed', 'skipped')),
+                    started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    completed_at TIMESTAMP,
+                    error_message VARCHAR,
+                    details_json JSON,
+                    FOREIGN KEY (client_id) REFERENCES act_v2_clients(client_id)
+                );
+            """)
+            con.execute("""
+                INSERT INTO act_v2_scheduler_runs
+                  (run_id, client_id, run_date, phase, status,
+                   started_at, completed_at, error_message, details_json)
+                SELECT run_id, client_id, run_date, phase, status,
+                       started_at, completed_at, error_message, details_json
+                FROM act_v2_scheduler_runs_new;
+            """)
+            con.execute('DROP TABLE act_v2_scheduler_runs_new;')
+            preserved = con.execute('SELECT COUNT(*) FROM act_v2_scheduler_runs').fetchone()[0]
+            logger.info(f'  rebuilt; {preserved} prior rows preserved')
+
+        # -------------------------------------------------------------------
         # 4. Backfill 5 new settings for every existing client
         # -------------------------------------------------------------------
         logger.info('--- Backfilling 5 settings for active clients ---')

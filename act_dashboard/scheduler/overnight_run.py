@@ -198,17 +198,15 @@ def run_neg_stale_cleanup_phase(client, eval_date):
 
     Returns (ok, err, details).
     """
-    from datetime import datetime as _dt
     con = duckdb.connect(DB_PATH)
     try:
-        today_iso = _dt.now().strftime('%Y-%m-%d')
         n = con.execute(
             """UPDATE act_v2_search_term_reviews
                SET review_status = 'expired'
                WHERE client_id = ?
                  AND review_status = 'pending'
-                 AND analysis_date < ?""",
-            [client['client_id'], today_iso],
+                 AND analysis_date < CURRENT_DATE""",
+            [client['client_id']],
         ).fetchone()
         # DuckDB UPDATE returns a (rowcount,) tuple
         expired = int(n[0]) if n else 0
