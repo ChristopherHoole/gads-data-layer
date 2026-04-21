@@ -549,3 +549,115 @@
   border-radius: 5px; background: var(--surface, #fff); color: var(--text, #111827); cursor: pointer;
 }
 .role-assign-select:focus { outline: 2px solid #3b82f6; outline-offset: -1px; border-color: #3b82f6; }
+
+/* ============================================================
+   N1n — Profile-list summary cards + slide-in list editor
+   ============================================================ */
+
+/* Summary card (replaces the raw textarea in each profile row) */
+.config-list-summary {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px;
+  background: var(--act-hover-bg);
+  border: 1px solid var(--act-border);
+  border-radius: 6px;
+}
+.config-list-summary__count {
+  font-weight: 600;
+  color: var(--act-primary, #1a73e8);
+  white-space: nowrap;
+  font-size: 13px;
+}
+.config-list-summary__preview {
+  flex: 1;
+  font-size: 13px;
+  color: var(--act-text);
+  opacity: 0.8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.config-list-summary__preview:empty::before {
+  content: '— empty —'; opacity: 0.6;
+}
+.config-list-summary__edit {
+  border: none; background: transparent;
+  color: var(--act-primary, #1a73e8);
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; white-space: nowrap;
+  padding: 4px 6px;
+}
+.config-list-summary__edit:hover { text-decoration: underline; }
+
+/* Slide-in editor toolbar + rows */
+.list-editor__toolbar {
+  display: flex; gap: 8px; align-items: center;
+  margin-bottom: 12px;
+}
+.list-editor__search {
+  flex: 1; padding: 6px 10px;
+  border: 1px solid var(--act-border); border-radius: 4px;
+  font-size: 13px; background: var(--act-surface); color: var(--act-text);
+}
+.list-editor__sort {
+  padding: 6px 8px; border: 1px solid var(--act-border);
+  border-radius: 4px; font-size: 13px;
+  background: var(--act-surface); color: var(--act-text);
+}
+.list-editor__count {
+  font-size: 12px; color: var(--act-text); opacity: 0.7;
+  white-space: nowrap;
+}
+
+.list-editor__add {
+  display: flex; gap: 8px; margin-bottom: 10px;
+  padding-bottom: 12px; border-bottom: 1px solid var(--act-border);
+}
+.list-editor__add-input {
+  flex: 1; padding: 6px 10px;
+  border: 1px solid var(--act-border); border-radius: 4px;
+  font-size: 13px; background: var(--act-surface); color: var(--act-text);
+}
+.list-editor__add-btn {
+  padding: 6px 16px;
+  background: var(--act-primary, #1a73e8); color: white;
+  border: none; border-radius: 4px; cursor: pointer;
+  font-size: 13px; font-weight: 500;
+}
+.list-editor__add-btn:hover { background: #1666d1; }
+
+.list-editor__warn {
+  font-size: 12px; color: #b8860b;
+  background: #fef3c7; border: 1px solid #fde68a;
+  padding: 6px 10px; border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.list-editor__rows {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.list-editor__row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 10px; border-radius: 4px;
+  font-size: 13px; color: var(--act-text);
+}
+.list-editor__row:hover { background: var(--act-hover-bg); }
+.list-editor__row.hidden { display: none; }
+.list-editor__row-text {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  flex: 1; min-width: 0;
+}
+.list-editor__row-remove {
+  background: none; border: none; cursor: pointer;
+  opacity: 0.5; padding: 2px 8px; border-radius: 3px;
+  color: var(--act-text); font-size: 14px; line-height: 1;
+}
+.list-editor__row-remove:hover {
+  opacity: 1; background: #dc2626; color: white;
+}
+
+.list-editor__empty {
+  text-align: center; font-size: 13px;
+  color: var(--act-text); opacity: 0.6;
+  padding: 24px 0;
+}

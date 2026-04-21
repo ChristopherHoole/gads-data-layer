@@ -111,59 +111,103 @@
           <div class="setting-control"><div class="input-group"><input type="number" class="config-input" data-key="monthly_budget" value="{{ client.monthly_budget|int }}" min="1"><span class="input-group__suffix">&pound;/month</span></div></div>
         </div>
 
-        {# N1a — Client Profile fields (feed the Negatives Module) #}
-        <div class="setting-row setting-row--textarea">
+        {# N1a — Client Profile fields (feed the Negatives Module)
+           N1n: summary-card + slide-in list editor. The hidden textarea
+           remains the source of truth: collectData() reads it by data-key,
+           the slide-in's Save writes back + dispatches 'input' so Wave J's
+           dirty-state listener still fires. #}
+        <div class="setting-row">
           <div class="setting-info">
             <p class="setting-name">Services Not Advertised</p>
             <p class="setting-desc">Services the client offers but does NOT currently advertise. Used as the Pass 1 denylist &mdash; Rule 5 blocks search terms matching these. Use specific phrases (e.g. <code>dental crown</code> not just <code>crown</code>) to avoid false matches against advertised variants.</p>
           </div>
           <div class="setting-control setting-control--full">
-            <textarea class="config-input config-input--textarea" data-key="services_not_advertised" rows="3"
+            <div class="config-list-summary"
+                 data-field="services_not_advertised"
+                 data-label="Services Not Advertised"
+                 data-desc="Services the client offers but does NOT currently advertise. Used as the Pass 1 denylist.">
+              <span class="config-list-summary__count">0</span>
+              <span class="config-list-summary__preview"></span>
+              <button type="button" class="config-list-summary__edit">Edit list &rarr;</button>
+            </div>
+            <textarea hidden class="config-input config-input--textarea" data-key="services_not_advertised"
                       placeholder="comma-separated, lowercase">{{ client.services_not_advertised }}</textarea>
           </div>
         </div>
 
-        <div class="setting-row setting-row--textarea">
+        <div class="setting-row">
           <div class="setting-info">
             <p class="setting-name">Services Advertised (Ad Scope)</p>
             <p class="setting-desc">Subset of services currently being advertised. Used as the Pass 1 allowlist for the Negatives Module.</p>
           </div>
           <div class="setting-control setting-control--full">
-            <textarea class="config-input config-input--textarea" data-key="services_advertised" rows="3"
+            <div class="config-list-summary"
+                 data-field="services_advertised"
+                 data-label="Services Advertised (Ad Scope)"
+                 data-desc="Subset of services currently being advertised. Used as the Pass 1 allowlist.">
+              <span class="config-list-summary__count">0</span>
+              <span class="config-list-summary__preview"></span>
+              <button type="button" class="config-list-summary__edit">Edit list &rarr;</button>
+            </div>
+            <textarea hidden class="config-input config-input--textarea" data-key="services_advertised"
                       placeholder="comma-separated, lowercase">{{ client.services_advertised }}</textarea>
           </div>
         </div>
 
-        <div class="setting-row setting-row--textarea">
+        <div class="setting-row">
           <div class="setting-info">
             <p class="setting-name">Service Locations</p>
             <p class="setting-desc">Postcodes, named areas, and placenames covered by the business. Searches matching any of these are protected from location negatives.</p>
           </div>
           <div class="setting-control setting-control--full">
-            <textarea class="config-input config-input--textarea" data-key="service_locations" rows="5"
+            <div class="config-list-summary"
+                 data-field="service_locations"
+                 data-label="Service Locations"
+                 data-desc="Postcodes, named areas, and placenames covered by the business.">
+              <span class="config-list-summary__count">0</span>
+              <span class="config-list-summary__preview"></span>
+              <button type="button" class="config-list-summary__edit">Edit list &rarr;</button>
+            </div>
+            <textarea hidden class="config-input config-input--textarea" data-key="service_locations"
                       placeholder="comma-separated, lowercase">{{ client.service_locations }}</textarea>
           </div>
         </div>
 
-        <div class="setting-row setting-row--textarea">
+        <div class="setting-row">
           <div class="setting-info">
             <p class="setting-name">Brand Terms (Protect)</p>
             <p class="setting-desc">Client-owned brand variants. Searches containing these are protected from competitor/generic negatives.</p>
           </div>
           <div class="setting-control setting-control--full">
-            <textarea class="config-input config-input--textarea" data-key="client_brand_terms" rows="2"
+            <div class="config-list-summary"
+                 data-field="client_brand_terms"
+                 data-label="Brand Terms (Protect)"
+                 data-desc="Client-owned brand variants. Searches matching these are protected from competitor/generic negatives.">
+              <span class="config-list-summary__count">0</span>
+              <span class="config-list-summary__preview"></span>
+              <button type="button" class="config-list-summary__edit">Edit list &rarr;</button>
+            </div>
+            <textarea hidden class="config-input config-input--textarea" data-key="client_brand_terms"
                       placeholder="comma-separated, lowercase">{{ client.client_brand_terms }}</textarea>
           </div>
         </div>
 
         {# N1b Wave C12 — Rule 7 exclusion tokens #}
-        <div class="setting-row setting-row--textarea">
+        <div class="setting-row">
           <div class="setting-info">
             <p class="setting-name">Rule 7 exclusion tokens</p>
             <p class="setting-desc">Comma-separated tokens to EXCLUDE from Rule 7 (soft-signal blocking) even if they appear in your 1-word exact negative list. Use for industry-universal words (e.g. teeth, dental) that you neg as bare queries but don't want treated as block signals for multi-word terms. These tokens still work as exact-match negatives in Google Ads &mdash; this only prevents Rule 7 from extrapolating them.</p>
           </div>
           <div class="setting-control setting-control--full">
-            <textarea class="config-input config-input--textarea" data-key="rule_7_exclude_tokens" rows="2"
+            <div class="config-list-summary"
+                 data-field="rule_7_exclude_tokens"
+                 data-label="Rule 7 exclusion tokens"
+                 data-desc="Tokens to exclude from Rule 7 soft-signal blocking. Use for industry-universal words you still want to neg as bare queries.">
+              <span class="config-list-summary__count">0</span>
+              <span class="config-list-summary__preview"></span>
+              <button type="button" class="config-list-summary__edit">Edit list &rarr;</button>
+            </div>
+            <textarea hidden class="config-input config-input--textarea" data-key="rule_7_exclude_tokens"
                       placeholder="comma-separated, lowercase">{{ client.rule_7_exclude_tokens }}</textarea>
           </div>
         </div>
@@ -598,6 +642,43 @@
 
     </div>
   </div>
+
+<!-- N1n — Reusable slide-in list editor. Opens over any of the 5 profile
+     lists; hidden textarea is still the source of truth. -->
+<div class="act-slidein-overlay" id="listEditorOverlay"></div>
+<aside class="act-slidein" id="listEditor" aria-hidden="true">
+  <div class="act-slidein__header">
+    <div>
+      <h3 id="listEditorTitle"></h3>
+      <p id="listEditorDesc" class="act-slidein__summary"></p>
+    </div>
+    <button type="button" class="act-slidein__close" id="listEditorClose" aria-label="Close">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+  <div class="act-slidein__body">
+    <div class="list-editor__toolbar">
+      <input type="search" class="list-editor__search" id="listEditorSearch" placeholder="Filter…">
+      <select class="list-editor__sort" id="listEditorSort">
+        <option value="az">A &rarr; Z</option>
+        <option value="za">Z &rarr; A</option>
+        <option value="recent">Recently added</option>
+      </select>
+      <span class="list-editor__count" id="listEditorCount"></span>
+    </div>
+    <div class="list-editor__add">
+      <input type="text" class="list-editor__add-input" id="listEditorAddInput"
+             placeholder="Add phrase (or paste comma/newline list)…">
+      <button type="button" class="list-editor__add-btn" id="listEditorAddBtn">Add</button>
+    </div>
+    <div class="list-editor__warn" id="listEditorWarn" style="display:none"></div>
+    <div class="list-editor__rows" id="listEditorRows" role="list"></div>
+  </div>
+  <div class="act-slidein__footer">
+    <button type="button" class="btn-reset" id="listEditorCancel">Cancel</button>
+    <button type="button" class="btn-save" id="listEditorSave">Save</button>
+  </div>
+</aside>
 
 <!-- Reset Confirmation Dialog -->
 <div class="config-confirm-overlay" id="resetOverlay">

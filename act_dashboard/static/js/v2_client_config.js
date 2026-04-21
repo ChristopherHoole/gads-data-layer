@@ -127,6 +127,214 @@ document.addEventListener('DOMContentLoaded', () => {
   setupValidation();
 
   // -------------------------------------------------------------------------
+  // N1n — Profile-list summary cards + slide-in editor
+  // -------------------------------------------------------------------------
+  const listEditor = (function () {
+    const el = {
+      slidein:  document.getElementById('listEditor'),
+      overlay:  document.getElementById('listEditorOverlay'),
+      title:    document.getElementById('listEditorTitle'),
+      desc:     document.getElementById('listEditorDesc'),
+      search:   document.getElementById('listEditorSearch'),
+      sort:     document.getElementById('listEditorSort'),
+      count:    document.getElementById('listEditorCount'),
+      addInput: document.getElementById('listEditorAddInput'),
+      addBtn:   document.getElementById('listEditorAddBtn'),
+      rows:     document.getElementById('listEditorRows'),
+      warn:     document.getElementById('listEditorWarn'),
+      closeBtn: document.getElementById('listEditorClose'),
+      cancelBtn:document.getElementById('listEditorCancel'),
+      saveBtn:  document.getElementById('listEditorSave'),
+    };
+    if (!el.slidein) return null;
+
+    // State for the currently-open editor session.
+    let activeField = null;            // string key, e.g. "services_advertised"
+    let activeTextarea = null;         // hidden <textarea> element
+    let originalSerialized = '';       // value at open-time, for dirty check
+    let items = [];                    // string[] in insertion order (for "recent")
+
+    // ---------- Parsing / serialisation (mirrors backend normalisation)
+    function parseCsv(s) {
+      if (!s) return [];
+      // Accept both comma and newline separators.
+      return s.split(/[,\n]/).map(x => x.trim().toLowerCase()).filter(Boolean);
+    }
+    function dedupe(arr) {
+      const seen = new Set();
+      const out = [];
+      for (const v of arr) {
+        if (!seen.has(v)) { seen.add(v); out.push(v); }
+      }
+      return out;
+    }
+    function serialize(arr) {
+      return arr.join(', ');
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    // ---------- Row rendering
+    function renderRows() {
+      const q = (el.search.value || '').trim().toLowerCase();
+      const sort = el.sort.value;
+      // Build a sorted copy without mutating `items` (insertion order is
+      // preserved there to keep "recently added" sort meaningful).
+      let display = items.map((v, i) => ({v, i}));
+      if (sort === 'az')       display.sort((a, b) => a.v.localeCompare(b.v));
+      else if (sort === 'za')  display.sort((a, b) => b.v.localeCompare(a.v));
+      else                     display.sort((a, b) => b.i - a.i);  // recent
+      let visible = 0;
+      if (!items.length) {
+        el.rows.innerHTML = '<div class="list-editor__empty">No phrases yet. Add one above.</div>';
+      } else {
+        el.rows.innerHTML = display.map(({v}) => {
+          const hide = q && !v.includes(q) ? ' hidden' : '';
+          if (!hide) visible++;
+          return `<div class="list-editor__row${hide}" data-val="${escapeHtml(v)}" role="listitem">
+            <span class="list-editor__row-text">${escapeHtml(v)}</span>
+            <button type="button" class="list-editor__row-remove" aria-label="Remove">&times;</button>
+          </div>`;
+        }).join('');
+      }
+      el.count.textContent = q
+        ? `${visible} of ${items.length}`
+        : `${items.length} phrase${items.length === 1 ? '' : 's'}`;
+    }
+
+    // ---------- Warning helper
+    let warnTimer = null;
+    function warn(msg) {
+      el.warn.textContent = msg;
+      el.warn.style.display = '';
+      clearTimeout(warnTimer);
+      warnTimer = setTimeout(() => { el.warn.style.display = 'none'; }, 4000);
+    }
+    function clearWarn() { el.warn.style.display = 'none'; }
+
+    // ---------- Add handler — accepts single phrase OR comma/newline paste
+    function addFromInput() {
+      const raw = el.addInput.value;
+      if (!raw.trim()) return;
+      const parsed = parseCsv(raw);
+      if (!parsed.length) {
+        warn('Nothing to add.');
+        return;
+      }
+      const existing = new Set(items);
+      const added = [];
+      const dupes = [];
+      for (const p of parsed) {
+        if (existing.has(p)) { dupes.push(p); continue; }
+        items.push(p);
+        existing.add(p);
+        added.push(p);
+      }
+      el.addInput.value = '';
+      renderRows();
+      if (added.length && dupes.length) {
+        warn(`Added ${added.length}. Skipped ${dupes.length} duplicate(s).`);
+      } else if (dupes.length) {
+        warn(`Already in list: ${dupes.slice(0, 3).join(', ')}${dupes.length > 3 ? '…' : ''}`);
+      } else {
+        clearWarn();
+      }
+    }
+
+    // ---------- Row remove (event delegation)
+    el.rows.addEventListener('click', (e) => {
+      const btn = e.target.closest('.list-editor__row-remove');
+      if (!btn) return;
+      const row = btn.closest('.list-editor__row');
+      const val = row?.dataset.val;
+      if (val == null) return;
+      items = items.filter(v => v !== val);
+      renderRows();
+    });
+
+    // ---------- Open / close
+    function updateSummary(container, arr) {
+      const countEl = container.querySelector('.config-list-summary__count');
+      const prevEl  = container.querySelector('.config-list-summary__preview');
+      if (countEl) countEl.textContent = `${arr.length} phrase${arr.length === 1 ? '' : 's'}`;
+      if (prevEl)  prevEl.textContent  = arr.slice(0, 5).join(', ');
+    }
+    function open(container) {
+      activeField = container.dataset.field;
+      activeTextarea = document.querySelector(`textarea[data-key="${activeField}"]`);
+      if (!activeTextarea) return;
+      originalSerialized = activeTextarea.value || '';
+      items = dedupe(parseCsv(originalSerialized));
+      el.title.textContent = container.dataset.label || activeField;
+      el.desc.textContent  = container.dataset.desc || '';
+      el.search.value = '';
+      el.sort.value = 'az';
+      el.addInput.value = '';
+      clearWarn();
+      renderRows();
+      el.slidein.classList.add('open');
+      el.slidein.setAttribute('aria-hidden', 'false');
+      el.overlay.classList.add('open');
+      setTimeout(() => el.search.focus(), 50);
+    }
+    function close() {
+      el.slidein.classList.remove('open');
+      el.slidein.setAttribute('aria-hidden', 'true');
+      el.overlay.classList.remove('open');
+      activeField = null;
+      activeTextarea = null;
+    }
+    function tryCancel() {
+      const current = serialize(items);
+      const originalNormalized = serialize(dedupe(parseCsv(originalSerialized)));
+      if (current !== originalNormalized) {
+        if (!confirm('Discard changes?')) return;
+      }
+      close();
+    }
+    function save() {
+      if (!activeTextarea) return close();
+      const newVal = serialize(items);
+      const originalNormalized = serialize(dedupe(parseCsv(originalSerialized)));
+      activeTextarea.value = newVal;
+      // Fire input so Wave J's dirty listener marks the page dirty.
+      if (newVal !== originalNormalized) {
+        activeTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      // Update the matching summary card in-place.
+      const card = document.querySelector(`.config-list-summary[data-field="${activeField}"]`);
+      if (card) updateSummary(card, items);
+      close();
+    }
+
+    // ---------- Wire global handlers
+    document.querySelectorAll('.config-list-summary').forEach(card => {
+      // Seed count + preview from the hidden textarea on page load.
+      const ta = document.querySelector(`textarea[data-key="${card.dataset.field}"]`);
+      if (ta) updateSummary(card, dedupe(parseCsv(ta.value || '')));
+      card.querySelector('.config-list-summary__edit')
+          .addEventListener('click', () => open(card));
+    });
+    el.closeBtn.addEventListener('click', tryCancel);
+    el.cancelBtn.addEventListener('click', tryCancel);
+    el.overlay.addEventListener('click', tryCancel);
+    el.saveBtn.addEventListener('click', save);
+    el.addBtn.addEventListener('click', addFromInput);
+    el.addInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); addFromInput(); }
+    });
+    el.search.addEventListener('input', renderRows);
+    el.sort.addEventListener('change', renderRows);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && el.slidein.classList.contains('open')) tryCancel();
+    });
+
+    return { open, close };
+  })();
+
+  // -------------------------------------------------------------------------
   // SCORING WEIGHTS VALIDATION
   // -------------------------------------------------------------------------
   const w7 = document.getElementById('weight7d');
