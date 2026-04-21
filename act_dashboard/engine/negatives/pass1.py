@@ -337,51 +337,56 @@ def classify_term(search_term: str, cfg: dict) -> tuple[str, str, str | None]:
         status = 'block' if cfg['rule_7_auto_block'] else 'review'
         return (status, 'contains_neg_vocabulary', rule7_matches[0])
 
-    # Rule 8 — ambiguous fallback with signal enrichment (Wave F).
-    # Detail is ";"-delimited key=value pairs. Empty -> None.
+    # Rule 8 — ambiguous fallback with PHRASE-LEVEL near-matches.
+    # Wave M: replaces Wave F/H token-level signals (rejected as misleading).
+    # Show the closest adv/not-adv/brand phrase above 50% meaningful-token
+    # overlap, or "no_match" if nothing crosses threshold. Single-token
+    # phrases are skipped (they'd have fired Rule 5/6).
+    generic = cfg.get('rule_7_exclude_tokens', set())
+
+    def _best_phrase_near(phrases, query_tokens_set):
+        """Return (best_phrase, abs_overlap, phrase_token_count) or None.
+        Ratio >= 0.5 on meaningful (non-generic) overlap."""
+        best = None
+        best_ratio = 0.0
+        best_abs = 0
+        best_len = 0
+        for p in phrases:
+            p_tokens = set(tokenize(p))
+            if len(p_tokens) < 2:
+                continue
+            overlap = p_tokens & query_tokens_set
+            meaningful = overlap - generic
+            if not meaningful:
+                continue
+            ratio = len(overlap) / len(p_tokens)
+            if ratio < 0.5:
+                continue
+            abs_ = len(overlap)
+            if (ratio > best_ratio
+                or (ratio == best_ratio and abs_ > best_abs)
+                or (ratio == best_ratio and abs_ == best_abs and best is not None and p < best)):
+                best = p
+                best_ratio = ratio
+                best_abs = abs_
+                best_len = len(p_tokens)
+        return (best, best_abs, best_len) if best else None
+
     signals: list[str] = []
+    brand_near = _best_phrase_near(cfg['brand_phrases'], t_token_set)
+    if brand_near:
+        p, a, n = brand_near
+        signals.append(f'brand_near={p}|{a}/{n}')
+    adv_near = _best_phrase_near(cfg['advertised_phrases'], t_token_set)
+    if adv_near:
+        p, a, n = adv_near
+        signals.append(f'adv_near={p}|{a}/{n}')
+    notadv_near = _best_phrase_near(cfg['denylist_phrases'], t_token_set)
+    if notadv_near:
+        p, a, n = notadv_near
+        signals.append(f'notadv_near={p}|{a}/{n}')
 
-    # brand_near: multi-token brand phrase shares >= max(2, len-1) tokens.
-    # Rules out noisy 2-token brands (those would already be caught by Rule 1
-    # on exact match) and caps false-positive rate on longer brands.
-    best_brand = None
-    best_brand_overlap = 0
-    for bp in cfg['brand_phrases']:
-        bp_tokens = set(tokenize(bp))
-        if len(bp_tokens) < 2:
-            continue
-        overlap = len(bp_tokens & t_token_set)
-        threshold = max(2, len(bp_tokens) - 1)
-        if overlap >= threshold and overlap > best_brand_overlap:
-            best_brand = bp
-            best_brand_overlap = overlap
-    if best_brand:
-        signals.append(f'brand_near={best_brand}')
-
-    # Compute raw token overlaps with advertised and denylist phrases.
-    adv_hits: set[str] = set()
-    for ap in cfg['advertised_phrases']:
-        adv_hits |= (set(tokenize(ap)) & t_token_set)
-    notadv_hits: set[str] = set()
-    for dp in cfg['denylist_phrases']:
-        notadv_hits |= (set(tokenize(dp)) & t_token_set)
-
-    # Wave H: drop non-discriminative tokens before surfacing signals.
-    #  (1) Dual-side tokens: appear in BOTH adv and notadv -> don't help triage
-    #  (2) rule_7_exclude_tokens: user has explicitly marked these as
-    #      industry-generic (consistent with Rule 7's own suppression)
-    dual_tokens = adv_hits & notadv_hits
-    generic_tokens = cfg.get('rule_7_exclude_tokens', set())
-    drop = dual_tokens | generic_tokens
-    adv_hits -= drop
-    notadv_hits -= drop
-
-    if adv_hits:
-        signals.append(f'adv_tokens={",".join(sorted(adv_hits))}')
-    if notadv_hits:
-        signals.append(f'notadv_tokens={",".join(sorted(notadv_hits))}')
-
-    detail = ';'.join(signals) if signals else None
+    detail = ';'.join(signals) if signals else 'no_match'
     return ('review', 'ambiguous', detail)
 
 

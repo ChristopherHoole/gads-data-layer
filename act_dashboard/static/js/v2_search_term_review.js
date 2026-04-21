@@ -66,22 +66,25 @@
     service_not_advertised:         d => d ? `Not advertised: ${d}` : 'Not advertised',
     advertised_service_match:       d => d ? `Advertised: ${d}` : 'Advertised',
     contains_neg_vocabulary:        d => d ? `Contains: ${d}` : 'Contains excluded term',
-    ambiguous: d => {
-      // Wave F: Rule 8 detail is ";"-delimited key=value signals so the user
-      // can triage ambiguous terms without opening each one. Wave G: strip
-      // the redundant "Needs review" prefix — the Status column already
-      // communicates that; em-dash when no signals are present.
-      if (!d) return '—';
+    ambiguous: (d, item) => {
+      // Wave M: phrase-level near-match signals (replaces token-level noise).
+      // Each value format: "phrase|abs/total". Explicit "no_match" sentinel
+      // from backend when nothing crossed the 50% meaningful-overlap threshold.
+      if (!d || d === 'no_match') return 'Needs Review — no phrase match';
       const parts = {};
       d.split(';').forEach(kv => {
         const i = kv.indexOf('=');
         if (i > 0) parts[kv.slice(0, i)] = kv.slice(i + 1);
       });
+      const fmt = raw => {
+        const [phrase, ratio] = raw.split('|');
+        return ratio ? `"${phrase}" (${ratio} tokens)` : `"${phrase}"`;
+      };
       const chunks = [];
-      if (parts.brand_near)    chunks.push(`brand near: ${parts.brand_near}`);
-      if (parts.adv_tokens)    chunks.push(`adv: ${parts.adv_tokens.replace(/,/g, ', ')}`);
-      if (parts.notadv_tokens) chunks.push(`not-adv: ${parts.notadv_tokens.replace(/,/g, ', ')}`);
-      return chunks.length ? chunks.join(' · ') : '—';
+      if (parts.brand_near)   chunks.push(`brand near: ${fmt(parts.brand_near)}`);
+      if (parts.adv_near)     chunks.push(`closest advertised: ${fmt(parts.adv_near)}`);
+      if (parts.notadv_near)  chunks.push(`closest not-adv: ${fmt(parts.notadv_near)}`);
+      return chunks.length ? `Needs Review — ${chunks.join(' · ')}` : 'Needs Review — no phrase match';
     },
     client_not_configured:          _ => 'Not configured',
     empty_term:                     _ => 'Empty term',
