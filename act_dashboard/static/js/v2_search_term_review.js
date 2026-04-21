@@ -369,6 +369,22 @@
     return `<span class="st-status st-status--${status}">${status}</span>`;
   }
 
+  // Wave I: single effective-status pill. Pending rows show Pass 1
+  // classification; decided rows show user decision only. Filter context
+  // already communicates the original classification; Reason column still
+  // carries the why.
+  function effectiveStatus(item) {
+    return (item.review_status && item.review_status !== 'pending')
+      ? item.review_status
+      : item.pass1_status;
+  }
+  function renderStatusCell(item) {
+    if (item.review_status && item.review_status !== 'pending') {
+      return `<span class="st-status st-status--${item.review_status}">${item.review_status}</span>`;
+    }
+    return renderPass1StatusPill(item.pass1_status);
+  }
+
   // -------------------- Row rendering (Pass 1/2 — 19 cols) -----------
   function renderRow(item) {
     const canEdit = item.pass1_status === 'block' || item.pass1_status === 'review';
@@ -376,15 +392,12 @@
     const hideChk = item.pass1_status === 'keep' ? 'style="visibility:hidden"' : '';
     const roleSel = canEdit ? roleDropdown(item.pass2_target_list_role, cfg.list_roles, item.id) : '';
     const pushErr = item.push_error ? `<span class="st-push-error">${escapeHtml(item.push_error)}</span>` : '';
-    const reviewed = item.review_status !== 'pending'
-      ? ` · <span class="st-status st-status--${item.review_status}">${item.review_status}</span>`
-      : '';
     const pct = v => (v == null) ? EMDASH : (Number(v) * 100).toFixed(2) + '%';
     const num2 = v => (v == null) ? EMDASH : Number(v).toFixed(2);
     return `<tr data-id="${item.id}" data-pass1="${item.pass1_status}">
       <td class="st-col-check st-frozen-0" ${hideChk}><input type="checkbox" class="st-chk" ${checked} ${canEdit ? '' : 'disabled'}></td>
       <td class="st-col-term  st-frozen-1" title="${escapeHtml(item.search_term)}">${escapeHtml(item.search_term)}</td>
-      <td>${renderPass1StatusPill(item.pass1_status)}${reviewed}</td>
+      <td>${renderStatusCell(item)}</td>
       <td title="${escapeHtml(humanReason(item.pass1_reason, item.pass1_reason_detail))}"><div class="clamp-2">${escapeHtml(humanReason(item.pass1_reason, item.pass1_reason_detail))}</div></td>
       <td>${roleSel}</td>
       <td>${escapeHtml(item.match_types || '')}</td>
@@ -555,11 +568,11 @@
     if (typeof a === 'number' && typeof b === 'number') return a - b;
     return String(a).localeCompare(String(b));
   }
-  const STATUS_SORT_ORDER = {
-    block: 0, review: 1, keep: 2,
-  };
+  // Wave I: status sort uses the effective-status pill the user actually sees
+  // (review_status when decided, else pass1_status). Alphabetical ordering
+  // keeps approved/block/expired/keep/pushed/rejected/review grouped sensibly.
   function _sortValue(item, key) {
-    if (key === 'pass1_status') return STATUS_SORT_ORDER[item.pass1_status] ?? 99;
+    if (key === 'pass1_status') return effectiveStatus(item);
     const v = item[key];
     if (v == null) return null;
     if (typeof v === 'number') return v;
