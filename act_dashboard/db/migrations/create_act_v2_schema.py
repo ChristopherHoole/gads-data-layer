@@ -85,6 +85,8 @@ TABLE_SQL = [
             services_advertised TEXT,
             service_locations TEXT,
             client_brand_terms TEXT,
+            rule_7_exclude_tokens TEXT,                -- Wave C12
+
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CHECK (
@@ -402,6 +404,7 @@ TABLE_SQL = [
             total_conversions DECIMAL(10,2),
             pass1_status VARCHAR,
             pass1_reason VARCHAR,
+            pass1_reason_detail VARCHAR,          -- Wave C12
             pass2_target_list_role VARCHAR,
             review_status VARCHAR DEFAULT 'pending',
             reviewed_at TIMESTAMP,

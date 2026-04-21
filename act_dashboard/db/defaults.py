@@ -111,6 +111,10 @@ NEG_ENGINE_SETTINGS = [
     # Wave C9: Rule 5 behaviour toggle. TRUE -> auto-block, FALSE -> route
     # to review for manual decision.
     ('block_offered_not_advertised', 'true', 'bool', 'account'),
+    # Wave C12: Rule 7 (contains_neg_vocabulary) toggle. TRUE -> auto-block,
+    # FALSE -> route to review. Pairs with per-client rule_7_exclude_tokens
+    # list on act_v2_clients.
+    ('rule_7_auto_block', 'true', 'bool', 'account'),
 ]
 
 # Extend DEFAULT_SETTINGS so reset endpoint + fresh seeds include them
