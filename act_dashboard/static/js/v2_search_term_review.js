@@ -47,9 +47,13 @@
   }
   const REASON_FMT = {
     brand_protection:               d => d ? `Brand: ${d}` : 'Brand',
-    existing_exact_neg_match:       d => {
-      if (!d) return 'Leak — exact';
-      return `Leak — exact: ${_rolesFromCsv(d)}`;
+    existing_exact_neg_match:       (d, item) => {
+      // Wave L: surface the matched keyword (= search_term by Rule 2 equality)
+      // so leak diagnostics read naturally — parallel to Leak-phrase format.
+      const term = item?.search_term || '';
+      if (!d) return term ? `Leak — exact: ${term}` : 'Leak — exact';
+      const roles = _rolesFromCsv(d);
+      return term ? `Leak — exact: ${term} (${roles})` : `Leak — exact: ${roles}`;
     },
     existing_phrase_neg_match:      d => {
       if (!d) return 'Leak — phrase';
@@ -117,10 +121,10 @@
     'offered_not_advertised_exact':  'Off Not Adv [ex]',
     'offered_not_advertised_phrase': 'Off Not Adv "ph"',
   };
-  function humanReason(code, detail) {
+  function humanReason(code, detail, item) {
     const fn = REASON_FMT[code];
     if (!fn) return code || '';
-    return fn(detail);
+    return fn(detail, item);
   }
   const humanReasonChip = c => REASON_CHIP_LABELS[c] || (c || '');
   const humanRole   = r => ROLE_LABELS[r] || (r || '—');
@@ -398,7 +402,7 @@
       <td class="st-col-check st-frozen-0" ${hideChk}><input type="checkbox" class="st-chk" ${checked} ${canEdit ? '' : 'disabled'}></td>
       <td class="st-col-term  st-frozen-1" title="${escapeHtml(item.search_term)}">${escapeHtml(item.search_term)}</td>
       <td>${renderStatusCell(item)}</td>
-      <td title="${escapeHtml(humanReason(item.pass1_reason, item.pass1_reason_detail))}"><div class="clamp-2">${escapeHtml(humanReason(item.pass1_reason, item.pass1_reason_detail))}</div></td>
+      <td title="${escapeHtml(humanReason(item.pass1_reason, item.pass1_reason_detail, item))}"><div class="clamp-2">${escapeHtml(humanReason(item.pass1_reason, item.pass1_reason_detail, item))}</div></td>
       <td>${roleSel}</td>
       <td>${escapeHtml(item.match_types || '')}</td>
       <td>${escapeHtml(humanStatuses(item.statuses))}</td>

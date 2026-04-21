@@ -201,6 +201,37 @@ def _longest_then_alpha(phrases, text_normalized: str) -> str | None:
     return matches[0]
 
 
+def _phrase_tokens_in_sequence(phrase_tokens: list[str], query_tokens: list[str]) -> bool:
+    """True if `phrase_tokens` appears as a contiguous subsequence of
+    `query_tokens`. Mirrors Google Ads phrase-match semantics (word-based,
+    not char-substring). Prevents 'low' matching 'hounslow'."""
+    n = len(phrase_tokens)
+    if not n or n > len(query_tokens):
+        return False
+    for i in range(len(query_tokens) - n + 1):
+        if query_tokens[i:i + n] == phrase_tokens:
+            return True
+    return False
+
+
+def _longest_phrase_token_match(phrases, query_tokens: list[str]) -> str | None:
+    """Return the phrase with most tokens whose token sequence appears
+    contiguously in query_tokens. Tie-break alphabetically. Accepts set,
+    list, or dict keys."""
+    best = None
+    best_count = 0
+    for p in phrases:
+        p_tokens = tokenize(p)
+        if not p_tokens:
+            continue
+        if _phrase_tokens_in_sequence(p_tokens, query_tokens):
+            n = len(p_tokens)
+            if n > best_count or (n == best_count and best is not None and p < best):
+                best = p
+                best_count = n
+    return best
+
+
 def _most_tokens_then_alpha(phrases, text_token_set: set[str]) -> str | None:
     """Return the phrase whose token-set is a subset of `text_token_set`,
     with most tokens. Tie-break alphabetically. None if no match.
@@ -243,10 +274,12 @@ def classify_term(search_term: str, cfg: dict) -> tuple[str, str, str | None]:
         detail = ','.join(cfg['exact_neg_phrases'][t_norm])
         return ('block', 'existing_exact_neg_match', detail)
 
-    # Rule 3 — SUBSTRING match against any phrase-match neg. Detail =
-    # "phrase|role1,role2" so the UI can show both the matched phrase and
-    # which list(s) it lives in.
-    phrase_match = _longest_then_alpha(list(cfg['phrase_neg_phrases'].keys()), t_norm)
+    # Rule 3 — Word-based phrase match. Wave L: token-sequence (contiguous)
+    # match instead of char-substring, mirroring Google Ads phrase-match
+    # semantics. Example: phrase "low" no longer matches query "hounslow".
+    # Detail = "phrase|role1,role2" so the UI can show both the matched
+    # phrase and which list(s) it lives in.
+    phrase_match = _longest_phrase_token_match(cfg['phrase_neg_phrases'].keys(), t_tokens)
     if phrase_match is not None:
         list_roles = ','.join(cfg['phrase_neg_phrases'][phrase_match])
         detail = f"{phrase_match}|{list_roles}" if list_roles else phrase_match
