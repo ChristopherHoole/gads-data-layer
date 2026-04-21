@@ -198,6 +198,27 @@ def _longest_then_alpha(phrases, text_normalized: str) -> str | None:
     return matches[0]
 
 
+def _most_tokens_then_alpha(phrases, text_token_set: set[str]) -> str | None:
+    """Return the phrase whose token-set is a subset of `text_token_set`,
+    with most tokens. Tie-break alphabetically. None if no match.
+    Accepts set, list, or dict keys for `phrases`. Wave F: lets Rules 5/6
+    fire on reordered-word variants (e.g. "replacement teeth cost" matches
+    advertised "teeth replacement")."""
+    best = None
+    best_count = 0
+    for p in phrases:
+        p_tokens = set(tokenize(p))
+        if not p_tokens or not p_tokens.issubset(text_token_set):
+            continue
+        n = len(p_tokens)
+        if n > best_count:
+            best = p
+            best_count = n
+        elif n == best_count and best is not None and p < best:
+            best = p
+    return best
+
+
 def classify_term(search_term: str, cfg: dict) -> tuple[str, str, str | None]:
     """Return (pass1_status, pass1_reason, pass1_reason_detail). Rules 1–8
     in order, first match wins. Detail is the matched term/phrase where
@@ -259,14 +280,16 @@ def classify_term(search_term: str, cfg: dict) -> tuple[str, str, str | None]:
     if outside_locs:
         return ('block', 'location_outside_service_area', outside_locs[0])
 
-    # Rule 5 — denylist (service we do but don't advertise)
-    denylist_match = _longest_then_alpha(cfg['denylist_phrases'], t_norm)
+    # Rule 5 — denylist (service we do but don't advertise). Wave F:
+    # token-subset match so reordered variants still fire.
+    denylist_match = _most_tokens_then_alpha(cfg['denylist_phrases'], t_token_set)
     if denylist_match is not None:
         status = 'block' if cfg['block_offered_not_advertised'] else 'review'
         return (status, 'service_not_advertised', denylist_match)
 
-    # Rule 6 — advertised service match (must beat Rule 7)
-    advertised_match = _longest_then_alpha(cfg['advertised_phrases'], t_norm)
+    # Rule 6 — advertised service match (must beat Rule 7). Wave F:
+    # token-subset match so "replacement teeth cost" matches "teeth replacement".
+    advertised_match = _most_tokens_then_alpha(cfg['advertised_phrases'], t_token_set)
     if advertised_match is not None:
         return ('keep', 'advertised_service_match', advertised_match)
 
@@ -278,8 +301,43 @@ def classify_term(search_term: str, cfg: dict) -> tuple[str, str, str | None]:
         status = 'block' if cfg['rule_7_auto_block'] else 'review'
         return (status, 'contains_neg_vocabulary', rule7_matches[0])
 
-    # Rule 8 — fallthrough
-    return ('review', 'ambiguous', None)
+    # Rule 8 — ambiguous fallback with signal enrichment (Wave F).
+    # Detail is ";"-delimited key=value pairs. Empty -> None.
+    signals: list[str] = []
+
+    # brand_near: multi-token brand phrase shares >= max(2, len-1) tokens.
+    # Rules out noisy 2-token brands (those would already be caught by Rule 1
+    # on exact match) and caps false-positive rate on longer brands.
+    best_brand = None
+    best_brand_overlap = 0
+    for bp in cfg['brand_phrases']:
+        bp_tokens = set(tokenize(bp))
+        if len(bp_tokens) < 2:
+            continue
+        overlap = len(bp_tokens & t_token_set)
+        threshold = max(2, len(bp_tokens) - 1)
+        if overlap >= threshold and overlap > best_brand_overlap:
+            best_brand = bp
+            best_brand_overlap = overlap
+    if best_brand:
+        signals.append(f'brand_near={best_brand}')
+
+    # adv_tokens: query tokens that appear in any advertised phrase
+    adv_hits: set[str] = set()
+    for ap in cfg['advertised_phrases']:
+        adv_hits |= (set(tokenize(ap)) & t_token_set)
+    if adv_hits:
+        signals.append(f'adv_tokens={",".join(sorted(adv_hits))}')
+
+    # notadv_tokens: query tokens that appear in any denylist phrase
+    notadv_hits: set[str] = set()
+    for dp in cfg['denylist_phrases']:
+        notadv_hits |= (set(tokenize(dp)) & t_token_set)
+    if notadv_hits:
+        signals.append(f'notadv_tokens={",".join(sorted(notadv_hits))}')
+
+    detail = ';'.join(signals) if signals else None
+    return ('review', 'ambiguous', detail)
 
 
 # ---------------------------------------------------------------------------

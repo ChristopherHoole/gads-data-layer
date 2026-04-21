@@ -62,7 +62,21 @@
     service_not_advertised:         d => d ? `Not advertised: ${d}` : 'Not advertised',
     advertised_service_match:       d => d ? `Advertised: ${d}` : 'Advertised',
     contains_neg_vocabulary:        d => d ? `Contains: ${d}` : 'Contains excluded term',
-    ambiguous:                      _ => 'Needs review',
+    ambiguous: d => {
+      // Wave F: Rule 8 detail is ";"-delimited key=value signals so the user
+      // can triage ambiguous terms without opening each one.
+      if (!d) return 'Needs review';
+      const parts = {};
+      d.split(';').forEach(kv => {
+        const i = kv.indexOf('=');
+        if (i > 0) parts[kv.slice(0, i)] = kv.slice(i + 1);
+      });
+      const chunks = [];
+      if (parts.brand_near)    chunks.push(`brand near: ${parts.brand_near}`);
+      if (parts.adv_tokens)    chunks.push(`adv: ${parts.adv_tokens.replace(/,/g, ', ')}`);
+      if (parts.notadv_tokens) chunks.push(`not-adv: ${parts.notadv_tokens.replace(/,/g, ', ')}`);
+      return chunks.length ? `Needs review · ${chunks.join(' · ')}` : 'Needs review';
+    },
     client_not_configured:          _ => 'Not configured',
     empty_term:                     _ => 'Empty term',
   };
