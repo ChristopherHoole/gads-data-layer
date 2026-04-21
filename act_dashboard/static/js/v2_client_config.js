@@ -22,6 +22,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------------------------------------------------------
+  // N1v — COLLAPSIBLE SECTIONS (matches Account Level / Morning Review pattern)
+  // -------------------------------------------------------------------------
+  document.querySelectorAll('.act-section__header').forEach(header => {
+    header.style.cursor = 'pointer';
+    header.addEventListener('click', () => {
+      const section = header.closest('.act-section');
+      if (section) section.classList.toggle('collapsed');
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // TOGGLE SWITCHES
   // -------------------------------------------------------------------------
   document.querySelectorAll('.config-toggle').forEach(toggle => {

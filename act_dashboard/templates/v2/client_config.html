@@ -425,6 +425,152 @@
       <div class="config-panel" id="panel-search-terms">
         <h3 class="config-panel__title">Search Terms</h3>
 
+        {# N1v — Two collapsible sections: lists at top (expanded), rules reference below (collapsed). #}
+
+        <!-- SECTION 1: CLIENT LISTS (expanded by default) -->
+        <section class="act-section" style="margin-bottom:16px">
+          <div class="act-section__header">
+            <h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-primary)">list_alt</span>Client Lists</h2>
+            <span class="material-symbols-outlined act-section__toggle">expand_more</span>
+          </div>
+          <div class="act-section__body" style="padding:16px 0 4px">
+
+            {# N1a/N1n — 5 profile summary cards (hidden textareas remain the
+               source of truth; slide-in editor writes back + dispatches input). #}
+            <div class="setting-row">
+              <div class="setting-info">
+                <p class="setting-name">Brand Terms (Protect)</p>
+                <p class="setting-desc">Client-owned brand variants. Searches containing these are protected from competitor/generic negatives.</p>
+              </div>
+              <div class="setting-control setting-control--full">
+                <div class="config-list-summary"
+                     data-field="client_brand_terms"
+                     data-label="Brand Terms (Protect)"
+                     data-desc="Client-owned brand variants. Searches matching these are protected from competitor/generic negatives.">
+                  <span class="config-list-summary__count">0</span>
+                  <span class="config-list-summary__preview"></span>
+                  <button type="button" class="config-list-summary__edit">Edit list &rarr;</button>
+                </div>
+                <textarea hidden class="config-input config-input--textarea" data-key="client_brand_terms"
+                          placeholder="comma-separated, lowercase">{{ client.client_brand_terms }}</textarea>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <p class="setting-name">Services Offered - Not Advertised</p>
+                <p class="setting-desc">Services the client offers but does NOT currently advertise. Used as the Pass 1 denylist &mdash; Rule 5 blocks search terms matching these. Use specific phrases (e.g. <code>dental crown</code> not just <code>crown</code>) to avoid false matches against advertised variants.</p>
+              </div>
+              <div class="setting-control setting-control--full">
+                <div class="config-list-summary"
+                     data-field="services_not_advertised"
+                     data-label="Services Offered - Not Advertised"
+                     data-desc="Services the client offers but does NOT currently advertise. Used as the Pass 1 denylist.">
+                  <span class="config-list-summary__count">0</span>
+                  <span class="config-list-summary__preview"></span>
+                  <button type="button" class="config-list-summary__edit">Edit list &rarr;</button>
+                </div>
+                <textarea hidden class="config-input config-input--textarea" data-key="services_not_advertised"
+                          placeholder="comma-separated, lowercase">{{ client.services_not_advertised }}</textarea>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <p class="setting-name">Services Offered - Advertised</p>
+                <p class="setting-desc">Subset of services currently being advertised. Used as the Pass 1 allowlist for the Negatives Module.</p>
+              </div>
+              <div class="setting-control setting-control--full">
+                <div class="config-list-summary"
+                     data-field="services_advertised"
+                     data-label="Services Offered - Advertised"
+                     data-desc="Subset of services currently being advertised. Used as the Pass 1 allowlist.">
+                  <span class="config-list-summary__count">0</span>
+                  <span class="config-list-summary__preview"></span>
+                  <button type="button" class="config-list-summary__edit">Edit list &rarr;</button>
+                </div>
+                <textarea hidden class="config-input config-input--textarea" data-key="services_advertised"
+                          placeholder="comma-separated, lowercase">{{ client.services_advertised }}</textarea>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <p class="setting-name">Service Locations</p>
+                <p class="setting-desc">Postcodes, named areas, and placenames covered by the business. Searches matching any of these are protected from location negatives.</p>
+              </div>
+              <div class="setting-control setting-control--full">
+                <div class="config-list-summary"
+                     data-field="service_locations"
+                     data-label="Service Locations"
+                     data-desc="Postcodes, named areas, and placenames covered by the business.">
+                  <span class="config-list-summary__count">0</span>
+                  <span class="config-list-summary__preview"></span>
+                  <button type="button" class="config-list-summary__edit">Edit list &rarr;</button>
+                </div>
+                <textarea hidden class="config-input config-input--textarea" data-key="service_locations"
+                          placeholder="comma-separated, lowercase">{{ client.service_locations }}</textarea>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <p class="setting-name">Rule 7 exclusion tokens</p>
+                <p class="setting-desc">Comma-separated tokens to EXCLUDE from Rule 7 (soft-signal blocking) even if they appear in your 1-word exact negative list. Use for industry-universal words (e.g. teeth, dental) that you neg as bare queries but don't want treated as block signals for multi-word terms. These tokens still work as exact-match negatives in Google Ads &mdash; this only prevents Rule 7 from extrapolating them.</p>
+              </div>
+              <div class="setting-control setting-control--full">
+                <div class="config-list-summary"
+                     data-field="rule_7_exclude_tokens"
+                     data-label="Rule 7 exclusion tokens"
+                     data-desc="Tokens to exclude from Rule 7 soft-signal blocking. Use for industry-universal words you still want to neg as bare queries.">
+                  <span class="config-list-summary__count">0</span>
+                  <span class="config-list-summary__preview"></span>
+                  <button type="button" class="config-list-summary__edit">Edit list &rarr;</button>
+                </div>
+                <textarea hidden class="config-input config-input--textarea" data-key="rule_7_exclude_tokens"
+                          placeholder="comma-separated, lowercase">{{ client.rule_7_exclude_tokens }}</textarea>
+              </div>
+            </div>
+
+            <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--act-border)">
+              <p class="setting-name" style="margin-bottom:4px">Engine Behaviour</p>
+              <p class="setting-desc" style="margin-bottom:12px">Toggles that control whether specific rule matches auto-block or route to Review for manual decision.</p>
+            </div>
+
+            {# N1b Wave C9 — Negatives engine Rule 5 behaviour #}
+            <div class="setting-row">
+              <div class="setting-info">
+                <p class="setting-name">Auto-block services offered but not advertised</p>
+                <p class="setting-desc">When ON, search terms matching services you offer but don't currently advertise (e.g. veneers for an implants-only scope) get blocked automatically. When OFF, they go to Review for manual decision.</p>
+              </div>
+              <div class="setting-control">
+                <div class="{{ toggle_class('block_offered_not_advertised') }}" data-key="block_offered_not_advertised"><div class="config-toggle__knob"></div></div>
+                <span style="font-size:12px;margin-left:8px;color:var(--act-text)">Auto-block</span>
+              </div>
+            </div>
+
+            {# N1b Wave C12 — Rule 7 behaviour toggle #}
+            <div class="setting-row">
+              <div class="setting-info">
+                <p class="setting-name">Auto-block Rule 7 (contains excluded term) matches</p>
+                <p class="setting-desc">When ON, Rule 7 soft-signal matches auto-block. When OFF, they route to Review for manual decision. Recommended: leave ON once your exclusion list is stable.</p>
+              </div>
+              <div class="setting-control">
+                <div class="{{ toggle_class('rule_7_auto_block') }}" data-key="rule_7_auto_block"><div class="config-toggle__knob"></div></div>
+                <span style="font-size:12px;margin-left:8px;color:var(--act-text)">Auto-block</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 2: RULES REFERENCE (collapsed by default) -->
+        <section class="act-section collapsed">
+          <div class="act-section__header">
+            <h2 class="act-section__title"><span class="material-symbols-outlined" style="color:var(--act-blue)">menu_book</span>How Classification Works</h2>
+            <span class="material-symbols-outlined act-section__toggle">expand_more</span>
+          </div>
+          <div class="act-section__body" style="padding:16px 0 0">
+
         {# N1p — Rules Reference: full Pass 1 / Pass 2 / Pass 3 hierarchy. #}
         <div class="rules-reference">
           <div class="rules-reference__intro">
@@ -500,132 +646,8 @@
             </table>
           </div>
         </div>
-
-        {# N1a/N1n — 5 profile summary cards (hidden textareas remain the
-           source of truth; slide-in editor writes back + dispatches input). #}
-        <div class="setting-row">
-          <div class="setting-info">
-            <p class="setting-name">Brand Terms (Protect)</p>
-            <p class="setting-desc">Client-owned brand variants. Searches containing these are protected from competitor/generic negatives.</p>
           </div>
-          <div class="setting-control setting-control--full">
-            <div class="config-list-summary"
-                 data-field="client_brand_terms"
-                 data-label="Brand Terms (Protect)"
-                 data-desc="Client-owned brand variants. Searches matching these are protected from competitor/generic negatives.">
-              <span class="config-list-summary__count">0</span>
-              <span class="config-list-summary__preview"></span>
-              <button type="button" class="config-list-summary__edit">Edit list &rarr;</button>
-            </div>
-            <textarea hidden class="config-input config-input--textarea" data-key="client_brand_terms"
-                      placeholder="comma-separated, lowercase">{{ client.client_brand_terms }}</textarea>
-          </div>
-        </div>
-
-        <div class="setting-row">
-          <div class="setting-info">
-            <p class="setting-name">Services Offered - Not Advertised</p>
-            <p class="setting-desc">Services the client offers but does NOT currently advertise. Used as the Pass 1 denylist &mdash; Rule 5 blocks search terms matching these. Use specific phrases (e.g. <code>dental crown</code> not just <code>crown</code>) to avoid false matches against advertised variants.</p>
-          </div>
-          <div class="setting-control setting-control--full">
-            <div class="config-list-summary"
-                 data-field="services_not_advertised"
-                 data-label="Services Offered - Not Advertised"
-                 data-desc="Services the client offers but does NOT currently advertise. Used as the Pass 1 denylist.">
-              <span class="config-list-summary__count">0</span>
-              <span class="config-list-summary__preview"></span>
-              <button type="button" class="config-list-summary__edit">Edit list &rarr;</button>
-            </div>
-            <textarea hidden class="config-input config-input--textarea" data-key="services_not_advertised"
-                      placeholder="comma-separated, lowercase">{{ client.services_not_advertised }}</textarea>
-          </div>
-        </div>
-
-        <div class="setting-row">
-          <div class="setting-info">
-            <p class="setting-name">Services Offered - Advertised</p>
-            <p class="setting-desc">Subset of services currently being advertised. Used as the Pass 1 allowlist for the Negatives Module.</p>
-          </div>
-          <div class="setting-control setting-control--full">
-            <div class="config-list-summary"
-                 data-field="services_advertised"
-                 data-label="Services Offered - Advertised"
-                 data-desc="Subset of services currently being advertised. Used as the Pass 1 allowlist.">
-              <span class="config-list-summary__count">0</span>
-              <span class="config-list-summary__preview"></span>
-              <button type="button" class="config-list-summary__edit">Edit list &rarr;</button>
-            </div>
-            <textarea hidden class="config-input config-input--textarea" data-key="services_advertised"
-                      placeholder="comma-separated, lowercase">{{ client.services_advertised }}</textarea>
-          </div>
-        </div>
-
-        <div class="setting-row">
-          <div class="setting-info">
-            <p class="setting-name">Service Locations</p>
-            <p class="setting-desc">Postcodes, named areas, and placenames covered by the business. Searches matching any of these are protected from location negatives.</p>
-          </div>
-          <div class="setting-control setting-control--full">
-            <div class="config-list-summary"
-                 data-field="service_locations"
-                 data-label="Service Locations"
-                 data-desc="Postcodes, named areas, and placenames covered by the business.">
-              <span class="config-list-summary__count">0</span>
-              <span class="config-list-summary__preview"></span>
-              <button type="button" class="config-list-summary__edit">Edit list &rarr;</button>
-            </div>
-            <textarea hidden class="config-input config-input--textarea" data-key="service_locations"
-                      placeholder="comma-separated, lowercase">{{ client.service_locations }}</textarea>
-          </div>
-        </div>
-
-        <div class="setting-row">
-          <div class="setting-info">
-            <p class="setting-name">Rule 7 exclusion tokens</p>
-            <p class="setting-desc">Comma-separated tokens to EXCLUDE from Rule 7 (soft-signal blocking) even if they appear in your 1-word exact negative list. Use for industry-universal words (e.g. teeth, dental) that you neg as bare queries but don't want treated as block signals for multi-word terms. These tokens still work as exact-match negatives in Google Ads &mdash; this only prevents Rule 7 from extrapolating them.</p>
-          </div>
-          <div class="setting-control setting-control--full">
-            <div class="config-list-summary"
-                 data-field="rule_7_exclude_tokens"
-                 data-label="Rule 7 exclusion tokens"
-                 data-desc="Tokens to exclude from Rule 7 soft-signal blocking. Use for industry-universal words you still want to neg as bare queries.">
-              <span class="config-list-summary__count">0</span>
-              <span class="config-list-summary__preview"></span>
-              <button type="button" class="config-list-summary__edit">Edit list &rarr;</button>
-            </div>
-            <textarea hidden class="config-input config-input--textarea" data-key="rule_7_exclude_tokens"
-                      placeholder="comma-separated, lowercase">{{ client.rule_7_exclude_tokens }}</textarea>
-          </div>
-        </div>
-
-        <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--act-border)">
-          <p class="setting-name" style="margin-bottom:4px">Engine Behaviour</p>
-          <p class="setting-desc" style="margin-bottom:12px">Toggles that control whether specific rule matches auto-block or route to Review for manual decision.</p>
-        </div>
-
-        {# N1b Wave C9 — Negatives engine Rule 5 behaviour #}
-        <div class="setting-row">
-          <div class="setting-info">
-            <p class="setting-name">Auto-block services offered but not advertised</p>
-            <p class="setting-desc">When ON, search terms matching services you offer but don't currently advertise (e.g. veneers for an implants-only scope) get blocked automatically. When OFF, they go to Review for manual decision.</p>
-          </div>
-          <div class="setting-control">
-            <div class="{{ toggle_class('block_offered_not_advertised') }}" data-key="block_offered_not_advertised"><div class="config-toggle__knob"></div></div>
-            <span style="font-size:12px;margin-left:8px;color:var(--act-text)">Auto-block</span>
-          </div>
-        </div>
-
-        {# N1b Wave C12 — Rule 7 behaviour toggle #}
-        <div class="setting-row">
-          <div class="setting-info">
-            <p class="setting-name">Auto-block Rule 7 (contains excluded term) matches</p>
-            <p class="setting-desc">When ON, Rule 7 soft-signal matches auto-block. When OFF, they route to Review for manual decision. Recommended: leave ON once your exclusion list is stable.</p>
-          </div>
-          <div class="setting-control">
-            <div class="{{ toggle_class('rule_7_auto_block') }}" data-key="rule_7_auto_block"><div class="config-toggle__knob"></div></div>
-            <span style="font-size:12px;margin-left:8px;color:var(--act-text)">Auto-block</span>
-          </div>
-        </div>
+        </section>
       </div>
 
       <!-- ============ ONBOARDING CHECKLIST ============ -->
