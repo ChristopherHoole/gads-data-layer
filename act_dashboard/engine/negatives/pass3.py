@@ -28,6 +28,7 @@ import duckdb
 from act_dashboard.engine.negatives._common import (
     normalize, tokenize, normalize_set, tokenize_set,
 )
+from act_dashboard.engine.negatives.reference_locations import is_location_shaped
 
 logger = logging.getLogger('act_v2_neg_pass3')
 if not logger.handlers:
@@ -57,25 +58,33 @@ def _load_client_settings(con, client_id: str) -> dict:
     }
 
 
-def _load_protected_words(con, client_id: str, stopwords: str) -> set[str]:
-    """Union of: stopword tokens, brand tokens, advertised tokens, location tokens."""
+def _load_protected_words(con, client_id: str, stopwords: str) -> tuple[set[str], set[str]]:
+    """Return (protected, service_location_tokens).
+      protected             = union of stopwords + brand + advertised + location
+                              tokens. Filters fragments OUT of suggestion pool.
+      service_location_tokens = just the tokenised service_locations set. Used
+                              by the N1s location-override threshold rule so
+                              outside-area 1-word locations can be suggested
+                              on a single occurrence."""
     row = con.execute(
         """SELECT services_advertised, service_locations, client_brand_terms
            FROM act_v2_clients WHERE client_id = ?""",
         [client_id],
     ).fetchone()
     if not row:
-        return set()
+        return set(), set()
     advertised_raw, locations_raw, brand_raw = row
 
+    service_location_tokens: set[str] = tokenize_set(locations_raw)
     protected: set[str] = set()
     protected |= tokenize_set(stopwords)
     protected |= tokenize_set(brand_raw)
     protected |= tokenize_set(advertised_raw)
-    # service_locations items like "greater london" are multi-word — store
-    # their tokens individually so any protected token blocks fragment use.
-    protected |= tokenize_set(locations_raw)
-    return protected
+    # In-area locations stay in the protected set so "sidcup", "hammersmith"
+    # etc. aren't suggested as phrase negs — only their out-of-area siblings
+    # make it through the filter below.
+    protected |= service_location_tokens
+    return protected, service_location_tokens
 
 
 def _load_denylist_tokens(con, client_id: str) -> set[str]:
@@ -136,7 +145,16 @@ def _risk_for(word_count: int) -> str:
     return {1: 'high', 2: 'medium', 3: 'low', 4: 'low'}.get(word_count, 'low')
 
 
-def _threshold_for(settings: dict, wc: int) -> int:
+def _threshold_for(settings: dict, wc: int, fragment: str,
+                   service_location_tokens: set[str]) -> int:
+    # N1s location override: a 1-word fragment that is location-shaped AND
+    # NOT in the client's service area needs only a single occurrence to be
+    # worth suggesting as a phrase-match neg. Outside-area locations are
+    # binary — one hit is enough to warrant a standing block.
+    if (wc == 1
+            and is_location_shaped(fragment)
+            and fragment not in service_location_tokens):
+        return 1
     return {
         1: settings['threshold_1'],
         2: settings['threshold_2'],
@@ -153,7 +171,8 @@ def run_pass3(client_id: str, db_path: str,
     con = duckdb.connect(db_path)
     try:
         settings = _load_client_settings(con, client_id)
-        protected = _load_protected_words(con, client_id, settings['stopwords'])
+        protected, service_location_tokens = _load_protected_words(
+            con, client_id, settings['stopwords'])
         denylist_tokens = _load_denylist_tokens(con, client_id)
         existing = _load_existing_negs_normalized(con, client_id)
         pushed_terms = _load_pushed_terms(con, client_id, analysis_date)
@@ -188,7 +207,7 @@ def run_pass3(client_id: str, db_path: str,
         for frag, info in bucket.items():
             wc = info['word_count']
             occurrence = len(info['source_terms'])
-            if occurrence < _threshold_for(settings, wc):
+            if occurrence < _threshold_for(settings, wc, frag, service_location_tokens):
                 skipped_below_threshold += 1
                 continue
             if frag in existing:
