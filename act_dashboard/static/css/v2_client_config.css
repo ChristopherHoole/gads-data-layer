@@ -9,19 +9,27 @@
   margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
 }
 
-.config-header__left { }
+/* N1p2: collapse the three stacked lines (title / sub / last-saved) into
+   one baseline-aligned row. Wrap gracefully at narrow viewports. */
+.config-header__left {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
 
 .config-header__title {
-  font-size: 16px; font-weight: 600; color: var(--act-text); margin: 0 0 4px;
+  font-size: 16px; font-weight: 600; color: var(--act-text); margin: 0;
 }
 
 .config-header__sub {
-  font-size: 14px; color: var(--act-text); margin: 0;
+  font-size: 13px; color: var(--act-text); margin: 0; opacity: 0.7;
 }
 
 .config-header__saved {
-  font-size: 12px; color: var(--act-text); opacity: 0.7; margin-top: 4px;
-  display: flex; align-items: center; gap: 4px;
+  font-size: 12px; color: var(--act-text); opacity: 0.6; margin: 0;
+  display: inline-flex; align-items: center; gap: 4px;
 }
 
 .config-header__saved .material-symbols-outlined { font-size: 14px; }
@@ -714,7 +722,9 @@
   color: var(--act-text);
   line-height: 1.45;
 }
-.rules-reference__table td:first-child {
+/* N1p2: explicit class (was td:first-child). Avoids crushing Pass 3's
+   prose first column, which was wrapping to one-word-per-line at 36px. */
+.rules-reference__num {
   font-weight: 600;
   color: var(--act-primary, #1a73e8);
   width: 36px;

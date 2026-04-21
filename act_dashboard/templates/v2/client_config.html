@@ -442,17 +442,17 @@
             <h4 class="rules-reference__pass-title">Pass 1 &mdash; Classification (8 rules, first match wins)</h4>
             <table class="rules-reference__table">
               <thead>
-                <tr><th>#</th><th>Rule</th><th>What it checks</th><th>Config that affects it</th><th>Outcome</th></tr>
+                <tr><th class="rules-reference__num">#</th><th>Rule</th><th>What it checks</th><th>Config that affects it</th><th>Outcome</th></tr>
               </thead>
               <tbody>
-                <tr><td>1</td><td><strong>Brand Protection</strong></td><td>Search term contains any brand phrase (substring match, order-sensitive)</td><td>Brand Terms (Protect)</td><td><span class="rules-outcome rules-outcome--keep">Keep</span></td></tr>
-                <tr><td>2</td><td><strong>Existing Exact Negative</strong></td><td>Search term exactly equals a keyword in a 1&ndash;5+ WRDS exact-match negative list</td><td>Google Ads negative lists (synced overnight)</td><td><span class="rules-outcome rules-outcome--block">Block</span></td></tr>
-                <tr><td>3</td><td><strong>Existing Phrase Negative</strong></td><td>A phrase-match negative appears as a contiguous word sequence in the search term</td><td>Google Ads phrase-match negative lists (synced)</td><td><span class="rules-outcome rules-outcome--block">Block</span></td></tr>
-                <tr><td>4</td><td><strong>Location Outside Service Area</strong></td><td>Any location-shaped token (UK postcode outcode or city) is not in your service area. Postcode prefix-match falls back for short forms (sw1 &rarr; sw1a/sw1p/sw1v).</td><td>Service Locations</td><td><span class="rules-outcome rules-outcome--block">Block</span></td></tr>
-                <tr><td>5</td><td><strong>Service Not Advertised</strong></td><td>All tokens of a not-advertised phrase appear in the search term (order-independent)</td><td>Services Offered - Not Advertised + Auto-block toggle</td><td><span class="rules-outcome rules-outcome--block">Block</span> (or Review if toggle off)</td></tr>
-                <tr><td>6</td><td><strong>Advertised Service Match</strong></td><td>All tokens of an advertised phrase appear in the search term (order-independent)</td><td>Services Offered - Advertised</td><td><span class="rules-outcome rules-outcome--keep">Keep</span></td></tr>
-                <tr><td>7</td><td><strong>Contains Negative Vocabulary</strong></td><td>Any single query token matches a 1-word exact negative &mdash; excluding tokens in the Rule 7 exclusion list</td><td>Google Ads 1 WRD [ex] list + Rule 7 exclusion tokens + Auto-block toggle</td><td><span class="rules-outcome rules-outcome--block">Block</span> (or Review if toggle off)</td></tr>
-                <tr><td>8</td><td><strong>Ambiguous (no match)</strong></td><td>No rule above matched. Displays phrase-level near-match suggestions if any config phrase overlaps &ge;50% on non-generic tokens.</td><td>All config above (shows closest match for human decision)</td><td><span class="rules-outcome rules-outcome--review">Needs Review</span></td></tr>
+                <tr><td class="rules-reference__num">1</td><td><strong>Brand Protection</strong></td><td>Search term contains any brand phrase (substring match, order-sensitive)</td><td>Brand Terms (Protect)</td><td><span class="rules-outcome rules-outcome--keep">Keep</span></td></tr>
+                <tr><td class="rules-reference__num">2</td><td><strong>Existing Exact Negative</strong></td><td>Search term exactly equals a keyword in a 1&ndash;5+ WRDS exact-match negative list</td><td>Google Ads negative lists (synced overnight)</td><td><span class="rules-outcome rules-outcome--block">Block</span></td></tr>
+                <tr><td class="rules-reference__num">3</td><td><strong>Existing Phrase Negative</strong></td><td>A phrase-match negative appears as a contiguous word sequence in the search term</td><td>Google Ads phrase-match negative lists (synced)</td><td><span class="rules-outcome rules-outcome--block">Block</span></td></tr>
+                <tr><td class="rules-reference__num">4</td><td><strong>Location Outside Service Area</strong></td><td>Any location-shaped token (UK postcode outcode or city) is not in your service area. Postcode prefix-match falls back for short forms (sw1 &rarr; sw1a/sw1p/sw1v).</td><td>Service Locations</td><td><span class="rules-outcome rules-outcome--block">Block</span></td></tr>
+                <tr><td class="rules-reference__num">5</td><td><strong>Services Offered - Not Advertised</strong></td><td>All tokens of a not-advertised phrase appear in the search term (order-independent)</td><td>Services Offered - Not Advertised + Auto-block toggle</td><td><span class="rules-outcome rules-outcome--block">Block</span> (or Review if toggle off)</td></tr>
+                <tr><td class="rules-reference__num">6</td><td><strong>Services Offered - Advertised</strong></td><td>All tokens of an advertised phrase appear in the search term (order-independent)</td><td>Services Offered - Advertised</td><td><span class="rules-outcome rules-outcome--keep">Keep</span></td></tr>
+                <tr><td class="rules-reference__num">7</td><td><strong>Contains Negative Vocabulary</strong></td><td>Any single query token matches a 1-word exact negative &mdash; excluding tokens in the Rule 7 exclusion list</td><td>Google Ads 1 WRD [ex] list + Rule 7 exclusion tokens + Auto-block toggle</td><td><span class="rules-outcome rules-outcome--block">Block</span> (or Review if toggle off)</td></tr>
+                <tr><td class="rules-reference__num">8</td><td><strong>Ambiguous (no match)</strong></td><td>No rule above matched. Displays phrase-level near-match suggestions if any config phrase overlaps &ge;50% on non-generic tokens.</td><td>All config above (shows closest match for human decision)</td><td><span class="rules-outcome rules-outcome--review">Needs Review</span></td></tr>
               </tbody>
             </table>
           </div>
@@ -466,11 +466,11 @@
             </p>
             <table class="rules-reference__table">
               <thead>
-                <tr><th>#</th><th>Routing Rule</th><th>Condition</th><th>Target list</th></tr>
+                <tr><th class="rules-reference__num">#</th><th>Routing Rule</th><th>Condition</th><th>Target list</th></tr>
               </thead>
               <tbody>
-                <tr><td>1</td><td><strong>Denylist match override</strong></td><td>Pass 1 reason was <code>service_not_advertised</code> (Rule 5)</td><td><code>Off Not Adv [ex]</code></td></tr>
-                <tr><td>2</td><td><strong>Word-count routing (default)</strong></td><td>Any other Block or Review reason &mdash; routed by word count of the search term</td><td><code>1 WRD [ex]</code> / <code>2 WRDS [ex]</code> / <code>3 WRDS [ex]</code> / <code>4 WRDS [ex]</code> / <code>5+ WRDS [ex]</code></td></tr>
+                <tr><td class="rules-reference__num">1</td><td><strong>Denylist match override</strong></td><td>Pass 1 reason was <code>service_not_advertised</code> (Rule 5)</td><td><code>Off Not Adv [ex]</code></td></tr>
+                <tr><td class="rules-reference__num">2</td><td><strong>Word-count routing (default)</strong></td><td>Any other Block or Review reason &mdash; routed by word count of the search term</td><td><code>1 WRD [ex]</code> / <code>2 WRDS [ex]</code> / <code>3 WRDS [ex]</code> / <code>4 WRDS [ex]</code> / <code>5+ WRDS [ex]</code></td></tr>
               </tbody>
             </table>
             <p class="setting-desc" style="margin-top:8px;font-size:12px;opacity:0.7">
@@ -503,6 +503,25 @@
 
         {# N1a/N1n — 5 profile summary cards (hidden textareas remain the
            source of truth; slide-in editor writes back + dispatches input). #}
+        <div class="setting-row">
+          <div class="setting-info">
+            <p class="setting-name">Brand Terms (Protect)</p>
+            <p class="setting-desc">Client-owned brand variants. Searches containing these are protected from competitor/generic negatives.</p>
+          </div>
+          <div class="setting-control setting-control--full">
+            <div class="config-list-summary"
+                 data-field="client_brand_terms"
+                 data-label="Brand Terms (Protect)"
+                 data-desc="Client-owned brand variants. Searches matching these are protected from competitor/generic negatives.">
+              <span class="config-list-summary__count">0</span>
+              <span class="config-list-summary__preview"></span>
+              <button type="button" class="config-list-summary__edit">Edit list &rarr;</button>
+            </div>
+            <textarea hidden class="config-input config-input--textarea" data-key="client_brand_terms"
+                      placeholder="comma-separated, lowercase">{{ client.client_brand_terms }}</textarea>
+          </div>
+        </div>
+
         <div class="setting-row">
           <div class="setting-info">
             <p class="setting-name">Services Offered - Not Advertised</p>
@@ -557,25 +576,6 @@
             </div>
             <textarea hidden class="config-input config-input--textarea" data-key="service_locations"
                       placeholder="comma-separated, lowercase">{{ client.service_locations }}</textarea>
-          </div>
-        </div>
-
-        <div class="setting-row">
-          <div class="setting-info">
-            <p class="setting-name">Brand Terms (Protect)</p>
-            <p class="setting-desc">Client-owned brand variants. Searches containing these are protected from competitor/generic negatives.</p>
-          </div>
-          <div class="setting-control setting-control--full">
-            <div class="config-list-summary"
-                 data-field="client_brand_terms"
-                 data-label="Brand Terms (Protect)"
-                 data-desc="Client-owned brand variants. Searches matching these are protected from competitor/generic negatives.">
-              <span class="config-list-summary__count">0</span>
-              <span class="config-list-summary__preview"></span>
-              <button type="button" class="config-list-summary__edit">Edit list &rarr;</button>
-            </div>
-            <textarea hidden class="config-input config-input--textarea" data-key="client_brand_terms"
-                      placeholder="comma-separated, lowercase">{{ client.client_brand_terms }}</textarea>
           </div>
         </div>
 
