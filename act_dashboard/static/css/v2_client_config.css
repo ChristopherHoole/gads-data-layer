@@ -741,3 +741,17 @@
 .rules-outcome--keep   { background: #d4f4dd; color: #0a6b2a; }
 .rules-outcome--block  { background: #fce4e4; color: #8a1c1c; }
 .rules-outcome--review { background: #fff4cc; color: #7a5c00; }
+
+/* N1w: Search Terms panel collapsible sections — add horizontal padding
+   inside the section body so content isn't flush to the edges. Base
+   .act-section__body has padding:0 (designed for tight row lists on
+   Account/Morning Review); Client Config cards + toggles need breathing room. */
+#panel-search-terms .act-section__body {
+  padding: 20px 24px 8px;
+}
+#panel-search-terms .act-section__body > .setting-row:last-child {
+  border-bottom: none;
+}
+#panel-search-terms .act-section {
+  margin-bottom: 16px;
+}
