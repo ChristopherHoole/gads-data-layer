@@ -281,3 +281,18 @@
 .st-sortable:hover { background: var(--act-hover-bg, rgba(0,0,0,0.03)); }
 .st-sort-ind { display: inline-block; width: 12px; margin-left: 4px; opacity: 0.85; font-size: 10px; }
 .st-sortable.st-sort-active { color: var(--act-blue, #1a73e8); }
+
+/* Wave G — stacked "Needs / Review" pill so the Status column signals
+   the action required in one glance. Padding compensates for the shorter
+   line-height so the pill's vertical footprint stays close to single-line. */
+.st-status--stacked {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+.st-status--stacked > span {
+  display: block;
+}

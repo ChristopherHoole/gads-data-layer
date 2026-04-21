@@ -64,8 +64,10 @@
     contains_neg_vocabulary:        d => d ? `Contains: ${d}` : 'Contains excluded term',
     ambiguous: d => {
       // Wave F: Rule 8 detail is ";"-delimited key=value signals so the user
-      // can triage ambiguous terms without opening each one.
-      if (!d) return 'Needs review';
+      // can triage ambiguous terms without opening each one. Wave G: strip
+      // the redundant "Needs review" prefix — the Status column already
+      // communicates that; em-dash when no signals are present.
+      if (!d) return '—';
       const parts = {};
       d.split(';').forEach(kv => {
         const i = kv.indexOf('=');
@@ -75,7 +77,7 @@
       if (parts.brand_near)    chunks.push(`brand near: ${parts.brand_near}`);
       if (parts.adv_tokens)    chunks.push(`adv: ${parts.adv_tokens.replace(/,/g, ', ')}`);
       if (parts.notadv_tokens) chunks.push(`not-adv: ${parts.notadv_tokens.replace(/,/g, ', ')}`);
-      return chunks.length ? `Needs review · ${chunks.join(' · ')}` : 'Needs review';
+      return chunks.length ? chunks.join(' · ') : '—';
     },
     client_not_configured:          _ => 'Not configured',
     empty_term:                     _ => 'Empty term',
@@ -356,6 +358,17 @@
     });
   }
 
+  // Wave G: "review" pill reads as "Needs / Review" stacked so the status
+  // column communicates the action required in one glance. keep/block stay
+  // single-line to keep the row height stable where possible.
+  function renderPass1StatusPill(status) {
+    if (status === 'review') {
+      return '<span class="st-status st-status--review st-status--stacked">' +
+             '<span>Needs</span><span>Review</span></span>';
+    }
+    return `<span class="st-status st-status--${status}">${status}</span>`;
+  }
+
   // -------------------- Row rendering (Pass 1/2 — 19 cols) -----------
   function renderRow(item) {
     const canEdit = item.pass1_status === 'block' || item.pass1_status === 'review';
@@ -363,7 +376,6 @@
     const hideChk = item.pass1_status === 'keep' ? 'style="visibility:hidden"' : '';
     const roleSel = canEdit ? roleDropdown(item.pass2_target_list_role, cfg.list_roles, item.id) : '';
     const pushErr = item.push_error ? `<span class="st-push-error">${escapeHtml(item.push_error)}</span>` : '';
-    const statusClass = `st-status st-status--${item.pass1_status}`;
     const reviewed = item.review_status !== 'pending'
       ? ` · <span class="st-status st-status--${item.review_status}">${item.review_status}</span>`
       : '';
@@ -372,7 +384,7 @@
     return `<tr data-id="${item.id}" data-pass1="${item.pass1_status}">
       <td class="st-col-check st-frozen-0" ${hideChk}><input type="checkbox" class="st-chk" ${checked} ${canEdit ? '' : 'disabled'}></td>
       <td class="st-col-term  st-frozen-1" title="${escapeHtml(item.search_term)}">${escapeHtml(item.search_term)}</td>
-      <td><span class="${statusClass}">${item.pass1_status}</span>${reviewed}</td>
+      <td>${renderPass1StatusPill(item.pass1_status)}${reviewed}</td>
       <td title="${escapeHtml(humanReason(item.pass1_reason, item.pass1_reason_detail))}"><div class="clamp-2">${escapeHtml(humanReason(item.pass1_reason, item.pass1_reason_detail))}</div></td>
       <td>${roleSel}</td>
       <td>${escapeHtml(item.match_types || '')}</td>
