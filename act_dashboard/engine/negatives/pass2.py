@@ -48,12 +48,16 @@ def run_pass2(client_id: str, db_path: str,
 
     con = duckdb.connect(db_path)
     try:
+        # Wave G2: also route 'review' rows so the UI dropdown shows a
+        # sensible suggestion (previously defaulted to the first <option>
+        # = '1_word_exact' regardless of term). Pass 2 stays a suggestion —
+        # the user can still override via the dropdown before approving.
         rows = con.execute(
             """SELECT id, search_term, pass1_reason
                FROM act_v2_search_term_reviews
                WHERE client_id = ?
                  AND analysis_date = ?
-                 AND pass1_status = 'block'""",
+                 AND pass1_status IN ('block','review')""",
             [client_id, analysis_date],
         ).fetchall()
 
