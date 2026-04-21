@@ -359,6 +359,9 @@
         if (p3View === key) return;
         p3View = key;
         currentPage = 1;
+        // N1r: re-render chips so .active moves to the newly clicked chip.
+        // Safe to self-call — the function clears existing chips on line 1.
+        renderP3StatusChips();
         reload();
       });
       bar.appendChild(btn);

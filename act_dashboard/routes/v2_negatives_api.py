@@ -635,6 +635,15 @@ def list_phrase_suggestions(client_id):
                 LIMIT ? OFFSET ?""",
             [client_id, analysis_date, page_size, offset],
         ).fetchall()
+        # N1r: global approved-not-pushed count (unscoped by current view)
+        # so the Push button on the frontend can enable regardless of what
+        # the active filter is showing. Mirrors the search-term-review endpoint.
+        approved_ready_count = int(con.execute(
+            """SELECT COUNT(*) FROM act_v2_phrase_suggestions
+               WHERE client_id = ? AND analysis_date = ?
+                 AND review_status = 'approved' AND pushed_to_ads_at IS NULL""",
+            [client_id, analysis_date],
+        ).fetchone()[0])
     finally:
         con.close()
 
@@ -662,6 +671,7 @@ def list_phrase_suggestions(client_id):
         })
     return jsonify({
         'items': items, 'total': int(total),
+        'approved_ready_count': approved_ready_count,
         'page': page, 'page_size': page_size,
         'view': view, 'analysis_date': analysis_date.isoformat(),
     })
