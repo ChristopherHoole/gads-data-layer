@@ -173,6 +173,9 @@ def _load_client_config(con, client_id: str) -> dict:
         'service_locations_tokens': service_locations_tokens,
         'block_offered_not_advertised': block_offered_not_advertised,
         'rule_7_auto_block': rule_7_auto_block,
+        # Wave H: also consumed by Rule 8 signal filter (drop generic tokens
+        # from adv/not-adv display so signals stay discriminative).
+        'rule_7_exclude_tokens': rule7_exclude_tokens,
     }
 
 
@@ -322,17 +325,26 @@ def classify_term(search_term: str, cfg: dict) -> tuple[str, str, str | None]:
     if best_brand:
         signals.append(f'brand_near={best_brand}')
 
-    # adv_tokens: query tokens that appear in any advertised phrase
+    # Compute raw token overlaps with advertised and denylist phrases.
     adv_hits: set[str] = set()
     for ap in cfg['advertised_phrases']:
         adv_hits |= (set(tokenize(ap)) & t_token_set)
-    if adv_hits:
-        signals.append(f'adv_tokens={",".join(sorted(adv_hits))}')
-
-    # notadv_tokens: query tokens that appear in any denylist phrase
     notadv_hits: set[str] = set()
     for dp in cfg['denylist_phrases']:
         notadv_hits |= (set(tokenize(dp)) & t_token_set)
+
+    # Wave H: drop non-discriminative tokens before surfacing signals.
+    #  (1) Dual-side tokens: appear in BOTH adv and notadv -> don't help triage
+    #  (2) rule_7_exclude_tokens: user has explicitly marked these as
+    #      industry-generic (consistent with Rule 7's own suppression)
+    dual_tokens = adv_hits & notadv_hits
+    generic_tokens = cfg.get('rule_7_exclude_tokens', set())
+    drop = dual_tokens | generic_tokens
+    adv_hits -= drop
+    notadv_hits -= drop
+
+    if adv_hits:
+        signals.append(f'adv_tokens={",".join(sorted(adv_hits))}')
     if notadv_hits:
         signals.append(f'notadv_tokens={",".join(sorted(notadv_hits))}')
 
