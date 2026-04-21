@@ -89,6 +89,7 @@
 .config-tab[data-tab="adgroup"].active   { border-left-color: #f59e0b; }
 .config-tab[data-tab="ad"].active        { border-left-color: #ec4899; }
 .config-tab[data-tab="shopping"].active  { border-left-color: #14b8a6; }
+.config-tab[data-tab="search-terms"].active { border-left-color: #0ea5e9; }
 .config-tab[data-tab="onboarding"].active { border-left-color: var(--act-green); }
 
 .config-tab .material-symbols-outlined { font-size: 18px; }
@@ -638,7 +639,7 @@
 }
 .list-editor__row {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 6px 10px; border-radius: 4px;
+  padding: 2px 10px; border-radius: 4px;
   font-size: 13px; color: var(--act-text);
 }
 .list-editor__row:hover { background: var(--act-hover-bg); }
@@ -661,3 +662,51 @@
   color: var(--act-text); opacity: 0.6;
   padding: 24px 0;
 }
+
+/* ============================================================
+   N1o — Rules Reference table (Search Terms tab header)
+   ============================================================ */
+.rules-reference {
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--act-border);
+}
+.rules-reference__header { margin-bottom: 12px; }
+
+.rules-reference__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.rules-reference__table th {
+  text-align: left;
+  padding: 8px 12px;
+  background: var(--act-hover-bg);
+  border-bottom: 1px solid var(--act-border);
+  font-weight: 600;
+  color: var(--act-text);
+}
+.rules-reference__table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--act-border);
+  vertical-align: top;
+  color: var(--act-text);
+  line-height: 1.45;
+}
+.rules-reference__table td:first-child {
+  font-weight: 600;
+  color: var(--act-primary, #1a73e8);
+  width: 36px;
+  text-align: center;
+}
+.rules-outcome {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rules-outcome--keep   { background: #d4f4dd; color: #0a6b2a; }
+.rules-outcome--block  { background: #fce4e4; color: #8a1c1c; }
+.rules-outcome--review { background: #fff4cc; color: #7a5c00; }
