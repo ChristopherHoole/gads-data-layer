@@ -644,6 +644,17 @@ def list_phrase_suggestions(client_id):
                  AND review_status = 'approved' AND pushed_to_ads_at IS NULL""",
             [client_id, analysis_date],
         ).fetchone()[0])
+        # N1u: per-status counts for chip labels on Pass 3 tab
+        counts_rows = con.execute(
+            """SELECT review_status, COUNT(*) FROM act_v2_phrase_suggestions
+               WHERE client_id = ? AND analysis_date = ?
+               GROUP BY review_status""",
+            [client_id, analysis_date],
+        ).fetchall()
+        ps_counts = {s: 0 for s in ('pending', 'approved', 'pushed', 'rejected')}
+        for status, n in counts_rows:
+            if status in ps_counts:
+                ps_counts[status] = int(n)
     finally:
         con.close()
 
@@ -672,6 +683,7 @@ def list_phrase_suggestions(client_id):
     return jsonify({
         'items': items, 'total': int(total),
         'approved_ready_count': approved_ready_count,
+        'counts': ps_counts,
         'page': page, 'page_size': page_size,
         'view': view, 'analysis_date': analysis_date.isoformat(),
     })

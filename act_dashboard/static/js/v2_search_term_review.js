@@ -346,6 +346,7 @@
     el.style.display = '';
   }
 
+  let p3Counts = {pending: 0, approved: 0, pushed: 0, rejected: 0};
   function renderP3StatusChips() {
     const bar = document.getElementById('stFilterBarP3');
     bar.querySelectorAll('.st-chip').forEach(el => el.remove());
@@ -354,7 +355,9 @@
       btn.type = 'button';
       btn.className = 'st-chip' + (p3View === key ? ' active' : '');
       btn.dataset.status = key;
-      btn.textContent = key.charAt(0).toUpperCase() + key.slice(1);
+      const label = key.charAt(0).toUpperCase() + key.slice(1);
+      const n = p3Counts[key] || 0;
+      btn.innerHTML = `${label} <span class="st-chip__count">${n}</span>`;
       btn.addEventListener('click', () => {
         if (p3View === key) return;
         p3View = key;
@@ -505,6 +508,17 @@
       renderPmaxOtherBanner(data.pmax_other_bucket);
       // Wave C4: cache live target-list labels for the dropdown
       liveTargetListLabels = data.target_list_labels || {};
+    } else {
+      // N1u: Pass 3 chip counts from server
+      if (data.counts) {
+        p3Counts = {
+          pending: data.counts.pending || 0,
+          approved: data.counts.approved || 0,
+          pushed: data.counts.pushed || 0,
+          rejected: data.counts.rejected || 0,
+        };
+        renderP3StatusChips();
+      }
     }
 
     if (currentTab === 'pass12') {
