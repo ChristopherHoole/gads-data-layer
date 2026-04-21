@@ -24,16 +24,33 @@
   let campaignSource = 'all';              // Wave C10: all | search | pmax
 
   // ---------- Wave A humanization maps (display only; DB stores codes) ----
-  // Wave C9: relabelled for clearer semantics. "Leak —" prefix makes
-  // Rule 2/3 hits obviously distinct from advertising-intent classifications.
-  const REASON_LABELS = {
-    brand_protection:               'Brand search',
-    existing_exact_neg_match:       'Leak — on exact neg list',
-    existing_phrase_neg_match:      'Leak — on phrase neg list',
-    existing_multiword_neg_match:   'Leak — on multi-word neg list',
+  // Wave C12: reason label now a function of (code, detail). When the
+  // engine populates pass1_reason_detail the label shows WHICH term fired
+  // the rule (e.g. 'Contains: 1kingsdental'). Fallback to short form when
+  // detail is null (Rule 2, Rule 8, empty-term, client-not-configured, or
+  // pre-C12 rows).
+  const REASON_FMT = {
+    brand_protection:               d => d ? `Brand: ${d}` : 'Brand',
+    existing_exact_neg_match:       _ => 'Leak — exact',
+    existing_phrase_neg_match:      d => d ? `Leak — phrase: ${d}` : 'Leak — phrase',
+    existing_multiword_neg_match:   d => d ? `Leak — phrase: ${d}` : 'Leak — phrase',
+    location_outside_service_area:  d => d ? `Outside: ${d}` : 'Outside service area',
+    service_not_advertised:         d => d ? `Not advertised: ${d}` : 'Not advertised',
+    advertised_service_match:       d => d ? `Advertised: ${d}` : 'Advertised',
+    contains_neg_vocabulary:        d => d ? `Contains: ${d}` : 'Contains excluded term',
+    ambiguous:                      _ => 'Needs review',
+    client_not_configured:          _ => 'Not configured',
+    empty_term:                     _ => 'Empty term',
+  };
+  // Short-form labels for the Reason filter chip row (detail varies per row).
+  const REASON_CHIP_LABELS = {
+    brand_protection:               'Brand',
+    existing_exact_neg_match:       'Leak — exact',
+    existing_phrase_neg_match:      'Leak — phrase',
+    existing_multiword_neg_match:   'Leak — phrase',
     location_outside_service_area:  'Outside service area',
-    service_not_advertised:         'Offered, not advertised',
-    advertised_service_match:       'Advertised service',
+    service_not_advertised:         'Not advertised',
+    advertised_service_match:       'Advertised',
     contains_neg_vocabulary:        'Contains excluded term',
     ambiguous:                      'Needs review',
     client_not_configured:          'Not configured',
@@ -60,7 +77,12 @@
     'offered_not_advertised_exact':  'Off Not Adv [ex]',
     'offered_not_advertised_phrase': 'Off Not Adv "ph"',
   };
-  const humanReason = r => REASON_LABELS[r] || (r || '');
+  function humanReason(code, detail) {
+    const fn = REASON_FMT[code];
+    if (!fn) return code || '';
+    return fn(detail);
+  }
+  const humanReasonChip = c => REASON_CHIP_LABELS[c] || (c || '');
   const humanRole   = r => ROLE_LABELS[r] || (r || '—');
 
   // Wave B Gate C: search_term_view.status humanised for display
@@ -214,7 +236,7 @@
       btn.type = 'button';
       btn.className = 'st-chip' + (selectedReasons.has(code) ? ' active' : '');
       btn.dataset.reason = code;
-      btn.innerHTML = `${humanReason(code)} <span class="st-chip__count">${n}</span>`;
+      btn.innerHTML = `${humanReasonChip(code)} <span class="st-chip__count">${n}</span>`;
       btn.addEventListener('click', () => {
         if (selectedReasons.has(code)) selectedReasons.delete(code);
         else selectedReasons.add(code);
@@ -313,7 +335,7 @@
       <td class="st-col-check st-frozen-0" ${hideChk}><input type="checkbox" class="st-chk" ${checked} ${canEdit ? '' : 'disabled'}></td>
       <td class="st-col-term  st-frozen-1" title="${escapeHtml(item.search_term)}">${escapeHtml(item.search_term)}</td>
       <td><span class="${statusClass}">${item.pass1_status}</span>${reviewed}</td>
-      <td>${escapeHtml(humanReason(item.pass1_reason))}</td>
+      <td title="${escapeHtml(humanReason(item.pass1_reason, item.pass1_reason_detail))}"><div class="clamp-2">${escapeHtml(humanReason(item.pass1_reason, item.pass1_reason_detail))}</div></td>
       <td>${roleSel}</td>
       <td>${escapeHtml(item.match_types || '')}</td>
       <td>${escapeHtml(humanStatuses(item.statuses))}</td>

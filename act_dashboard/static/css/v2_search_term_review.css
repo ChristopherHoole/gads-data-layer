@@ -175,7 +175,7 @@
    into normal white-space + break-word. Keyword + Campaign additionally
    get 2-line clamp (full text available via title="" tooltip). */
 .st-table--wide th:nth-child(3),  .st-table--wide td:nth-child(3)  { min-width:  70px; max-width:  90px; }                    /* Status */
-.st-table--wide th:nth-child(4),  .st-table--wide td:nth-child(4)  { min-width:  80px; max-width: 120px; white-space: normal; word-wrap: break-word; } /* Reason */
+.st-table--wide th:nth-child(4),  .st-table--wide td:nth-child(4)  { min-width: 100px; max-width: 160px; white-space: normal; word-wrap: break-word; } /* Reason — Wave C12 wider for detail text */
 /* Wave C8: widen + tighten padding so the longest Target list value
    (e.g. 'Com & Bran "ph"', 15 chars) fits the closed dropdown without
    overflowing into Match type. */
