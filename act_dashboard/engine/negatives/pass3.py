@@ -191,12 +191,28 @@ def run_pass3(client_id: str, db_path: str,
                 b['word_count'] = wc
                 b['source_terms'].add(term)
 
-        # Idempotent re-run: wipe today's pending suggestions first
+        # N1t: Idempotent re-run wipes ONLY pending suggestions. Preserve rows
+        # the user has already decided on (approved/pushed/rejected). Pass 1
+        # follows the same preservation strategy — a pushed phrase neg is a
+        # real Google Ads change, losing local tracking creates sync drift.
         con.execute(
             """DELETE FROM act_v2_phrase_suggestions
-               WHERE client_id = ? AND analysis_date = ?""",
+               WHERE client_id = ? AND analysis_date = ?
+                 AND review_status = 'pending'""",
             [client_id, analysis_date],
         )
+
+        # N1t: include fragments already decided in today's act_v2_phrase_suggestions
+        # in the dedup set — so a fragment the user already approved/pushed/
+        # rejected today doesn't get re-surfaced as a fresh pending suggestion
+        # (would also violate UNIQUE(client_id, analysis_date, fragment, role)).
+        decided_today = con.execute(
+            """SELECT DISTINCT fragment FROM act_v2_phrase_suggestions
+               WHERE client_id = ? AND analysis_date = ?
+                 AND review_status IN ('approved', 'pushed', 'rejected')""",
+            [client_id, analysis_date],
+        ).fetchall()
+        existing = existing | {r[0] for r in decided_today if r[0]}
 
         created = 0
         risk_histogram: dict[str, int] = {}
