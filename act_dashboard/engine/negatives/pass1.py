@@ -521,6 +521,15 @@ def run_pass1(client_id: str, db_path: str,
             f'blocks={status_counts["block"]} keeps={status_counts["keep"]} '
             f'reviews={status_counts["review"]}'
         )
-        return summary
     finally:
         con.close()
+
+    # N1k: always chain Pass 2. Pass 1 clears pass2_target_list_role to NULL
+    # on every updated pending row, and if Pass 2 isn't run the UI dropdown
+    # silently defaults to the first <option> ('1 WRD [ex]') for every row.
+    # Scheduler and reclassify CLI already chain, but any direct caller of
+    # run_pass1() would otherwise leave the DB in a broken UI state.
+    # Late import avoids a potential circular at module-import time.
+    from act_dashboard.engine.negatives.pass2 import run_pass2
+    summary['pass2'] = run_pass2(client_id, db_path, analysis_date)
+    return summary
