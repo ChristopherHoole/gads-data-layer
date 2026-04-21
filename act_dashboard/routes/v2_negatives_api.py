@@ -693,15 +693,25 @@ def bulk_update_phrase_suggestions():
             if new_status not in allowed:
                 continue
             override = it.get('target_list_role_override')
-            if override is None:
-                con.execute(
-                    """UPDATE act_v2_phrase_suggestions
-                       SET review_status = ?, reviewed_at = CURRENT_TIMESTAMP,
-                           reviewed_by = 'user'
+
+            # N1q: DuckDB 1.1.0 raises a false-positive PK duplicate error
+            # when UPDATE touches a UNIQUE-constrained column, even with the
+            # same value. target_list_role is part of the UNIQUE on this
+            # table — only set it when the value is actually changing.
+            # Frontend always sends the dropdown value, so this is the
+            # common path.
+            touch_role = False
+            if override is not None:
+                current = con.execute(
+                    """SELECT target_list_role
+                       FROM act_v2_phrase_suggestions
                        WHERE id = ? AND client_id = ?""",
-                    [new_status, row_id, client_id],
-                )
-            else:
+                    [row_id, client_id],
+                ).fetchone()
+                if current and current[0] != override:
+                    touch_role = True
+
+            if touch_role:
                 con.execute(
                     """UPDATE act_v2_phrase_suggestions
                        SET review_status = ?, reviewed_at = CURRENT_TIMESTAMP,
@@ -709,6 +719,14 @@ def bulk_update_phrase_suggestions():
                            target_list_role = ?
                        WHERE id = ? AND client_id = ?""",
                     [new_status, override, row_id, client_id],
+                )
+            else:
+                con.execute(
+                    """UPDATE act_v2_phrase_suggestions
+                       SET review_status = ?, reviewed_at = CURRENT_TIMESTAMP,
+                           reviewed_by = 'user'
+                       WHERE id = ? AND client_id = ?""",
+                    [new_status, row_id, client_id],
                 )
             updated += 1
     finally:
