@@ -238,9 +238,30 @@ def list_search_term_reviews(client_id):
             st_type_filter_params + params + [page_size, offset],
         ).fetchall()
 
-        # Wave C10: status + reason counts recomputed WITHIN the current
-        # campaign_source subset so chip counts stay honest when user
-        # narrows to Search or PMax.
+        # Wave D1 (Fix 5) — cross-filtering cascade: chip counts should reflect
+        # the OTHER active filter so what the user sees in the table matches the
+        # counts on the pills they haven't clicked.
+        #   status chips   -> scope = client+date+campaign_source+reasons  (ignore view)
+        #   reason chips   -> scope = client+date+campaign_source+view     (ignore reasons)
+        # campaign_source chips stay globally scoped (client+date only) so users
+        # can see absolute totals for each source regardless of other filters.
+        src_clause = (' AND id' + source_ids_subquery_body) if source_ids_subquery_body else ''
+        src_params = list(source_ids_params)
+
+        # reasons clause (for status-chip scope)
+        reasons_clause = ''
+        reasons_params: list = []
+        if reasons:
+            ph = ','.join(['?'] * len(reasons))
+            reasons_clause = f" AND pass1_reason IN ({ph})"
+            reasons_params = list(reasons)
+
+        # view clause (for reason-chip scope) — reuse the same SQL fragment the
+        # rows query uses, but only when view != 'all'. When view='all' (1=1)
+        # we don't need to append anything.
+        view_sql = _ST_VIEW_FILTERS[view]
+        view_clause = f" AND ({view_sql})" if view_sql != "1=1" else ''
+
         counts_row = con.execute(
             f"""SELECT
                  COUNT(*) FILTER (WHERE review_status='pending' AND pass1_status='block')  AS block,
@@ -252,8 +273,8 @@ def list_search_term_reviews(client_id):
                  COUNT(*) FILTER (WHERE review_status='expired')                           AS expired,
                  COUNT(*)                                                                   AS total
                FROM act_v2_search_term_reviews
-               WHERE client_id = ? AND analysis_date = ?{(' AND id' + source_ids_subquery_body) if source_ids_subquery_body else ''}""",
-            [client_id, analysis_date] + source_ids_params,
+               WHERE client_id = ? AND analysis_date = ?{src_clause}{reasons_clause}""",
+            [client_id, analysis_date] + src_params + reasons_params,
         ).fetchone()
         counts = {
             'all':      int(counts_row[7] or 0),
@@ -268,11 +289,24 @@ def list_search_term_reviews(client_id):
         reason_rows = con.execute(
             f"""SELECT pass1_reason, COUNT(*)
                FROM act_v2_search_term_reviews
-               WHERE client_id = ? AND analysis_date = ?{(' AND id' + source_ids_subquery_body) if source_ids_subquery_body else ''}
+               WHERE client_id = ? AND analysis_date = ?{src_clause}{view_clause}
                GROUP BY pass1_reason""",
-            [client_id, analysis_date] + source_ids_params,
+            [client_id, analysis_date] + src_params,
         ).fetchall()
         reason_counts = {(r[0] or 'unknown'): int(r[1]) for r in reason_rows}
+
+        # Wave D1 (Fix 3) — approved-but-not-pushed count for the whole
+        # client+date (NOT scoped by any chip filter). Drives the Push button:
+        # if the user approved rows from Block view, then switched away, they
+        # shouldn't lose access to the Push action just because those rows are
+        # no longer visible.
+        approved_ready_count = int(con.execute(
+            """SELECT COUNT(*) FROM act_v2_search_term_reviews
+               WHERE client_id = ? AND analysis_date = ?
+                 AND review_status = 'approved'
+                 AND pushed_to_ads_at IS NULL""",
+            [client_id, analysis_date],
+        ).fetchone()[0] or 0)
 
         # Wave C10: campaign_source chip counts. 'all' = distinct review
         # rows for today (global, unaffected by current source filter so
@@ -402,6 +436,7 @@ def list_search_term_reviews(client_id):
         'target_list_labels': target_list_labels,
         'campaign_source': campaign_source,
         'campaign_source_counts': campaign_source_counts,
+        'approved_ready_count': approved_ready_count,
     })
 
 

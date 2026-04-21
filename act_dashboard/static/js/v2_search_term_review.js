@@ -22,6 +22,13 @@
   let p3View = 'pending';                  // Pass 3 tab single-select
   let liveTargetListLabels = {};           // Wave C4: {role: live_name} from API
   let campaignSource = 'all';              // Wave C10: all | search | pmax
+  // Wave D1 — client-side column sort. Applied AFTER fetch to lastItems.
+  // null = no explicit sort (server-side ordering: impr DESC tie-break).
+  let sortKey = null;
+  let sortDir = 'desc';                    // 'asc' | 'desc'
+  // Wave D1 — whole-client approved-not-pushed count (drives Push button
+  // even when current filter hides approved rows).
+  let approvedReadyCount = 0;
 
   // ---------- Wave A humanization maps (display only; DB stores codes) ----
   // Wave C12: reason label now a function of (code, detail). When the
@@ -29,10 +36,27 @@
   // the rule (e.g. 'Contains: 1kingsdental'). Fallback to short form when
   // detail is null (Rule 2, Rule 8, empty-term, client-not-configured, or
   // pre-C12 rows).
+  // Wave D1: Rule 2 (existing_exact_neg_match) detail is a comma-joined list
+  // of list_role codes; Rule 3 (existing_phrase_neg_match) detail is
+  // "phrase|role1,role2" (pipe-delimited). Render role codes via ROLE_LABELS
+  // (falls back to the raw code when unknown) so the UI shows WHERE the
+  // match lives, not just that one happened.
+  function _rolesFromCsv(csv) {
+    return (csv || '').split(',').map(r => r.trim()).filter(Boolean)
+      .map(r => ROLE_LABELS[r] || r).join(', ');
+  }
   const REASON_FMT = {
     brand_protection:               d => d ? `Brand: ${d}` : 'Brand',
-    existing_exact_neg_match:       _ => 'Leak — exact',
-    existing_phrase_neg_match:      d => d ? `Leak — phrase: ${d}` : 'Leak — phrase',
+    existing_exact_neg_match:       d => {
+      if (!d) return 'Leak — exact';
+      return `Leak — exact: ${_rolesFromCsv(d)}`;
+    },
+    existing_phrase_neg_match:      d => {
+      if (!d) return 'Leak — phrase';
+      const [phrase, rolesCsv] = d.split('|');
+      if (!rolesCsv) return `Leak — phrase: ${phrase}`;
+      return `Leak — phrase: ${phrase} (${_rolesFromCsv(rolesCsv)})`;
+    },
     existing_multiword_neg_match:   d => d ? `Leak — phrase: ${d}` : 'Leak — phrase',
     location_outside_service_area:  d => d ? `Outside: ${d}` : 'Outside service area',
     service_not_advertised:         d => d ? `Not advertised: ${d}` : 'Not advertised',
@@ -420,6 +444,9 @@
       return;
     }
     lastItems = data.items || [];
+    approvedReadyCount = data.approved_ready_count || 0;
+    applyClientSideSort();
+    updateSortIndicators();
 
     // Repaint chips from server-side counts (Pass 1/2 only)
     if (currentTab === 'pass12') {
@@ -473,9 +500,88 @@
     document.getElementById('lblReject').textContent = sel.length;
     document.getElementById('stBulkApprove').disabled = sel.length === 0;
     document.getElementById('stBulkReject').disabled = sel.length === 0;
+    // Wave D1 (Fix 3) — push button reflects ALL approved-not-pushed rows for
+    // this client+date, not just what's in the current filtered view. Users
+    // often approve from Block view (rows then move to Approved view) and
+    // would otherwise see a greyed-out button that looks broken.
+    const btn = document.getElementById('stPushApproved');
+    btn.disabled = approvedReadyCount === 0;
+    btn.textContent = approvedReadyCount > 0
+      ? `Push ${approvedReadyCount} approved to Google Ads`
+      : 'Push approved to Google Ads';
+    // Helpful tooltip when approved rows exist but aren't visible under
+    // current filters — explains why the user can't see them in the table.
     const approvedInView = lastItems.some(i =>
       i.review_status === 'approved' && !i.pushed_to_ads_at);
-    document.getElementById('stPushApproved').disabled = !approvedInView;
+    if (approvedReadyCount > 0 && !approvedInView) {
+      btn.title = `${approvedReadyCount} row(s) approved. Switch to the "Approved" status filter to view them before pushing.`;
+    } else {
+      btn.removeAttribute('title');
+    }
+  }
+
+  // ---------- Wave D1: client-side column sort -----------------------
+  // Compare helper: nulls last in both directions so "—" rows sink.
+  function _cmp(a, b) {
+    if (a == null && b == null) return 0;
+    if (a == null) return 1;
+    if (b == null) return -1;
+    if (typeof a === 'number' && typeof b === 'number') return a - b;
+    return String(a).localeCompare(String(b));
+  }
+  const STATUS_SORT_ORDER = {
+    block: 0, review: 1, keep: 2,
+  };
+  function _sortValue(item, key) {
+    if (key === 'pass1_status') return STATUS_SORT_ORDER[item.pass1_status] ?? 99;
+    const v = item[key];
+    if (v == null) return null;
+    if (typeof v === 'number') return v;
+    // numeric columns come through as numbers from the API already
+    return v;
+  }
+  function applyClientSideSort() {
+    if (!sortKey) return;
+    const dirMul = sortDir === 'asc' ? 1 : -1;
+    lastItems.sort((a, b) => dirMul * _cmp(_sortValue(a, sortKey), _sortValue(b, sortKey)));
+  }
+  function updateSortIndicators() {
+    document.querySelectorAll('#stTable thead th.st-sortable').forEach(th => {
+      const ind = th.querySelector('.st-sort-ind');
+      if (th.dataset.sort === sortKey) {
+        th.classList.add('st-sort-active');
+        if (ind) ind.textContent = sortDir === 'asc' ? '▲' : '▼';
+      } else {
+        th.classList.remove('st-sort-active');
+        if (ind) ind.textContent = '';
+      }
+    });
+  }
+  function wireSortHeaders() {
+    document.querySelectorAll('#stTable thead th.st-sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.sort;
+        if (!key) return;
+        if (sortKey === key) {
+          sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+          sortKey = key;
+          // First click on numeric cols -> DESC (highest spend first);
+          // First click on text cols -> ASC (alphabetical).
+          const numericKeys = new Set([
+            'total_cost','total_impressions','total_clicks','avg_cpc','ctr',
+            'total_conversions','cost_per_conversion','conversion_rate',
+          ]);
+          sortDir = numericKeys.has(key) ? 'desc' : 'asc';
+        }
+        applyClientSideSort();
+        updateSortIndicators();
+        tbody.innerHTML = lastItems.length
+          ? lastItems.map(renderRow).join('')
+          : '<tr><td colspan="19" class="st-loading">No matching rows</td></tr>';
+        updateButtons();
+      });
+    });
   }
 
   async function bulkUpdate(status) {
@@ -513,7 +619,9 @@
     } catch (e) {
       toast(`Push failed: ${e.message}`, 'error');
     } finally {
-      btn.textContent = 'Push approved to Google Ads';
+      // Label is re-derived from approvedReadyCount inside updateButtons()
+      // (called by reload() on success, or here on error).
+      updateButtons();
     }
   }
 
@@ -595,6 +703,9 @@
       reload();
     });
   }
+
+  // Wave D1: wire sortable headers once (thead is static).
+  wireSortHeaders();
 
   // Initial load
   reload();

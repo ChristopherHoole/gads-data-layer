@@ -275,3 +275,9 @@
   max-width: 420px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 .st-toast--error { background: #991b1b; }
+
+/* Wave D1 — sortable column headers */
+.st-sortable { cursor: pointer; user-select: none; }
+.st-sortable:hover { background: var(--act-hover-bg, rgba(0,0,0,0.03)); }
+.st-sort-ind { display: inline-block; width: 12px; margin-left: 4px; opacity: 0.85; font-size: 10px; }
+.st-sortable.st-sort-active { color: var(--act-blue, #1a73e8); }

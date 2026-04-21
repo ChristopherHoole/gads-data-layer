@@ -80,11 +80,12 @@ def _load_client_config(con, client_id: str) -> dict:
     # Legacy name retained in the cfg dict for any downstream consumer.
     all_services_phrases = denylist_phrases
 
-    # All keyword_texts from LINKED exact-match lists (any word count).
-    # Rule 2 checks equality against this whole set; Rule 7 uses only the
-    # single-token subset.
+    # Wave D1: exact_neg_phrases is a dict mapping normalized keyword -> sorted
+    # distinct list_roles that contain it. Dict `in` still works for Rule 2
+    # equality check, and the Rule 2/3 returns now surface which list(s) caught
+    # the match (pass1_reason_detail) so the UI can show context.
     exact_rows = con.execute(
-        """SELECT DISTINCT kw.keyword_text
+        """SELECT DISTINCT kw.keyword_text, l.list_role
            FROM act_v2_negative_list_keywords kw
            JOIN act_v2_negative_keyword_lists l ON kw.list_id = l.list_id
            WHERE kw.client_id = ?
@@ -96,19 +97,23 @@ def _load_client_config(con, client_id: str) -> dict:
              AND kw.match_type = 'EXACT'""",
         [client_id],
     ).fetchall()
-    exact_neg_phrases: set[str] = set()
+    exact_neg_phrases: dict[str, list[str]] = {}
     exact_neg_single_words: set[str] = set()
-    for (kw_text,) in exact_rows:
+    for kw_text, list_role in exact_rows:
         n = normalize(kw_text)
         if not n:
             continue
-        exact_neg_phrases.add(n)
+        roles = exact_neg_phrases.setdefault(n, [])
+        if list_role not in roles:
+            roles.append(list_role)
         if ' ' not in n:
             exact_neg_single_words.add(n)
+    for k in exact_neg_phrases:
+        exact_neg_phrases[k].sort()
 
-    # All keywords (any length) from LINKED phrase-match lists — Rule 3 substring set.
+    # All keywords (any length) from LINKED phrase-match lists — Rule 3 substring map.
     phrase_rows = con.execute(
-        """SELECT DISTINCT kw.keyword_text
+        """SELECT DISTINCT kw.keyword_text, l.list_role
            FROM act_v2_negative_list_keywords kw
            JOIN act_v2_negative_keyword_lists l ON kw.list_id = l.list_id
            WHERE kw.client_id = ?
@@ -119,11 +124,16 @@ def _load_client_config(con, client_id: str) -> dict:
              )""",
         [client_id],
     ).fetchall()
-    phrase_neg_phrases: set[str] = set()
-    for (kw_text,) in phrase_rows:
+    phrase_neg_phrases: dict[str, list[str]] = {}
+    for kw_text, list_role in phrase_rows:
         n = normalize(kw_text)
-        if n:
-            phrase_neg_phrases.add(n)
+        if not n:
+            continue
+        roles = phrase_neg_phrases.setdefault(n, [])
+        if list_role not in roles:
+            roles.append(list_role)
+    for k in phrase_neg_phrases:
+        phrase_neg_phrases[k].sort()
 
     # Wave C9/C12: behavioural toggles.
     def _toggle(key: str, default: bool = True) -> bool:
@@ -170,9 +180,9 @@ def _is_client_configured(cfg: dict) -> bool:
 # ---------------------------------------------------------------------------
 # Rule evaluation — first match wins (Wave C12: returns (status, reason, detail))
 # ---------------------------------------------------------------------------
-def _longest_then_alpha(phrases: set[str], text_normalized: str) -> str | None:
-    """Return the longest phrase from `phrases` that substrings `text_normalized`.
-    Tie-break alphabetically. None if no match."""
+def _longest_then_alpha(phrases, text_normalized: str) -> str | None:
+    """Return the longest phrase from `phrases` (set, list, or dict keys) that
+    substrings `text_normalized`. Tie-break alphabetically. None if no match."""
     matches = [p for p in phrases if p and p in text_normalized]
     if not matches:
         return None
@@ -195,16 +205,20 @@ def classify_term(search_term: str, cfg: dict) -> tuple[str, str, str | None]:
     if brand_match is not None:
         return ('keep', 'brand_protection', brand_match)
 
-    # Rule 2 — EQUALITY match against any exact-match neg. Detail redundant
-    # with search_term itself -> None.
+    # Rule 2 — EQUALITY match against any exact-match neg. Detail =
+    # comma-joined list_roles that contain this keyword (for UI context).
     if t_norm in cfg['exact_neg_phrases']:
-        return ('block', 'existing_exact_neg_match', None)
+        detail = ','.join(cfg['exact_neg_phrases'][t_norm])
+        return ('block', 'existing_exact_neg_match', detail)
 
-    # Rule 3 — SUBSTRING match against any phrase-match neg. Detail = longest
-    # matching phrase (useful when the same term hits several).
-    phrase_match = _longest_then_alpha(cfg['phrase_neg_phrases'], t_norm)
+    # Rule 3 — SUBSTRING match against any phrase-match neg. Detail =
+    # "phrase|role1,role2" so the UI can show both the matched phrase and
+    # which list(s) it lives in.
+    phrase_match = _longest_then_alpha(list(cfg['phrase_neg_phrases'].keys()), t_norm)
     if phrase_match is not None:
-        return ('block', 'existing_phrase_neg_match', phrase_match)
+        list_roles = ','.join(cfg['phrase_neg_phrases'][phrase_match])
+        detail = f"{phrase_match}|{list_roles}" if list_roles else phrase_match
+        return ('block', 'existing_phrase_neg_match', detail)
 
     # Rule 4 — any location-shaped token NOT in service area. Detail =
     # alphabetically-first such token.
