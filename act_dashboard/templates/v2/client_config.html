@@ -156,6 +156,18 @@
           </div>
         </div>
 
+        {# N1b Wave C12 — Rule 7 exclusion tokens #}
+        <div class="setting-row setting-row--textarea">
+          <div class="setting-info">
+            <p class="setting-name">Rule 7 exclusion tokens</p>
+            <p class="setting-desc">Comma-separated tokens to EXCLUDE from Rule 7 (soft-signal blocking) even if they appear in your 1-word exact negative list. Use for industry-universal words (e.g. teeth, dental) that you neg as bare queries but don't want treated as block signals for multi-word terms. These tokens still work as exact-match negatives in Google Ads &mdash; this only prevents Rule 7 from extrapolating them.</p>
+          </div>
+          <div class="setting-control setting-control--full">
+            <textarea class="config-input config-input--textarea" data-key="rule_7_exclude_tokens" rows="2"
+                      placeholder="comma-separated, lowercase">{{ client.rule_7_exclude_tokens }}</textarea>
+          </div>
+        </div>
+
         <div class="setting-row">
           <div class="setting-info"><p class="setting-name">Budget Allocation Mode</p><p class="setting-desc">Automatic lets ACT shift budget between campaigns within bands. Manual requires approval for all shifts.</p></div>
           <div class="setting-control"><div class="{{ toggle_class('budget_allocation_mode') }}" data-key="budget_allocation_mode"><div class="config-toggle__knob"></div></div><span style="font-size:12px;margin-left:8px;color:var(--act-text)">Automatic</span></div>
@@ -169,6 +181,18 @@
           </div>
           <div class="setting-control">
             <div class="{{ toggle_class('block_offered_not_advertised') }}" data-key="block_offered_not_advertised"><div class="config-toggle__knob"></div></div>
+            <span style="font-size:12px;margin-left:8px;color:var(--act-text)">Auto-block</span>
+          </div>
+        </div>
+
+        {# N1b Wave C12 — Rule 7 behaviour toggle #}
+        <div class="setting-row">
+          <div class="setting-info">
+            <p class="setting-name">Auto-block Rule 7 (contains excluded term) matches</p>
+            <p class="setting-desc">When ON, Rule 7 soft-signal matches auto-block. When OFF, they route to Review for manual decision. Recommended: leave ON once your exclusion list is stable.</p>
+          </div>
+          <div class="setting-control">
+            <div class="{{ toggle_class('rule_7_auto_block') }}" data-key="rule_7_auto_block"><div class="config-toggle__knob"></div></div>
             <span style="font-size:12px;margin-left:8px;color:var(--act-text)">Auto-block</span>
           </div>
         </div>

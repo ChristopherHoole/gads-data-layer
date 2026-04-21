@@ -34,7 +34,8 @@ def client_config():
         client_row = con.execute(
             """SELECT client_id, client_name, google_ads_customer_id, persona,
                       monthly_budget, target_cpa, target_roas, active, created_at, updated_at,
-                      services_all, services_advertised, service_locations, client_brand_terms
+                      services_all, services_advertised, service_locations, client_brand_terms,
+                      rule_7_exclude_tokens
                FROM act_v2_clients WHERE client_id = ?""",
             [client_id]
         ).fetchone()
@@ -56,6 +57,7 @@ def client_config():
             'services_advertised': client_row[11] or '',
             'service_locations': client_row[12] or '',
             'client_brand_terms': client_row[13] or '',
+            'rule_7_exclude_tokens': client_row[14] or '',
         }
 
         # Get all clients for switcher
@@ -189,15 +191,36 @@ def save_settings():
             service_locations = _norm(client_data.get('service_locations'))
             client_brand_terms = _norm(client_data.get('client_brand_terms'))
 
+            # Wave C12: Rule 7 exclusion tokens — 9-step parser per brief:
+            #   split on commas, strip, lowercase, tokenize on whitespace,
+            #   strip punctuation (keep word chars), dedupe, comma-join.
+            def _norm_rule7(v):
+                if v is None:
+                    return None
+                import re
+                tokens: list[str] = []
+                seen: set[str] = set()
+                for piece in str(v).split(','):
+                    for word in piece.strip().lower().split():
+                        tok = re.sub(r'[^\w]+', '', word)
+                        if tok and tok not in seen:
+                            seen.add(tok)
+                            tokens.append(tok)
+                return ', '.join(tokens) if tokens else None
+
+            rule_7_exclude_tokens = _norm_rule7(client_data.get('rule_7_exclude_tokens'))
+
             con.execute("""
                 UPDATE act_v2_clients SET
                     persona = ?, monthly_budget = ?, target_cpa = ?, target_roas = ?,
                     services_all = ?, services_advertised = ?,
                     service_locations = ?, client_brand_terms = ?,
+                    rule_7_exclude_tokens = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE client_id = ?
             """, [persona, monthly_budget, target_cpa, target_roas,
                   services_all, services_advertised, service_locations, client_brand_terms,
+                  rule_7_exclude_tokens,
                   client_id])
 
         # Update level states

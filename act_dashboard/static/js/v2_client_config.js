@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // N1a — client profile textareas (lowercase + trim on client; server re-normalises)
-    const PROFILE_FIELDS = ['services_all', 'services_advertised', 'service_locations', 'client_brand_terms'];
+    const PROFILE_FIELDS = ['services_all', 'services_advertised', 'service_locations', 'client_brand_terms', 'rule_7_exclude_tokens'];
     PROFILE_FIELDS.forEach(k => {
       const el = document.querySelector(`textarea[data-key="${k}"]`);
       data.client[k] = el ? el.value.trim().toLowerCase() : '';
@@ -207,7 +207,8 @@ document.addEventListener('DOMContentLoaded', () => {
       // Skip client-level fields (handled in data.client above)
       if (['monthly_budget', 'target_cpa', 'target_roas',
            'services_all', 'services_advertised',
-           'service_locations', 'client_brand_terms'].includes(key)) return;
+           'service_locations', 'client_brand_terms',
+           'rule_7_exclude_tokens'].includes(key)) return;
 
       let value;
       if (el.classList.contains('config-toggle')) {
