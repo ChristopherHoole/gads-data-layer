@@ -76,6 +76,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.config-select').forEach(sel => {
       sel.addEventListener('change', markDirty);
     });
+
+    // N1j — profile textareas (services_advertised, services_not_advertised,
+    // service_locations, client_brand_terms, rule_7_exclude_tokens) weren't
+    // wired to dirty-state. 'input' (not 'change') so Save activates the
+    // instant the user types, matching numeric-input behaviour above.
+    document.querySelectorAll('textarea[data-key]').forEach(textarea => {
+      textarea.addEventListener('input', markDirty);
+    });
   }
 
   function validateField(input, errorEl) {
