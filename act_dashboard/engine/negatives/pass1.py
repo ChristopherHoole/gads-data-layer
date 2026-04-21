@@ -37,6 +37,7 @@ import duckdb
 
 from act_dashboard.engine.negatives._common import (
     normalize, tokenize, normalize_set, phrase_appears_in,
+    split_comma_list, tokenize_set,
 )
 from act_dashboard.engine.negatives.reference_locations import is_location_shaped
 
@@ -57,13 +58,15 @@ def _load_client_config(con, client_id: str) -> dict:
     empty fields become empty sets."""
     row = con.execute(
         """SELECT services_all, services_advertised,
-                  service_locations, client_brand_terms
+                  service_locations, client_brand_terms,
+                  rule_7_exclude_tokens
            FROM act_v2_clients WHERE client_id = ?""",
         [client_id],
     ).fetchone()
     if not row:
         return None
-    services_all_raw, services_adv_raw, locations_raw, brand_raw = row
+    (services_all_raw, services_adv_raw, locations_raw,
+     brand_raw, rule7_exclude_raw) = row
 
     all_services_phrases = normalize_set(services_all_raw)
     advertised_phrases = normalize_set(services_adv_raw)
@@ -118,25 +121,36 @@ def _load_client_config(con, client_id: str) -> dict:
         if n:
             phrase_neg_phrases.add(n)
 
-    # Wave C9: Rule 5 toggle — block vs review.
-    toggle_row = con.execute(
-        """SELECT setting_value FROM act_v2_client_settings
-           WHERE client_id = ? AND setting_key = 'block_offered_not_advertised'""",
-        [client_id],
-    ).fetchone()
-    block_offered_not_advertised = (toggle_row is None
-                                    or (toggle_row[0] or '').lower() == 'true')
+    # Wave C9/C12: behavioural toggles.
+    def _toggle(key: str, default: bool = True) -> bool:
+        row = con.execute(
+            "SELECT setting_value FROM act_v2_client_settings "
+            "WHERE client_id = ? AND setting_key = ?",
+            [client_id, key],
+        ).fetchone()
+        if row is None:
+            return default
+        return (row[0] or '').lower() == 'true'
+    block_offered_not_advertised = _toggle('block_offered_not_advertised', True)
+    rule_7_auto_block = _toggle('rule_7_auto_block', True)
+
+    # Wave C12: Rule 7 exclusion subset. Tokens in this set are excluded
+    # ONLY from Rule 7 — Rule 2 still uses the full exact_neg_single_words.
+    rule7_exclude_tokens = tokenize_set(split_comma_list(rule7_exclude_raw))
+    exact_neg_single_words_for_rule_7 = exact_neg_single_words - rule7_exclude_tokens
 
     return {
         'brand_phrases': brand_phrases,
         'exact_neg_phrases': exact_neg_phrases,            # Rule 2 (equality)
         'phrase_neg_phrases': phrase_neg_phrases,          # Rule 3 (substring)
-        'exact_neg_single_words': exact_neg_single_words,  # Rule 7 (soft token signal)
+        'exact_neg_single_words': exact_neg_single_words,  # (full set, for Rule 2 context)
+        'exact_neg_single_words_for_rule_7': exact_neg_single_words_for_rule_7,  # C12
         'advertised_phrases': advertised_phrases,
         'all_services_phrases': all_services_phrases,
         'denylist_phrases': denylist_phrases,
         'service_locations_set': service_locations_set,
         'block_offered_not_advertised': block_offered_not_advertised,
+        'rule_7_auto_block': rule_7_auto_block,
     }
 
 
@@ -150,54 +164,73 @@ def _is_client_configured(cfg: dict) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Rule evaluation — first match wins
+# Rule evaluation — first match wins (Wave C12: returns (status, reason, detail))
 # ---------------------------------------------------------------------------
-def classify_term(search_term: str, cfg: dict) -> tuple[str, str]:
-    """Return (pass1_status, pass1_reason). Rules 1–8 in order, first match wins."""
+def _longest_then_alpha(phrases: set[str], text_normalized: str) -> str | None:
+    """Return the longest phrase from `phrases` that substrings `text_normalized`.
+    Tie-break alphabetically. None if no match."""
+    matches = [p for p in phrases if p and p in text_normalized]
+    if not matches:
+        return None
+    matches.sort(key=lambda p: (-len(p), p))
+    return matches[0]
+
+
+def classify_term(search_term: str, cfg: dict) -> tuple[str, str, str | None]:
+    """Return (pass1_status, pass1_reason, pass1_reason_detail). Rules 1–8
+    in order, first match wins. Detail is the matched term/phrase where
+    meaningful, else None."""
     t_norm = normalize(search_term)
     if not t_norm:
-        return ('review', 'empty_term')
+        return ('review', 'empty_term', None)
     t_tokens = t_norm.split()
     t_token_set = set(t_tokens)
 
-    # Rule 1 — brand protection (always wins)
-    if phrase_appears_in(cfg['brand_phrases'], t_norm):
-        return ('keep', 'brand_protection')
+    # Rule 1 — brand protection (always wins); detail = longest matching brand
+    brand_match = _longest_then_alpha(cfg['brand_phrases'], t_norm)
+    if brand_match is not None:
+        return ('keep', 'brand_protection', brand_match)
 
-    # Rule 2 — EQUALITY match against any exact-match neg (Google Ads semantics)
+    # Rule 2 — EQUALITY match against any exact-match neg. Detail redundant
+    # with search_term itself -> None.
     if t_norm in cfg['exact_neg_phrases']:
-        return ('block', 'existing_exact_neg_match')
+        return ('block', 'existing_exact_neg_match', None)
 
-    # Rule 3 — SUBSTRING match against any phrase-match neg (Google Ads semantics)
-    if phrase_appears_in(cfg['phrase_neg_phrases'], t_norm):
-        return ('block', 'existing_phrase_neg_match')
+    # Rule 3 — SUBSTRING match against any phrase-match neg. Detail = longest
+    # matching phrase (useful when the same term hits several).
+    phrase_match = _longest_then_alpha(cfg['phrase_neg_phrases'], t_norm)
+    if phrase_match is not None:
+        return ('block', 'existing_phrase_neg_match', phrase_match)
 
-    # Rule 4 — any location-shaped token NOT in service area
+    # Rule 4 — any location-shaped token NOT in service area. Detail =
+    # alphabetically-first such token.
     locs = cfg['service_locations_set']
-    for tk in t_tokens:
-        if is_location_shaped(tk) and tk not in locs:
-            return ('block', 'location_outside_service_area')
+    outside_locs = sorted({tk for tk in t_tokens
+                           if is_location_shaped(tk) and tk not in locs})
+    if outside_locs:
+        return ('block', 'location_outside_service_area', outside_locs[0])
 
     # Rule 5 — denylist (service we do but don't advertise)
-    if phrase_appears_in(cfg['denylist_phrases'], t_norm):
-        # Wave C9: configurable — toggle OFF sends these to review instead.
+    denylist_match = _longest_then_alpha(cfg['denylist_phrases'], t_norm)
+    if denylist_match is not None:
         status = 'block' if cfg['block_offered_not_advertised'] else 'review'
-        return (status, 'service_not_advertised')
+        return (status, 'service_not_advertised', denylist_match)
 
-    # Rule 6 — advertised service match (must beat Rule 7 so advertised
-    # services with incidental neg-vocabulary tokens stay as keep)
-    if phrase_appears_in(cfg['advertised_phrases'], t_norm):
-        return ('keep', 'advertised_service_match')
+    # Rule 6 — advertised service match (must beat Rule 7)
+    advertised_match = _longest_then_alpha(cfg['advertised_phrases'], t_norm)
+    if advertised_match is not None:
+        return ('keep', 'advertised_service_match', advertised_match)
 
-    # Rule 7 — SOFT signal: any token is in the client's single-word
-    # exact-neg vocabulary. Rules 2/3 handle true already-blocked terms;
-    # this catches semantically-similar queries the user's own neg list
-    # says are unwanted.
-    if t_token_set & cfg['exact_neg_single_words']:
-        return ('block', 'contains_neg_vocabulary')
+    # Rule 7 — SOFT signal: token intersects the Rule-7-scoped single-word
+    # negs (exclusion list applied). Detail = alphabetically-first match.
+    # Wave C12: auto_block toggle flips 'block' -> 'review' when OFF.
+    rule7_matches = sorted(t_token_set & cfg['exact_neg_single_words_for_rule_7'])
+    if rule7_matches:
+        status = 'block' if cfg['rule_7_auto_block'] else 'review'
+        return (status, 'contains_neg_vocabulary', rule7_matches[0])
 
     # Rule 8 — fallthrough
-    return ('review', 'ambiguous')
+    return ('review', 'ambiguous', None)
 
 
 # ---------------------------------------------------------------------------
@@ -264,11 +297,16 @@ def run_pass1(client_id: str, db_path: str,
               analysis_date: date | None = None) -> dict:
     """Execute Pass 1 for one client. Writes into act_v2_search_term_reviews.
 
-    Idempotent for the same analysis_date: callers are expected to run the
-    stale-cleanup phase first (which expires prior-date 'pending' rows), and
-    this function deletes+re-inserts today's rows before writing fresh.
+    Wave C12 idempotent semantics:
+      - Rows with review_status IN ('approved','pushed','rejected','expired')
+        for the target analysis_date are LEFT UNTOUCHED.
+      - Rows with review_status = 'pending' are UPDATEd with fresh
+        pass1_status / pass1_reason / pass1_reason_detail; pass2_target_list_role
+        is cleared so Pass 2 re-routes on its next run.
+      - Terms not yet in the review table for this date are INSERTed.
 
-    Returns a summary dict including per-rule counts (histogram).
+    Returns a summary dict including per-rule counts (histogram) plus
+    {'inserted': N, 'updated': M, 'preserved': K}.
     """
     if analysis_date is None:
         analysis_date = date.today()
@@ -281,62 +319,86 @@ def run_pass1(client_id: str, db_path: str,
 
         terms = _load_terms_for_today(con, client_id, analysis_date)
 
-        # Idempotent re-run: wipe today's existing rows for this client first
-        con.execute(
-            """DELETE FROM act_v2_search_term_reviews
+        # Map existing review rows for this date -> review_status + id, so we
+        # know which terms to INSERT vs UPDATE vs PRESERVE.
+        existing_rows = con.execute(
+            """SELECT id, search_term, review_status
+               FROM act_v2_search_term_reviews
                WHERE client_id = ? AND analysis_date = ?""",
             [client_id, analysis_date],
-        )
+        ).fetchall()
+        existing_by_term = {r[1]: {'id': r[0], 'review_status': r[2]}
+                            for r in existing_rows}
+        preserved_statuses = {'approved', 'pushed', 'rejected', 'expired'}
 
         configured = _is_client_configured(cfg)
         if not configured:
             logger.warning(f'[pass1] {client_id}: client_not_configured — marking all {len(terms)} terms as review')
 
-        # Histogram of reason codes
         histogram: dict[str, int] = {}
-        rows_to_insert = []
+        rows_to_insert: list = []
+        rows_to_update: list = []   # tuples (status, reason, detail, id)
+        preserved_count = 0
+        status_counts = {'keep': 0, 'block': 0, 'review': 0}
+
         for t in terms:
             if configured:
-                status, reason = classify_term(t['search_term'], cfg)
+                status, reason, detail = classify_term(t['search_term'], cfg)
             else:
-                status, reason = ('review', 'client_not_configured')
+                status, reason, detail = ('review', 'client_not_configured', None)
             histogram[reason] = histogram.get(reason, 0) + 1
-            rows_to_insert.append((
-                client_id, t['search_term'], analysis_date,
-                t['first_seen'], t['last_seen'],
-                t['impr'], t['clicks'], t['cost'], t['conv'],
-                status, reason,
-            ))
+            status_counts[status] = status_counts.get(status, 0) + 1
 
-        # Batch insert
+            existing = existing_by_term.get(t['search_term'])
+            if existing and existing['review_status'] in preserved_statuses:
+                preserved_count += 1
+                continue
+            if existing:
+                rows_to_update.append((status, reason, detail, existing['id']))
+            else:
+                rows_to_insert.append((
+                    client_id, t['search_term'], analysis_date,
+                    t['first_seen'], t['last_seen'],
+                    t['impr'], t['clicks'], t['cost'], t['conv'],
+                    status, reason, detail,
+                ))
+
         if rows_to_insert:
             con.executemany(
                 """INSERT INTO act_v2_search_term_reviews
                    (client_id, search_term, analysis_date,
                     first_seen_date, last_seen_date,
                     total_impressions, total_clicks, total_cost, total_conversions,
-                    pass1_status, pass1_reason)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    pass1_status, pass1_reason, pass1_reason_detail)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 rows_to_insert,
             )
-
-        # Status tallies (keep/block/review)
-        status_counts = {'keep': 0, 'block': 0, 'review': 0}
-        for r in rows_to_insert:
-            s = r[9]
-            status_counts[s] = status_counts.get(s, 0) + 1
+        if rows_to_update:
+            con.executemany(
+                """UPDATE act_v2_search_term_reviews
+                   SET pass1_status = ?,
+                       pass1_reason = ?,
+                       pass1_reason_detail = ?,
+                       pass2_target_list_role = NULL
+                   WHERE id = ? AND review_status = 'pending'""",
+                rows_to_update,
+            )
 
         summary = {
             'client_id': client_id,
             'analysis_date': analysis_date.isoformat(),
-            'terms_classified': len(rows_to_insert),
+            'terms_classified': len(terms),
+            'inserted': len(rows_to_insert),
+            'updated': len(rows_to_update),
+            'preserved': preserved_count,
             'configured': configured,
             'status_counts': status_counts,
             'reason_histogram': histogram,
         }
         logger.info(
             f'[pass1] {client_id} ({analysis_date}): '
-            f'{len(rows_to_insert)} terms, '
+            f'{len(terms)} terms, ins={len(rows_to_insert)} '
+            f'upd={len(rows_to_update)} preserved={preserved_count}; '
             f'blocks={status_counts["block"]} keeps={status_counts["keep"]} '
             f'reviews={status_counts["review"]}'
         )

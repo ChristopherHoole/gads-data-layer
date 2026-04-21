@@ -31,6 +31,14 @@ def tokenize(text: str | None) -> list[str]:
     return normalize(text).split()
 
 
+def split_comma_list(raw: str | None) -> list[str]:
+    """Split a comma-separated string -> list of non-empty trimmed items.
+    Returns [] for None/empty. Reused by Rule 7 exclusion-token parsing etc."""
+    if not raw:
+        return []
+    return [p.strip() for p in raw.split(',') if p and p.strip()]
+
+
 def normalize_set(items: list[str] | str | None) -> set[str]:
     """Normalize a list (or comma-separated string) of phrases into a set.
     Empty input -> empty set."""
