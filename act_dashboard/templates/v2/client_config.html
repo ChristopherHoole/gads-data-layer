@@ -425,99 +425,93 @@
       <div class="config-panel" id="panel-search-terms">
         <h3 class="config-panel__title">Search Terms</h3>
 
-        {# N1o — Rules Reference: shows what each of the 8 Pass 1 rules does
-           and which config feeds it. First match wins. #}
+        {# N1p — Rules Reference: full Pass 1 / Pass 2 / Pass 3 hierarchy. #}
         <div class="rules-reference">
-          <div class="rules-reference__header">
-            <p class="setting-name">How Search Terms Are Classified</p>
+          <div class="rules-reference__intro">
+            <p class="setting-name">How ACT Processes Search Terms</p>
             <p class="setting-desc">
-              Each overnight search term runs through these 8 rules in order. First match wins.
-              Rules 4&ndash;8 use token-based matching (word-aware, not character substring).
-              Rules 2&ndash;3 detect leaks from your existing Google Ads negative lists.
+              Every overnight, ACT runs three passes over each search term. Pass 1 classifies it.
+              Pass 2 decides which negative list it would push to. Pass 3 looks for patterns across
+              blocked terms and suggests consolidated phrase-match negatives to replace many individual
+              exact-match negs.
             </p>
           </div>
-          <table class="rules-reference__table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Rule</th>
-                <th>What it checks</th>
-                <th>Config that affects it</th>
-                <th>Outcome</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>1</td>
-                <td><strong>Brand Protection</strong></td>
-                <td>Search term contains any brand phrase (substring match, order-sensitive)</td>
-                <td>Brand Terms (Protect)</td>
-                <td><span class="rules-outcome rules-outcome--keep">Keep</span></td>
-              </tr>
-              <tr>
-                <td>2</td>
-                <td><strong>Existing Exact Negative</strong></td>
-                <td>Search term exactly equals a keyword in a 1&ndash;5+ WRDS exact-match negative list</td>
-                <td>Google Ads negative lists (synced overnight)</td>
-                <td><span class="rules-outcome rules-outcome--block">Block</span></td>
-              </tr>
-              <tr>
-                <td>3</td>
-                <td><strong>Existing Phrase Negative</strong></td>
-                <td>A phrase-match negative appears as a contiguous word sequence in the search term</td>
-                <td>Google Ads phrase-match negative lists (synced)</td>
-                <td><span class="rules-outcome rules-outcome--block">Block</span></td>
-              </tr>
-              <tr>
-                <td>4</td>
-                <td><strong>Location Outside Service Area</strong></td>
-                <td>Any location-shaped token (UK postcode outcode or city) is not in your service area. Postcode prefix-match falls back for short forms (sw1 &rarr; sw1a/sw1p/sw1v).</td>
-                <td>Service Locations</td>
-                <td><span class="rules-outcome rules-outcome--block">Block</span></td>
-              </tr>
-              <tr>
-                <td>5</td>
-                <td><strong>Service Not Advertised</strong></td>
-                <td>All tokens of a not-advertised phrase appear in the search term (order-independent)</td>
-                <td>Services Not Advertised + Auto-block toggle</td>
-                <td><span class="rules-outcome rules-outcome--block">Block</span> (or Review if toggle off)</td>
-              </tr>
-              <tr>
-                <td>6</td>
-                <td><strong>Advertised Service Match</strong></td>
-                <td>All tokens of an advertised phrase appear in the search term (order-independent)</td>
-                <td>Services Advertised (Ad Scope)</td>
-                <td><span class="rules-outcome rules-outcome--keep">Keep</span></td>
-              </tr>
-              <tr>
-                <td>7</td>
-                <td><strong>Contains Negative Vocabulary</strong></td>
-                <td>Any single query token matches a 1-word exact negative &mdash; excluding tokens in the Rule 7 exclusion list</td>
-                <td>Google Ads 1 WRD [ex] list + Rule 7 exclusion tokens + Auto-block toggle</td>
-                <td><span class="rules-outcome rules-outcome--block">Block</span> (or Review if toggle off)</td>
-              </tr>
-              <tr>
-                <td>8</td>
-                <td><strong>Ambiguous (no match)</strong></td>
-                <td>No rule above matched. Displays phrase-level near-match suggestions if any config phrase overlaps &ge;50% on non-generic tokens.</td>
-                <td>All config above (shows closest match for human decision)</td>
-                <td><span class="rules-outcome rules-outcome--review">Needs Review</span></td>
-              </tr>
-            </tbody>
-          </table>
+
+          <!-- PASS 1 -->
+          <div class="rules-reference__pass">
+            <h4 class="rules-reference__pass-title">Pass 1 &mdash; Classification (8 rules, first match wins)</h4>
+            <table class="rules-reference__table">
+              <thead>
+                <tr><th>#</th><th>Rule</th><th>What it checks</th><th>Config that affects it</th><th>Outcome</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>1</td><td><strong>Brand Protection</strong></td><td>Search term contains any brand phrase (substring match, order-sensitive)</td><td>Brand Terms (Protect)</td><td><span class="rules-outcome rules-outcome--keep">Keep</span></td></tr>
+                <tr><td>2</td><td><strong>Existing Exact Negative</strong></td><td>Search term exactly equals a keyword in a 1&ndash;5+ WRDS exact-match negative list</td><td>Google Ads negative lists (synced overnight)</td><td><span class="rules-outcome rules-outcome--block">Block</span></td></tr>
+                <tr><td>3</td><td><strong>Existing Phrase Negative</strong></td><td>A phrase-match negative appears as a contiguous word sequence in the search term</td><td>Google Ads phrase-match negative lists (synced)</td><td><span class="rules-outcome rules-outcome--block">Block</span></td></tr>
+                <tr><td>4</td><td><strong>Location Outside Service Area</strong></td><td>Any location-shaped token (UK postcode outcode or city) is not in your service area. Postcode prefix-match falls back for short forms (sw1 &rarr; sw1a/sw1p/sw1v).</td><td>Service Locations</td><td><span class="rules-outcome rules-outcome--block">Block</span></td></tr>
+                <tr><td>5</td><td><strong>Service Not Advertised</strong></td><td>All tokens of a not-advertised phrase appear in the search term (order-independent)</td><td>Services Offered - Not Advertised + Auto-block toggle</td><td><span class="rules-outcome rules-outcome--block">Block</span> (or Review if toggle off)</td></tr>
+                <tr><td>6</td><td><strong>Advertised Service Match</strong></td><td>All tokens of an advertised phrase appear in the search term (order-independent)</td><td>Services Offered - Advertised</td><td><span class="rules-outcome rules-outcome--keep">Keep</span></td></tr>
+                <tr><td>7</td><td><strong>Contains Negative Vocabulary</strong></td><td>Any single query token matches a 1-word exact negative &mdash; excluding tokens in the Rule 7 exclusion list</td><td>Google Ads 1 WRD [ex] list + Rule 7 exclusion tokens + Auto-block toggle</td><td><span class="rules-outcome rules-outcome--block">Block</span> (or Review if toggle off)</td></tr>
+                <tr><td>8</td><td><strong>Ambiguous (no match)</strong></td><td>No rule above matched. Displays phrase-level near-match suggestions if any config phrase overlaps &ge;50% on non-generic tokens.</td><td>All config above (shows closest match for human decision)</td><td><span class="rules-outcome rules-outcome--review">Needs Review</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- PASS 2 -->
+          <div class="rules-reference__pass">
+            <h4 class="rules-reference__pass-title">Pass 2 &mdash; Target List Routing (for Block and Review rows)</h4>
+            <p class="setting-desc" style="margin-bottom:8px">
+              Determines which Google Ads negative list a search term would be pushed to if you approve it.
+              Runs immediately after Pass 1, on every Block and Review row.
+            </p>
+            <table class="rules-reference__table">
+              <thead>
+                <tr><th>#</th><th>Routing Rule</th><th>Condition</th><th>Target list</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>1</td><td><strong>Denylist match override</strong></td><td>Pass 1 reason was <code>service_not_advertised</code> (Rule 5)</td><td><code>Off Not Adv [ex]</code></td></tr>
+                <tr><td>2</td><td><strong>Word-count routing (default)</strong></td><td>Any other Block or Review reason &mdash; routed by word count of the search term</td><td><code>1 WRD [ex]</code> / <code>2 WRDS [ex]</code> / <code>3 WRDS [ex]</code> / <code>4 WRDS [ex]</code> / <code>5+ WRDS [ex]</code></td></tr>
+              </tbody>
+            </table>
+            <p class="setting-desc" style="margin-top:8px;font-size:12px;opacity:0.7">
+              You can override the target list per row via the dropdown in the Search Term Review table.
+            </p>
+          </div>
+
+          <!-- PASS 3 -->
+          <div class="rules-reference__pass">
+            <h4 class="rules-reference__pass-title">Pass 3 &mdash; Phrase Suggestions (on demand)</h4>
+            <p class="setting-desc" style="margin-bottom:8px">
+              Scans the day&rsquo;s Block-classified search terms for shared sub-phrases. Proposes new phrase-match
+              negatives that would catch multiple similar queries in one hit, reducing the list bloat of
+              individual exact-match entries. Runs when you click <strong>Run Pass 3</strong> on the
+              Search Term Review page.
+            </p>
+            <table class="rules-reference__table">
+              <thead>
+                <tr><th>What it does</th><th>Output</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Finds contiguous word sequences (n-grams) that appear across multiple blocked search terms for the day. Ranks by how many terms each suggestion would consolidate.</td>
+                  <td>Suggestions appear in the <strong>Pass 3 Suggestions</strong> tab on Search Term Review, with the candidate phrase and a list of source search terms it would cover.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {# N1a/N1n — 5 profile summary cards (hidden textareas remain the
            source of truth; slide-in editor writes back + dispatches input). #}
         <div class="setting-row">
           <div class="setting-info">
-            <p class="setting-name">Services Not Advertised</p>
+            <p class="setting-name">Services Offered - Not Advertised</p>
             <p class="setting-desc">Services the client offers but does NOT currently advertise. Used as the Pass 1 denylist &mdash; Rule 5 blocks search terms matching these. Use specific phrases (e.g. <code>dental crown</code> not just <code>crown</code>) to avoid false matches against advertised variants.</p>
           </div>
           <div class="setting-control setting-control--full">
             <div class="config-list-summary"
                  data-field="services_not_advertised"
-                 data-label="Services Not Advertised"
+                 data-label="Services Offered - Not Advertised"
                  data-desc="Services the client offers but does NOT currently advertise. Used as the Pass 1 denylist.">
               <span class="config-list-summary__count">0</span>
               <span class="config-list-summary__preview"></span>
@@ -530,13 +524,13 @@
 
         <div class="setting-row">
           <div class="setting-info">
-            <p class="setting-name">Services Advertised (Ad Scope)</p>
+            <p class="setting-name">Services Offered - Advertised</p>
             <p class="setting-desc">Subset of services currently being advertised. Used as the Pass 1 allowlist for the Negatives Module.</p>
           </div>
           <div class="setting-control setting-control--full">
             <div class="config-list-summary"
                  data-field="services_advertised"
-                 data-label="Services Advertised (Ad Scope)"
+                 data-label="Services Offered - Advertised"
                  data-desc="Subset of services currently being advertised. Used as the Pass 1 allowlist.">
               <span class="config-list-summary__count">0</span>
               <span class="config-list-summary__preview"></span>

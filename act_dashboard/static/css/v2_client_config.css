@@ -562,15 +562,20 @@
   background: var(--act-hover-bg);
   border: 1px solid var(--act-border);
   border-radius: 6px;
+  /* N1p: constrain to parent width + clip so long preview text can't push
+     the card past the panel edge. min-width: 0 on the flex child below. */
+  width: 100%; max-width: 100%; box-sizing: border-box;
+  overflow: hidden;
 }
 .config-list-summary__count {
+  flex: 0 0 auto;
   font-weight: 600;
   color: var(--act-primary, #1a73e8);
   white-space: nowrap;
   font-size: 13px;
 }
 .config-list-summary__preview {
-  flex: 1;
+  flex: 1 1 0; min-width: 0;
   font-size: 13px;
   color: var(--act-text);
   opacity: 0.8;
@@ -582,6 +587,7 @@
   content: '— empty —'; opacity: 0.6;
 }
 .config-list-summary__edit {
+  flex: 0 0 auto;
   border: none; background: transparent;
   color: var(--act-primary, #1a73e8);
   font-size: 13px; font-weight: 500;
@@ -672,6 +678,21 @@
   border-bottom: 1px solid var(--act-border);
 }
 .rules-reference__header { margin-bottom: 12px; }
+
+/* N1p — Pass 1 / Pass 2 / Pass 3 subsections inside the Rules Reference. */
+.rules-reference__intro { margin-bottom: 20px; }
+.rules-reference__pass {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--act-border);
+}
+.rules-reference__pass:first-of-type {
+  margin-top: 0; padding-top: 0; border-top: none;
+}
+.rules-reference__pass-title {
+  font-size: 14px; font-weight: 700; color: var(--act-text);
+  margin: 0 0 10px 0;
+}
 
 .rules-reference__table {
   width: 100%;
