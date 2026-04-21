@@ -34,8 +34,8 @@ def client_config():
         client_row = con.execute(
             """SELECT client_id, client_name, google_ads_customer_id, persona,
                       monthly_budget, target_cpa, target_roas, active, created_at, updated_at,
-                      services_all, services_advertised, service_locations, client_brand_terms,
-                      rule_7_exclude_tokens
+                      services_not_advertised, services_advertised,
+                      service_locations, client_brand_terms, rule_7_exclude_tokens
                FROM act_v2_clients WHERE client_id = ?""",
             [client_id]
         ).fetchone()
@@ -53,7 +53,7 @@ def client_config():
             'target_roas': float(client_row[6]) if client_row[6] else None,
             'active': client_row[7],
             # N1a — client profile fields (lowercase, comma-separated)
-            'services_all': client_row[10] or '',
+            'services_not_advertised': client_row[10] or '',
             'services_advertised': client_row[11] or '',
             'service_locations': client_row[12] or '',
             'client_brand_terms': client_row[13] or '',
@@ -186,7 +186,7 @@ def save_settings():
                 s = str(v).strip().lower()
                 return s if s else None
 
-            services_all = _norm(client_data.get('services_all'))
+            services_not_advertised = _norm(client_data.get('services_not_advertised'))
             services_advertised = _norm(client_data.get('services_advertised'))
             service_locations = _norm(client_data.get('service_locations'))
             client_brand_terms = _norm(client_data.get('client_brand_terms'))
@@ -213,13 +213,14 @@ def save_settings():
             con.execute("""
                 UPDATE act_v2_clients SET
                     persona = ?, monthly_budget = ?, target_cpa = ?, target_roas = ?,
-                    services_all = ?, services_advertised = ?,
+                    services_not_advertised = ?, services_advertised = ?,
                     service_locations = ?, client_brand_terms = ?,
                     rule_7_exclude_tokens = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE client_id = ?
             """, [persona, monthly_budget, target_cpa, target_roas,
-                  services_all, services_advertised, service_locations, client_brand_terms,
+                  services_not_advertised, services_advertised,
+                  service_locations, client_brand_terms,
                   rule_7_exclude_tokens,
                   client_id])
 

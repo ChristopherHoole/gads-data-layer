@@ -114,12 +114,12 @@
         {# N1a — Client Profile fields (feed the Negatives Module) #}
         <div class="setting-row setting-row--textarea">
           <div class="setting-info">
-            <p class="setting-name">Services Offered (All)</p>
-            <p class="setting-desc">Everything this client does &mdash; the full service catalogue. Lowercase, comma-separated.</p>
+            <p class="setting-name">Services Not Advertised</p>
+            <p class="setting-desc">Services the client offers but does NOT currently advertise. Used as the Pass 1 denylist &mdash; Rule 5 blocks search terms matching these. Use specific phrases (e.g. <code>dental crown</code> not just <code>crown</code>) to avoid false matches against advertised variants.</p>
           </div>
           <div class="setting-control setting-control--full">
-            <textarea class="config-input config-input--textarea" data-key="services_all" rows="3"
-                      placeholder="comma-separated, lowercase">{{ client.services_all }}</textarea>
+            <textarea class="config-input config-input--textarea" data-key="services_not_advertised" rows="3"
+                      placeholder="comma-separated, lowercase">{{ client.services_not_advertised }}</textarea>
           </div>
         </div>
 

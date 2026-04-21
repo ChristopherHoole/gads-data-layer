@@ -81,7 +81,7 @@ TABLE_SQL = [
             target_roas DECIMAL(10,2),
             active BOOLEAN NOT NULL DEFAULT TRUE,
             -- N1a: client profile fields (comma-separated, lowercase on save)
-            services_all TEXT,
+            services_not_advertised TEXT,    -- Wave C13 (replaces services_all)
             services_advertised TEXT,
             service_locations TEXT,
             client_brand_terms TEXT,

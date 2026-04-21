@@ -25,7 +25,7 @@ So "dental implants" keeps on rule 6 (advertised), never hits rule 7, even
 if "dental" and "implants" both live in the 1-word exact neg list.
 
 Client precheck: if service_locations is empty AND both services_advertised
-and services_all are empty, we can't classify meaningfully -> mark every
+and services_not_advertised are empty, we can't classify meaningfully -> mark every
 term today as review with reason='client_not_configured'.
 """
 import json
@@ -57,7 +57,7 @@ def _load_client_config(con, client_id: str) -> dict:
     """Return all normalized inputs Pass 1 needs. Never raises on missing data;
     empty fields become empty sets."""
     row = con.execute(
-        """SELECT services_all, services_advertised,
+        """SELECT services_not_advertised, services_advertised,
                   service_locations, client_brand_terms,
                   rule_7_exclude_tokens
            FROM act_v2_clients WHERE client_id = ?""",
@@ -65,16 +65,20 @@ def _load_client_config(con, client_id: str) -> dict:
     ).fetchone()
     if not row:
         return None
-    (services_all_raw, services_adv_raw, locations_raw,
+    (services_not_adv_raw, services_adv_raw, locations_raw,
      brand_raw, rule7_exclude_raw) = row
 
-    all_services_phrases = normalize_set(services_all_raw)
     advertised_phrases = normalize_set(services_adv_raw)
     service_locations_set = normalize_set(locations_raw)
     brand_phrases = normalize_set(brand_raw)
 
-    # "Denylist" = services the client DOES but is NOT advertising = shouldn't match ads.
-    denylist_phrases = all_services_phrases - advertised_phrases
+    # Wave C13: Pass 1 reads the explicit denylist directly — no more
+    # runtime subtraction of (all_services - advertised). Keeps the UI
+    # field and engine input identical; singular/plural mismatches and
+    # configuration gaps are now visible in one place.
+    denylist_phrases = normalize_set(services_not_adv_raw)
+    # Legacy name retained in the cfg dict for any downstream consumer.
+    all_services_phrases = denylist_phrases
 
     # All keyword_texts from LINKED exact-match lists (any word count).
     # Rule 2 checks equality against this whole set; Rule 7 uses only the

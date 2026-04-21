@@ -79,18 +79,17 @@ def _load_protected_words(con, client_id: str, stopwords: str) -> set[str]:
 
 
 def _load_denylist_tokens(con, client_id: str) -> set[str]:
-    """Wave C9: tokens unique to all-services but NOT to services-advertised.
-    Used so Pass 3 can route fragments containing those tokens to the
-    dedicated offered_not_advertised_phrase list."""
+    """Wave C13: read tokens directly from the explicit denylist column
+    services_not_advertised. Used so Pass 3 can route fragments containing
+    those tokens to the dedicated offered_not_advertised_phrase list."""
     row = con.execute(
-        """SELECT services_all, services_advertised
+        """SELECT services_not_advertised
            FROM act_v2_clients WHERE client_id = ?""",
         [client_id],
     ).fetchone()
     if not row:
         return set()
-    all_raw, adv_raw = row
-    return tokenize_set(all_raw) - tokenize_set(adv_raw)
+    return tokenize_set(row[0])
 
 
 def _load_existing_negs_normalized(con, client_id: str) -> set[str]:
