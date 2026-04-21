@@ -39,7 +39,9 @@ from act_dashboard.engine.negatives._common import (
     normalize, tokenize, normalize_set, phrase_appears_in,
     split_comma_list, tokenize_set,
 )
-from act_dashboard.engine.negatives.reference_locations import is_location_shaped
+from act_dashboard.engine.negatives.reference_locations import (
+    is_location_shaped, UK_POSTCODE_OUTCODE_RE,
+)
 
 logger = logging.getLogger('act_v2_neg_pass1')
 if not logger.handlers:
@@ -69,7 +71,12 @@ def _load_client_config(con, client_id: str) -> dict:
      brand_raw, rule7_exclude_raw) = row
 
     advertised_phrases = normalize_set(services_adv_raw)
+    # Wave E1: keep the phrase-level normalized set for the line-173 precheck
+    # (only its emptiness matters there), AND add a flat tokenised set for
+    # Rule 4 so tokens like "hammersmith" match multi-word config entries
+    # like "hammersmith and fulham".
     service_locations_set = normalize_set(locations_raw)
+    service_locations_tokens = tokenize_set(locations_raw)
     brand_phrases = normalize_set(brand_raw)
 
     # Wave C13: Pass 1 reads the explicit denylist directly — no more
@@ -163,6 +170,7 @@ def _load_client_config(con, client_id: str) -> dict:
         'all_services_phrases': all_services_phrases,
         'denylist_phrases': denylist_phrases,
         'service_locations_set': service_locations_set,
+        'service_locations_tokens': service_locations_tokens,
         'block_offered_not_advertised': block_offered_not_advertised,
         'rule_7_auto_block': rule_7_auto_block,
     }
@@ -220,11 +228,34 @@ def classify_term(search_term: str, cfg: dict) -> tuple[str, str, str | None]:
         detail = f"{phrase_match}|{list_roles}" if list_roles else phrase_match
         return ('block', 'existing_phrase_neg_match', detail)
 
-    # Rule 4 — any location-shaped token NOT in service area. Detail =
-    # alphabetically-first such token.
-    locs = cfg['service_locations_set']
+    # Rule 4 — any location-shaped token NOT in service area.
+    # Wave E1: match against the tokenised location set (so "hammersmith"
+    # matches multi-word config entries like "hammersmith and fulham"), and
+    # fall back to UK postcode district equivalence so short outcodes like
+    # "sw1" match configured sub-units "sw1a/sw1p/sw1v" — but NOT "sw10"
+    # (different district).
+    loc_tokens = cfg['service_locations_tokens']
+
+    def _postcode_district(p: str) -> str:
+        """Normalise UK outcode to district form.
+        'sw1'->'sw1', 'sw1a'->'sw1' (trailing letter stripped),
+        'sw10'->'sw10' (trailing digit kept), 'e1w'->'e1'."""
+        if UK_POSTCODE_OUTCODE_RE.match(p) and len(p) >= 3 and p[-1].isalpha():
+            return p[:-1]
+        return p
+
+    def _in_service_area(tk: str) -> bool:
+        if tk in loc_tokens:
+            return True
+        if UK_POSTCODE_OUTCODE_RE.match(tk):
+            tk_district = _postcode_district(tk)
+            for loc in loc_tokens:
+                if UK_POSTCODE_OUTCODE_RE.match(loc) and _postcode_district(loc) == tk_district:
+                    return True
+        return False
+
     outside_locs = sorted({tk for tk in t_tokens
-                           if is_location_shaped(tk) and tk not in locs})
+                           if is_location_shaped(tk) and not _in_service_area(tk)})
     if outside_locs:
         return ('block', 'location_outside_service_area', outside_locs[0])
 
