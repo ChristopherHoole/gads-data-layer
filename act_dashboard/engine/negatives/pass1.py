@@ -70,6 +70,22 @@ def _load_client_config(con, client_id: str) -> dict:
     (services_not_adv_raw, services_adv_raw, locations_raw,
      brand_raw, rule7_exclude_raw) = row
 
+    # N2 Part 1: resolve the latest negative-list snapshot ONCE and filter all
+    # downstream neg-list queries by it. Without this, the UNION across every
+    # historical snapshot returns keywords the user has since deleted from
+    # Google Ads, causing stale Leak-exact / Leak-phrase matches days after
+    # the user removed the term.
+    latest_snap_row = con.execute(
+        "SELECT MAX(snapshot_date) FROM act_v2_negative_list_keywords WHERE client_id = ?",
+        [client_id],
+    ).fetchone()
+    latest_snapshot_date = latest_snap_row[0] if latest_snap_row and latest_snap_row[0] else None
+    if latest_snapshot_date is None:
+        logger.warning(
+            f"[pass1] No negative list snapshot found for client_id={client_id}. "
+            f"Pass 1 will run with empty neg lists."
+        )
+
     advertised_phrases = normalize_set(services_adv_raw)
     # Wave E1: keep the phrase-level normalized set for the line-173 precheck
     # (only its emptiness matters there), AND add a flat tokenised set for
@@ -91,19 +107,23 @@ def _load_client_config(con, client_id: str) -> dict:
     # distinct list_roles that contain it. Dict `in` still works for Rule 2
     # equality check, and the Rule 2/3 returns now surface which list(s) caught
     # the match (pass1_reason_detail) so the UI can show context.
-    exact_rows = con.execute(
-        """SELECT DISTINCT kw.keyword_text, l.list_role
-           FROM act_v2_negative_list_keywords kw
-           JOIN act_v2_negative_keyword_lists l ON kw.list_id = l.list_id
-           WHERE kw.client_id = ?
-             AND l.is_linked_to_campaign = TRUE
-             AND l.list_role IN (
-               '1_word_exact','2_word_exact','3_word_exact','4_word_exact',
-               '5plus_word_exact','location_exact','competitor_exact'
-             )
-             AND kw.match_type = 'EXACT'""",
-        [client_id],
-    ).fetchall()
+    if latest_snapshot_date is None:
+        exact_rows = []
+    else:
+        exact_rows = con.execute(
+            """SELECT DISTINCT kw.keyword_text, l.list_role
+               FROM act_v2_negative_list_keywords kw
+               JOIN act_v2_negative_keyword_lists l ON kw.list_id = l.list_id
+               WHERE kw.client_id = ?
+                 AND kw.snapshot_date = ?
+                 AND l.is_linked_to_campaign = TRUE
+                 AND l.list_role IN (
+                   '1_word_exact','2_word_exact','3_word_exact','4_word_exact',
+                   '5plus_word_exact','location_exact','competitor_exact'
+                 )
+                 AND kw.match_type = 'EXACT'""",
+            [client_id, latest_snapshot_date],
+        ).fetchall()
     exact_neg_phrases: dict[str, list[str]] = {}
     exact_neg_single_words: set[str] = set()
     for kw_text, list_role in exact_rows:
@@ -119,18 +139,22 @@ def _load_client_config(con, client_id: str) -> dict:
         exact_neg_phrases[k].sort()
 
     # All keywords (any length) from LINKED phrase-match lists — Rule 3 substring map.
-    phrase_rows = con.execute(
-        """SELECT DISTINCT kw.keyword_text, l.list_role
-           FROM act_v2_negative_list_keywords kw
-           JOIN act_v2_negative_keyword_lists l ON kw.list_id = l.list_id
-           WHERE kw.client_id = ?
-             AND l.is_linked_to_campaign = TRUE
-             AND l.list_role IN (
-               '1_word_phrase','2_word_phrase','3_word_phrase','4_word_phrase',
-               'location_phrase','competitor_phrase'
-             )""",
-        [client_id],
-    ).fetchall()
+    if latest_snapshot_date is None:
+        phrase_rows = []
+    else:
+        phrase_rows = con.execute(
+            """SELECT DISTINCT kw.keyword_text, l.list_role
+               FROM act_v2_negative_list_keywords kw
+               JOIN act_v2_negative_keyword_lists l ON kw.list_id = l.list_id
+               WHERE kw.client_id = ?
+                 AND kw.snapshot_date = ?
+                 AND l.is_linked_to_campaign = TRUE
+                 AND l.list_role IN (
+                   '1_word_phrase','2_word_phrase','3_word_phrase','4_word_phrase',
+                   'location_phrase','competitor_phrase'
+                 )""",
+            [client_id, latest_snapshot_date],
+        ).fetchall()
     phrase_neg_phrases: dict[str, list[str]] = {}
     for kw_text, list_role in phrase_rows:
         n = normalize(kw_text)
@@ -176,6 +200,9 @@ def _load_client_config(con, client_id: str) -> dict:
         # Wave H: also consumed by Rule 8 signal filter (drop generic tokens
         # from adv/not-adv display so signals stay discriminative).
         'rule_7_exclude_tokens': rule7_exclude_tokens,
+        # N2 Part 1: expose the snapshot date Pass 1 actually read from, so
+        # run_pass1 can log it and callers can surface it in summaries.
+        'neg_snapshot_date': latest_snapshot_date,
     }
 
 
@@ -473,6 +500,10 @@ def run_pass1(client_id: str, db_path: str,
         cfg = _load_client_config(con, client_id)
         if cfg is None:
             raise ValueError(f'client_id {client_id} not found')
+        logger.info(
+            f"[pass1] client={client_id} analysis_date={analysis_date} "
+            f"using neg snapshot={cfg.get('neg_snapshot_date')}"
+        )
 
         terms = _load_terms_for_today(con, client_id, analysis_date)
 
@@ -544,6 +575,8 @@ def run_pass1(client_id: str, db_path: str,
         summary = {
             'client_id': client_id,
             'analysis_date': analysis_date.isoformat(),
+            'neg_snapshot_date': (cfg.get('neg_snapshot_date').isoformat()
+                                   if cfg.get('neg_snapshot_date') else None),
             'terms_classified': len(terms),
             'inserted': len(rows_to_insert),
             'updated': len(rows_to_update),

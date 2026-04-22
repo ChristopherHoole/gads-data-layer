@@ -103,14 +103,26 @@ def _load_denylist_tokens(con, client_id: str) -> set[str]:
 
 def _load_existing_negs_normalized(con, client_id: str) -> set[str]:
     """All normalized keyword_text across LINKED neg lists (any role, any
-    match type). Used for dedup so we never re-suggest what's already there."""
+    match type). Used for dedup so we never re-suggest what's already there.
+
+    N2 Part 1: scope to the latest snapshot_date so we don't dedup against
+    keywords the user has since removed from Google Ads.
+    """
+    latest_row = con.execute(
+        "SELECT MAX(snapshot_date) FROM act_v2_negative_list_keywords WHERE client_id = ?",
+        [client_id],
+    ).fetchone()
+    latest = latest_row[0] if latest_row and latest_row[0] else None
+    if latest is None:
+        return set()
     rows = con.execute(
         """SELECT DISTINCT kw.keyword_text
            FROM act_v2_negative_list_keywords kw
            JOIN act_v2_negative_keyword_lists l ON kw.list_id = l.list_id
            WHERE kw.client_id = ?
+             AND kw.snapshot_date = ?
              AND l.is_linked_to_campaign = TRUE""",
-        [client_id],
+        [client_id, latest],
     ).fetchall()
     return {normalize(r[0]) for r in rows if r[0]}
 
