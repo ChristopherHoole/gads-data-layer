@@ -512,6 +512,49 @@ def bulk_update_search_term_reviews():
                     [new_status, override, row_id, client_id],
                 )
             updated += 1
+
+            # N3 Part A: a fresh user reject seeds a 60-day sticky rejection
+            # that Rule 0 will honour on every subsequent Pass 1 run. Skip
+            # when the same term already has an active sticky (e.g. user
+            # rejects the same term from Search AND PMax in one session).
+            if new_status == 'rejected':
+                meta = con.execute(
+                    """SELECT search_term, pass1_reason, pass1_reason_detail
+                       FROM act_v2_search_term_reviews
+                       WHERE id = ? AND client_id = ?""",
+                    [row_id, client_id],
+                ).fetchone()
+                if meta and meta[0]:
+                    from act_dashboard.engine.negatives._common import normalize
+                    term_raw = meta[0]
+                    term_norm = normalize(term_raw)
+                    if term_norm:
+                        active = con.execute(
+                            """SELECT 1 FROM act_v2_sticky_rejections
+                               WHERE client_id = ? AND search_term_normalized = ?
+                                 AND expires_at > CURRENT_TIMESTAMP
+                                 AND unrejected_at IS NULL LIMIT 1""",
+                            [client_id, term_norm],
+                        ).fetchone()
+                        if not active:
+                            prev = con.execute(
+                                """SELECT COALESCE(MAX(cycle_number), 0)
+                                   FROM act_v2_sticky_rejections
+                                   WHERE client_id = ? AND search_term_normalized = ?""",
+                                [client_id, term_norm],
+                            ).fetchone()[0] or 0
+                            con.execute(
+                                """INSERT INTO act_v2_sticky_rejections
+                                   (client_id, search_term_normalized, search_term_original,
+                                    rejected_at, expires_at, cycle_number,
+                                    reason_at_rejection, reason_detail_at_rejection,
+                                    campaign_type_at_rejection, rejected_by)
+                                   VALUES (?, ?, ?, CURRENT_TIMESTAMP,
+                                           CURRENT_TIMESTAMP + INTERVAL '60 days',
+                                           ?, ?, ?, NULL, 'user')""",
+                                [client_id, term_norm, term_raw,
+                                 prev + 1, meta[1], meta[2]],
+                            )
     finally:
         con.close()
     return jsonify({'updated_count': updated})
