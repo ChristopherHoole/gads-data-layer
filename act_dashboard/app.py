@@ -569,6 +569,10 @@ def create_app():
         'v2_negatives_api.refresh_snapshot',
         'v2_negatives_api.reclassify_now',
         'v2_negatives_api.list_negative_lists',
+        # N3: sticky rejections API
+        'v2_sticky_api.list_sticky_rejections',
+        'v2_sticky_api.unreject_sticky',
+        'v2_sticky_api.sticky_history',
     ]
     for route_name in v2_negatives_api_routes:
         if route_name in app.view_functions:

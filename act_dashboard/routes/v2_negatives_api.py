@@ -54,6 +54,12 @@ def _reclassify_lock(client_id: str, analysis_date_iso: str) -> threading.Lock:
 v2_negatives_api_bp = Blueprint('v2_negatives_api', __name__,
                                 url_prefix='/v2/api/negatives')
 
+# N3 Part A: sticky rejections live under /v2/api/sticky-rejections — separate
+# blueprint for clean URL semantics (they're not "negatives" in the GAds list
+# sense, they're user-decision stickies).
+v2_sticky_api_bp = Blueprint('v2_sticky_api', __name__,
+                             url_prefix='/v2/api/sticky-rejections')
+
 _WAREHOUSE_PATH = os.path.normpath(
     os.path.join(os.path.dirname(__file__), '..', '..', 'warehouse.duckdb')
 )
@@ -1087,3 +1093,158 @@ def reclassify_now():
         }), 500
     finally:
         lock.release()
+
+
+# ===========================================================================
+# N3 Part A — Sticky rejections API (GET list, POST unreject, GET history)
+# ===========================================================================
+@v2_sticky_api_bp.route('', methods=['GET'])
+def list_sticky_rejections():
+    client_id = request.args.get('client_id')
+    if not client_id:
+        return _err('missing_client_id', 'client_id required')
+    status_filter = (request.args.get('status') or 'active').lower()
+    if status_filter not in ('active', 'expired', 'all'):
+        return _err('bad_status', "status must be active|expired|all")
+
+    con = _db()
+    try:
+        where = ['client_id = ?']
+        params: list = [client_id]
+        if status_filter == 'active':
+            where.append("expires_at > CURRENT_TIMESTAMP AND unrejected_at IS NULL")
+        elif status_filter == 'expired':
+            where.append("(expires_at <= CURRENT_TIMESTAMP OR unrejected_at IS NOT NULL)")
+
+        rows = con.execute(
+            f"""SELECT id, search_term_normalized, search_term_original,
+                       rejected_at, expires_at, cycle_number,
+                       reason_at_rejection, reason_detail_at_rejection,
+                       campaign_type_at_rejection, rejected_by,
+                       unrejected_at, unrejected_reason
+               FROM act_v2_sticky_rejections
+               WHERE {' AND '.join(where)}
+               ORDER BY expires_at ASC""",
+            params,
+        ).fetchall()
+
+        stats = con.execute(
+            """SELECT
+                 SUM(CASE WHEN expires_at > CURRENT_TIMESTAMP AND unrejected_at IS NULL THEN 1 ELSE 0 END) AS active_ct,
+                 SUM(CASE WHEN (expires_at <= CURRENT_TIMESTAMP OR unrejected_at IS NOT NULL)
+                           AND COALESCE(rejected_at, CURRENT_TIMESTAMP) > CURRENT_TIMESTAMP - INTERVAL '30 days'
+                          THEN 1 ELSE 0 END) AS expired_30d,
+                 COUNT(*) AS total_cycles,
+                 COUNT(DISTINCT search_term_normalized) AS distinct_terms
+               FROM act_v2_sticky_rejections WHERE client_id = ?""",
+            [client_id],
+        ).fetchone()
+        active_ct = int(stats[0] or 0)
+        expired_30d = int(stats[1] or 0)
+        total_cycles = int(stats[2] or 0)
+        distinct_terms = int(stats[3] or 0)
+        avg_cycles = round(total_cycles / distinct_terms, 2) if distinct_terms else 0.0
+
+        items = [
+            {
+                'id': r[0],
+                'search_term_normalized': r[1],
+                'search_term_original': r[2],
+                'rejected_at': r[3].isoformat() if r[3] else None,
+                'expires_at': r[4].isoformat() if r[4] else None,
+                'cycle_number': r[5],
+                'reason_at_rejection': r[6],
+                'reason_detail_at_rejection': r[7],
+                'campaign_type_at_rejection': r[8],
+                'rejected_by': r[9],
+                'unrejected_at': r[10].isoformat() if r[10] else None,
+                'unrejected_reason': r[11],
+            }
+            for r in rows
+        ]
+        return jsonify({
+            'status': 'ok',
+            'items': items,
+            'total_rows': len(items),
+            'stats': {
+                'active_count': active_ct,
+                'expired_last_30d': expired_30d,
+                'total_cycles': total_cycles,
+                'avg_cycles_per_term': avg_cycles,
+            },
+        })
+    finally:
+        con.close()
+
+
+@v2_sticky_api_bp.route('/<int:row_id>/unreject', methods=['POST'])
+def unreject_sticky(row_id):
+    data = request.get_json(silent=True) or {}
+    client_id = data.get('client_id')
+    if not client_id:
+        return _err('missing_client_id', 'client_id required')
+    con = _db()
+    try:
+        row = con.execute(
+            """SELECT id, search_term_normalized, expires_at, unrejected_at
+               FROM act_v2_sticky_rejections
+               WHERE id = ? AND client_id = ?""",
+            [row_id, client_id],
+        ).fetchone()
+        if not row:
+            return _err('not_found', f'sticky {row_id} not found for client', 404)
+        if row[3] is not None:
+            return jsonify({'status': 'error', 'message': 'Already unrejected'}), 409
+        con.execute(
+            """UPDATE act_v2_sticky_rejections
+               SET unrejected_at = CURRENT_TIMESTAMP,
+                   unrejected_reason = 'manual_unreject'
+               WHERE id = ? AND client_id = ?""",
+            [row_id, client_id],
+        )
+        return jsonify({'status': 'ok', 'id': row_id,
+                        'search_term_normalized': row[1]})
+    finally:
+        con.close()
+
+
+@v2_sticky_api_bp.route('/history', methods=['GET'])
+def sticky_history():
+    client_id = request.args.get('client_id')
+    term = request.args.get('term')
+    if not client_id or not term:
+        return _err('missing_params', 'client_id and term required')
+    con = _db()
+    try:
+        rows = con.execute(
+            """SELECT id, search_term_normalized, search_term_original,
+                      rejected_at, expires_at, cycle_number,
+                      reason_at_rejection, reason_detail_at_rejection,
+                      rejected_by, unrejected_at, unrejected_reason
+               FROM act_v2_sticky_rejections
+               WHERE client_id = ? AND search_term_normalized = ?
+               ORDER BY cycle_number DESC, rejected_at DESC""",
+            [client_id, term],
+        ).fetchall()
+        return jsonify({
+            'status': 'ok',
+            'term': term,
+            'items': [
+                {
+                    'id': r[0],
+                    'search_term_normalized': r[1],
+                    'search_term_original': r[2],
+                    'rejected_at': r[3].isoformat() if r[3] else None,
+                    'expires_at': r[4].isoformat() if r[4] else None,
+                    'cycle_number': r[5],
+                    'reason_at_rejection': r[6],
+                    'reason_detail_at_rejection': r[7],
+                    'rejected_by': r[8],
+                    'unrejected_at': r[9].isoformat() if r[9] else None,
+                    'unrejected_reason': r[10],
+                }
+                for r in rows
+            ],
+        })
+    finally:
+        con.close()

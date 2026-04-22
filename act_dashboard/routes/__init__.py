@@ -85,14 +85,21 @@ def register_blueprints(app: Flask):
     app.register_blueprint(v2_morning_bp)
 
     # N1b: ACT v2 Negatives Module — Pass 1/2/3 + approve/push API
-    from act_dashboard.routes.v2_negatives_api import v2_negatives_api_bp
+    from act_dashboard.routes.v2_negatives_api import v2_negatives_api_bp, v2_sticky_api_bp
     app.register_blueprint(v2_negatives_api_bp)
+    app.register_blueprint(v2_sticky_api_bp)
     print("[OK] [N1b] Registered v2_negatives_api blueprint (/v2/api/negatives)")
+    print("[OK] [N3]  Registered v2_sticky_api blueprint (/v2/api/sticky-rejections)")
 
     # N1b Gate 5: Search-term review page
     from act_dashboard.routes.v2_search_term_review import v2_search_term_review_bp
     app.register_blueprint(v2_search_term_review_bp)
     print("[OK] [N1b] Registered v2_search_term_review blueprint (/v2/search-term-review)")
+
+    # N3: Rejected Terms management page
+    from act_dashboard.routes.v2_rejected_terms import v2_rejected_terms_bp
+    app.register_blueprint(v2_rejected_terms_bp)
+    print("[OK] [N3]  Registered v2_rejected_terms blueprint (/v2/rejected-terms)")
 
     print("[OK] [Phase 1a] Registered auth blueprint (login, logout, switch-client)")
     print("[OK] [Phase 1b] Registered api blueprint (execute, batch, status, approve, reject)")

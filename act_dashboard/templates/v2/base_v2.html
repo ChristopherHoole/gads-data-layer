@@ -27,6 +27,9 @@
       <a href="/v2/search-term-review{% if client and client.id != 'all' %}?client={{ client.id }}{% endif %}" class="act-nav-item {% if active_page == 'search-term-review' %}active{% endif %}">
         <span class="material-symbols-outlined">filter_alt</span>Search Terms
       </a>
+      <a href="/v2/rejected-terms{% if client and client.id != 'all' %}?client={{ client.id }}{% endif %}" class="act-nav-item {% if active_page == 'rejected-terms' %}active{% endif %}">
+        <span class="material-symbols-outlined">block</span>Rejected Terms
+      </a>
     </div>
     <div class="act-nav-section">
       <div class="act-nav-label">Optimization</div>
