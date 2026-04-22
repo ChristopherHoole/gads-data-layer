@@ -9,6 +9,10 @@
 
 {% block topbar_extras %}
   <input type="date" id="stDate" value="{{ analysis_date }}" class="act-date-picker">
+  <span class="neg-sync-pill" id="stNegSyncPill" title="Latest negative-list snapshot from Google Ads">
+    <span class="material-symbols-outlined" style="font-size:14px;vertical-align:-2px;">sync</span>
+    <span id="stNegSyncText">Negatives: loading…</span>
+  </span>
 {% endblock %}
 
 {% block content %}
@@ -68,6 +72,8 @@
     </div>
     <div class="st-action-bar__right">
       <button class="btn-act btn-act--approve" id="stPushApproved" disabled>Push approved to Google Ads</button>
+      <button class="btn-act btn-act--details" id="stRefreshNegs" title="Pull the latest negative-keyword lists from Google Ads">🔄 Refresh negatives from Google Ads</button>
+      <button class="btn-act btn-act--details" id="stReclassify" title="Re-run Pass 1 + Pass 2 on today's terms using current config and latest neg snapshot">♻️ Reclassify today's terms</button>
       <button class="btn-act btn-act--details" id="stRunPass3">Run Pass 3</button>
     </div>
   </div>

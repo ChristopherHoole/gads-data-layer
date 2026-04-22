@@ -742,6 +742,93 @@
   document.getElementById('stBulkReject').addEventListener('click', () => bulkUpdate('rejected'));
   document.getElementById('stPushApproved').addEventListener('click', pushApproved);
   document.getElementById('stRunPass3').addEventListener('click', runPass3);
+
+  // --------- N2 Part 2/4/5: refresh snapshot + reclassify + sync pill -------
+  async function loadSyncPill() {
+    const txt = document.getElementById('stNegSyncText');
+    const pill = document.getElementById('stNegSyncPill');
+    if (!txt || !pill) return;
+    try {
+      const resp = await fetch(`/v2/api/negatives/lists?client_id=${encodeURIComponent(CLIENT)}`);
+      const data = await resp.json();
+      pill.classList.remove('neg-sync--green','neg-sync--amber','neg-sync--red','neg-sync--none');
+      if (!data.last_synced_at) {
+        pill.classList.add('neg-sync--none');
+        txt.textContent = 'No negative snapshot yet';
+        return;
+      }
+      const d = new Date(data.last_synced_at);
+      const ageHrs = (Date.now() - d.getTime()) / 3600000;
+      const zone = ageHrs < 24 ? 'neg-sync--green' : ageHrs < 48 ? 'neg-sync--amber' : 'neg-sync--red';
+      pill.classList.add(zone);
+      const rel = ageHrs < 1 ? `${Math.max(1, Math.floor(ageHrs*60))}m ago`
+                 : ageHrs < 48 ? `${Math.floor(ageHrs)}h ago`
+                 : `${Math.floor(ageHrs/24)}d ago`;
+      const nice = d.toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+      txt.textContent = `Negatives: ${nice} (${rel})`;
+    } catch (e) {
+      pill.classList.add('neg-sync--none');
+      txt.textContent = 'Negatives: — (error)';
+    }
+  }
+  loadSyncPill();
+
+  const btnRefresh = document.getElementById('stRefreshNegs');
+  if (btnRefresh) btnRefresh.addEventListener('click', async () => {
+    const orig = btnRefresh.innerHTML;
+    btnRefresh.disabled = true; btnRefresh.textContent = 'Refreshing…';
+    try {
+      const resp = await fetch('/v2/api/negatives/refresh-snapshot', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ client_id: CLIENT }),
+      });
+      const data = await resp.json();
+      if (resp.status === 409) {
+        toast('Refresh already running.', 'error');
+      } else if (data.status === 'ok') {
+        toast(`Synced ${data.list_count} lists, ${data.keyword_count} keywords in ${data.duration_seconds}s`);
+        loadSyncPill();
+      } else {
+        toast('Refresh failed: ' + (data.message || 'Unknown'), 'error');
+      }
+    } catch (e) {
+      toast('Refresh failed: ' + e.message, 'error');
+    } finally {
+      btnRefresh.disabled = false; btnRefresh.innerHTML = orig;
+    }
+  });
+
+  const btnReclass = document.getElementById('stReclassify');
+  if (btnReclass) btnReclass.addEventListener('click', async () => {
+    const confirmed = window.confirm(
+      "Re-run Pass 1 + Pass 2 on today's search terms using the current config and latest negative list snapshot.\n\n" +
+      "✓ Approved / pushed / rejected / expired rows are preserved\n" +
+      "↻ Pending rows are re-classified in place\n" +
+      "+ New terms are added\n\nContinue?"
+    );
+    if (!confirmed) return;
+    const orig = btnReclass.innerHTML;
+    btnReclass.disabled = true; btnReclass.textContent = 'Reclassifying…';
+    try {
+      const resp = await fetch('/v2/api/negatives/reclassify-now', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ client_id: CLIENT, analysis_date: analysisDate }),
+      });
+      const data = await resp.json();
+      if (resp.status === 409) {
+        toast('Reclassify already running.', 'error');
+      } else if (data.status === 'ok') {
+        toast(`Reclassified: ins=${data.inserted} upd=${data.updated} preserved=${data.preserved} in ${data.duration_seconds}s`);
+        setTimeout(() => window.location.reload(), 800);
+      } else {
+        toast('Reclassify failed: ' + (data.message || 'Unknown'), 'error');
+      }
+    } catch (e) {
+      toast('Reclassify failed: ' + e.message, 'error');
+    } finally {
+      btnReclass.disabled = false; btnReclass.innerHTML = orig;
+    }
+  });
   document.getElementById('stDate').addEventListener('change', e => {
     analysisDate = e.target.value;
     currentPage = 1;

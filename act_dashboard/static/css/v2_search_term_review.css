@@ -296,3 +296,15 @@
 .st-status--stacked > span {
   display: block;
 }
+
+/* N2 Part 5 — Neg-list sync pill in topbar */
+.neg-sync-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 14px; font-size: 12px;
+  background: #f3f4f6; color: #374151; border: 1px solid transparent;
+  margin-left: 8px;
+}
+.neg-sync-pill.neg-sync--green { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+.neg-sync-pill.neg-sync--amber { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.neg-sync-pill.neg-sync--red   { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.neg-sync-pill.neg-sync--none  { background: #f3f4f6; color: #6b7280; }
