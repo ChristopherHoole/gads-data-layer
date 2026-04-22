@@ -669,7 +669,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (e) {
         showToast('Refresh failed: ' + e.message, 'error');
       } finally {
-        if (btn) { btn.disabled = false; btn.innerHTML = '<span class="material-symbols-outlined">refresh</span> Refresh from Google Ads'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<span class="material-symbols-outlined">refresh</span> Refresh Neg Lists from GAds'; }
       }
     }
 
@@ -680,7 +680,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="neg-empty" style="padding:24px;border:1px dashed var(--border);border-radius:8px;text-align:center;">
             <p style="margin-bottom:12px;color:var(--text-muted);">No negative list snapshot yet.<br/>Click below to pull current lists from Google Ads.</p>
             <button type="button" class="btn btn--primary" id="negListsRefreshBtn">
-              <span class="material-symbols-outlined">refresh</span> Refresh from Google Ads
+              <span class="material-symbols-outlined">refresh</span> Refresh Neg Lists from GAds
             </button>
           </div>`;
         document.getElementById('negListsRefreshBtn')?.addEventListener('click', refresh);
@@ -708,7 +708,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="neg-actions">
           <button type="button" class="btn btn--primary" id="negListsRefreshBtn">
-            <span class="material-symbols-outlined">refresh</span> Refresh from Google Ads
+            <span class="material-symbols-outlined">refresh</span> Refresh Neg Lists from GAds
           </button>
           <input type="search" id="negListsSearch" placeholder="Search keyword across all lists…" class="neg-search" value="${state.filter.replace(/"/g,'&quot;')}"/>
           <select id="negListsRoleFilter" class="neg-role-filter">${roleOptions}</select>
