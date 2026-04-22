@@ -62,6 +62,16 @@ def db_with_two_snapshots(tmp_path):
             snapshot_date DATE
         );
     """)
+    con.execute("""
+        CREATE TABLE act_v2_sticky_rejections (
+            id BIGINT, client_id VARCHAR, search_term_normalized VARCHAR,
+            search_term_original VARCHAR, rejected_at TIMESTAMP,
+            expires_at TIMESTAMP, cycle_number INTEGER,
+            reason_at_rejection VARCHAR, reason_detail_at_rejection VARCHAR,
+            campaign_type_at_rejection VARCHAR, rejected_by VARCHAR,
+            unrejected_at TIMESTAMP, unrejected_reason VARCHAR
+        );
+    """)
     con.execute("""INSERT INTO act_v2_clients VALUES
         ('testclient','','dental implants','london','','')""")
     con.execute("""INSERT INTO act_v2_negative_keyword_lists VALUES
@@ -116,6 +126,13 @@ def test_pass1_empty_when_no_snapshot(tmp_path):
     con.execute("""CREATE TABLE act_v2_negative_list_keywords (
         id BIGINT, list_id VARCHAR, client_id VARCHAR, keyword_text VARCHAR,
         match_type VARCHAR, snapshot_date DATE);""")
+    con.execute("""CREATE TABLE act_v2_sticky_rejections (
+        id BIGINT, client_id VARCHAR, search_term_normalized VARCHAR,
+        search_term_original VARCHAR, rejected_at TIMESTAMP,
+        expires_at TIMESTAMP, cycle_number INTEGER,
+        reason_at_rejection VARCHAR, reason_detail_at_rejection VARCHAR,
+        campaign_type_at_rejection VARCHAR, rejected_by VARCHAR,
+        unrejected_at TIMESTAMP, unrejected_reason VARCHAR);""")
     con.execute("""INSERT INTO act_v2_clients VALUES
         ('nosnap','','dental implants','london','','')""")
     cfg = _load_client_config(con, 'nosnap')

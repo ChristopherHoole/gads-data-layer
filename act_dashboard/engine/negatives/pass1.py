@@ -184,6 +184,31 @@ def _load_client_config(con, client_id: str) -> dict:
     rule7_exclude_tokens = tokenize_set(split_comma_list(rule7_exclude_raw))
     exact_neg_single_words_for_rule_7 = exact_neg_single_words - rule7_exclude_tokens
 
+    # N3 Part A: sticky rejections — a normalized term the user has rejected
+    # stays rejected for 60 days (cycle-counted). Load the active set +
+    # expiry/cycle map into cfg so Rule 0 can short-circuit classification
+    # and surface a useful reason_detail.
+    sticky_rows = con.execute(
+        """SELECT search_term_normalized, cycle_number, expires_at
+           FROM act_v2_sticky_rejections
+           WHERE client_id = ?
+             AND expires_at > CURRENT_TIMESTAMP
+             AND unrejected_at IS NULL""",
+        [client_id],
+    ).fetchall()
+    sticky_rejected_terms = set()
+    sticky_expiry_map: dict[str, tuple[int, str]] = {}
+    for norm, cycle, exp in sticky_rows:
+        if not norm:
+            continue
+        sticky_rejected_terms.add(norm)
+        # If the same term has multiple active rows (shouldn't happen thanks
+        # to the reject-time guard), prefer the latest cycle / furthest expiry.
+        existing = sticky_expiry_map.get(norm)
+        exp_iso = exp.isoformat() if hasattr(exp, 'isoformat') else str(exp)
+        if existing is None or cycle > existing[0]:
+            sticky_expiry_map[norm] = (cycle, exp_iso)
+
     return {
         'brand_phrases': brand_phrases,
         'exact_neg_phrases': exact_neg_phrases,            # Rule 2 (equality)
@@ -203,6 +228,9 @@ def _load_client_config(con, client_id: str) -> dict:
         # N2 Part 1: expose the snapshot date Pass 1 actually read from, so
         # run_pass1 can log it and callers can surface it in summaries.
         'neg_snapshot_date': latest_snapshot_date,
+        # N3 Part A: sticky rejection set + per-term (cycle, expires_at).
+        'sticky_rejected_terms': sticky_rejected_terms,
+        'sticky_expiry_map': sticky_expiry_map,
     }
 
 
@@ -289,6 +317,18 @@ def classify_term(search_term: str, cfg: dict) -> tuple[str, str, str | None]:
         return ('review', 'empty_term', None)
     t_tokens = t_norm.split()
     t_token_set = set(t_tokens)
+
+    # Rule 0 — N3: sticky rejection takes priority over every other rule.
+    # A sticky rejection is the user's explicit decision: don't surface this
+    # term again until expiry. run_pass1 auto-promotes rejected_sticky to
+    # review_status='rejected' so it never sits in Pending.
+    sticky = cfg.get('sticky_rejected_terms')
+    if sticky and t_norm in sticky:
+        cycle, exp_iso = cfg.get('sticky_expiry_map', {}).get(t_norm, (None, None))
+        exp_day = (exp_iso or '')[:10]
+        detail = (f"sticky rejection — cycle {cycle}, expires {exp_day}"
+                  if cycle else "sticky rejection")
+        return ('rejected_sticky', 'sticky_rejected', detail)
 
     # Rule 1 — brand protection (always wins); detail = longest matching brand
     brand_match = _longest_then_alpha(cfg['brand_phrases'], t_norm)
@@ -526,8 +566,11 @@ def run_pass1(client_id: str, db_path: str,
         histogram: dict[str, int] = {}
         rows_to_insert: list = []
         rows_to_update: list = []   # tuples (status, reason, detail, id)
+        # N3: sticky rows need review_status flipped to 'rejected' + audit cols
+        sticky_insert: list = []
+        sticky_update: list = []
         preserved_count = 0
-        status_counts = {'keep': 0, 'block': 0, 'review': 0}
+        status_counts = {'keep': 0, 'block': 0, 'review': 0, 'rejected_sticky': 0}
 
         for t in terms:
             if configured:
@@ -541,15 +584,24 @@ def run_pass1(client_id: str, db_path: str,
             if existing and existing['review_status'] in preserved_statuses:
                 preserved_count += 1
                 continue
+
+            is_sticky = (status == 'rejected_sticky')
             if existing:
-                rows_to_update.append((status, reason, detail, existing['id']))
+                if is_sticky:
+                    sticky_update.append((status, reason, detail, existing['id']))
+                else:
+                    rows_to_update.append((status, reason, detail, existing['id']))
             else:
-                rows_to_insert.append((
+                row_base = (
                     client_id, t['search_term'], analysis_date,
                     t['first_seen'], t['last_seen'],
                     t['impr'], t['clicks'], t['cost'], t['conv'],
                     status, reason, detail,
-                ))
+                )
+                if is_sticky:
+                    sticky_insert.append(row_base)
+                else:
+                    rows_to_insert.append(row_base)
 
         if rows_to_insert:
             con.executemany(
@@ -571,6 +623,32 @@ def run_pass1(client_id: str, db_path: str,
                    WHERE id = ? AND review_status = 'pending'""",
                 rows_to_update,
             )
+        # N3: sticky rows — auto-promote review_status so they never hit Pending
+        if sticky_insert:
+            con.executemany(
+                """INSERT INTO act_v2_search_term_reviews
+                   (client_id, search_term, analysis_date,
+                    first_seen_date, last_seen_date,
+                    total_impressions, total_clicks, total_cost, total_conversions,
+                    pass1_status, pass1_reason, pass1_reason_detail,
+                    review_status, reviewed_at, reviewed_by)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                           'rejected', CURRENT_TIMESTAMP, 'sticky_auto')""",
+                sticky_insert,
+            )
+        if sticky_update:
+            con.executemany(
+                """UPDATE act_v2_search_term_reviews
+                   SET pass1_status = ?,
+                       pass1_reason = ?,
+                       pass1_reason_detail = ?,
+                       pass2_target_list_role = NULL,
+                       review_status = 'rejected',
+                       reviewed_at = CURRENT_TIMESTAMP,
+                       reviewed_by = 'sticky_auto'
+                   WHERE id = ? AND review_status = 'pending'""",
+                sticky_update,
+            )
 
         summary = {
             'client_id': client_id,
@@ -578,9 +656,10 @@ def run_pass1(client_id: str, db_path: str,
             'neg_snapshot_date': (cfg.get('neg_snapshot_date').isoformat()
                                    if cfg.get('neg_snapshot_date') else None),
             'terms_classified': len(terms),
-            'inserted': len(rows_to_insert),
-            'updated': len(rows_to_update),
+            'inserted': len(rows_to_insert) + len(sticky_insert),
+            'updated': len(rows_to_update) + len(sticky_update),
             'preserved': preserved_count,
+            'sticky_applied': len(sticky_insert) + len(sticky_update),
             'configured': configured,
             'status_counts': status_counts,
             'reason_histogram': histogram,
