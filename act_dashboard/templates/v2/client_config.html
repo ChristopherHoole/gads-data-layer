@@ -38,6 +38,7 @@
       <div class="config-tab" data-tab="ad"><span class="material-symbols-outlined">article</span>Ad</div>
       <div class="config-tab" data-tab="shopping"><span class="material-symbols-outlined">shopping_cart</span>Shopping</div>
       <div class="config-tab" data-tab="search-terms"><span class="material-symbols-outlined">filter_alt</span>Search Terms</div>
+      <div class="config-tab" data-tab="negative-lists"><span class="material-symbols-outlined">block</span>Negative Lists</div>
       <div class="config-tab" data-tab="onboarding"><span class="material-symbols-outlined">checklist</span>Onboarding</div>
     </nav>
 
@@ -648,6 +649,21 @@
         </div>
           </div>
         </section>
+      </div>
+
+      <!-- ============ NEGATIVE LISTS (read-only viewer) ============ -->
+      <div class="config-panel" id="panel-negative-lists">
+        <h3 class="config-panel__title">Negative Lists</h3>
+        <p class="config-panel__subtitle">
+          Read-only view of the latest snapshot pulled from Google Ads.
+          To change a list, edit it in Google Ads and click Refresh below.
+        </p>
+
+        <div id="negLists" data-client-id="{{ client.client_id }}">
+          <div class="neg-lists__loading" style="padding:18px;color:var(--text-muted);">
+            Loading negative lists...
+          </div>
+        </div>
       </div>
 
       <!-- ============ ONBOARDING CHECKLIST ============ -->

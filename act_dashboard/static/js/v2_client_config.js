@@ -18,6 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
       tab.classList.add('active');
       const panel = document.getElementById('panel-' + tab.dataset.tab);
       if (panel) panel.classList.add('active');
+      // N2 Part 3: lazy-load neg-list viewer on first activation
+      if (tab.dataset.tab === 'negative-lists' && !NegLists._loaded) {
+        NegLists.load();
+      }
     });
   });
 
@@ -600,5 +604,224 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  // ==========================================================================
+  // N2 Part 3 + 5 — Negative Lists viewer (read-only) + last-synced pill
+  // ==========================================================================
+  const NegLists = (() => {
+    const root = document.getElementById('negLists');
+    if (!root) return { load: () => {}, _loaded: false };
+    const clientId = root.dataset.clientId;
+    let state = { loaded: false, filter: '', roleFilter: '', data: null };
+
+    function fmtWhen(iso) {
+      if (!iso) return '—';
+      try {
+        const d = new Date(iso);
+        const diffMs = Date.now() - d.getTime();
+        const mins = Math.floor(diffMs / 60000);
+        const hrs = Math.floor(mins / 60);
+        const days = Math.floor(hrs / 24);
+        const rel = days >= 1 ? `${days}d ago` : hrs >= 1 ? `${hrs}h ago` : `${Math.max(1, mins)}m ago`;
+        return `${d.toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })} (${rel})`;
+      } catch { return iso; }
+    }
+
+    function syncZoneClass(iso) {
+      if (!iso) return 'neg-sync--none';
+      const ageHrs = (Date.now() - new Date(iso).getTime()) / 3600000;
+      if (ageHrs < 24) return 'neg-sync--green';
+      if (ageHrs < 48) return 'neg-sync--amber';
+      return 'neg-sync--red';
+    }
+
+    async function refresh() {
+      const btn = document.getElementById('negListsRefreshBtn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Refreshing…'; }
+      try {
+        const resp = await fetch('/v2/api/negatives/refresh-snapshot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ client_id: clientId }),
+        });
+        const data = await resp.json();
+        if (resp.status === 409) {
+          showToast('Refresh already running.', 'warning');
+        } else if (data.status === 'ok') {
+          showToast(`Synced ${data.list_count} lists, ${data.keyword_count} keywords in ${data.duration_seconds}s`, 'success');
+          await load(true);
+        } else {
+          showToast('Refresh failed: ' + (data.message || 'Unknown'), 'error');
+        }
+      } catch (e) {
+        showToast('Refresh failed: ' + e.message, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<span class="material-symbols-outlined">refresh</span> Refresh from Google Ads'; }
+      }
+    }
+
+    function render() {
+      const d = state.data;
+      if (!d || d.total_lists === 0) {
+        root.innerHTML = `
+          <div class="neg-empty" style="padding:24px;border:1px dashed var(--border);border-radius:8px;text-align:center;">
+            <p style="margin-bottom:12px;color:var(--text-muted);">No negative list snapshot yet.<br/>Click below to pull current lists from Google Ads.</p>
+            <button type="button" class="btn btn--primary" id="negListsRefreshBtn">
+              <span class="material-symbols-outlined">refresh</span> Refresh from Google Ads
+            </button>
+          </div>`;
+        document.getElementById('negListsRefreshBtn')?.addEventListener('click', refresh);
+        return;
+      }
+
+      // Role filter options
+      const roles = Array.from(new Set(d.lists.map(l => l.list_role).filter(Boolean))).sort();
+      const roleOptions = ['<option value="">All roles</option>'].concat(
+        roles.map(r => `<option value="${r}"${state.roleFilter===r?' selected':''}>${r}</option>`)
+      ).join('');
+
+      const zone = syncZoneClass(d.last_synced_at);
+      const warnBanner = zone === 'neg-sync--red'
+        ? `<div class="neg-warn-banner">Negative list snapshot is over 48 hours old. Click Refresh to pull latest from Google Ads.</div>`
+        : '';
+
+      root.innerHTML = `
+        ${warnBanner}
+        <div class="neg-stats">
+          <div class="neg-stat"><span class="neg-stat__label">Total lists</span><span class="neg-stat__val">${d.total_lists}</span></div>
+          <div class="neg-stat"><span class="neg-stat__label">Total keywords</span><span class="neg-stat__val">${d.total_keywords}</span></div>
+          <div class="neg-stat"><span class="neg-stat__label">Snapshot date</span><span class="neg-stat__val">${d.snapshot_date || '—'}</span></div>
+          <div class="neg-stat ${zone}"><span class="neg-stat__label">Last synced</span><span class="neg-stat__val">${fmtWhen(d.last_synced_at)}</span></div>
+        </div>
+        <div class="neg-actions">
+          <button type="button" class="btn btn--primary" id="negListsRefreshBtn">
+            <span class="material-symbols-outlined">refresh</span> Refresh from Google Ads
+          </button>
+          <input type="search" id="negListsSearch" placeholder="Search keyword across all lists…" class="neg-search" value="${state.filter.replace(/"/g,'&quot;')}"/>
+          <select id="negListsRoleFilter" class="neg-role-filter">${roleOptions}</select>
+          <span class="neg-match-count" id="negMatchCount"></span>
+        </div>
+        <div id="negListsContainer" class="neg-lists"></div>
+      `;
+
+      document.getElementById('negListsRefreshBtn').addEventListener('click', refresh);
+      document.getElementById('negListsSearch').addEventListener('input', e => {
+        state.filter = e.target.value.trim().toLowerCase();
+        renderLists();
+      });
+      document.getElementById('negListsRoleFilter').addEventListener('change', e => {
+        state.roleFilter = e.target.value;
+        renderLists();
+      });
+      renderLists();
+    }
+
+    function renderLists() {
+      const container = document.getElementById('negListsContainer');
+      if (!container) return;
+      const d = state.data;
+      const f = state.filter;
+      const rf = state.roleFilter;
+      let matchingLists = 0;
+      let matchingTotal = 0;
+
+      const html = d.lists.filter(l => !rf || l.list_role === rf).map((l) => {
+        const matchedKws = f ? l.keywords.filter(k => (k.keyword_text || '').toLowerCase().includes(f)) : l.keywords;
+        const hasMatch = f && matchedKws.length > 0;
+        if (hasMatch) { matchingLists++; matchingTotal += matchedKws.length; }
+        const expanded = hasMatch; // auto-expand on match
+        const pageSize = 100;
+        const initial = matchedKws.slice(0, pageSize);
+        return `
+          <div class="neg-list ${expanded?'open':''}" data-list-id="${l.list_id}" data-total="${matchedKws.length}" data-page-size="${pageSize}">
+            <div class="neg-list__header">
+              <span class="neg-list__toggle material-symbols-outlined">${expanded?'expand_more':'chevron_right'}</span>
+              <span class="neg-list__name">${escapeHtml(l.list_name)}</span>
+              <span class="neg-list__role">${l.list_role || '—'}</span>
+              <span class="neg-list__match">${l.match_type || '—'}</span>
+              <span class="neg-list__count">${matchedKws.length}${f ? '/' + l.keyword_count : ''} kw</span>
+              <span class="neg-list__linked ${l.is_linked_to_campaign?'linked':'unlinked'}">${l.is_linked_to_campaign?'linked':'unlinked'}</span>
+            </div>
+            <div class="neg-list__body" style="${expanded?'':'display:none;'}">
+              ${matchedKws.length === 0
+                ? '<div class="neg-list__empty">No keywords.</div>'
+                : `<table class="neg-kw-table">
+                    <thead><tr><th>Keyword</th><th>Match</th><th>Added</th><th>By</th></tr></thead>
+                    <tbody class="neg-kw-tbody">
+                      ${initial.map(k => renderKwRow(k, f)).join('')}
+                    </tbody>
+                  </table>
+                  ${matchedKws.length > pageSize ? `<div class="neg-kw-pager"><button type="button" class="btn btn--ghost neg-kw-more">Load more (${matchedKws.length - pageSize} remaining)</button></div>` : ''}`
+              }
+            </div>
+          </div>`;
+      }).join('');
+
+      container.innerHTML = html || '<div style="padding:14px;color:var(--text-muted);">No lists match the current filter.</div>';
+
+      // wire up list toggles
+      container.querySelectorAll('.neg-list__header').forEach(h => {
+        h.addEventListener('click', () => {
+          const wrap = h.closest('.neg-list');
+          const body = wrap.querySelector('.neg-list__body');
+          const toggle = wrap.querySelector('.neg-list__toggle');
+          const open = wrap.classList.toggle('open');
+          body.style.display = open ? '' : 'none';
+          toggle.textContent = open ? 'expand_more' : 'chevron_right';
+        });
+      });
+
+      // Load-more pager — client-side slice into full dataset
+      container.querySelectorAll('.neg-kw-more').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const wrap = btn.closest('.neg-list');
+          const listId = wrap.dataset.listId;
+          const list = d.lists.find(x => x.list_id === listId);
+          const matched = f ? list.keywords.filter(k => (k.keyword_text || '').toLowerCase().includes(f)) : list.keywords;
+          const tbody = wrap.querySelector('.neg-kw-tbody');
+          const shown = tbody.querySelectorAll('tr').length;
+          const next = matched.slice(shown, shown + 100);
+          tbody.insertAdjacentHTML('beforeend', next.map(k => renderKwRow(k, f)).join(''));
+          const remaining = matched.length - (shown + next.length);
+          if (remaining <= 0) btn.parentElement.remove();
+          else btn.textContent = `Load more (${remaining} remaining)`;
+        });
+      });
+
+      const counter = document.getElementById('negMatchCount');
+      if (counter) counter.textContent = f ? `Found in ${matchingLists} list${matchingLists===1?'':'s'}: ${matchingTotal} keyword${matchingTotal===1?'':'s'}` : '';
+    }
+
+    function renderKwRow(k, filter) {
+      const txt = escapeHtml(k.keyword_text || '');
+      const highlighted = filter
+        ? txt.replace(new RegExp('('+filter.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')', 'ig'), '<mark>$1</mark>')
+        : txt;
+      const when = k.added_at ? new Date(k.added_at).toLocaleDateString('en-GB') : '—';
+      return `<tr><td>${highlighted}</td><td>${k.match_type || ''}</td><td>${when}</td><td>${k.added_by || ''}</td></tr>`;
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    async function load(force) {
+      if (state.loaded && !force) return;
+      try {
+        const resp = await fetch(`/v2/api/negatives/lists?client_id=${encodeURIComponent(clientId)}`);
+        const data = await resp.json();
+        if (data.status !== 'ok') throw new Error(data.detail || 'failed');
+        state.data = data;
+        state.loaded = true;
+        NegLists._loaded = true;
+        render();
+      } catch (e) {
+        root.innerHTML = `<div style="padding:18px;color:var(--danger);">Failed to load negative lists: ${e.message}</div>`;
+      }
+    }
+
+    return { load, refresh, _loaded: false };
+  })();
 
 });

@@ -755,3 +755,69 @@
 #panel-search-terms .act-section {
   margin-bottom: 16px;
 }
+
+/* ============================================================================
+   N2 Part 3 — Negative Lists viewer (Client Config tab)
+   ============================================================================ */
+.neg-stats {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px;
+}
+.neg-stat {
+  background: var(--bg-card, #fff); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 4px;
+}
+.neg-stat__label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.neg-stat__val { font-size: 15px; font-weight: 600; color: var(--text); }
+.neg-sync--green .neg-stat__val { color: #0b8a3e; }
+.neg-sync--amber .neg-stat__val { color: #b45309; }
+.neg-sync--red .neg-stat__val { color: #b42318; }
+.neg-sync--none .neg-stat__val { color: var(--text-muted); }
+
+.neg-warn-banner {
+  background: #fef2f2; border: 1px solid #fecaca; color: #b42318;
+  padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; font-size: 13px;
+}
+
+.neg-actions {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.neg-search {
+  flex: 1 1 240px; min-width: 220px; padding: 8px 12px;
+  border: 1px solid var(--border); border-radius: 6px; font-size: 13px;
+}
+.neg-role-filter {
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px;
+}
+.neg-match-count { font-size: 12px; color: var(--text-muted); }
+
+.neg-lists { display: flex; flex-direction: column; gap: 8px; }
+
+.neg-list {
+  border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card, #fff);
+}
+.neg-list__header {
+  display: grid;
+  grid-template-columns: 24px 1fr 160px 90px 100px 90px;
+  align-items: center; gap: 8px; padding: 10px 14px;
+  cursor: pointer; font-size: 13px;
+}
+.neg-list__header:hover { background: var(--bg-hover, #f9fafb); }
+.neg-list__toggle { font-size: 20px; color: var(--text-muted); }
+.neg-list__name { font-weight: 600; }
+.neg-list__role { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #eef2ff; color: #3730a3; text-align: center; }
+.neg-list__match { font-size: 11px; color: var(--text-muted); }
+.neg-list__count { font-size: 12px; color: var(--text-muted); text-align: right; }
+.neg-list__linked { font-size: 11px; padding: 2px 8px; border-radius: 10px; text-align: center; }
+.neg-list__linked.linked { background: #dcfce7; color: #166534; }
+.neg-list__linked.unlinked { background: #f3f4f6; color: #6b7280; }
+
+.neg-list__body { border-top: 1px solid var(--border); padding: 10px 14px 14px; }
+.neg-list__empty { padding: 10px; color: var(--text-muted); font-size: 13px; }
+
+.neg-kw-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.neg-kw-table th { text-align: left; font-weight: 600; color: var(--text-muted); padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.neg-kw-table td { padding: 5px 8px; border-bottom: 1px solid var(--border-light, #f3f4f6); }
+.neg-kw-table mark { background: #fef08a; padding: 0 2px; border-radius: 2px; }
+
+.neg-kw-pager { padding-top: 10px; text-align: center; }
+
