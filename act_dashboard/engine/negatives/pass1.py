@@ -385,8 +385,17 @@ def classify_term(search_term: str, cfg: dict) -> tuple[str, str, str | None]:
 
     # Rule 5 — denylist (service we do but don't advertise). Wave F:
     # token-subset match so reordered variants still fire.
+    # N3 Part B: when an advertised phrase ALSO matches, downgrade block to
+    # review ('mixed_intent_adv_and_notadv') — the query expresses both the
+    # advertised intent and a not-advertised signal, so the user should
+    # decide. This only applies to the Rule-5 path; Rules 2/3 (hard GAds
+    # neg-list matches) still block.
     denylist_match = _most_tokens_then_alpha(cfg['denylist_phrases'], t_token_set)
     if denylist_match is not None:
+        advertised_co = _most_tokens_then_alpha(cfg['advertised_phrases'], t_token_set)
+        if advertised_co is not None:
+            return ('review', 'mixed_intent_adv_and_notadv',
+                    f"adv: {advertised_co} | not-adv: {denylist_match}")
         status = 'block' if cfg['block_offered_not_advertised'] else 'review'
         return (status, 'service_not_advertised', denylist_match)
 

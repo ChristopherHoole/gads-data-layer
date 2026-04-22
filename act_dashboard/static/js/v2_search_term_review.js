@@ -64,6 +64,10 @@
     existing_multiword_neg_match:   d => d ? `Leak — phrase: ${d}` : 'Leak — phrase',
     location_outside_service_area:  d => d ? `Outside: ${d}` : 'Outside service area',
     service_not_advertised:         d => d ? `Not advertised: ${d}` : 'Not advertised',
+    // N3 Part B: mixed-intent downgrade — detail format
+    // "adv: <phrase> | not-adv: <phrase>"
+    mixed_intent_adv_and_notadv:    d => d ? `Mixed intent — ${d}` : 'Mixed intent (adv + not-adv)',
+    sticky_rejected:                d => d ? `Sticky rejected — ${d}` : 'Sticky rejected',
     advertised_service_match:       d => d ? `Advertised: ${d}` : 'Advertised',
     contains_neg_vocabulary:        d => d ? `Contains: ${d}` : 'Contains excluded term',
     ambiguous: (d, item) => {
