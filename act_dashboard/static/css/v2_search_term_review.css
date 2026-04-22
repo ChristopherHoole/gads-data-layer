@@ -174,30 +174,32 @@
 /* Wave C3 — per-column min/max widths (tighter). Wrapping text cols opt
    into normal white-space + break-word. Keyword + Campaign additionally
    get 2-line clamp (full text available via title="" tooltip). */
-.st-table--wide th:nth-child(3),  .st-table--wide td:nth-child(3)  { min-width:  70px; max-width:  90px; }                    /* Status */
-.st-table--wide th:nth-child(4),  .st-table--wide td:nth-child(4)  { min-width: 100px; max-width: 160px; white-space: normal; word-wrap: break-word; } /* Reason — Wave C12 wider for detail text */
+/* N3-hotfix-1: # column is now nth-child(1); every other column shifted
+   +1 so Search-term / Reason / Keyword regain their pre-N3g widths. */
+.st-table--wide th:nth-child(4),  .st-table--wide td:nth-child(4)  { min-width:  70px; max-width:  90px; }                    /* Status */
+.st-table--wide th:nth-child(5),  .st-table--wide td:nth-child(5)  { min-width: 100px; max-width: 160px; white-space: normal; word-wrap: break-word; } /* Reason — Wave C12 wider for detail text */
 /* Wave C8: widen + tighten padding so the longest Target list value
    (e.g. 'Com & Bran "ph"', 15 chars) fits the closed dropdown without
    overflowing into Match type. */
-.st-table--wide th:nth-child(5),
-.st-table--wide td:nth-child(5) {
+.st-table--wide th:nth-child(6),
+.st-table--wide td:nth-child(6) {
   min-width: 95px; max-width: 140px;
   padding-left: 4px; padding-right: 4px;
 }
-.st-table--wide th:nth-child(6),  .st-table--wide td:nth-child(6)  { min-width:  50px; max-width:  70px; white-space: normal; word-wrap: break-word; } /* Match type */
-.st-table--wide th:nth-child(7),  .st-table--wide td:nth-child(7)  { min-width:  50px; max-width:  70px; white-space: normal; word-wrap: break-word; } /* Added / Excluded */
-.st-table--wide th:nth-child(8),  .st-table--wide td:nth-child(8)  { min-width:  80px; max-width: 120px; white-space: normal; word-wrap: break-word; } /* Campaign */
-.st-table--wide th:nth-child(9),  .st-table--wide td:nth-child(9)  { min-width:  70px; max-width:  90px; white-space: normal; word-wrap: break-word; } /* Campaign type */
-.st-table--wide th:nth-child(10), .st-table--wide td:nth-child(10) { min-width:  80px; max-width: 120px; white-space: normal; word-wrap: break-word; } /* Keyword */
-.st-table--wide th:nth-child(11), .st-table--wide td:nth-child(11) { min-width:  50px; max-width:  70px; }                    /* Cost */
-.st-table--wide th:nth-child(12), .st-table--wide td:nth-child(12) { min-width:  50px; max-width:  70px; }                    /* Impr */
-.st-table--wide th:nth-child(13), .st-table--wide td:nth-child(13) { min-width:  50px; max-width:  70px; }                    /* Clicks */
-.st-table--wide th:nth-child(14), .st-table--wide td:nth-child(14) { min-width:  50px; max-width:  70px; }                    /* Avg CPC */
-.st-table--wide th:nth-child(15), .st-table--wide td:nth-child(15) { min-width:  50px; max-width:  70px; }                    /* CTR */
-.st-table--wide th:nth-child(16), .st-table--wide td:nth-child(16) { min-width:  50px; max-width:  70px; }                    /* Conv */
-.st-table--wide th:nth-child(17), .st-table--wide td:nth-child(17) { min-width:  60px; max-width:  80px; }                    /* Cost / Conv — slightly wider so "Cost /" fits line 1 */
-.st-table--wide th:nth-child(18), .st-table--wide td:nth-child(18) { min-width:  50px; max-width:  70px; }                    /* Conv rate */
-.st-table--wide th:nth-child(19), .st-table--wide td:nth-child(19) { min-width:  80px; max-width: 120px; white-space: normal; word-wrap: break-word; } /* Push error */
+.st-table--wide th:nth-child(7),  .st-table--wide td:nth-child(7)  { min-width:  50px; max-width:  70px; white-space: normal; word-wrap: break-word; } /* Match type */
+.st-table--wide th:nth-child(8),  .st-table--wide td:nth-child(8)  { min-width:  50px; max-width:  70px; white-space: normal; word-wrap: break-word; } /* Added / Excluded */
+.st-table--wide th:nth-child(9),  .st-table--wide td:nth-child(9)  { min-width:  80px; max-width: 120px; white-space: normal; word-wrap: break-word; } /* Campaign */
+.st-table--wide th:nth-child(10), .st-table--wide td:nth-child(10) { min-width:  70px; max-width:  90px; white-space: normal; word-wrap: break-word; } /* Campaign type */
+.st-table--wide th:nth-child(11), .st-table--wide td:nth-child(11) { min-width:  80px; max-width: 120px; white-space: normal; word-wrap: break-word; } /* Keyword */
+.st-table--wide th:nth-child(12), .st-table--wide td:nth-child(12) { min-width:  50px; max-width:  70px; }                    /* Cost */
+.st-table--wide th:nth-child(13), .st-table--wide td:nth-child(13) { min-width:  50px; max-width:  70px; }                    /* Impr */
+.st-table--wide th:nth-child(14), .st-table--wide td:nth-child(14) { min-width:  50px; max-width:  70px; }                    /* Clicks */
+.st-table--wide th:nth-child(15), .st-table--wide td:nth-child(15) { min-width:  50px; max-width:  70px; }                    /* Avg CPC */
+.st-table--wide th:nth-child(16), .st-table--wide td:nth-child(16) { min-width:  50px; max-width:  70px; }                    /* CTR */
+.st-table--wide th:nth-child(17), .st-table--wide td:nth-child(17) { min-width:  50px; max-width:  70px; }                    /* Conv */
+.st-table--wide th:nth-child(18), .st-table--wide td:nth-child(18) { min-width:  60px; max-width:  80px; }                    /* Cost / Conv — slightly wider so "Cost /" fits line 1 */
+.st-table--wide th:nth-child(19), .st-table--wide td:nth-child(19) { min-width:  50px; max-width:  70px; }                    /* Conv rate */
+.st-table--wide th:nth-child(20), .st-table--wide td:nth-child(20) { min-width:  80px; max-width: 120px; white-space: normal; word-wrap: break-word; } /* Push error */
 
 /* Wave C7: 2-line clamp now lives on an INNER <div class="clamp-2"> inside
    Keyword / Campaign cells, NOT on the <td> itself. Putting -webkit-box
@@ -337,8 +339,11 @@
   border-top: 1px solid var(--border-light, #f3f4f6); margin-top: 10px;
 }
 
-/* N3g — row number column on Search Terms tables (shared with Rejected Terms) */
+/* N3g — row number column on Search Terms tables (shared with Rejected Terms)
+   N3-hotfix-1: hard-lock the width so the browser can't redistribute it to
+   other columns, which was squeezing Reason/Keyword and expanding Search term. */
 .st-table th.col-num, .st-table td.col-num {
-  width: 44px; text-align: right; color: var(--text-muted);
+  width: 44px; min-width: 44px; max-width: 44px;
+  text-align: right; color: var(--text-muted);
   font-variant-numeric: tabular-nums; padding-right: 10px;
 }
