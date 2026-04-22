@@ -403,7 +403,7 @@
   }
 
   // -------------------- Row rendering (Pass 1/2 — 19 cols) -----------
-  function renderRow(item) {
+  function renderRow(item, idx) {
     const canEdit = item.pass1_status === 'block' || item.pass1_status === 'review';
     const checked = item.pass1_status === 'block' ? 'checked' : '';
     const hideChk = item.pass1_status === 'keep' ? 'style="visibility:hidden"' : '';
@@ -411,7 +411,10 @@
     const pushErr = item.push_error ? `<span class="st-push-error">${escapeHtml(item.push_error)}</span>` : '';
     const pct = v => (v == null) ? EMDASH : (Number(v) * 100).toFixed(2) + '%';
     const num2 = v => (v == null) ? EMDASH : Number(v).toFixed(2);
+    // N3g: continuous row # across pagination.
+    const rowNum = (currentPage - 1) * PAGE_SIZE + (idx || 0) + 1;
     return `<tr data-id="${item.id}" data-pass1="${item.pass1_status}">
+      <td class="col-num">${rowNum}</td>
       <td class="st-col-check st-frozen-0" ${hideChk}><input type="checkbox" class="st-chk" ${checked} ${canEdit ? '' : 'disabled'}></td>
       <td class="st-col-term  st-frozen-1" title="${escapeHtml(item.search_term)}">${escapeHtml(item.search_term)}</td>
       <td>${renderStatusCell(item)}</td>
@@ -435,7 +438,7 @@
   }
 
   // -------------------- Row rendering (Pass 3) -----------------------
-  function renderP3Row(item) {
+  function renderP3Row(item, idx) {
     const roleSel = roleDropdown(item.target_list_role, cfg.phrase_roles, item.id);
     const checked = item.word_count >= 2 ? 'checked' : '';  // 1-word unchecked
     const pushErr = item.push_error ? `<span class="st-push-error">${escapeHtml(item.push_error)}</span>` : '';
@@ -443,7 +446,9 @@
     const reviewed = item.review_status !== 'pending'
       ? `<span class="st-status st-status--${item.review_status}">${item.review_status}</span>`
       : '<span class="st-status st-status--review">pending</span>';
+    const rowNum = (currentPage - 1) * PAGE_SIZE + (idx || 0) + 1;
     return `<tr data-id="${item.id}">
+      <td class="col-num">${rowNum}</td>
       <td><input type="checkbox" class="st-chk" ${checked}></td>
       <td class="st-table__term">${escapeHtml(item.fragment)}</td>
       <td class="num">${item.word_count}</td>
@@ -532,7 +537,7 @@
     } else {
       p3body.innerHTML = lastItems.length
         ? lastItems.map(renderP3Row).join('')
-        : '<tr><td colspan="9" class="st-loading">No matching suggestions</td></tr>';
+        : '<tr><td colspan="10" class="st-loading">No matching suggestions</td></tr>';
     }
 
     document.getElementById('stPagerLabel').textContent =
@@ -645,7 +650,7 @@
         updateSortIndicators();
         tbody.innerHTML = lastItems.length
           ? lastItems.map(renderRow).join('')
-          : '<tr><td colspan="19" class="st-loading">No matching rows</td></tr>';
+          : '<tr><td colspan="20" class="st-loading">No matching rows</td></tr>';
         updateButtons();
       });
     });

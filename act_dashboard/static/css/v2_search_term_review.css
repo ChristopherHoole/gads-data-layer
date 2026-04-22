@@ -336,3 +336,9 @@
   padding: 14px 22px 18px; display: flex; justify-content: flex-end; gap: 10px;
   border-top: 1px solid var(--border-light, #f3f4f6); margin-top: 10px;
 }
+
+/* N3g — row number column on Search Terms tables (shared with Rejected Terms) */
+.st-table th.col-num, .st-table td.col-num {
+  width: 44px; text-align: right; color: var(--text-muted);
+  font-variant-numeric: tabular-nums; padding-right: 10px;
+}
