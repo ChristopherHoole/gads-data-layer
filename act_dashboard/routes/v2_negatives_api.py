@@ -14,6 +14,8 @@ Endpoints:
 import json
 import logging
 import os
+import threading
+import time
 from datetime import date, datetime
 
 import duckdb
@@ -23,6 +25,31 @@ from act_dashboard.engine.negatives.pass3 import run_pass3
 from act_dashboard.data_pipeline.google_ads_mutate import (
     push_negatives_to_shared_lists,
 )
+
+# N2 Part 2 + 4: per-client in-memory locks to stop two refresh or reclassify
+# jobs racing against the same DuckDB + Google Ads customer. Keys are bare
+# strings so the dict grows at most once per active client and we don't have
+# to GC it (entries are cheap).
+_REFRESH_LOCKS: dict[str, threading.Lock] = {}
+_RECLASSIFY_LOCKS: dict[tuple[str, str], threading.Lock] = {}
+_LOCKS_GUARD = threading.Lock()
+
+
+def _refresh_lock(client_id: str) -> threading.Lock:
+    with _LOCKS_GUARD:
+        lk = _REFRESH_LOCKS.get(client_id)
+        if lk is None:
+            lk = _REFRESH_LOCKS[client_id] = threading.Lock()
+        return lk
+
+
+def _reclassify_lock(client_id: str, analysis_date_iso: str) -> threading.Lock:
+    key = (client_id, analysis_date_iso)
+    with _LOCKS_GUARD:
+        lk = _RECLASSIFY_LOCKS.get(key)
+        if lk is None:
+            lk = _RECLASSIFY_LOCKS[key] = threading.Lock()
+        return lk
 
 v2_negatives_api_bp = Blueprint('v2_negatives_api', __name__,
                                 url_prefix='/v2/api/negatives')
@@ -826,3 +853,194 @@ def push_phrase_suggestions():
         ],
         'ops_budget_remaining': result.get('ops_budget_remaining'),
     })
+
+
+# ---------------------------------------------------------------------------
+# N2 Part 2 — POST /refresh-snapshot  (pull current neg-list state from GAds)
+# ---------------------------------------------------------------------------
+@v2_negatives_api_bp.route('/refresh-snapshot', methods=['POST'])
+def refresh_snapshot():
+    data = request.get_json(silent=True) or {}
+    client_id = data.get('client_id')
+    if not client_id:
+        return _err('missing_client_id', 'client_id required')
+
+    lock = _refresh_lock(client_id)
+    if not lock.acquire(blocking=False):
+        return jsonify({
+            'status': 'error',
+            'message': 'A refresh is already in progress for this client.',
+        }), 409
+
+    try:
+        con = _db()
+        try:
+            row = con.execute(
+                "SELECT customer_id FROM act_v2_clients WHERE client_id = ?",
+                [client_id],
+            ).fetchone()
+        finally:
+            con.close()
+        if not row or not row[0]:
+            return _err('bad_client', f'no customer_id for client_id={client_id}', 404)
+        customer_id = row[0]
+
+        from act_dashboard.data_pipeline.google_ads_ingestion import GoogleAdsDataPipeline
+
+        today = date.today().strftime('%Y-%m-%d')
+        start = time.time()
+        pipeline = GoogleAdsDataPipeline(client_id=client_id, customer_id=customer_id)
+        try:
+            result = pipeline.ingest_negative_lists(today)
+        finally:
+            pipeline.close()
+        duration = time.time() - start
+
+        return jsonify({
+            'status': 'ok',
+            'snapshot_date': today,
+            'list_count': result['lists'],
+            'keyword_count': result['keywords'],
+            'unmatched_names': result.get('unmatched_names', []),
+            'duration_seconds': round(duration, 1),
+        })
+    except Exception as e:
+        logger.exception(f'[refresh-snapshot] client_id={client_id}')
+        return jsonify({
+            'status': 'error',
+            'message': str(e)[:500],
+            'error_class': type(e).__name__,
+        }), 500
+    finally:
+        lock.release()
+
+
+# ---------------------------------------------------------------------------
+# N2 Part 3 — GET /lists  (read-only viewer for Client Config tab)
+# ---------------------------------------------------------------------------
+@v2_negatives_api_bp.route('/lists', methods=['GET'])
+def list_negative_lists():
+    client_id = request.args.get('client_id')
+    if not client_id:
+        return _err('missing_client_id', 'client_id required')
+    con = _db()
+    try:
+        snap_row = con.execute(
+            "SELECT MAX(snapshot_date) FROM act_v2_negative_list_keywords WHERE client_id = ?",
+            [client_id],
+        ).fetchone()
+        snapshot_date = snap_row[0] if snap_row and snap_row[0] else None
+        if snapshot_date is None:
+            return jsonify({
+                'status': 'ok',
+                'snapshot_date': None,
+                'last_synced_at': None,
+                'total_lists': 0,
+                'total_keywords': 0,
+                'lists': [],
+            })
+
+        last_sync_row = con.execute(
+            "SELECT MAX(last_synced_at) FROM act_v2_negative_keyword_lists WHERE client_id = ?",
+            [client_id],
+        ).fetchone()
+        last_synced_at = last_sync_row[0] if last_sync_row else None
+
+        lists_rows = con.execute(
+            """SELECT list_id, list_name, list_role, match_type,
+                      keyword_count, is_linked_to_campaign
+               FROM act_v2_negative_keyword_lists
+               WHERE client_id = ?
+               ORDER BY list_name""",
+            [client_id],
+        ).fetchall()
+
+        kw_rows = con.execute(
+            """SELECT list_id, keyword_text, match_type, added_at, added_by
+               FROM act_v2_negative_list_keywords
+               WHERE client_id = ? AND snapshot_date = ?
+               ORDER BY list_id, keyword_text""",
+            [client_id, snapshot_date],
+        ).fetchall()
+
+        by_list: dict[str, list] = {}
+        for r in kw_rows:
+            by_list.setdefault(r[0], []).append({
+                'keyword_text': r[1],
+                'match_type': r[2],
+                'added_at': r[3].isoformat() if r[3] else None,
+                'added_by': r[4] or 'unknown',
+            })
+
+        lists_payload = []
+        total_kw = 0
+        for lr in lists_rows:
+            list_id, name, role, match_type, _kw_count, linked = lr
+            kws = by_list.get(list_id, [])
+            actual = len(kws)
+            total_kw += actual
+            lists_payload.append({
+                'list_id': list_id,
+                'list_name': name,
+                'list_role': role,
+                'match_type': match_type,
+                'keyword_count': actual,
+                'is_linked_to_campaign': bool(linked),
+                'keywords': kws,
+            })
+
+        return jsonify({
+            'status': 'ok',
+            'snapshot_date': snapshot_date.isoformat() if hasattr(snapshot_date, 'isoformat') else str(snapshot_date),
+            'last_synced_at': last_synced_at.isoformat() if last_synced_at else None,
+            'total_lists': len(lists_payload),
+            'total_keywords': total_kw,
+            'lists': lists_payload,
+        })
+    finally:
+        con.close()
+
+
+# ---------------------------------------------------------------------------
+# N2 Part 4 — POST /reclassify-now  (re-run Pass 1 + Pass 2 for today)
+# ---------------------------------------------------------------------------
+@v2_negatives_api_bp.route('/reclassify-now', methods=['POST'])
+def reclassify_now():
+    data = request.get_json(silent=True) or {}
+    client_id = data.get('client_id')
+    if not client_id:
+        return _err('missing_client_id', 'client_id required')
+    try:
+        analysis_date = _parse_date(data.get('analysis_date'))
+    except ValueError:
+        return _err('bad_date', 'analysis_date must be YYYY-MM-DD')
+
+    lock = _reclassify_lock(client_id, analysis_date.isoformat())
+    if not lock.acquire(blocking=False):
+        return jsonify({
+            'status': 'error',
+            'message': 'A reclassify is already in progress for this client/date.',
+        }), 409
+    try:
+        from act_dashboard.engine.negatives.pass1 import run_pass1
+        start = time.time()
+        summary = run_pass1(client_id, _WAREHOUSE_PATH, analysis_date)
+        duration = time.time() - start
+        return jsonify({
+            'status': 'ok',
+            'analysis_date': analysis_date.isoformat(),
+            'snapshot_date_used': summary.get('neg_snapshot_date'),
+            'inserted': summary.get('inserted', 0),
+            'updated': summary.get('updated', 0),
+            'preserved': summary.get('preserved', 0),
+            'duration_seconds': round(duration, 1),
+        })
+    except Exception as e:
+        logger.exception(f'[reclassify-now] client_id={client_id}')
+        return jsonify({
+            'status': 'error',
+            'message': str(e)[:500],
+            'error_class': type(e).__name__,
+        }), 500
+    finally:
+        lock.release()

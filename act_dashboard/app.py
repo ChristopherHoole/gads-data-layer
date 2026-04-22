@@ -565,6 +565,10 @@ def create_app():
         'v2_negatives_api.run_pass3_endpoint',
         'v2_negatives_api.bulk_update_phrase_suggestions',
         'v2_negatives_api.push_phrase_suggestions',
+        # N2: neg-list sync, reclassify, viewer
+        'v2_negatives_api.refresh_snapshot',
+        'v2_negatives_api.reclassify_now',
+        'v2_negatives_api.list_negative_lists',
     ]
     for route_name in v2_negatives_api_routes:
         if route_name in app.view_functions:
