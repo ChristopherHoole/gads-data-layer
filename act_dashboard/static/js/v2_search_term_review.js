@@ -212,12 +212,12 @@
     return r.json();
   }
 
-  function toast(msg, kind) {
+  function toast(msg, kind, durationMs) {
     toastEl.textContent = msg;
     toastEl.className = 'st-toast' + (kind === 'error' ? ' st-toast--error' : '');
     toastEl.style.display = 'block';
     clearTimeout(toast._t);
-    toast._t = setTimeout(() => { toastEl.style.display = 'none'; }, 4000);
+    toast._t = setTimeout(() => { toastEl.style.display = 'none'; }, durationMs || 4000);
   }
 
   // Wave C10: null -> "—" so PMax rows (cost/CPC/Cost-per-conv) display
@@ -798,14 +798,53 @@
     }
   });
 
+  // N2-polish-1: in-app confirm modal (replaces crude window.confirm).
+  // Lightweight: injected on demand, removed on resolve. Returns a Promise.
+  function showConfirmModal({ title, bodyHtml, confirmLabel = 'Confirm', cancelLabel = 'Cancel' }) {
+    return new Promise(resolve => {
+      const wrap = document.createElement('div');
+      wrap.className = 'act-confirm-overlay';
+      wrap.innerHTML = `
+        <div class="act-confirm" role="dialog" aria-modal="true" aria-labelledby="actConfirmTitle">
+          <div class="act-confirm__header">
+            <h3 id="actConfirmTitle" class="act-confirm__title">${title}</h3>
+          </div>
+          <div class="act-confirm__body">${bodyHtml}</div>
+          <div class="act-confirm__footer">
+            <button type="button" class="btn-act btn-act--decline" data-role="cancel">${cancelLabel}</button>
+            <button type="button" class="btn-act btn-act--approve" data-role="confirm">${confirmLabel}</button>
+          </div>
+        </div>`;
+      document.body.appendChild(wrap);
+      const cleanup = (val) => { wrap.remove(); document.removeEventListener('keydown', onKey); resolve(val); };
+      const onKey = (e) => {
+        if (e.key === 'Escape') cleanup(false);
+        if (e.key === 'Enter')  cleanup(true);
+      };
+      document.addEventListener('keydown', onKey);
+      wrap.addEventListener('click', (e) => { if (e.target === wrap) cleanup(false); });
+      wrap.querySelector('[data-role="cancel"]').addEventListener('click', () => cleanup(false));
+      wrap.querySelector('[data-role="confirm"]').addEventListener('click', () => cleanup(true));
+      // Autofocus primary action for keyboard confirm
+      setTimeout(() => wrap.querySelector('[data-role="confirm"]').focus(), 0);
+    });
+  }
+
   const btnReclass = document.getElementById('stReclassify');
   if (btnReclass) btnReclass.addEventListener('click', async () => {
-    const confirmed = window.confirm(
-      "Re-run Pass 1 + Pass 2 on today's search terms using the current config and latest negative list snapshot.\n\n" +
-      "✓ Approved / pushed / rejected / expired rows are preserved\n" +
-      "↻ Pending rows are re-classified in place\n" +
-      "+ New terms are added\n\nContinue?"
-    );
+    const confirmed = await showConfirmModal({
+      title: "Reclassify today's terms",
+      bodyHtml: `
+        <p>Re-run Pass 1 + Pass 2 on today's search terms using the current config and latest negative list snapshot.</p>
+        <ul class="act-confirm__list">
+          <li><span class="act-confirm__ok">✓</span> Approved / pushed / rejected / expired rows are preserved</li>
+          <li><span class="act-confirm__change">↻</span> Pending rows are re-classified in place</li>
+          <li><span class="act-confirm__add">+</span> New terms are added</li>
+        </ul>
+      `,
+      confirmLabel: 'Reclassify',
+      cancelLabel: 'Cancel',
+    });
     if (!confirmed) return;
     const orig = btnReclass.innerHTML;
     btnReclass.disabled = true; btnReclass.textContent = 'Reclassifying…';
@@ -818,8 +857,12 @@
       if (resp.status === 409) {
         toast('Reclassify already running.', 'error');
       } else if (data.status === 'ok') {
-        toast(`Reclassified: ins=${data.inserted} upd=${data.updated} preserved=${data.preserved} in ${data.duration_seconds}s`);
-        setTimeout(() => window.location.reload(), 800);
+        // N2-polish-1: no full page reload. Toast persists 5s, table
+        // reloads in place via existing AJAX reload() so the user can
+        // see the confirmation and the refreshed rows.
+        toast(`Reclassified ${data.updated} pending rows in ${data.duration_seconds}s (ins=${data.inserted} preserved=${data.preserved})`, undefined, 5000);
+        currentPage = 1;
+        await reload();
       } else {
         toast('Reclassify failed: ' + (data.message || 'Unknown'), 'error');
       }

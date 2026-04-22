@@ -308,3 +308,31 @@
 .neg-sync-pill.neg-sync--amber { background: #fef3c7; color: #92400e; border-color: #fde68a; }
 .neg-sync-pill.neg-sync--red   { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
 .neg-sync-pill.neg-sync--none  { background: #f3f4f6; color: #6b7280; }
+
+/* N2-polish-1 — Confirm modal (ACT styled) */
+.act-confirm-overlay {
+  position: fixed; inset: 0; background: rgba(17, 24, 39, 0.55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2000; animation: actConfirmFade 0.12s ease;
+}
+@keyframes actConfirmFade { from { opacity: 0; } to { opacity: 1; } }
+.act-confirm {
+  background: var(--bg-card, #fff); border-radius: 10px;
+  width: min(520px, 92vw); box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+  border: 1px solid var(--border);
+  animation: actConfirmSlide 0.14s ease;
+}
+@keyframes actConfirmSlide { from { transform: translateY(6px); } to { transform: translateY(0); } }
+.act-confirm__header { padding: 18px 22px 0; }
+.act-confirm__title  { margin: 0; font-size: 16px; font-weight: 600; color: var(--text); }
+.act-confirm__body   { padding: 14px 22px 6px; font-size: 13px; color: var(--text); line-height: 1.55; }
+.act-confirm__body p { margin: 0 0 12px; }
+.act-confirm__list   { list-style: none; padding: 0; margin: 6px 0 4px; display: flex; flex-direction: column; gap: 6px; }
+.act-confirm__list li { display: flex; align-items: baseline; gap: 8px; }
+.act-confirm__ok     { color: #0b8a3e; font-weight: 700; width: 14px; display: inline-block; }
+.act-confirm__change { color: #1e40af; font-weight: 700; width: 14px; display: inline-block; }
+.act-confirm__add    { color: #6b7280; font-weight: 700; width: 14px; display: inline-block; }
+.act-confirm__footer {
+  padding: 14px 22px 18px; display: flex; justify-content: flex-end; gap: 10px;
+  border-top: 1px solid var(--border-light, #f3f4f6); margin-top: 10px;
+}
