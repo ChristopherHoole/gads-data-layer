@@ -189,6 +189,33 @@ def run_ingestion_phase(client, eval_date):
         pipeline.close()
 
 
+def run_neg_sticky_expiry_phase(client, eval_date):
+    """N3 Part A: flip sticky rejections whose expires_at has passed into
+    the 'auto_expired' state so Rule 0 stops blocking them. Runs BEFORE
+    Pass 1 so the cfg load picks up the updated active set.
+    """
+    con = duckdb.connect(DB_PATH)
+    try:
+        n = con.execute(
+            """UPDATE act_v2_sticky_rejections
+               SET unrejected_at = CURRENT_TIMESTAMP,
+                   unrejected_reason = 'auto_expired'
+               WHERE client_id = ?
+                 AND expires_at <= CURRENT_TIMESTAMP
+                 AND unrejected_at IS NULL""",
+            [client['client_id']],
+        ).fetchone()
+        expired = int(n[0]) if n else 0
+        logger.info(f"  [NEG-STICKY-EXPIRY] {client['client_name']}: expired {expired} stickies")
+        return True, None, {'expired': expired}
+    except Exception as e:
+        err = str(e)[:500]
+        logger.error(f"  [NEG-STICKY-EXPIRY] Failed: {err}")
+        return False, err, None
+    finally:
+        con.close()
+
+
 def run_neg_stale_cleanup_phase(client, eval_date):
     """Expire any PRIOR-DATE pending search-term reviews for this client.
 
@@ -333,6 +360,9 @@ def run_client_cycle(client, eval_date):
     # classification depends only on the data just ingested).
     # -------------------------------------------------------------------
     for phase_name, runner, key in (
+        # N3: sticky expiry must run BEFORE pass1 so the cfg load sees the
+        # freshly-unrejected set and re-classifies those terms normally.
+        ('neg_sticky_expiry', run_neg_sticky_expiry_phase, 'neg_sticky_expiry_status'),
         ('neg_stale_cleanup', run_neg_stale_cleanup_phase, 'neg_stale_cleanup_status'),
         ('neg_pass1',         run_neg_pass1_phase,          'neg_pass1_status'),
         ('neg_pass2',         run_neg_pass2_phase,          'neg_pass2_status'),
