@@ -614,6 +614,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const clientId = root.dataset.clientId;
     let state = { loaded: false, filter: '', roleFilter: '', data: null };
 
+    // Defence-in-depth: if the template ever renders an empty data-client-id
+    // (e.g. wrong Jinja var), surface a human-readable error instead of the
+    // raw "client_id required" API response.
+    if (!clientId) {
+      return {
+        load: () => {
+          root.innerHTML = '<div class="neg-error" style="padding:18px;color:var(--danger);">No client selected. Please select a client from the top-right dropdown.</div>';
+          console.error('[NegLists] clientId missing from #negLists data-client-id');
+        },
+        _loaded: false,
+      };
+    }
+
     function fmtWhen(iso) {
       if (!iso) return '—';
       try {
