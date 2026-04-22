@@ -876,7 +876,7 @@ def refresh_snapshot():
         con = _db()
         try:
             row = con.execute(
-                "SELECT customer_id FROM act_v2_clients WHERE client_id = ?",
+                "SELECT google_ads_customer_id FROM act_v2_clients WHERE client_id = ?",
                 [client_id],
             ).fetchone()
         finally:
