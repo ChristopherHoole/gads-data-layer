@@ -263,9 +263,14 @@ def list_search_term_reviews(client_id):
                    campaigns, campaign_types, ad_groups, keywords, match_types, statuses,
                    agg_avg_cpc, agg_ctr, agg_cost_per_conv, agg_conv_rate
             FROM source_agg
-            ORDER BY total_impressions DESC NULLS LAST,
-                     total_clicks DESC NULLS LAST,
-                     id ASC
+            -- N4c: default sort prioritises cost (match triage workflow
+            -- — high-spend leaks first). Impressions is the tiebreaker
+            -- so zero-cost high-volume rows still bubble up below the
+            -- paid ones. search_term ASC gives a deterministic third
+            -- tiebreaker so pagination is stable across reloads.
+            ORDER BY total_cost        DESC NULLS LAST,
+                     total_impressions DESC NULLS LAST,
+                     search_term       ASC
             LIMIT ? OFFSET ?
             """,
             st_type_filter_params + params + [page_size, offset],
@@ -707,7 +712,14 @@ def list_phrase_suggestions(client_id):
                        pushed_to_ads_at, pushed_google_ads_criterion_id, push_error
                 FROM act_v2_phrase_suggestions
                 WHERE {where}
-                ORDER BY word_count, occurrence_count DESC, id
+                -- N4c: default Pass 3 sort mirrors the cost-priority
+                -- spirit of the Pass 1/2 tab. No direct cost column on
+                -- suggestions, so occurrence_count is the best available
+                -- volume proxy. word_count ASC then fragment ASC keep
+                -- the ordering stable across pages.
+                ORDER BY occurrence_count DESC NULLS LAST,
+                         word_count ASC,
+                         fragment ASC
                 LIMIT ? OFFSET ?""",
             [client_id, analysis_date, page_size, offset],
         ).fetchall()
