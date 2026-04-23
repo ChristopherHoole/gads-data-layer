@@ -822,14 +822,80 @@ def bulk_update_phrase_suggestions():
                     touch_role = True
 
             if touch_role:
-                con.execute(
-                    """UPDATE act_v2_phrase_suggestions
-                       SET review_status = ?, reviewed_at = CURRENT_TIMESTAMP,
-                           reviewed_by = 'user',
-                           target_list_role = ?
+                # N4d: DuckDB 1.1.0 raises a false-positive UNIQUE/PK
+                # violation when UPDATE modifies the target_list_role
+                # on an existing row. Work around it with DELETE +
+                # INSERT reusing the same id.
+                #
+                # NOTE: this path must NOT be wrapped in a single
+                # explicit BEGIN/COMMIT. DuckDB 1.1.0 retains the
+                # DELETE'd row's primary-key slot in its in-txn index
+                # view, so the subsequent INSERT (…id=same…) triggers
+                # the same false-positive PK error we were trying to
+                # avoid. Autocommit each statement and use a
+                # compensating re-INSERT if the second statement fails,
+                # so we never leave the row deleted.
+                full_row = con.execute(
+                    """SELECT client_id, analysis_date, fragment, word_count,
+                              target_list_role, source_search_terms,
+                              occurrence_count, risk_level, review_status,
+                              reviewed_at, reviewed_by, pushed_to_ads_at,
+                              pushed_google_ads_criterion_id, push_error
+                       FROM act_v2_phrase_suggestions
                        WHERE id = ? AND client_id = ?""",
-                    [new_status, override, row_id, client_id],
+                    [row_id, client_id],
+                ).fetchone()
+                if not full_row:
+                    # Row vanished mid-loop — skip silently, mirrors the
+                    # existing UPDATE's "no rows matched" behaviour.
+                    continue
+
+                con.execute(
+                    """DELETE FROM act_v2_phrase_suggestions
+                       WHERE id = ? AND client_id = ?""",
+                    [row_id, client_id],
                 )
+                try:
+                    con.execute(
+                        """INSERT INTO act_v2_phrase_suggestions
+                           (id, client_id, analysis_date, fragment,
+                            word_count, target_list_role, source_search_terms,
+                            occurrence_count, risk_level, review_status,
+                            reviewed_at, reviewed_by, pushed_to_ads_at,
+                            pushed_google_ads_criterion_id, push_error)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                                   CURRENT_TIMESTAMP, 'user', ?, ?, ?)""",
+                        [row_id, full_row[0], full_row[1], full_row[2],
+                         full_row[3], override, full_row[5], full_row[6],
+                         full_row[7], new_status,
+                         full_row[11], full_row[12], full_row[13]],
+                    )
+                except Exception:
+                    # Compensate: restore the original row verbatim so
+                    # the failed reclassify doesn't lose a user's prior
+                    # state. Re-raise so the caller sees the real error.
+                    try:
+                        con.execute(
+                            """INSERT INTO act_v2_phrase_suggestions
+                               (id, client_id, analysis_date, fragment,
+                                word_count, target_list_role, source_search_terms,
+                                occurrence_count, risk_level, review_status,
+                                reviewed_at, reviewed_by, pushed_to_ads_at,
+                                pushed_google_ads_criterion_id, push_error)
+                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                                       ?, ?, ?, ?, ?)""",
+                            [row_id, full_row[0], full_row[1], full_row[2],
+                             full_row[3], full_row[4], full_row[5],
+                             full_row[6], full_row[7], full_row[8],
+                             full_row[9], full_row[10], full_row[11],
+                             full_row[12], full_row[13]],
+                        )
+                    except Exception:
+                        logger.exception(
+                            f"[bulk-update-phrase] id={row_id} compensation "
+                            f"re-insert FAILED. Row lost — investigate."
+                        )
+                    raise
             else:
                 con.execute(
                     """UPDATE act_v2_phrase_suggestions
