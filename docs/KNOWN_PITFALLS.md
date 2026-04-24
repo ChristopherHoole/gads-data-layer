@@ -1,8 +1,8 @@
 # KNOWN PITFALLS - ADS CONTROL TOWER (A.C.T)
 
-**Version:** 9.0
+**Version:** 10.0
 **Created:** 2026-02-28
-**Updated:** 2026-03-21
+**Updated:** 2026-04-23
 **Purpose:** Troubleshooting guide with solutions and prevention strategies
 
 **See Also:** LESSONS_LEARNED.md (best practices), MASTER_KNOWLEDGE_BASE.md (current state)
@@ -27,9 +27,10 @@
 14. **Synthetic Data & Features Pipeline Issues** (6 pitfalls)
 15. **Recommendations Engine Issues** (5 pitfalls)
 16. **Flags System Issues** (5 pitfalls)
-17. **Multi-Entity Rules & Flags Issues** (5 pitfalls) ← NEW
+17. **Multi-Entity Rules & Flags Issues** (5 pitfalls)
+18. **ACT v2 Negatives Module Issues** (10 pitfalls) ← NEW (N1–N4)
 
-**Total:** 80 pitfalls with solutions
+**Total:** 90 pitfalls with solutions
 
 ---
 
@@ -542,6 +543,82 @@ function agRfbAutoRisk() {
 
 ---
 
-**Version:** 9.0 | **Last Updated:** 2026-03-21
-**Total Pitfalls:** 80
+## ACT v2 NEGATIVES MODULE ISSUES (N1–N4, Apr 2026)
+
+### 81. DuckDB 1.1.0 UPDATE-on-UNIQUE False-Positive PK
+**Problem:** `UPDATE act_v2_phrase_suggestions SET target_list_role = ? WHERE id = ?` throws `ConstraintException: Duplicate key violates primary key` even when no real duplicate exists and the new value is unique.
+**Cause:** DuckDB 1.1.0's index layer treats UPDATEs on UNIQUE-constrained columns as insert-then-delete; the pre-image key is briefly "still present" in the index view and the new value looks like a dupe.
+**Solution (no real change):** Read the current value first. Only issue the UPDATE if the value is actually changing. See N1q in `bulk_update_phrase_suggestions`.
+**Solution (real change):** DELETE by id, then INSERT with the same id + new values. See N4d.
+**Prevention:** Any UPDATE touching a UNIQUE column needs this pattern. Affected tables in this project: `act_v2_phrase_suggestions`, anything with a composite UNIQUE where the mutable column participates.
+**Ticket:** N1q / N4d
+
+### 82. DuckDB 1.1.0 DELETE+INSERT-Same-ID Inside BEGIN/COMMIT Fails
+**Problem:** Followed the "wrap DELETE + INSERT in a single transaction for atomicity" pattern and hit the same false-positive PK error on the INSERT.
+**Cause:** Within an explicit transaction, DuckDB 1.1.0 retains the DELETE'd row's primary-key slot in the in-transaction index view. An INSERT with the same id trips as a duplicate.
+**Solution:** Autocommit each statement (no explicit `BEGIN`/`COMMIT`). DELETE commits, the index releases the key, INSERT succeeds. For atomicity, pre-read the full row and add a compensating re-INSERT in the `except` branch that restores the original state, then re-raise. Log the compensation failure with `logger.exception` so a worst-case row loss is at least visible.
+**Verified:** Both `:memory:` and file-backed DuckDB 1.1.0 connections.
+**Prevention:** Do not reach for `BEGIN/COMMIT` to make this safe — it makes it worse. Autocommit + compensation is the working pattern.
+**Ticket:** N4d
+
+### 83. Stale Negative-List Matches — Missing snapshot_date Filter
+**Problem:** ACT kept flagging search terms as "already blocked in GAds" days after the user had removed the neg keyword. Evidence: DBD removed `over 60s` from the 2026-04-21 snapshot, but Pass 1 on 2026-04-22 still showed `pass1_reason_detail = 'over 60s|2_word_phrase'`.
+**Cause:** `_load_client_config` in pass1/pass3 UNIONed across every historical `snapshot_date` in `act_v2_negative_list_keywords`. Once a keyword ever existed in any snapshot, it stayed "in the neg list" forever.
+**Solution:** Resolve `MAX(snapshot_date)` once per run. Add `AND kw.snapshot_date = ?` to every neg-list query. Fall back to empty sets when no snapshot exists, log a warning, let downstream rules still run.
+**Prevention:** Any query against a snapshot-archived table must filter by the latest `snapshot_date` for the client. Grep for `act_v2_negative_list_keywords` before touching the neg engine.
+**Ticket:** N2 Part 1
+
+### 84. PMax API `campaign_search_term_insight` Returns NULL Cost
+**Problem:** PMax rows in `act_v2_search_terms` had `cost=NULL`, so no cost-based signals worked for PMax.
+**Cause:** The `campaign_search_term_insight` resource prohibits `metrics.cost_micros`. Google Ads API doesn't expose per-term PMax cost via any API surface; only the UI's scheduled "Search terms report" CSV has it.
+**Solution:** Manual CLI ingestion from the CSV export — `pmax_csv_ingest.py` upserts into `raw_pmax_search_term_csv`, `act_v2_search_terms` (PMax slice only), and `act_v2_pmax_other_bucket`. Engine reads `act_v2_search_terms` unchanged.
+**Prevention:** If an ACT feature needs PMax cost, assume API won't have it and plan for the CSV path.
+**Ticket:** N4
+
+### 85. GAds CSV Export: UTF-16+Tab vs UTF-8+Comma
+**Problem:** Parser broke on the scheduled-email-link CSV despite working on the manual download.
+**Cause:** Google sends two different shapes — manual download is UTF-8 + comma, scheduled-email link is UTF-16 + tab.
+**Solution:** Detect encoding via BOM (`\xff\xfe` / `\xfe\xff` → UTF-16, else UTF-8-sig). Detect delimiter by counting tabs vs commas in the header row. See `pmax_csv_ingest._detect_encoding` / `_detect_delimiter`.
+**Prevention:** Never hardcode encoding or delimiter on Google CSVs. Test both shapes.
+**Ticket:** N4b
+
+### 86. CSS `nth-child` Column Widths Shift When Prepending a Column
+**Problem:** Adding a 44px `#` column to a wide table broke wrapping on Search term / Reason / Keyword — wide columns stretched, narrow columns shrank.
+**Cause:** The existing widths were pinned via `.st-table--wide th:nth-child(N)` selectors. Prepending a column shifted every downstream nth-child by +1 — the "Status" rule was now sizing Reason, Reason was sizing Target list, etc.
+**Solution:** Shift every nth-child selector +1 when a column is prepended. Also hard-lock the new column (`width` + `min-width` + `max-width`) so the browser can't redistribute it.
+**Prevention:** Prefer semantic class selectors (`.col-num`, `.col-search-term`, etc.) over positional `nth-child` for column widths. When you inherit an `nth-child`-driven table and need to add a column, remember every downstream index needs to shift.
+**Ticket:** N3-hotfix-1
+
+### 87. Jinja Template Key Mismatch Renders Empty String Silently
+**Problem:** `<div id="negLists" data-client-id="{{ client.client_id }}">` rendered as `data-client-id=""`. JS read an empty string, API returned 400 "client_id required".
+**Cause:** Route builds the `client` dict with key `id`, not `client_id`. Jinja renders an undefined attribute as empty, no error.
+**Solution:** One-char fix (`client.id`). Add a defensive early-return in the consuming JS: if `dataset.clientId` is empty, render a human-readable error and `console.error` rather than firing the API call.
+**Prevention:** Grep for `client.client_id` in templates before committing (in this project, every correct usage is `client.id`). Defensive null-checks at the JS-to-API boundary are cheap insurance against template regressions.
+**Ticket:** N2-hotfix-1
+
+### 88. Wrong Column Name: `customer_id` vs `google_ads_customer_id`
+**Problem:** `/v2/api/negatives/refresh-snapshot` threw `Binder Error: Referenced column "customer_id" not found`.
+**Cause:** `act_v2_clients` stores the Google Ads customer id as `google_ads_customer_id`, not `customer_id`. The endpoint's lookup SQL used the wrong column name.
+**Solution:** Query `SELECT google_ads_customer_id FROM act_v2_clients`. Keep the local variable named `customer_id` since `GoogleAdsDataPipeline`'s kwarg is `customer_id`.
+**Prevention:** Run `DESCRIBE act_v2_clients` before writing new SQL against it. Every entity id column uses the `google_ads_<entity>_id` pattern.
+**Ticket:** N2-hotfix-2
+
+### 89. Missing CSRF Exemptions on New v2 JSON Endpoints
+**Problem:** New `POST /v2/api/...` endpoints returned 400 on the first client call.
+**Cause:** Every new endpoint in a `/v2/api/*` blueprint must be added to the CSRF-exempt list in `app.py` next to the existing v2 entries. The global CSRF protection catches unlisted JSON POSTs.
+**Solution:** For every new endpoint, add `'blueprint.route_function'` to the `v2_negatives_api_routes` list (or a new list alongside it for new blueprints). `app.py` already loops over the list and runs `csrf.exempt(app.view_functions[name])`.
+**Prevention:** When registering a new v2 blueprint / POST route, grep `csrf.exempt` in `app.py` and append. Missing this produces a 400, not a 500, so it's easy to miss locally.
+**Ticket:** N2 / N3e
+
+### 90. `btn-act--ghost` Doesn't Exist; Use `btn-act--decline`
+**Problem:** Confirm-modal Cancel button was unstyled — invisible text on white.
+**Cause:** `btn-act--ghost` is not defined in `v2_base.css`. Only `btn-act--approve`, `btn-act--decline`, `btn-act--details` exist in the v2 design system.
+**Solution:** Use `btn-act--decline` for Cancel, `btn-act--approve` for primary confirm, `btn-act--details` for neutral / secondary actions.
+**Prevention:** Grep `btn-act--` in `act_dashboard/static/css/v2_base.css` before reaching for a new variant. If you need a "ghost" button, define the class in v2_base.css first rather than inlining a style.
+**Ticket:** N2-polish-1
+
+---
+
+**Version:** 10.0 | **Last Updated:** 2026-04-23
+**Total Pitfalls:** 90
 **See Also:** LESSONS_LEARNED.md | MASTER_KNOWLEDGE_BASE.md
