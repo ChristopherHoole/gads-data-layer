@@ -69,6 +69,13 @@
       <label><input type="checkbox" id="stSelectAll"> Select all on page</label>
       <button class="btn-act btn-act--approve" id="stBulkApprove" disabled>Approve selected (<span id="lblApprove">0</span>)</button>
       <button class="btn-act btn-act--decline" id="stBulkReject" disabled>Reject selected (<span id="lblReject">0</span>)</button>
+      {# Fix 1.4 — stable session row numbering: progress + hide-actioned toggle #}
+      <span class="st-session-progress" id="stSessionProgress" title="Rows actioned in this view since last load. Resets when filter / page / date changes.">
+        <span id="stSessionActioned">0</span> of <span id="stSessionTotal">0</span> actioned
+      </span>
+      <label class="st-hide-actioned" title="Hide rows already approved or rejected in this view. Row numbers do not renumber.">
+        <input type="checkbox" id="stHideActioned"> Hide actioned
+      </label>
     </div>
     <div class="st-action-bar__right">
       <button class="btn-act btn-act--approve" id="stPushApproved" disabled>Push approved to Google Ads</button>

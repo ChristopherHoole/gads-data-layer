@@ -29,6 +29,18 @@
   // Wave D1 — whole-client approved-not-pushed count (drives Push button
   // even when current filter hides approved rows).
   let approvedReadyCount = 0;
+  // Fix 1.4 — stable session row numbering. After a bulk action we mark
+  // rows in place rather than calling reload(), so row numbers don't
+  // renumber mid-session. sessionTotal/sessionActioned drive the
+  // "X of N actioned" header. hideActioned toggles a CSS class that
+  // visually hides actioned rows without removing them from the DOM
+  // (so remaining numbers stay 1..N gap-free in user's reference).
+  let sessionTotal = 0;
+  let sessionActioned = 0;
+  let hideActioned = false;
+  // IDs actioned IN THIS SESSION (not pre-decided rows from server). Survives
+  // sort re-renders so the .actioned class + checkbox lock stick.
+  let sessionActionedIds = new Set();
 
   // ---------- Wave A humanization maps (display only; DB stores codes) ----
   // Wave C12: reason label now a function of (code, detail). When the
@@ -404,16 +416,32 @@
 
   // -------------------- Row rendering (Pass 1/2 — 19 cols) -----------
   function renderRow(item, idx) {
-    const canEdit = item.pass1_status === 'block' || item.pass1_status === 'review';
-    const checked = item.pass1_status === 'block' ? 'checked' : '';
+    // Fix 1.4 — once a row has been actioned IN THIS SESSION, it's locked
+    // and visually struck-through. Pre-decided rows from server (e.g. the
+    // Approved filter view) keep their normal styling — only their status
+    // pill differs. canEdit drives both checkbox + role dropdown enabled
+    // state, so a sort-driven re-render preserves the locked state.
+    const isActioned = sessionActionedIds.has(item.id);
+    const canEdit = !isActioned
+      && (item.pass1_status === 'block' || item.pass1_status === 'review');
+    const checked = (!isActioned && item.pass1_status === 'block') ? 'checked' : '';
     const hideChk = item.pass1_status === 'keep' ? 'style="visibility:hidden"' : '';
-    const roleSel = canEdit ? roleDropdown(item.pass2_target_list_role, cfg.list_roles, item.id) : '';
+    // Show the chosen role disabled on actioned rows so the user can still
+    // see what they picked even after a sort re-render.
+    let roleSel = '';
+    if (canEdit) {
+      roleSel = roleDropdown(item.pass2_target_list_role, cfg.list_roles, item.id);
+    } else if (isActioned) {
+      const lbl = liveTargetListLabels[item.pass2_target_list_role] || humanRole(item.pass2_target_list_role);
+      roleSel = `<select class="st-target-select" disabled><option>${escapeHtml(lbl)}</option></select>`;
+    }
     const pushErr = item.push_error ? `<span class="st-push-error">${escapeHtml(item.push_error)}</span>` : '';
     const pct = v => (v == null) ? EMDASH : (Number(v) * 100).toFixed(2) + '%';
     const num2 = v => (v == null) ? EMDASH : Number(v).toFixed(2);
     // N3g: continuous row # across pagination.
     const rowNum = (currentPage - 1) * PAGE_SIZE + (idx || 0) + 1;
-    return `<tr data-id="${item.id}" data-pass1="${item.pass1_status}">
+    const actionedCls = isActioned ? ' class="actioned"' : '';
+    return `<tr data-id="${item.id}" data-pass1="${item.pass1_status}"${actionedCls}>
       <td class="col-num">${rowNum}</td>
       <td class="st-col-check st-frozen-0" ${hideChk}><input type="checkbox" class="st-chk" ${checked} ${canEdit ? '' : 'disabled'}></td>
       <td class="st-col-term  st-frozen-1" title="${escapeHtml(item.search_term)}">${escapeHtml(item.search_term)}</td>
@@ -439,17 +467,24 @@
 
   // -------------------- Row rendering (Pass 3) -----------------------
   function renderP3Row(item, idx) {
-    const roleSel = roleDropdown(item.target_list_role, cfg.phrase_roles, item.id);
-    const checked = item.word_count >= 2 ? 'checked' : '';  // 1-word unchecked
+    // Fix 1.4 — same actioned-row lock as Pass 1/2 (in-session only).
+    const isActioned = sessionActionedIds.has(item.id);
+    const roleSel = isActioned
+      ? `<select class="st-target-select" disabled><option>${humanRole(item.target_list_role)}</option></select>`
+      : roleDropdown(item.target_list_role, cfg.phrase_roles, item.id);
+    const chkAttrs = isActioned
+      ? 'disabled'
+      : (item.word_count >= 2 ? 'checked' : '');  // 1-word unchecked
     const pushErr = item.push_error ? `<span class="st-push-error">${escapeHtml(item.push_error)}</span>` : '';
     const sources = (item.source_search_terms || []).slice(0, 20).join(', ');
     const reviewed = item.review_status !== 'pending'
       ? `<span class="st-status st-status--${item.review_status}">${item.review_status}</span>`
       : '<span class="st-status st-status--review">pending</span>';
     const rowNum = (currentPage - 1) * PAGE_SIZE + (idx || 0) + 1;
-    return `<tr data-id="${item.id}">
+    const actionedCls = isActioned ? ' class="actioned"' : '';
+    return `<tr data-id="${item.id}"${actionedCls}>
       <td class="col-num">${rowNum}</td>
-      <td><input type="checkbox" class="st-chk" ${checked}></td>
+      <td><input type="checkbox" class="st-chk" ${chkAttrs}></td>
       <td class="st-table__term">${escapeHtml(item.fragment)}</td>
       <td class="num">${item.word_count}</td>
       <td>${roleSel}</td>
@@ -540,6 +575,15 @@
         : '<tr><td colspan="10" class="st-loading">No matching suggestions</td></tr>';
     }
 
+    // Fix 1.4 — fresh page = fresh session counters and fresh actioned set.
+    // Row numbers re-assign 1..N here; in-place bulkUpdate() leaves them
+    // alone afterwards. We deliberately drop sessionActionedIds on reload
+    // so a filter/page change starts a clean slate (matches AC #5).
+    sessionTotal = lastItems.length;
+    sessionActioned = 0;
+    sessionActionedIds = new Set();
+    updateSessionProgress();
+
     document.getElementById('stPagerLabel').textContent =
       `Page ${currentPage} · ${lastItems.length} of ${data.total}`;
     document.getElementById('stPrev').disabled = currentPage <= 1;
@@ -554,6 +598,9 @@
       ? tbody.querySelectorAll('tr[data-id]') : p3body.querySelectorAll('tr[data-id]');
     const ids = [];
     rows.forEach(tr => {
+      // Fix 1.4 — actioned rows are visually struck-through and locked;
+      // skip them so a stray Select-all click can't re-action them.
+      if (tr.classList.contains('actioned')) return;
       const chk = tr.querySelector('input.st-chk');
       if (chk && chk.checked && !chk.disabled) {
         const roleEl = tr.querySelector('select.st-target-select');
@@ -564,6 +611,62 @@
       }
     });
     return ids;
+  }
+
+  // -------------------- Fix 1.4: stable session row numbering ---------
+  function updateSessionProgress() {
+    const a = document.getElementById('stSessionActioned');
+    const t = document.getElementById('stSessionTotal');
+    if (a) a.textContent = sessionActioned;
+    if (t) t.textContent = sessionTotal;
+  }
+  // Mark a single row as actioned in-place: keeps the row in the DOM (and
+  // its row number stable), updates the status pill, locks the checkbox,
+  // and updates the in-memory item so client-side sort + push-button
+  // gating reflect the new state without triggering a reload().
+  function markRowActioned(id, newStatus) {
+    const root = currentTab === 'pass12' ? tbody : p3body;
+    const tr = root.querySelector(`tr[data-id="${id}"]`);
+    if (!tr) return false;
+    if (tr.classList.contains('actioned')) return false;
+    tr.classList.add('actioned');
+    tr.dataset.actionedStatus = newStatus;
+    sessionActionedIds.add(id);
+    // Update the in-memory item too so sort / push counts stay coherent
+    const item = lastItems.find(it => it.id === id);
+    if (item) item.review_status = newStatus;
+    // Replace the status cell pill with the new decided state
+    if (currentTab === 'pass12') {
+      const cells = tr.children;
+      // Status column is index 3 in the Pass 1/2 wide table (col-num=0,
+      // checkbox=1, search-term=2, status=3 — see thead in template).
+      if (cells[3]) {
+        cells[3].innerHTML =
+          `<span class="st-status st-status--${newStatus}">${newStatus}</span>`;
+      }
+    } else {
+      // Pass 3 status column is index 7 (col-num=0, chk=1, fragment=2,
+      // words=3, role=4, occ=5, risk=6, status=7).
+      const cells = tr.children;
+      if (cells[7]) {
+        cells[7].innerHTML =
+          `<span class="st-status st-status--${newStatus}">${newStatus}</span>`;
+      }
+    }
+    // Lock the checkbox so the row can't be re-actioned without reload
+    const chk = tr.querySelector('input.st-chk');
+    if (chk) { chk.checked = false; chk.disabled = true; }
+    // Lock the role dropdown too — role choice is captured at action time
+    const roleEl = tr.querySelector('select.st-target-select');
+    if (roleEl) roleEl.disabled = true;
+    return true;
+  }
+  function setHideActioned(on) {
+    hideActioned = !!on;
+    // Apply to both tables so a tab switch keeps the toggle's effect.
+    [stTable, stP3Table].forEach(tbl => {
+      if (tbl) tbl.classList.toggle('hide-actioned', hideActioned);
+    });
   }
 
   function updateButtons() {
@@ -673,7 +776,28 @@
     try {
       const res = await apiPost(endpoint, {client_id: CLIENT, items});
       toast(`${status}: ${res.updated_count} row(s)`);
-      await reload();
+      // Fix 1.4 — mark each actioned row in-place so row numbers stay
+      // stable for the session. We deliberately do NOT call reload();
+      // that's what was renumbering the table mid-triage. Status-card +
+      // chip counts go slightly stale until next filter/page change,
+      // which is the accepted tradeoff documented in the brief.
+      let marked = 0;
+      sel.forEach(s => { if (markRowActioned(s.id, status)) marked++; });
+      sessionActioned += marked;
+      updateSessionProgress();
+      // Optimistic top-card + push-button update so the dashboard
+      // numbers don't lie until the user navigates.
+      if (currentTab === 'pass12') {
+        const pendingEl = document.getElementById('cntPending');
+        if (pendingEl) pendingEl.textContent =
+          Math.max(0, (parseInt(pendingEl.textContent, 10) || 0) - marked);
+        const dstEl = document.getElementById(
+          status === 'approved' ? 'cntApproved' : 'cntRejected');
+        if (dstEl) dstEl.textContent =
+          (parseInt(dstEl.textContent, 10) || 0) + marked;
+        if (status === 'approved') approvedReadyCount += marked;
+      }
+      updateButtons();
     } catch (e) { toast(`Bulk update failed: ${e.message}`, 'error'); }
   }
 
@@ -739,11 +863,22 @@
   // Chip interaction is now attached inside renderStatusChips /
   // renderReasonChips / renderP3StatusChips (per-button listener).
   document.getElementById('stSelectAll').addEventListener('change', e => {
-    const chks = (currentTab === 'pass12' ? tbody : p3body)
-      .querySelectorAll('input.st-chk:not(:disabled)');
-    chks.forEach(c => { c.checked = e.target.checked; });
+    // Fix 1.4 — Select-all must not pick up actioned rows; their checkbox
+    // is already disabled, but we also skip via the .actioned guard so a
+    // future un-disabled state still couldn't reactivate them.
+    const root = currentTab === 'pass12' ? tbody : p3body;
+    root.querySelectorAll('tr[data-id]').forEach(tr => {
+      if (tr.classList.contains('actioned')) return;
+      const chk = tr.querySelector('input.st-chk');
+      if (chk && !chk.disabled) chk.checked = e.target.checked;
+    });
     updateButtons();
   });
+  // Fix 1.4 — Hide actioned rows toggle. Pure CSS hide; numbering preserved.
+  const hideToggle = document.getElementById('stHideActioned');
+  if (hideToggle) {
+    hideToggle.addEventListener('change', e => setHideActioned(e.target.checked));
+  }
   document.addEventListener('change', e => {
     if (e.target.classList && e.target.classList.contains('st-chk')) updateButtons();
   });

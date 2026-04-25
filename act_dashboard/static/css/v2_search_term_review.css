@@ -347,3 +347,39 @@
   text-align: right; color: var(--text-muted);
   font-variant-numeric: tabular-nums; padding-right: 10px;
 }
+
+/* Fix 1.4 — stable session row numbering.
+   Actioned rows stay in the DOM (so row numbers don't shift) but are
+   visually dimmed + struck-through. The col-num cell is excluded from
+   strikethrough and dimming so the row number remains a clear reference
+   point even on a struck-through row. */
+.st-table tbody tr.actioned td {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+.st-table tbody tr.actioned td.col-num {
+  opacity: 1;
+  text-decoration: none;
+  font-weight: 500;
+}
+/* Status pill on actioned rows shouldn't be struck through — keep its
+   colour readable so the user can see the new state at a glance. */
+.st-table tbody tr.actioned td .st-status {
+  text-decoration: none;
+}
+/* Hide-actioned toggle (display:none preserves DOM + numbering). */
+.st-table.hide-actioned tbody tr.actioned { display: none; }
+
+/* Session progress + Hide-actioned toggle in the action bar. */
+.st-session-progress {
+  font-size: 12px; color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  padding-left: 8px; border-left: 1px solid var(--act-border-light);
+  margin-left: 4px;
+}
+.st-session-progress span { font-weight: 600; color: var(--act-text); }
+.st-hide-actioned {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--act-text);
+  cursor: pointer;
+}
