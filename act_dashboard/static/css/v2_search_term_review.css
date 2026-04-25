@@ -623,3 +623,74 @@
 .st-table.only-unsure tbody tr[data-id]:not([data-ai-verdict="unsure"]) {
   display: none;
 }
+
+/* ============================================================
+   Stage 7.6 — Custom confirm modal (replaces native window.confirm).
+   Sits at z:1100 above the explain modal (z:2000) is intentional;
+   confirms are short-lived and shouldn't outlive an open explain.
+   Actually we put it BELOW the explain modal so a confirm CAN
+   overlay an open explain. z:2100. ============================ */
+.ai-confirm-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 2100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.ai-confirm-content {
+  background: var(--act-surface);
+  color: var(--act-text);
+  border-radius: 10px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.28);
+  border: 1px solid var(--act-border);
+  overflow: hidden;
+}
+.ai-confirm-header {
+  padding: 14px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--act-border-light);
+  color: var(--act-text);
+}
+.ai-confirm-body {
+  padding: 16px 20px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--act-text);
+}
+.ai-confirm-body p { margin: 0 0 8px; }
+.ai-confirm-body p:last-child { margin-bottom: 0; }
+.ai-confirm-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--act-border-light);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  background: var(--act-hover-bg);
+}
+.ai-confirm-cancel {
+  background: var(--act-surface);
+  color: var(--act-text);
+  border: 1px solid var(--act-border);
+}
+.ai-confirm-cancel:hover { background: var(--act-hover-bg); }
+.ai-confirm-ok--primary {
+  background: var(--act-primary);
+  color: white;
+}
+.ai-confirm-ok--primary:hover { background: #1d4ed8; }
+.ai-confirm-ok--danger {
+  background: var(--act-red);
+  color: white;
+}
+.ai-confirm-ok--danger:hover { background: #dc2626; }
+.ai-confirm-ok:focus-visible,
+.ai-confirm-cancel:focus-visible {
+  outline: 2px solid var(--act-primary);
+  outline-offset: 2px;
+}

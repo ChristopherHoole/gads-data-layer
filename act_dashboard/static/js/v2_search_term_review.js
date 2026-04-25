@@ -557,6 +557,51 @@
     }
   }
 
+  // Stage 7.6: drop-in styled replacement for window.confirm — Promise
+  // returns true on OK, false on Cancel / Escape / backdrop. Enter
+  // confirms (the OK button is auto-focused on open).
+  //
+  // SECURITY: `body` is rendered as HTML so callers can include lists,
+  // <strong>, etc. Callers MUST escapeHtml() any user-controlled content
+  // they interpolate into the body. `title`, `okLabel`, `cancelLabel`
+  // ARE escaped automatically.
+  function aiConfirm({title, body, okLabel = 'OK', cancelLabel = 'Cancel',
+                       okStyle = 'primary'}) {
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'ai-confirm-modal';
+      overlay.innerHTML = `
+        <div class="ai-confirm-content" role="dialog" aria-modal="true">
+          <div class="ai-confirm-header">${escapeHtml(title)}</div>
+          <div class="ai-confirm-body">${body}</div>
+          <div class="ai-confirm-footer">
+            <button type="button" class="btn-act ai-confirm-cancel">${escapeHtml(cancelLabel)}</button>
+            <button type="button" class="btn-act ai-confirm-ok ai-confirm-ok--${escapeHtml(okStyle)}">${escapeHtml(okLabel)}</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      const cleanup = (result) => {
+        document.removeEventListener('keydown', onKey);
+        overlay.remove();
+        resolve(result);
+      };
+      const onKey = (e) => {
+        if (e.key === 'Escape') cleanup(false);
+        if (e.key === 'Enter')  cleanup(true);
+      };
+      overlay.querySelector('.ai-confirm-ok')
+        .addEventListener('click', () => cleanup(true));
+      overlay.querySelector('.ai-confirm-cancel')
+        .addEventListener('click', () => cleanup(false));
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) cleanup(false);
+      });
+      document.addEventListener('keydown', onKey);
+      // Auto-focus OK so Enter works immediately
+      setTimeout(() => overlay.querySelector('.ai-confirm-ok').focus(), 0);
+    });
+  }
+
   // Banners — info auto-dismisses, error stays until clicked
   function aiBanner(kind, msg) {
     const host = document.querySelector('.st-action-bar');
@@ -586,10 +631,17 @@
       return;
     }
     if (ids.length > 100) {
-      const tokensApprox = Math.ceil(ids.length / 25) * 5;
-      if (!confirm(`Classify ${ids.length} rows? Approx ~${tokensApprox}K tokens.`)) {
-        return;
-      }
+      // Stage 7.6: styled confirm replacing native window.confirm.
+      // Token estimate is ~5K per ~50-row batch (page-25-batches use
+      // ~5K each per Stage 6 measurements).
+      const tokensApprox = Math.ceil(ids.length / 50) * 5;
+      const ok = await aiConfirm({
+        title: `Classify ${ids.length} rows?`,
+        body: `This will use approximately <strong>~${tokensApprox}K tokens</strong> of your AI quota.`,
+        okLabel: 'Classify',
+        okStyle: 'primary',
+      });
+      if (!ok) return;
     }
     const btn = document.getElementById('btnAITriage');
     btn.disabled = true;
@@ -635,18 +687,26 @@
       aiBanner('info', 'No high-confidence AI verdicts pending.');
       return;
     }
-    // Stage 7.5: compute id splits BEFORE the confirm so the dialog
-    // shows the exact breakdown.
+    // Stage 7.5/7.6: compute id splits BEFORE the confirm so the dialog
+    // shows the exact breakdown. Stage 7.6 swapped native window.confirm
+    // for the styled aiConfirm modal.
     const approveIds = hcRows
       .filter(r => r.ai_verdict === 'approve').map(r => r.id);
     const rejectIds = hcRows
       .filter(r => r.ai_verdict === 'reject').map(r => r.id);
-    if (!confirm(
-        `Apply ${hcRows.length} high-confidence AI verdicts?\n\n`
-        + `  • ${approveIds.length} will be blocked (pushed as negatives)\n`
-        + `  • ${rejectIds.length} will be kept running\n\n`
-        + 'Continue?'
-    )) return;
+    const ok = await aiConfirm({
+      title: `Apply ${hcRows.length} high-confidence AI verdicts?`,
+      body: `
+        <ul style="line-height:1.6; padding-left:20px; margin:0;">
+          <li><strong>${approveIds.length}</strong> will be <strong>blocked</strong> (pushed as negatives in Google Ads)</li>
+          <li><strong>${rejectIds.length}</strong> will be <strong>kept running</strong> (rejection of the block)</li>
+        </ul>
+        <p style="margin:12px 0 0; color: var(--text-muted); font-size: 12px;">You can still review them individually in the Approved / Rejected tabs before pushing to Google Ads.</p>
+      `,
+      okLabel: 'Apply AI calls',
+      okStyle: 'primary',
+    });
+    if (!ok) return;
     try {
       // Reuse the negatives bulk-update endpoint. Stage 7 follows the
       // existing bulkUpdate pattern but with a pre-built id list rather
@@ -1029,17 +1089,37 @@
     // this client+date, not just what's in the current filtered view. Users
     // often approve from Block view (rows then move to Approved view) and
     // would otherwise see a greyed-out button that looks broken.
+    //
+    // Stage 7.6: backend push endpoint is genuinely global (POSTs
+    // {client_id, analysis_date} with no filter pass-through), so the
+    // count + handler ARE consistent — the button DOES push exactly
+    // what it says. The label gets an "(across all tabs)" caveat when
+    // the global count is larger than what's visible in the current
+    // filter, so the user understands the scope. Re-aligning to a
+    // filtered scope would need a backend change (filter pass-through
+    // on POST /v2/api/negatives/push-approved) — Tier 2.2.
     const btn = document.getElementById('stPushApproved');
     btn.disabled = approvedReadyCount === 0;
-    btn.textContent = approvedReadyCount > 0
-      ? `Push ${approvedReadyCount} approved to Google Ads`
-      : 'Push approved to Google Ads';
-    // Helpful tooltip when approved rows exist but aren't visible under
-    // current filters — explains why the user can't see them in the table.
-    const approvedInView = lastItems.some(i =>
-      i.review_status === 'approved' && !i.pushed_to_ads_at);
-    if (approvedReadyCount > 0 && !approvedInView) {
-      btn.title = `${approvedReadyCount} row(s) approved. Switch to the "Approved" status filter to view them before pushing.`;
+    const approvedInView = lastItems.filter(i =>
+      i.review_status === 'approved' && !i.pushed_to_ads_at).length;
+    if (approvedReadyCount === 0) {
+      btn.textContent = 'Push approved to Google Ads';
+    } else if (approvedInView < approvedReadyCount) {
+      // More approved rows exist outside the current filter — be explicit
+      btn.textContent =
+        `Push ${approvedReadyCount} approved to Google Ads (across all tabs)`;
+    } else {
+      btn.textContent = `Push ${approvedReadyCount} approved to Google Ads`;
+    }
+    // Tooltip clarifies scope + remediation
+    if (approvedReadyCount > 0 && approvedInView < approvedReadyCount) {
+      btn.title =
+        `${approvedReadyCount} row(s) approved across all status filters; `
+        + `${approvedInView} visible here. Switch to the "Approved" status `
+        + `filter to view them all before pushing.`;
+    } else if (approvedReadyCount > 0) {
+      btn.title =
+        `${approvedReadyCount} row(s) approved; pushing will mutate Google Ads.`;
     } else {
       btn.removeAttribute('title');
     }
