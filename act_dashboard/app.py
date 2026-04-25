@@ -128,8 +128,9 @@ def create_app():
     app.config['RECOMMENDATIONS_CACHE'] = ExpiringCache(default_ttl=3600)  # 1 hour TTL
 
     # Initialize rate limiter (Phase 1f)
-    # Default: 200 requests per day, 50 per hour
-    # Execution endpoints have stricter limits (10 per minute)
+    # Default limits apply to non-localhost callers. Localhost is exempt
+    # entirely so single-user dev / triage workflows never hit 429.
+    # Production deploy will need to revisit per-tenant rate limiting.
     limiter = Limiter(
         app=app,
         key_func=get_remote_address,
@@ -137,6 +138,11 @@ def create_app():
         storage_uri="memory://",
     )
     app.config['LIMITER'] = limiter
+
+    @limiter.request_filter
+    def _exempt_localhost():
+        from flask import request
+        return request.remote_addr in ("127.0.0.1", "::1", "localhost")
 
     # Register all route blueprints (Phase 1 complete - all 16 routes migrated)
     register_blueprints(app)
