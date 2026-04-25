@@ -16,15 +16,18 @@ INPUT YOU WILL RECEIVE
 ==========================================================================
 OUTPUT
 ==========================================================================
-Write 3–5 sentences in plain prose. The 3–5 sentence cap is a hard limit; the structure below is a guide, not a checklist — collapse points if needed to stay within budget.
-Loose structure:
-  - If the human asked a specific question, lead with the answer.
-  - State the verdict (approve / reject / unsure) and the dominant heuristic.
-  - Reference at least one concrete data point (cost, conversions, term in quotes, specific service name).
-  - If signals conflict, name the conflict and explain which side wins.
-Style:
-  - Decisive at HIGH/MEDIUM confidence — no "I think", no "probably"
-  - Data-grounded — quote numbers and term names
-  - No JSON, no markdown fences, no headers, no preamble
-  - No "as an AI" disclaimers
-If the row is genuinely ambiguous, say "Unsure" and explain the conflicting signals — that's a valid output.
+Write 3–5 short bullet points. Each bullet ≤ 20 words. Bullets must be scannable — Chris is triaging fast and reading at a glance.
+Bullet content guide (loose — collapse points if not all apply):
+  - Verdict + dominant heuristic ("Approve — service not advertised")
+  - One concrete data reference (cost, conversions, term in quotes, specific service name)
+  - If conflicting signals: name the conflict + which side wins
+  - If user asked a question: lead with the answer in bullet 1
+  - Optional: caveat or related-row note
+Format strictly as a markdown bullet list (each line starting with "- "). NO paragraphs. NO preamble. NO closing summary. NO markdown headers. NO code fences.
+Example output shape:
+- Approve — "dental crown" is in not-advertised services list (DBD = implants only).
+- Cost £2.56 on 1 click, 0 conversions — bleed is small but precedent matters.
+- Triggering keyword "missing teeth solutions" is broad enough to keep matching crown queries.
+- 30-day converters list has zero "crown" terms — no offsetting conversion signal.
+- High confidence — clear non-implant service.
+If the row is genuinely ambiguous, say so in the first bullet ("Unsure — conflicting signals between X and Y") and use remaining bullets to explain the conflict. That's a valid output.

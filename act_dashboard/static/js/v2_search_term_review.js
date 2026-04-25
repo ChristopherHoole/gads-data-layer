@@ -548,7 +548,12 @@
       btn.style.display = 'none';
     } else {
       btn.style.display = '';
-      badge.textContent = `(${hcRows.length})`;
+      // Stage 7.5: show breakdown so users know what will happen BEFORE
+      // clicking. ACT-terminology mapping: approve=block, reject=keep.
+      const approveCount = hcRows.filter(r => r.ai_verdict === 'approve').length;
+      const rejectCount = hcRows.filter(r => r.ai_verdict === 'reject').length;
+      badge.textContent =
+        `(${hcRows.length}: ${approveCount} block / ${rejectCount} keep)`;
     }
   }
 
@@ -630,11 +635,18 @@
       aiBanner('info', 'No high-confidence AI verdicts pending.');
       return;
     }
-    if (!confirm(`Apply ${hcRows.length} high-confidence AI verdicts as your action?`)) return;
+    // Stage 7.5: compute id splits BEFORE the confirm so the dialog
+    // shows the exact breakdown.
     const approveIds = hcRows
       .filter(r => r.ai_verdict === 'approve').map(r => r.id);
     const rejectIds = hcRows
       .filter(r => r.ai_verdict === 'reject').map(r => r.id);
+    if (!confirm(
+        `Apply ${hcRows.length} high-confidence AI verdicts?\n\n`
+        + `  • ${approveIds.length} will be blocked (pushed as negatives)\n`
+        + `  • ${rejectIds.length} will be kept running\n\n`
+        + 'Continue?'
+    )) return;
     try {
       // Reuse the negatives bulk-update endpoint. Stage 7 follows the
       // existing bulkUpdate pattern but with a pre-built id list rather
@@ -695,7 +707,14 @@
     const body = document.getElementById('explainModalBody');
     const title = modal.querySelector('#explainModalTitle em');
     title.textContent = searchTerm;
-    body.innerHTML = '<div class="ai-loading-spinner"></div>';
+    // Stage 7.5: spinner subtext so users know the ~20s wait is normal.
+    body.innerHTML =
+      '<div style="text-align:center; padding: 20px;">'
+      + '<div class="ai-loading-spinner"></div>'
+      + '<p style="margin-top: 12px; color: var(--text-muted); font-size: 12px;">'
+      + 'Opus is thinking deeply (~20s)…'
+      + '</p>'
+      + '</div>';
     modal.style.display = 'flex';
     try {
       const data = await apiPost('/v2/api/ai/explain-row', {
@@ -704,13 +723,33 @@
         flow: getExplainFlow(item || {}),
         analysis_date: analysisDate,
       });
-      // Plain text -> paragraph(s); preserve double newlines as paragraph
-      // breaks, single newlines as <br>.
-      const html = (data.explanation || '')
-        .split(/\n\s*\n/)
-        .map(p => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
-        .join('');
-      body.innerHTML = html || '<p>(empty response)</p>';
+      // Stage 7.5: explain prompt now produces "- bullet" lines. Render
+      // as a <ul>; fallback to paragraph rendering if Opus ignored the
+      // bullet instruction so the output never looks broken.
+      const text = data.explanation || '';
+      const lines = text.split('\n').filter(l => l.trim());
+      const bulletLines = lines.filter(l => /^\s*-\s+/.test(l));
+      const otherLines  = lines.filter(l => !/^\s*-\s+/.test(l));
+      if (bulletLines.length) {
+        const prelude = otherLines
+          .map(l => `<p>${escapeHtml(l)}</p>`)
+          .join('');
+        const bullets = bulletLines
+          .map(l => `<li>${escapeHtml(l.replace(/^\s*-\s*/, ''))}</li>`)
+          .join('');
+        body.innerHTML = prelude
+          + `<ul style="line-height:1.6; padding-left: 20px; margin: 0;">`
+          + bullets + '</ul>';
+      } else if (text.trim()) {
+        // Fallback: no bullets present, render as paragraphs (mirrors
+        // pre-7.5 behaviour) so the output is still readable.
+        body.innerHTML = text
+          .split(/\n\s*\n/)
+          .map(p => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
+          .join('');
+      } else {
+        body.innerHTML = '<p>(empty response)</p>';
+      }
     } catch (e) {
       body.innerHTML = `<div class="ai-error-banner"><span>Explain failed: ${escapeHtml(e.message)}</span></div>`;
     }
