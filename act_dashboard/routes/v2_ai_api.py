@@ -29,7 +29,7 @@ from datetime import date, datetime
 import duckdb
 from flask import Blueprint, jsonify, request
 
-from act_dashboard.ai import classifier
+from act_dashboard.ai import classifier, explainer
 from act_dashboard.ai.claude_subprocess import ClaudeError
 from act_dashboard.ai.locks import LockContentionError
 
@@ -209,13 +209,13 @@ def explain_row():
     review_id = body.get('review_id')
     question = body.get('question')
 
-    con = _db()
+    val_con = _db()
     try:
         try:
-            _validate_client_id(con, body.get('client_id'))
+            _validate_client_id(val_con, body.get('client_id'))
             if isinstance(review_id, bool) or not isinstance(review_id, int):
                 raise ValueError('review_id required, integer')
-            row = con.execute(
+            row = val_con.execute(
                 "SELECT 1 FROM act_v2_search_term_reviews WHERE id = ?",
                 [review_id],
             ).fetchone()
@@ -228,24 +228,49 @@ def explain_row():
                     raise ValueError(
                         f'question max {_MAX_QUESTION_CHARS} chars (got {len(question)})'
                     )
+            # Stage 5: flow + analysis_date are required for chat_log persistence.
+            # Extends the existing block — Stage 2 fields above remain authoritative.
+            _validate_flow(body.get('flow'))
+            _parse_analysis_date(body.get('analysis_date'))
         except ValueError as e:
             return _err(str(e))
     finally:
-        con.close()
+        val_con.close()
 
-    # TODO Stage 5: acquire shared per-client lock (same lock as classify-terms + chat).
-    # TODO Stage 5: subprocess.run with --model claude-opus-4-7.
-    # TODO Stage 5: persist user question + assistant response to
-    #               act_v2_ai_chat_log with related_review_id set.
-    return jsonify({
-        'review_id': review_id,
-        'explanation': '<stub: deep reasoning will appear here>',
-        'model_version': 'stub',
-        'tokens_used': 0,
-        'wall_clock_ms': 0,
-        'chat_log_id': None,
-        'stub': True,
-    }), 200
+    client_id = body['client_id']
+    flow = body['flow']
+    analysis_date = body['analysis_date']
+
+    # Read-write connection for the explainer (it INSERTs to
+    # act_v2_ai_chat_log + act_v2_ai_errors). Same lifecycle pattern as
+    # classify-terms.
+    con = duckdb.connect(_WAREHOUSE_PATH)
+    try:
+        result = explainer.explain_row(
+            con,
+            client_id=client_id,
+            review_id=review_id,
+            flow=flow,
+            analysis_date=analysis_date,
+            question=question,
+        )
+        return jsonify(result), 200
+    except LockContentionError as e:
+        return jsonify({
+            'error': 'another AI call is in flight for this client',
+            'client_id': e.client_id,
+        }), 409
+    except ClaudeError as e:
+        logger.error(
+            'explain_row ClaudeError: type=%s msg=%s',
+            e.error_type, str(e)[:300],
+        )
+        return jsonify({
+            'error': 'AI explanation failed',
+            'error_type': e.error_type,
+        }), 502
+    finally:
+        con.close()
 
 
 # ---------------------------------------------------------------------------
