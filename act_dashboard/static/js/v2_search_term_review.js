@@ -637,11 +637,19 @@
   // Same code path for every card so behaviour is symmetric across paths.
   function bumpCard(id, delta) {
     const el = document.getElementById(id);
-    if (!el) return;
-    const raw = (el.textContent || '').replace(/[^\d-]/g, '');
+    if (!el) { console.log('[bumpCard]', id, 'NOT FOUND'); return; }
+    const rawText = el.textContent;
+    const raw = (rawText || '').replace(/[^\d-]/g, '');
     const cur = parseInt(raw, 10);
     const next = Math.max(0, (Number.isFinite(cur) ? cur : 0) + delta);
     el.textContent = String(next);
+    console.log('[bumpCard]', id,
+      'rawText=', JSON.stringify(rawText),
+      'raw=', JSON.stringify(raw),
+      'cur=', cur,
+      'delta=', delta,
+      'next=', next,
+      'el.textContent now=', el.textContent);
   }
   // Mark a single row as actioned in-place: keeps the row in the DOM (and
   // its row number stable), updates the status pill, locks the checkbox,
@@ -812,10 +820,32 @@
       // shared bumpCard() helper so both paths take exactly the same code
       // path. Previous QA showed Pending decrementing but Approved/Rejected
       // not — symmetric helper rules that class of bug out.
+      // DIAGNOSTIC instrumentation (Fix 1.4 Issue 1 round 2): inspection
+      // alone hasn't surfaced the asymmetry — we need runtime telemetry
+      // to know whether (a) the second bumpCard never runs, (b) it runs
+      // but writes a stale value, (c) something resets it afterward.
+      // Remove these console.logs once the root cause is identified.
       if (currentTab === 'pass12') {
+        console.log('[bump] marked =', marked, 'status =', status);
+        const pendBefore = document.getElementById('cntPending');
+        console.log('[bump] before pending', pendBefore && pendBefore.textContent);
         bumpCard('cntPending', -marked);
-        bumpCard(status === 'approved' ? 'cntApproved' : 'cntRejected', +marked);
+        const pendAfter = document.getElementById('cntPending');
+        console.log('[bump] after  pending', pendAfter && pendAfter.textContent);
+        const targetId = status === 'approved' ? 'cntApproved' : 'cntRejected';
+        const tgtBefore = document.getElementById(targetId);
+        console.log('[bump] before', targetId, tgtBefore && tgtBefore.textContent);
+        bumpCard(targetId, +marked);
+        const tgtAfter = document.getElementById(targetId);
+        console.log('[bump] after ', targetId, tgtAfter && tgtAfter.textContent);
         if (status === 'approved') approvedReadyCount += marked;
+        // Also schedule a deferred read so we can see whether anything
+        // resets the value on a subsequent tick (microtask / animation
+        // frame / late callback).
+        setTimeout(() => {
+          const late = document.getElementById(targetId);
+          console.log('[bump] +50ms', targetId, late && late.textContent);
+        }, 50);
       }
       updateButtons();
     } catch (e) { toast(`Bulk update failed: ${e.message}`, 'error'); }
