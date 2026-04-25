@@ -19,8 +19,9 @@ PROMPT_VERSION_EXPLAIN  = "v1"   # explain_row_v1.txt — Opus deep reasoning
 PROMPT_VERSION_CHAT     = "v1"   # chat_v1.txt — free-text panel chat
 
 # --- File names (resolved relative to this directory at request time) ---
-PROMPT_FILE_CLASSIFY = "search_terms_v1.txt"
-PROMPT_FILE_PASS3    = "search_terms_pass3_v1.txt"
-PROMPT_FILE_USER     = "search_terms_user_v1.txt"
-PROMPT_FILE_EXPLAIN  = "explain_row_v1.txt"
-PROMPT_FILE_CHAT     = "chat_v1.txt"
+PROMPT_FILE_CLASSIFY   = "search_terms_v1.txt"
+PROMPT_FILE_PASS3      = "search_terms_pass3_v1.txt"
+PROMPT_FILE_USER       = "search_terms_user_v1.txt"
+PROMPT_FILE_PASS3_USER = "search_terms_pass3_user_v1.txt"
+PROMPT_FILE_EXPLAIN    = "explain_row_v1.txt"
+PROMPT_FILE_CHAT       = "chat_v1.txt"

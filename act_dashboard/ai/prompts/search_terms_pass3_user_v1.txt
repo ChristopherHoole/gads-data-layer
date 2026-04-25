@@ -1,0 +1,6 @@
+Route these {{count}} phrase suggestions for {{client_id}} on {{analysis_date}}.
+Format for each row:
+  [<phrase_id>] "<fragment>" (word_count: <N>, occurrence_count: <K>, risk_level: <low|medium|high>, engine_suggested: <target_list_role>)
+Phrases:
+{{rendered_phrase_list}}
+Return JSON array as specified in the system prompt. One object per phrase, same order as input.

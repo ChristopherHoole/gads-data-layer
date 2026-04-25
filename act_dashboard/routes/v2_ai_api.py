@@ -29,6 +29,10 @@ from datetime import date, datetime
 import duckdb
 from flask import Blueprint, jsonify, request
 
+from act_dashboard.ai import classifier
+from act_dashboard.ai.claude_subprocess import ClaudeError
+from act_dashboard.ai.locks import LockContentionError
+
 v2_ai_api_bp = Blueprint('v2_ai_api', __name__, url_prefix='/v2/api/ai')
 
 logger = logging.getLogger('act_v2_ai_api')
@@ -137,10 +141,12 @@ def classify_terms():
     if review_ids_raw is None and phrase_ids_raw is None:
         return _err('one of review_ids or phrase_suggestion_ids is required')
 
-    con = _db()
+    # Stage 4: validate against a read-only DB; the orchestrator opens its
+    # own read-write connection below for the actual classify+persist.
+    val_con = _db()
     try:
         try:
-            _validate_client_id(con, body.get('client_id'))
+            _validate_client_id(val_con, body.get('client_id'))
             _parse_analysis_date(body.get('analysis_date'))
             _validate_flow(flow)
             force_reclassify = _validate_bool(
@@ -149,34 +155,49 @@ def classify_terms():
             if flow == 'pass3':
                 if phrase_ids_raw is None:
                     return _err('pass3 flow requires phrase_suggestion_ids')
-                _validate_id_list(phrase_ids_raw, 'phrase_suggestion_ids')
+                ids = _validate_id_list(phrase_ids_raw, 'phrase_suggestion_ids')
             else:
                 if review_ids_raw is None:
                     return _err(f'{flow} flow requires review_ids')
-                _validate_id_list(review_ids_raw, 'review_ids')
+                ids = _validate_id_list(review_ids_raw, 'review_ids')
         except ValueError as e:
             return _err(str(e))
     finally:
-        con.close()
+        val_con.close()
 
-    # TODO Stage 4: acquire shared per-client lock (keyed on client_id, shared
-    #               with explain-row + chat); return 409 on contention.
-    # TODO Stage 4: 30s in-memory idempotency cache keyed on hash(ids + prompt_version).
-    # TODO Stage 4: subprocess.run(['claude', '-p', '--output-format', 'json',
-    #               '--model', 'claude-sonnet-4-6'], ...).
-    # TODO Stage 4: filter out already-classified rows where (source_id,
-    #               prompt_version) exists, unless force_reclassify=true.
-    # TODO Stage 4: persist results to act_v2_ai_classifications, errors to
-    #               act_v2_ai_errors.
-    _ = force_reclassify  # silenced until Stage 4 consumes it
-    return jsonify({
-        'classified': 0,
-        'results': [],
-        'skipped_already_classified': 0,
-        'tokens_used': 0,
-        'wall_clock_ms': 0,
-        'stub': True,
-    }), 200
+    client_id = body['client_id']
+    analysis_date = body['analysis_date']
+
+    # Stage 4: open a read-write connection for the classifier (it INSERTs
+    # to act_v2_ai_classifications + act_v2_ai_errors) and own the
+    # lifecycle here so the orchestrator stays connection-agnostic.
+    con = duckdb.connect(_WAREHOUSE_PATH)
+    try:
+        result = classifier.classify_batch(
+            con,
+            client_id=client_id,
+            analysis_date=analysis_date,
+            flow=flow,
+            ids=ids,
+            force_reclassify=force_reclassify,
+        )
+        return jsonify(result), 200
+    except LockContentionError as e:
+        return jsonify({
+            'error': 'another classify batch is in flight for this client',
+            'client_id': e.client_id,
+        }), 409
+    except ClaudeError as e:
+        logger.error(
+            'classify_terms ClaudeError: type=%s msg=%s',
+            e.error_type, str(e)[:300],
+        )
+        return jsonify({
+            'error': 'AI classification failed',
+            'error_type': e.error_type,
+        }), 502
+    finally:
+        con.close()
 
 
 # ---------------------------------------------------------------------------
