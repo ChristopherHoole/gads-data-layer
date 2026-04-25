@@ -10,6 +10,24 @@
   color: var(--act-text);
 }
 
+/* Fix 1.8 — date picker convention info icon. Sits inline with the
+   picker; no fixed dimensions so it can't push the picker around. The
+   muted opacity + currentColor lets it pick up dark-mode text colour
+   automatically. The native title="" tooltip handles hover/dismiss. */
+.st-date-help {
+  display: inline-flex; align-items: center;
+  margin-left: 2px; padding: 2px;
+  color: var(--act-text);
+  opacity: 0.55;
+  cursor: help;
+  border-radius: 4px;
+}
+.st-date-help:hover, .st-date-help:focus { opacity: 0.95; outline: none; }
+.st-date-help .material-symbols-outlined {
+  font-size: 16px;
+  vertical-align: middle;
+}
+
 /* Wave A patch 1: force 5 summary cards on one row (overrides the v2_base
    default of repeat(4, 1fr)) */
 .st-page .status-cards { grid-template-columns: repeat(5, 1fr); }

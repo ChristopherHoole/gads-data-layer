@@ -9,6 +9,15 @@
 
 {% block topbar_extras %}
   <input type="date" id="stDate" value="{{ analysis_date }}" class="act-date-picker">
+  {# Fix 1.8 — date picker convention tooltip. Native title="" matches the
+     pattern used elsewhere in this template (e.g. neg-sync pill below) and
+     respects light/dark mode automatically. #}
+  <span class="st-date-help"
+        tabindex="0"
+        aria-label="Date picker convention"
+        title="The picker shows analysis_date — the date ACT analysed.&#10;Selected date X displays activity from date X-1.&#10;Example: 25 Apr picker = data from 24 Apr ad activity.">
+    <span class="material-symbols-outlined">info</span>
+  </span>
   <span class="neg-sync-pill" id="stNegSyncPill" title="Latest negative-list snapshot from Google Ads">
     <span class="material-symbols-outlined" style="font-size:14px;vertical-align:-2px;">sync</span>
     <span id="stNegSyncText">Negatives: loading…</span>
