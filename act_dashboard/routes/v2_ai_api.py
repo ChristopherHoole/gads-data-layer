@@ -29,7 +29,7 @@ from datetime import date, datetime
 import duckdb
 from flask import Blueprint, jsonify, request
 
-from act_dashboard.ai import classifier, explainer
+from act_dashboard.ai import chatter, classifier, explainer
 from act_dashboard.ai.claude_subprocess import ClaudeError
 from act_dashboard.ai.locks import LockContentionError
 
@@ -281,10 +281,10 @@ def chat():
     body = request.get_json(silent=True) or {}
     message = body.get('message')
 
-    con = _db()
+    val_con = _db()
     try:
         try:
-            _validate_client_id(con, body.get('client_id'))
+            _validate_client_id(val_con, body.get('client_id'))
             _validate_flow(body.get('flow'))
             _parse_analysis_date(body.get('analysis_date'))
             if not isinstance(message, str):
@@ -297,19 +297,41 @@ def chat():
         except ValueError as e:
             return _err(str(e))
     finally:
-        con.close()
+        val_con.close()
 
-    # TODO Stage 4/9: acquire shared per-client lock (same lock as classify-terms + explain-row).
-    # TODO Stage 4/9: subprocess.run with --model claude-sonnet-4-6 + chat_v1.txt system prompt.
-    # TODO Stage 4/9: persist user message + assistant response to act_v2_ai_chat_log.
-    return jsonify({
-        'response': '<stub: chat response will appear here>',
-        'model_version': 'stub',
-        'tokens_used': 0,
-        'wall_clock_ms': 0,
-        'chat_log_id': None,
-        'stub': True,
-    }), 200
+    client_id = body['client_id']
+    flow = body['flow']
+    analysis_date = body['analysis_date']
+
+    # Stage 9 — read-write connection for the chatter (it INSERTs to
+    # act_v2_ai_chat_log + act_v2_ai_errors). Same lifecycle pattern as
+    # classify-terms / explain-row.
+    con = duckdb.connect(_WAREHOUSE_PATH)
+    try:
+        result = chatter.chat(
+            con,
+            client_id=client_id,
+            flow=flow,
+            analysis_date=analysis_date,
+            message=message,
+        )
+        return jsonify(result), 200
+    except LockContentionError as e:
+        return jsonify({
+            'error': 'another AI call is in flight for this client',
+            'client_id': e.client_id,
+        }), 409
+    except ClaudeError as e:
+        logger.error(
+            'chat ClaudeError: type=%s msg=%s',
+            e.error_type, str(e)[:300],
+        )
+        return jsonify({
+            'error': 'AI chat failed',
+            'error_type': e.error_type,
+        }), 502
+    finally:
+        con.close()
 
 
 # ---------------------------------------------------------------------------
@@ -337,17 +359,75 @@ def chat_history():
                     )
         except ValueError as e:
             return _err(str(e))
+
+        client_id = request.args['client_id']
+        flow = request.args['flow']
+        analysis_date = request.args['analysis_date']
+
+        rows = con.execute(
+            """SELECT id, role, message, model_version,
+                      related_review_id, created_at
+                 FROM act_v2_ai_chat_log
+                WHERE client_id = ?
+                  AND flow = ?
+                  AND analysis_date = ?
+                  AND cleared_at IS NULL
+                ORDER BY created_at DESC
+                LIMIT ?""",
+            [client_id, flow, analysis_date, limit],
+        ).fetchall()
     finally:
         con.close()
 
-    # TODO Stage 9: SELECT id, role, message, model_version, related_review_id,
-    #               created_at FROM act_v2_ai_chat_log
-    #               WHERE client_id=? AND flow=? AND analysis_date=?
-    #                 AND cleared_at IS NULL
-    #               ORDER BY created_at DESC LIMIT ?  -- then reverse for
-    #               chronological render
-    _ = limit  # silenced until Stage 9 consumes it
-    return jsonify({
-        'messages': [],
-        'stub': True,
-    }), 200
+    # Reverse for chronological render (oldest first) — the LIMIT keeps
+    # the most-recent N; we just need to flip the order back on the way out.
+    messages = [
+        {
+            'id': r[0],
+            'role': r[1],
+            'message': r[2],
+            'model_version': r[3],
+            'related_review_id': r[4],
+            'created_at': r[5].isoformat() if r[5] else None,
+        }
+        for r in reversed(rows)
+    ]
+    return jsonify({'messages': messages}), 200
+
+
+# ---------------------------------------------------------------------------
+# POST /chat-clear — soft-delete all messages for a (client, flow, date).
+# ---------------------------------------------------------------------------
+# DuckDB UPDATE caution: cleared_at is NOT in any UNIQUE constraint
+# (per Stage 1 schema), so this UPDATE is safe — the project-memory
+# false-positive PK bug only fires on UNIQUE-constrained columns.
+@v2_ai_api_bp.route('/chat-clear', methods=['POST'])
+def chat_clear():
+    body = request.get_json(silent=True) or {}
+    val_con = _db()
+    try:
+        try:
+            _validate_client_id(val_con, body.get('client_id'))
+            _validate_flow(body.get('flow'))
+            _parse_analysis_date(body.get('analysis_date'))
+        except ValueError as e:
+            return _err(str(e))
+    finally:
+        val_con.close()
+
+    client_id = body['client_id']
+    flow = body['flow']
+    analysis_date = body['analysis_date']
+
+    con = duckdb.connect(_WAREHOUSE_PATH)
+    try:
+        con.execute(
+            """UPDATE act_v2_ai_chat_log
+                  SET cleared_at = CURRENT_TIMESTAMP
+                WHERE client_id = ? AND flow = ? AND analysis_date = ?
+                  AND cleared_at IS NULL""",
+            [client_id, flow, analysis_date],
+        )
+        return jsonify({'cleared': True}), 200
+    finally:
+        con.close()

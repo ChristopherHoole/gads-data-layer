@@ -812,62 +812,267 @@
     if (stTable) stTable.classList.toggle('only-unsure', !active);
   }
 
-  // === Per-row Explain modal ===
-  async function openExplainModal(reviewId, searchTerm, item) {
-    const modal = document.getElementById('explainModal');
-    const body = document.getElementById('explainModalBody');
-    const title = modal.querySelector('#explainModalTitle em');
-    title.textContent = searchTerm;
-    // Stage 7.5: spinner subtext so users know the ~20s wait is normal.
-    body.innerHTML =
-      '<div style="text-align:center; padding: 20px;">'
-      + '<div class="ai-loading-spinner"></div>'
-      + '<p style="margin-top: 12px; color: var(--text-muted); font-size: 12px;">'
-      + 'Opus is thinking deeply (~20s)…'
-      + '</p>'
-      + '</div>';
-    modal.style.display = 'flex';
+  // ============================================================
+  // Stage 9 — chat panel (free-text Opus + history hydration +
+  // explain redirect into the chat stream).
+  // ============================================================
+
+  // In-flight latch — set true while ANY chat-style call is running
+  // (chat send OR explain-into-panel). Prevents the user from firing
+  // a second request before the first completes (the lock is also
+  // enforced server-side via locks.LockContentionError, but checking
+  // here is a friendlier UX — we surface a system bubble instead of
+  // a 409 banner).
+  let aiChatLoading = false;
+
+  async function hydrateChatHistory() {
+    const flow = getCurrentFlowOrNull();
+    if (!flow || !analysisDate) {
+      renderChatMessages([]);
+      return;
+    }
     try {
-      const data = await apiPost('/v2/api/ai/explain-row', {
-        client_id: CLIENT,
-        review_id: reviewId,
-        flow: getExplainFlow(item || {}),
-        analysis_date: analysisDate,
-      });
-      // Stage 7.5: explain prompt now produces "- bullet" lines. Render
-      // as a <ul>; fallback to paragraph rendering if Opus ignored the
-      // bullet instruction so the output never looks broken.
-      const text = data.explanation || '';
-      const lines = text.split('\n').filter(l => l.trim());
-      const bulletLines = lines.filter(l => /^\s*-\s+/.test(l));
-      const otherLines  = lines.filter(l => !/^\s*-\s+/.test(l));
-      if (bulletLines.length) {
-        const prelude = otherLines
-          .map(l => `<p>${escapeHtml(l)}</p>`)
-          .join('');
-        const bullets = bulletLines
-          .map(l => `<li>${escapeHtml(l.replace(/^\s*-\s*/, ''))}</li>`)
-          .join('');
-        body.innerHTML = prelude
-          + `<ul style="line-height:1.6; padding-left: 20px; margin: 0;">`
-          + bullets + '</ul>';
-      } else if (text.trim()) {
-        // Fallback: no bullets present, render as paragraphs (mirrors
-        // pre-7.5 behaviour) so the output is still readable.
-        body.innerHTML = text
-          .split(/\n\s*\n/)
-          .map(p => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
-          .join('');
-      } else {
-        body.innerHTML = '<p>(empty response)</p>';
+      const url = '/v2/api/ai/chat-history'
+        + `?client_id=${encodeURIComponent(CLIENT)}`
+        + `&flow=${encodeURIComponent(flow)}`
+        + `&analysis_date=${encodeURIComponent(analysisDate)}`
+        + '&limit=50';
+      const r = await fetch(url, {credentials: 'same-origin'});
+      if (!r.ok) {
+        renderChatMessages([]);
+        return;
       }
+      const data = await r.json();
+      renderChatMessages(data.messages || []);
     } catch (e) {
-      body.innerHTML = `<div class="ai-error-banner"><span>Explain failed: ${escapeHtml(e.message)}</span></div>`;
+      console.warn('chat-history fetch failed:', e);
+      renderChatMessages([]);
     }
   }
-  function closeExplainModal() {
-    const m = document.getElementById('explainModal');
-    if (m) m.style.display = 'none';
+
+  function renderChatMessages(messages) {
+    const list = document.getElementById('aiChatMessages');
+    const empty = document.getElementById('aiChatEmpty');
+    if (!list) return;
+    // Strip existing message DOM (preserve the empty placeholder)
+    Array.from(list.querySelectorAll('.ai-chat-msg, .ai-chat-typing'))
+      .forEach(el => el.remove());
+    if (!messages.length) {
+      if (empty) empty.style.display = '';
+      return;
+    }
+    if (empty) empty.style.display = 'none';
+    for (const msg of messages) list.appendChild(buildMsgEl(msg));
+    scrollChatToBottom();
+  }
+
+  function buildMsgEl(msg) {
+    const el = document.createElement('div');
+    const role = msg.role === 'user'
+      ? 'user'
+      : (msg.role === 'system' ? 'system' : 'assistant');
+    el.className = `ai-chat-msg ai-chat-msg-${role}`;
+    // Special pill for explain-marker user rows (related_review_id set)
+    if (role === 'user' && msg.related_review_id) {
+      el.className = 'ai-chat-msg ai-chat-msg-explain-marker';
+    }
+    const safe = (msg.message && msg.message.trim())
+      ? msg.message
+      : '[no response — try again]';
+    // Bullet detection: accept both "- " and "* " (multiline regex).
+    const hasBullets = /^\s*[-*]\s/m.test(safe);
+    if (role === 'assistant' && hasBullets) {
+      const lines = safe.split('\n').filter(l => l.trim());
+      const bullets = lines.filter(l => /^\s*[-*]\s/.test(l));
+      const nonBullets = lines.filter(l => !/^\s*[-*]\s/.test(l));
+      const prelude = nonBullets
+        .map(l => `<p>${escapeHtml(l)}</p>`).join('');
+      const ul = bullets.length
+        ? '<ul>' + bullets
+            .map(l => `<li>${escapeHtml(l.replace(/^\s*[-*]\s*/, ''))}</li>`)
+            .join('') + '</ul>'
+        : '';
+      el.innerHTML = prelude + ul;
+    } else {
+      el.innerHTML = `<div>${escapeHtml(safe).replace(/\n/g, '<br>')}</div>`;
+    }
+    return el;
+  }
+
+  function scrollChatToBottom() {
+    const list = document.getElementById('aiChatMessages');
+    if (list) list.scrollTop = list.scrollHeight;
+  }
+
+  function appendChatMsg(msg) {
+    const empty = document.getElementById('aiChatEmpty');
+    if (empty) empty.style.display = 'none';
+    const list = document.getElementById('aiChatMessages');
+    if (!list) return;
+    list.appendChild(buildMsgEl(msg));
+    scrollChatToBottom();
+  }
+
+  function appendTypingIndicator() {
+    const list = document.getElementById('aiChatMessages');
+    if (!list) return;
+    const el = document.createElement('div');
+    el.className = 'ai-chat-typing';
+    el.id = 'aiChatTyping';
+    el.innerHTML = '<span class="ai-chat-typing-dot"></span>'
+      + '<span class="ai-chat-typing-dot"></span>'
+      + '<span class="ai-chat-typing-dot"></span>';
+    list.appendChild(el);
+    scrollChatToBottom();
+  }
+  function removeTypingIndicator() {
+    const el = document.getElementById('aiChatTyping');
+    if (el) el.remove();
+  }
+
+  async function sendChatMessage() {
+    if (aiChatLoading) return;
+    const input = document.getElementById('aiChatInput');
+    const message = input ? input.value.trim() : '';
+    if (!message) return;
+    const flow = getCurrentFlowOrNull();
+    if (!flow) {
+      appendChatMsg({
+        role: 'system',
+        message: 'Pick a campaign source (Search / PMax) AND a status (Block / Review) before chatting — current filters are too broad.',
+      });
+      return;
+    }
+
+    aiChatLoading = true;
+    const sendBtn = document.getElementById('btnAIChatSend');
+    if (sendBtn) sendBtn.disabled = true;
+
+    appendChatMsg({role: 'user', message});
+    input.value = '';
+    if (getAIPanelState() === 'collapsed') setAIPanelState('open');
+    appendTypingIndicator();
+
+    try {
+      const r = await fetch('/v2/api/ai/chat', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          client_id: CLIENT,
+          flow,
+          analysis_date: analysisDate,
+          message,
+        }),
+      });
+      removeTypingIndicator();
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({error: r.statusText}));
+        appendChatMsg({
+          role: 'system',
+          message: `Chat failed: ${err.error || r.statusText}`,
+        });
+        return;
+      }
+      const data = await r.json();
+      appendChatMsg({role: 'assistant', message: data.response});
+    } catch (e) {
+      removeTypingIndicator();
+      appendChatMsg({role: 'system', message: `Chat error: ${e.message}`});
+    } finally {
+      aiChatLoading = false;
+      if (sendBtn) sendBtn.disabled = false;
+      if (input) input.focus();
+    }
+  }
+
+  async function clearChat() {
+    const flow = getCurrentFlowOrNull();
+    if (!flow) {
+      appendChatMsg({
+        role: 'system',
+        message: 'No chat thread bound to the current view (filter ambiguous).',
+      });
+      return;
+    }
+    const ok = await aiConfirm({
+      title: 'Clear this conversation?',
+      body: 'All messages for the current view will be hidden. (Soft delete — recoverable from the database.)',
+      okLabel: 'Clear',
+      okStyle: 'danger',
+    });
+    if (!ok) return;
+    try {
+      const r = await fetch('/v2/api/ai/chat-clear', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          client_id: CLIENT,
+          flow,
+          analysis_date: analysisDate,
+        }),
+      });
+      if (r.ok) {
+        renderChatMessages([]);
+      } else {
+        aiBanner('error', 'Clear chat failed');
+      }
+    } catch (e) {
+      aiBanner('error', `Clear chat error: ${e.message}`);
+    }
+  }
+
+  // Replaces the Stage 7 transitional Explain modal. Per-row Explain
+  // now appends to the chat stream — auto-expands the panel if it's
+  // collapsed so the user actually SEES their request + reply.
+  async function explainRowInPanel(reviewId, searchTerm, item) {
+    if (aiChatLoading) {
+      appendChatMsg({
+        role: 'system',
+        message: 'Another AI call is in flight — wait for it to finish.',
+      });
+      return;
+    }
+    aiChatLoading = true;
+    if (getAIPanelState() === 'collapsed') setAIPanelState('open');
+
+    appendChatMsg({
+      role: 'user',
+      message: `🔍 Explain row [${reviewId}]: "${searchTerm}"`,
+      related_review_id: reviewId,
+    });
+    appendTypingIndicator();
+
+    try {
+      const r = await fetch('/v2/api/ai/explain-row', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          client_id: CLIENT,
+          review_id: reviewId,
+          flow: getExplainFlow(item || {}),
+          analysis_date: analysisDate,
+        }),
+      });
+      removeTypingIndicator();
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({error: r.statusText}));
+        appendChatMsg({
+          role: 'system',
+          message: `Explain failed: ${err.error || r.statusText}`,
+        });
+        return;
+      }
+      const data = await r.json();
+      appendChatMsg({role: 'assistant', message: data.explanation});
+    } catch (e) {
+      removeTypingIndicator();
+      appendChatMsg({role: 'system', message: `Explain error: ${e.message}`});
+    } finally {
+      aiChatLoading = false;
+    }
   }
 
   // === Loading skeleton state for AI cells during a triage call ===
@@ -1028,6 +1233,10 @@
     updateApplyHCButton();
     // Stage 8 — refresh AI panel context header (flow / total / client / date)
     updateAIPanelContext();
+    // Stage 9 — re-hydrate chat history when the (flow, date) scope
+    // changes. hydrateChatHistory itself is a no-op when flow is null
+    // (e.g. "All > All") so calling it on every reload is safe.
+    hydrateChatHistory();
   }
 
   // -------------------- Selection & action buttons -------------------
@@ -1399,7 +1608,9 @@
   updateAIPanelContext();
 
   // Per-row Explain link — event delegation on tbody so it survives
-  // re-renders (sort, reload, etc.).
+  // re-renders (sort, reload, etc.). Stage 9 redirects the explain
+  // output into the chat stream (replacing the Stage 7 transitional
+  // modal); the modal HTML/CSS/JS were removed in Stage 9.
   if (tbody) {
     tbody.addEventListener('click', (e) => {
       const link = e.target.closest('.ai-explain-link');
@@ -1407,24 +1618,28 @@
       e.preventDefault();
       const id = parseInt(link.dataset.rowId, 10);
       const item = lastItems.find(it => it.id === id);
-      openExplainModal(id, link.dataset.searchTerm || '', item);
+      explainRowInPanel(id, link.dataset.searchTerm || '', item);
     });
   }
-  // Close modal: × button + Escape key + click on backdrop
-  const _explainModal = document.getElementById('explainModal');
-  const _explainClose = document.getElementById('explainModalClose');
-  if (_explainClose) _explainClose.addEventListener('click', closeExplainModal);
-  if (_explainModal) {
-    _explainModal.addEventListener('click', (e) => {
-      if (e.target === _explainModal) closeExplainModal();
+
+  // -------------------- Stage 9 — chat panel wiring ------------------
+  const _btnChatSend = document.getElementById('btnAIChatSend');
+  if (_btnChatSend) _btnChatSend.addEventListener('click', sendChatMessage);
+  const _btnChatClear = document.getElementById('btnAIChatClear');
+  if (_btnChatClear) _btnChatClear.addEventListener('click', clearChat);
+  // Enter sends, Shift+Enter inserts newline
+  const _chatInput = document.getElementById('aiChatInput');
+  if (_chatInput) {
+    _chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChatMessage();
+      }
     });
   }
-  document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
-    if (_explainModal && _explainModal.style.display !== 'none') {
-      closeExplainModal();
-    }
-  });
+  // Initial hydrate. reload() also re-hydrates on every fetch via the
+  // hook in the reload tail (filter / date / tab change).
+  hydrateChatHistory();
 
   // --------- N2 Part 2/4/5: refresh snapshot + reclassify + sync pill -------
   async function loadSyncPill() {

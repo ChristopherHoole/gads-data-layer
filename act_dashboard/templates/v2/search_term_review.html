@@ -204,20 +204,9 @@
   {# ---- Toast host ---- #}
   <div id="stToast" class="st-toast" style="display:none"></div>
 
-  {# ---- Stage 7: transitional explain-row modal.
-       Stages 8/9 replace this with the chat-panel split-screen.
-       One-shot display: open → spinner → fill → close. No history. ---- #}
-  <div id="explainModal" class="ai-explain-modal" style="display:none">
-    <div class="ai-explain-modal-content">
-      <div class="ai-explain-modal-header">
-        <span id="explainModalTitle">Explanation for: <em></em></span>
-        <button id="explainModalClose" type="button" aria-label="Close">×</button>
-      </div>
-      <div id="explainModalBody" class="ai-explain-modal-body">
-        <div class="ai-loading-spinner"></div>
-      </div>
-    </div>
-  </div>
+  {# Stage 7 transitional explain-row modal removed in Stage 9.
+       Per-row 🔍 Explain now appends to the chat panel stream
+       (see explainRowInPanel in v2_search_term_review.js). #}
 
     </div>{# /.ai-page-main #}
 
@@ -235,10 +224,34 @@
         <span class="ai-panel-context-empty">—</span>
       </div>
       <div class="ai-panel-body" id="aiPanelBody">
-        <div class="ai-panel-placeholder">
-          <p>💬 AI chat panel coming in Stage 9.</p>
-          <p>For now, use the per-row 🔍 Explain links and the
-             🤖 AI Triage / ✅ Apply high-conf buttons in the action bar.</p>
+        {# Stage 9 — chat panel. Hydrated via /v2/api/ai/chat-history on
+           page load + on every filter/date/tab change. The aiChatEmpty
+           div is hidden by JS once any message exists. #}
+        <div class="ai-chat-messages" id="aiChatMessages">
+          <div class="ai-chat-empty" id="aiChatEmpty">
+            <p>💬 No messages yet for this view.</p>
+            <p style="font-size:11px; opacity:0.7;">
+              Ask me anything about the rows you're triaging — patterns,
+              clusters, specific terms, anomalies.
+            </p>
+          </div>
+        </div>
+
+        <div class="ai-chat-input-area">
+          <textarea id="aiChatInput" rows="2" maxlength="4000"
+                    placeholder="Ask about this batch... (Enter to send, Shift+Enter for newline)"></textarea>
+          <div class="ai-chat-input-row">
+            <button class="btn-act ai-chat-clear" id="btnAIChatClear"
+                    type="button"
+                    title="Clear this conversation (soft delete — recoverable in DB)">
+              🗑️ Clear
+            </button>
+            <button class="btn-act ai-chat-send" id="btnAIChatSend"
+                    type="button"
+                    title="Send message (Enter)">
+              Send →
+            </button>
+          </div>
         </div>
       </div>
     </aside>
