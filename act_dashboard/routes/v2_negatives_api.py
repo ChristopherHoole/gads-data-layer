@@ -25,6 +25,10 @@ from act_dashboard.engine.negatives.pass3 import run_pass3
 from act_dashboard.data_pipeline.google_ads_mutate import (
     push_negatives_to_shared_lists,
 )
+# Stage 7: surface AI classifications in the review-table list response.
+# Only the current prompt_version surfaces — historical versions stay
+# attributed in the AI table for audit but don't pollute the live UI.
+from act_dashboard.ai.prompts import PROMPT_VERSION_CLASSIFY
 
 # N2 Part 2 + 4: per-client in-memory locks to stop two refresh or reclassify
 # jobs racing against the same DuckDB + Google Ads customer. Keys are bare
@@ -210,7 +214,20 @@ def list_search_term_reviews(client_id):
 
         rows = con.execute(
             f"""
-            WITH source_agg AS (
+            WITH ai_latest AS (
+              -- Stage 7: latest AI classification at the CURRENT prompt
+              -- version, one row per review_id. Pre-aggregating here keeps
+              -- source_agg's GROUP BY untouched (review-row uniqueness is
+              -- already established before we LEFT JOIN ai_latest).
+              SELECT DISTINCT ON (review_id)
+                     review_id, ai_verdict, ai_confidence,
+                     ai_reasoning, ai_intent_tag
+                FROM act_v2_ai_classifications
+               WHERE prompt_version = ?
+                 AND review_id IS NOT NULL
+               ORDER BY review_id, classified_at DESC
+            ),
+            source_agg AS (
               SELECT r.id, r.search_term, r.analysis_date,
                      r.first_seen_date, r.last_seen_date,
                      COALESCE(SUM(st.impressions), 0)  AS total_impressions,
@@ -253,27 +270,35 @@ def list_search_term_reviews(client_id):
                        r.pushed_to_ads_at, r.pushed_google_ads_criterion_id,
                        r.push_error
             )
-            SELECT id, search_term, analysis_date,
-                   first_seen_date, last_seen_date,
-                   total_impressions, total_clicks, total_cost, total_conversions,
-                   pass1_status, pass1_reason, pass1_reason_detail,
-                   pass2_target_list_role,
-                   review_status, reviewed_at, reviewed_by,
-                   pushed_to_ads_at, pushed_google_ads_criterion_id, push_error,
-                   campaigns, campaign_types, ad_groups, keywords, match_types, statuses,
-                   agg_avg_cpc, agg_ctr, agg_cost_per_conv, agg_conv_rate
-            FROM source_agg
+            SELECT sa.id, sa.search_term, sa.analysis_date,
+                   sa.first_seen_date, sa.last_seen_date,
+                   sa.total_impressions, sa.total_clicks, sa.total_cost,
+                   sa.total_conversions,
+                   sa.pass1_status, sa.pass1_reason, sa.pass1_reason_detail,
+                   sa.pass2_target_list_role,
+                   sa.review_status, sa.reviewed_at, sa.reviewed_by,
+                   sa.pushed_to_ads_at, sa.pushed_google_ads_criterion_id,
+                   sa.push_error,
+                   sa.campaigns, sa.campaign_types, sa.ad_groups,
+                   sa.keywords, sa.match_types, sa.statuses,
+                   sa.agg_avg_cpc, sa.agg_ctr, sa.agg_cost_per_conv,
+                   sa.agg_conv_rate,
+                   ai.ai_verdict, ai.ai_confidence,
+                   ai.ai_reasoning, ai.ai_intent_tag
+            FROM source_agg sa
+            LEFT JOIN ai_latest ai ON ai.review_id = sa.id
             -- N4c: default sort prioritises cost (match triage workflow
             -- — high-spend leaks first). Impressions is the tiebreaker
             -- so zero-cost high-volume rows still bubble up below the
             -- paid ones. search_term ASC gives a deterministic third
             -- tiebreaker so pagination is stable across reloads.
-            ORDER BY total_cost        DESC NULLS LAST,
-                     total_impressions DESC NULLS LAST,
-                     search_term       ASC
+            ORDER BY sa.total_cost        DESC NULLS LAST,
+                     sa.total_impressions DESC NULLS LAST,
+                     sa.search_term       ASC
             LIMIT ? OFFSET ?
             """,
-            st_type_filter_params + params + [page_size, offset],
+            [PROMPT_VERSION_CLASSIFY] + st_type_filter_params + params
+            + [page_size, offset],
         ).fetchall()
 
         # Wave D1 (Fix 5) — cross-filtering cascade: chip counts should reflect
@@ -462,6 +487,12 @@ def list_search_term_reviews(client_id):
             'ctr':                 float(r[26]) if r[26] is not None else None,
             'cost_per_conversion': float(r[27]) if r[27] is not None else None,
             'conversion_rate':     float(r[28]) if r[28] is not None else None,
+            # Stage 7 — AI classifications (NULL when not yet classified at
+            # the current prompt_version).
+            'ai_verdict':     r[29],
+            'ai_confidence':  r[30],
+            'ai_reasoning':   r[31],
+            'ai_intent_tag':  r[32],
         })
     return jsonify({
         'items': items, 'total': int(total),

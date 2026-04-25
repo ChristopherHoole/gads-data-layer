@@ -88,6 +88,24 @@
       </label>
     </div>
     <div class="st-action-bar__right">
+      {# Stage 7 — AI helpers. Sit at the START of the right group so the
+         flow reads left-to-right: AI assists → user actions → push to GAds. #}
+      <div class="ai-action-group">
+        <button class="btn-act btn-act--ai" id="btnAITriage"
+                title="Classify pending rows in the current view using Claude Opus.">
+          🤖 AI Triage <span class="ai-action-badge" id="aiTriageCount">(0 pending)</span>
+        </button>
+        <button class="btn-act btn-act--ai-secondary" id="btnApplyHighConf"
+                style="display:none"
+                title="Apply every high-confidence AI verdict on this page as your action.">
+          ✅ Apply high-conf <span class="ai-action-badge" id="applyHighConfCount">(0)</span>
+        </button>
+        <button class="btn-act btn-act--details" id="btnFilterUnsure"
+                data-active="false"
+                title="Filter the current view to rows where the AI returned 'unsure'.">
+          🔍 Only show unsure
+        </button>
+      </div>
       <button class="btn-act btn-act--approve" id="stPushApproved" disabled>Push approved to Google Ads</button>
       <button class="btn-act btn-act--details" id="stRefreshNegs" title="Pull the latest negative-keyword lists from Google Ads">🔄 Refresh Neg Lists from GAds</button>
       <button class="btn-act btn-act--details" id="stReclassify" title="Re-run Pass 1 + Pass 2 on today's terms using current config and latest neg snapshot">♻️ Reclassify today's terms</button>
@@ -123,10 +141,16 @@
           <th class="num st-sortable" data-sort="cost_per_conversion">Cost / Conv <span class="st-sort-ind"></span></th>
           <th class="num st-sortable" data-sort="conversion_rate">Conv rate <span class="st-sort-ind"></span></th>
           <th>Push error</th>
+          {# Stage 7 — AI columns appended at the end so the existing
+             nth-child width rules (CSS lines 197-220) don't need re-numbering.
+             Trade-off: user scrolls right to see them. Acceptable for MVP. #}
+          <th title="AI verdict (approve = block / reject = keep running / unsure = escalate)">AI Verdict</th>
+          <th title="AI confidence in its verdict (high / medium / low)">AI Confidence</th>
+          <th title="Get a deep-reasoning explanation from Opus for this row">Explain</th>
         </tr>
       </thead>
       <tbody id="stTbody">
-        <tr><td colspan="20" class="st-loading">Loading…</td></tr>
+        <tr><td colspan="23" class="st-loading">Loading…</td></tr>
       </tbody>
     </table>
 
@@ -170,6 +194,21 @@
 
   {# ---- Toast host ---- #}
   <div id="stToast" class="st-toast" style="display:none"></div>
+
+  {# ---- Stage 7: transitional explain-row modal.
+       Stages 8/9 replace this with the chat-panel split-screen.
+       One-shot display: open → spinner → fill → close. No history. ---- #}
+  <div id="explainModal" class="ai-explain-modal" style="display:none">
+    <div class="ai-explain-modal-content">
+      <div class="ai-explain-modal-header">
+        <span id="explainModalTitle">Explanation for: <em></em></span>
+        <button id="explainModalClose" type="button" aria-label="Close">×</button>
+      </div>
+      <div id="explainModalBody" class="ai-explain-modal-body">
+        <div class="ai-loading-spinner"></div>
+      </div>
+    </div>
+  </div>
 
 </div>
 

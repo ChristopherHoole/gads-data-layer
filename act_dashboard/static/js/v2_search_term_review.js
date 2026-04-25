@@ -441,7 +441,12 @@
     // N3g: continuous row # across pagination.
     const rowNum = (currentPage - 1) * PAGE_SIZE + (idx || 0) + 1;
     const actionedCls = isActioned ? ' class="actioned"' : '';
-    return `<tr data-id="${item.id}" data-pass1="${item.pass1_status}"${actionedCls}>
+    // Stage 7 — data-ai-verdict on <tr> drives the "Only show unsure"
+    // filter via a single CSS class on tbody (no reload — pure client-side).
+    const aiVerdictAttr = item.ai_verdict
+      ? ` data-ai-verdict="${item.ai_verdict}"`
+      : '';
+    return `<tr data-id="${item.id}" data-pass1="${item.pass1_status}"${aiVerdictAttr}${actionedCls}>
       <td class="col-num">${rowNum}</td>
       <td class="st-col-check st-frozen-0" ${hideChk}><input type="checkbox" class="st-chk" ${checked} ${canEdit ? '' : 'disabled'}></td>
       <td class="st-col-term  st-frozen-1" title="${escapeHtml(item.search_term)}">${escapeHtml(item.search_term)}</td>
@@ -462,7 +467,273 @@
       <td class="num">${fmtMoney(item.cost_per_conversion)}</td>
       <td class="num">${pct(item.conversion_rate)}</td>
       <td>${pushErr}</td>
+      ${renderAIVerdictCell(item)}
+      ${renderAIConfidenceCell(item)}
+      ${renderAIExplainCell(item)}
     </tr>`;
+  }
+
+  // -------------------- Stage 7 — AI cells + buttons -----------------
+  function renderAIVerdictCell(item) {
+    if (item.ai_verdict == null) return '<td class="ai-verdict-empty">—</td>';
+    const reasoning = item.ai_reasoning || '';
+    const tip = reasoning.length > 200
+      ? reasoning.slice(0, 200) + '…'
+      : reasoning;
+    const tipAttr = tip ? ` title="${escapeHtml(tip)}"` : '';
+    const intent = item.ai_intent_tag
+      ? `<span class="ai-intent-tag">${escapeHtml(item.ai_intent_tag)}</span>`
+      : '';
+    return `<td><span class="ai-verdict-pill ai-verdict-${item.ai_verdict}"${tipAttr}>${item.ai_verdict}</span>${intent}</td>`;
+  }
+  function renderAIConfidenceCell(item) {
+    if (item.ai_confidence == null) return '<td class="ai-verdict-empty">—</td>';
+    return `<td><span class="ai-conf-pill ai-conf-${item.ai_confidence}">${item.ai_confidence}</span></td>`;
+  }
+  function renderAIExplainCell(item) {
+    // Stage 5 scope: explain-row endpoint accepts review_id only — Pass 3
+    // (act_v2_phrase_suggestions) is out of scope this stage. We're inside
+    // the Pass 1/2 renderer so all rows here are review-table rows; render
+    // the link unconditionally. Pass 3 uses a separate renderP3Row().
+    return `<td><a class="ai-explain-link" data-row-id="${item.id}" data-search-term="${escapeHtml(item.search_term)}">🔍 Explain</a></td>`;
+  }
+
+  // Derive the classify-terms `flow` from current filter state. Returns
+  // null when ambiguous (statusView='all' or campaignSource='all') —
+  // caller surfaces a toast asking the user to narrow filters.
+  function getCurrentFlowOrNull() {
+    if (currentTab === 'pass3') return 'pass3';
+    const sv = statusView;
+    const cs = campaignSource;
+    if (cs === 'all' || sv === 'all') return null;
+    if (sv !== 'block' && sv !== 'review') return null;
+    return `${cs}_${sv}`;
+  }
+  // Per-row explain only needs review_id + a flow for chat_log scoping.
+  // When the user has narrowed to a specific flow, use it; otherwise pick
+  // a sensible fallback per row (campaign type + pass1_status).
+  function getExplainFlow(item) {
+    const f = getCurrentFlowOrNull();
+    if (f && f !== 'pass3') return f;
+    const ct = (item.campaign_types || '').toLowerCase();
+    const cs = ct.includes('performance_max') ? 'pmax' : 'search';
+    const sv = (item.pass1_status === 'review') ? 'review' : 'block';
+    return `${cs}_${sv}`;
+  }
+
+  function getPendingClassifiableIds() {
+    return lastItems
+      .filter(it => it.review_status === 'pending'
+        && (it.pass1_status === 'block' || it.pass1_status === 'review')
+        && it.ai_verdict == null)
+      .map(it => it.id);
+  }
+  function updateAITriageBadge() {
+    const el = document.getElementById('aiTriageCount');
+    if (!el) return;
+    const n = getPendingClassifiableIds().length;
+    el.textContent = `(${n} pending)`;
+    const btn = document.getElementById('btnAITriage');
+    if (btn) btn.disabled = (n === 0);
+  }
+  function updateApplyHCButton() {
+    const btn = document.getElementById('btnApplyHighConf');
+    const badge = document.getElementById('applyHighConfCount');
+    if (!btn || !badge) return;
+    const hcRows = lastItems.filter(it =>
+      it.ai_confidence === 'high'
+      && it.review_status === 'pending'
+      && (it.ai_verdict === 'approve' || it.ai_verdict === 'reject'));
+    if (hcRows.length === 0) {
+      btn.style.display = 'none';
+    } else {
+      btn.style.display = '';
+      badge.textContent = `(${hcRows.length})`;
+    }
+  }
+
+  // Banners — info auto-dismisses, error stays until clicked
+  function aiBanner(kind, msg) {
+    const host = document.querySelector('.st-action-bar');
+    if (!host) return;
+    const el = document.createElement('div');
+    el.className = kind === 'error' ? 'ai-error-banner' : 'ai-info-banner';
+    el.innerHTML = `<span></span><button type="button" aria-label="Dismiss">×</button>`;
+    el.firstElementChild.textContent = msg;
+    el.lastElementChild.addEventListener('click', () => el.remove());
+    host.parentNode.insertBefore(el, host.nextSibling);
+    if (kind !== 'error') {
+      setTimeout(() => { if (el.parentNode) el.remove(); }, 5000);
+    }
+  }
+
+  // === AI Triage button ===
+  async function fireAITriage() {
+    const flow = getCurrentFlowOrNull();
+    if (!flow) {
+      aiBanner('error',
+        "Pick a campaign source (Search / PMax) AND a status (Block / Review) before AI Triage — current filters are too broad.");
+      return;
+    }
+    const ids = getPendingClassifiableIds();
+    if (!ids.length) {
+      aiBanner('info', 'No pending rows to classify on this page.');
+      return;
+    }
+    if (ids.length > 100) {
+      const tokensApprox = Math.ceil(ids.length / 25) * 5;
+      if (!confirm(`Classify ${ids.length} rows? Approx ~${tokensApprox}K tokens.`)) {
+        return;
+      }
+    }
+    const btn = document.getElementById('btnAITriage');
+    btn.disabled = true;
+    const origLabel = btn.innerHTML;
+    btn.innerHTML = '🤖 AI Triage … <span class="ai-skeleton" style="width:40px"></span>';
+    setAILoadingState(ids);
+    try {
+      const data = await apiPost(
+        '/v2/api/ai/classify-terms',
+        {
+          client_id: CLIENT,
+          analysis_date: analysisDate,
+          flow,
+          review_ids: ids,
+          force_reclassify: false,
+        },
+      );
+      await reload({preserveSession: true});
+      if (data.classified === 0 && data.skipped_already_classified > 0) {
+        aiBanner('info',
+          `All ${data.skipped_already_classified} rows were already classified at the current prompt version. Display refreshed.`);
+      } else if (data.classified > 0) {
+        aiBanner('info',
+          `Classified ${data.classified} rows in ${(data.wall_clock_ms / 1000).toFixed(1)}s. ${data.tokens_used} tokens used.`);
+      }
+    } catch (e) {
+      aiBanner('error', `AI Triage failed: ${e.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = origLabel;
+      updateAITriageBadge();
+      updateApplyHCButton();
+    }
+  }
+
+  // === Apply high-confidence button ===
+  async function applyHighConf() {
+    const hcRows = lastItems.filter(it =>
+      it.ai_confidence === 'high'
+      && it.review_status === 'pending'
+      && (it.ai_verdict === 'approve' || it.ai_verdict === 'reject'));
+    if (!hcRows.length) {
+      aiBanner('info', 'No high-confidence AI verdicts pending.');
+      return;
+    }
+    if (!confirm(`Apply ${hcRows.length} high-confidence AI verdicts as your action?`)) return;
+    const approveIds = hcRows
+      .filter(r => r.ai_verdict === 'approve').map(r => r.id);
+    const rejectIds = hcRows
+      .filter(r => r.ai_verdict === 'reject').map(r => r.id);
+    try {
+      // Reuse the negatives bulk-update endpoint. Stage 7 follows the
+      // existing bulkUpdate pattern but with a pre-built id list rather
+      // than reading checkboxes.
+      const endpoint = '/v2/api/negatives/search-term-review/bulk-update';
+      let total = 0;
+      if (approveIds.length) {
+        const res = await apiPost(endpoint, {
+          client_id: CLIENT,
+          items: approveIds.map(id => ({id, review_status: 'approved'})),
+        });
+        approveIds.forEach(id => markRowActioned(id, 'approved'));
+        total += res.updated_count || approveIds.length;
+      }
+      if (rejectIds.length) {
+        const res = await apiPost(endpoint, {
+          client_id: CLIENT,
+          items: rejectIds.map(id => ({id, review_status: 'rejected'})),
+        });
+        rejectIds.forEach(id => markRowActioned(id, 'rejected'));
+        total += res.updated_count || rejectIds.length;
+      }
+      sessionActioned += approveIds.length + rejectIds.length;
+      updateSessionProgress();
+      // Optimistic top-card + chip updates (mirrors bulkUpdate).
+      bumpCard('cntPending', -(approveIds.length + rejectIds.length));
+      bumpCard('cntApproved', approveIds.length);
+      bumpCard('cntRejected', rejectIds.length);
+      const sourceChip = statusView === 'pending' ? 'review' : statusView;
+      if (sourceChip && sourceChip !== 'all') {
+        bumpChip(sourceChip, -(approveIds.length + rejectIds.length));
+      }
+      bumpChip('approved', approveIds.length);
+      bumpChip('rejected', rejectIds.length);
+      approvedReadyCount += approveIds.length;
+      updateButtons();
+      updateApplyHCButton();
+      toast(`Applied ${total} AI verdict(s).`);
+    } catch (e) {
+      aiBanner('error', `Apply high-confidence failed: ${e.message}`);
+    }
+  }
+
+  // === "Only show unsure" filter (pure client-side; no reload). ===
+  // KNOWN LIMIT — Tier 2.2 polish: pagination is server-side, so a page
+  // with zero unsure rows looks empty under filter even if other pages
+  // have unsures. Acceptable for MVP — user can switch off + paginate.
+  function toggleUnsureFilter() {
+    const btn = document.getElementById('btnFilterUnsure');
+    const active = btn.dataset.active === 'true';
+    btn.dataset.active = active ? 'false' : 'true';
+    if (stTable) stTable.classList.toggle('only-unsure', !active);
+  }
+
+  // === Per-row Explain modal ===
+  async function openExplainModal(reviewId, searchTerm, item) {
+    const modal = document.getElementById('explainModal');
+    const body = document.getElementById('explainModalBody');
+    const title = modal.querySelector('#explainModalTitle em');
+    title.textContent = searchTerm;
+    body.innerHTML = '<div class="ai-loading-spinner"></div>';
+    modal.style.display = 'flex';
+    try {
+      const data = await apiPost('/v2/api/ai/explain-row', {
+        client_id: CLIENT,
+        review_id: reviewId,
+        flow: getExplainFlow(item || {}),
+        analysis_date: analysisDate,
+      });
+      // Plain text -> paragraph(s); preserve double newlines as paragraph
+      // breaks, single newlines as <br>.
+      const html = (data.explanation || '')
+        .split(/\n\s*\n/)
+        .map(p => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
+        .join('');
+      body.innerHTML = html || '<p>(empty response)</p>';
+    } catch (e) {
+      body.innerHTML = `<div class="ai-error-banner"><span>Explain failed: ${escapeHtml(e.message)}</span></div>`;
+    }
+  }
+  function closeExplainModal() {
+    const m = document.getElementById('explainModal');
+    if (m) m.style.display = 'none';
+  }
+
+  // === Loading skeleton state for AI cells during a triage call ===
+  function setAILoadingState(reviewIds) {
+    const idSet = new Set(reviewIds);
+    if (!stTable) return;
+    stTable.querySelectorAll('tr[data-id]').forEach(tr => {
+      const id = parseInt(tr.dataset.id, 10);
+      if (!idSet.has(id)) return;
+      const cells = tr.children;
+      // Last 3 cells are the AI columns (positions 21/22/23 = indexes 20/21/22)
+      const verdictCell = cells[20];
+      const confCell = cells[21];
+      if (verdictCell) verdictCell.innerHTML = '<span class="ai-skeleton"></span>';
+      if (confCell) confCell.innerHTML = '<span class="ai-skeleton" style="width:40px"></span>';
+    });
   }
 
   // -------------------- Row rendering (Pass 3) -----------------------
@@ -598,6 +869,9 @@
     document.getElementById('stNext').disabled = lastItems.length < PAGE_SIZE
       || (currentPage * PAGE_SIZE) >= data.total;
     updateButtons();
+    // Stage 7 — refresh AI badges/buttons whenever the table data changes
+    updateAITriageBadge();
+    updateApplyHCButton();
   }
 
   // -------------------- Selection & action buttons -------------------
@@ -925,6 +1199,42 @@
   document.getElementById('stBulkReject').addEventListener('click', () => bulkUpdate('rejected'));
   document.getElementById('stPushApproved').addEventListener('click', pushApproved);
   document.getElementById('stRunPass3').addEventListener('click', runPass3);
+
+  // -------------------- Stage 7 — AI button wiring -------------------
+  const _btnAITriage = document.getElementById('btnAITriage');
+  if (_btnAITriage) _btnAITriage.addEventListener('click', fireAITriage);
+  const _btnApplyHC = document.getElementById('btnApplyHighConf');
+  if (_btnApplyHC) _btnApplyHC.addEventListener('click', applyHighConf);
+  const _btnFilterUnsure = document.getElementById('btnFilterUnsure');
+  if (_btnFilterUnsure) _btnFilterUnsure.addEventListener('click', toggleUnsureFilter);
+
+  // Per-row Explain link — event delegation on tbody so it survives
+  // re-renders (sort, reload, etc.).
+  if (tbody) {
+    tbody.addEventListener('click', (e) => {
+      const link = e.target.closest('.ai-explain-link');
+      if (!link || link.hasAttribute('disabled')) return;
+      e.preventDefault();
+      const id = parseInt(link.dataset.rowId, 10);
+      const item = lastItems.find(it => it.id === id);
+      openExplainModal(id, link.dataset.searchTerm || '', item);
+    });
+  }
+  // Close modal: × button + Escape key + click on backdrop
+  const _explainModal = document.getElementById('explainModal');
+  const _explainClose = document.getElementById('explainModalClose');
+  if (_explainClose) _explainClose.addEventListener('click', closeExplainModal);
+  if (_explainModal) {
+    _explainModal.addEventListener('click', (e) => {
+      if (e.target === _explainModal) closeExplainModal();
+    });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (_explainModal && _explainModal.style.display !== 'none') {
+      closeExplainModal();
+    }
+  });
 
   // --------- N2 Part 2/4/5: refresh snapshot + reclassify + sync pill -------
   async function loadSyncPill() {
