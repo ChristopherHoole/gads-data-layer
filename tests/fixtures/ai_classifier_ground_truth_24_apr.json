@@ -1,0 +1,4256 @@
+{
+  "exported_at": "2026-04-25T15:05:15",
+  "client_id": "dbd001",
+  "human_reviewer": "chris",
+  "review_window_start": "2026-04-24T00:00:00",
+  "review_window_end": "2026-04-25T00:00:00",
+  "totals_by_flow": {
+    "search_block": {
+      "approved": 5,
+      "rejected": 2
+    },
+    "search_review": {
+      "approved": 11,
+      "rejected": 13
+    },
+    "pmax_block": {
+      "approved": 70,
+      "rejected": 0
+    },
+    "pmax_review": {
+      "approved": 83,
+      "rejected": 18
+    },
+    "pass3": {
+      "approved": 5,
+      "rejected": 0
+    }
+  },
+  "rows": [
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14243,
+      "flows": [],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist that do payment plans near me",
+      "pass1_status": "rejected_sticky",
+      "pass1_reason": "sticky_rejected",
+      "pass1_reason_detail": "sticky rejection — cycle 1, expires 2026-06-22",
+      "pass2_target_list_role": null,
+      "total_cost": 7.79,
+      "total_clicks": 4,
+      "total_impressions": 6,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T11:38:42.893000",
+      "reviewed_by": "sticky_auto"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14244,
+      "flows": [],
+      "analysis_date": "2026-04-24",
+      "search_term": "how much does it cost to replace all your teeth",
+      "pass1_status": "rejected_sticky",
+      "pass1_reason": "sticky_rejected",
+      "pass1_reason_detail": "sticky rejection — cycle 1, expires 2026-06-22",
+      "pass2_target_list_role": null,
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 3,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T11:38:42.896000",
+      "reviewed_by": "sticky_auto"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14245,
+      "flows": [],
+      "analysis_date": "2026-04-24",
+      "search_term": "i want to fix my teeth",
+      "pass1_status": "rejected_sticky",
+      "pass1_reason": "sticky_rejected",
+      "pass1_reason_detail": "sticky rejection — cycle 1, expires 2026-06-22",
+      "pass2_target_list_role": null,
+      "total_cost": 9.18,
+      "total_clicks": 3,
+      "total_impressions": 6,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T11:38:42.900000",
+      "reviewed_by": "sticky_auto"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14246,
+      "flows": [],
+      "analysis_date": "2026-04-24",
+      "search_term": "new teeth now cost",
+      "pass1_status": "rejected_sticky",
+      "pass1_reason": "sticky_rejected",
+      "pass1_reason_detail": "sticky rejection — cycle 1, expires 2026-06-22",
+      "pass2_target_list_role": null,
+      "total_cost": 1.89,
+      "total_clicks": 1,
+      "total_impressions": 1,
+      "total_conversions": 1.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T11:38:42.903000",
+      "reviewed_by": "sticky_auto"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14247,
+      "flows": [],
+      "analysis_date": "2026-04-24",
+      "search_term": "dental hammersmith",
+      "pass1_status": "rejected_sticky",
+      "pass1_reason": "sticky_rejected",
+      "pass1_reason_detail": "sticky rejection — cycle 1, expires 2026-06-22",
+      "pass2_target_list_role": null,
+      "total_cost": 3.13,
+      "total_clicks": 3,
+      "total_impressions": 7,
+      "total_conversions": 2.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T11:38:42.907000",
+      "reviewed_by": "sticky_auto"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14248,
+      "flows": [],
+      "analysis_date": "2026-04-24",
+      "search_term": "i want all my teeth removed and replaced",
+      "pass1_status": "rejected_sticky",
+      "pass1_reason": "sticky_rejected",
+      "pass1_reason_detail": "sticky rejection — cycle 1, expires 2026-06-22",
+      "pass2_target_list_role": null,
+      "total_cost": 1.79,
+      "total_clicks": 1,
+      "total_impressions": 6,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T11:38:42.911000",
+      "reviewed_by": "sticky_auto"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14249,
+      "flows": [],
+      "analysis_date": "2026-04-24",
+      "search_term": "teeth fixing near me",
+      "pass1_status": "rejected_sticky",
+      "pass1_reason": "sticky_rejected",
+      "pass1_reason_detail": "sticky rejection — cycle 1, expires 2026-06-22",
+      "pass2_target_list_role": null,
+      "total_cost": 3.82,
+      "total_clicks": 1,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T11:38:42.931000",
+      "reviewed_by": "sticky_auto"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14250,
+      "flows": [],
+      "analysis_date": "2026-04-24",
+      "search_term": "teeth set price",
+      "pass1_status": "rejected_sticky",
+      "pass1_reason": "sticky_rejected",
+      "pass1_reason_detail": "sticky rejection — cycle 1, expires 2026-06-22",
+      "pass2_target_list_role": null,
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T11:38:42.935000",
+      "reviewed_by": "sticky_auto"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14251,
+      "flows": [],
+      "analysis_date": "2026-04-24",
+      "search_term": "dental finance",
+      "pass1_status": "rejected_sticky",
+      "pass1_reason": "sticky_rejected",
+      "pass1_reason_detail": "sticky rejection — cycle 1, expires 2026-06-22",
+      "pass2_target_list_role": null,
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T11:38:42.939000",
+      "reviewed_by": "sticky_auto"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14183,
+      "flows": [
+        "search_block",
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "veneers on finance",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "veneers",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 6.08,
+      "total_clicks": 1,
+      "total_impressions": 5,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:08:55.162000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14185,
+      "flows": [
+        "search_block",
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "veneer teeth",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "veneer",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.74,
+      "total_clicks": 1,
+      "total_impressions": 3,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:08:55.168000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14013,
+      "flows": [
+        "search_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "how much does a dental bridge cost uk",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "dental bridge",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:08:55.173000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14007,
+      "flows": [
+        "search_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "how much is veneers",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "veneers",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:08:55.177000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13605,
+      "flows": [
+        "search_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "how much to get a bridge tooth",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "tooth bridge",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:08:55.181000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13606,
+      "flows": [
+        "search_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "permanent dental bridge",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "dental bridge",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:09:31.237000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13838,
+      "flows": [
+        "search_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "permanent front tooth dental bridge",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "dental bridge",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:09:31.256000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13611,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "fix teeth uk",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 1.82,
+      "total_clicks": 1,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:12:16.086000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13693,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "cheep teeth",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:12:16.092000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14184,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "best dentist for fillings",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "notadv_near=composite fillings|1/2",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:12:16.096000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13932,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "bridge teeth cost uk",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "adv_near=implant bridge|1/2;notadv_near=dental bridge|1/2",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:12:16.099000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13759,
+      "flows": [
+        "search_review",
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "bridges teeth",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "adv_near=vivo bridges|1/2;notadv_near=dental bridges|1/2",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 3,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:12:16.103000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13937,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "can a loose tooth be fixed",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "adv_near=fixed teeth|1/2",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:12:16.106000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13604,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "nextwea com teeth",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:12:16.110000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13761,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "teeth flipper",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:12:16.114000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13765,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "teeth reshaping near me",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "notadv_near=gum reshaping|1/2",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:12:16.117000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13844,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "tooth and gum restoration",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:12:16.121000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13610,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "tooth caps",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:12:16.124000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13698,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "teeth on finance",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 9.62,
+      "total_clicks": 1,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:13:14.391000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13591,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "emergency dental implants",
+      "pass1_status": "review",
+      "pass1_reason": "mixed_intent_adv_and_notadv",
+      "pass1_reason_detail": "adv: dental implants | not-adv: emergency dental",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 6,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:13:14.403000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14004,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "how much for a new set of teeth uk",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "adv_near=teeth in a day|2/4",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:13:14.414000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13835,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "one day dentist near me",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:13:14.424000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13763,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "can i pay for dental treatment monthly",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "notadv_near=bonding treatment|1/2",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:13:14.435000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13607,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dental finance plans uk",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:13:14.446000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13608,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dental instalment plan",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:13:14.456000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14076,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist financing",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:13:14.467000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13936,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist that do monthly payments",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:13:14.478000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13924,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "how much for a new tooth",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:13:14.488000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13609,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "loan for dental treatment",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "notadv_near=bonding treatment|1/2",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:13:14.503000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14179,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "tooth implant vs crown cost",
+      "pass1_status": "review",
+      "pass1_reason": "mixed_intent_adv_and_notadv",
+      "pass1_reason_detail": "adv: implant cost | not-adv: tooth crown",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:13:14.516000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14006,
+      "flows": [
+        "search_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "whole set of new teeth",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:13:14.535000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13992,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "same day smiles",
+      "pass1_status": "block",
+      "pass1_reason": "contains_neg_vocabulary",
+      "pass1_reason_detail": "smiles",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:16:32.280000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13879,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "british society of prosthodontics",
+      "pass1_status": "block",
+      "pass1_reason": "contains_neg_vocabulary",
+      "pass1_reason_detail": "prosthodontics",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:16:32.286000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13907,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "cerec inlay",
+      "pass1_status": "block",
+      "pass1_reason": "contains_neg_vocabulary",
+      "pass1_reason_detail": "cerec",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:16:32.289000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13847,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "denturly reviews",
+      "pass1_status": "block",
+      "pass1_reason": "contains_neg_vocabulary",
+      "pass1_reason_detail": "denturly",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:16:32.293000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13684,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "ile kosztują implanty wszystkich zębów",
+      "pass1_status": "block",
+      "pass1_reason": "contains_neg_vocabulary",
+      "pass1_reason_detail": "implanty",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:16:32.296000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13809,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "implanty bez srub",
+      "pass1_status": "block",
+      "pass1_reason": "contains_neg_vocabulary",
+      "pass1_reason_detail": "implanty",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:16:32.300000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14056,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "land of smiles london",
+      "pass1_status": "block",
+      "pass1_reason": "contains_neg_vocabulary",
+      "pass1_reason_detail": "smiles",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:16:32.304000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14151,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "land of smiles uk",
+      "pass1_status": "block",
+      "pass1_reason": "contains_neg_vocabulary",
+      "pass1_reason_detail": "smiles",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:16:32.307000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13854,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "mydentist barking road",
+      "pass1_status": "block",
+      "pass1_reason": "contains_neg_vocabulary",
+      "pass1_reason_detail": "mydentist",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:16:32.311000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13884,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "the eledent clinic",
+      "pass1_status": "block",
+      "pass1_reason": "contains_neg_vocabulary",
+      "pass1_reason_detail": "eledent",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:16:32.315000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13742,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dental crown dentist",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "dental crown",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 5.42,
+      "total_clicks": 1,
+      "total_impressions": 1,
+      "total_conversions": 1.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.518000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13768,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "can you get veneers with crooked teeth",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "veneers",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.525000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13676,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "smile design",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "smile design",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.529000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14091,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "tooth veneer cost",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "veneer",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.532000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13724,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "what is a bridge tooth",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "tooth bridge",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.536000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13616,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "affordable periodontist",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "periodontist",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.540000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13984,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "cost of dental bridges",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "dental bridges",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.543000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14061,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "crown tooth",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "tooth crown",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.547000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13862,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "croydon orthodontic practice",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "orthodontic",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.550000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14034,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dental crowns uk",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "dental crowns",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.554000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13729,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dental veneers",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "veneers",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.557000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14063,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "emergency dentist near me",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "emergency dentist",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.561000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13977,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "facing vs veneers",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "veneers",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.565000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14144,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "full smile makeover cost",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "smile makeover",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.569000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13950,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "gum recession treatment",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "gum treatment",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.572000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13873,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "how much do feather veneers cost",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "veneers",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.576000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13750,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "how much does it cost to get veneers in the uk",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "veneers",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.579000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14102,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "how much for a new crown tooth",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "tooth crown",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.583000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14087,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "how much is a tooth bridge uk",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "tooth bridge",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.586000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14226,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "orthodontist clinic",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "orthodontist",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.590000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13948,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "periodontal staging and grading",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "periodontal",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.615000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13869,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "periodontitis london",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "periodontitis",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.620000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14029,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "replace tooth crown",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "tooth crown",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.624000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13916,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "teeth veneers alternative",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "veneers",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.629000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13830,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "teeth veneers uk cost",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "veneers",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.634000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13613,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "teeth whitening",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "teeth whitening",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.638000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13985,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "teeth whitening in london",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "teeth whitening",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.643000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13979,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "teeth whitening on finance",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "teeth whitening",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.647000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13990,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "tooth crown cost uk private",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "tooth crown",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.652000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14086,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "types of dental crowns and cost",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "dental crowns",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.657000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13955,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "veneers london price",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "veneers",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.661000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13988,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "veneers process",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "veneers",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.666000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14107,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "veneers vs crowns",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "veneers",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.670000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13736,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "what is veneers",
+      "pass1_status": "block",
+      "pass1_reason": "service_not_advertised",
+      "pass1_reason_detail": "veneers",
+      "pass2_target_list_role": "offered_not_advertised_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:19:21.673000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14121,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "bl3 emax veneers",
+      "pass1_status": "block",
+      "pass1_reason": "location_outside_service_area",
+      "pass1_reason_detail": "bl3",
+      "pass2_target_list_role": "location_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:24:53.057000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13704,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "k2 dental",
+      "pass1_status": "block",
+      "pass1_reason": "location_outside_service_area",
+      "pass1_reason_detail": "k2",
+      "pass2_target_list_role": "location_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:24:53.064000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13980,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "stella dental stafford",
+      "pass1_status": "block",
+      "pass1_reason": "location_outside_service_area",
+      "pass1_reason_detail": "stafford",
+      "pass2_target_list_role": "location_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:24:53.068000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13644,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dental and implant centre hartlepool",
+      "pass1_status": "block",
+      "pass1_reason": "location_outside_service_area",
+      "pass1_reason_detail": "hartlepool",
+      "pass2_target_list_role": "location_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:24:53.071000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13973,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dental implants taunton",
+      "pass1_status": "block",
+      "pass1_reason": "location_outside_service_area",
+      "pass1_reason_detail": "taunton",
+      "pass2_target_list_role": "location_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:24:53.075000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14235,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "gloucester dentist",
+      "pass1_status": "block",
+      "pass1_reason": "location_outside_service_area",
+      "pass1_reason_detail": "gloucester",
+      "pass2_target_list_role": "location_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:24:53.078000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13686,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist near me",
+      "pass1_status": "block",
+      "pass1_reason": "existing_exact_neg_match",
+      "pass1_reason_detail": "3_word_exact",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 5.15,
+      "total_clicks": 4,
+      "total_impressions": 14,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:31:48.047000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13699,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "bluebell dentistry & aesthetics",
+      "pass1_status": "block",
+      "pass1_reason": "existing_exact_neg_match",
+      "pass1_reason_detail": "3_word_exact",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 1.66,
+      "total_clicks": 1,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:31:48.052000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13897,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "affordable dental clinic near me",
+      "pass1_status": "block",
+      "pass1_reason": "existing_exact_neg_match",
+      "pass1_reason_detail": "5plus_word_exact",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 1.45,
+      "total_clicks": 1,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:31:48.056000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14236,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "clear correct price",
+      "pass1_status": "block",
+      "pass1_reason": "existing_exact_neg_match",
+      "pass1_reason_detail": "3_word_exact",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.97,
+      "total_clicks": 1,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:31:48.060000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13799,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "balham dentist",
+      "pass1_status": "block",
+      "pass1_reason": "existing_exact_neg_match",
+      "pass1_reason_detail": "2_word_exact",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 4,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:31:48.064000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13715,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist chiswick",
+      "pass1_status": "block",
+      "pass1_reason": "existing_exact_neg_match",
+      "pass1_reason_detail": "2_word_exact",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 4,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:31:48.068000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14163,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dental clinic near me",
+      "pass1_status": "block",
+      "pass1_reason": "existing_exact_neg_match",
+      "pass1_reason_detail": "4_word_exact",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:31:48.072000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14143,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist dagenham",
+      "pass1_status": "block",
+      "pass1_reason": "existing_exact_neg_match",
+      "pass1_reason_detail": "2_word_exact",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:31:48.076000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13775,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist treatment",
+      "pass1_status": "block",
+      "pass1_reason": "existing_exact_neg_match",
+      "pass1_reason_detail": "2_word_exact",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:31:48.079000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13800,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "crowns teeth",
+      "pass1_status": "block",
+      "pass1_reason": "existing_exact_neg_match",
+      "pass1_reason_detail": "2_word_exact",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:31:48.083000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13816,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist hammersmith",
+      "pass1_status": "block",
+      "pass1_reason": "existing_exact_neg_match",
+      "pass1_reason_detail": "2_word_exact",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:31:48.086000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14093,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist teddington",
+      "pass1_status": "block",
+      "pass1_reason": "existing_exact_neg_match",
+      "pass1_reason_detail": "2_word_exact",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:31:48.090000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13789,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "fix my smile uk",
+      "pass1_status": "block",
+      "pass1_reason": "existing_exact_neg_match",
+      "pass1_reason_detail": "4_word_exact",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:31:48.094000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14066,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "gurs sehmi dentist",
+      "pass1_status": "block",
+      "pass1_reason": "existing_exact_neg_match",
+      "pass1_reason_detail": "3_word_exact",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:31:48.098000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13909,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "hammersmith dentist",
+      "pass1_status": "block",
+      "pass1_reason": "existing_exact_neg_match",
+      "pass1_reason_detail": "2_word_exact",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:31:48.101000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13821,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "how to fill teeth gap",
+      "pass1_status": "block",
+      "pass1_reason": "existing_exact_neg_match",
+      "pass1_reason_detail": "5plus_word_exact",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:31:48.104000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13865,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "swanley dentist",
+      "pass1_status": "block",
+      "pass1_reason": "existing_exact_neg_match",
+      "pass1_reason_detail": "2_word_exact",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:31:48.108000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14131,
+      "flows": [
+        "pmax_block"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "umm dental",
+      "pass1_status": "block",
+      "pass1_reason": "existing_exact_neg_match",
+      "pass1_reason_detail": "2_word_exact",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:31:48.111000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14164,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "services offered by gallions reach dental clinic",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "brand_near=dental by design|2/3",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 6.58,
+      "total_clicks": 2,
+      "total_impressions": 4,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.129000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14219,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist wembley central",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 4.76,
+      "total_clicks": 1,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.135000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13783,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dental teeth",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 3.34,
+      "total_clicks": 1,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.139000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13701,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist streatham hill",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 2.07,
+      "total_clicks": 1,
+      "total_impressions": 3,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.143000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13727,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "tooth doc",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 1.92,
+      "total_clicks": 1,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.147000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14072,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "whitechapel dentist",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 1.72,
+      "total_clicks": 1,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.151000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13858,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "cost of bridges for teeth",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "adv_near=implant cost|1/2;notadv_near=dental bridges|1/2",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 1.19,
+      "total_clicks": 1,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.154000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13743,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist barnstaple",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.99,
+      "total_clicks": 1,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.158000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13997,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "budget friendly dentist near me",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.91,
+      "total_clicks": 1,
+      "total_impressions": 3,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.163000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14024,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "church view dental practice",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.75,
+      "total_clicks": 1,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.167000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14023,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "new dental technology 2019",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.51,
+      "total_clicks": 2,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.172000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13874,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist feltham high street",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 4,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.177000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13856,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "crooked teeth",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 3,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.181000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13960,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dental laboratory near me",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 3,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.186000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13902,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist shepherds bush",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 3,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.190000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13776,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dk dental",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 3,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.194000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13850,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "my dentist tolworth",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 3,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.199000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14205,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "the london dental clinic",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "brand_near=dental by design london|2/4",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 3,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.203000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14140,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "abbey dental practice",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.207000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14148,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "apolline dental",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.211000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14146,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "best dentist in purley",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.215000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14031,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "best private dentist in london",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.220000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14204,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "birkbeck dentistry",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.224000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13892,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "bluebell dental practice",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.228000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13956,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "cancun dental specialists",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.231000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14118,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "cassiobury dental practice",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.235000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14050,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "cena implantów zębowych",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.239000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14187,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "cheap dentist near me",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.243000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13807,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "cuanto cuesta un implante dental",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.247000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14165,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dental laboratory",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.251000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14147,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentalglow",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "1_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.254000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14228,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentalliving",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "1_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.258000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13828,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist bury",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.297000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13886,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist in belmont",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.301000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13726,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist in hainault",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.305000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14038,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist lewisham high street",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.309000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13677,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist new cross gate",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.313000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13815,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist student discount",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.318000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13657,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist woolwich powis street",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.322000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13859,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentists in bow",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:38:19.326000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14136,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dental loan",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 4.76,
+      "total_clicks": 1,
+      "total_impressions": 3,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:39:25.269000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13959,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "best dentist uk",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 2.56,
+      "total_clicks": 1,
+      "total_impressions": 1,
+      "total_conversions": 1.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:39:25.287000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13767,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist in hammersmith",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 2.48,
+      "total_clicks": 1,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:39:25.297000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14130,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "screw in teeth uk",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "adv_near=teeth in a day|2/4",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 2.16,
+      "total_clicks": 1,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:39:25.308000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14083,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist that take payment plans",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 2.07,
+      "total_clicks": 1,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:39:25.318000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13833,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist near me that take payment plans",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 1.37,
+      "total_clicks": 1,
+      "total_impressions": 4,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:39:25.329000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14190,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentist with payment plans near me",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 1.01,
+      "total_clicks": 1,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:39:25.341000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13703,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "can you pay dentist in installments",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:39:25.352000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14142,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "cosmetic dental surgery uk",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "adv_near=cosmetic dentist|1/2;notadv_near=cosmetic bonding|1/2",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:39:25.364000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13818,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dental work financing options",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:39:25.376000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13961,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "my teeth are worn down what can i do",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:42:36.759000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13722,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "replace missing molars",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "adv_near=replace missing teeth|2/3",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:42:36.774000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14099,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "3d cbct scan",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:42:36.787000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14100,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "all for one teeth",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:42:36.798000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13632,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "anveli",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "1_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:42:36.844000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13718,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "bad teeth transformation",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "notadv_near=smile transformation|1/2",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:42:36.856000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13939,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "best implantologist near me",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:42:36.868000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14213,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "bilimplant reviews",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "rejected",
+      "reviewed_at": "2026-04-24T14:42:36.882000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14240,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentists in teddington",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.893000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14035,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dentists in uk",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.899000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13746,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dents near me",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.904000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13999,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "different types of teeth shapes",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.908000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14157,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "dinti provizorii",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.913000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13723,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "how does a bridge work in your mouth",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "adv_near=teeth in a day|2/4;notadv_near=dental bridge|1/2",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.917000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14150,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "how much does root canals cost",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "adv_near=implant cost|1/2;notadv_near=root canal|1/2",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.922000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14078,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "how to book a dentist appointment",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.927000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13790,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "hybrid ceramic crown",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "adv_near=ceramic implant|1/2;notadv_near=dental crown|1/2",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.931000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13631,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "hypnosis dentist",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.935000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13626,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "hypnotherapy dentist",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.940000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13619,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "i need a crown",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "adv_near=implant crown|1/2;notadv_near=dental crown|1/2",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.944000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14108,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "instamile",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "1_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.949000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14073,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "iq dental",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.953000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14169,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "kings dental clinic london",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "brand_near=dental by design london|2/4",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.957000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13721,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "megadentist",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "1_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.961000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13878,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "mood dental clinic",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.965000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14200,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "perfect teeth solutions",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.969000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13778,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "permanent vampire fangs uk",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "adv_near=permanent teeth|1/2",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.973000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13654,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "plastic tooth",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.977000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14042,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "pure smile dental bethnal green",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.980000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14209,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "resin bonded bridge",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "adv_near=implant bridge|1/2;notadv_near=dental bridge|1/2",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.984000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14167,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "ruislip dentists",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.987000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13896,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "savona dental",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.990000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14217,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "second opinion on dental work",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:09.994000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13806,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "swaffham dentist",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:10.025000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14208,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "the dental centre london",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "brand_near=dental by design london|2/4",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:10.029000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13860,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "the fabulous smile company kingston",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:10.032000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13659,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "top 10 dentists in london",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:10.036000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13623,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "uk dentist prices",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:10.040000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13803,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "zirconia crown price uk full set",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "adv_near=full arch|1/2;notadv_near=dental crown|1/2",
+      "pass2_target_list_role": "5plus_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 2,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:10.043000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14160,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "acrylic dental flipper",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:10.047000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13730,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "ag dental practice",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:10.050000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14120,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "all saints dental clinic",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:10.054000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13805,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "aylesford dental practice",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:10.058000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14133,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "balamory dentist",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:10.062000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13771,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "ballinger dentist",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:10.065000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13967,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "best dentist in london",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "4_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:10.069000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14062,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "big teeth",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:10.073000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14203,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "biggleswade dental center",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "3_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:10.077000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 13971,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "bite problems",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:10.080000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_search_term_reviews",
+      "source_id": 14239,
+      "flows": [
+        "pmax_review"
+      ],
+      "analysis_date": "2026-04-24",
+      "search_term": "blingz dental",
+      "pass1_status": "review",
+      "pass1_reason": "ambiguous",
+      "pass1_reason_detail": "no_match",
+      "pass2_target_list_role": "2_word_exact",
+      "total_cost": 0.0,
+      "total_clicks": 0,
+      "total_impressions": 1,
+      "total_conversions": 0.0,
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:44:10.084000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_phrase_suggestions",
+      "source_id": 158,
+      "flows": [
+        "pass3"
+      ],
+      "analysis_date": "2026-04-24",
+      "fragment": "bl3",
+      "word_count": 1,
+      "engine_suggested_target_list_role": "1_word_phrase",
+      "occurrence_count": 1,
+      "risk_level": "high",
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:51:01.651000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_phrase_suggestions",
+      "source_id": 160,
+      "flows": [
+        "pass3"
+      ],
+      "analysis_date": "2026-04-24",
+      "fragment": "gloucester",
+      "word_count": 1,
+      "engine_suggested_target_list_role": "1_word_phrase",
+      "occurrence_count": 1,
+      "risk_level": "high",
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:51:01.663000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_phrase_suggestions",
+      "source_id": 155,
+      "flows": [
+        "pass3"
+      ],
+      "analysis_date": "2026-04-24",
+      "fragment": "hartlepool",
+      "word_count": 1,
+      "engine_suggested_target_list_role": "1_word_phrase",
+      "occurrence_count": 1,
+      "risk_level": "high",
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:51:01.672000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_phrase_suggestions",
+      "source_id": 157,
+      "flows": [
+        "pass3"
+      ],
+      "analysis_date": "2026-04-24",
+      "fragment": "stafford",
+      "word_count": 1,
+      "engine_suggested_target_list_role": "1_word_phrase",
+      "occurrence_count": 1,
+      "risk_level": "high",
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:51:01.680000",
+      "reviewed_by": "user"
+    },
+    {
+      "source_table": "act_v2_phrase_suggestions",
+      "source_id": 156,
+      "flows": [
+        "pass3"
+      ],
+      "analysis_date": "2026-04-24",
+      "fragment": "taunton",
+      "word_count": 1,
+      "engine_suggested_target_list_role": "1_word_phrase",
+      "occurrence_count": 1,
+      "risk_level": "high",
+      "human_verdict": "approved",
+      "reviewed_at": "2026-04-24T14:51:01.688000",
+      "reviewed_by": "user"
+    }
+  ]
+}
