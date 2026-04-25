@@ -63,6 +63,10 @@ SEQUENCES = [
     'seq_act_v2_pmax_other',
     # N5 — PMax CSV watcher activity log
     'seq_act_v2_csv_watch_log',
+    # Tier 2.1 / N6 — AI classification + errors + chat log
+    'seq_act_v2_ai_classifications',
+    'seq_act_v2_ai_errors',
+    'seq_act_v2_ai_chat_log',
 ]
 
 # ---------------------------------------------------------------------------
@@ -481,6 +485,98 @@ TABLE_SQL = [
         );
         """,
     ),
+    # ---------------------------------------------------------------------
+    # Tier 2.1 / N6 — AI classification tables. MUST be defined AFTER
+    # act_v2_search_term_reviews + act_v2_phrase_suggestions because they
+    # FK to both. WARNING (DuckDB 1.1.0): prompt_version / review_id /
+    # phrase_suggestion_id are part of UNIQUE constraints — never UPDATE
+    # them in place; INSERT new or read existing only.
+    # ---------------------------------------------------------------------
+    (
+        'act_v2_ai_classifications',
+        """
+        CREATE TABLE IF NOT EXISTS act_v2_ai_classifications (
+            id BIGINT PRIMARY KEY DEFAULT nextval('seq_act_v2_ai_classifications'),
+            review_id BIGINT,
+            phrase_suggestion_id BIGINT,
+            client_id VARCHAR NOT NULL,
+            analysis_date DATE NOT NULL,
+            search_term VARCHAR,
+            fragment VARCHAR,
+            flow VARCHAR NOT NULL,
+            ai_verdict VARCHAR,
+            ai_target_list_role VARCHAR,
+            ai_reasoning TEXT,
+            ai_confidence VARCHAR NOT NULL,
+            ai_intent_tag VARCHAR,
+            model_version VARCHAR NOT NULL,
+            prompt_version VARCHAR NOT NULL,
+            tokens_in INTEGER,
+            tokens_out INTEGER,
+            latency_ms INTEGER,
+            classified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            user_action VARCHAR,
+            user_actioned_at TIMESTAMP,
+            CHECK (
+                (flow = 'pass3'
+                    AND phrase_suggestion_id IS NOT NULL
+                    AND review_id IS NULL
+                    AND ai_target_list_role IS NOT NULL)
+                OR
+                (flow IN ('search_block','search_review','pmax_block','pmax_review')
+                    AND review_id IS NOT NULL
+                    AND phrase_suggestion_id IS NULL
+                    AND ai_verdict IS NOT NULL)
+            ),
+            UNIQUE (review_id, prompt_version),
+            UNIQUE (phrase_suggestion_id, prompt_version),
+            FOREIGN KEY (client_id) REFERENCES act_v2_clients(client_id),
+            FOREIGN KEY (review_id) REFERENCES act_v2_search_term_reviews(id),
+            FOREIGN KEY (phrase_suggestion_id) REFERENCES act_v2_phrase_suggestions(id)
+        );
+        """,
+    ),
+    (
+        'act_v2_ai_errors',
+        """
+        CREATE TABLE IF NOT EXISTS act_v2_ai_errors (
+            id BIGINT PRIMARY KEY DEFAULT nextval('seq_act_v2_ai_errors'),
+            client_id VARCHAR,
+            analysis_date DATE,
+            flow VARCHAR,
+            review_ids_in_batch TEXT,
+            error_type VARCHAR NOT NULL,
+            error_message TEXT,
+            raw_output TEXT,
+            occurred_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (client_id) REFERENCES act_v2_clients(client_id)
+        );
+        """,
+    ),
+    (
+        'act_v2_ai_chat_log',
+        """
+        CREATE TABLE IF NOT EXISTS act_v2_ai_chat_log (
+            id BIGINT PRIMARY KEY DEFAULT nextval('seq_act_v2_ai_chat_log'),
+            client_id VARCHAR NOT NULL,
+            flow VARCHAR NOT NULL,
+            analysis_date DATE NOT NULL,
+            role VARCHAR NOT NULL,
+            message TEXT NOT NULL,
+            model_version VARCHAR,
+            prompt_version VARCHAR,
+            tokens_in INTEGER,
+            tokens_out INTEGER,
+            latency_ms INTEGER,
+            related_review_id BIGINT,
+            cleared_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            CHECK (role IN ('user','assistant','system')),
+            FOREIGN KEY (client_id) REFERENCES act_v2_clients(client_id),
+            FOREIGN KEY (related_review_id) REFERENCES act_v2_search_term_reviews(id)
+        );
+        """,
+    ),
 ]
 
 # ---------------------------------------------------------------------------
@@ -542,6 +638,42 @@ INDEX_SQL = [
         'idx_phrase_sugg_client_date',
         """CREATE INDEX idx_phrase_sugg_client_date
            ON act_v2_phrase_suggestions(client_id, analysis_date);""",
+    ),
+    # Tier 2.1 / N6 — AI tables
+    (
+        'idx_ai_class_review_id',
+        """CREATE INDEX idx_ai_class_review_id
+           ON act_v2_ai_classifications(review_id);""",
+    ),
+    (
+        'idx_ai_class_phrase_suggestion_id',
+        """CREATE INDEX idx_ai_class_phrase_suggestion_id
+           ON act_v2_ai_classifications(phrase_suggestion_id);""",
+    ),
+    (
+        'idx_ai_class_client_date_flow',
+        """CREATE INDEX idx_ai_class_client_date_flow
+           ON act_v2_ai_classifications(client_id, analysis_date, flow);""",
+    ),
+    (
+        'idx_ai_class_user_action',
+        """CREATE INDEX idx_ai_class_user_action
+           ON act_v2_ai_classifications(user_action);""",
+    ),
+    (
+        'idx_ai_errors_client_date',
+        """CREATE INDEX idx_ai_errors_client_date
+           ON act_v2_ai_errors(client_id, occurred_at);""",
+    ),
+    (
+        'idx_ai_errors_type',
+        """CREATE INDEX idx_ai_errors_type
+           ON act_v2_ai_errors(error_type);""",
+    ),
+    (
+        'idx_ai_chat_client_flow_date',
+        """CREATE INDEX idx_ai_chat_client_flow_date
+           ON act_v2_ai_chat_log(client_id, flow, analysis_date, created_at);""",
     ),
 ]
 
