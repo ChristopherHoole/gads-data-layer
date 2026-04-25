@@ -48,9 +48,11 @@ from act_dashboard.ai.prompts import (
 
 logger = logging.getLogger(__name__)
 
-# Confirmed Stage 4 Pause 1: full slug, not the 'sonnet' alias — version
-# locking is critical for agreement-rate measurements over time.
-MODEL_SONNET = 'claude-sonnet-4-6'
+# Stage 4.5 (revised 25 Apr PM): switched from Sonnet 4.6 to Opus 4.7 for
+# both batch classify and (Stage 5) explain-row. Reasoning logged in scope
+# §13 Q4. Full slug used (not the 'opus' alias) — version locking is
+# critical for agreement-rate measurements over time.
+MODEL_BATCH = 'claude-opus-4-7'
 
 
 class _ParseError(Exception):
@@ -172,7 +174,7 @@ def classify_batch(con, client_id: str, analysis_date: str, flow: str,
         for attempt in (1, 2):
             try:
                 result_text, usage, wall_ms = claude_subprocess.run_claude(
-                    MODEL_SONNET, system_prompt, user_message,
+                    MODEL_BATCH, system_prompt, user_message,
                 )
                 parsed = _parse_result(
                     result_text, is_pass3, len(rows_to_classify),
@@ -217,7 +219,7 @@ def classify_batch(con, client_id: str, analysis_date: str, flow: str,
                 _insert_classification(
                     con, row, parsed_item, flow, is_pass3,
                     client_id, analysis_date, prompt_version,
-                    MODEL_SONNET, per_row_tokens_in,
+                    MODEL_BATCH, per_row_tokens_in,
                     per_row_tokens_out, per_row_latency,
                 )
                 results_payload.append(
