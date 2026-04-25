@@ -61,6 +61,8 @@ SEQUENCES = [
     'seq_act_v2_phrase_suggestions',
     # N1b Wave B — PMax "Other search terms" bucket transparency
     'seq_act_v2_pmax_other',
+    # N5 — PMax CSV watcher activity log
+    'seq_act_v2_csv_watch_log',
 ]
 
 # ---------------------------------------------------------------------------
@@ -435,6 +437,23 @@ TABLE_SQL = [
             ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(client_id, campaign_id, snapshot_date),
             FOREIGN KEY (client_id) REFERENCES act_v2_clients(client_id)
+        );
+        """,
+    ),
+    (
+        'act_v2_csv_watch_log',
+        """
+        CREATE TABLE IF NOT EXISTS act_v2_csv_watch_log (
+            id BIGINT PRIMARY KEY DEFAULT nextval('seq_act_v2_csv_watch_log'),
+            file_path VARCHAR NOT NULL,
+            client_id VARCHAR,
+            status VARCHAR NOT NULL CHECK (status IN (
+                'detected', 'ingested', 'failed', 'skipped'
+            )),
+            rows_ingested INTEGER,
+            error_message TEXT,
+            detected_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            processed_at TIMESTAMP
         );
         """,
     ),

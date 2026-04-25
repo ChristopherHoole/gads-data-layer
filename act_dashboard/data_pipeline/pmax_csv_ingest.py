@@ -503,6 +503,103 @@ def ingest(path: str, client_id: str) -> dict:
         con.close()
 
 
+# ---------------------------------------------------------------------------
+# Public API for watcher / other importers (Fix 1.6)
+# ---------------------------------------------------------------------------
+def ingest_csv(file_path: str, client_id: str) -> dict:
+    """Brief-compliant alias for ingest(). Same return shape.
+
+    Watcher code imports this name; the pre-existing CLI keeps using
+    ingest() so legacy callers don't break.
+    """
+    return ingest(file_path, client_id)
+
+
+def validate_search_terms_csv(file_path: str) -> tuple[bool, str | None]:
+    """Cheap pre-flight: open the file in detected encoding, confirm row 1
+    contains 'Search terms report' (case-insensitive). Returns
+    (ok, reason_if_not).
+
+    Used by the watcher to filter out files that match the glob but aren't
+    actually GAds Search-terms exports (e.g. a user's own spreadsheet
+    happened to have a similar name).
+    """
+    try:
+        encoding = _detect_encoding(file_path)
+        with open(file_path, 'r', encoding=encoding, newline='') as f:
+            first = f.readline()
+    except Exception as e:
+        return False, f"could not read file: {e}"
+    if 'search terms report' not in (first or '').lower():
+        return False, (
+            f"row 1 doesn't look like a Search-terms-report header: "
+            f"{first!r}"
+        )
+    return True, None
+
+
+def detect_client_from_csv(file_path: str, db_path: str | None = None) -> str | None:
+    """Best-effort client_id detection from CSV content.
+
+    Reads the Campaign column (if present), looks up each name in
+    act_v2_campaign_roles across all clients, returns the first matching
+    client_id. Returns None when:
+      - CSV has no Campaign column (single-campaign manual export shape)
+      - no Campaign name matches any client's role registry
+      - DB unreachable
+
+    The watcher uses this for routing on multi-client setups. Today only
+    DBD is onboarded so the watcher can fall back to a configured default.
+    """
+    db = db_path or DB_PATH
+    try:
+        encoding = _detect_encoding(file_path)
+        with open(file_path, 'r', encoding=encoding, newline='') as f:
+            raw_lines = f.read().splitlines()
+    except Exception:
+        return None
+    if len(raw_lines) < 4:
+        return None
+    delimiter = _detect_delimiter(raw_lines[2])
+    reader = csv.reader(raw_lines[2:], delimiter=delimiter)
+    try:
+        header = next(reader)
+    except StopIteration:
+        return None
+    header_norm = [h.strip() for h in header]
+    if 'Campaign' not in header_norm:
+        return None
+    campaign_idx = header_norm.index('Campaign')
+    seen_names = set()
+    for row in reader:
+        if len(row) <= campaign_idx:
+            continue
+        name = (row[campaign_idx] or '').strip().lower()
+        if not name or name.startswith('total:'):
+            continue
+        seen_names.add(name)
+        if len(seen_names) >= 50:  # cap; we only need a couple of hits
+            break
+    if not seen_names:
+        return None
+    try:
+        con = duckdb.connect(db, read_only=True)
+    except duckdb.IOException:
+        return None
+    try:
+        rows = con.execute(
+            """SELECT DISTINCT client_id, LOWER(TRIM(campaign_name))
+               FROM act_v2_campaign_roles
+               WHERE campaign_name IS NOT NULL"""
+        ).fetchall()
+    finally:
+        con.close()
+    for client_id, cname in rows:
+        if cname in seen_names:
+            return client_id
+    return None
+
+
 def _round(val, places: int):
     if val is None:
         return None

@@ -38,6 +38,28 @@
 </div>
 {% endif %}
 
+{# ---- Fix 1.6 — PMax CSV watcher banner / pill ---- #}
+{% if csv_watch_failed %}
+<div class="scheduler-banner scheduler-banner--failed">
+  <span class="material-symbols-outlined">error</span>
+  <span>
+    PMax CSV ingest failed:
+    <strong>{{ csv_watch_failed.file_path.split('\\')[-1].split('/')[-1] }}</strong>
+    — {{ csv_watch_failed.error_message or 'unknown error' }}
+    {% if csv_watch_failed.client_id %} (client: {{ csv_watch_failed.client_id }}){% endif %}
+  </span>
+</div>
+{% elif csv_watch_ingested %}
+<div class="scheduler-banner scheduler-banner--ok" style="background:#e6f4ea;color:#137333;border-left:3px solid #34a853">
+  <span class="material-symbols-outlined" style="color:#137333">check_circle</span>
+  <span>
+    PMax CSV ingested: <strong>{{ csv_watch_ingested.rows_ingested or 0 }}</strong> rows
+    {% if csv_watch_ingested.client_id %}for {{ csv_watch_ingested.client_id }}{% endif %}
+    {% if csv_watch_ingested.processed_at %} · {{ csv_watch_ingested.processed_at.strftime('%H:%M') }}{% endif %}
+  </span>
+</div>
+{% endif %}
+
 {# ---- Overnight impact summary ---- #}
 <div class="act-impact-summary">
   <span class="material-symbols-outlined">savings</span>

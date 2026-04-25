@@ -312,6 +312,48 @@ def morning_review():
         impact_total_actions = len(executed)
         # estimated_impact is free-text; can't sum. Just show action count.
 
+        # Fix 1.6 — PMax CSV watcher activity (last 24h) for the banner.
+        # We surface the most recent terminal row of each kind (failed first
+        # for visibility, then most-recent ingested) so the template can
+        # show a red banner OR a green pill, not both.
+        csv_watch_failed = None
+        csv_watch_ingested = None
+        try:
+            row = con.execute(
+                """SELECT file_path, client_id, error_message, detected_at
+                   FROM act_v2_csv_watch_log
+                   WHERE status = 'failed'
+                     AND detected_at > CURRENT_TIMESTAMP - INTERVAL '24 hours'
+                   ORDER BY detected_at DESC LIMIT 1"""
+            ).fetchone()
+            if row:
+                csv_watch_failed = {
+                    'file_path': row[0],
+                    'client_id': row[1],
+                    'error_message': row[2],
+                    'detected_at': row[3],
+                }
+        except Exception:
+            # Table may not exist yet on a pre-N5 install — fail silent.
+            pass
+        try:
+            row = con.execute(
+                """SELECT file_path, client_id, rows_ingested, processed_at
+                   FROM act_v2_csv_watch_log
+                   WHERE status = 'ingested'
+                     AND detected_at > CURRENT_TIMESTAMP - INTERVAL '24 hours'
+                   ORDER BY detected_at DESC LIMIT 1"""
+            ).fetchone()
+            if row:
+                csv_watch_ingested = {
+                    'file_path': row[0],
+                    'client_id': row[1],
+                    'rows_ingested': row[2],
+                    'processed_at': row[3],
+                }
+        except Exception:
+            pass
+
     finally:
         con.close()
 
@@ -335,5 +377,7 @@ def morning_review():
         impact_total_actions=impact_total_actions,
         pending_search_term_count=pending_search_term_count,
         classified_search_term_count=classified_search_term_count,
+        csv_watch_failed=csv_watch_failed,
+        csv_watch_ingested=csv_watch_ingested,
         active_page='morning-review',
     )
