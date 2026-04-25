@@ -17,6 +17,9 @@
   }
   let PAGE_SIZE = loadPageSize();
   let lastItems = [];                      // items currently rendered
+  // Stage 8: total filtered row count from the server (= data.total, NOT
+  // lastItems.length). Drives the AI panel context-header row count.
+  let lastTotal = 0;
   let statusView = 'all';                  // single-select status chip
   let selectedReasons = new Set();         // multi-select reason chips
   let p3View = 'pending';                  // Pass 3 tab single-select
@@ -602,6 +605,54 @@
     });
   }
 
+  // ============================================================
+  // Stage 8 — AI panel: collapse/expand state + context header.
+  // Stage 9 fills the body with chat. Stage 10 adds canned replies.
+  // ============================================================
+  const AI_PANEL_STATE_KEY = 'act_ai_panel_state';   // 'open' | 'collapsed'
+
+  function getAIPanelState() {
+    const v = localStorage.getItem(AI_PANEL_STATE_KEY);
+    return (v === 'collapsed' || v === 'open') ? v : 'open';
+  }
+  function setAIPanelState(state) {
+    localStorage.setItem(AI_PANEL_STATE_KEY, state);
+    const grid = document.getElementById('aiPageGrid');
+    const strip = document.getElementById('btnAIPanelExpand');
+    if (grid) grid.dataset.panelState = state;
+    if (strip) strip.style.display = state === 'collapsed' ? '' : 'none';
+  }
+
+  // Friendly label builder — uses what the user has selected even when
+  // it's ambiguous (e.g. "All > Block" or "Search > All"). Falls back
+  // to "Pass 3 Suggestions" on the pass3 tab.
+  function _aiPanelFlowLabel() {
+    if (currentTab === 'pass3') return 'Pass 3 Suggestions';
+    const sourceMap = {all: 'All', search: 'Search', pmax: 'PMax'};
+    const statusMap = {
+      all: 'All', pending: 'Pending', block: 'Block', review: 'Review',
+      keep: 'Keep', approved: 'Approved', pushed: 'Pushed',
+      rejected: 'Rejected', expired: 'Expired',
+    };
+    const cs = sourceMap[campaignSource] || campaignSource || 'All';
+    const sv = statusMap[statusView] || statusView || 'All';
+    return `${cs} > ${sv}`;
+  }
+
+  function updateAIPanelContext() {
+    const ctx = document.getElementById('aiPanelContext');
+    if (!ctx) return;
+    const flowLabel = _aiPanelFlowLabel();
+    const clientName = (cfg && (cfg.client_name || cfg.client_id)) || '—';
+    const dateStr = analysisDate || '—';
+    const rowsLabel = lastTotal === 1 ? 'row' : 'rows';
+    ctx.innerHTML =
+      `<strong>${escapeHtml(flowLabel)}</strong> · `
+      + `${lastTotal} ${rowsLabel} · `
+      + `${escapeHtml(clientName)} · `
+      + `${escapeHtml(dateStr)}`;
+  }
+
   // Banners — info auto-dismisses, error stays until clicked
   function aiBanner(kind, msg) {
     const host = document.querySelector('.st-action-bar');
@@ -962,6 +1013,10 @@
         : '<tr><td colspan="10" class="st-loading">No matching suggestions</td></tr>';
     }
 
+    // Stage 8: capture the server-side total so the AI panel context
+    // header reads the actual filtered count (not the current page size).
+    lastTotal = data.total || 0;
+
     document.getElementById('stPagerLabel').textContent =
       `Page ${currentPage} · ${lastItems.length} of ${data.total}`;
     document.getElementById('stPrev').disabled = currentPage <= 1;
@@ -971,6 +1026,8 @@
     // Stage 7 — refresh AI badges/buttons whenever the table data changes
     updateAITriageBadge();
     updateApplyHCButton();
+    // Stage 8 — refresh AI panel context header (flow / total / client / date)
+    updateAIPanelContext();
   }
 
   // -------------------- Selection & action buttons -------------------
@@ -1326,6 +1383,20 @@
   if (_btnApplyHC) _btnApplyHC.addEventListener('click', applyHighConf);
   const _btnFilterUnsure = document.getElementById('btnFilterUnsure');
   if (_btnFilterUnsure) _btnFilterUnsure.addEventListener('click', toggleUnsureFilter);
+
+  // -------------------- Stage 8 — AI panel wiring --------------------
+  // Restore persisted collapse/expand state on load
+  setAIPanelState(getAIPanelState());
+  const _btnPanelCollapse = document.getElementById('btnAIPanelCollapse');
+  if (_btnPanelCollapse) {
+    _btnPanelCollapse.addEventListener('click', () => setAIPanelState('collapsed'));
+  }
+  const _btnPanelExpand = document.getElementById('btnAIPanelExpand');
+  if (_btnPanelExpand) {
+    _btnPanelExpand.addEventListener('click', () => setAIPanelState('open'));
+  }
+  // Initial context-header paint (reload() also calls this on every fetch)
+  updateAIPanelContext();
 
   // Per-row Explain link — event delegation on tbody so it survives
   // re-renders (sort, reload, etc.).

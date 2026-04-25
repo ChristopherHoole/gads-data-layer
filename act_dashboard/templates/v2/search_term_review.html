@@ -27,6 +27,15 @@
 {% block content %}
 <div class="st-page" data-client-id="{{ client.id }}" data-analysis-date="{{ analysis_date }}">
 
+  {# ---- Stage 8: split-screen 65/35 grid wrapper.
+       Main column carries every existing UI element verbatim; panel is
+       new. Grid template is conditional on data-panel-state — JS toggles
+       between '1fr 35%' (open) and '1fr' (collapsed). State persists via
+       localStorage. Mobile (<1024px) hides the panel and forces 1fr. #}
+  <div class="ai-page-grid" id="aiPageGrid" data-panel-state="open">
+
+    <div class="ai-page-main">
+
   {# ---- 5 summary badges ---- #}
   <div class="status-cards">
     <div class="status-card status-card--amber"><div class="status-card__count" id="cntPending">{{ counts.pending_block_review }}</div><div class="status-card__label">Pending</div></div>
@@ -210,12 +219,44 @@
     </div>
   </div>
 
+    </div>{# /.ai-page-main #}
+
+    {# Stage 8 — AI panel shell. Stage 9 fills the body with chat. #}
+    <aside class="ai-panel" id="aiPanel" aria-label="AI Co-pilot panel">
+      <div class="ai-panel-header">
+        <div class="ai-panel-title">
+          🤖 <span id="aiPanelTitleText">AI Co-pilot</span>
+        </div>
+        <button class="ai-panel-collapse-btn" id="btnAIPanelCollapse"
+                type="button"
+                title="Collapse AI panel" aria-label="Collapse AI panel">»</button>
+      </div>
+      <div class="ai-panel-context" id="aiPanelContext">
+        <span class="ai-panel-context-empty">—</span>
+      </div>
+      <div class="ai-panel-body" id="aiPanelBody">
+        <div class="ai-panel-placeholder">
+          <p>💬 AI chat panel coming in Stage 9.</p>
+          <p>For now, use the per-row 🔍 Explain links and the
+             🤖 AI Triage / ✅ Apply high-conf buttons in the action bar.</p>
+        </div>
+      </div>
+    </aside>
+
+    {# Slim strip — visible only when panel is collapsed. #}
+    <button class="ai-panel-strip" id="btnAIPanelExpand" type="button"
+            title="Expand AI panel" aria-label="Expand AI panel"
+            style="display:none">🤖<br>Expand</button>
+
+  </div>{# /.ai-page-grid #}
+
 </div>
 
 {# Data for JS #}
 <script id="stConfig" type="application/json">
 {
   "client_id": "{{ client.id }}",
+  "client_name": {{ client.name|tojson }},
   "analysis_date": "{{ analysis_date }}",
   "list_roles": [
     "1_word_exact","1_word_phrase","2_word_exact","2_word_phrase",
