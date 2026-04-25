@@ -17,7 +17,8 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 
 import duckdb
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, jsonify, render_template, request, redirect, url_for
+from werkzeug.utils import secure_filename
 
 v2_morning_bp = Blueprint('v2_morning', __name__, url_prefix='/v2')
 
@@ -381,3 +382,87 @@ def morning_review():
         csv_watch_ingested=csv_watch_ingested,
         active_page='morning-review',
     )
+
+
+# ---------------------------------------------------------------------------
+# Fix 1.6 follow-up — PMax CSV upload endpoint
+# ---------------------------------------------------------------------------
+# Drops the uploaded file into client_csvs/<client_id>/incoming/ and returns
+# 200. Ingestion is NOT performed here — we deliberately route through the
+# watcher so there's exactly one ingestion code path. The watcher's
+# on_created event will fire ~immediately after the file lands and run the
+# normal validate -> ingest -> archive pipeline.
+@v2_morning_bp.route('/api/csv/upload', methods=['POST'])
+def csv_upload():
+    # Lazy import so the route module doesn't pull in watchdog at app
+    # boot — watcher is a separate process; the Flask app only needs the
+    # folder path helpers.
+    from act_dashboard.data_pipeline.pmax_csv_watcher import (
+        ensure_client_folders,
+        incoming_dir,
+    )
+
+    client_id = (request.form.get('client_id') or '').strip()
+    if not client_id:
+        return jsonify({'status': 'error', 'message': 'client_id required'}), 400
+
+    # Validate client_id against active clients (avoid path traversal via
+    # crafted client_id and avoid accidental writes for inactive clients).
+    con = _get_db()
+    try:
+        row = con.execute(
+            "SELECT 1 FROM act_v2_clients WHERE client_id = ? AND active = TRUE",
+            [client_id],
+        ).fetchone()
+    finally:
+        con.close()
+    if not row:
+        return jsonify({
+            'status': 'error',
+            'message': f'unknown or inactive client_id: {client_id}',
+        }), 400
+
+    upload = request.files.get('file')
+    if upload is None or not upload.filename:
+        return jsonify({'status': 'error', 'message': 'file required'}), 400
+
+    # secure_filename strips path components and unsafe chars; we still
+    # constrain to .csv to keep the watcher's filter happy.
+    fname = secure_filename(upload.filename)
+    if not fname.lower().endswith('.csv'):
+        return jsonify({
+            'status': 'error',
+            'message': 'only .csv files are accepted',
+        }), 400
+
+    # Ensure folders exist (idempotent — same helper the watcher uses).
+    ensure_client_folders([client_id])
+    target = incoming_dir(client_id) / fname
+
+    # If the same name was uploaded earlier today, append _2, _3 etc. so
+    # we don't clobber a CSV the watcher hasn't picked up yet.
+    if target.exists():
+        stem = target.stem
+        suffix = target.suffix
+        n = 2
+        while True:
+            candidate = target.with_name(f"{stem}_{n}{suffix}")
+            if not candidate.exists():
+                target = candidate
+                break
+            n += 1
+
+    try:
+        upload.save(str(target))
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'failed to save file: {e}',
+        }), 500
+
+    return jsonify({
+        'status': 'ok',
+        'client_id': client_id,
+        'saved_as': target.name,
+        'path': str(target),
+    }), 200

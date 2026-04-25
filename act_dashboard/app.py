@@ -587,6 +587,13 @@ def create_app():
         else:
             print(f"[WARN] [N1b] Route not found (skipping): {route_name}")
 
+    # Fix 1.6 follow-up: PMax CSV upload endpoint (multipart POST, JSON resp)
+    if 'v2_morning.csv_upload' in app.view_functions:
+        csrf.exempt(app.view_functions['v2_morning.csv_upload'])
+        print("[OK] [Fix 1.6] CSRF exempted: v2_morning.csv_upload")
+    else:
+        print("[WARN] [Fix 1.6] Route not found (skipping): v2_morning.csv_upload")
+
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
     def csrf_error(reason):

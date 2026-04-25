@@ -15,6 +15,12 @@
   {% else %}
   <span class="act-last-ran" style="background:var(--act-amber-bg);border:1px solid var(--act-amber-border)"><span class="material-symbols-outlined" style="color:var(--act-amber)">schedule</span>ACT has not run yet</span>
   {% endif %}
+  {# Fix 1.6 follow-up — upload PMax CSV button #}
+  <button type="button" class="btn-act btn-act--details" id="mrCsvUploadBtn"
+          title="Drop a Search-terms CSV into the watched folder for ingestion">
+    <span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px">upload_file</span>
+    Upload PMax CSV
+  </button>
 {% endblock %}
 
 {# ---- Macros ---- #}
@@ -325,9 +331,44 @@
 {# ---- Slide-in panel ---- #}
 {% include 'v2/_decision_details.html' %}
 
+{# ---- Fix 1.6 follow-up — PMax CSV upload toast host ---- #}
+<div id="mrToast" class="st-toast" style="display:none"></div>
+
+{# ---- Fix 1.6 follow-up — PMax CSV upload modal (hidden until trigger) ---- #}
+<div class="act-confirm-overlay" id="mrCsvUploadOverlay" style="display:none">
+  <div class="act-confirm" role="dialog" aria-modal="true" aria-labelledby="mrCsvUploadTitle" style="max-width:460px">
+    <div class="act-confirm__header">
+      <h3 id="mrCsvUploadTitle" class="act-confirm__title">Upload PMax CSV</h3>
+    </div>
+    <div class="act-confirm__body">
+      <p style="margin:0 0 12px;font-size:13px;color:var(--act-text)">
+        Drops the file into <code>client_csvs/&lt;client_id&gt;/incoming/</code>.
+        The watcher picks it up automatically; refresh in 5–10s to see the result.
+      </p>
+      <label style="display:block;margin-bottom:10px;font-size:13px">
+        Client
+        <select id="mrCsvUploadClient" style="width:100%;margin-top:4px;padding:6px 8px;border:1px solid var(--act-border);border-radius:6px;background:var(--act-surface);color:var(--act-text);font-size:13px">
+          {% for c in clients if c.id != 'all' %}
+            <option value="{{ c.id }}" {% if c.id == client.id %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label style="display:block;font-size:13px">
+        CSV file
+        <input type="file" id="mrCsvUploadFile" accept=".csv" style="display:block;margin-top:4px;font-size:13px">
+      </label>
+    </div>
+    <div class="act-confirm__footer">
+      <button type="button" class="btn-act btn-act--decline" id="mrCsvUploadCancel">Cancel</button>
+      <button type="button" class="btn-act btn-act--approve" id="mrCsvUploadSubmit">Upload</button>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block page_js %}
 <script src="{{ url_for('static', filename='js/v2_decision_details.js') }}"></script>
 <script src="{{ url_for('static', filename='js/v2_morning_review.js') }}"></script>
+<script src="{{ url_for('static', filename='js/v2_csv_upload.js') }}"></script>
 {% endblock %}
