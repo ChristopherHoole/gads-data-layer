@@ -1,0 +1,14 @@
+Triage these {{count}} search terms for {{client_id}} on {{analysis_date}}, flow={{flow}}.
+
+Format for each row:
+  [<review_id>] "<search_term>"
+    pass1_reason: <reason> / detail: <pass1_reason_detail>
+    cost: £<total_cost> | clicks: <total_clicks> | impressions: <total_impressions> | conversions: <total_conversions>
+    triggered by keyword: "<keywords or '—' if none>"
+    campaigns: <campaigns or '—'>
+
+Terms:
+
+{{rendered_term_list}}
+
+Return JSON array as specified in the system prompt. One object per term, same order as input.
