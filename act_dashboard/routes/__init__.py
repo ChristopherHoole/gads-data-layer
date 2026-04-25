@@ -101,6 +101,11 @@ def register_blueprints(app: Flask):
     app.register_blueprint(v2_rejected_terms_bp)
     print("[OK] [N3]  Registered v2_rejected_terms blueprint (/v2/rejected-terms)")
 
+    # Tier 2.1 Stage 2: AI endpoints (stubs only — no Claude calls yet)
+    from act_dashboard.routes.v2_ai_api import v2_ai_api_bp
+    app.register_blueprint(v2_ai_api_bp)
+    print("[OK] [T2.1 S2] Registered v2_ai_api blueprint (/v2/api/ai)")
+
     print("[OK] [Phase 1a] Registered auth blueprint (login, logout, switch-client)")
     print("[OK] [Phase 1b] Registered api blueprint (execute, batch, status, approve, reject)")
     print("[OK] [Phase 1c] Registered page blueprints (keywords, ads, shopping)")

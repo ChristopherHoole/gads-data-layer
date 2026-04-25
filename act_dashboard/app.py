@@ -594,6 +594,15 @@ def create_app():
     else:
         print("[WARN] [Fix 1.6] Route not found (skipping): v2_morning.csv_upload")
 
+    # Tier 2.1 Stage 2: AI endpoints — blueprint-level exempt covers all 4
+    # endpoints (classify-terms, explain-row, chat, chat-history).
+    try:
+        from act_dashboard.routes.v2_ai_api import v2_ai_api_bp
+        csrf.exempt(v2_ai_api_bp)
+        print("[OK] [T2.1 S2] CSRF exempted blueprint: v2_ai_api")
+    except Exception as e:
+        print(f"[WARN] [T2.1 S2] Could not CSRF-exempt v2_ai_api: {e}")
+
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
     def csrf_error(reason):
