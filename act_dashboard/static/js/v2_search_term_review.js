@@ -263,7 +263,7 @@
         if (campaignSource === key) return;
         campaignSource = key;
         currentPage = 1;                // reset pagination on source change
-        reload();
+        reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2
       });
       bar.appendChild(btn);
     });
@@ -283,7 +283,7 @@
         if (statusView === key) return;
         statusView = key;
         currentPage = 1;
-        reload();
+        reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2
       });
       bar.appendChild(btn);
     });
@@ -304,7 +304,7 @@
         if (selectedReasons.has(code)) selectedReasons.delete(code);
         else selectedReasons.add(code);
         currentPage = 1;
-        reload();
+        reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2
       });
       bar.appendChild(btn);
     });
@@ -322,7 +322,7 @@
         if (selectedReasons.has(code)) selectedReasons.delete(code);
         else selectedReasons.add(code);
         currentPage = 1;
-        reload();
+        reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2
       });
       bar.appendChild(btn);
     });
@@ -381,7 +381,7 @@
         // N1r: re-render chips so .active moves to the newly clicked chip.
         // Safe to self-call — the function clears existing chips on line 1.
         renderP3StatusChips();
-        reload();
+        reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2
       });
       bar.appendChild(btn);
     });
@@ -514,7 +514,13 @@
   }
 
   // -------------------- Load + render --------------------------------
-  async function reload() {
+  // Fix 1.4 follow-up (Issue 2): chip filters (status / reason / source / p3)
+  // are not a context boundary — they're just a view filter on the same
+  // dataset — so the in-session actioned set must persist across them.
+  // Pagination, page-size, date change, refresh, reclassify, push, and
+  // initial load are real boundaries and DO reset the session set.
+  async function reload(opts) {
+    const preserveSession = !!(opts && opts.preserveSession);
     let url, view;
     if (currentTab === 'pass12') {
       view = statusView;
@@ -543,6 +549,17 @@
     approvedReadyCount = data.approved_ready_count || 0;
     applyClientSideSort();
     updateSortIndicators();
+
+    // Fix 1.4 follow-up — clear/preserve the in-session actioned set BEFORE
+    // we render the new tbody, so renderRow's isActioned check sees the
+    // correct state. Order matters: stale Set + new rows would otherwise
+    // carry .actioned classes onto rows from a different page/date.
+    sessionTotal = lastItems.length;
+    if (!preserveSession) {
+      sessionActioned = 0;
+      sessionActionedIds = new Set();
+    }
+    updateSessionProgress();
 
     // Repaint chips from server-side counts (Pass 1/2 only)
     if (currentTab === 'pass12') {
@@ -575,15 +592,6 @@
         : '<tr><td colspan="10" class="st-loading">No matching suggestions</td></tr>';
     }
 
-    // Fix 1.4 — fresh page = fresh session counters and fresh actioned set.
-    // Row numbers re-assign 1..N here; in-place bulkUpdate() leaves them
-    // alone afterwards. We deliberately drop sessionActionedIds on reload
-    // so a filter/page change starts a clean slate (matches AC #5).
-    sessionTotal = lastItems.length;
-    sessionActioned = 0;
-    sessionActionedIds = new Set();
-    updateSessionProgress();
-
     document.getElementById('stPagerLabel').textContent =
       `Page ${currentPage} · ${lastItems.length} of ${data.total}`;
     document.getElementById('stPrev').disabled = currentPage <= 1;
@@ -614,11 +622,26 @@
   }
 
   // -------------------- Fix 1.4: stable session row numbering ---------
+  // Fix 1.4 follow-up (Issue 3): single-number label "N actioned this session";
+  // hide the chip entirely until the user has actioned at least one row.
   function updateSessionProgress() {
     const a = document.getElementById('stSessionActioned');
-    const t = document.getElementById('stSessionTotal');
+    const wrap = document.getElementById('stSessionProgress');
     if (a) a.textContent = sessionActioned;
-    if (t) t.textContent = sessionTotal;
+    if (wrap) wrap.style.display = sessionActioned > 0 ? '' : 'none';
+  }
+  // Fix 1.4 follow-up (Issue 1): the previous textContent +/- arithmetic was
+  // succeeding for Pending but not visibly applying to Approved/Rejected
+  // during QA. Rewrote as a single defensive helper that strips any non-digit
+  // cruft (whitespace, commas, NBSP), parses, clamps to >=0, and writes back.
+  // Same code path for every card so behaviour is symmetric across paths.
+  function bumpCard(id, delta) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const raw = (el.textContent || '').replace(/[^\d-]/g, '');
+    const cur = parseInt(raw, 10);
+    const next = Math.max(0, (Number.isFinite(cur) ? cur : 0) + delta);
+    el.textContent = String(next);
   }
   // Mark a single row as actioned in-place: keeps the row in the DOM (and
   // its row number stable), updates the status pill, locks the checkbox,
@@ -785,16 +808,13 @@
       sel.forEach(s => { if (markRowActioned(s.id, status)) marked++; });
       sessionActioned += marked;
       updateSessionProgress();
-      // Optimistic top-card + push-button update so the dashboard
-      // numbers don't lie until the user navigates.
+      // Fix 1.4 follow-up (Issue 1) — Pending --, Approved/Rejected ++ via
+      // shared bumpCard() helper so both paths take exactly the same code
+      // path. Previous QA showed Pending decrementing but Approved/Rejected
+      // not — symmetric helper rules that class of bug out.
       if (currentTab === 'pass12') {
-        const pendingEl = document.getElementById('cntPending');
-        if (pendingEl) pendingEl.textContent =
-          Math.max(0, (parseInt(pendingEl.textContent, 10) || 0) - marked);
-        const dstEl = document.getElementById(
-          status === 'approved' ? 'cntApproved' : 'cntRejected');
-        if (dstEl) dstEl.textContent =
-          (parseInt(dstEl.textContent, 10) || 0) + marked;
+        bumpCard('cntPending', -marked);
+        bumpCard(status === 'approved' ? 'cntApproved' : 'cntRejected', +marked);
         if (status === 'approved') approvedReadyCount += marked;
       }
       updateButtons();
@@ -851,7 +871,7 @@
     stTable.style.display = tab === 'pass12' ? '' : 'none';
     stP3Table.style.display = tab === 'pass3' ? '' : 'none';
     if (tab === 'pass3') renderP3StatusChips();
-    reload();
+    reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2 — tab switch is a view change, not a data boundary
   }
 
   // -------------------- Wire events ----------------------------------
@@ -932,6 +952,10 @@
       } else if (data.status === 'ok') {
         toast(`Synced ${data.list_count} lists, ${data.keyword_count} keywords in ${data.duration_seconds}s`);
         loadSyncPill();
+        // Fix 1.4 follow-up (Issue 2): refresh-neg-lists is a real boundary
+        // — neg snapshot changed, classifications may differ next reclassify.
+        // Trigger a default reload so the in-session actioned set clears.
+        await reload();
       } else {
         toast('Refresh failed: ' + (data.message || 'Unknown'), 'error');
       }
