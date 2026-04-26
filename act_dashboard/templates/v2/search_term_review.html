@@ -122,6 +122,16 @@
     </div>
   </div>
 
+  {# ---- Stage 10 follow-up: empty-state banner shown when "Only unsure"
+       filter is on but no unsure rows exist on this page. Hidden by
+       default; CSS toggles visibility based on body[data-unsure-empty="true"]
+       which JS sets after evaluating. This is a static-DOM approach (no
+       dynamic insertion) so no race conditions / parent-element confusion. #}
+  <div id="stUnsureEmptyBanner" class="st-empty-banner">
+    🔍 <strong>"Only unsure" filter is on, but no unsure rows on this page.</strong>
+    Click <strong>🤖 AI Triage</strong> to classify rows first, or turn the filter off.
+  </div>
+
   {# ---- Table area — outer wrap keeps NO overflow; the wide Pass 1/2
        table scrolls horizontally inside its own .st-hscroll wrapper so
        sticky thead can pin to the page viewport. ---- #}

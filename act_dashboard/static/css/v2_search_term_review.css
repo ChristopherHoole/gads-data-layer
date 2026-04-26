@@ -542,6 +542,25 @@
 .ai-info-banner button:hover,
 .ai-error-banner button:hover { opacity: 1; }
 
+/* Stage 10 follow-up — empty-state banner shown above the table when
+   "Only unsure" filter is on but the current page has no unsure rows.
+   Hidden by default; JS sets data-unsure-empty="true" on body when the
+   condition is met. Static-DOM approach (no dynamic insertion) — element
+   lives in the template, CSS controls visibility. */
+.st-empty-banner {
+  display: none;
+  background: var(--act-blue-bg);
+  border: 1px solid var(--act-blue-border);
+  color: var(--act-text);
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin: 8px 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.st-empty-banner strong { font-weight: 600; }
+body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
+
 /* Pin reasonable widths for the new AI columns. Append-only — these
    are positions 21/22/23 so they don't collide with the existing
    nth-child(4..20) rules above. */

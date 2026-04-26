@@ -810,6 +810,22 @@
     const active = btn.dataset.active === 'true';
     btn.dataset.active = active ? 'false' : 'true';
     if (stTable) stTable.classList.toggle('only-unsure', !active);
+    updateUnsureEmptyState();
+  }
+
+  // Stage 10 follow-up — when the unsure filter is on AND the current page
+  // has no unsure rows, surface a friendly empty-state banner.
+  //
+  // Implementation: static-DOM approach. The banner element lives in the
+  // template at #stUnsureEmptyBanner with `display: none`. CSS shows it
+  // when body has `data-unsure-empty="true"`. This function only flips
+  // that data attribute — no dynamic insertion / parent-element races.
+  function updateUnsureEmptyState() {
+    const isOn = !!(stTable && stTable.classList.contains('only-unsure'));
+    const unsureCount = stTable
+      ? stTable.querySelectorAll('tbody tr[data-id][data-ai-verdict="unsure"]').length
+      : 0;
+    document.body.dataset.unsureEmpty = (isOn && unsureCount === 0) ? 'true' : 'false';
   }
 
   // ============================================================
@@ -1218,6 +1234,7 @@
     const btn = document.getElementById('btnFilterUnsure');
     if (btn) btn.dataset.active = active ? 'true' : 'false';
     if (stTable) stTable.classList.toggle('only-unsure', !!active);
+    updateUnsureEmptyState();
   }
 
   function applyCannedFilter(filter) {
@@ -1481,6 +1498,9 @@
     // Stage 10 — re-render canned reply pills (Pass 3 vs main flows
     // get different sets; tab switches funnel through reload()).
     renderCannedReplies();
+    // Stage 10 follow-up — recompute unsure-filter empty banner now that
+    // tbody has new rows (the filter state may have stayed on across reload).
+    updateUnsureEmptyState();
   }
 
   // -------------------- Selection & action buttons -------------------
