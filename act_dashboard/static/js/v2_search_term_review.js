@@ -1365,8 +1365,27 @@
       ? `<span class="st-status st-status--${item.review_status}">${item.review_status}</span>`
       : '<span class="st-status st-status--review">pending</span>';
     const rowNum = (currentPage - 1) * PAGE_SIZE + (idx || 0) + 1;
-    const actionedCls = isActioned ? ' class="actioned"' : '';
-    return `<tr data-id="${item.id}"${actionedCls}>
+
+    // Stage 11 — unified class list (replaces standalone actionedCls).
+    // Two flags can apply at the same time: in-session actioned lock AND
+    // AI-disagrees-with-engine highlight. Build one class attribute.
+    const trClasses = [];
+    if (isActioned) trClasses.push('actioned');
+    const aiDisagrees = (item.ai_target_list_role
+                         && item.ai_target_list_role !== item.target_list_role);
+    if (aiDisagrees) trClasses.push('ai-p3-disagree');
+    const classAttr = trClasses.length ? ` class="${trClasses.join(' ')}"` : '';
+
+    // Stage 11 — AI suggested role + confidence cells. Reuses the
+    // .ai-conf-pill / ai-conf-<level> classes from Stage 7.
+    const aiRoleCell = item.ai_target_list_role
+      ? `<td><span class="ai-p3-role" title="${escapeHtml(item.ai_reasoning || '')}">${escapeHtml(humanRole(item.ai_target_list_role))}</span></td>`
+      : '<td class="ai-verdict-empty">—</td>';
+    const aiConfCell = item.ai_confidence
+      ? `<td><span class="ai-conf-pill ai-conf-${escapeHtml(item.ai_confidence)}">${escapeHtml(item.ai_confidence)}</span></td>`
+      : '<td class="ai-verdict-empty">—</td>';
+
+    return `<tr data-id="${item.id}"${classAttr}>
       <td class="col-num">${rowNum}</td>
       <td><input type="checkbox" class="st-chk" ${chkAttrs}></td>
       <td class="st-table__term">${escapeHtml(item.fragment)}</td>
@@ -1377,7 +1396,140 @@
       <td>${reviewed}</td>
       <td class="st-table__sources" title="${escapeHtml(sources)}">${escapeHtml(sources)}</td>
       <td>${pushErr}</td>
+      ${aiRoleCell}
+      ${aiConfCell}
     </tr>`;
+  }
+
+  // ============================================================
+  // Stage 11 — Pass 3 AI routing.
+  //   * fireAIRouteP3   — POST /classify-terms with flow=pass3
+  //   * applyAIRouteP3  — bulk-update pending row dropdowns to AI's
+  //                       suggestion (client-side only; user still
+  //                       reviews + approves via the existing flow).
+  //   * updateAIRouteP3Badge / updateApplyAIRouteP3Button — counters.
+  // ============================================================
+  async function fireAIRouteP3() {
+    const pendingIds = (lastItems || [])
+      .filter(it => it.review_status === 'pending')
+      .map(it => it.id);
+    if (pendingIds.length === 0) {
+      aiBanner('info', 'No pending phrase suggestions to route.');
+      return;
+    }
+    if (pendingIds.length > 50) {
+      const ok = await aiConfirm({
+        title: `Route ${pendingIds.length} phrases?`,
+        body: `This will use approximately <strong>${Math.ceil(pendingIds.length / 25) * 3}K tokens</strong> of your AI quota.`,
+        okLabel: 'Route',
+        okStyle: 'primary',
+      });
+      if (!ok) return;
+    }
+    const btn = document.getElementById('btnAIRouteP3');
+    if (btn) btn.disabled = true;
+    try {
+      const r = await fetch('/v2/api/ai/classify-terms', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          client_id: CLIENT,
+          analysis_date: analysisDate,
+          flow: 'pass3',
+          phrase_suggestion_ids: pendingIds,
+          force_reclassify: false,
+        }),
+      });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({error: r.statusText}));
+        aiBanner('error', `AI Route failed: ${err.error || r.statusText}`);
+        return;
+      }
+      const data = await r.json();
+      if (data.classified === 0 && data.skipped_already_classified > 0) {
+        aiBanner('info', `All ${data.skipped_already_classified} phrases already routed. Display refreshed.`);
+      } else if (data.classified > 0) {
+        aiBanner('info', `Routed ${data.classified} phrases in ${(data.wall_clock_ms/1000).toFixed(1)}s.`);
+      }
+      await reload();
+    } catch (e) {
+      aiBanner('error', `AI Route error: ${e.message}`);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  // Bulk-update each pending row's target_list_role dropdown to AI's
+  // suggestion. Does NOT auto-approve and does NOT write to the DB —
+  // user reviews + approves via existing flow. Sidesteps the DuckDB
+  // UPDATE-on-UNIQUE bug by keeping changes purely in-memory + DOM.
+  //
+  // KNOWN LIMIT (Tier 2.2): on reload, the engine's roles come back.
+  // The confirm copy warns about this.
+  async function applyAIRouteP3() {
+    const candidates = (lastItems || []).filter(it =>
+      it.review_status === 'pending'
+      && it.ai_target_list_role
+      && it.ai_target_list_role !== it.target_list_role
+    );
+    if (candidates.length === 0) {
+      aiBanner('info', 'No AI routing suggestions to apply (or AI agrees with engine on all).');
+      return;
+    }
+    const ok = await aiConfirm({
+      title: `Apply AI routing to ${candidates.length} phrases?`,
+      body: `Each row's target list dropdown will be updated to the AI's suggestion. You still need to <strong>approve</strong> them via the existing flow before they push to Google Ads. This change is reversible — just change the dropdown back, or refresh.<br><br><em>Don't reload the page before approving — your changes will revert.</em>`,
+      okLabel: 'Apply routing',
+      okStyle: 'primary',
+    });
+    if (!ok) return;
+    let applied = 0;
+    for (const item of candidates) {
+      const select = document.querySelector(
+        `tr[data-id="${item.id}"] .st-target-select`
+      );
+      if (!select) continue;
+      select.value = item.ai_target_list_role;
+      // Mirror the in-memory item so subsequent renders + counts agree.
+      item.target_list_role = item.ai_target_list_role;
+      // Re-render the row's class so the amber tint clears (no longer
+      // disagrees, since both sides now match).
+      const tr = select.closest('tr');
+      if (tr) tr.classList.remove('ai-p3-disagree');
+      applied++;
+    }
+    aiBanner('info', `Updated ${applied} row dropdowns to AI's suggestion. Review + approve via existing flow.`);
+    updateApplyAIRouteP3Button();
+  }
+
+  function updateAIRouteP3Badge() {
+    const count = (lastItems || []).filter(it => it.review_status === 'pending').length;
+    const el = document.getElementById('aiRouteP3Count');
+    if (el) el.textContent = `(${count} pending)`;
+  }
+
+  function updateApplyAIRouteP3Button() {
+    const candidates = (lastItems || []).filter(it =>
+      it.review_status === 'pending'
+      && it.ai_target_list_role
+      && it.ai_target_list_role !== it.target_list_role
+    );
+    const btn = document.getElementById('btnApplyAIRouteP3');
+    if (!btn) return;
+    // Visibility is gated both on tab (Stage 11 buttons hidden on Pass 1/2)
+    // AND on having any disagreements. switchTab() owns the tab gate; here
+    // we only manage the inner "any disagreements?" gate when on Pass 3.
+    if (currentTab !== 'pass3') {
+      btn.style.display = 'none';
+      return;
+    }
+    if (candidates.length > 0) {
+      btn.style.display = '';
+      const cnt = document.getElementById('applyAIRouteP3Count');
+      if (cnt) cnt.textContent = `(${candidates.length})`;
+    } else {
+      btn.style.display = 'none';
+    }
   }
 
   function roleDropdown(current, options, rowId) {
@@ -1498,6 +1650,9 @@
     // Stage 10 — re-render canned reply pills (Pass 3 vs main flows
     // get different sets; tab switches funnel through reload()).
     renderCannedReplies();
+    // Stage 11 — Pass 3 AI routing badge + apply button visibility.
+    updateAIRouteP3Badge();
+    updateApplyAIRouteP3Button();
     // Stage 10 follow-up — recompute unsure-filter empty banner now that
     // tbody has new rows (the filter state may have stayed on across reload).
     updateUnsureEmptyState();
@@ -1812,6 +1967,14 @@
     if (banner && tab === 'pass3') banner.style.display = 'none';
     stTable.style.display = tab === 'pass12' ? '' : 'none';
     stP3Table.style.display = tab === 'pass3' ? '' : 'none';
+    // Stage 11 — Pass 3 AI Route button only shows on Pass 3 tab. The
+    // Apply button visibility additionally depends on whether any
+    // disagreements exist (handled in updateApplyAIRouteP3Button after
+    // reload).
+    const _btnRoute = document.getElementById('btnAIRouteP3');
+    if (_btnRoute) _btnRoute.style.display = tab === 'pass3' ? '' : 'none';
+    const _btnApplyRoute = document.getElementById('btnApplyAIRouteP3');
+    if (_btnApplyRoute && tab !== 'pass3') _btnApplyRoute.style.display = 'none';
     if (tab === 'pass3') renderP3StatusChips();
     reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2 — tab switch is a view change, not a data boundary
   }
@@ -1848,6 +2011,9 @@
   document.getElementById('stBulkReject').addEventListener('click', () => bulkUpdate('rejected'));
   document.getElementById('stPushApproved').addEventListener('click', pushApproved);
   document.getElementById('stRunPass3').addEventListener('click', runPass3);
+  // Stage 11 — Pass 3 AI routing buttons.
+  document.getElementById('btnAIRouteP3')?.addEventListener('click', fireAIRouteP3);
+  document.getElementById('btnApplyAIRouteP3')?.addEventListener('click', applyAIRouteP3);
 
   // -------------------- Stage 7 — AI button wiring -------------------
   const _btnAITriage = document.getElementById('btnAITriage');

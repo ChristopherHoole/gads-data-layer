@@ -114,6 +114,17 @@
                 title="Filter the current view to rows where the AI returned 'unsure'.">
           🔍 Only show unsure
         </button>
+        {# Stage 11 — Pass 3 routing AI buttons. Hidden until Pass 3 tab. #}
+        <button class="btn-act btn-act--ai" id="btnAIRouteP3"
+                style="display:none"
+                title="Ask Opus to suggest the right target list for each pending phrase.">
+          🤖 AI Route <span class="ai-action-badge" id="aiRouteP3Count">(0 pending)</span>
+        </button>
+        <button class="btn-act btn-act--ai-secondary" id="btnApplyAIRouteP3"
+                style="display:none"
+                title="Update each pending row's target list dropdown to match the AI's suggestion. You still review + approve via the existing flow.">
+          ✅ Apply AI routing <span class="ai-action-badge" id="applyAIRouteP3Count">(0)</span>
+        </button>
       </div>
       <button class="btn-act btn-act--approve" id="stPushApproved" disabled>Push approved to Google Ads</button>
       <button class="btn-act btn-act--details" id="stRefreshNegs" title="Pull the latest negative-keyword lists from Google Ads">🔄 Refresh Neg Lists from GAds</button>
@@ -187,10 +198,13 @@
           <th>Status</th>
           <th>Source terms</th>
           <th>Push error</th>
+          {# Stage 11 — AI routing suggestion columns. #}
+          <th>AI Role</th>
+          <th>AI Conf</th>
         </tr>
       </thead>{# Pass 3 headers already sentence-case #}
       <tbody id="stP3Tbody">
-        <tr><td colspan="10" class="st-loading">Run Pass 3 to generate suggestions</td></tr>
+        <tr><td colspan="12" class="st-loading">Run Pass 3 to generate suggestions</td></tr>
       </tbody>
     </table>
   </div>
