@@ -872,31 +872,100 @@
       ? 'user'
       : (msg.role === 'system' ? 'system' : 'assistant');
     el.className = `ai-chat-msg ai-chat-msg-${role}`;
-    // Special pill for explain-marker user rows (related_review_id set)
     if (role === 'user' && msg.related_review_id) {
       el.className = 'ai-chat-msg ai-chat-msg-explain-marker';
     }
     const safe = (msg.message && msg.message.trim())
       ? msg.message
       : '[no response — try again]';
-    // Bullet detection: accept both "- " and "* " (multiline regex).
-    const hasBullets = /^\s*[-*]\s/m.test(safe);
-    if (role === 'assistant' && hasBullets) {
-      const lines = safe.split('\n').filter(l => l.trim());
-      const bullets = lines.filter(l => /^\s*[-*]\s/.test(l));
-      const nonBullets = lines.filter(l => !/^\s*[-*]\s/.test(l));
-      const prelude = nonBullets
-        .map(l => `<p>${escapeHtml(l)}</p>`).join('');
-      const ul = bullets.length
-        ? '<ul>' + bullets
-            .map(l => `<li>${escapeHtml(l.replace(/^\s*[-*]\s*/, ''))}</li>`)
-            .join('') + '</ul>'
-        : '';
-      el.innerHTML = prelude + ul;
+    if (role === 'assistant') {
+      el.innerHTML = renderAssistantMarkdown(safe);
     } else {
       el.innerHTML = `<div>${escapeHtml(safe).replace(/\n/g, '<br>')}</div>`;
     }
     return el;
+  }
+
+  // Stage 9.6: lightweight markdown renderer for assistant bubbles. Splits
+  // on blank-line block boundaries; each block is classified as h3 / table /
+  // bullet list / numbered list / paragraph. **bold** inline anywhere.
+  // Handles all formats Opus produces under the new prompt rules: headline
+  // + tables (many-rows), headline + bullets (single-row / explain),
+  // headline + numbered list (recommendations). Plus backwards compat
+  // with pre-9.6 plain bullet/paragraph chat history.
+  function renderAssistantMarkdown(text) {
+    return text.split(/\n\s*\n/).map(_renderMdBlock).join('');
+  }
+
+  function _renderMdBlock(block) {
+    const trimmed = block.trim();
+    if (!trimmed) return '';
+
+    // ### H3 header — single-line only (multi-line headers would be weird)
+    if (/^###\s+/.test(trimmed) && !trimmed.includes('\n')) {
+      const heading = trimmed.replace(/^###\s+/, '');
+      return `<h4 class="ai-chat-h3">${_renderMdInline(heading)}</h4>`;
+    }
+
+    const lines = trimmed.split('\n');
+
+    // Markdown table: row 1 has |, row 2 is the separator (--- with optional
+    // : alignment markers), row 3+ are body cells.
+    if (lines.length >= 2
+        && lines[0].includes('|')
+        && /^\s*\|?\s*[-:|\s]+\|?\s*$/.test(lines[1])) {
+      return _renderMdTable(lines);
+    }
+
+    // Bullet list — every line is a "- " or "* " bullet
+    if (lines.every(l => /^\s*[-*]\s/.test(l))) {
+      const items = lines
+        .map(l => `<li>${_renderMdInline(l.replace(/^\s*[-*]\s*/, ''))}</li>`)
+        .join('');
+      return `<ul>${items}</ul>`;
+    }
+
+    // Numbered list — every line is "N. "
+    if (lines.every(l => /^\s*\d+\.\s/.test(l))) {
+      const items = lines
+        .map(l => `<li>${_renderMdInline(l.replace(/^\s*\d+\.\s*/, ''))}</li>`)
+        .join('');
+      return `<ol>${items}</ol>`;
+    }
+
+    // Mixed block (e.g. paragraph that happens to contain a single bullet
+    // line): fall through to paragraph rendering with <br> for newlines.
+    return `<p>${_renderMdInline(lines.join(' '))}</p>`;
+  }
+
+  function _renderMdTable(lines) {
+    const parseCells = (line) => line
+      .replace(/^\s*\|/, '')
+      .replace(/\|\s*$/, '')
+      .split('|')
+      .map(c => c.trim());
+    const headers = parseCells(lines[0]);
+    const rows = lines.slice(2).map(parseCells);
+    const headerHtml = headers
+      .map(h => `<th>${_renderMdInline(h)}</th>`).join('');
+    const rowsHtml = rows
+      .map(r => '<tr>'
+        + r.map(c => `<td>${_renderMdInline(c)}</td>`).join('')
+        + '</tr>')
+      .join('');
+    return '<div class="ai-chat-table-wrap">'
+      + '<table class="ai-chat-table">'
+      + `<thead><tr>${headerHtml}</tr></thead>`
+      + `<tbody>${rowsHtml}</tbody>`
+      + '</table></div>';
+  }
+
+  function _renderMdInline(s) {
+    // Escape ALL HTML first, then unescape **bold** as <strong> (the only
+    // inline markdown Opus uses with any reliability under the chat
+    // prompt). Italics / code / links are out of scope for MVP.
+    return escapeHtml(s)
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   }
 
   function scrollChatToBottom() {

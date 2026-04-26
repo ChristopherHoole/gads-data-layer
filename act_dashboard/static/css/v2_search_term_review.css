@@ -641,17 +641,24 @@
    automatically.
    ============================================================ */
 
-/* Page grid (main + AI panel). Default open at 1fr 35%; collapsed
-   data attribute switches to 1fr so the table reclaims full width. */
+/* Stage 9.6: page-grid no longer carries the panel column. The panel is
+   position:fixed against the viewport, decoupled from grid sizing
+   entirely (Stage 8's sticky-inside-flex+grid was brittle on certain
+   viewports — Chris's input area kept sliding below the viewport on
+   ~1080px tall windows even after the Stage 9.5 nested-flex
+   min-height:0 fix). Single-column grid + right-padding reserves the
+   visual space the panel occupies; collapsed state clears the padding
+   and hides the panel. */
 .ai-page-grid {
   display: grid;
-  grid-template-columns: 1fr 35%;
+  grid-template-columns: 1fr;
   gap: 0;
   min-height: calc(100vh - var(--act-topbar-height));
-  transition: grid-template-columns 0.25s ease;
+  padding-right: 35%;
+  transition: padding-right 0.25s ease;
 }
 .ai-page-grid[data-panel-state="collapsed"] {
-  grid-template-columns: 1fr;
+  padding-right: 0;
 }
 
 /* Main column — wraps every existing UI element verbatim. min-width:0
@@ -662,18 +669,23 @@
   overflow-x: auto;
 }
 
-/* AI panel — sits in the right column, sticky to the top-bar offset
-   so it stays visible while the table scrolls. max-height bounds the
-   body so its internal scroll can take over. */
+/* AI panel — fixed to the viewport right edge, below the topbar. The
+   max-height + flex column + min-height:0 children chain (Stage 9.5)
+   keeps the input area pinned at the bottom regardless of message
+   list length. position:fixed avoids the sticky-inside-grid edge
+   case that was causing the input to slide off screen. */
 .ai-panel {
+  position: fixed;
+  top: var(--act-topbar-height);
+  right: 0;
+  width: 35%;
+  max-height: calc(100vh - var(--act-topbar-height));
   border-left: 1px solid var(--act-border-light);
   background: var(--act-surface);
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: var(--act-topbar-height);
-  max-height: calc(100vh - var(--act-topbar-height));
   overflow: hidden;
+  z-index: 50;
 }
 .ai-page-grid[data-panel-state="collapsed"] .ai-panel { display: none; }
 
@@ -938,3 +950,50 @@
 }
 .ai-chat-send:hover { background: #1d4ed8; }
 .ai-chat-send:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ============================================================
+   Stage 9.6 — Assistant markdown rendering (h3 + tables + bold).
+   Tables sit in a horizontal-scroll wrap so dense rows don't blow
+   out the narrow chat panel. All cells wrap so column widths can
+   stay tight. Numeric column right-alignment intentionally skipped
+   for MVP — Tier 2.2 polish item.
+   ============================================================ */
+.ai-chat-msg-assistant .ai-chat-h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 8px 0 4px 0;
+  color: var(--act-text);
+}
+.ai-chat-msg-assistant .ai-chat-h3:first-child { margin-top: 0; }
+
+.ai-chat-table-wrap {
+  overflow-x: auto;
+  margin: 6px 0;
+  -webkit-overflow-scrolling: touch;
+}
+.ai-chat-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 11px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+.ai-chat-table th,
+.ai-chat-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--act-border-light);
+  text-align: left;
+  vertical-align: top;
+  white-space: normal;          /* let cell text wrap; keeps narrow panel readable */
+}
+.ai-chat-table th {
+  background: var(--act-hover-bg);
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;          /* headers compact */
+  color: var(--act-text);
+}
+.ai-chat-table tbody tr:last-child td { border-bottom: none; }
+
+.ai-chat-msg-assistant strong { font-weight: 600; }

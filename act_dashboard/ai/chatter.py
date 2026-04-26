@@ -255,6 +255,7 @@ def _build_user_message(client_id: str, flow: str, analysis_date: str,
         parts.append('=== VISIBLE ROWS (current page, top by cost) ===')
         for r in visible_rows:
             cost = r.get('total_cost') or 0
+            clicks = r.get('total_clicks') or 0
             convs = r.get('total_conversions') or 0
             ai_part = ''
             if r.get('ai_verdict'):
@@ -271,7 +272,8 @@ def _build_user_message(client_id: str, flow: str, analysis_date: str,
                 cost_str = '£?'
             parts.append(
                 f'  [{r.get("id", "?")}] "{r.get("search_term", "?")}" | '
-                f'{cost_str} | {convs} conv | {status}{ai_part}'
+                f'{cost_str} | {clicks} clk | {convs} conv | '
+                f'{status}{ai_part}'
             )
         parts.append('')
     parts.append('=== USER MESSAGE ===')
