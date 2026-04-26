@@ -294,6 +294,18 @@ def chat():
                     f'message length must be {_MIN_MESSAGE_CHARS}–'
                     f'{_MAX_MESSAGE_CHARS} chars (got {len(message)})'
                 )
+            # Stage 9.5 — visible_rows: optional list of dicts representing
+            # the current page's rows. Hard cap at 100 to bound the token
+            # budget regardless of client-side PAGE_SIZE.
+            visible_rows = body.get('visible_rows', [])
+            if not isinstance(visible_rows, list):
+                raise ValueError('visible_rows must be a list')
+            if len(visible_rows) > 100:
+                raise ValueError(
+                    f'visible_rows max 100 items (got {len(visible_rows)})'
+                )
+            if not all(isinstance(r, dict) for r in visible_rows):
+                raise ValueError('each visible_rows entry must be a dict')
         except ValueError as e:
             return _err(str(e))
     finally:
@@ -314,6 +326,7 @@ def chat():
             flow=flow,
             analysis_date=analysis_date,
             message=message,
+            visible_rows=visible_rows,
         )
         return jsonify(result), 200
     except LockContentionError as e:

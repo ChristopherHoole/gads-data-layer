@@ -953,6 +953,30 @@
     if (getAIPanelState() === 'collapsed') setAIPanelState('open');
     appendTypingIndicator();
 
+    // Stage 9.5: snapshot the current page's rows so Opus actually sees
+    // the table data the user is looking at. lastItems is the current
+    // RENDERED page (PAGE_SIZE rows max) — not the full filtered set;
+    // pagination shows different rows. Sort by cost desc + slice to 50
+    // to keep token budget bounded (~50 rows = ~50 lines = ~1500 tokens).
+    // Number-coerce DECIMAL strings before subtracting (DuckDB serializes
+    // DECIMAL as string; "10" - "5" = "10-5" without coercion).
+    const visibleRows = [...(lastItems || [])]
+      .sort((a, b) =>
+        (Number(b.total_cost) || 0) - (Number(a.total_cost) || 0))
+      .slice(0, 50)
+      .map(r => ({
+        id: r.id,
+        search_term: r.search_term,
+        total_cost: r.total_cost,
+        total_clicks: r.total_clicks,
+        total_conversions: r.total_conversions,
+        pass1_reason: r.pass1_reason,
+        review_status: r.review_status,
+        ai_verdict: r.ai_verdict,
+        ai_confidence: r.ai_confidence,
+        ai_intent_tag: r.ai_intent_tag,
+      }));
+
     try {
       const r = await fetch('/v2/api/ai/chat', {
         method: 'POST',
@@ -963,6 +987,7 @@
           flow,
           analysis_date: analysisDate,
           message,
+          visible_rows: visibleRows,
         }),
       });
       removeTypingIndicator();

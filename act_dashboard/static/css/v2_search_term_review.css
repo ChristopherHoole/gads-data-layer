@@ -775,15 +775,28 @@
 
 /* Override Stage 8 panel-body padding so the chat layout owns its
    own spacing. The body is now a flex column with a scrolling
-   messages list on top and a fixed input area at the bottom. */
+   messages list on top and a fixed input area at the bottom.
+
+   Stage 9.5: nested-flex scroll fix. Without min-height:0 a flex
+   item defaults to min-content size, which lets descendants with
+   overflow:auto grow PAST the panel rather than scrolling inside
+   it - the panel's max-height was being ignored, the input area
+   slid below the viewport, and Send/Clear became unreachable
+   without scrolling the whole page. min-height:0 + flex:1 +
+   overflow:hidden on the body lets the inner messages list
+   actually take its overflow-y:auto seriously. */
 .ai-panel-body {
+  flex: 1;
+  min-height: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .ai-chat-messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 12px;
   display: flex;

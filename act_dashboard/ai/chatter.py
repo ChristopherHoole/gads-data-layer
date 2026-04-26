@@ -42,8 +42,15 @@ HISTORY_TURNS = 8
 # Public entry point
 # ===========================================================================
 def chat(con, client_id: str, flow: str, analysis_date: str,
-         message: str) -> dict:
+         message: str, visible_rows: list[dict] | None = None) -> dict:
     """Returns dict matching endpoint response schema.
+
+    visible_rows is the optional snapshot of the current page's rows the
+    user is looking at - sent by Stage 9.5 frontend as a list of dicts
+    with id/search_term/cost/clicks/conversions/pass1_reason/review_status
+    /ai_verdict/ai_confidence/ai_intent_tag. Empty/None means no row
+    snapshot was provided (older clients, or page state not yet hydrated)
+    and the chat falls back to page-summary counts only.
 
     May raise locks.LockContentionError (caller -> 409).
     May raise claude_subprocess.ClaudeError after retry (caller -> 502).
@@ -73,6 +80,7 @@ def chat(con, client_id: str, flow: str, analysis_date: str,
         user_message = _build_user_message(
             client_id, flow, analysis_date,
             client_ctx, page_summary, recent, message,
+            visible_rows or [],
         )
 
         # Call Opus (retry once). Empty response counts as a parse
@@ -196,7 +204,8 @@ def _fetch_page_summary(con, client_id: str, flow: str,
 
 def _build_user_message(client_id: str, flow: str, analysis_date: str,
                          client_ctx: dict, page_summary: dict,
-                         recent: list[dict], message: str) -> str:
+                         recent: list[dict], message: str,
+                         visible_rows: list[dict]) -> str:
     flow_label = {
         'search_block': 'Search > Block',
         'search_review': 'Search > Review',
@@ -236,6 +245,34 @@ def _build_user_message(client_id: str, flow: str, analysis_date: str,
         for turn in recent:
             tag = 'USER' if turn['role'] == 'user' else 'ASSISTANT'
             parts.append(f'[{tag}] {turn["message"]}')
+        parts.append('')
+    if visible_rows:
+        # Stage 9.5: snapshot of the rows the user can actually see right
+        # now. One line per row keeps the budget bounded (~50 rows ≈
+        # 1500 tokens). Only enabled fields the row actually has — empty
+        # AI fields are omitted from the line so unclassified rows look
+        # cleaner than a row of "/?/?/?".
+        parts.append('=== VISIBLE ROWS (current page, top by cost) ===')
+        for r in visible_rows:
+            cost = r.get('total_cost') or 0
+            convs = r.get('total_conversions') or 0
+            ai_part = ''
+            if r.get('ai_verdict'):
+                ai_part = (
+                    f' | AI: {r["ai_verdict"]}'
+                    f'/{r.get("ai_confidence", "?")}'
+                )
+                if r.get('ai_intent_tag'):
+                    ai_part += f' ({r["ai_intent_tag"]})'
+            status = r.get('review_status') or 'pending'
+            try:
+                cost_str = f'£{float(cost):.2f}'
+            except (TypeError, ValueError):
+                cost_str = '£?'
+            parts.append(
+                f'  [{r.get("id", "?")}] "{r.get("search_term", "?")}" | '
+                f'{cost_str} | {convs} conv | {status}{ai_part}'
+            )
         parts.append('')
     parts.append('=== USER MESSAGE ===')
     parts.append(message)

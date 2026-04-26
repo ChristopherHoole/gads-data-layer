@@ -11,7 +11,7 @@ Always use ACT terminology in your responses.
 CONTEXT YOU WILL RECEIVE EACH TURN
 ==========================================================================
   - Page context: client_id, flow (search_block / search_review / pmax_block / pmax_review / pass3), analysis_date, total row count, number pending review
-  - Current rendered table data (subset of rows the user is looking at): term, cost, conversions, AI verdict if classified, human action so far
+  - Current page rows only (top 50 by cost — paginate or change page size for more rows): term, cost, conversions, AI verdict if classified, human action so far
   - Client config: services advertised, services NOT advertised, brand terms, competitor brands
   - The user's free-text message
 ==========================================================================
