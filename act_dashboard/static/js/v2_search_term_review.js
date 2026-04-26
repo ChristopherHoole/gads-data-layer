@@ -1118,6 +1118,115 @@
     }
   }
 
+  // ============================================================
+  // Stage 10 — canned reply pills above the chat input. Two types:
+  //   type: 'chat'   -> fills the chat input with `prompt` and submits
+  //   type: 'filter' -> toggles a table filter (no AI call, no token spend)
+  //
+  // Universal set covers 4 main flows (search/pmax × block/review). Pass 3
+  // has its own set since it's phrase routing, not row classification.
+  //
+  // Note: "Only unsure" duplicates the Stage 7 action-bar button intentionally.
+  // Two entry points to the same state — one in the table area for table-focused
+  // work, one in the panel for chat-focused work. They both target the same
+  // underlying state (the .only-unsure CSS class on stTable + the action-bar
+  // button's data-active flag), kept in sync via setUnsureFilter().
+  //
+  // Pass 3 risk filter: no client-side risk_level filter exists today, so the
+  // 4th Pass 3 pill falls back to a chat-type prompt instead.
+  // ============================================================
+  const CANNED_REPLIES_UNIVERSAL = [
+    {
+      type: 'chat',
+      label: 'Show patterns by intent',
+      prompt: 'What patterns do you see in these rows? Group by intent.',
+    },
+    {
+      type: 'chat',
+      label: "Which rows shouldn't I block?",
+      prompt: 'Which rows look like converters or borderline keepers? Be explicit about which I should NOT block.',
+    },
+    {
+      type: 'chat',
+      label: "What's worth my time first?",
+      prompt: 'Rank these by what needs human review vs what is safe to bulk-approve. Show me the top 5 to look at first.',
+    },
+    {
+      type: 'filter',
+      label: 'Only unsure',
+      filter: { ai_verdict: 'unsure' },
+    },
+  ];
+
+  const CANNED_REPLIES_PASS3 = [
+    {
+      type: 'chat',
+      label: 'Check phrase routing',
+      prompt: "Audit the engine's target_list_role for each phrase. Flag any that should be in a different list.",
+    },
+    {
+      type: 'chat',
+      label: 'Find ambiguous tokens',
+      prompt: "Identify any ambiguous single-word phrases (like 'k2' or 'root') that should be held for review rather than auto-routed.",
+    },
+    {
+      type: 'chat',
+      label: 'Group by intent',
+      prompt: 'Group these phrases into location / competitor / service / brand / other.',
+    },
+    // Risk-level filter infrastructure not present client-side -> chat fallback.
+    {
+      type: 'chat',
+      label: 'Highlight high-risk phrases',
+      prompt: 'Which phrases are high-risk to push without human review? Flag the ones that need a closer look.',
+    },
+  ];
+
+  function getCannedRepliesForCurrentFlow() {
+    const flow = getCurrentFlowOrNull();
+    return flow === 'pass3' ? CANNED_REPLIES_PASS3 : CANNED_REPLIES_UNIVERSAL;
+  }
+
+  function renderCannedReplies() {
+    const container = document.getElementById('aiCannedReplies');
+    if (!container) return;
+    const replies = getCannedRepliesForCurrentFlow();
+    container.innerHTML = replies.map((r, idx) => {
+      const fullPrompt = r.type === 'chat' ? r.prompt : `Filter: ${JSON.stringify(r.filter)}`;
+      return `<button type="button" class="ai-canned-pill ai-canned-pill--${r.type}"
+                      data-canned-idx="${idx}"
+                      title="${escapeHtml(fullPrompt)}">${escapeHtml(r.label)}</button>`;
+    }).join('');
+  }
+
+  async function handleCannedClick(idx) {
+    const replies = getCannedRepliesForCurrentFlow();
+    const reply = replies[idx];
+    if (!reply) return;
+    if (reply.type === 'chat') {
+      const input = document.getElementById('aiChatInput');
+      if (input) input.value = reply.prompt;
+      await sendChatMessage();
+    } else if (reply.type === 'filter') {
+      applyCannedFilter(reply.filter);
+    }
+  }
+
+  // "Set, don't toggle" — clicking a canned pill should always activate
+  // the filter (never clear it). Use the action-bar button to clear.
+  function setUnsureFilter(active) {
+    const btn = document.getElementById('btnFilterUnsure');
+    if (btn) btn.dataset.active = active ? 'true' : 'false';
+    if (stTable) stTable.classList.toggle('only-unsure', !!active);
+  }
+
+  function applyCannedFilter(filter) {
+    if (filter && filter.ai_verdict === 'unsure') {
+      setUnsureFilter(true);
+      // No reload needed — toggleUnsureFilter is pure client-side CSS.
+    }
+  }
+
   async function clearChat() {
     const flow = getCurrentFlowOrNull();
     if (!flow) {
@@ -1369,6 +1478,9 @@
     // changes. hydrateChatHistory itself is a no-op when flow is null
     // (e.g. "All > All") so calling it on every reload is safe.
     hydrateChatHistory();
+    // Stage 10 — re-render canned reply pills (Pass 3 vs main flows
+    // get different sets; tab switches funnel through reload()).
+    renderCannedReplies();
   }
 
   // -------------------- Selection & action buttons -------------------
@@ -1772,6 +1884,17 @@
   // Initial hydrate. reload() also re-hydrates on every fetch via the
   // hook in the reload tail (filter / date / tab change).
   hydrateChatHistory();
+
+  // Stage 10 — initial canned-reply pill render + click delegation.
+  renderCannedReplies();
+  const _cannedRoot = document.getElementById('aiCannedReplies');
+  if (_cannedRoot) {
+    _cannedRoot.addEventListener('click', (e) => {
+      const pill = e.target.closest('.ai-canned-pill');
+      if (!pill) return;
+      handleCannedClick(Number(pill.dataset.cannedIdx));
+    });
+  }
 
   // --------- N2 Part 2/4/5: refresh snapshot + reclassify + sync pill -------
   async function loadSyncPill() {

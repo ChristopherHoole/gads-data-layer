@@ -1047,3 +1047,51 @@
 }
 
 .ai-chat-msg-assistant strong { font-weight: 600; }
+
+/* Stage 10 — canned reply pills above the chat input. Always visible
+   (entry point for new users). Compact pill row, wraps to multiple
+   lines if more pills than fit in panel width. */
+.ai-canned-replies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--act-border-light);
+}
+.ai-canned-replies:empty {
+  display: none;
+}
+
+.ai-canned-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 11px;
+  border-radius: 12px;
+  border: 1px solid var(--act-border);
+  background: var(--act-surface);
+  color: var(--act-text);
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+.ai-canned-pill:hover {
+  background: var(--act-hover-bg);
+  border-color: var(--act-text-secondary, #9ca3af);
+}
+.ai-canned-pill:active {
+  transform: scale(0.97);
+}
+
+/* Subtle visual distinction between chat-type and filter-type pills.
+   Chat = solid (does work via Opus). Filter = outlined-italic (instant, no work). */
+.ai-canned-pill--filter {
+  background: transparent;
+  font-style: italic;
+}
+
+.ai-canned-pill[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
