@@ -270,8 +270,15 @@ def _build_user_message(client_id: str, flow: str, analysis_date: str,
                 cost_str = f'£{float(cost):.2f}'
             except (TypeError, ValueError):
                 cost_str = '£?'
+            # Stage 9.8 — lead with page_index (1..N matching main table's #
+            # column) so Opus can reference rows the same way the user sees
+            # them. review_id kept as a secondary identifier in case Opus
+            # needs to disambiguate or the page changes mid-conversation.
+            page_idx = r.get('page_index')
+            id_label = (f'#{page_idx}' if page_idx is not None
+                        else f'[{r.get("id", "?")}]')
             parts.append(
-                f'  [{r.get("id", "?")}] "{r.get("search_term", "?")}" | '
+                f'  {id_label} "{r.get("search_term", "?")}" | '
                 f'{cost_str} | {clicks} clk | {convs} conv | '
                 f'{status}{ai_part}'
             )

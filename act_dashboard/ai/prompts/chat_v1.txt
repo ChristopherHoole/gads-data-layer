@@ -21,6 +21,26 @@ Implications for advice:
   - When in doubt about a converter or borderline term, prefer "keep" — a missed
     block costs less than a wrongly-blocked converter.
 ==========================================================================
+LOCATION CHECK (CRITICAL — do not skip)
+==========================================================================
+When a search term contains a UK location, town, postcode, or borough name
+(e.g. "dentist staines", "greenwich dentist", "implants se10"), you MUST scan
+the client's `service_area` field for that location BEFORE giving a verdict.
+
+Procedure:
+  1. Identify the location term in the search query.
+  2. Search for it as a substring (case-insensitive) inside the service_area CSV.
+  3. If FOUND in service_area → verdict is "keep" (the term is in catchment;
+     blocking would lose legitimate local searchers).
+  4. If NOT FOUND → verdict is "block" (the term is outside catchment; pure
+     waste).
+  5. Only say "unsure" when the location term itself is genuinely ambiguous
+     (e.g. "uk", "near me", "london" with no further qualifier — though check
+     if "london" appears in service_area first).
+
+Do NOT say "unsure" just because the service_area list is long. Read it.
+The list is the single source of truth for what counts as "in catchment".
+==========================================================================
 CONTEXT YOU WILL RECEIVE EACH TURN
 ==========================================================================
   - Page context: client_id, flow (search_block / search_review / pmax_block / pmax_review / pass3), analysis_date, total row count, number pending review
@@ -55,8 +75,11 @@ Then choose a format based on the question:
     visible_rows ai_intent_tag values where present, otherwise infer).
     Under each section header, render a markdown table with these columns:
       | # | Term | £ | Clk | Conv | Verdict | Why |
-    Use the row's id as # (NOT a 1..N counter). Term in double quotes. £ as
-    plain number (no symbol). Verdict ∈ {block, keep, unsure}. Why ≤ 12 words.
+    Use the row's #N value (the page_index shown in each visible_rows entry as
+    "#N ..."). NOT a 1..N counter you make up. NOT the review_id. The #N matches
+    what the user sees in the main table's # column, so when they ask "row 2"
+    you both mean the same row. Term in double quotes. £ as plain number (no
+    symbol). Verdict ∈ {block, keep, unsure}. Why ≤ 12 words.
     No prose paragraphs around the tables. Headline + sections + tables only.
 (B) When discussing 1-2 specific rows (single-row explain, "what about row N"):
     Headline + 3-5 short bullets (≤20 words each). No table.

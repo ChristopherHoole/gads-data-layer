@@ -654,7 +654,11 @@
   grid-template-columns: 1fr;
   gap: 0;
   min-height: calc(100vh - var(--act-topbar-height));
-  padding-right: 35%;
+  /* Stage 9.7 — use vw not % so this matches the panel's vw width.
+     Previously: padding-right: 35% of .st-page (narrower than viewport
+     because left sidebar) didn't match panel's 35% of viewport, so the
+     cards row + action bar slid under the panel. */
+  padding-right: 30vw;
   transition: padding-right 0.25s ease;
 }
 .ai-page-grid[data-panel-state="collapsed"] {
@@ -678,8 +682,15 @@
   position: fixed;
   top: var(--act-topbar-height);
   right: 0;
-  width: 35%;
-  max-height: calc(100vh - var(--act-topbar-height));
+  bottom: 0;                /* Stage 9.7 — top+bottom defines height implicitly.
+                               Without this, position:fixed sizes to content,
+                               so empty panel renders ~300px tall instead of
+                               filling the viewport. */
+  width: 30vw;              /* Stage 9.7 — vw not % so this matches grid
+                               padding-right: 30vw. Previously % referred to
+                               viewport for fixed elements, but grid % referred
+                               to .st-page (narrower due to left sidebar) — the
+                               mismatch let cards slide under the panel. */
   border-left: 1px solid var(--act-border-light);
   background: var(--act-surface);
   display: flex;
@@ -845,6 +856,11 @@
   color: var(--act-text);
   border-bottom-left-radius: 4px;
   border: 1px solid var(--act-blue-border);
+  /* Stage 9.8 — assistant bubble is wider than user bubble so markdown
+     tables get full panel width. User stays at 85% (default from .ai-chat-msg)
+     because user messages don't contain tables. */
+  max-width: 100%;
+  width: 100%;
 }
 .ai-chat-msg-assistant ul,
 .ai-chat-msg-assistant ol {
@@ -976,10 +992,15 @@
   width: 100%;
   font-size: 11px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Stage 9.8 — white background separates the table from the blue bubble. */
+  background: var(--act-surface);
+  border: 1px solid var(--act-border-light);
+  border-radius: 4px;
+  overflow: hidden;             /* clips child borders to the rounded corner */
 }
 .ai-chat-table th,
 .ai-chat-table td {
-  padding: 4px 6px;
+  padding: 5px 8px;
   border-bottom: 1px solid var(--act-border-light);
   text-align: left;
   vertical-align: top;
@@ -988,12 +1009,41 @@
 .ai-chat-table th {
   background: var(--act-hover-bg);
   font-weight: 600;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+  font-size: 11px;
+  /* Stage 9.8 — sentence case, no uppercase. Chris doesn't want allcaps. */
+  text-transform: none;
+  letter-spacing: 0;
   white-space: nowrap;          /* headers compact */
   color: var(--act-text);
 }
 .ai-chat-table tbody tr:last-child td { border-bottom: none; }
+.ai-chat-table tbody tr:nth-child(even) { background: var(--act-hover-bg); }
+
+/* Stage 9.8 — verdict cells render as pills, not just coloured text.
+   JS tags the cell with one of these classes based on the textual content
+   of the cell when its column header matches /verdict/i (see renderTable
+   in v2_search_term_review.js). The cell text is wrapped in a <span> by
+   the renderer so we can apply the pill bg/border without affecting cell
+   padding. */
+.ai-chat-table td.verdict-cell { white-space: nowrap; }
+.ai-chat-table td.verdict-cell .verdict-pill {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border: 1px solid transparent;
+}
+.ai-chat-table td.verdict-block  .verdict-pill {
+  background: #fee2e2; color: #b91c1c; border-color: #fecaca;
+}
+.ai-chat-table td.verdict-keep   .verdict-pill {
+  background: #dcfce7; color: #15803d; border-color: #bbf7d0;
+}
+.ai-chat-table td.verdict-unsure .verdict-pill {
+  background: #f3f4f6; color: #4b5563; border-color: #e5e7eb;
+}
 
 .ai-chat-msg-assistant strong { font-weight: 600; }

@@ -946,11 +946,30 @@
       .map(c => c.trim());
     const headers = parseCells(lines[0]);
     const rows = lines.slice(2).map(parseCells);
+
+    // Stage 9.8 — find the verdict column index by header name so we can
+    // colour-code its cells (block=red, keep=green, unsure=grey). Whichever
+    // column matches /verdict/i wins; if Opus reorders columns, this still
+    // tracks. -1 if no verdict column.
+    const verdictIdx = headers.findIndex(h => /verdict/i.test(h));
+
     const headerHtml = headers
       .map(h => `<th>${_renderMdInline(h)}</th>`).join('');
     const rowsHtml = rows
       .map(r => '<tr>'
-        + r.map(c => `<td>${_renderMdInline(c)}</td>`).join('')
+        + r.map((c, i) => {
+            if (i === verdictIdx) {
+              // Stage 9.8 — wrap verdict text in a pill span so the cell
+              // shows a coloured rounded pill instead of plain coloured text.
+              const verdictCls = _verdictClass(c);
+              const cellCls = verdictCls ? `verdict-cell ${verdictCls}` : '';
+              const inner = `<span class="verdict-pill">${_renderMdInline(c)}</span>`;
+              return cellCls
+                ? `<td class="${cellCls}">${inner}</td>`
+                : `<td>${_renderMdInline(c)}</td>`;
+            }
+            return `<td>${_renderMdInline(c)}</td>`;
+          }).join('')
         + '</tr>')
       .join('');
     return '<div class="ai-chat-table-wrap">'
@@ -958,6 +977,16 @@
       + `<thead><tr>${headerHtml}</tr></thead>`
       + `<tbody>${rowsHtml}</tbody>`
       + '</table></div>';
+  }
+
+  function _verdictClass(cellText) {
+    // Match the cell text loosely — Opus might use "block", "Block",
+    // "block (X)" with a parenthetical, etc. Empty / unrecognised → no class.
+    const t = (cellText || '').trim().toLowerCase();
+    if (t.startsWith('block'))  return 'verdict-block';
+    if (t.startsWith('keep'))   return 'verdict-keep';
+    if (t.startsWith('unsure')) return 'verdict-unsure';
+    return '';
   }
 
   function _renderMdInline(s) {
@@ -1029,12 +1058,21 @@
     // to keep token budget bounded (~50 rows = ~50 lines = ~1500 tokens).
     // Number-coerce DECIMAL strings before subtracting (DuckDB serializes
     // DECIMAL as string; "10" - "5" = "10-5" without coercion).
-    const visibleRows = [...(lastItems || [])]
+    // Stage 9.8 — tag each row with its on-screen page_index BEFORE the
+    // cost-sort so Opus can reference rows the same way the user sees them
+    // in the main table ("row 2"). Without this, Opus shows review_id (5-6
+    // digits) which doesn't match the main table's 1..N row numbering.
+    const visibleRows = (lastItems || [])
+      .map((r, idx) => ({
+        ...r,
+        _page_index: (currentPage - 1) * PAGE_SIZE + idx + 1,
+      }))
       .sort((a, b) =>
         (Number(b.total_cost) || 0) - (Number(a.total_cost) || 0))
       .slice(0, 50)
       .map(r => ({
         id: r.id,
+        page_index: r._page_index,
         search_term: r.search_term,
         total_cost: r.total_cost,
         total_clicks: r.total_clicks,

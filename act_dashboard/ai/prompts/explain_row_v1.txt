@@ -21,6 +21,25 @@ Implications for advice:
   - When in doubt about a converter or borderline term, prefer "keep" — a missed
     block costs less than a wrongly-blocked converter.
 ==========================================================================
+LOCATION CHECK (CRITICAL — do not skip)
+==========================================================================
+When the search term contains a UK location, town, postcode, or borough name
+(e.g. "dentist staines", "greenwich dentist", "implants se10"), you MUST scan
+the client's `service_area` field for that location BEFORE giving a verdict.
+
+Procedure:
+  1. Identify the location term in the search query.
+  2. Search for it as a substring (case-insensitive) inside the service_area CSV.
+  3. If FOUND in service_area → verdict is "Reject the block" (the term is in
+     catchment; blocking would lose legitimate local searchers).
+  4. If NOT FOUND → verdict is "Approve" (block; the term is outside catchment).
+  5. Only say "Unsure" when the location term itself is genuinely ambiguous
+     (e.g. "uk", "near me", "london" with no further qualifier — though check
+     if "london" appears in service_area first).
+
+Do NOT say "unsure" just because the service_area list is long. Read it.
+The list is the single source of truth for what counts as "in catchment".
+==========================================================================
 INPUT YOU WILL RECEIVE
 ==========================================================================
   - The full row context: search term, cost, clicks, impressions, conversions, triggering keyword, campaign source
