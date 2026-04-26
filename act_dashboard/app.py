@@ -625,6 +625,22 @@ def create_app():
     sched_thread.start()
     print("[OK] Queue scheduler started (daemon thread, every 300s)")
 
+    # Stage 1.6.1: PMax CSV watcher auto-start. Replaces the manual
+    # `python -m act_dashboard.data_pipeline.pmax_csv_watcher` step.
+    # The helper has its own idempotency guard + werkzeug-reloader-
+    # parent skip, so calling it here unconditionally is safe.
+    # Failure is logged but doesn't crash Flask — watcher is non-critical
+    # and user can fall back to the standalone entry point.
+    try:
+        from act_dashboard.data_pipeline.pmax_csv_watcher import (
+            start_csv_watcher_thread,
+        )
+        start_csv_watcher_thread()
+        print("[OK] [Tier 1.6.1] PMax CSV watcher auto-started (daemon thread + 24h startup scan)")
+    except Exception as e:
+        app.logger.error(f'CSV watcher failed to start: {e}', exc_info=True)
+        print(f"[WARN] [Tier 1.6.1] CSV watcher failed to start: {e}")
+
     # Centralized error handlers (Phase 1i)
     
     @app.errorhandler(404)

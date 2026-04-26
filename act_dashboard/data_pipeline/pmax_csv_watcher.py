@@ -41,8 +41,9 @@ import logging
 import os
 import shutil
 import sys
+import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import duckdb
@@ -100,10 +101,19 @@ def archive_dir(client_id: str) -> Path:
 
 
 def get_active_clients() -> list[str]:
-    """Read active client_ids. Short-lived read-only connection so we
-    don't lock out Flask / overnight scheduler."""
+    """Read active client_ids. Short-lived connection.
+
+    Stage 1.6.1: opens read-write (no read_only=True) because when the
+    watcher runs as a Flask thread, other in-process modules (outreach
+    poller, queue scheduler, request handlers) already hold read-write
+    connections to the same DB file. DuckDB requires all in-process
+    connections to share the same access mode — a read-only attempt
+    against a read-write peer raises ConnectionException("different
+    configuration than existing connections"). The query itself is a
+    plain SELECT so the lost read-only safety check is purely cosmetic.
+    """
     try:
-        con = duckdb.connect(DB_PATH, read_only=True)
+        con = duckdb.connect(DB_PATH)
     except duckdb.IOException as e:
         logger.error(f"DB locked, cannot read active clients: {e}")
         return []
@@ -271,27 +281,109 @@ class _Handler(FileSystemEventHandler):
 
 
 # ---------------------------------------------------------------------------
-# Main
+# Stage 1.6.1 — Startup scan + Flask-thread entry point
 # ---------------------------------------------------------------------------
-def main():
-    if not _HAS_WATCHDOG:
-        print(
-            "ERROR: 'watchdog' is not installed. Run: pip install watchdog\n"
-            "If using the project venv: "
-            ".venv\\Scripts\\python.exe -m pip install watchdog",
-            file=sys.stderr,
-        )
-        return 1
+# Window for the startup-scan to consider a sitting CSV "recent enough" to
+# auto-process. Files older than this are logged-and-skipped (left in place
+# so the user can decide whether to re-drop them).
+_STARTUP_SCAN_WINDOW = timedelta(hours=24)
 
-    logger.info('=' * 60)
-    logger.info('PMax CSV Watcher (per-client) — Starting')
-    logger.info(f'  csv_root      : {CLIENT_CSVS_ROOT}')
-    logger.info(f'  db_path       : {DB_PATH}')
+# Idempotency guard for start_csv_watcher_thread() — protects against
+# multiple create_app() calls within a single process. The Werkzeug
+# debug reloader fork is handled separately via the WERKZEUG_RUN_MAIN
+# check (only the child process actually serves; parent just monitors).
+_watcher_started = False
+_watcher_lock = threading.Lock()
+
+
+def _scan_incoming_for_recent_files() -> None:
+    """One-shot scan of every active client's incoming/ for *.csv files
+    with mtime within the last 24h. Per-file errors don't abort the
+    scan — single-file failures get logged and the loop continues.
+
+    Idempotency: process_file() does its own validate -> ingest -> archive
+    sequence; ingest_csv() is itself idempotent (DELETE+INSERT keyed on
+    (client_id, snapshot_date)). A file accidentally scanned twice would
+    only re-write the same rows.
+    """
+    cutoff = datetime.now() - _STARTUP_SCAN_WINDOW
+    try:
+        clients = get_active_clients()
+    except Exception:
+        logger.exception('[csv_watcher] startup scan: get_active_clients failed')
+        return
+
+    for client_id in clients:
+        try:
+            incoming = incoming_dir(client_id)
+            if not incoming.exists():
+                continue
+            for path in sorted(incoming.glob('*.csv')):
+                if path.name.startswith('.'):
+                    continue
+                try:
+                    mtime = datetime.fromtimestamp(path.stat().st_mtime)
+                except OSError as e:
+                    logger.warning(
+                        f'[csv_watcher] startup scan: stat failed for {path}: {e}'
+                    )
+                    continue
+                if mtime < cutoff:
+                    logger.info(
+                        f'[csv_watcher] startup scan: skipping {path.name} '
+                        f'(mtime {mtime.isoformat(timespec="seconds")}, '
+                        f'older than 24h)'
+                    )
+                    continue
+                logger.info(
+                    f'[csv_watcher] startup scan: processing {path.name} '
+                    f'(mtime {mtime.isoformat(timespec="seconds")})'
+                )
+                try:
+                    process_file(path, client_id)
+                except Exception:
+                    # process_file already logs + writes act_v2_csv_watch_log
+                    # rows on its own failure paths; this is a belt-and-braces
+                    # catch so one bad file doesn't kill the whole scan.
+                    logger.exception(
+                        f'[csv_watcher] startup scan: process_file raised for {path}'
+                    )
+        except Exception:
+            logger.exception(
+                f'[csv_watcher] startup scan: unhandled error for client {client_id}'
+            )
+
+
+def _run_watch_loop(blocking: bool = True) -> int:
+    """Set up the watchdog Observer for every active client's incoming/
+    folder. When blocking=True (standalone main entry), keeps the
+    process alive with a 60s sleep loop until Ctrl+C. When blocking=
+    False (Flask-thread entry), schedules + starts the Observer and
+    returns immediately — the Observer's own threads keep watching.
+
+    Returns process-style exit code (0 on success, 1 on setup failure).
+    """
+    if not _HAS_WATCHDOG:
+        msg = (
+            "'watchdog' is not installed. Run: pip install watchdog\n"
+            "If using the project venv: "
+            ".venv\\Scripts\\python.exe -m pip install watchdog"
+        )
+        # Both the standalone CLI and the Flask thread care about this —
+        # log loudly + write to stderr for the CLI shell.
+        logger.error(msg)
+        if blocking:
+            print(f'ERROR: {msg}', file=sys.stderr)
+        return 1
 
     clients = get_active_clients()
     if not clients:
         logger.error('No active clients in act_v2_clients. Exiting.')
         return 1
+    logger.info('=' * 60)
+    logger.info('PMax CSV Watcher (per-client) — Starting')
+    logger.info(f'  csv_root      : {CLIENT_CSVS_ROOT}')
+    logger.info(f'  db_path       : {DB_PATH}')
     logger.info(f'  active clients: {clients}')
     logger.info('=' * 60)
 
@@ -303,16 +395,93 @@ def main():
         observer.schedule(_Handler(cid), str(watch_path), recursive=False)
         logger.info(f'  watching {watch_path}')
     observer.start()
-    logger.info("Watcher running. Ctrl+C to stop.")
+    logger.info('Watcher running.' + (' Ctrl+C to stop.' if blocking else ''))
+
+    if not blocking:
+        # Flask-thread mode: hand control back to the caller. The
+        # watchdog Observer keeps running on its own daemon threads
+        # until the parent process exits.
+        return 0
+
     try:
         while True:
             time.sleep(60)
     except KeyboardInterrupt:
-        logger.info("Stopping watcher (KeyboardInterrupt)")
+        logger.info('Stopping watcher (KeyboardInterrupt)')
     finally:
         observer.stop()
         observer.join(timeout=5)
     return 0
+
+
+def start_csv_watcher_thread() -> None:
+    """Start the CSV watcher as a Flask daemon thread. Idempotent — safe
+    to call multiple times (e.g. multiple create_app() invocations within
+    one process).
+
+    Reloader guard: when Flask runs with debug=True + use_reloader=True,
+    Werkzeug forks parent (file-monitor) and child (server) processes.
+    Both call create_app(). Werkzeug sets WERKZEUG_RUN_MAIN=true ONLY in
+    the child process, so we use that to skip thread spawn in the parent.
+    Without this guard the watcher would run twice (once per process)
+    and each dropped CSV would be picked up by both — wasteful even if
+    the underlying ingest is idempotent.
+
+    Order matters: the startup scan completes BEFORE the Observer
+    starts. If both ran in parallel a file could land in both queues
+    and double-ingest before the DELETE+INSERT idempotency caught it.
+    """
+    global _watcher_started
+
+    # Reloader guard. WERKZEUG_RUN_MAIN is set to 'true' by werkzeug
+    # ONLY in the child reloader process. The parent process lacks
+    # this var entirely. If we're not in debug-reloader mode at all
+    # the var is absent — that's fine, we proceed normally.
+    if (os.environ.get('WERKZEUG_RUN_MAIN') is None
+            and os.environ.get('FLASK_DEBUG') in ('1', 'true', 'True')):
+        # Debug mode parent process — child will start the thread.
+        logger.info(
+            '[csv_watcher] reloader-parent process — child will start watcher'
+        )
+        return
+
+    with _watcher_lock:
+        if _watcher_started:
+            logger.info('[csv_watcher] already started — skipping')
+            return
+        _watcher_started = True
+
+    if not _HAS_WATCHDOG:
+        logger.error(
+            "[csv_watcher] watchdog not installed; thread NOT started. "
+            'Install: .venv\\Scripts\\python.exe -m pip install watchdog'
+        )
+        return
+
+    def _runner():
+        try:
+            # ORDER IS CRITICAL — startup scan must complete BEFORE the
+            # Observer starts (a file detected by both would risk a
+            # double-ingest before the DB DELETE+INSERT idempotency
+            # catches it).
+            _scan_incoming_for_recent_files()
+            # Non-blocking: schedules the Observer and returns immediately.
+            # Observer's own threads keep the watch active until the
+            # parent process (Flask) exits.
+            _run_watch_loop(blocking=False)
+        except Exception:
+            logger.exception('[csv_watcher] thread crashed')
+
+    t = threading.Thread(target=_runner, name='csv_watcher', daemon=True)
+    t.start()
+    logger.info('[csv_watcher] started as Flask daemon thread')
+
+
+def main():
+    """Standalone-process entry point. Same scan-then-watch order as the
+    Flask thread, but blocks on a 60s sleep loop until Ctrl+C."""
+    _scan_incoming_for_recent_files()
+    return _run_watch_loop(blocking=True)
 
 
 if __name__ == '__main__':
