@@ -217,7 +217,14 @@
 .st-table--wide th:nth-child(17), .st-table--wide td:nth-child(17) { min-width:  50px; max-width:  70px; }                    /* Conv */
 .st-table--wide th:nth-child(18), .st-table--wide td:nth-child(18) { min-width:  60px; max-width:  80px; }                    /* Cost / Conv — slightly wider so "Cost /" fits line 1 */
 .st-table--wide th:nth-child(19), .st-table--wide td:nth-child(19) { min-width:  50px; max-width:  70px; }                    /* Conv rate */
-.st-table--wide th:nth-child(20), .st-table--wide td:nth-child(20) { min-width:  80px; max-width: 120px; white-space: normal; word-wrap: break-word; } /* Push error */
+/* Push error column hidden — functionally dead since DuckDB UPDATE-on-UNIQUE
+   workaround landed (autocommit DELETE+INSERT in bulk_update_phrase_suggestions).
+   DB column kept; markup + colspan untouched so AI Verdict / Confidence /
+   Explain at nth-child 21/22/23 keep their existing widths. Re-surface by
+   reverting this rule if ever needed. */
+.st-table--wide th:nth-child(20), .st-table--wide td:nth-child(20) { display: none; }
+/* Pass 3 Push error — same reasoning as above. Column 10 in #stP3Table. */
+#stP3Table th:nth-child(10), #stP3Table td:nth-child(10) { display: none; }
 
 /* Wave C7: 2-line clamp now lives on an INNER <div class="clamp-2"> inside
    Keyword / Campaign cells, NOT on the <td> itself. Putting -webkit-box

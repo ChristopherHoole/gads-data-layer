@@ -189,9 +189,9 @@
     {key: 'block',    label: 'Block'},
     {key: 'review',   label: 'Review'},
     {key: 'keep',     label: 'Keep'},
-    {key: 'approved', label: 'Approved'},
-    {key: 'pushed',   label: 'Pushed'},
-    {key: 'rejected', label: 'Rejected'},
+    {key: 'approved', label: 'Approved to Block'},
+    {key: 'pushed',   label: 'Pushed to Neg Lists'},
+    {key: 'rejected', label: "Didn't Block"},
     {key: 'expired',  label: 'Expired'},
   ];
   // Display order for reason chips — matches brief
@@ -631,8 +631,8 @@
     const sourceMap = {all: 'All', search: 'Search', pmax: 'PMax'};
     const statusMap = {
       all: 'All', pending: 'Pending', block: 'Block', review: 'Review',
-      keep: 'Keep', approved: 'Approved', pushed: 'Pushed',
-      rejected: 'Rejected', expired: 'Expired',
+      keep: 'Keep', approved: 'Approved to Block', pushed: 'Pushed to Neg Lists',
+      rejected: "Didn't Block", expired: 'Expired',
     };
     const cs = sourceMap[campaignSource] || campaignSource || 'All';
     const sv = statusMap[statusView] || statusView || 'All';
@@ -752,7 +752,7 @@
           <li><strong>${approveIds.length}</strong> will be <strong>blocked</strong> (pushed as negatives in Google Ads)</li>
           <li><strong>${rejectIds.length}</strong> will be <strong>kept running</strong> (rejection of the block)</li>
         </ul>
-        <p style="margin:12px 0 0; color: var(--text-muted); font-size: 12px;">You can still review them individually in the Approved / Rejected tabs before pushing to Google Ads.</p>
+        <p style="margin:12px 0 0; color: var(--text-muted); font-size: 12px;">You can still review them individually in the Approved to Block / Didn't Block tabs before pushing to Google Ads.</p>
       `,
       okLabel: 'Apply AI calls',
       okStyle: 'primary',
@@ -1800,7 +1800,7 @@
     if (approvedReadyCount > 0 && approvedInView < approvedReadyCount) {
       btn.title =
         `${approvedReadyCount} row(s) approved across all status filters; `
-        + `${approvedInView} visible here. Switch to the "Approved" status `
+        + `${approvedInView} visible here. Switch to the "Approved to Block" status `
         + `filter to view them all before pushing.`;
     } else if (approvedReadyCount > 0) {
       btn.title =
@@ -2180,7 +2180,7 @@
       bodyHtml: `
         <p>Re-run Pass 1 + Pass 2 on today's search terms using the current config and latest negative list snapshot.</p>
         <ul class="act-confirm__list">
-          <li><span class="act-confirm__ok">✓</span> Approved / pushed / rejected / expired rows are preserved</li>
+          <li><span class="act-confirm__ok">✓</span> Approved to Block / Pushed to Neg Lists / Didn't Block / Expired rows are preserved</li>
           <li><span class="act-confirm__change">↻</span> Pending rows are re-classified in place</li>
           <li><span class="act-confirm__add">+</span> New terms are added</li>
         </ul>
