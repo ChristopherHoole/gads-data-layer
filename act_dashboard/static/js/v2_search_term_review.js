@@ -477,6 +477,16 @@
   }
 
   // -------------------- Stage 7 — AI cells + buttons -----------------
+  // Display-label map for AI verdict pills. Underlying enum values
+  // (approve/reject/unsure) stay as-is in the DB, API payloads, and JS
+  // comparisons elsewhere — this map is purely for the pill text.
+  // CSS class hook (.ai-verdict-${ai_verdict}) is unchanged so the
+  // existing colours stay correct.
+  const AI_VERDICT_LABEL = {
+    approve: 'BLOCK',
+    reject: "DON'T BLOCK",
+    unsure: 'UNSURE',
+  };
   function renderAIVerdictCell(item) {
     if (item.ai_verdict == null) return '<td class="ai-verdict-empty">—</td>';
     const reasoning = item.ai_reasoning || '';
@@ -487,7 +497,8 @@
     const intent = item.ai_intent_tag
       ? `<span class="ai-intent-tag">${escapeHtml(item.ai_intent_tag)}</span>`
       : '';
-    return `<td><span class="ai-verdict-pill ai-verdict-${item.ai_verdict}"${tipAttr}>${item.ai_verdict}</span>${intent}</td>`;
+    const label = AI_VERDICT_LABEL[item.ai_verdict] || item.ai_verdict.toUpperCase();
+    return `<td><span class="ai-verdict-pill ai-verdict-${item.ai_verdict}"${tipAttr}>${label}</span>${intent}</td>`;
   }
   function renderAIConfidenceCell(item) {
     if (item.ai_confidence == null) return '<td class="ai-verdict-empty">—</td>';
@@ -1788,13 +1799,13 @@
     const approvedInView = lastItems.filter(i =>
       i.review_status === 'approved' && !i.pushed_to_ads_at).length;
     if (approvedReadyCount === 0) {
-      btn.textContent = 'Push approved to Google Ads';
+      btn.textContent = 'Push to GAds Neg Lists';
     } else if (approvedInView < approvedReadyCount) {
       // More approved rows exist outside the current filter — be explicit
       btn.textContent =
-        `Push ${approvedReadyCount} approved to Google Ads (across all tabs)`;
+        `Push ${approvedReadyCount} to GAds Neg Lists (across all tabs)`;
     } else {
-      btn.textContent = `Push ${approvedReadyCount} approved to Google Ads`;
+      btn.textContent = `Push ${approvedReadyCount} to GAds Neg Lists`;
     }
     // Tooltip clarifies scope + remediation
     if (approvedReadyCount > 0 && approvedInView < approvedReadyCount) {

@@ -126,7 +126,7 @@
           ✅ Apply AI routing <span class="ai-action-badge" id="applyAIRouteP3Count">(0)</span>
         </button>
       </div>
-      <button class="btn-act btn-act--approve" id="stPushApproved" disabled>Push approved to Google Ads</button>
+      <button class="btn-act btn-act--approve" id="stPushApproved" disabled>Push to GAds Neg Lists</button>
       <button class="btn-act btn-act--details" id="stRefreshNegs" title="Pull the latest negative-keyword lists from Google Ads">🔄 Refresh Neg Lists from GAds</button>
       <button class="btn-act btn-act--details" id="stReclassify" title="Re-run Pass 1 + Pass 2 on today's terms using current config and latest neg snapshot">♻️ Reclassify today's terms</button>
       <button class="btn-act btn-act--details" id="stRunPass3">Run Pass 3</button>
@@ -174,7 +174,7 @@
           {# Stage 7 — AI columns appended at the end so the existing
              nth-child width rules (CSS lines 197-220) don't need re-numbering.
              Trade-off: user scrolls right to see them. Acceptable for MVP. #}
-          <th title="AI verdict (approve = block / reject = keep running / unsure = escalate)">AI Verdict</th>
+          <th title="AI verdict (BLOCK = push as negative / DON'T BLOCK = keep running / UNSURE = escalate)">AI Verdict</th>
           <th title="AI confidence in its verdict (high / medium / low)">AI Confidence</th>
           <th title="Get a deep-reasoning explanation from Opus for this row">Explain</th>
         </tr>
