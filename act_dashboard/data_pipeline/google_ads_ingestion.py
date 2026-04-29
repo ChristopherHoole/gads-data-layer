@@ -166,7 +166,7 @@ class GoogleAdsDataPipeline:
         # not per-historical-date. We re-run on every ingest_date call and overwrite.
         nl = self.ingest_negative_lists(date)
 
-        logger.info(f"  {date}: campaigns={c}, ad_groups={ag}, keywords={kw}, ads={ad}, search_terms={st}+pmax={pst}, segments={seg}, neg_lists={nl['lists']}/{nl['keywords']}kw")
+        logger.info(f"  {date}: campaigns={c}, ad_groups={ag}, keywords={kw}, ads={ad}, search_terms={st}+pmax_bucket={pst}, segments={seg}, neg_lists={nl['lists']}/{nl['keywords']}kw")
         return {'campaigns': c, 'ad_groups': ag, 'keywords': kw, 'ads': ad,
                 'search_terms': st, 'pmax_search_terms': pst, 'segments': seg,
                 'neg_lists': nl['lists'], 'neg_keywords': nl['keywords']}
@@ -515,19 +515,28 @@ class GoogleAdsDataPipeline:
     # PMax search-term ingestion (campaign_search_term_insight resource)
     # -----------------------------------------------------------------------
     def ingest_pmax_search_terms(self, date: str) -> int:
-        """Ingest Performance Max search terms via campaign_search_term_insight.
+        """Refresh the PMax 'Other search terms' aggregate bucket only.
 
-        Must be called AFTER ingest_search_terms (which clears the day's rows
-        in act_v2_search_terms via its delete-then-insert pattern). Per-row
-        shape diverges from search_term_view:
-          - per PMax campaign, terms come back as category_label (= the term)
-          - no ad_group context; store ad_group_id/name = 'PMAX_ASSET_GROUP'
-          - no keyword context; keyword_text/keyword_id = NULL
-          - synthetic match_type = 'PMAX'
-          - cost_micros is PROHIBITED on this resource -> cost = NULL
-          - status not surfaced -> NULL
-          - category_label='' represents Google's aggregated low-volume
-            bucket; skip it (not actionable)
+        Per-term PMax data is supplied exclusively by pmax_csv_ingest —
+        Chris's daily CSV download is the sole source for PMax per-term
+        rows in act_v2_search_terms. We previously also wrote per-term
+        rows here, but campaign_search_term_insight prohibits cost_micros
+        at term granularity, so those rows landed with cost = NULL and
+        polluted the Search Term Review UI (179 ghost rows for DBD on
+        2026-04-28 was the trigger).
+
+        What this still does:
+          - For each active PMax campaign, query campaign_search_term_insight
+            for the day's rows.
+          - Write the empty-category_label rows (= Google's aggregated
+            low-volume "Other search terms" bucket) into
+            act_v2_pmax_other_bucket so the UI's transparency banner
+            ("£273/day in hidden queries") can surface them. This
+            aggregate is NOT in the CSV — only the API has it.
+          - Per-term rows from the API are intentionally discarded.
+
+        Returns: count of Other-bucket rows written (one per campaign
+        with a non-empty bucket on that date).
 
         GAQL quirk: segments.date can only appear when filtering by a single
         campaign_search_term_insight.id. Workaround: filter by campaign_id +
@@ -560,7 +569,7 @@ class GoogleAdsDataPipeline:
             [self.client_id, date],
         )
 
-        count = 0
+        bucket_count = 0
         for campaign_id, campaign_name in pmax_campaigns:
             query = f"""
                 SELECT
@@ -598,33 +607,14 @@ class GoogleAdsDataPipeline:
                          row.metrics.impressions, row.metrics.clicks,
                          round(row.metrics.conversions, 2)],
                     )
+                    bucket_count += 1
                     continue
-                clicks = row.metrics.clicks
-                conversions = row.metrics.conversions
-                self.db.execute(
-                    """INSERT INTO act_v2_search_terms
-                       (client_id, snapshot_date, campaign_id, campaign_name,
-                        campaign_type, ad_group_id, ad_group_name, search_term,
-                        match_type, status, keyword_text, keyword_id,
-                        cost, impressions, clicks, conversions, conversion_value,
-                        ctr, avg_cpc, cost_per_conversion, conversion_rate)
-                       VALUES (?, ?, ?, ?, 'PERFORMANCE_MAX',
-                               'PMAX_ASSET_GROUP', 'PMAX_ASSET_GROUP', ?,
-                               'PMAX', NULL, NULL, NULL,
-                               NULL, ?, ?, ?, ?, ?, NULL, NULL, ?)""",
-                    [self.client_id, date,
-                     str(campaign_id), campaign_name,
-                     term,
-                     row.metrics.impressions,
-                     clicks,
-                     round(conversions, 2),
-                     round(row.metrics.conversions_value, 2),
-                     round(row.metrics.ctr, 6),
-                     round(_safe_div(conversions, clicks), 4)],
-                )
-                count += 1
+                # Per-term PMax rows are intentionally discarded — see
+                # docstring. CSV ingest (pmax_csv_ingest.py) is the sole
+                # source for per-term PMax data in act_v2_search_terms.
+                continue
             logger.info(f"  [pmax-st] {campaign_name}: {len(rows)} rows returned")
-        return count
+        return bucket_count
 
     # -----------------------------------------------------------------------
     # Campaign segments ingestion (device, geo, ad schedule)
