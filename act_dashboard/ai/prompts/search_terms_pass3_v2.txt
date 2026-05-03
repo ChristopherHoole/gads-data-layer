@@ -76,21 +76,63 @@ matching "location" / "loc_N_word" — use the AVAILABLE TARGET LISTS
 section for the exact name) with confidence ≥ 0.80. In-area locations
 (matching the client's service_locations) MUST NOT be suggested at all.
 
-Rule 5 — VOLUME FLOOR. Aim for 20–50 fragments per 100 pushed terms in
-the dataset (proportional). If the dataset is smaller, scale down. If
-there are no defensible fragments, return an EMPTY list — do not pad
-with junk to hit a quota. An honest empty list is the correct output
-when nothing is worth blocking.
+Rule 5 — VOLUME EXPECTATIONS + HARD CAP. For a typical dental-vertical
+day with 800-1200 search terms post-dedup, expect 20-50 defensible
+fragments. HARD CAP: never emit more than 60 fragments — if your
+candidate list exceeds 60, keep only the top-60 by signal density
+(content-token weight × occurrence_count). If the dataset is smaller,
+scale down proportionally.
 
-Rule 6 — STICKY-REJECTION RESPECT. Never suggest a fragment that appears
-in the SUPPRESSION LIST section of the user message (rejected fragments
-the user has already said no to, plus already-pushed neg keywords across
-all lists, plus yesterday's pushed Pass 3 fragments).
+If there are genuinely no defensible fragments, return an EMPTY list —
+do not pad with junk to hit a quota. An honest empty list is the
+correct output when nothing is worth blocking. Returning fewer than 20
+on a 1000+ row dataset is also acceptable if the data justifies it.
+
+Rule 6 — SUPPRESSION. The SUPPRESSION LIST in the user message has two
+sub-lists. NEVER re-suggest any fragment that exactly matches an entry
+in either:
+
+  6a. Sticky-rejected fragments — the user has explicitly rejected
+      these. Hard block.
+
+  6b. Yesterday's pushed Pass 3 fragments — already actioned recently.
+      Hard block.
+
+You are NOT shown the full list of currently active negative keywords
+on this client's lists. The system handles deduplication against active
+negs in code AFTER you return — propose fragments freely without
+worrying about whether some longer multi-word version already exists.
+A shorter, broader fragment that happens to consolidate multiple
+existing multi-word negs is a positive outcome, and the dedup pass
+will not block it.
+
+DO NOT be conservative because of this. Do not pre-emptively skip a
+fragment because you think "maybe a longer version is already on the
+list." If the dataset shows clear off-not-advertised or out-of-area
+content, suggest the canonical short fragment for it. The code dedup
+will catch true exact-string duplicates; everything else is a
+consolidation win, which is exactly what Pass 3 exists to surface.
 
 Rule 7 — NO HIGH-INTENT BLOCKS. A fragment MUST NOT match any token in
 the client's services_advertised list, and MUST NOT match any token in
 the client's brand_terms or known-good keywords. Blocking a converter
 costs more than missing a block.
+
+Rule 8 — THEMES → FRAGMENTS CONTRACT. Every theme you emit in the
+"themes" array that calls out a cluster as worth blocking MUST have at
+least one corresponding entry in the "fragments" array. A theme without
+a matching fragment is a contract violation — the human reviewer has
+nothing actionable to push.
+
+If you genuinely cannot produce a defensible fragment for a cluster
+(e.g. because it overlaps services_advertised), DO NOT include the
+theme in the first place. Drop the theme rather than emit it without
+a fragment.
+
+Themes that describe NEUTRAL OR POSITIVE patterns (e.g. "increased
+finance-related queries this week — client offers 0% finance, leave
+running") are exempt from this rule because they explicitly recommend
+NOT blocking.
 
 ==========================================================================
 OUTPUT (JSON ONLY — no prose, no markdown, no fences)

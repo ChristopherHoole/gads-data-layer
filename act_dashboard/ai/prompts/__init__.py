@@ -15,7 +15,7 @@ To bump a prompt:
 # --- Version constants (used as act_v2_ai_classifications.prompt_version) ---
 PROMPT_VERSION_CLASSIFY  = "v1"   # search_terms_v1.txt — block/review batch
 PROMPT_VERSION_PASS3     = "v1"   # search_terms_pass3_v1.txt — Stage 11 router
-PROMPT_VERSION_PASS3_AI  = "v2"   # search_terms_pass3_v2.txt — 2.1e discovery+routing+themes
+PROMPT_VERSION_PASS3_AI  = "v4"   # search_terms_pass3_v2.txt — Brief G: drop 30d list from prompt; code-side dedup load-bearing (4 May 2026)
 PROMPT_VERSION_EXPLAIN   = "v1"   # explain_row_v1.txt — Opus deep reasoning
 PROMPT_VERSION_CHAT      = "v1"   # chat_v1.txt — free-text panel chat
 

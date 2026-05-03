@@ -53,16 +53,20 @@ from act_dashboard.ai.prompts import (
 
 logger = logging.getLogger(__name__)
 
-# Pass 3 reuses the same Opus slug as Stages 4-5-9 (per brief Q6) for
-# nuanced understanding of off-not-advertised + location intent. Cost
-# ceiling ~$0.15/client/day at current Anthropic pricing.
-MODEL_PASS3_AI = 'claude-opus-4-7'
+# Model journey (4 May 2026):
+#   Opus 4.7 -> ($1-4.50/run, 2-8min, works) — too expensive for daily use
+#   Sonnet 4.6 -> ($? /run, hangs >900s on 1100-row context) — broken on
+#                  long-context generation. Verified working on tiny payloads
+#                  (3-row diagnostic in 59s). Not viable as drop-in.
+#   Haiku 4.5 -> trying now. Cheapest tier; if it handles long context
+#                  reliably this is the production model.
+MODEL_PASS3_AI = 'claude-haiku-4-5-20251001'
 
 # Pass 3 packs the full day's search-term dataset + client config + history
-# into a single call (~25-30K input tokens). Output is the throttle, not
-# input — 20-50 fragments with rationales + source_terms is 5-10K output
-# tokens at Opus's ~30 tok/s = 170-330s of generation. 600s gives ~2x
-# headroom over the worst observed case on DBD-sized days (~700 terms).
+# into a single call (~25-30K input tokens). 600s ceiling: if Haiku 4.5
+# can't finish a ~1100-row run in 10 min that's a fail signal — we want
+# a fast model, not a slow one with extra budget. Opus baseline was
+# 2-8min; Haiku should be similar or faster.
 TIMEOUT_PASS3_S = 600
 
 # Env var feature flag (per brief): 'ai' (default new) or 'rules' (fallback
@@ -76,6 +80,25 @@ def get_active_engine() -> str:
     """Returns 'ai' (default) or 'rules' (legacy fallback)."""
     val = (os.environ.get(ENGINE_ENV) or DEFAULT_ENGINE).strip().lower()
     return val if val in ('ai', 'rules') else DEFAULT_ENGINE
+
+
+def _match_type_from_role(role: str | None) -> str:
+    """Extract canonical match_type ('exact' / 'phrase') from a list_role
+    string. Returns '' if the role has no recognised suffix.
+
+    Source of truth: the list_role suffix. The match_type column on
+    act_v2_negative_keyword_lists is NOT populated in production, so
+    we derive from role names. Both sides of dedup (active negs +
+    AI-proposed fragments) use this function so keys align exactly.
+    """
+    if not role:
+        return ''
+    r = role.strip().lower()
+    if r.endswith('_exact'):
+        return 'exact'
+    if r.endswith('_phrase'):
+        return 'phrase'
+    return ''
 
 
 # ============================================================================
@@ -214,13 +237,49 @@ def run_pass3_ai(con, client_id: str, analysis_date: str) -> dict:
         suggestions_created = 0
         skipped_dedup = 0
         existing_negs = _load_existing_negs(con, client_id)
+        # Sole dedup against currently-active linked neg keywords, KEYED ON
+        # (normalised_text, match_type). The AI is no longer shown the
+        # active-negs list (it poisoned the prompt). This code-side check is
+        # LOAD-BEARING.
+        #
+        # Match-type matters: `veneers` exact blocks only the literal query
+        # "veneers"; `veneers` phrase blocks any query containing "veneers".
+        # Different blocking surfaces in Google Ads. Must NOT collapse them —
+        # phrase-match proposals for words already on exact-match lists are
+        # real coverage wins, not duplicates.
+        #
+        # Match-type is derived from list_role suffix via _match_type_from_role
+        # (the match_type column on act_v2_negative_keyword_lists is NULL in
+        # production). Both sides of the dedup compare use the same helper so
+        # keys align exactly.
         for f in fragments:
-            frag = f['fragment']
-            # Final dedup against existing linked neg keywords (the AI
-            # received this set in suppression, but defensive double-check).
-            if frag in existing_negs:
+            frag_raw = f.get('fragment') or ''
+            frag_norm = frag_raw.strip().lower()
+            if not frag_norm:
+                # Defensive — _filter_valid_fragments should have dropped
+                # empty fragments, but recheck here since dedup is load-bearing.
+                continue
+            role = f.get('target_list_role') or ''
+            match_type = _match_type_from_role(role)
+            if not match_type:
+                # Defensive — _filter_valid_fragments validates target_list_role
+                # against valid_roles before we get here, so role should always
+                # have a recognised suffix. If it doesn't, something upstream
+                # changed; skip rather than silently dedupe incorrectly.
+                logger.warning(
+                    'pass3_ai dedup: unrecognised target_list_role suffix %r '
+                    '(fragment=%r); skipping',
+                    role, frag_norm,
+                )
+                continue
+            if (frag_norm, match_type) in existing_negs:
                 skipped_dedup += 1
                 continue
+            # Persist the canonical (lowercase + stripped) form so any
+            # subsequent dedup against this row (Stage 11 router, future
+            # Pass 3 runs) sees the same canonical key.
+            f['fragment'] = frag_norm
+            frag = frag_norm
             try:
                 con.execute("""
                     INSERT INTO act_v2_phrase_suggestions
@@ -250,21 +309,22 @@ def run_pass3_ai(con, client_id: str, analysis_date: str) -> dict:
 
         # Anthropic envelope splits input into 3 buckets — sum them all
         # for an honest tokens_in figure. Cost is computed per bucket
-        # using the published Opus 4.7 multipliers (May 2026):
-        #   input (uncached) : $15 / M       (1.0×)
-        #   cache_creation   : $18.75 / M    (1.25×)
-        #   cache_read       : $1.50 / M     (0.10×)
-        #   output           : $75 / M       (5.0×)
+        # using the published Haiku 4.5 multipliers (May 2026):
+        #   input (uncached) : $1.00 / M     (1.0×)
+        #   cache_creation   : $1.25 / M     (1.25×)
+        #   cache_read       : $0.10 / M     (0.10×)
+        #   output           : $5.00 / M     (5.0×)
+        # Haiku is 15x cheaper than Opus, 3x cheaper than Sonnet.
         in_uncached = int(usage.get('input_tokens', 0) or 0)
         in_cache_creation = int(usage.get('cache_creation_input_tokens', 0) or 0)
         in_cache_read = int(usage.get('cache_read_input_tokens', 0) or 0)
         tokens_in = in_uncached + in_cache_creation + in_cache_read
         tokens_out = int(usage.get('output_tokens', 0) or 0)
         cost_usd = round(
-            in_uncached         * 15.00 / 1_000_000
-            + in_cache_creation * 18.75 / 1_000_000
-            + in_cache_read     *  1.50 / 1_000_000
-            + tokens_out        * 75.00 / 1_000_000,
+            in_uncached         *  1.00 / 1_000_000
+            + in_cache_creation *  1.25 / 1_000_000
+            + in_cache_read     *  0.10 / 1_000_000
+            + tokens_out        *  5.00 / 1_000_000,
             4,
         )
 
@@ -429,7 +489,14 @@ def _load_suppression(con, client_id: str, analysis_date: str) -> dict:
 
       - All sticky-rejected fragments for this client (any date).
       - Yesterday's pushed Pass 3 fragments.
-      - Last 30 days of pushed neg keywords (any list).
+
+    NOTE (Brief G, May 2026): the previous third sub-list — last 30 days of
+    pushed neg keywords — was removed because every model (Opus, Sonnet,
+    Haiku) misread its presence as "this entire surface area is blocked,
+    don't suggest broader fragments either", killing the consolidation
+    case Pass 3 exists for. Code-side dedup against currently-active
+    linked negs (see _load_existing_negs / dedup loop in run_pass3_ai)
+    catches true exact-string duplicates without needing model reasoning.
     """
     rejected_rows = con.execute(
         """SELECT DISTINCT fragment FROM act_v2_phrase_suggestions
@@ -442,7 +509,6 @@ def _load_suppression(con, client_id: str, analysis_date: str) -> dict:
     except Exception:  # noqa: BLE001
         d = date.today()
     yesterday = (d - timedelta(days=1)).isoformat()
-    thirty_days_ago = (d - timedelta(days=30)).isoformat()
 
     yesterday_pushed_rows = con.execute(
         """SELECT DISTINCT fragment FROM act_v2_phrase_suggestions
@@ -451,24 +517,25 @@ def _load_suppression(con, client_id: str, analysis_date: str) -> dict:
         [client_id, yesterday],
     ).fetchall()
 
-    pushed_negs_rows = con.execute(
-        """SELECT DISTINCT keyword_text
-           FROM act_v2_negative_list_keywords
-           WHERE client_id = ?
-             AND snapshot_date >= ?""",
-        [client_id, thirty_days_ago],
-    ).fetchall()
-
     return {
         'sticky_rejected_fragments': sorted({r[0] for r in rejected_rows if r[0]}),
         'yesterday_pushed_fragments': sorted({r[0] for r in yesterday_pushed_rows if r[0]}),
-        'last_30d_pushed_negs': sorted({r[0] for r in pushed_negs_rows if r[0]}),
     }
 
 
-def _load_existing_negs(con, client_id: str) -> set[str]:
-    """Final defensive dedup set against the latest snapshot of all linked
-    neg keywords. Mirrors the rule-based pass3.py L104-127 behaviour."""
+def _load_existing_negs(con, client_id: str) -> set[tuple[str, str]]:
+    """Match-type-aware dedup set against currently-active linked neg
+    keywords. Returns {(normalised_text, match_type), ...} where
+    match_type is derived from list_role suffix (the match_type column
+    on act_v2_negative_keyword_lists is unreliable — NULL in practice).
+
+    A `veneers` exact-match neg blocks ONLY the literal query "veneers".
+    A `veneers` phrase-match neg blocks any query containing "veneers".
+    These are different blocking surfaces in Google Ads — dedup must
+    treat them separately so AI-proposed phrase-match versions of words
+    already on exact-match lists are correctly inserted, not collapsed
+    as duplicates.
+    """
     latest = con.execute(
         "SELECT MAX(snapshot_date) FROM act_v2_negative_list_keywords "
         "WHERE client_id = ?",
@@ -477,7 +544,9 @@ def _load_existing_negs(con, client_id: str) -> set[str]:
     if not latest:
         return set()
     rows = con.execute(
-        """SELECT DISTINCT kw.keyword_text
+        """SELECT DISTINCT
+                  LOWER(TRIM(kw.keyword_text)) AS norm_text,
+                  l.list_role
            FROM act_v2_negative_list_keywords kw
            JOIN act_v2_negative_keyword_lists l ON kw.list_id = l.list_id
            WHERE kw.client_id = ?
@@ -485,7 +554,24 @@ def _load_existing_negs(con, client_id: str) -> set[str]:
              AND l.is_linked_to_campaign = TRUE""",
         [client_id, latest],
     ).fetchall()
-    return {(r[0] or '').strip().lower() for r in rows if r[0]}
+    out: set[tuple[str, str]] = set()
+    for norm_text, role in rows:
+        if not norm_text:
+            continue
+        match_type = _match_type_from_role(role)
+        if not match_type:
+            # Defensive: a role with no recognised suffix is a schema
+            # surprise. Log and skip — better to under-dedupe (let a
+            # potential dup through to the user) than over-dedupe
+            # (silently lose a real fragment).
+            logger.warning(
+                'pass3_ai _load_existing_negs: unrecognised list_role '
+                'suffix %r — skipping (text=%r, client=%s)',
+                role, norm_text, client_id,
+            )
+            continue
+        out.add((norm_text, match_type))
+    return out
 
 
 # ============================================================================
@@ -524,16 +610,13 @@ def _build_user_message(client_id: str, analysis_date: str,
     parts.append('')
 
     parts.append('=== SUPPRESSION LIST (NEVER suggest any fragment in here) ===')
+    parts.append('Two sub-lists. Hard exact-string blocks only.')
     parts.append(f'Sticky-rejected fragments ({len(suppression["sticky_rejected_fragments"])}):')
     for f in suppression['sticky_rejected_fragments'][:200]:
         parts.append(f'  {f}')
     parts.append(f"Yesterday's pushed Pass 3 fragments "
                  f'({len(suppression["yesterday_pushed_fragments"])}):')
     for f in suppression['yesterday_pushed_fragments'][:200]:
-        parts.append(f'  {f}')
-    parts.append(f"Last-30-day pushed neg keywords (excerpt of "
-                 f'{len(suppression["last_30d_pushed_negs"])}):')
-    for f in suppression['last_30d_pushed_negs'][:500]:
         parts.append(f'  {f}')
     parts.append('')
 
