@@ -357,10 +357,35 @@ def _load_target_lists(con, client_id: str) -> list[dict]:
 def _load_day_search_terms(con, client_id: str, analysis_date: str) -> list[dict]:
     """Full day's Search + PMax search-term rows.
 
-    Joins act_v2_search_term_reviews to surface review_status as context
-    (NEVER as a filter). Aggregates st-level metrics across the row's
-    first_seen/last_seen window so the AI sees one row per (term).
+    Date convention (locked project rule, MEMORY.md "Date picker convention"):
+    the picker shows analysis_date which is one day AHEAD of the underlying
+    snapshot_date. Overnight ingestion on the morning of day N lands data
+    tagged snapshot_date = day N-1. So we resolve the effective snapshot_date
+    as MAX(snapshot_date) < analysis_date — same pattern pass1.py L488-492
+    uses. Strict less-than (not <=) excludes any same-day ingestion run.
+
+    Joins act_v2_search_term_reviews on analysis_date to surface review_status
+    as context (NEVER as a filter). search_term_reviews is correctly keyed on
+    analysis_date so that join uses analysis_date verbatim.
     """
+    row = con.execute(
+        "SELECT MAX(snapshot_date) FROM act_v2_search_terms "
+        "WHERE client_id = ? AND snapshot_date < ?",
+        [client_id, analysis_date],
+    ).fetchone()
+    effective_snapshot = row[0] if row else None
+    if effective_snapshot is None:
+        logger.info(
+            'pass3_ai no snapshot < analysis_date=%s for client=%s — empty result',
+            analysis_date, client_id,
+        )
+        return []
+
+    logger.info(
+        'pass3_ai resolved snapshot_date=%s for analysis_date=%s (client=%s)',
+        effective_snapshot, analysis_date, client_id,
+    )
+
     rows = con.execute(
         """SELECT
               st.search_term,
@@ -382,7 +407,7 @@ def _load_day_search_terms(con, client_id: str, analysis_date: str) -> list[dict
            ORDER BY total_cost DESC NULLS LAST,
                     total_impressions DESC NULLS LAST,
                     st.search_term""",
-        [analysis_date, client_id, analysis_date],
+        [analysis_date, client_id, effective_snapshot],
     ).fetchall()
     return [
         {
