@@ -1950,14 +1950,58 @@
   }
 
   async function runPass3() {
+    // Tier 2.1e — "Run Pass 3" now calls the AI engine. The legacy
+    // rule-based engine remains callable at /v2/api/negatives/run-pass3
+    // (gated by ACT_PASS3_ENGINE=rules env var, used for debugging).
     try {
-      const res = await apiPost('/v2/api/negatives/run-pass3',
+      const res = await apiPost('/v2/api/search-terms/run-pass3-ai',
         {client_id: CLIENT, analysis_date: analysisDate});
-      toast(`Pass 3: ${res.suggestions_created} suggestion(s) created`);
+      const themes = (res.themes || []).length;
+      toast(
+        `Pass 3 AI: ${res.suggestions_created} fragment(s), `
+        + `${themes} theme(s), $${(res.cost_usd || 0).toFixed(3)} `
+        + `in ${((res.wall_clock_ms || 0) / 1000).toFixed(1)}s`
+      );
       document.getElementById('cntSugg').textContent = res.suggestions_created;
       // Auto-enable the Pass 3 tab
       document.querySelector('.st-tab[data-tab="pass3"]').disabled = false;
-    } catch (e) { toast(`Pass 3 failed: ${e.message}`, 'error'); }
+      // If user is already on Pass 3 tab, refresh banner immediately.
+      if (currentTab === 'pass3') hydrateP3ThemeBanner();
+    } catch (e) { toast(`Pass 3 AI failed: ${e.message}`, 'error'); }
+  }
+
+  // Tier 2.1e — fetch + render the Pass 3 theme banner. Called on tab
+  // switch into pass3 and after a successful Run Pass 3.
+  async function hydrateP3ThemeBanner() {
+    const banner = document.getElementById('stP3ThemeBanner');
+    const list = document.getElementById('stP3ThemesList');
+    if (!banner || !list) return;
+    try {
+      const r = await fetch(
+        `/v2/api/search-terms/pass3-themes/${encodeURIComponent(CLIENT)}`
+        + `?date=${encodeURIComponent(analysisDate)}`,
+      );
+      if (!r.ok) {
+        banner.style.display = 'none';
+        return;
+      }
+      const data = await r.json();
+      const themes = data.themes || [];
+      if (themes.length === 0) {
+        banner.style.display = 'none';
+        list.innerHTML = '';
+        return;
+      }
+      // Themes render as separate paragraphs (per brief spec). Escape
+      // user-controlled content via the existing escapeHtml helper.
+      list.innerHTML = themes
+        .map(t => `<p class="st-p3-theme">${escapeHtml(t.theme_text)}</p>`)
+        .join('');
+      banner.style.display = '';
+    } catch (e) {
+      // Banner is non-critical — fail silently, leave it hidden.
+      banner.style.display = 'none';
+    }
   }
 
   // -------------------- Tab switching --------------------------------
@@ -1987,6 +2031,15 @@
     const _btnApplyRoute = document.getElementById('btnApplyAIRouteP3');
     if (_btnApplyRoute && tab !== 'pass3') _btnApplyRoute.style.display = 'none';
     if (tab === 'pass3') renderP3StatusChips();
+    // Tier 2.1e — theme banner only shows on Pass 3 tab.
+    const _p3Banner = document.getElementById('stP3ThemeBanner');
+    if (_p3Banner) {
+      if (tab === 'pass3') {
+        hydrateP3ThemeBanner();  // async; reveals when themes exist
+      } else {
+        _p3Banner.style.display = 'none';
+      }
+    }
     reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2 — tab switch is a view change, not a data boundary
   }
 

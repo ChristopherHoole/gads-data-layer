@@ -603,6 +603,15 @@ def create_app():
     except Exception as e:
         print(f"[WARN] [T2.1 S2] Could not CSRF-exempt v2_ai_api: {e}")
 
+    # Tier 2.1e: search-terms discovery endpoints — blueprint-level exempt
+    # covers run-pass3-ai and pass3-themes.
+    try:
+        from act_dashboard.routes.v2_search_terms_api import v2_search_terms_api_bp
+        csrf.exempt(v2_search_terms_api_bp)
+        print("[OK] [T2.1e] CSRF exempted blueprint: v2_search_terms_api")
+    except Exception as e:
+        print(f"[WARN] [T2.1e] Could not CSRF-exempt v2_search_terms_api: {e}")
+
     # Chat 36: CSRF error handler - return JSON for all errors
     @app.errorhandler(CSRFError)
     def csrf_error(reason):

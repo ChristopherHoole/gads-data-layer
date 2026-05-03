@@ -106,6 +106,11 @@ def register_blueprints(app: Flask):
     app.register_blueprint(v2_ai_api_bp)
     print("[OK] [T2.1 S2] Registered v2_ai_api blueprint (/v2/api/ai)")
 
+    # Tier 2.1e: search-terms discovery endpoints (AI-driven Pass 3)
+    from act_dashboard.routes.v2_search_terms_api import v2_search_terms_api_bp
+    app.register_blueprint(v2_search_terms_api_bp)
+    print("[OK] [T2.1e] Registered v2_search_terms_api blueprint (/v2/api/search-terms)")
+
     print("[OK] [Phase 1a] Registered auth blueprint (login, logout, switch-client)")
     print("[OK] [Phase 1b] Registered api blueprint (execute, batch, status, approve, reject)")
     print("[OK] [Phase 1c] Registered page blueprints (keywords, ads, shopping)")

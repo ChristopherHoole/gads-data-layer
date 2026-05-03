@@ -1139,3 +1139,42 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
 .st-table tbody tr.ai-p3-disagree:hover {
   background: rgba(251, 191, 36, 0.12);
 }
+
+/* Tier 2.1e — Pass 3 AI theme banner. Sits above the Pass 3 fragment
+   table; hidden when no themes exist for the current date. */
+.st-p3-theme-banner {
+  display: flex;
+  gap: 14px;
+  padding: 14px 18px;
+  margin: 12px 0 16px;
+  background: var(--act-blue-bg, #eff6ff);
+  border: 1px solid var(--act-primary, #3b82f6);
+  border-left: 4px solid var(--act-primary, #3b82f6);
+  border-radius: 8px;
+}
+.st-p3-theme-banner__icon {
+  font-size: 20px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+.st-p3-theme-banner__body {
+  flex: 1;
+  min-width: 0;
+}
+.st-p3-theme-banner__title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--act-primary, #2563eb);
+  margin-bottom: 6px;
+}
+.st-p3-theme-banner__themes .st-p3-theme {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--act-text);
+  margin: 0 0 8px;
+}
+.st-p3-theme-banner__themes .st-p3-theme:last-child {
+  margin-bottom: 0;
+}

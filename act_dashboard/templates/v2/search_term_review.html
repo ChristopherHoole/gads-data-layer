@@ -184,6 +184,17 @@
       </tbody>
     </table>
 
+    {# Tier 2.1e — Pass 3 AI theme banner. Populated by JS on tab activation
+       from GET /v2/api/search-terms/pass3-themes/<client>?date=...
+       Hidden when no themes for the current date. #}
+    <div id="stP3ThemeBanner" class="st-p3-theme-banner" style="display:none">
+      <div class="st-p3-theme-banner__icon" aria-hidden="true">🤖</div>
+      <div class="st-p3-theme-banner__body">
+        <div class="st-p3-theme-banner__title">AI Theme Summary</div>
+        <div class="st-p3-theme-banner__themes" id="stP3ThemesList"></div>
+      </div>
+    </div>
+
     {# Pass 3 table (hidden until tab-switch) #}
     <table class="st-table" id="stP3Table" style="display:none">
       <thead>
