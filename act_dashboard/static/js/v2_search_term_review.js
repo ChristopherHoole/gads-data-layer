@@ -1953,12 +1953,25 @@
     // Tier 2.1e — "Run Pass 3" now calls the AI engine. The legacy
     // rule-based engine remains callable at /v2/api/negatives/run-pass3
     // (gated by ACT_PASS3_ENGINE=rules env var, used for debugging).
+    const btn = document.getElementById('stRunPass3');
+    const originalLabel = btn ? btn.textContent : 'Run Pass 3';
+    const startMs = Date.now();
+    let tickHandle = null;
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '⏳ Pass 3 running… 0s';
+      tickHandle = setInterval(() => {
+        const secs = Math.round((Date.now() - startMs) / 1000);
+        btn.textContent = `⏳ Pass 3 running… ${secs}s`;
+      }, 1000);
+    }
+    toast('Pass 3 AI started — this can take 30s to 5min depending on dataset size.', 'info');
     try {
       const res = await apiPost('/v2/api/search-terms/run-pass3-ai',
         {client_id: CLIENT, analysis_date: analysisDate});
       const themes = (res.themes || []).length;
       toast(
-        `Pass 3 AI: ${res.suggestions_created} fragment(s), `
+        `Pass 3 AI done: ${res.suggestions_created} fragment(s), `
         + `${themes} theme(s), $${(res.cost_usd || 0).toFixed(3)} `
         + `in ${((res.wall_clock_ms || 0) / 1000).toFixed(1)}s`
       );
@@ -1968,6 +1981,13 @@
       // If user is already on Pass 3 tab, refresh banner immediately.
       if (currentTab === 'pass3') hydrateP3ThemeBanner();
     } catch (e) { toast(`Pass 3 AI failed: ${e.message}`, 'error'); }
+    finally {
+      if (tickHandle) clearInterval(tickHandle);
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+      }
+    }
   }
 
   // Tier 2.1e — fetch + render the Pass 3 theme banner. Called on tab

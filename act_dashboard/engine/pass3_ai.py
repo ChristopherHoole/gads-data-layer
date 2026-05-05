@@ -395,11 +395,15 @@ def _load_target_lists(con, client_id: str) -> list[dict]:
     """Distinct {list_role, list_name, word_count, match_type} for this
     client's LINKED neg lists. The AI is told to route to one of these
     list_role values; output is validated against this set before INSERT."""
+    # Pass 3 is a PHRASE-MATCH discovery surface only. Exact-match negs are
+    # handled per-term by Pass 1/2. Filter linked lists to phrase-match only
+    # so the AI cannot route a fragment to an _exact list_role.
     rows = con.execute(
         """SELECT DISTINCT list_role, list_name, word_count, match_type
            FROM act_v2_negative_keyword_lists
            WHERE client_id = ? AND is_linked_to_campaign = TRUE
              AND list_role IS NOT NULL
+             AND list_role LIKE '%_phrase'
            ORDER BY list_role""",
         [client_id],
     ).fetchall()
@@ -430,7 +434,7 @@ def _load_day_search_terms(con, client_id: str, analysis_date: str) -> list[dict
     """
     row = con.execute(
         "SELECT MAX(snapshot_date) FROM act_v2_search_terms "
-        "WHERE client_id = ? AND snapshot_date < ?",
+        "WHERE client_id = ? AND snapshot_date < CAST(? AS DATE)",
         [client_id, analysis_date],
     ).fetchone()
     effective_snapshot = row[0] if row else None

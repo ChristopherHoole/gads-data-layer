@@ -745,36 +745,32 @@ def list_phrase_suggestions(client_id):
         # Stage 11 — LEFT JOIN latest AI classification at the current
         # PROMPT_VERSION_PASS3 (mirrors the Stage 7 ai_latest CTE pattern
         # used by list_search_term_reviews). Null cols when not classified.
+        # 2.1e Pass 3 AI writes confidence/rationale/target_list_role directly
+        # onto act_v2_phrase_suggestions (n8 cols), so we don't JOIN
+        # act_v2_ai_classifications anymore. Confidence is a DOUBLE 0..1 — bucket
+        # it into the high/medium/low pill values the UI expects.
         rows = con.execute(
-            f"""WITH ai_latest AS (
-                  SELECT DISTINCT ON (phrase_suggestion_id)
-                         phrase_suggestion_id, ai_target_list_role,
-                         ai_confidence, ai_reasoning
-                    FROM act_v2_ai_classifications
-                   WHERE prompt_version = ?
-                     AND phrase_suggestion_id IS NOT NULL
-                   ORDER BY phrase_suggestion_id, classified_at DESC
-                )
-                SELECT ps.id, ps.analysis_date, ps.fragment, ps.word_count,
+            f"""SELECT ps.id, ps.analysis_date, ps.fragment, ps.word_count,
                        ps.target_list_role,
                        ps.source_search_terms, ps.occurrence_count, ps.risk_level,
                        ps.review_status, ps.reviewed_at, ps.reviewed_by,
                        ps.pushed_to_ads_at, ps.pushed_google_ads_criterion_id,
                        ps.push_error,
-                       ai.ai_target_list_role, ai.ai_confidence, ai.ai_reasoning
+                       ps.target_list_role AS ai_target_list_role,
+                       CASE
+                         WHEN ps.confidence >= 0.85 THEN 'high'
+                         WHEN ps.confidence >= 0.65 THEN 'medium'
+                         WHEN ps.confidence IS NOT NULL THEN 'low'
+                         ELSE NULL
+                       END AS ai_confidence,
+                       ps.rationale AS ai_reasoning
                 FROM act_v2_phrase_suggestions ps
-                LEFT JOIN ai_latest ai ON ai.phrase_suggestion_id = ps.id
                 WHERE {where_ps}
-                -- N4c: default Pass 3 sort mirrors the cost-priority
-                -- spirit of the Pass 1/2 tab. No direct cost column on
-                -- suggestions, so occurrence_count is the best available
-                -- volume proxy. word_count ASC then fragment ASC keep
-                -- the ordering stable across pages.
                 ORDER BY ps.occurrence_count DESC NULLS LAST,
                          ps.word_count ASC,
                          ps.fragment ASC
                 LIMIT ? OFFSET ?""",
-            [PROMPT_VERSION_PASS3, client_id, analysis_date, page_size, offset],
+            [client_id, analysis_date, page_size, offset],
         ).fetchall()
         # N1r: global approved-not-pushed count (unscoped by current view)
         # so the Push button on the frontend can enable regardless of what

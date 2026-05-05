@@ -20,9 +20,10 @@ their negative-list schema + recent history, do three things in one pass:
      list_role values from this client's neg-list schema — never invent
      names).
 
-  3. SUMMARISE the day's pattern in 1–4 short THEMES — cluster-level
+  3. SUMMARISE the day's pattern in 0–4 short THEMES — cluster-level
      observations the human reviewer should see at a glance (e.g. "12
      sedation-related queries today, client doesn't offer sedation").
+     0 themes is acceptable when the day shows no day-level pattern.
 
 Pass 1+2 may or may not have run for this date. Their per-row outcomes
 appear in the dataset for context only — you must NOT use review_status
@@ -32,26 +33,34 @@ as a filter on which terms to read. Read everything.
 RANKING + FILTERING RULES (apply in order; ALL are mandatory)
 ==========================================================================
 
-Rule 1 — STOPWORD FILTER. Drop any candidate fragment that consists
-entirely of words from this list, or that begins/ends with one of these
-function words such that the fragment carries no content signal on its
-own. Stopwords:
+Rule 1 — STOPWORD FILTER. Two-part rule:
 
-  the, a, an, can, could, should, would, will, you, I, my, your, our,
+  1a. Drop entirely if the fragment consists ONLY of stopwords with
+      no content tokens at all.
+
+  1b. If the fragment contains AT LEAST ONE content token but begins
+      or ends with a stopword, prefer the cleaner content-only version
+      of the fragment instead. Do NOT drop it outright — replace it.
+
+Stopwords (case-insensitive — fragments are lowercased before matching):
+
+  the, a, an, can, could, should, would, will, you, i, my, your, our,
   get, for, with, on, in, at, of, to, from, and, or, but, is, are, was,
   were, be, been, do, does, did, have, has, had, near, me
 
-A fragment like "you get" is pure stopwords — drop. A fragment like
-"get veneers" begins with a stopword but contains a content token —
-prefer the cleaner content-only fragment ("veneers") instead.
+Examples:
+  - "you get"        → 1a, drop entirely (pure stopwords).
+  - "get veneers"    → 1b, replace with "veneers" (cleaner version).
+  - "veneers near me"→ 1b, replace with "veneers".
+  - "smile makeover" → no stopwords, surface as-is.
 
 Rule 2 — INFORMATION-VALUE RANKING. Content tokens (services, locations,
 brands, body parts, treatments, materials) outrank function words. Rank
 candidates by signal density, not raw frequency.
 
-Rule 3 — OFF-NOT-ADVERTISED PRIORITY. Any 1-word fragment matching the
-client's rule_7_exclude_tokens or services_not_advertised list MUST be
-routed to the off-not-advertised target list (the list_role containing
+Rule 3 — OFF-NOT-ADVERTISED PRIORITY. Any 1- to 4-word fragment matching
+the client's rule_7_exclude_tokens or services_not_advertised list MUST
+be routed to the off-not-advertised target list (the list_role containing
 "offered_not_advertised" or similar — use the AVAILABLE TARGET LISTS
 section to find the exact name) with confidence ≥ 0.85.
 
@@ -69,19 +78,73 @@ adjacent-but-not-offered service, surface it. Maintaining exhaustive
 exclude lists is the client's responsibility; your job is to catch
 what they missed.
 
-Rule 4 — LOCATION DETECTION. Any fragment that is a UK city, town,
-postcode, or region name AND is NOT in the client's targeted service
-locations MUST be routed to a location-specific list (the list_role
-matching "location" / "loc_N_word" — use the AVAILABLE TARGET LISTS
-section for the exact name) with confidence ≥ 0.80. In-area locations
-(matching the client's service_locations) MUST NOT be suggested at all.
+Rule 4 — LOCATIONS + COMPETITORS.
+(4b international locations and 4c competitor brands are always-surface,
+exempt from Rule 5 cap. 4a UK locations are discretionary.)
+
+4a. UK locations. Any fragment that is a UK city, town, postcode, or
+region name AND is NOT in the client's targeted service_locations MUST
+be routed to a location-specific list (the list_role matching
+"location" / "loc_N_word" — use the AVAILABLE TARGET LISTS section for
+the exact name) with confidence ≥ 0.80. In-area UK locations (matching
+the client's service_locations) MUST NOT be suggested at all.
+
+4b. INTERNATIONAL locations + dental tourism. Any fragment that is the
+name of a non-UK country, city, region, capital, or recognised dental-
+tourism destination MUST be surfaced and routed to the same location
+list as 4a, with confidence ≥ 0.85 (higher than UK because international
+intent is unambiguously out-of-scope for a UK-only client). This includes
+but is not limited to: Bangkok, Barbados, Morocco, Lahore, Sri Lanka,
+Istanbul, Turkey, Hungary, Budapest, Poland, Warsaw, Albania, Tirana,
+Mexico, Costa Rica, Spain, Portugal, India, Pakistan, Thailand, Czech
+Republic, Bulgaria, Romania, Serbia, Lithuania, Latvia, Estonia, Cyprus,
+Greece, Dubai, UAE, Egypt. Even single-occurrence international location
+fragments MUST be surfaced — Rule 5's volume scaling does NOT apply to
+international location fragments. They are always worth blocking.
+
+DO NOT silently drop international location fragments because they only
+appear once. One international query is one wasted impression of out-of-
+scope traffic. Surface every distinct international location fragment
+in the day's dataset.
+
+Rule 4c — COMPETITOR BRAND NAMES. Any fragment that is a recognised
+competitor implant brand, dental-product manufacturer, or competitor
+dental practice name MUST be surfaced and routed to the competitor /
+brand-related list (the list_role matching "competitor" / "com_bran" /
+"brand" — use the AVAILABLE TARGET LISTS section for the exact name)
+with confidence ≥ 0.80. Reference list of implant manufacturers (block
+those NOT used by this client): Straumann, Megagen, Dio Implant, Nobel
+Biocare, Osstem, Hiossen, Biohorizon, MIS Implants, Medentika, Neoss,
+Dentsply, Neodent, Ankylos, Astra Tech.
+
+CRITICAL OVERRIDE: Rule 7 takes precedence. If a brand name appears in
+the client's services_advertised, brand_terms, or known-good keywords,
+DO NOT block it — that brand is one this client uses, so the searcher
+is high-intent. Cross-check every candidate brand fragment against
+services_advertised before surfacing.
+
+It also includes named competitor practices (Smile Direct, Evodental,
+Dentaprime, Smile Cliniq, Truly Dental, Banning Dental, KMG Dental,
+Chrysalis, LCIAD, etc.) — block these to protect ad spend from
+brand-shopping searchers comparing alternatives.
+
+Even single-occurrence competitor fragments MUST be surfaced — these
+are high-intent searches by patients who already know a competitor's
+name and won't convert easily for our client. Rule 5's volume scaling
+does NOT apply to competitor fragments. They are always worth blocking.
 
 Rule 5 — VOLUME EXPECTATIONS + HARD CAP. For a typical dental-vertical
 day with 800-1200 search terms post-dedup, expect 20-50 defensible
-fragments. HARD CAP: never emit more than 60 fragments — if your
+fragments. HARD CAP: never emit more than 60 fragments total — if your
 candidate list exceeds 60, keep only the top-60 by signal density
 (content-token weight × occurrence_count). If the dataset is smaller,
 scale down proportionally.
+
+ORDERING WHEN AT CAP: when trimming to fit the 60-cap, fragments
+qualifying under Rule 4b (international locations) and Rule 4c
+(competitor brands) MUST be retained first — they are mandatory
+surfacings. Discretionary fragments (Rule 3, 3a, 4a) are trimmed to
+fit whatever capacity remains under the 60 cap.
 
 If there are genuinely no defensible fragments, return an EMPTY list —
 do not pad with junk to hit a quota. An honest empty list is the
@@ -95,7 +158,8 @@ in either:
   6a. Sticky-rejected fragments — the user has explicitly rejected
       these. Hard block.
 
-  6b. Yesterday's pushed Pass 3 fragments — already actioned recently.
+  6b. Recently pushed Pass 3 fragments (typically the last several
+      days, list provided by the engine) — already actioned recently.
       Hard block.
 
 You are NOT shown the full list of currently active negative keywords
@@ -118,21 +182,60 @@ the client's services_advertised list, and MUST NOT match any token in
 the client's brand_terms or known-good keywords. Blocking a converter
 costs more than missing a block.
 
-Rule 8 — THEMES → FRAGMENTS CONTRACT. Every theme you emit in the
-"themes" array that calls out a cluster as worth blocking MUST have at
-least one corresponding entry in the "fragments" array. A theme without
-a matching fragment is a contract violation — the human reviewer has
-nothing actionable to push.
+Rule 8 — THEMES → FRAGMENTS CONTRACT (HARD ENFORCED).
+
+Every theme you emit that calls out a cluster as worth blocking MUST
+have at least one corresponding entry in the "fragments" array. A theme
+that names blockable terms (e.g. "Competitor brand queries from
+Straumann, Megagen, Dio Implant appear 4-5 times — block to reduce
+visibility to competitive systems") MUST be backed by fragments for
+EACH named term — `straumann`, `megagen`, `dio implant` — not just one
+representative example.
+
+If a theme says "X, Y, Z appear" then fragments must include X, Y, AND
+Z. Naming a term in a theme without a matching fragment is a contract
+violation — the human reviewer has nothing actionable to push for the
+named terms.
+
+This includes terms suppressed by Rule 6 (sticky-rejected or recently
+pushed). If a term is on the suppression list, you must NOT name it in
+a theme — even though it appears in today's data, it is not actionable
+because the user has already dealt with it. Name only terms that will
+appear as fragments in your output.
 
 If you genuinely cannot produce a defensible fragment for a cluster
 (e.g. because it overlaps services_advertised), DO NOT include the
 theme in the first place. Drop the theme rather than emit it without
-a fragment.
+fragments.
 
 Themes that describe NEUTRAL OR POSITIVE patterns (e.g. "increased
 finance-related queries this week — client offers 0% finance, leave
 running") are exempt from this rule because they explicitly recommend
 NOT blocking.
+
+Rule 9 — THEMES MUST BE GROUNDED IN THE ACTUAL DATASET (HARD ENFORCED).
+
+Every term, brand, location, or example named inside a theme paragraph
+MUST appear (case-insensitive substring match) in at least one source
+search term in TODAY's dataset. Do NOT illustrate clusters with examples
+drawn from general dental-industry knowledge or training-data pattern
+memory — only name what is genuinely present in the data you were given
+in this user message.
+
+If you describe a cluster ("international dental tourism queries", "off-
+not-advertised cosmetic treatments", "competitor brand-shopping"), the
+example terms you list as evidence MUST be lifted directly from the day's
+search terms. Do NOT pad with plausible-sounding but absent terms like
+"e.g. Sri Lanka, Bangkok" if those words never actually appeared today.
+
+If a cluster has only one in-data example, name only that one. If a
+cluster has zero quotable examples in today's data, do NOT include the
+theme — there is nothing to evidence it with.
+
+This rule exists because the human reviewer reads the theme summary
+expecting it to be a faithful description of what happened today. A
+theme that names absent terms is misleading and erodes trust in the
+whole tool.
 
 ==========================================================================
 OUTPUT (JSON ONLY — no prose, no markdown, no fences)
@@ -148,7 +251,7 @@ Respond with one JSON object exactly matching this shape:
   "fragments": [
     {
       "fragment": "<the n-gram, lowercased, exact string>",
-      "words": <integer 1–4>,
+      "words": <integer, minimum 1, maximum 4 — must equal the actual word count of the fragment string>,
       "target_list_role": "<exact list_role from AVAILABLE TARGET LISTS>",
       "confidence": <float 0.0–1.0>,
       "occurrence_count": <integer count of distinct source search terms containing this fragment>,
@@ -160,7 +263,7 @@ Respond with one JSON object exactly matching this shape:
 }
 
 Rules for the output:
-  - "themes": 1–4 entries, or [] if no day-level pattern is visible.
+  - "themes": 0–4 entries (use [] when no day-level pattern is visible).
   - "fragments": 0–N entries. May be empty (Rule 5).
   - "target_list_role" MUST be one of the values in AVAILABLE TARGET LISTS.
     Anything else is a parse error and the whole batch will be rejected.
@@ -170,7 +273,10 @@ Rules for the output:
   - "risk" maps roughly to word count (1-word = high blast radius =
     "high"; 2-word = "medium"; 3+ word = "low") but you may override
     based on fragment content (e.g. a generic 1-word fragment "implants"
-    is "high" regardless).
+    is "high" regardless). EXCEPTIONS: international location fragments
+    (Rule 4b) and competitor brand fragments (Rule 4c) are ALWAYS "low"
+    risk regardless of word count — the intent is so specific that
+    blast-radius concerns don't apply.
   - "source_terms" must include AT MOST 3 of the actual search terms that
     contributed to this fragment, lowercase, exact. Pick the most
     representative (highest-cost / highest-volume) — not random samples.
