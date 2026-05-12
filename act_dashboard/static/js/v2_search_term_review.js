@@ -290,6 +290,40 @@
     + "PMax data from Google's campaign_search_term_insight API has "
     + "known inconsistencies with the UI.";
 
+  // Section 3 addendum (12 May 2026): the standalone PMax "Other search
+  // terms" transparency banner was removed. Bucket data is stored here
+  // and surfaced via a tooltip on a small info icon attached to the
+  // PMax pill row. setPmaxOtherBucket() updates this; renderSourceChips
+  // reads it when building the icon's title. Stored bucket shape mirrors
+  // the API response: {snapshot_date, impressions, clicks, cost,
+  // conversions, distinct_term_count}.
+  let pmaxOtherBucket = null;
+
+  // Build the icon's hover-text from the current bucket. Same phrasing
+  // logic as the deleted banner: adapt to which fields Google surfaced.
+  function _pmaxIconTooltip() {
+    const b = pmaxOtherBucket;
+    if (!b) return '';
+    const date = b.snapshot_date || analysisDate;
+    const impr = b.impressions != null ? b.impressions.toLocaleString() : null;
+    const cost = b.cost != null ? fmtMoney(b.cost) : null;
+    const n    = b.distinct_term_count;
+    let lead;
+    if (n != null) {
+      lead = `${n.toLocaleString()} additional PMax ${n === 1 ? 'query' : 'queries'}`;
+    } else if (impr != null) {
+      lead = `Additional PMax queries (${impr} impressions)`;
+    } else {
+      lead = 'Additional PMax queries';
+    }
+    const parts = [lead, `aggregated into Google's "Other search terms" bucket for ${date}`];
+    const metrics = [];
+    if (n != null && impr != null) metrics.push(`${impr} impr`);
+    if (cost) metrics.push(`${cost} cost`);
+    const detail = metrics.length ? ` (${metrics.join(', ')})` : '';
+    return `Note: ${parts.join(' ')}${detail}. Individual terms not available via the API — review in Google Ads UI for full PMax coverage.`;
+  }
+
   function renderSourceChips(counts) {
     const bar = document.getElementById('stSourceBar');
     if (!bar) return;
@@ -306,6 +340,33 @@
       });
       pg.appendChild(btn);
     });
+
+    // Section 3 addendum (12 May 2026): info icon sibling of the
+    // pill-group. Only shown when we have bucket data for the day.
+    // Outside the pill-group so it doesn't look like another pill;
+    // its own clickable target with event-propagation stop so a misclick
+    // doesn't toggle the PMax filter.
+    let icon = bar.querySelector('.pmax-info-icon');
+    const tip = _pmaxIconTooltip();
+    if (tip) {
+      if (!icon) {
+        icon = document.createElement('button');
+        icon.type = 'button';
+        icon.className = 'pmax-info-icon';
+        icon.setAttribute('aria-label', 'PMax coverage info');
+        icon.textContent = 'ⓘ';  // CIRCLED LATIN SMALL LETTER I — ⓘ
+        icon.addEventListener('click', (e) => {
+          // Pure info target — must not toggle the PMax filter.
+          e.stopPropagation();
+          e.preventDefault();
+        });
+        bar.appendChild(icon);
+      }
+      icon.title = tip;
+      icon.style.display = '';
+    } else if (icon) {
+      icon.style.display = 'none';
+    }
   }
 
   function renderStatusChips(counts) {
@@ -354,38 +415,14 @@
     });
   }
 
-  // -------------------- PMax Other-bucket transparency banner --------
-  function renderPmaxOtherBanner(bucket) {
-    const el = document.getElementById('stPmaxOtherBanner');
-    const txt = document.getElementById('stPmaxOtherText');
-    if (!el || !bucket) {
-      if (el) el.style.display = 'none';
-      return;
-    }
-    const date = bucket.snapshot_date || analysisDate;
-    const impr = bucket.impressions != null ? bucket.impressions.toLocaleString() : null;
-    const cost = bucket.cost != null ? fmtMoney(bucket.cost) : null;
-    const n    = bucket.distinct_term_count;
-    // Phrasing adapts to which fields Google surfaced:
-    //  - If distinct_term_count present: "N additional PMax queries ..."
-    //  - Else: lead with impressions
-    //  - Cost clause dropped when null
-    let lead;
-    if (n != null) {
-      lead = `${n.toLocaleString()} additional PMax ${n === 1 ? 'query' : 'queries'}`;
-    } else if (impr != null) {
-      lead = `Additional PMax queries (${impr} impressions)`;
-    } else {
-      lead = 'Additional PMax queries';
-    }
-    const parts = [lead, `aggregated into Google's "Other search terms" bucket for ${date}`];
-    const metrics = [];
-    if (n != null && impr != null) metrics.push(`${impr} impr`);
-    if (cost) metrics.push(`${cost} cost`);
-    let detail = '';
-    if (metrics.length) detail = ` (${metrics.join(', ')})`;
-    txt.textContent = `Note: ${parts.join(' ')}${detail}. Individual terms not available via the API — review in Google Ads UI for full PMax coverage.`;
-    el.style.display = '';
+  // -------------------- PMax Other-bucket data ----------------------
+  // Section 3 addendum (12 May 2026): the standalone banner this used
+  // to populate was removed. The function now just stores the bucket
+  // in module scope so renderSourceChips can build the icon tooltip
+  // from it. Caller order in reload() puts this BEFORE renderSourceChips
+  // so the icon picks up the latest data on every refresh.
+  function setPmaxOtherBucket(bucket) {
+    pmaxOtherBucket = bucket || null;
   }
 
   let p3Counts = {pending: 0, approved: 0, pushed: 0, rejected: 0};
@@ -1627,12 +1664,15 @@
     }
     updateSessionProgress();
 
-    // Repaint chips from server-side counts (Pass 1/2 only)
+    // Repaint chips from server-side counts (Pass 1/2 only).
+    // Section 3 addendum: store PMax bucket BEFORE renderSourceChips so
+    // the info icon next to the PMax pill picks up the latest data
+    // (renderSourceChips reads pmaxOtherBucket via _pmaxIconTooltip).
     if (currentTab === 'pass12') {
+      setPmaxOtherBucket(data.pmax_other_bucket);
       if (data.campaign_source_counts) renderSourceChips(data.campaign_source_counts);
       if (data.counts) renderStatusChips(data.counts);
       if (data.reason_counts) renderReasonChips(data.reason_counts);
-      renderPmaxOtherBanner(data.pmax_other_bucket);
       // Wave C4: cache live target-list labels for the dropdown
       liveTargetListLabels = data.target_list_labels || {};
     } else {
@@ -2052,9 +2092,10 @@
     document.getElementById('stStatusBar').style.display = tab === 'pass12' ? '' : 'none';
     document.getElementById('stReasonBar').style.display = tab === 'pass12' ? '' : 'none';
     document.getElementById('stFilterBarP3').style.display = tab === 'pass3' ? '' : 'none';
-    // Banner is Pass 1/2 scoped — hide when switching to Pass 3
-    const banner = document.getElementById('stPmaxOtherBanner');
-    if (banner && tab === 'pass3') banner.style.display = 'none';
+    // Section 3 addendum (12 May 2026): #stPmaxOtherBanner was deleted;
+    // bucket data now lives as a tooltip on the PMax info icon, which is
+    // inside #stSourceBar — that already gets hidden above on Pass 3
+    // tab, so the icon is auto-hidden with no extra toggle needed.
     stTable.style.display = tab === 'pass12' ? '' : 'none';
     stP3Table.style.display = tab === 'pass3' ? '' : 'none';
     // Stage 11 — Pass 3 AI Route button only shows on Pass 3 tab. The

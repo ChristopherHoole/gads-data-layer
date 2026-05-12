@@ -43,11 +43,13 @@
      Section 1 pill restyle); Pending was a derived total Block + Review.
      Status pills are now the single source for these counts. #}
 
-  {# ---- PMax "Other search terms" transparency banner — hidden until JS fills it ---- #}
-  <div class="act-impact-summary" id="stPmaxOtherBanner" style="display:none">
-    <span class="material-symbols-outlined">info</span>
-    <span id="stPmaxOtherText"></span>
-  </div>
+  {# Section 3 addendum (12 May 2026): the standalone PMax "Other search
+     terms" transparency banner was removed. The same daily-bucket data
+     now appears as a tooltip on a small info icon next to the PMax
+     pill in the Campaign type filter row (see renderSourceChips +
+     PMAX_INFO_ICON in v2_search_term_review.js). The existing PMax
+     pill tooltip (API quirk note from Section 1 addendum) is unchanged
+     — two separate tooltips on two separate targets. #}
 
   {# ---- Tabs ---- #}
   <div class="st-tabs">

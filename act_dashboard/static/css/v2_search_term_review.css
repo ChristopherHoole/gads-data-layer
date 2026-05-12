@@ -73,6 +73,34 @@
    removed and its copy moved to a native tooltip on the PMax pill
    (see renderSourceChips in v2_search_term_review.js). Rules deleted. */
 
+/* Section 3 addendum (12 May 2026): small info-icon sibling of the
+   Campaign type pill-group. Subtle, clearly a separate clickable info
+   target (not part of the pill). Hover triggers native title tooltip
+   that surfaces the day's PMax "Other search terms" bucket data. */
+.pmax-info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 6px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--act-text);
+  opacity: 0.55;
+  font-size: 15px;
+  line-height: 1;
+  cursor: help;
+  border-radius: 50%;
+  transition: opacity 120ms ease, background 120ms ease;
+}
+.pmax-info-icon:hover, .pmax-info-icon:focus {
+  opacity: 1;
+  background: var(--act-hover-bg);
+  outline: none;
+}
+
 /* Sticky action bar — pins below fixed topbar (z:900) on vertical scroll.
    z:25 puts it above any body content. Opaque bg covers rows behind it. */
 .st-action-bar {
