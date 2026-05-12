@@ -145,9 +145,17 @@
       <button class="btn-act btn-act--approve" id="stPushApproved" style="display:none" disabled>Push to GAds Neg Lists</button>
       {# Section 5: #stRefreshNegs removed — same functionality lives in
          Client Config; out of place on the Search Terms page. #}
-      <button class="btn-act btn-act--details" id="stReclassify" title="Re-run Pass 1 + Pass 2 on today's terms using current config and latest neg snapshot">♻️ Reclassify today's terms</button>
-      {# Section 5: #stRunPass3 is Pass 3-only; switchTab() toggles visibility. #}
-      <button class="btn-act btn-act--details" id="stRunPass3" style="display:none">Run Pass 3</button>
+      {# Section 6 addendum (12 May 2026): #stReclassify promoted from
+         btn-act--details (text-link style) to btn-act--decline (proper
+         button matching the rest of the action bar). Term Review tab
+         only — switchTab() hides it on Phrase Suggestions tab. #}
+      <button class="btn-act btn-act--decline" id="stReclassify" title="Re-run Pass 1 + Pass 2 on today's terms using current config and latest neg snapshot">♻️ Reclassify today's terms</button>
+      {# Section 5 / Section 6 addendum: #stRunPass3 is Pass 3-only AND
+         only visible when suggestions already exist (empty-state CTA
+         lives inside the tab body when none have been generated yet).
+         Promoted to btn-act--decline (proper button); label flips to
+         "Re-run Pass 3" post-run via updateRunPass3ButtonVisibility(). #}
+      <button class="btn-act btn-act--decline" id="stRunPass3" style="display:none">Run Pass 3</button>
     </div>
   </div>
 

@@ -423,6 +423,46 @@
     btn.style.display = shouldShow ? '' : 'none';
   }
 
+  // Section 6 addendum (12 May 2026): mutex between the empty-state
+  // CTA (rendered inside p3body when no run has happened) and the
+  // action-bar #stRunPass3 button. Rules:
+  //   - Term Review tab           -> #stRunPass3 hidden (Section 5)
+  //   - Phrase Suggestions, empty -> empty-state CTA in body, action
+  //                                  bar HIDDEN (avoid two Run buttons)
+  //   - Phrase Suggestions, run'd -> action bar visible labelled
+  //                                  "Re-run Pass 3", empty state
+  //                                  already auto-hidden by render
+  // Read from p3Counts (sum of pending/approved/pushed/rejected) to
+  // distinguish "no run yet" from "filter excludes everything".
+  function updateRunPass3ButtonVisibility() {
+    const btn = document.getElementById('stRunPass3');
+    if (!btn) return;
+    if (currentTab !== 'pass3') {
+      btn.style.display = 'none';
+      return;
+    }
+    const totalAcrossStatuses = (p3Counts.pending || 0)
+      + (p3Counts.approved || 0) + (p3Counts.pushed || 0)
+      + (p3Counts.rejected || 0);
+    if (totalAcrossStatuses === 0) {
+      // Empty-state CTA owns this surface — hide the action-bar twin.
+      btn.style.display = 'none';
+    } else {
+      btn.style.display = '';
+      btn.textContent = 'Re-run Pass 3';  // "Re-" signals a run has happened
+    }
+  }
+
+  // Section 6 addendum (12 May 2026): #stReclassify only re-runs Pass 1+2
+  // (Term Review engine). Has no effect on Phrase Suggestions, so hide
+  // it on the Phrase Suggestions tab to avoid implying it does something
+  // there.
+  function updateReclassifyButtonVisibility() {
+    const btn = document.getElementById('stReclassify');
+    if (!btn) return;
+    btn.style.display = currentTab === 'pass12' ? '' : 'none';
+  }
+
   function renderReasonChips(reasonCounts) {
     const bar = document.getElementById('stReasonBar');
     if (!bar) return;
@@ -1725,6 +1765,11 @@
         };
         renderP3StatusChips();
       }
+      // Section 6 addendum: re-evaluate the action-bar Run Pass 3 button
+      // now that p3Counts is fresh — flips between hidden (no run yet,
+      // empty-state CTA owns the surface) and visible "Re-run Pass 3"
+      // (suggestions exist).
+      updateRunPass3ButtonVisibility();
     }
 
     if (currentTab === 'pass12') {
@@ -2090,16 +2135,27 @@
         + `in ${((res.wall_clock_ms || 0) / 1000).toFixed(1)}s`
       );
       document.getElementById('cntSugg').textContent = res.suggestions_created;
-      // Auto-enable the Pass 3 tab
+      // Section 6 (main): tab disabled gate was removed. Line kept as
+      // a no-op safety net in case any legacy code path re-disables it.
       document.querySelector('.st-tab[data-tab="pass3"]').disabled = false;
-      // If user is already on Pass 3 tab, refresh banner immediately.
-      if (currentTab === 'pass3') hydrateP3ThemeBanner();
+      // If user is already on Pass 3 tab, refresh banner + table so the
+      // empty-state CTA disappears and the action-bar "Re-run Pass 3"
+      // button takes over (Section 6 addendum mutex).
+      if (currentTab === 'pass3') {
+        hydrateP3ThemeBanner();
+        await reload({preserveSession: true});
+      }
     } catch (e) { toast(`Pass 3 AI failed: ${e.message}`, 'error'); }
     finally {
       if (tickHandle) clearInterval(tickHandle);
       if (btn) {
         btn.disabled = false;
+        // Restore the label that fits the current state. originalLabel
+        // can be stale if a run just completed (was "Run Pass 3", should
+        // become "Re-run Pass 3"); the visibility helper sets the correct
+        // text from p3Counts so we don't need to manage two cases here.
         btn.textContent = originalLabel;
+        updateRunPass3ButtonVisibility();
       }
     }
   }
@@ -2166,14 +2222,15 @@
     const _btnApplyRoute = document.getElementById('btnApplyAIRouteP3');
     if (_btnApplyRoute && tab !== 'pass3') _btnApplyRoute.style.display = 'none';
     // Section 5 (12 May 2026): tab-conditional visibility for AI Triage
-    // (Pass 1/2 only — Pass 3 doesn't classify search-term rows) and
-    // Run Pass 3 (Pass 3 only — Pass 3 generation belongs on that tab).
+    // (Pass 1/2 only — Pass 3 doesn't classify search-term rows).
     const _btnAITriage = document.getElementById('btnAITriage');
     if (_btnAITriage) _btnAITriage.style.display = tab === 'pass12' ? '' : 'none';
-    const _btnRunPass3 = document.getElementById('stRunPass3');
-    if (_btnRunPass3) _btnRunPass3.style.display = tab === 'pass3' ? '' : 'none';
-    // Push button visibility depends on Status filter pill AND tab;
-    // re-evaluate on tab change so the Pass-3-side hide kicks in.
+    // Section 6 addendum (12 May 2026): Run Pass 3 + Reclassify + Push
+    // all use centralised visibility helpers — single source of truth
+    // for each, called here on tab change and from render paths on
+    // state change.
+    updateRunPass3ButtonVisibility();
+    updateReclassifyButtonVisibility();
     updatePushButtonVisibility();
     if (tab === 'pass3') renderP3StatusChips();
     // Tier 2.1e — theme banner only shows on Pass 3 tab.
