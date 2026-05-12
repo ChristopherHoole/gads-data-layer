@@ -28,15 +28,11 @@
   vertical-align: middle;
 }
 
-/* Wave A patch 1: force 5 summary cards on one row (overrides the v2_base
-   default of repeat(4, 1fr)) */
-.st-page .status-cards { grid-template-columns: repeat(5, 1fr); }
-@media (max-width: 1200px) {
-  .st-page .status-cards { grid-template-columns: repeat(3, 1fr); }
-}
-@media (max-width: 768px) {
-  .st-page .status-cards { grid-template-columns: repeat(2, 1fr); }
-}
+/* Wave A patch 1 / Section 3 (12 May 2026): the .st-page .status-cards
+   grid override is gone — the 5 status cards were removed entirely (the
+   same counts live in the Status filter pills now). Base .status-cards
+   rules live in v2_base.css; this page no longer needs to override them
+   because the markup is gone. */
 
 /* Tabs */
 .st-tabs { display: flex; gap: 4px; margin: 16px 0 0; border-bottom: 1px solid var(--act-border-light); }

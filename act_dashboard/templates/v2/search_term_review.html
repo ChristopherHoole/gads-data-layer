@@ -37,14 +37,11 @@
 
     <div class="ai-page-main">
 
-  {# ---- 5 summary badges ---- #}
-  <div class="status-cards">
-    <div class="status-card status-card--amber"><div class="status-card__count" id="cntPending">{{ counts.pending_block_review }}</div><div class="status-card__label">Pending</div></div>
-    <div class="status-card status-card--green"><div class="status-card__count" id="cntApproved">{{ counts.approved }}</div><div class="status-card__label">Approved to Block</div></div>
-    <div class="status-card status-card--red"><div class="status-card__count" id="cntRejected">{{ counts.rejected }}</div><div class="status-card__label">Didn't Block</div></div>
-    <div class="status-card status-card--blue"><div class="status-card__count" id="cntPushed">{{ counts.pushed }}</div><div class="status-card__label">Pushed to Neg Lists</div></div>
-    <div class="status-card" style="border-left-color:#9aa0a6"><div class="status-card__count" id="cntExpired">{{ counts.expired }}</div><div class="status-card__label">Expired</div></div>
-  </div>
+  {# Section 3 (12 May 2026): the 5 status cards (Pending / Approved to
+     Block / Didn't Block / Pushed to Neg Lists / Expired) were removed.
+     4 of 5 duplicated counts already in the Status filter pills (see
+     Section 1 pill restyle); Pending was a derived total Block + Review.
+     Status pills are now the single source for these counts. #}
 
   {# ---- PMax "Other search terms" transparency banner — hidden until JS fills it ---- #}
   <div class="act-impact-summary" id="stPmaxOtherBanner" style="display:none">

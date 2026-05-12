@@ -814,10 +814,8 @@
       }
       sessionActioned += approveIds.length + rejectIds.length;
       updateSessionProgress();
-      // Optimistic top-card + chip updates (mirrors bulkUpdate).
-      bumpCard('cntPending', -(approveIds.length + rejectIds.length));
-      bumpCard('cntApproved', approveIds.length);
-      bumpCard('cntRejected', rejectIds.length);
+      // Section 3 (12 May 2026): top status cards removed; only the
+      // Status filter pills need the optimistic delta now.
       const sourceChip = statusView === 'pending' ? 'review' : statusView;
       if (sourceChip && sourceChip !== 'all') {
         bumpChip(sourceChip, -(approveIds.length + rejectIds.length));
@@ -1725,14 +1723,10 @@
   // during QA. Rewrote as a single defensive helper that strips any non-digit
   // cruft (whitespace, commas, NBSP), parses, clamps to >=0, and writes back.
   // Same code path for every card so behaviour is symmetric across paths.
-  function bumpCard(id, delta) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const raw = (el.textContent || '').replace(/[^\d-]/g, '');
-    const cur = parseInt(raw, 10);
-    const next = Math.max(0, (Number.isFinite(cur) ? cur : 0) + delta);
-    el.textContent = String(next);
-  }
+  // Section 3 (12 May 2026): bumpCard removed — the 5 status cards it
+  // updated were deleted from the page. bumpChip (below) handles the
+  // optimistic count updates on the Status filter pills, which are now
+  // the single source for these counts.
   // Fix 1.4 Issue 1 (real fix): also bump the status filter pill counts
   // so the chip row stays in sync with the top stat cards. Pills are
   // re-rendered on every reload(), but bulkUpdate() deliberately doesn't
@@ -1934,15 +1928,13 @@
       sel.forEach(s => { if (markRowActioned(s.id, status)) marked++; });
       sessionActioned += marked;
       updateSessionProgress();
-      // Fix 1.4 Issue 1 — keep the top stat cards AND the status filter
-      // pills in sync with the action. Top cards use bumpCard (#cnt* IDs);
-      // pills use bumpChip (data-status attribute on chip buttons inside
-      // #stStatusBar). The pre-action source pill (typically Review for
-      // Pass 1/2 triage) is whichever filter the user has active, except
-      // 'all' (all-rows total doesn't change with an action).
+      // Fix 1.4 Issue 1 / Section 3 (12 May 2026) — keep the Status filter
+      // pills in sync with the action. (Top stat cards were removed in
+      // Section 3; the pills are now the single source for these counts.)
+      // The pre-action source pill (typically Review for Pass 1/2 triage)
+      // is whichever filter the user has active, except 'all' (all-rows
+      // total doesn't change with an action).
       if (currentTab === 'pass12') {
-        bumpCard('cntPending', -marked);
-        bumpCard(status === 'approved' ? 'cntApproved' : 'cntRejected', +marked);
         const sourceChip = statusView === 'pending' ? 'review' : statusView;
         if (sourceChip && sourceChip !== 'all') bumpChip(sourceChip, -marked);
         bumpChip(status, +marked);
