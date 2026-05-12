@@ -167,6 +167,19 @@ class GoogleAdsDataPipeline:
         nl = self.ingest_negative_lists(date)
 
         logger.info(f"  {date}: campaigns={c}, ad_groups={ag}, keywords={kw}, ads={ad}, search_terms={st}+pmax_bucket={pst}, segments={seg}, neg_lists={nl['lists']}/{nl['keywords']}kw")
+        # Section 7 (12 May 2026): future Search-API daily ingest hook.
+        # When the Search API path runs daily for a client (not built
+        # yet — overnight scheduler currently fires this, but a future
+        # event-driven Search-API ingest will land here), kick off the
+        # same daily pipeline the PMax watcher uses. Pattern:
+        #     import threading
+        #     from act_dashboard.engine.daily_pipeline import run_daily_pipeline
+        #     threading.Thread(
+        #         target=lambda: run_daily_pipeline(self.client_id),
+        #         daemon=True, name=f'daily-pipeline-{self.client_id}',
+        #     ).start()
+        # DBD-only guard lives inside run_daily_pipeline; other clients
+        # are no-op'd there until enrolled.
         return {'campaigns': c, 'ad_groups': ag, 'keywords': kw, 'ads': ad,
                 'search_terms': st, 'pmax_search_terms': pst, 'segments': seg,
                 'neg_lists': nl['lists'], 'neg_keywords': nl['keywords']}

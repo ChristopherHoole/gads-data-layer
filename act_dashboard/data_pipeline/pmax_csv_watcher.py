@@ -248,6 +248,38 @@ def process_file(path: Path, client_id: str) -> None:
     _log_row(str(target), client_id=client_id, status='ingested',
              rows_ingested=rows, processed=True)
 
+    # Section 7 (12 May 2026): auto-run Pass 1 → 2 → 3 pipeline after a
+    # successful daily ingest. Fire-and-forget on a daemon thread so the
+    # watcher returns immediately to listening — Pass 3 AI alone takes
+    # 1-3 min, would otherwise block subsequent CSV drops. Exceptions
+    # inside the thread MUST NOT propagate out of the thread (would not
+    # crash the watcher anyway because daemon, but log them so they're
+    # visible). DBD-only guard lives inside run_daily_pipeline; non-DBD
+    # clients are no-op'd there.
+    try:
+        import threading
+        from act_dashboard.engine.daily_pipeline import run_daily_pipeline
+
+        def _bg():
+            try:
+                run_daily_pipeline(client_id)
+            except Exception as e:  # noqa: BLE001
+                logger.error(
+                    f"  daily_pipeline crashed for {client_id}: {e}",
+                    exc_info=True,
+                )
+        threading.Thread(
+            target=_bg,
+            daemon=True,
+            name=f'daily-pipeline-{client_id}',
+        ).start()
+        logger.info(f"  triggered daily_pipeline background thread for {client_id}")
+    except Exception as e:  # noqa: BLE001
+        # Defensive — if the import itself fails, the ingest is already
+        # done and archived; pipeline can be re-triggered manually via
+        # the UI buttons. Don't crash the watcher.
+        logger.error(f"  failed to dispatch daily_pipeline: {e}")
+
 
 # ---------------------------------------------------------------------------
 # watchdog handler — one instance per client_id

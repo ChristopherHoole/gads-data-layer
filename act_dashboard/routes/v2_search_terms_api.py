@@ -82,6 +82,46 @@ def run_pass3_ai_endpoint():
 
 
 # ---------------------------------------------------------------------------
+# GET /last-pass3-status?client_id=X
+#   Section 7 (12 May 2026): drives the failure banner on the Phrase
+#   Suggestions tab. Returns the latest neg_pass3 row from
+#   act_v2_scheduler_runs for today + this client. If status='failed',
+#   the UI surfaces a banner with Re-run / Dismiss actions.
+# ---------------------------------------------------------------------------
+@v2_search_terms_api_bp.route('/last-pass3-status', methods=['GET'])
+def get_last_pass3_status():
+    client_id = (request.args.get('client_id') or '').strip()
+    if not client_id:
+        return _err('missing_client_id', 'client_id required')
+    con = _db()
+    try:
+        row = con.execute(
+            """SELECT status, started_at, completed_at, error_message
+               FROM act_v2_scheduler_runs
+               WHERE client_id = ?
+                 AND phase = 'neg_pass3'
+                 AND run_date = CURRENT_DATE
+               ORDER BY started_at DESC
+               LIMIT 1""",
+            [client_id],
+        ).fetchone()
+    finally:
+        con.close()
+    if not row:
+        # No run yet today — banner stays hidden. Empty-state CTA in the
+        # tab body is the right surface for this case.
+        return jsonify({'client_id': client_id, 'status': None})
+    status, started_at, completed_at, error_message = row
+    return jsonify({
+        'client_id':       client_id,
+        'status':          status,
+        'started_at':      started_at.isoformat() if started_at else None,
+        'completed_at':    completed_at.isoformat() if completed_at else None,
+        'error_message':   error_message,
+    })
+
+
+# ---------------------------------------------------------------------------
 # GET /pass3-themes/<client_id>?date=YYYY-MM-DD
 # ---------------------------------------------------------------------------
 @v2_search_terms_api_bp.route('/pass3-themes/<client_id>', methods=['GET'])

@@ -2160,6 +2160,53 @@
     }
   }
 
+  // Section 7 (12 May 2026): Pass 3 failure banner.
+  //   Fetches the latest neg_pass3 scheduler run for today; if status =
+  //   'failed', surfaces the banner with Re-run / Dismiss. Dismiss is
+  //   session-only (sessionStorage scoped by client + date). Banner
+  //   clears automatically next page load if a successful pass3_ai run
+  //   is logged (UI just doesn't re-render it). Hooked from switchTab
+  //   when entering the Pass 3 tab.
+  function _p3FailureDismissKey() {
+    return `p3_failure_dismissed:${CLIENT}:${analysisDate}`;
+  }
+
+  async function hydrateP3FailureBanner() {
+    const banner = document.getElementById('stP3FailureBanner');
+    const detail = document.getElementById('stP3FailureDetail');
+    if (!banner || !detail) return;
+    if (sessionStorage.getItem(_p3FailureDismissKey()) === 'yes') {
+      banner.style.display = 'none';
+      return;
+    }
+    try {
+      const r = await fetch(
+        `/v2/api/search-terms/last-pass3-status?`
+        + `client_id=${encodeURIComponent(CLIENT)}`,
+      );
+      if (!r.ok) { banner.style.display = 'none'; return; }
+      const data = await r.json();
+      if (data.status !== 'failed') {
+        banner.style.display = 'none';
+        return;
+      }
+      // Format the timestamp + error message in one short line.
+      const when = data.started_at
+        ? new Date(data.started_at).toLocaleTimeString([], {
+            hour: '2-digit', minute: '2-digit',
+          })
+        : '(unknown time)';
+      const err = data.error_message
+        ? ` — ${data.error_message.slice(0, 200)}`
+        : '';
+      detail.textContent = `Failed at ${when} today${err}.`;
+      banner.style.display = '';
+    } catch (e) {
+      // Banner is non-critical — fail silently, leave it hidden.
+      banner.style.display = 'none';
+    }
+  }
+
   // Tier 2.1e — fetch + render the Pass 3 theme banner. Called on tab
   // switch into pass3 and after a successful Run Pass 3.
   async function hydrateP3ThemeBanner() {
@@ -2242,6 +2289,15 @@
         _p3Banner.style.display = 'none';
       }
     }
+    // Section 7 (12 May 2026): failure banner only shows on Pass 3 tab.
+    const _p3FailBanner = document.getElementById('stP3FailureBanner');
+    if (_p3FailBanner) {
+      if (tab === 'pass3') {
+        hydrateP3FailureBanner();
+      } else {
+        _p3FailBanner.style.display = 'none';
+      }
+    }
     reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2 — tab switch is a view change, not a data boundary
   }
 
@@ -2277,6 +2333,23 @@
   document.getElementById('stBulkReject').addEventListener('click', () => bulkUpdate('rejected'));
   document.getElementById('stPushApproved').addEventListener('click', pushApproved);
   document.getElementById('stRunPass3').addEventListener('click', runPass3);
+  // Section 7 (12 May 2026): failure-banner Re-run + Dismiss buttons.
+  const _btnP3Rerun = document.getElementById('btnP3FailureRerun');
+  if (_btnP3Rerun) _btnP3Rerun.addEventListener('click', () => {
+    // Same handler as the action-bar Run Pass 3 button. After success
+    // the banner won't re-appear (status changes to 'success').
+    runPass3();
+    // Hide immediately for snappy UX — hydrateP3FailureBanner will
+    // re-evaluate on the next reload anyway.
+    const b = document.getElementById('stP3FailureBanner');
+    if (b) b.style.display = 'none';
+  });
+  const _btnP3Dismiss = document.getElementById('btnP3FailureDismiss');
+  if (_btnP3Dismiss) _btnP3Dismiss.addEventListener('click', () => {
+    sessionStorage.setItem(_p3FailureDismissKey(), 'yes');
+    const b = document.getElementById('stP3FailureBanner');
+    if (b) b.style.display = 'none';
+  });
   // Section 6 (12 May 2026): empty-state Run Pass 3 button is rendered
   // dynamically inside p3body when no run has happened. Event-delegate
   // on p3body so the same handler fires regardless of which surface

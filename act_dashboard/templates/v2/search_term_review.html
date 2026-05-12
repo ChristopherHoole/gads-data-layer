@@ -210,6 +210,24 @@
       </tbody>
     </table>
 
+    {# Section 7 (12 May 2026): Pass 3 failure banner. Hidden by default;
+       populated by JS on Phrase Suggestions tab activation from GET
+       /v2/api/search-terms/last-pass3-status. Shows the last auto-run
+       failure with Re-run / Dismiss actions. Dismiss is session-only
+       (sessionStorage). Banner auto-clears next page load when a
+       successful pass3_ai run is logged. #}
+    <div id="stP3FailureBanner" class="st-p3-failure-banner" style="display:none">
+      <div class="st-p3-failure-banner__icon" aria-hidden="true">⚠</div>
+      <div class="st-p3-failure-banner__body">
+        <div class="st-p3-failure-banner__title">Last automatic Pass 3 failed</div>
+        <div class="st-p3-failure-banner__detail" id="stP3FailureDetail"></div>
+      </div>
+      <div class="st-p3-failure-banner__actions">
+        <button type="button" class="btn-act btn-act--decline" id="btnP3FailureRerun">Re-run Pass 3</button>
+        <button type="button" class="btn-act btn-act--decline" id="btnP3FailureDismiss">Dismiss</button>
+      </div>
+    </div>
+
     {# Tier 2.1e — Pass 3 AI theme banner. Populated by JS on tab activation
        from GET /v2/api/search-terms/pass3-themes/<client>?date=...
        Hidden when no themes for the current date. #}
