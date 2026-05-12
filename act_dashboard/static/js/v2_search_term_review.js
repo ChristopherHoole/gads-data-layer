@@ -278,6 +278,18 @@
     return btn;
   }
 
+  // Section 1 addendum (12 May 2026): the standalone "Metrics split per
+  // source..." note that lived between this row and the Status row was
+  // removed. The same copy now appears as a native browser tooltip on
+  // the PMax pill only (PMax-source data has the known API caveats; the
+  // Search and All pills do not, so they stay tooltip-free). Verbatim
+  // per the brief addendum.
+  const PMAX_PILL_TOOLTIP =
+    "Metrics split per source. Search data aligns with Google Ads UI's "
+    + "Search-term report — cross-validate there. "
+    + "PMax data from Google's campaign_search_term_insight API has "
+    + "known inconsistencies with the UI.";
+
   function renderSourceChips(counts) {
     const bar = document.getElementById('stSourceBar');
     if (!bar) return;
@@ -285,6 +297,7 @@
     pg.innerHTML = '';
     SOURCE_CHIP_ORDER.forEach(({key, label}) => {
       const btn = _makePillBtn(label, counts[key] ?? 0, campaignSource === key, {source: key});
+      if (key === 'pmax') btn.title = PMAX_PILL_TOOLTIP;
       btn.addEventListener('click', () => {
         if (campaignSource === key) return;
         campaignSource = key;
@@ -2042,8 +2055,8 @@
       el.classList.toggle('active', el.dataset.tab === tab);
     });
     document.getElementById('stSourceBar').style.display = tab === 'pass12' ? '' : 'none';
-    const srcNote = document.getElementById('stSourceNote');
-    if (srcNote) srcNote.style.display = tab === 'pass12' ? '' : 'none';
+    // Section 1 addendum (12 May 2026): #stSourceNote was deleted; its
+    // copy now lives as a tooltip on the PMax pill. Nothing to toggle.
     document.getElementById('stStatusBar').style.display = tab === 'pass12' ? '' : 'none';
     document.getElementById('stReasonBar').style.display = tab === 'pass12' ? '' : 'none';
     document.getElementById('stFilterBarP3').style.display = tab === 'pass3' ? '' : 'none';

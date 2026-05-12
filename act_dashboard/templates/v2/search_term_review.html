@@ -69,10 +69,10 @@
     <span class="st-filter-bar__label">Campaign type</span>
     <div class="pill-group" data-pill-target="source"></div>
   </div>
-  <p class="st-source-note" id="stSourceNote">
-    Metrics split per source. Search data aligns with Google Ads UI's Search-term report &mdash; cross-validate there.
-    PMax data from Google's <code>campaign_search_term_insight</code> API has known inconsistencies with the UI.
-  </p>
+  {# Section 1 addendum (12 May 2026): the standalone "Metrics split per
+     source..." note was removed. The same copy now appears as a native
+     tooltip on hover of the PMax pill (rendered by renderSourceChips in
+     v2_search_term_review.js). #}
 
   {# ---- Status pill row (single-select) — populated by JS ---- #}
   <div class="st-filter-bar" id="stStatusBar" data-for="pass12">
