@@ -512,11 +512,10 @@
   font-weight: 500;
   opacity: 0.85;
 }
-#btnFilterUnsure[data-active="true"] {
-  background: var(--act-primary);
-  color: white;
-  border-color: var(--act-primary);
-}
+/* Section 5 (12 May 2026): #btnFilterUnsure active-state rule
+   removed — the button itself is gone from the action bar. The
+   .st-table.only-unsure filter class (further down) stays since the
+   canned-reply pill in the chat panel still triggers it. */
 
 /* Stage 7 transitional explain modal CSS removed in Stage 9. Per-row
    🔍 Explain now appends to the chat panel stream. */

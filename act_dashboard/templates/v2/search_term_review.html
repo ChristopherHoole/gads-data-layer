@@ -106,7 +106,11 @@
     </div>
     <div class="st-action-bar__right">
       {# Stage 7 — AI helpers. Sit at the START of the right group so the
-         flow reads left-to-right: AI assists → user actions → push to GAds. #}
+         flow reads left-to-right: AI assists → user actions → push to GAds.
+         Section 5 (12 May 2026): #btnFilterUnsure was removed (the canned
+         reply pill in the chat panel still triggers .st-table.only-unsure
+         via setUnsureFilter — same filter behaviour, different surface).
+         #btnAITriage is Pass 1/2-only; switchTab() toggles visibility. #}
       <div class="ai-action-group">
         <button class="btn-act btn-act--ai" id="btnAITriage"
                 title="Classify pending rows in the current view using Claude Opus.">
@@ -116,11 +120,6 @@
                 style="display:none"
                 title="Apply every high-confidence AI verdict on this page as your action.">
           ✅ Apply high-conf <span class="ai-action-badge" id="applyHighConfCount">(0)</span>
-        </button>
-        <button class="btn-act btn-act--details" id="btnFilterUnsure"
-                data-active="false"
-                title="Filter the current view to rows where the AI returned 'unsure'.">
-          🔍 Only show unsure
         </button>
         {# Stage 11 — Pass 3 routing AI buttons. Hidden until Pass 3 tab. #}
         <button class="btn-act btn-act--ai" id="btnAIRouteP3"
@@ -134,10 +133,15 @@
           ✅ Apply AI routing <span class="ai-action-badge" id="applyAIRouteP3Count">(0)</span>
         </button>
       </div>
-      <button class="btn-act btn-act--approve" id="stPushApproved" disabled>Push to GAds Neg Lists</button>
-      <button class="btn-act btn-act--details" id="stRefreshNegs" title="Pull the latest negative-keyword lists from Google Ads">🔄 Refresh Neg Lists from GAds</button>
+      {# Section 5: #stPushApproved is gated on the Status filter pill.
+         Hidden by default (Status defaults to 'All'); shown only when
+         Status=Approved to Block. JS toggles via renderStatusChips. #}
+      <button class="btn-act btn-act--approve" id="stPushApproved" style="display:none" disabled>Push to GAds Neg Lists</button>
+      {# Section 5: #stRefreshNegs removed — same functionality lives in
+         Client Config; out of place on the Search Terms page. #}
       <button class="btn-act btn-act--details" id="stReclassify" title="Re-run Pass 1 + Pass 2 on today's terms using current config and latest neg snapshot">♻️ Reclassify today's terms</button>
-      <button class="btn-act btn-act--details" id="stRunPass3">Run Pass 3</button>
+      {# Section 5: #stRunPass3 is Pass 3-only; switchTab() toggles visibility. #}
+      <button class="btn-act btn-act--details" id="stRunPass3" style="display:none">Run Pass 3</button>
     </div>
   </div>
 

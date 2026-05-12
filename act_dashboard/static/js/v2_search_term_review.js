@@ -394,11 +394,33 @@
         if (key === 'all') {
           selectedReasons.clear();
         }
+        // Section 5 (12 May 2026): Push button is gated on Status=approved.
+        // Update visibility live on every pill click (no reload needed
+        // — the button itself isn't filter-dependent, just status-aware).
+        updatePushButtonVisibility();
         currentPage = 1;
         reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2
       });
       pg.appendChild(btn);
     });
+    // Initial paint of the Push button visibility on every renderStatusChips
+    // call (called via reload() — covers page-load, tab-switch, filter
+    // change). Cheaper than wiring a separate observer.
+    updatePushButtonVisibility();
+  }
+
+  // Section 5 (12 May 2026): #stPushApproved is gated on the Status
+  // filter pill. Only visible when statusView === 'approved' (the
+  // "Approved to Block" pill); hidden in all other states. The pill key
+  // is 'approved' per STATUS_CHIP_ORDER — display label is "Approved to
+  // Block" (the verbal rename from Tier 2.1 polish), but the underlying
+  // enum stayed 'approved'. Also hidden on Pass 3 tab (no Push button
+  // there — Pass 3 has its own push endpoint).
+  function updatePushButtonVisibility() {
+    const btn = document.getElementById('stPushApproved');
+    if (!btn) return;
+    const shouldShow = currentTab === 'pass12' && statusView === 'approved';
+    btn.style.display = shouldShow ? '' : 'none';
   }
 
   function renderReasonChips(reasonCounts) {
@@ -884,16 +906,14 @@
   }
 
   // === "Only show unsure" filter (pure client-side; no reload). ===
+  // Section 5 (12 May 2026): the #btnFilterUnsure action-bar button +
+  // its toggleUnsureFilter handler were removed. setUnsureFilter
+  // (further down) is still the canonical setter; the canned-reply
+  // pill in the chat panel calls it directly. Same filter behaviour,
+  // different entry point.
   // KNOWN LIMIT — Tier 2.2 polish: pagination is server-side, so a page
   // with zero unsure rows looks empty under filter even if other pages
   // have unsures. Acceptable for MVP — user can switch off + paginate.
-  function toggleUnsureFilter() {
-    const btn = document.getElementById('btnFilterUnsure');
-    const active = btn.dataset.active === 'true';
-    btn.dataset.active = active ? 'false' : 'true';
-    if (stTable) stTable.classList.toggle('only-unsure', !active);
-    updateUnsureEmptyState();
-  }
 
   // Stage 10 follow-up — when the unsure filter is on AND the current page
   // has no unsure rows, surface a friendly empty-state banner.
@@ -1311,10 +1331,14 @@
   }
 
   // "Set, don't toggle" — clicking a canned pill should always activate
-  // the filter (never clear it). Use the action-bar button to clear.
+  // the filter (never clear it).
+  // Section 5 (12 May 2026): the action-bar #btnFilterUnsure button was
+  // removed; clearing the filter is now done by re-clicking the same
+  // canned-reply pill, or by leaving Status=approved/etc which auto-
+  // recomputes the table. (User-facing flow change banked; behaviour
+  // here is unchanged — function still sets the .only-unsure CSS class
+  // on stTable, same as before.)
   function setUnsureFilter(active) {
-    const btn = document.getElementById('btnFilterUnsure');
-    if (btn) btn.dataset.active = active ? 'true' : 'false';
     if (stTable) stTable.classList.toggle('only-unsure', !!active);
     updateUnsureEmptyState();
   }
@@ -1322,7 +1346,7 @@
   function applyCannedFilter(filter) {
     if (filter && filter.ai_verdict === 'unsure') {
       setUnsureFilter(true);
-      // No reload needed — toggleUnsureFilter is pure client-side CSS.
+      // No reload needed — setUnsureFilter is pure client-side CSS.
     }
   }
 
@@ -2121,6 +2145,16 @@
     if (_btnRoute) _btnRoute.style.display = tab === 'pass3' ? '' : 'none';
     const _btnApplyRoute = document.getElementById('btnApplyAIRouteP3');
     if (_btnApplyRoute && tab !== 'pass3') _btnApplyRoute.style.display = 'none';
+    // Section 5 (12 May 2026): tab-conditional visibility for AI Triage
+    // (Pass 1/2 only — Pass 3 doesn't classify search-term rows) and
+    // Run Pass 3 (Pass 3 only — Pass 3 generation belongs on that tab).
+    const _btnAITriage = document.getElementById('btnAITriage');
+    if (_btnAITriage) _btnAITriage.style.display = tab === 'pass12' ? '' : 'none';
+    const _btnRunPass3 = document.getElementById('stRunPass3');
+    if (_btnRunPass3) _btnRunPass3.style.display = tab === 'pass3' ? '' : 'none';
+    // Push button visibility depends on Status filter pill AND tab;
+    // re-evaluate on tab change so the Pass-3-side hide kicks in.
+    updatePushButtonVisibility();
     if (tab === 'pass3') renderP3StatusChips();
     // Tier 2.1e — theme banner only shows on Pass 3 tab.
     const _p3Banner = document.getElementById('stP3ThemeBanner');
@@ -2175,8 +2209,9 @@
   if (_btnAITriage) _btnAITriage.addEventListener('click', fireAITriage);
   const _btnApplyHC = document.getElementById('btnApplyHighConf');
   if (_btnApplyHC) _btnApplyHC.addEventListener('click', applyHighConf);
-  const _btnFilterUnsure = document.getElementById('btnFilterUnsure');
-  if (_btnFilterUnsure) _btnFilterUnsure.addEventListener('click', toggleUnsureFilter);
+  // Section 5 (12 May 2026): #btnFilterUnsure listener removed — the
+  // button itself is gone from the action bar. Canned-reply pill in the
+  // chat panel keeps the equivalent surface via setUnsureFilter().
 
   // -------------------- Stage 8 — AI panel wiring --------------------
   // Restore persisted collapse/expand state on load
@@ -2267,34 +2302,11 @@
   }
   loadSyncPill();
 
-  const btnRefresh = document.getElementById('stRefreshNegs');
-  if (btnRefresh) btnRefresh.addEventListener('click', async () => {
-    const orig = btnRefresh.innerHTML;
-    btnRefresh.disabled = true; btnRefresh.textContent = 'Refreshing…';
-    try {
-      const resp = await fetch('/v2/api/negatives/refresh-snapshot', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ client_id: CLIENT }),
-      });
-      const data = await resp.json();
-      if (resp.status === 409) {
-        toast('Refresh already running.', 'error');
-      } else if (data.status === 'ok') {
-        toast(`Synced ${data.list_count} lists, ${data.keyword_count} keywords in ${data.duration_seconds}s`);
-        loadSyncPill();
-        // Fix 1.4 follow-up (Issue 2): refresh-neg-lists is a real boundary
-        // — neg snapshot changed, classifications may differ next reclassify.
-        // Trigger a default reload so the in-session actioned set clears.
-        await reload();
-      } else {
-        toast('Refresh failed: ' + (data.message || 'Unknown'), 'error');
-      }
-    } catch (e) {
-      toast('Refresh failed: ' + e.message, 'error');
-    } finally {
-      btnRefresh.disabled = false; btnRefresh.innerHTML = orig;
-    }
-  });
+  // Section 5 (12 May 2026): #stRefreshNegs button + click handler
+  // removed from the Search Terms page. The same /refresh-snapshot
+  // functionality lives in Client Config and is the canonical surface
+  // for refreshing the negative-keywords snapshot. loadSyncPill() above
+  // still polls the snapshot state for the topbar sync indicator.
 
   // N2-polish-1: in-app confirm modal (replaces crude window.confirm).
   // Lightweight: injected on demand, removed on resolve. Returns a Promise.
