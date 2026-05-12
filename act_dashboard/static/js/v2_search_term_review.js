@@ -2112,16 +2112,47 @@
     // Tier 2.1e — "Run Pass 3" now calls the AI engine. The legacy
     // rule-based engine remains callable at /v2/api/negatives/run-pass3
     // (gated by ACT_PASS3_ENGINE=rules env var, used for debugging).
-    const btn = document.getElementById('stRunPass3');
-    const originalLabel = btn ? btn.textContent : 'Run Pass 3';
+    //
+    // Section 7 addendum (12 May 2026): live "⏳ running… Ns" counter
+    // (originally shipped in commit eda0296; lost during the Section 5/6
+    // button refactor) is restored on BOTH surfaces:
+    //   - #stRunPass3              (action-bar Re-run Pass 3 button)
+    //   - [data-action="run-pass3-empty"] (empty-state CTA inside p3body)
+    // Whichever button the user clicked, both get disabled + label-
+    // swapped while the API call is in flight, preventing
+    // double-trigger from the other entry point. On completion (success
+    // OR failure) both buttons are re-enabled in a single render pass;
+    // labels are restored (action-bar via updateRunPass3ButtonVisibility
+    // which re-derives from p3Counts; empty-state to plain "Run Pass 3"
+    // — though the empty-state usually disappears after a successful run
+    // anyway since lastItems populates and the render branch switches).
+    const _collectPass3Buttons = () => {
+      const out = [];
+      const actionBar = document.getElementById('stRunPass3');
+      if (actionBar) out.push({el: actionBar, originalLabel: actionBar.textContent});
+      document.querySelectorAll('[data-action="run-pass3-empty"]').forEach(el => {
+        out.push({el, originalLabel: el.textContent});
+      });
+      return out;
+    };
+
+    const pass3Buttons = _collectPass3Buttons();
     const startMs = Date.now();
     let tickHandle = null;
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = '⏳ Pass 3 running… 0s';
+    if (pass3Buttons.length) {
+      pass3Buttons.forEach(({el}) => {
+        el.disabled = true;
+        el.textContent = '⏳ running… 0s';
+      });
       tickHandle = setInterval(() => {
         const secs = Math.round((Date.now() - startMs) / 1000);
-        btn.textContent = `⏳ Pass 3 running… ${secs}s`;
+        const label = `⏳ running… ${secs}s`;
+        pass3Buttons.forEach(({el}) => {
+          // Only update buttons still in the DOM. If a re-render swapped
+          // out the empty-state container mid-run, its button is gone —
+          // skip it. Action-bar button stays put throughout.
+          if (el.isConnected) el.textContent = label;
+        });
       }, 1000);
     }
     toast('Pass 3 AI started — this can take 30s to 5min depending on dataset size.', 'info');
@@ -2148,15 +2179,15 @@
     } catch (e) { toast(`Pass 3 AI failed: ${e.message}`, 'error'); }
     finally {
       if (tickHandle) clearInterval(tickHandle);
-      if (btn) {
-        btn.disabled = false;
-        // Restore the label that fits the current state. originalLabel
-        // can be stale if a run just completed (was "Run Pass 3", should
-        // become "Re-run Pass 3"); the visibility helper sets the correct
-        // text from p3Counts so we don't need to manage two cases here.
-        btn.textContent = originalLabel;
-        updateRunPass3ButtonVisibility();
-      }
+      pass3Buttons.forEach(({el, originalLabel}) => {
+        if (!el.isConnected) return;  // re-render removed this surface
+        el.disabled = false;
+        el.textContent = originalLabel;
+      });
+      // Action-bar label may need to flip "Run Pass 3" -> "Re-run Pass 3"
+      // now that a run has happened; visibility helper re-derives from
+      // the fresh p3Counts (reload above updated them).
+      updateRunPass3ButtonVisibility();
     }
   }
 
