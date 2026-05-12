@@ -51,11 +51,17 @@
      pill tooltip (API quirk note from Section 1 addendum) is unchanged
      — two separate tooltips on two separate targets. #}
 
-  {# ---- Tabs ---- #}
+  {# ---- Tabs ----
+       Section 6 (12 May 2026): user-facing labels are now plain-English
+       ("Term Review" / "Phrase Suggestions"). Internal data-tab values
+       (pass12 / pass3) stay — they're keyed in JS state, route params,
+       and switchTab(). Pass 3 tab no longer disabled when no run has
+       happened — Section 5 moved Run Pass 3 INTO the tab, so disabling
+       it would deadlock the user away from the trigger. #}
   <div class="st-tabs">
-    <button class="st-tab active" data-tab="pass12">Pass 1/2 Review</button>
-    <button class="st-tab" data-tab="pass3" {% if not pushed_today and phrase_suggestions_count == 0 %}disabled title="Run Pass 3 after pushing today's approved terms"{% endif %}>
-      Pass 3 Suggestions <span class="st-tab__badge" id="cntSugg">{{ phrase_suggestions_count }}</span>
+    <button class="st-tab active" data-tab="pass12">Term Review</button>
+    <button class="st-tab" data-tab="pass3">
+      Phrase Suggestions <span class="st-tab__badge" id="cntSugg">{{ phrase_suggestions_count }}</span>
     </button>
   </div>
 

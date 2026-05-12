@@ -253,6 +253,29 @@
 .st-table td.num, .st-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .st-table tr:hover td { background: var(--act-hover-bg); }
 .st-loading { padding: 40px; text-align: center; opacity: 0.6; }
+
+/* Section 6 (12 May 2026): Phrase Suggestions empty state — shown when
+   no Pass 3 run has happened yet. Centred message + prominent Run Pass 3
+   CTA inside the table area, since the action-bar Run Pass 3 button
+   only appears on this tab (Section 5) and the visual emphasis should
+   point the new-day user at the trigger immediately. */
+.st-p3-empty {
+  padding: 60px 24px;
+  text-align: center;
+}
+.st-p3-empty__text {
+  font-size: 14px;
+  color: var(--act-text);
+  opacity: 0.7;
+  margin-bottom: 16px;
+}
+.st-p3-empty__cta {
+  /* Lifts the empty-state Run Pass 3 visually above the smaller
+     action-bar version of the same button — same handler, two
+     surfaces, this one is the primary CTA when the tab is empty. */
+  font-size: 14px;
+  padding: 10px 22px;
+}
 .st-table__term { font-weight: 500; }
 .st-table__sources {
   font-size: 11px; color: var(--act-text); opacity: 0.7;

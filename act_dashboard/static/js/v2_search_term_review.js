@@ -731,9 +731,9 @@
 
   // Friendly label builder — uses what the user has selected even when
   // it's ambiguous (e.g. "All > Block" or "Search > All"). Falls back
-  // to "Pass 3 Suggestions" on the pass3 tab.
+  // to "Phrase Suggestions" on the pass3 tab (Section 6 rename).
   function _aiPanelFlowLabel() {
-    if (currentTab === 'pass3') return 'Pass 3 Suggestions';
+    if (currentTab === 'pass3') return 'Phrase Suggestions';
     const sourceMap = {all: 'All', search: 'Search', pmax: 'PMax'};
     const statusMap = {
       all: 'All', pending: 'Pending', block: 'Block', review: 'Review',
@@ -1732,9 +1732,29 @@
         ? lastItems.map(renderRow).join('')
         : '<tr><td colspan="10" class="st-loading">No matching rows</td></tr>';
     } else {
-      p3body.innerHTML = lastItems.length
-        ? lastItems.map(renderP3Row).join('')
-        : '<tr><td colspan="10" class="st-loading">No matching suggestions</td></tr>';
+      // Section 6 (12 May 2026): two distinct empty-state messages on
+      // the Phrase Suggestions tab:
+      //   (a) No run yet — total across ALL p3 statuses is 0. Show a
+      //       centred CTA pointing at Run Pass 3 (the empty-state
+      //       button delegates to the same runPass3 handler as the
+      //       action-bar Run Pass 3 button — both fire AI Pass 3).
+      //   (b) Filter shows nothing — at least one status has rows but
+      //       the current view filter excludes everything. Show the
+      //       plain "No matching suggestions" message.
+      const totalAcrossStatuses = (p3Counts.pending || 0)
+        + (p3Counts.approved || 0) + (p3Counts.pushed || 0)
+        + (p3Counts.rejected || 0);
+      if (lastItems.length) {
+        p3body.innerHTML = lastItems.map(renderP3Row).join('');
+      } else if (totalAcrossStatuses === 0) {
+        p3body.innerHTML = `
+          <tr><td colspan="12" class="st-p3-empty">
+            <div class="st-p3-empty__text">No phrase suggestions yet — run Pass 3 to generate them.</div>
+            <button type="button" class="btn-act btn-act--approve st-p3-empty__cta" data-action="run-pass3-empty">Run Pass 3</button>
+          </td></tr>`;
+      } else {
+        p3body.innerHTML = '<tr><td colspan="12" class="st-loading">No matching suggestions</td></tr>';
+      }
     }
 
     // Stage 8: capture the server-side total so the AI panel context
@@ -2200,6 +2220,16 @@
   document.getElementById('stBulkReject').addEventListener('click', () => bulkUpdate('rejected'));
   document.getElementById('stPushApproved').addEventListener('click', pushApproved);
   document.getElementById('stRunPass3').addEventListener('click', runPass3);
+  // Section 6 (12 May 2026): empty-state Run Pass 3 button is rendered
+  // dynamically inside p3body when no run has happened. Event-delegate
+  // on p3body so the same handler fires regardless of which surface
+  // (action bar or empty-state) was clicked.
+  if (p3body) {
+    p3body.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action="run-pass3-empty"]');
+      if (btn) runPass3();
+    });
+  }
   // Stage 11 — Pass 3 AI routing buttons.
   document.getElementById('btnAIRouteP3')?.addEventListener('click', fireAIRouteP3);
   document.getElementById('btnApplyAIRouteP3')?.addEventListener('click', applyAIRouteP3);
