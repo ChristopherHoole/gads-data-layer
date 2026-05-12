@@ -335,6 +335,14 @@
       btn.addEventListener('click', () => {
         if (campaignSource === key) return;
         campaignSource = key;
+        // Section 4 (12 May 2026): cascading "All" reset. Clicking All on
+        // Campaign type (the top row) resets both downstream rows to All
+        // so the user sees the full unfiltered list. State changes only —
+        // a single reload() below redraws everything.
+        if (key === 'all') {
+          statusView = 'all';
+          selectedReasons.clear();
+        }
         currentPage = 1;                // reset pagination on source change
         reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2
       });
@@ -379,6 +387,13 @@
       btn.addEventListener('click', () => {
         if (statusView === key) return;
         statusView = key;
+        // Section 4 (12 May 2026): cascading "All" reset. Clicking All on
+        // Status (the middle row) resets Reason to All — but does NOT
+        // touch Campaign type (upstream). Reason row is multi-select so
+        // "reset to All" means clear all selected reasons.
+        if (key === 'all') {
+          selectedReasons.clear();
+        }
         currentPage = 1;
         reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2
       });
