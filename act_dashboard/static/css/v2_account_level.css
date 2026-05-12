@@ -151,19 +151,10 @@
 }
 .table-toolbar__left, .table-toolbar__right { display: flex; align-items: center; gap: 8px; }
 
-/* Pill button group */
-.pill-group {
-  display: flex; gap: 0; background: var(--act-hover-bg);
-  border-radius: 6px; padding: 2px; border: 1px solid var(--act-border-light);
-}
-.pill-btn {
-  font-size: 12px; font-weight: 600; padding: 4px 12px;
-  border: none; border-radius: 4px; cursor: pointer;
-  background: transparent; color: var(--act-text); transition: all 120ms ease;
-}
-.pill-btn:hover { background: rgba(0,0,0,0.05); }
-[data-theme="dark"] .pill-btn:hover { background: rgba(255,255,255,0.05); }
-.pill-btn.active { background: var(--act-surface) !important; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+/* Pill button group — moved to v2_shared.css (12 May 2026, Section 1).
+ * Both Account and Search Terms pages link v2_shared.css for one source
+ * of truth on .pill-group / .pill-btn / .pill-btn__count. Visual rules
+ * are identical — no behavioural change for Account page. */
 
 /* Status dot */
 .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }

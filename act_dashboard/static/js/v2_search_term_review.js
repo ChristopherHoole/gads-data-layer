@@ -252,82 +252,92 @@
     {key: 'search', label: 'Search'},
     {key: 'pmax',   label: 'PMax'},
   ];
+  // -------------------- Section 1 (12 May 2026) — pill-bar rendering ----
+  // All three Pass 1/2 filter rows (source / status / reason) plus the
+  // Pass 3 status row use the same .pill-group / .pill-btn primitives
+  // from v2_shared.css. _pillGroupOf(bar) returns the inner .pill-group
+  // container (the render target), creating it if missing (defensive —
+  // markup is in HTML, but tests/hot-reload could call before parse).
+  // ---------------------------------------------------------------------
+  function _pillGroupOf(bar) {
+    let pg = bar.querySelector('.pill-group');
+    if (!pg) {
+      pg = document.createElement('div');
+      pg.className = 'pill-group';
+      bar.appendChild(pg);
+    }
+    return pg;
+  }
+
+  function _makePillBtn(label, count, isActive, dataAttrs) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pill-btn' + (isActive ? ' active' : '');
+    for (const [k, v] of Object.entries(dataAttrs || {})) btn.dataset[k] = v;
+    btn.innerHTML = `${label} <span class="pill-btn__count">${count}</span>`;
+    return btn;
+  }
+
   function renderSourceChips(counts) {
     const bar = document.getElementById('stSourceBar');
     if (!bar) return;
-    bar.querySelectorAll('.st-chip').forEach(el => el.remove());
+    const pg = _pillGroupOf(bar);
+    pg.innerHTML = '';
     SOURCE_CHIP_ORDER.forEach(({key, label}) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'st-chip' + (campaignSource === key ? ' active' : '');
-      btn.dataset.source = key;
-      btn.innerHTML = `${label} <span class="st-chip__count">${counts[key] ?? 0}</span>`;
+      const btn = _makePillBtn(label, counts[key] ?? 0, campaignSource === key, {source: key});
       btn.addEventListener('click', () => {
         if (campaignSource === key) return;
         campaignSource = key;
         currentPage = 1;                // reset pagination on source change
         reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2
       });
-      bar.appendChild(btn);
+      pg.appendChild(btn);
     });
   }
 
   function renderStatusChips(counts) {
     const bar = document.getElementById('stStatusBar');
-    // Preserve the label span; remove any previous chips
-    bar.querySelectorAll('.st-chip').forEach(el => el.remove());
+    if (!bar) return;
+    const pg = _pillGroupOf(bar);
+    pg.innerHTML = '';
     STATUS_CHIP_ORDER.forEach(({key, label}) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'st-chip' + (statusView === key ? ' active' : '');
-      btn.dataset.status = key;
-      btn.innerHTML = `${label} <span class="st-chip__count">${counts[key] ?? 0}</span>`;
+      const btn = _makePillBtn(label, counts[key] ?? 0, statusView === key, {status: key});
       btn.addEventListener('click', () => {
         if (statusView === key) return;
         statusView = key;
         currentPage = 1;
         reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2
       });
-      bar.appendChild(btn);
+      pg.appendChild(btn);
     });
   }
 
   function renderReasonChips(reasonCounts) {
     const bar = document.getElementById('stReasonBar');
-    bar.querySelectorAll('.st-chip').forEach(el => el.remove());
+    if (!bar) return;
+    const pg = _pillGroupOf(bar);
+    pg.innerHTML = '';
+    const onClick = code => () => {
+      if (selectedReasons.has(code)) selectedReasons.delete(code);
+      else selectedReasons.add(code);
+      currentPage = 1;
+      reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2
+    };
     REASON_CHIP_ORDER.forEach(code => {
       const n = reasonCounts[code] || 0;
       if (n === 0) return;  // hide zero-count reasons per brief
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'st-chip' + (selectedReasons.has(code) ? ' active' : '');
-      btn.dataset.reason = code;
-      btn.innerHTML = `${humanReasonChip(code)} <span class="st-chip__count">${n}</span>`;
-      btn.addEventListener('click', () => {
-        if (selectedReasons.has(code)) selectedReasons.delete(code);
-        else selectedReasons.add(code);
-        currentPage = 1;
-        reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2
-      });
-      bar.appendChild(btn);
+      const btn = _makePillBtn(humanReasonChip(code), n, selectedReasons.has(code), {reason: code});
+      btn.addEventListener('click', onClick(code));
+      pg.appendChild(btn);
     });
     // If any other reason codes appear in data that aren't in the known
     // order, append them so they're never invisible.
     Object.keys(reasonCounts).forEach(code => {
       if (REASON_CHIP_ORDER.includes(code)) return;
       if (!reasonCounts[code]) return;
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'st-chip' + (selectedReasons.has(code) ? ' active' : '');
-      btn.dataset.reason = code;
-      btn.innerHTML = `${humanReason(code)} <span class="st-chip__count">${reasonCounts[code]}</span>`;
-      btn.addEventListener('click', () => {
-        if (selectedReasons.has(code)) selectedReasons.delete(code);
-        else selectedReasons.add(code);
-        currentPage = 1;
-        reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2
-      });
-      bar.appendChild(btn);
+      const btn = _makePillBtn(humanReason(code), reasonCounts[code], selectedReasons.has(code), {reason: code});
+      btn.addEventListener('click', onClick(code));
+      pg.appendChild(btn);
     });
   }
 
@@ -368,25 +378,23 @@
   let p3Counts = {pending: 0, approved: 0, pushed: 0, rejected: 0};
   function renderP3StatusChips() {
     const bar = document.getElementById('stFilterBarP3');
-    bar.querySelectorAll('.st-chip').forEach(el => el.remove());
+    if (!bar) return;
+    const pg = _pillGroupOf(bar);
+    pg.innerHTML = '';
     ['pending', 'approved', 'pushed', 'rejected'].forEach(key => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'st-chip' + (p3View === key ? ' active' : '');
-      btn.dataset.status = key;
       const label = key.charAt(0).toUpperCase() + key.slice(1);
       const n = p3Counts[key] || 0;
-      btn.innerHTML = `${label} <span class="st-chip__count">${n}</span>`;
+      const btn = _makePillBtn(label, n, p3View === key, {status: key});
       btn.addEventListener('click', () => {
         if (p3View === key) return;
         p3View = key;
         currentPage = 1;
         // N1r: re-render chips so .active moves to the newly clicked chip.
-        // Safe to self-call — the function clears existing chips on line 1.
+        // Safe to self-call — _pillGroupOf clears the container on entry.
         renderP3StatusChips();
         reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2
       });
-      bar.appendChild(btn);
+      pg.appendChild(btn);
     });
   }
 
@@ -1719,9 +1727,11 @@
   function bumpChip(statusKey, delta) {
     const bar = document.getElementById('stStatusBar');
     if (!bar) return;
-    const btn = bar.querySelector(`.st-chip[data-status="${statusKey}"]`);
+    // Section 1 (12 May 2026): chips now render as .pill-btn inside an
+    // inner .pill-group container; count badge is .pill-btn__count.
+    const btn = bar.querySelector(`.pill-btn[data-status="${statusKey}"]`);
     if (!btn) return;
-    const span = btn.querySelector('.st-chip__count');
+    const span = btn.querySelector('.pill-btn__count');
     if (!span) return;
     const cur = parseInt((span.textContent || '0').replace(/[^\d-]/g, ''), 10) || 0;
     span.textContent = String(Math.max(0, cur + delta));

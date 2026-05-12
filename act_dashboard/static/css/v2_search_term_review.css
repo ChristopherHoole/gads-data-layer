@@ -55,38 +55,20 @@
   font-size: 11px; padding: 1px 6px; border-radius: 8px;
 }
 
-/* Wave A patches 4+5: two chip rows.
-   Row 1 = status (single-select, default=all, buttons).
-   Row 2 = reason (multi-select, default=none, toggle buttons). */
+/* Filter bar row layout — Section 1 (12 May 2026).
+ * The pill styling has moved to v2_shared.css (.pill-group / .pill-btn).
+ * This rule only handles the row container (label + inner .pill-group).
+ * Old .st-chip* rules removed; nothing else in the codebase referenced
+ * them (grep confirmed). */
 .st-filter-bar {
-  display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 0;
+  display: flex; gap: 10px; flex-wrap: wrap; padding: 8px 0;
   align-items: center;
 }
 .st-filter-bar__label {
-  font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px;
-  color: var(--act-text); opacity: 0.55; margin-right: 6px; min-width: 56px;
-}
-.st-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 4px 10px; border: 1px solid var(--act-border);
-  border-radius: 14px; font-size: 12px; cursor: pointer;
-  background: var(--act-surface); color: var(--act-text);
-  user-select: none; transition: background 120ms ease, border-color 120ms ease;
-}
-.st-chip:hover { background: var(--act-hover-bg); }
-.st-chip.active {
-  background: var(--act-blue-bg);
-  border-color: var(--act-primary);
-  color: var(--act-primary);
-  font-weight: 500;
-}
-.st-chip__count {
-  background: rgba(0,0,0,0.08); color: inherit;
-  padding: 1px 6px; border-radius: 8px; font-size: 11px;
-  font-weight: 500;
-}
-.st-chip.active .st-chip__count {
-  background: var(--act-primary); color: white;
+  /* Sentence-case per global ACT rule (12 May 2026) — was uppercase. */
+  font-size: 12px; font-weight: 500;
+  color: var(--act-text); opacity: 0.7;
+  margin-right: 4px; min-width: 96px;
 }
 
 /* Wave C10: Campaign Type chip row explainer. One-line, low emphasis. */

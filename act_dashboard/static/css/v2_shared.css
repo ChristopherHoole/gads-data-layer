@@ -1,0 +1,74 @@
+/* v2_shared.css — shared visual primitives for ACT v2 pages.
+ *
+ * Anything that wants to live identically on multiple pages goes here.
+ * Pages link this BEFORE their per-page CSS so per-page rules can
+ * still override defaults if a one-off variant is genuinely needed.
+ *
+ * Owners (Section 1, 12 May 2026):
+ *   .pill-group / .pill-btn / .pill-btn__count
+ *     — single source of truth for filter pill bars (Account page top
+ *       filter rows + Search Terms filter bars). Previously duplicated
+ *       in v2_account_level.css; consolidated here to lock visual parity.
+ */
+
+/* ============================================================
+ * Pill button group — single-row segmented control.
+ * Use:
+ *   <div class="pill-group">
+ *     <button class="pill-btn active">All <span class="pill-btn__count">384</span></button>
+ *     <button class="pill-btn">Block <span class="pill-btn__count">16</span></button>
+ *   </div>
+ * Multi-select rows: allow multiple `.active` simultaneously — selector
+ * makes no exclusivity assumption.
+ * ============================================================ */
+.pill-group {
+  display: inline-flex;
+  gap: 0;
+  background: var(--act-hover-bg);
+  border-radius: 6px;
+  padding: 2px;
+  border: 1px solid var(--act-border-light);
+  flex-wrap: wrap;  /* allow long rows (reason chips) to wrap inside the group */
+}
+.pill-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--act-text);
+  transition: all 120ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.pill-btn:hover { background: rgba(0,0,0,0.05); }
+[data-theme="dark"] .pill-btn:hover { background: rgba(255,255,255,0.05); }
+.pill-btn.active {
+  background: var(--act-surface) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Inline count badge inside a pill. Subtle pill-within-pill so the
+ * number reads as metadata, not the primary label. Active state inverts
+ * to white-on-primary for legibility against the lighter active bg. */
+.pill-btn__count {
+  display: inline-block;
+  background: rgba(0,0,0,0.08);
+  color: inherit;
+  padding: 1px 7px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+[data-theme="dark"] .pill-btn__count {
+  background: rgba(255,255,255,0.12);
+}
+.pill-btn.active .pill-btn__count {
+  background: var(--act-primary);
+  color: white;
+}

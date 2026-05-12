@@ -4,6 +4,7 @@
 {% block page_title %}Search Term Review{% endblock %}
 
 {% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/v2_shared.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/v2_search_term_review.css') }}">
 {% endblock %}
 
@@ -59,26 +60,34 @@
     </button>
   </div>
 
-  {# ---- Wave C10: Campaign Type chip row (single-select) ---- #}
+  {# ---- Wave C10: Campaign type pill row (single-select).
+       Section 1 (12 May 2026): inner .pill-group is the JS render target;
+       JS injects .pill-btn buttons into it. Outer .st-filter-bar carries
+       the row layout (label + group) only — no chip styling here, all
+       pill visuals live in v2_shared.css. #}
   <div class="st-filter-bar" id="stSourceBar" data-for="pass12">
-    <span class="st-filter-bar__label">Campaign&nbsp;type</span>
+    <span class="st-filter-bar__label">Campaign type</span>
+    <div class="pill-group" data-pill-target="source"></div>
   </div>
   <p class="st-source-note" id="stSourceNote">
     Metrics split per source. Search data aligns with Google Ads UI's Search-term report &mdash; cross-validate there.
     PMax data from Google's <code>campaign_search_term_insight</code> API has known inconsistencies with the UI.
   </p>
 
-  {# ---- Status filter chips (single-select) — populated by JS ---- #}
+  {# ---- Status pill row (single-select) — populated by JS ---- #}
   <div class="st-filter-bar" id="stStatusBar" data-for="pass12">
     <span class="st-filter-bar__label">Status</span>
+    <div class="pill-group" data-pill-target="status"></div>
   </div>
-  {# ---- Reason filter chips (multi-select) — populated by JS ---- #}
+  {# ---- Reason pill row (multi-select) — populated by JS ---- #}
   <div class="st-filter-bar" id="stReasonBar" data-for="pass12">
     <span class="st-filter-bar__label">Reason</span>
+    <div class="pill-group" data-pill-target="reason"></div>
   </div>
-  {# ---- Pass 3 filter chips (single-select status) ---- #}
+  {# ---- Pass 3 pill row (single-select status) ---- #}
   <div class="st-filter-bar" id="stFilterBarP3" data-for="pass3" style="display:none">
     <span class="st-filter-bar__label">Status</span>
+    <div class="pill-group" data-pill-target="p3status"></div>
   </div>
 
   {# ---- Sticky action bar ---- #}
