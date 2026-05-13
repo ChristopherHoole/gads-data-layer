@@ -353,11 +353,11 @@
   </div>{# /.act-card — Section 2 wrap #}
 
   {# ====================================================================
-     IA refactor (13 May 2026) — Rejected Terms pane.
-     Sibling of the triage .act-card above. switchTab('rejected') shows
-     this and hides the triage card; switchTab('pass12'|'pass3') hides
-     this and shows the triage card. Section C will polish the visuals
-     (wrap in .act-card with two-zone layout + .data-table etc.). #}
+     Section C (13 May 2026) — Rejected Terms pane, redesigned to ACT
+     standard: .act-card wrapper, two-zone .st-card-toolbar / .st-card-
+     table layout, .pill-group filter pills, .data-table table, .page-btn
+     pagination. Visually consistent with the Term Review tab and the
+     Account page. Sentence case throughout, dark-theme parity. #}
   <div id="paneRejected" class="st-rejected-pane" style="display:none">
     <div class="rt-page" data-client-id="{{ client.id }}">
 
@@ -368,44 +368,57 @@
         <div class="status-card status-card--green"><div class="status-card__count" id="rtAvgCycles">—</div><div class="status-card__label">Avg cycles / term</div></div>
       </div>
 
-      <div class="rt-filter-bar">
-        <div class="rt-pill-group" id="rtStatusPills" role="tablist">
-          <button type="button" class="rt-pill active" data-status="active">Active</button>
-          <button type="button" class="rt-pill" data-status="expired">Expired</button>
-          <button type="button" class="rt-pill" data-status="all">All</button>
+      <div class="act-card">
+        <div class="st-card-toolbar">
+          <div class="st-filter-bar">
+            <span class="st-filter-bar__label">Status</span>
+            <div class="pill-group" id="rtStatusPills" role="tablist">
+              <button type="button" class="pill-btn active" data-status="active">Active</button>
+              <button type="button" class="pill-btn" data-status="expired">Expired</button>
+              <button type="button" class="pill-btn" data-status="all">All</button>
+            </div>
+          </div>
+          <div class="rt-search-row">
+            <input type="search" id="rtSearch" class="rt-search" placeholder="Search term…"/>
+            <span class="rt-count" id="rtCount"></span>
+          </div>
         </div>
-        <input type="search" id="rtSearch" class="rt-search" placeholder="Search term…"/>
-        <span class="rt-count" id="rtCount"></span>
+
+        <div class="st-card-table">
+          <div class="rt-table-wrap">
+            <table class="data-table rt-table">
+              <thead>
+                <tr>
+                  <th class="col-num">#</th>
+                  <th>Search term</th>
+                  <th>Status</th>
+                  <th>Cycle</th>
+                  <th>Rejected at</th>
+                  <th>Expires at</th>
+                  <th>Countdown</th>
+                  <th>Reason at rejection</th>
+                  <th class="rt-actions-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="rtBody">
+                <tr><td colspan="9" class="rt-loading">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="st-pager rt-pager">
+            <div class="st-pager__left">
+              <span id="rtPageLabel">Page 1</span>
+            </div>
+            <div class="st-pager__right">
+              <button type="button" id="rtPrev" class="page-btn">«</button>
+              <button type="button" id="rtNext" class="page-btn">»</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="rt-toast" id="rtToast" style="display:none"></div>
-
-      <div class="rt-table-wrap">
-        <table class="rt-table">
-          <thead>
-            <tr>
-              <th class="col-num">#</th>
-              <th>Search term</th>
-              <th>Status</th>
-              <th>Cycle</th>
-              <th>Rejected at</th>
-              <th>Expires at</th>
-              <th>Countdown</th>
-              <th>Reason at rejection</th>
-              <th class="rt-actions-col">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="rtBody">
-            <tr><td colspan="9" class="rt-loading">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="rt-pager">
-        <button type="button" id="rtPrev" class="btn-act btn-act--details">Prev</button>
-        <span id="rtPageLabel">Page 1</span>
-        <button type="button" id="rtNext" class="btn-act btn-act--details">Next</button>
-      </div>
     </div>
   </div>
 

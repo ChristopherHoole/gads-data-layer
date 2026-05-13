@@ -253,9 +253,11 @@
 
   // -------- Filter controls --------------------------------------------
   document.getElementById('rtStatusPills').addEventListener('click', (e) => {
-    const pill = e.target.closest('.rt-pill');
+    // Section C (13 May 2026) — pills restyled to .pill-btn from
+    // v2_shared.css. JS selector updated to match.
+    const pill = e.target.closest('.pill-btn');
     if (!pill) return;
-    document.querySelectorAll('#rtStatusPills .rt-pill').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('#rtStatusPills .pill-btn').forEach(p => p.classList.remove('active'));
     pill.classList.add('active');
     state.status = pill.dataset.status;
     load();
