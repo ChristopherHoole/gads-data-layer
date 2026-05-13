@@ -542,11 +542,13 @@
                 <p class="setting-desc">When enabled, Pass 1/2 AI Triage consults this client's past Approve/Reject decisions. Exact-match terms (last 90 days) auto-fill without an AI call. Novel terms get the last 30 user decisions injected as examples. Currently rolled out to DBD only.</p>
               </div>
               <div class="setting-control">
-                <label class="config-checkbox" style="display:inline-flex;align-items:center;gap:8px">
-                  <input type="checkbox" data-key="enable_ai_feedback_loop"
-                         {% if client.enable_ai_feedback_loop %}checked{% endif %}>
-                  <span>Enabled</span>
-                </label>
+                {# Slider toggle matches the Rule 5 / Rule 7 sliders below.
+                   Stored on act_v2_clients.enable_ai_feedback_loop (not
+                   act_v2_client_settings) — collectData() reads it into
+                   data.client and the settings-loop skips this key. #}
+                <div class="config-toggle{% if client.enable_ai_feedback_loop %} on{% endif %}"
+                     data-key="enable_ai_feedback_loop"><div class="config-toggle__knob"></div></div>
+                <span style="font-size:12px;margin-left:8px;color:var(--act-text)">Enabled</span>
               </div>
             </div>
 
