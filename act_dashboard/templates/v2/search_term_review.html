@@ -6,8 +6,11 @@
 {% block page_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/v2_shared.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/v2_search_term_review.css') }}">
-{# IA refactor (13 May 2026) — Rejected Terms is now a tab on this page. #}
+{# IA refactor (13 May 2026) — Rejected Terms + Negative Lists are now
+   tabs on this page; their stylesheets ride along. Section D will
+   extract the .neg-* rules into a dedicated stylesheet. #}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/v2_rejected_terms.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/v2_client_config.css') }}">
 {% endblock %}
 
 {% block topbar_extras %}
@@ -84,6 +87,7 @@
       </button>
     </div>
     <div class="st-tabs__group st-tabs__group--right">
+      <button class="st-tab" data-tab="negative-lists">Negative lists</button>
       <button class="st-tab" data-tab="rejected">Rejected terms</button>
     </div>
   </div>
@@ -405,6 +409,27 @@
     </div>
   </div>
 
+  {# ====================================================================
+     IA refactor (13 May 2026) — Negative Lists pane.
+     Sibling of the triage card + Rejected pane. switchTab('negative-lists')
+     reveals this and triggers window.NegativeListsPane.boot() on first
+     activation. v2_negative_lists.js owns the render. Section D will
+     polish visuals (wrap in .act-card with two-zone layout + .data-table). #}
+  <div id="paneNegativeLists" class="st-neg-lists-pane" style="display:none">
+    <div class="config-panel active" style="padding:0">
+      <h3 class="config-panel__title">Negative lists</h3>
+      <p class="config-panel__subtitle">
+        Read-only view of the latest snapshot pulled from Google Ads.
+        To change a list, edit it in Google Ads and click Refresh below.
+      </p>
+      <div id="negLists" data-client-id="{{ client.id }}">
+        <div class="neg-lists__loading" style="padding:18px;color:var(--text-muted);">
+          Loading negative lists...
+        </div>
+      </div>
+    </div>
+  </div>
+
   {# ---- Toast host ---- #}
   <div id="stToast" class="st-toast" style="display:none"></div>
 
@@ -506,5 +531,6 @@
   };
 </script>
 <script src="{{ url_for('static', filename='js/v2_rejected_terms.js') }}"></script>
+<script src="{{ url_for('static', filename='js/v2_negative_lists.js') }}"></script>
 <script src="{{ url_for('static', filename='js/v2_search_term_review.js') }}"></script>
 {% endblock %}
