@@ -133,7 +133,11 @@
                         their own horizontal padding (20px) so they line
                         up with the action bar above. */
 .st-card-toolbar {
-  padding: 20px;
+  /* Section 2 addendum 2 tweak (13 May 2026): trimmed vertical padding
+     5px top/bottom (was 20px) to tighten the chrome above the table.
+     Horizontal padding stays 20px to align with the action bar / table
+     cell content edges below. */
+  padding: 5px 20px;
 }
 .st-card-table {
   padding: 0;
@@ -205,6 +209,13 @@
 .st-table th.st-sort-active .st-sort-glyph { opacity: 0.85; }
 
 .st-table tbody tr:last-child td { border-bottom: none; }  /* Section 2 */
+
+/* Section 2 addendum 2 tweak (13 May 2026): lock the header row height
+   to 59px so it doesn't visually dominate the table. CSS treats `height`
+   on a th as a minimum — content can still push it taller if it has to,
+   but our 2-line wrap cap (addendum 1) keeps every header within this
+   budget at production column widths. */
+.st-table thead th { height: 59px; }
 
 /* Frozen-left columns — horizontal-sticky only, independent of sticky
    thead. Opaque bg so body rows scrolling under them don't show through.
