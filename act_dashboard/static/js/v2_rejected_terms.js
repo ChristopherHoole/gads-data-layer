@@ -1,9 +1,17 @@
 /* N3 — Rejected Terms page front-end. Lists sticky rejections, supports
    status filter, text search, manual unreject + cycle-history inline row,
-   live countdowns (1-min tick). Mirrors the search_term_review toast helper. */
+   live countdowns (1-min tick). Mirrors the search_term_review toast helper.
+
+   Brief 13 May 2026 (IA refactor Section A): this file is now also loaded
+   by the Search Terms page as the Rejected Terms tab. When `RT_CONFIG.lazy`
+   is true the IIFE wires listeners but does NOT auto-fetch — the host page
+   calls window.RejectedTerms.boot() on first tab activation. */
 (function () {
-  const CLIENT = (window.RT_CONFIG || {}).client_id;
+  const CFG = window.RT_CONFIG || {};
+  const CLIENT = CFG.client_id;
+  const LAZY = !!CFG.lazy;
   const body = document.getElementById('rtBody');
+  if (!body) return;  // markup absent on this page — nothing to wire.
   const toastEl = document.getElementById('rtToast');
   let state = {
     items: [],
@@ -245,9 +253,11 @@
 
   // -------- Filter controls --------------------------------------------
   document.getElementById('rtStatusPills').addEventListener('click', (e) => {
-    const pill = e.target.closest('.rt-pill');
+    // Section C (13 May 2026) — pills restyled to .pill-btn from
+    // v2_shared.css. JS selector updated to match.
+    const pill = e.target.closest('.pill-btn');
     if (!pill) return;
-    document.querySelectorAll('#rtStatusPills .rt-pill').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('#rtStatusPills .pill-btn').forEach(p => p.classList.remove('active'));
     pill.classList.add('active');
     state.status = pill.dataset.status;
     load();
@@ -261,9 +271,20 @@
   document.getElementById('rtNext').addEventListener('click', () => { state.page++; render(); });
 
   // -------- Boot --------------------------------------------------------
-  if (!CLIENT) {
-    body.innerHTML = '<tr><td colspan="9" class="rt-loading rt-loading--error">No client selected.</td></tr>';
-  } else {
+  // In lazy mode we expose `boot` so the host (Search Terms page) can
+  // trigger the first fetch on tab activation. Listeners + countdown
+  // tick are already wired above.
+  let _booted = false;
+  function boot() {
+    if (_booted) return;
+    _booted = true;
+    if (!CLIENT) {
+      body.innerHTML = '<tr><td colspan="9" class="rt-loading rt-loading--error">No client selected.</td></tr>';
+      return;
+    }
     load();
   }
+  window.RejectedTerms = { boot, reload: load };
+
+  if (!LAZY) boot();
 })();

@@ -1,95 +1,159 @@
-/* N3 — Rejected Terms page */
-.rt-page { padding: 18px 22px; }
+/* N3 — Rejected Terms styles.
+   Section C (13 May 2026) redesign: aligned to ACT standard. The page
+   now lives as a tab inside Search Terms (#paneRejected). Wrapping is
+   handled by the host .act-card; this stylesheet only customises the
+   bits that aren't covered by .pill-group / .data-table / .page-btn /
+   .st-card-toolbar / .st-card-table in v2_shared.css. */
 
+/* Page wrapper inside the tab pane. Acts as a thin layout container
+   so the existing JS can keep targeting `.rt-page`. */
+.rt-page { padding: 16px 0 0; }
+
+/* Stats strip — keeps the existing status-card visuals (already
+   theme-aware); just tighten spacing under the redesigned tab. */
 .rt-stats {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
   margin-bottom: 18px;
 }
 
-.rt-filter-bar {
-  display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;
+/* Toolbar second row: search input + count. The first row (status
+   pills) uses the standard .st-filter-bar / .pill-group from
+   v2_shared.css. */
+.rt-search-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 6px 0 4px;
+  flex-wrap: wrap;
 }
-.rt-pill-group { display: inline-flex; gap: 4px; background: #f3f4f6; padding: 3px; border-radius: 9px; }
-.rt-pill {
-  border: none; background: transparent; padding: 6px 14px; border-radius: 7px;
-  font-size: 12px; color: #4b5563; cursor: pointer;
-}
-.rt-pill.active { background: var(--bg-card, #fff); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,0.06); font-weight: 600; }
-
 .rt-search {
-  flex: 1 1 240px; min-width: 220px; max-width: 360px;
-  padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px;
+  flex: 0 1 340px; min-width: 220px;
+  padding: 7px 12px;
+  border: 1px solid var(--act-border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--act-surface);
+  color: var(--act-text);
 }
-.rt-count { font-size: 12px; color: var(--text-muted); }
+.rt-search::placeholder { color: var(--act-text); opacity: 0.5; }
+.rt-search:focus {
+  outline: none;
+  border-color: var(--act-primary);
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.15);
+}
+.rt-count { font-size: 12px; color: var(--act-text); opacity: 0.65; }
 
-.rt-table-wrap { overflow-x: auto; background: var(--bg-card, #fff); border: 1px solid var(--border); border-radius: 8px; }
-.rt-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.rt-table th, .rt-table td { padding: 10px 12px; border-bottom: 1px solid var(--border-light, #f3f4f6); text-align: left; }
-.rt-table th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); background: #fafafa; }
-.rt-table tbody tr:hover { background: #fafbfc; }
-.col-num { width: 44px; min-width: 44px; max-width: 44px; text-align: right; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-.rt-table .rt-term { min-width: 220px; max-width: 320px; white-space: normal; word-wrap: break-word; }
-.rt-table .rt-reason { min-width: 180px; max-width: 260px; white-space: normal; word-wrap: break-word; }
-.rt-actions-col { width: 120px; }
-.rt-actions-placeholder { color: var(--text-muted); }
+/* Table — class is `.data-table .rt-table`. .data-table handles the
+   base look. Below: only the column widths + non-sortable cursor +
+   the row-level styling that varies from defaults. */
+.rt-table-wrap { padding: 0 4px; }
+.rt-table th {
+  cursor: default;  /* not client-sortable today; override .data-table th */
+}
+.rt-table th:hover { color: var(--act-text); }
+.col-num {
+  width: 44px; min-width: 44px; max-width: 44px;
+  text-align: right;
+  color: var(--act-text); opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+.rt-table .rt-term {
+  min-width: 220px; max-width: 320px;
+  white-space: normal; word-wrap: break-word;
+  font-weight: 600;
+}
+.rt-table .rt-reason {
+  min-width: 180px; max-width: 260px;
+  white-space: normal; word-wrap: break-word;
+  color: var(--act-text); opacity: 0.75;
+  font-size: 12px;
+}
+.rt-actions-col { width: 130px; }
+.rt-actions-placeholder { color: var(--act-text); opacity: 0.5; }
 
-.rt-term { font-weight: 600; }
-.rt-reason { color: var(--text-muted); font-size: 12px; }
-
-.rt-status { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+/* Status pill in the row — uses the same shape language as ACT badges. */
+.rt-status {
+  display: inline-block; padding: 2px 10px;
+  border-radius: 4px; font-size: 11px; font-weight: 600;
+}
 .rt-status--amber { background: #fef3c7; color: #92400e; }
 .rt-status--grey  { background: #f3f4f6; color: #6b7280; }
+[data-theme="dark"] .rt-status--amber { background: rgba(245, 158, 11, 0.18); color: #fbbf24; }
+[data-theme="dark"] .rt-status--grey  { background: rgba(255, 255, 255, 0.08); color: rgba(255,255,255,0.65); }
 
 .rt-cycle-btn {
-  background: transparent; border: 1px solid var(--border); border-radius: 6px;
-  padding: 4px 10px; font-size: 12px; cursor: pointer; color: var(--text);
+  background: transparent;
+  border: 1px solid var(--act-border);
+  border-radius: 6px;
+  padding: 4px 10px; font-size: 12px;
+  cursor: pointer; color: var(--act-text);
 }
-.rt-cycle-btn:hover { background: #f3f4f6; }
+.rt-cycle-btn:hover { background: var(--act-hover-bg); }
 
-.rt-countdown { font-size: 12px; font-variant-numeric: tabular-nums; }
+.rt-countdown {
+  font-size: 12px; font-variant-numeric: tabular-nums;
+}
 .countdown--ok      { color: #0b8a3e; }
 .countdown--warn    { color: #b45309; }
 .countdown--urgent  { color: #b42318; font-weight: 600; }
-.countdown--expired { color: #6b7280; font-style: italic; }
+.countdown--expired { color: var(--act-text); opacity: 0.55; font-style: italic; }
+[data-theme="dark"] .countdown--ok      { color: #34d399; }
+[data-theme="dark"] .countdown--warn    { color: #fbbf24; }
+[data-theme="dark"] .countdown--urgent  { color: #f87171; }
 
-.rt-loading { padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px; }
-.rt-loading--error { color: var(--danger, #b42318); }
+.rt-loading { padding: 20px; text-align: center; color: var(--act-text); opacity: 0.65; font-size: 13px; }
+.rt-loading--error { color: var(--danger, #b42318); opacity: 1; }
 
-.rt-pager {
-  display: flex; align-items: center; justify-content: center; gap: 12px;
-  margin-top: 14px; font-size: 12px; color: var(--text-muted);
+/* Pager — uses .st-pager (already in v2_search_term_review.css) plus
+   .page-btn (in v2_shared.css). Only need the row-level margin tweak. */
+.st-pager.rt-pager {
+  border-top: 1px solid var(--act-border-light);
+  padding-top: 12px;
+  padding-bottom: 12px;
+  padding-left: 20px;
+  padding-right: 20px;
+  margin-top: 0;
 }
 
 .rt-toast {
   position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-  background: #111827; color: #fff; padding: 10px 16px; border-radius: 8px;
-  font-size: 13px; box-shadow: 0 10px 24px rgba(0,0,0,0.25); z-index: 1500;
+  background: #111827; color: #fff;
+  padding: 10px 16px; border-radius: 8px;
+  font-size: 13px; box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+  z-index: 1500;
 }
 .rt-toast--error { background: #b42318; }
 
-/* Inline history row */
-.rt-history-row td { padding: 0; background: #fafbfc; }
+/* Inline history row (toggled via Cycle button). */
+.rt-history-row td {
+  padding: 0;
+  background: var(--act-hover-bg);
+}
 .rt-history-cell { padding: 14px 16px; }
-.rt-history__title { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.rt-history__title { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--act-text); }
 .rt-history__table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.rt-history__table th, .rt-history__table td { padding: 6px 10px; border-bottom: 1px solid var(--border-light, #f3f4f6); text-align: left; }
-.rt-history__table th { font-weight: 600; color: var(--text-muted); }
+.rt-history__table th, .rt-history__table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--act-border-light);
+  text-align: left;
+  color: var(--act-text);
+}
+.rt-history__table th { font-weight: 600; opacity: 0.7; }
 
-/* Shared confirm modal (duplicated minimal styles so the page works without
-   depending on v2_search_term_review.css load order) */
+/* Confirm modal — shared with v2_search_term_review (kept in case the
+   pane is opened before that stylesheet's rules are reached). */
 .act-confirm-overlay {
   position: fixed; inset: 0; background: rgba(17, 24, 39, 0.55);
   display: flex; align-items: center; justify-content: center; z-index: 2000;
 }
 .act-confirm {
-  background: var(--bg-card, #fff); border-radius: 10px;
+  background: var(--act-surface); border-radius: 10px;
   width: min(480px, 92vw); box-shadow: 0 20px 40px rgba(0,0,0,0.25);
-  border: 1px solid var(--border);
+  border: 1px solid var(--act-border);
+  color: var(--act-text);
 }
 .act-confirm__header { padding: 18px 22px 0; }
 .act-confirm__title  { margin: 0; font-size: 16px; font-weight: 600; }
 .act-confirm__body   { padding: 14px 22px 6px; font-size: 13px; line-height: 1.55; }
 .act-confirm__footer {
   padding: 14px 22px 18px; display: flex; justify-content: flex-end; gap: 10px;
-  border-top: 1px solid var(--border-light, #f3f4f6); margin-top: 10px;
+  border-top: 1px solid var(--act-border-light); margin-top: 10px;
 }

@@ -143,3 +143,36 @@
 }
 .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* ============================================================
+ * .data-table — shared narrow table look used by Account, Rejected
+ * terms, and Negative lists. Copied from v2_account_level.css so any
+ * page can drop a clean table without depending on Account CSS load
+ * order. Rules are identical to the Account version, so the cascade
+ * doesn't fight when both stylesheets are loaded.
+ *
+ * Note: cursor:pointer on th is the Account-page sortable-header
+ * convention. Pages that don't sort should add their own `th { cursor:
+ * default }` override (or skip the .data-table class on those headers).
+ * ============================================================ */
+.data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.data-table th {
+  font-size: 12px; font-weight: 600; color: var(--act-text);
+  padding: 10px 12px; text-align: left;
+  border-bottom: 2px solid var(--act-border-light);
+  cursor: pointer; white-space: nowrap; user-select: none;
+}
+.data-table th:hover { color: var(--act-primary); }
+.data-table th .material-symbols-outlined {
+  font-size: 14px; vertical-align: middle; margin-left: 2px; opacity: 0.4;
+}
+.data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--act-border-light);
+  vertical-align: middle; color: var(--act-text);
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(0,0,0,0.015); }
+[data-theme="dark"] .data-table tr:hover td { background: rgba(255,255,255,0.03); }
+.data-table td.num { text-align: left; font-family: var(--act-font); font-size: 14px; }
+.data-table th.num { text-align: left; }
+

@@ -6,6 +6,10 @@
 {% block page_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/v2_shared.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/v2_search_term_review.css') }}">
+{# IA refactor (13 May 2026) — Rejected Terms + Negative Lists are now
+   tabs on this page; their stylesheets ride along. #}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/v2_rejected_terms.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/v2_negative_lists.css') }}">
 {% endblock %}
 
 {% block topbar_extras %}
@@ -70,11 +74,21 @@
        and switchTab(). Pass 3 tab no longer disabled when no run has
        happened — Section 5 moved Run Pass 3 INTO the tab, so disabling
        it would deadlock the user away from the trigger. #}
-  <div class="st-tabs">
-    <button class="st-tab active" data-tab="pass12">Term Review</button>
-    <button class="st-tab" data-tab="pass3">
-      Phrase Suggestions <span class="st-tab__badge" id="cntSugg">{{ phrase_suggestions_count }}</span>
-    </button>
+  {# IA refactor (13 May 2026): split tab row — left group is the active
+     triage surfaces (Term Review / Phrase Suggestions); right group is
+     archive / output (Rejected terms, plus Negative lists in Section B).
+     Sentence case labels per global rule. #}
+  <div class="st-tabs st-tabs--split">
+    <div class="st-tabs__group st-tabs__group--left">
+      <button class="st-tab active" data-tab="pass12">Term Review</button>
+      <button class="st-tab" data-tab="pass3">
+        Phrase Suggestions <span class="st-tab__badge" id="cntSugg">{{ phrase_suggestions_count }}</span>
+      </button>
+    </div>
+    <div class="st-tabs__group st-tabs__group--right">
+      <button class="st-tab" data-tab="negative-lists">Negative lists</button>
+      <button class="st-tab" data-tab="rejected">Rejected terms</button>
+    </div>
   </div>
 
   {# ---- Wave C10: Campaign type pill row (single-select).
@@ -337,6 +351,108 @@
     </div>{# /.st-card-table — Section 2 addendum 2 split #}
   </div>{# /.act-card — Section 2 wrap #}
 
+  {# ====================================================================
+     Section C (13 May 2026) — Rejected Terms pane, redesigned to ACT
+     standard: .act-card wrapper, two-zone .st-card-toolbar / .st-card-
+     table layout, .pill-group filter pills, .data-table table, .page-btn
+     pagination. Visually consistent with the Term Review tab and the
+     Account page. Sentence case throughout, dark-theme parity. #}
+  <div id="paneRejected" class="st-rejected-pane" style="display:none">
+    <div class="rt-page" data-client-id="{{ client.id }}">
+
+      <div class="rt-stats">
+        <div class="status-card status-card--amber"><div class="status-card__count" id="rtActive">—</div><div class="status-card__label">Active rejections</div></div>
+        <div class="status-card"><div class="status-card__count" id="rtExpired30d">—</div><div class="status-card__label">Expired (last 30d)</div></div>
+        <div class="status-card status-card--blue"><div class="status-card__count" id="rtTotalCycles">—</div><div class="status-card__label">Total cycles recorded</div></div>
+        <div class="status-card status-card--green"><div class="status-card__count" id="rtAvgCycles">—</div><div class="status-card__label">Avg cycles / term</div></div>
+      </div>
+
+      <div class="act-card">
+        <div class="st-card-toolbar">
+          <div class="st-filter-bar">
+            <span class="st-filter-bar__label">Status</span>
+            <div class="pill-group" id="rtStatusPills" role="tablist">
+              <button type="button" class="pill-btn active" data-status="active">Active</button>
+              <button type="button" class="pill-btn" data-status="expired">Expired</button>
+              <button type="button" class="pill-btn" data-status="all">All</button>
+            </div>
+          </div>
+          <div class="rt-search-row">
+            <input type="search" id="rtSearch" class="rt-search" placeholder="Search term…"/>
+            <span class="rt-count" id="rtCount"></span>
+          </div>
+        </div>
+
+        <div class="st-card-table">
+          <div class="rt-table-wrap">
+            <table class="data-table rt-table">
+              <thead>
+                <tr>
+                  <th class="col-num">#</th>
+                  <th>Search term</th>
+                  <th>Status</th>
+                  <th>Cycle</th>
+                  <th>Rejected at</th>
+                  <th>Expires at</th>
+                  <th>Countdown</th>
+                  <th>Reason at rejection</th>
+                  <th class="rt-actions-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="rtBody">
+                <tr><td colspan="9" class="rt-loading">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="st-pager rt-pager">
+            <div class="st-pager__left">
+              <span id="rtPageLabel">Page 1</span>
+            </div>
+            <div class="st-pager__right">
+              <button type="button" id="rtPrev" class="page-btn">«</button>
+              <button type="button" id="rtNext" class="page-btn">»</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rt-toast" id="rtToast" style="display:none"></div>
+    </div>
+  </div>
+
+  {# ====================================================================
+     Section D (13 May 2026) — Negative Lists pane, redesigned to ACT
+     standard. .act-card wrapper, two-zone layout via .st-card-toolbar
+     (search + filter + refresh action) + .st-card-table (the list
+     accordion). The summary stats render above the card. v2_negative_
+     lists.js writes into three pre-built holders (#negStatsHolder,
+     #negToolbarHolder, #negListsHolder) so the markup structure stays
+     stable across renders. #}
+  <div id="paneNegativeLists" class="st-neg-pane" style="display:none">
+    <div class="neg-page" data-client-id="{{ client.id }}">
+
+      <p class="neg-page__subtitle">
+        Read-only view of the latest snapshot pulled from Google Ads.
+        To change a list, edit it in Google Ads and click <strong>Refresh neg lists from GAds</strong> below.
+      </p>
+
+      <div id="negStatsHolder" class="neg-stats-holder"></div>
+      <div id="negWarnHolder"></div>
+
+      <div class="act-card">
+        <div class="st-card-toolbar">
+          <div id="negToolbarHolder" class="neg-toolbar"></div>
+        </div>
+        <div class="st-card-table">
+          <div id="negLists" data-client-id="{{ client.id }}">
+            <div class="neg-loading">Loading negative lists…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   {# ---- Toast host ---- #}
   <div id="stToast" class="st-toast" style="display:none"></div>
 
@@ -427,5 +543,17 @@
 {% endblock %}
 
 {% block page_js %}
+{# IA refactor (13 May 2026) — Rejected Terms front-end runs lazily on
+   this page. The IIFE wires listeners on load but does NOT fetch until
+   window.RejectedTerms.boot() is called from switchTab('rejected'). #}
+<script>
+  window.RT_CONFIG = {
+    client_id: "{{ client.id }}",
+    client_name: {{ client.name|tojson }},
+    lazy: true,
+  };
+</script>
+<script src="{{ url_for('static', filename='js/v2_rejected_terms.js') }}"></script>
+<script src="{{ url_for('static', filename='js/v2_negative_lists.js') }}"></script>
 <script src="{{ url_for('static', filename='js/v2_search_term_review.js') }}"></script>
 {% endblock %}
