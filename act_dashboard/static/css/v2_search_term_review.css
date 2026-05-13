@@ -36,6 +36,11 @@
 
 /* Tabs */
 .st-tabs { display: flex; gap: 4px; margin: 16px 0 0; border-bottom: 1px solid var(--act-border-light); }
+/* IA refactor (13 May 2026): split layout — left group (active triage)
+   + right group (archive/output). justify-content:space-between gives
+   the two groups apart edges; gap rules still apply within each group. */
+.st-tabs--split { justify-content: space-between; }
+.st-tabs__group { display: flex; gap: 4px; }
 .st-tab {
   background: transparent; border: none;
   padding: 10px 14px; font-size: 13px; font-weight: 500;

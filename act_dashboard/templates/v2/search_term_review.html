@@ -6,6 +6,8 @@
 {% block page_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/v2_shared.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/v2_search_term_review.css') }}">
+{# IA refactor (13 May 2026) — Rejected Terms is now a tab on this page. #}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/v2_rejected_terms.css') }}">
 {% endblock %}
 
 {% block topbar_extras %}
@@ -70,11 +72,20 @@
        and switchTab(). Pass 3 tab no longer disabled when no run has
        happened — Section 5 moved Run Pass 3 INTO the tab, so disabling
        it would deadlock the user away from the trigger. #}
-  <div class="st-tabs">
-    <button class="st-tab active" data-tab="pass12">Term Review</button>
-    <button class="st-tab" data-tab="pass3">
-      Phrase Suggestions <span class="st-tab__badge" id="cntSugg">{{ phrase_suggestions_count }}</span>
-    </button>
+  {# IA refactor (13 May 2026): split tab row — left group is the active
+     triage surfaces (Term Review / Phrase Suggestions); right group is
+     archive / output (Rejected terms, plus Negative lists in Section B).
+     Sentence case labels per global rule. #}
+  <div class="st-tabs st-tabs--split">
+    <div class="st-tabs__group st-tabs__group--left">
+      <button class="st-tab active" data-tab="pass12">Term Review</button>
+      <button class="st-tab" data-tab="pass3">
+        Phrase Suggestions <span class="st-tab__badge" id="cntSugg">{{ phrase_suggestions_count }}</span>
+      </button>
+    </div>
+    <div class="st-tabs__group st-tabs__group--right">
+      <button class="st-tab" data-tab="rejected">Rejected terms</button>
+    </div>
   </div>
 
   {# ---- Wave C10: Campaign type pill row (single-select).
@@ -337,6 +348,63 @@
     </div>{# /.st-card-table — Section 2 addendum 2 split #}
   </div>{# /.act-card — Section 2 wrap #}
 
+  {# ====================================================================
+     IA refactor (13 May 2026) — Rejected Terms pane.
+     Sibling of the triage .act-card above. switchTab('rejected') shows
+     this and hides the triage card; switchTab('pass12'|'pass3') hides
+     this and shows the triage card. Section C will polish the visuals
+     (wrap in .act-card with two-zone layout + .data-table etc.). #}
+  <div id="paneRejected" class="st-rejected-pane" style="display:none">
+    <div class="rt-page" data-client-id="{{ client.id }}">
+
+      <div class="rt-stats">
+        <div class="status-card status-card--amber"><div class="status-card__count" id="rtActive">—</div><div class="status-card__label">Active rejections</div></div>
+        <div class="status-card"><div class="status-card__count" id="rtExpired30d">—</div><div class="status-card__label">Expired (last 30d)</div></div>
+        <div class="status-card status-card--blue"><div class="status-card__count" id="rtTotalCycles">—</div><div class="status-card__label">Total cycles recorded</div></div>
+        <div class="status-card status-card--green"><div class="status-card__count" id="rtAvgCycles">—</div><div class="status-card__label">Avg cycles / term</div></div>
+      </div>
+
+      <div class="rt-filter-bar">
+        <div class="rt-pill-group" id="rtStatusPills" role="tablist">
+          <button type="button" class="rt-pill active" data-status="active">Active</button>
+          <button type="button" class="rt-pill" data-status="expired">Expired</button>
+          <button type="button" class="rt-pill" data-status="all">All</button>
+        </div>
+        <input type="search" id="rtSearch" class="rt-search" placeholder="Search term…"/>
+        <span class="rt-count" id="rtCount"></span>
+      </div>
+
+      <div class="rt-toast" id="rtToast" style="display:none"></div>
+
+      <div class="rt-table-wrap">
+        <table class="rt-table">
+          <thead>
+            <tr>
+              <th class="col-num">#</th>
+              <th>Search term</th>
+              <th>Status</th>
+              <th>Cycle</th>
+              <th>Rejected at</th>
+              <th>Expires at</th>
+              <th>Countdown</th>
+              <th>Reason at rejection</th>
+              <th class="rt-actions-col">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rtBody">
+            <tr><td colspan="9" class="rt-loading">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="rt-pager">
+        <button type="button" id="rtPrev" class="btn-act btn-act--details">Prev</button>
+        <span id="rtPageLabel">Page 1</span>
+        <button type="button" id="rtNext" class="btn-act btn-act--details">Next</button>
+      </div>
+    </div>
+  </div>
+
   {# ---- Toast host ---- #}
   <div id="stToast" class="st-toast" style="display:none"></div>
 
@@ -427,5 +495,16 @@
 {% endblock %}
 
 {% block page_js %}
+{# IA refactor (13 May 2026) — Rejected Terms front-end runs lazily on
+   this page. The IIFE wires listeners on load but does NOT fetch until
+   window.RejectedTerms.boot() is called from switchTab('rejected'). #}
+<script>
+  window.RT_CONFIG = {
+    client_id: "{{ client.id }}",
+    client_name: {{ client.name|tojson }},
+    lazy: true,
+  };
+</script>
+<script src="{{ url_for('static', filename='js/v2_rejected_terms.js') }}"></script>
 <script src="{{ url_for('static', filename='js/v2_search_term_review.js') }}"></script>
 {% endblock %}

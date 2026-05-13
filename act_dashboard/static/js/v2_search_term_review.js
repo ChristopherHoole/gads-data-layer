@@ -6,7 +6,11 @@
   const cfg = JSON.parse(document.getElementById('stConfig').textContent);
   const CLIENT = cfg.client_id;
   let analysisDate = cfg.analysis_date;
-  let currentTab = 'pass12';              // pass12 | pass3
+  // IA refactor (13 May 2026): tabs widened to 'rejected' (and
+  // 'negative-lists' in Section B). Visible-state branches stay keyed on
+  // pass12/pass3 only — the new tabs are handled in switchTab via a
+  // separate "right-side" branch that hides the triage card entirely.
+  let currentTab = 'pass12';              // pass12 | pass3 | rejected
   let currentPage = 1;
   // Wave C: page size configurable + persisted in localStorage
   const PAGE_SIZE_KEY = 'st_rows_per_page';
@@ -2205,12 +2209,71 @@
   }
 
   // -------------------- Tab switching --------------------------------
+  // IA refactor (13 May 2026): four tabs now. pass12 + pass3 are the
+  // original "triage" surfaces; rejected + negative-lists (Section B)
+  // are right-aligned sibling panes. The right-side tabs hide the
+  // triage .act-card entirely and reveal their own pane.
+  const RIGHT_SIDE_TABS = new Set(['rejected', 'negative-lists']);
+  // Map tab key → pane element id (right-side only).
+  const RIGHT_PANE_BY_TAB = {
+    'rejected': 'paneRejected',
+    'negative-lists': 'paneNegativeLists',
+  };
+  // First-activation hook so heavy lazy boots only fire once per session.
+  const _rightTabBooted = new Set();
+  function _bootRightTab(tab) {
+    if (_rightTabBooted.has(tab)) return;
+    _rightTabBooted.add(tab);
+    if (tab === 'rejected' && window.RejectedTerms?.boot) {
+      window.RejectedTerms.boot();
+    }
+    if (tab === 'negative-lists' && window.NegativeListsPane?.boot) {
+      window.NegativeListsPane.boot();
+    }
+  }
+  function _updateUrlTab(tab) {
+    try {
+      const url = new URL(window.location.href);
+      if (tab === 'pass12') url.searchParams.delete('tab');
+      else url.searchParams.set('tab', tab);
+      history.replaceState({}, '', url.toString());
+    } catch (_) { /* old browser — non-critical */ }
+  }
   function switchTab(tab) {
     currentTab = tab;
     currentPage = 1;
     document.querySelectorAll('.st-tab').forEach(el => {
       el.classList.toggle('active', el.dataset.tab === tab);
     });
+    _updateUrlTab(tab);
+
+    // Right-side tabs: hide the triage card + AI panel; show the matching
+    // pane; trigger first-load if needed; bail before the pass12/pass3
+    // visibility logic below (none of it applies to these tabs).
+    const isRightSide = RIGHT_SIDE_TABS.has(tab);
+    const triageCard = document.querySelector('.ai-page-main > .act-card');
+    if (triageCard) triageCard.style.display = isRightSide ? 'none' : '';
+    Object.entries(RIGHT_PANE_BY_TAB).forEach(([t, paneId]) => {
+      const pane = document.getElementById(paneId);
+      if (pane) pane.style.display = (t === tab) ? '' : 'none';
+    });
+    // Hide the AI co-pilot side panel on archive/output tabs — it's
+    // scoped to the active triage flow. On the way back to a triage tab
+    // we restore via setAIPanelState() (it reads the persisted state).
+    const aiPanel = document.getElementById('aiPanel');
+    const aiStrip = document.getElementById('btnAIPanelExpand');
+    if (isRightSide) {
+      if (aiPanel) aiPanel.style.display = 'none';
+      if (aiStrip) aiStrip.style.display = 'none';
+      const grid = document.getElementById('aiPageGrid');
+      if (grid) grid.dataset.panelState = 'collapsed';
+      _bootRightTab(tab);
+      return;
+    } else {
+      if (aiPanel) aiPanel.style.display = '';
+      setAIPanelState(getAIPanelState());
+    }
+
     document.getElementById('stSourceBar').style.display = tab === 'pass12' ? '' : 'none';
     // Section 1 addendum (12 May 2026): #stSourceNote was deleted; its
     // copy now lives as a tooltip on the PMax pill. Nothing to toggle.
@@ -2538,4 +2601,18 @@
 
   // Initial load
   reload();
+
+  // IA refactor (13 May 2026) — deep-link to a specific tab via ?tab=…
+  // Done AFTER the initial reload() kicks off so the triage data still
+  // hydrates in the background; right-side tabs hide the triage card on
+  // arrival. Switching back later finds the data already cached.
+  (function _applyDeepLinkTab() {
+    let target = null;
+    try {
+      target = new URLSearchParams(window.location.search).get('tab');
+    } catch (_) {}
+    if (!target || target === 'pass12') return;
+    const tabBtn = document.querySelector(`.st-tab[data-tab="${target}"]`);
+    if (tabBtn && !tabBtn.disabled) switchTab(target);
+  })();
 })();
