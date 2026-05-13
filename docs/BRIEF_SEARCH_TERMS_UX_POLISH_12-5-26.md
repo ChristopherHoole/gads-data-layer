@@ -320,6 +320,164 @@ Implementation notes:
 
 Ship as a follow-up commit on top of `483e9ac`.
 
+### Section 2 addendum 2 (13 May 2026, post-build)
+
+After the first addendum landed (`0b75d0e`), four issues remain visible vs the Account page reference. Lock all four below.
+
+#### 2d. Header vertical alignment — fix the `.num` override bug
+
+`vertical-align: middle` was added to `.st-table th` in addendum 1 but is being **overridden** by `.st-table th.num { vertical-align: top; }` at line ~247 of `v2_search_term_review.css`. The numeric headers (Cost, Impr, Clicks, Avg CPC, CTR, Conv, Cost/Conv, Conv rate) are still rendering top-aligned. Visible in dev tools as a struck-through rule.
+
+Fix: change `.num` rules so that `vertical-align: middle` applies on header `<th>` cells. The body `<td.num>` can stay top-aligned if needed for tall multi-line cells, but headers must all be middle.
+
+Suggested CSS:
+```css
+.st-table th.num { vertical-align: middle; }  /* override the body .num default */
+.st-table td.num { vertical-align: top; }     /* keep body cells as-is */
+```
+
+#### 2e. Table edge alignment — proper approach via class separation
+
+Addendum 1 used `margin: 0 -12px` on `.st-hscroll` as a hack. User feedback: do it properly — give the above-table content its own class with its own padding, and the table its own class with its own padding, just like the Account page does.
+
+Reference: Account page has `.acct-section__header { padding: 14px 20px; }` (header bar) and `.acct-section__body { padding: 20px; }` (body content). The table inside the body sits flush to the body's edges — content alignment comes from each section's own padding, not from negative margins on the table.
+
+Implement the same on Search Terms:
+- The card wrapper (`.act-card`) has zero internal padding.
+- An inner class for the "above-table" zone (tabs + filter bars + action bar) has its own padding (`20px` to match Account).
+- The table sits directly inside `.act-card` with its own padding scheme — header cells and body cells use `padding: 10px 12px` (or whatever Account uses) and the table itself has no extra wrapper inset.
+- The pagination row gets its own padding too (matching Account's pagination strip).
+- Result: visually the table content aligns left/right with the action bar and pagination above/below, but it's driven by per-section padding, not negative margins.
+
+Remove the `margin: 0 -12px` hack from `.st-hscroll`.
+
+#### 2f. Class separation for above-table vs table
+
+Today the above-table content (tabs, filter bars, action bar) and the table sit inside the same `.act-card__body` with one padding value. Refactor so they're sibling classes:
+- `.st-card-toolbar` (or similar name — implementer's choice) wraps tabs + filter bars + action bar. Has its own padding (`20px`).
+- `.st-card-table` (or similar) wraps the table + pagination. Has its own padding (`0` at edges, internal padding via cells).
+- Both sit inside `.act-card` directly.
+
+This mirrors the Account page's `.acct-section__header` + `.acct-section__body` pattern. The benefit: you can tweak padding/spacing on either zone independently.
+
+#### 2g. Remove sort function from non-numeric columns
+
+This **reverses part of addendum 1** (which put Material `unfold_more` glyph on every header). User has refined: sort glyph and click-to-sort only on columns where sorting is genuinely useful.
+
+**No sort indicator + no click-to-sort + no cursor:pointer + no hover affordance on:**
+- `#`
+- `Search term`
+- `Status`
+- `Reason`
+- `Target list`
+- `Match type`
+- `Added / Excl`
+
+**Keep sort indicator + click-to-sort + cursor:pointer + hover on:**
+- `Campaign`, `Campaign type`, `Keyword` (text but high-value sort)
+- `Cost`, `Impr`, `Clicks`, `Avg CPC`, `CTR`, `Conv`, `Cost / Conv`, `Conv rate` (numeric)
+- `AI Verdict`, `AI Confidence` (categorical but useful)
+- `Explain` (action column — actually, drop sort here too)
+- `Push error` (drop sort)
+
+Final sortable list:
+- Campaign, Campaign type, Keyword
+- Cost, Impr, Clicks, Avg CPC, CTR, Conv, Cost / Conv, Conv rate
+- AI Verdict, AI Confidence
+
+Implementation:
+- Remove `<span class="material-symbols-outlined">unfold_more</span>` from the non-sortable `<th>` cells.
+- Remove `cursor: pointer` and `:hover { color: primary }` from those `<th>` cells (scoped via a new class like `.st-th--nosort`, or by removing `.st-sortable` and styling base `.st-table th` without the interactive states).
+- Restructure so the base `.st-table th` is non-interactive (no cursor, no hover), and a separate class (`.st-sortable` or similar) layers on the interactive behaviour.
+- Apply the same logic to the Phrase Suggestions table — only the genuinely sortable columns get sort glyphs there too. (Confirm with implementer: today Pass 3 table has no sort wiring; leave it as-is unless adding sort is trivial.)
+
+#### Acceptance criteria (addendum 2)
+- All header `<th>` cells render middle-aligned (no top-aligned numeric headers).
+- Edge alignment of table content with action bar above and pagination below is achieved via per-section padding classes, not negative margins. `margin: 0 -12px` removed from `.st-hscroll`.
+- Class structure inside `.act-card` is `[card-toolbar (tabs+filters+actions)] → [card-table (table+pagination)]`, each with its own padding.
+- Sort glyph + cursor:pointer + hover only on the columns listed above. Other columns render as plain non-interactive headers.
+- No regressions to sort, filter, row actions.
+- Dark theme parity preserved.
+
+#### Deliverable (addendum 2)
+- Code change + 2 after-screenshots (Term Review light + dark).
+- Save to `act_dashboard/Screenshots/` as `section2_addendum2_after_*`.
+
+Ship as a follow-up commit on top of `0b75d0e`.
+
+### Build 2 addendum 2 implementation note (13 May 2026, post-build)
+
+**2d — `th.num` vertical-align bug:** the shared rule covering
+`.st-table td.nowrap-cell, .st-table th.num, .st-table td.num` had
+`vertical-align: top` which silently overrode the addendum-1 `middle`
+on numeric headers. Removed the `vertical-align` declaration from
+that rule — numeric cells now inherit `middle` from the broader
+`.st-table th, .st-table td` rule above (consistent with all other
+cells).
+
+**2e — `.st-hscroll` margin hack removed:** the `margin: 0 -12px`
+bleed is gone. Edge alignment now driven by the zone-padding pattern
+in 2f below.
+
+**2f — Two-zone card layout:**
+- New markup: `.act-card > .st-card-toolbar + .st-card-table` (was
+  `.act-card > .act-card__body`).
+- `.st-card-toolbar` carries the tabs + filter pills + AI banners +
+  action bar + unsure-empty banner. Padding 20px (mirrors Account
+  `.acct-section__body`).
+- `.st-card-table` carries the P3 banners (hoisted out of
+  `.st-hscroll`, see below) + the table scroller + pagination.
+  Zero outer padding — table cells provide their own 12px.
+- Banners + pagination INSIDE `.st-card-table` get their own
+  `padding: 20px` (or `margin: 0 20px`) so they line up with the
+  action-bar 20px inset above. Without this, they'd sit flush against
+  the card edge.
+- The two P3 banners (failure + theme) previously lived INSIDE
+  `.st-hscroll` (between the two `<table>` elements). They've been
+  hoisted OUT — they now sit at the top of `.st-card-table`, above
+  `.st-hscroll`. Show/hide state is unchanged (switchTab + JS toggle
+  display:none on the same IDs). Bonus fix: they no longer horizontally
+  scroll with a wide Term Review table.
+
+**2g — Sort only on sortable columns:**
+- Term Review table:
+  - REMOVED `.st-sortable` + `data-sort` + sort glyph from: `#`,
+    `Search term`, `Status`, `Reason`, `Target list`, `Match type`,
+    `Added / Excl`, `Push error`, `Explain`.
+  - ADDED `.st-sortable` + `data-sort` + sort glyph to: `Campaign`
+    (`data-sort="campaigns"`), `Campaign type` (`campaign_types`),
+    `Keyword` (`keywords`), `AI Verdict` (`ai_verdict`),
+    `AI Confidence` (`ai_confidence`). All five had glyphs from the
+    earlier addendum but no `.st-sortable` wiring — now they're
+    proper sortable.
+  - KEPT sort on: `Cost`, `Impr`, `Clicks`, `Avg CPC`, `CTR`, `Conv`,
+    `Cost/Conv`, `Conv rate` (numeric cols, unchanged).
+- Phrase Suggestions table: no client-side sort wiring exists, so
+  ALL glyphs removed from headers (none of them are sortable today).
+  Can be re-enabled later by adding `.st-sortable` + `data-sort` +
+  the glyph span, plus wiring in `applyClientSideSort` if needed.
+- CSS split: base `.st-table th` is now non-interactive (`cursor:
+  default`, no hover-primary). `.st-table th.st-sortable` adds
+  `cursor: pointer` + `:hover { color: primary }`. Same visual
+  separation as Account `.data-table`.
+- JS `_sortValue` works as-is for the new string sort keys — they
+  resolve via `item[key]` and `_cmp` handles string comparison.
+  No changes to the JS sort plumbing needed.
+
+**Markup nesting verified:** `<div>` open/close balance is 46/46.
+
+**Deviations from spec:** none material. Brief 2f said "internal
+padding via cells" for `.st-card-table` — I kept that (`padding: 0`
+on the zone itself) and added child-specific `margin: 0 20px` on
+the banners + `padding: 0 20px` on pagination so they horizontally
+align with the action bar above. Strictly cell-padding-only inset
+would have left banners and pagination flush against the card edge,
+which read worse than the slight 20px child-padding compromise.
+
+**After-screenshots pending Chris's browser session:** 2 shots —
+Term Review tab light + dark themes. Save as
+`section2_addendum2_after_termreview_light.jpg` + `_dark.jpg`.
+
 ### Build 2 addendum implementation note (13 May 2026, post-build)
 
 **2a — header restyle:**

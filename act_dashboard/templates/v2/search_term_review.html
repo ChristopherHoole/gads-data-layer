@@ -37,13 +37,17 @@
 
     <div class="ai-page-main">
 
-  {# Section 2 (13 May 2026): visual restyle to match Account page.
-     All Search Terms content (tabs + filters + AI banners + action bar
-     + tables + pagination) lives inside a single white card matching
-     the Account page Campaign Performance card. .act-card / .act-card__body
-     are defined in v2_shared.css for cross-page reuse. #}
+  {# Section 2 + addendum 2 (13 May 2026): white card with two sibling
+     zones, mirroring Account .acct-section's header+body split.
+       .st-card-toolbar — tabs + filter pills + AI banners + action bar.
+                          20px padding (same as Account body).
+       .st-card-table   — tables + pagination. Zero outer padding;
+                          inset is driven by table cell padding (12px).
+     Result: action-bar contents and table cell contents sit on the
+     same vertical line as the card edge + 20px (zone padding) or
+     + 12px (cell padding) — no negative-margin hacks needed. #}
   <div class="act-card">
-    <div class="act-card__body">
+    <div class="st-card-toolbar">
 
   {# Section 3 (12 May 2026): the 5 status cards (Pending / Approved to
      Block / Didn't Block / Pushed to Neg Lists / Expired) were removed.
@@ -177,58 +181,15 @@
     Click <strong>🤖 AI Triage</strong> to classify rows first, or turn the filter off.
   </div>
 
-  {# ---- Table area — outer wrap keeps NO overflow; the wide Pass 1/2
-       table scrolls horizontally inside its own .st-hscroll wrapper so
-       sticky thead can pin to the page viewport. ---- #}
-  <div class="st-hscroll" id="stHScroll">
-  <div class="st-table-wrap">
-    <table class="st-table st-table--wide" id="stTable">
-      <thead>
-        {# Section 2 addendum (13 May 2026):
-           - Column order swapped: checkbox first, # second, Search term
-             third (was # first, checkbox second, term third). Three
-             frozen-left columns now (offsets in CSS: frozen-0/1/2).
-             nth-child(4..23) width rules unchanged — content columns
-             from Status onwards stayed at the same indices.
-           - Every <th> carries an unfold_more Material Icon (matches
-             Account .data-table). Sortable behaviour gated by
-             .st-sortable + data-sort; non-sortable headers show the
-             glyph for visual consistency but the click is a no-op.
-           - Removed the custom <span class="st-sort-ind"> — replaced by
-             a span.material-symbols-outlined the JS swaps name on. #}
-        <tr>
-          <th class="st-col-check st-frozen-0">&nbsp;</th>
-          <th class="col-num st-frozen-1">#<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th class="st-col-term st-frozen-2 st-sortable" data-sort="search_term">Search term<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th class="st-sortable" data-sort="pass1_status">Status<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th>Reason<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th>Target list<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th>Match type<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th>Added / Excl<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th>Campaign<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th>Campaign type<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th>Keyword<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th class="num st-sortable" data-sort="total_cost">Cost<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th class="num st-sortable" data-sort="total_impressions">Impr<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th class="num st-sortable" data-sort="total_clicks">Clicks<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th class="num st-sortable" data-sort="avg_cpc">Avg CPC<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th class="num st-sortable" data-sort="ctr">CTR<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th class="num st-sortable" data-sort="total_conversions">Conv<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th class="num st-sortable" data-sort="cost_per_conversion">Cost/Conv<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th class="num st-sortable" data-sort="conversion_rate">Conv rate<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th>Push error<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          {# Stage 7 — AI columns appended at the end so the existing
-             nth-child width rules don't need re-numbering. Trade-off:
-             user scrolls right to see them. Acceptable for MVP. #}
-          <th title="AI verdict (BLOCK = push as negative / DON'T BLOCK = keep running / UNSURE = escalate)">AI Verdict<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th title="AI confidence in its verdict (high / medium / low)">AI Confidence<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th title="Get a deep-reasoning explanation from Opus for this row">Explain<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-        </tr>
-      </thead>
-      <tbody id="stTbody">
-        <tr><td colspan="23" class="st-loading">Loading…</td></tr>
-      </tbody>
-    </table>
+  </div>{# /.st-card-toolbar — Section 2 addendum 2 split #}
+
+  <div class="st-card-table">
+
+    {# Section 2 addendum 2 (13 May 2026): P3 banners hoisted OUT of
+       .st-hscroll so they don't horizontally scroll with the wide
+       Term Review table. They sit above the table area and their
+       hidden/shown state is still controlled by switchTab() the same
+       way as before. #}
 
     {# Section 7 (12 May 2026): Pass 3 failure banner. Hidden by default;
        populated by JS on Phrase Suggestions tab activation from GET
@@ -259,27 +220,92 @@
       </div>
     </div>
 
-    {# Pass 3 table (hidden until tab-switch) #}
+  {# ---- Table area — outer wrap keeps NO overflow; the wide Pass 1/2
+       table scrolls horizontally inside its own .st-hscroll wrapper so
+       sticky thead can pin to the page viewport. ---- #}
+  <div class="st-hscroll" id="stHScroll">
+  <div class="st-table-wrap">
+    <table class="st-table st-table--wide" id="stTable">
+      <thead>
+        {# Section 2 addendum (13 May 2026):
+           - Column order swapped: checkbox first, # second, Search term
+             third (was # first, checkbox second, term third). Three
+             frozen-left columns now (offsets in CSS: frozen-0/1/2).
+             nth-child(4..23) width rules unchanged — content columns
+             from Status onwards stayed at the same indices.
+           - Every <th> carries an unfold_more Material Icon (matches
+             Account .data-table). Sortable behaviour gated by
+             .st-sortable + data-sort; non-sortable headers show the
+             glyph for visual consistency but the click is a no-op.
+           - Removed the custom <span class="st-sort-ind"> — replaced by
+             a span.material-symbols-outlined the JS swaps name on. #}
+        {# Section 2 addendum 2 (13 May 2026): sort glyph + interactivity
+           ONLY on genuinely-sortable columns. Non-sortable headers (#,
+           Search term, Status, Reason, Target list, Match type,
+           Added / Excl, Push error, Explain) carry no glyph, no pointer,
+           no hover-primary — they're plain labels. Sortable: Campaign,
+           Campaign type, Keyword, Cost, Impr, Clicks, Avg CPC, CTR,
+           Conv, Cost/Conv, Conv rate, AI Verdict, AI Confidence. #}
+        <tr>
+          <th class="st-col-check st-frozen-0">&nbsp;</th>
+          <th class="col-num st-frozen-1">#</th>
+          <th class="st-col-term st-frozen-2">Search term</th>
+          <th>Status</th>
+          <th>Reason</th>
+          <th>Target list</th>
+          <th>Match type</th>
+          <th>Added / Excl</th>
+          <th class="st-sortable" data-sort="campaigns">Campaign<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
+          <th class="st-sortable" data-sort="campaign_types">Campaign type<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
+          <th class="st-sortable" data-sort="keywords">Keyword<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
+          <th class="num st-sortable" data-sort="total_cost">Cost<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
+          <th class="num st-sortable" data-sort="total_impressions">Impr<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
+          <th class="num st-sortable" data-sort="total_clicks">Clicks<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
+          <th class="num st-sortable" data-sort="avg_cpc">Avg CPC<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
+          <th class="num st-sortable" data-sort="ctr">CTR<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
+          <th class="num st-sortable" data-sort="total_conversions">Conv<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
+          <th class="num st-sortable" data-sort="cost_per_conversion">Cost/Conv<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
+          <th class="num st-sortable" data-sort="conversion_rate">Conv rate<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
+          <th>Push error</th>
+          {# Stage 7 — AI columns appended at the end so the existing
+             nth-child width rules don't need re-numbering. Trade-off:
+             user scrolls right to see them. Acceptable for MVP. #}
+          <th class="st-sortable" data-sort="ai_verdict" title="AI verdict (BLOCK = push as negative / DON'T BLOCK = keep running / UNSURE = escalate)">AI Verdict<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
+          <th class="st-sortable" data-sort="ai_confidence" title="AI confidence in its verdict (high / medium / low)">AI Confidence<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
+          <th title="Get a deep-reasoning explanation from Opus for this row">Explain</th>
+        </tr>
+      </thead>
+      <tbody id="stTbody">
+        <tr><td colspan="23" class="st-loading">Loading…</td></tr>
+      </tbody>
+    </table>
+
+    {# Pass 3 table (hidden until tab-switch).
+       Section 2 addendum 2: the P3 banners that used to sit here have
+       been hoisted out of .st-hscroll — they now live at the top of
+       .st-card-table (above this table area block). #}
     <table class="st-table" id="stP3Table" style="display:none">
       <thead>
         {# Section 2 addendum (13 May 2026): same checkbox-first column
            order as the Term Review table for visual consistency across
            tabs. Pass 3 table doesn't have frozen-left columns
-           (.st-table not .st-table--wide), so no offset CSS needed. #}
+           (.st-table not .st-table--wide), so no offset CSS needed.
+           Section 2 addendum 2: Pass 3 has no client-side sort wiring,
+           so no headers carry the .st-sortable class or sort glyph. #}
         <tr>
           <th style="width:34px"></th>
-          <th class="col-num">#<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th>Fragment<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th class="num">Words<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th>Target list<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th class="num">Occ<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th>Risk<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th>Status<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th>Source terms<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th>Push error<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
+          <th class="col-num">#</th>
+          <th>Fragment</th>
+          <th class="num">Words</th>
+          <th>Target list</th>
+          <th class="num">Occ</th>
+          <th>Risk</th>
+          <th>Status</th>
+          <th>Source terms</th>
+          <th>Push error</th>
           {# Stage 11 — AI routing suggestion columns. #}
-          <th>AI Role<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
-          <th>AI Conf<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
+          <th>AI Role</th>
+          <th>AI Conf</th>
         </tr>
       </thead>{# Pass 3 headers already sentence-case #}
       <tbody id="stP3Tbody">
@@ -312,7 +338,7 @@
     </div>
   </div>
 
-    </div>{# /.act-card__body — Section 2 wrap #}
+    </div>{# /.st-card-table — Section 2 addendum 2 split #}
   </div>{# /.act-card — Section 2 wrap #}
 
   {# ---- Toast host ---- #}

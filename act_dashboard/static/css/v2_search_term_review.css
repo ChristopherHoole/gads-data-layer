@@ -123,16 +123,35 @@
 
    Simple horizontal scroll wrapper — no sticky interactions to worry about
    now that thead isn't sticky, so a plain overflow-x: auto is safe. */
-/* Section 2 addendum (13 May 2026): negative-margin bleed so the
-   first/last cell padding lines up with the .act-card__body padding
-   edge (20px). The table's th/td padding-left/right is 12px; offsetting
-   the scroller by -12px on each side means the cell CONTENT (not the
-   cell border) sits flush with the card padding inner edge — same x
-   as the action bar above and the pagination row below. */
-.st-hscroll {
-  overflow-x: auto;
-  margin: 0 -12px;
+/* Section 2 addendum 2 (13 May 2026): two-zone card layout.
+     .st-card-toolbar — tabs + filter pills + AI banners + action bar.
+                        20px padding (mirrors Account .acct-section__body).
+     .st-card-table   — tables + pagination. Zero outer padding so the
+                        table edge sits flush with the card edge; cell
+                        padding (12px) provides the visible inset.
+                        The P3 banners + pagination inside this zone get
+                        their own horizontal padding (20px) so they line
+                        up with the action bar above. */
+.st-card-toolbar {
+  padding: 20px;
 }
+.st-card-table {
+  padding: 0;
+}
+/* Banners + pagination that sit inside .st-card-table need their own
+   horizontal padding so they don't sit flush against the card edge
+   — they should line up with the action bar's 20px inset. */
+.st-card-table > .st-p3-failure-banner,
+.st-card-table > .st-p3-theme-banner {
+  margin-left: 20px;
+  margin-right: 20px;
+}
+.st-card-table > .st-pager {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.st-hscroll { overflow-x: auto; }
 .st-table-wrap { /* no overflow */ }
 .st-table {
   width: 100%; border-collapse: separate; border-spacing: 0;
@@ -163,20 +182,19 @@
   white-space: normal;
   word-wrap: break-word;
   vertical-align: middle;
-  /* Section 2 addendum: cursor pointer + hover-primary on EVERY header
-     (matches Account .data-table). Sortable headers do their thing on
-     click; non-sortable headers' click is a no-op but the affordance
-     is the same — visual consistency across the row. */
-  cursor: pointer;
+  /* Section 2 addendum 2 (13 May 2026): base header is NON-interactive.
+     Cursor stays default; no hover-primary. Sortable headers opt in via
+     the .st-sortable modifier below — same visual treatment as Account
+     where only sortable cols are clickable. */
+  cursor: default;
   user-select: none;
 }
-.st-table th:hover { color: var(--act-primary); }
-/* Section 2 addendum: Material Icon sort glyph injected by every
-   header cell. Matches Account .data-table th .material-symbols-outlined
-   styling exactly (font-size 14, opacity 0.4, vertical-align middle,
-   2px left margin). Active sort column inherits primary via
-   .st-sort-active below — color: inherit on the icon keeps it
-   visually attached to its parent th's colour state. */
+/* Section 2 addendum 2: sortable-only interactivity. Pointer + hover
+   colour + sort-glyph all live on .st-sortable, not on the bare th.
+   Non-sortable headers carry no .st-sort-glyph in markup, so the
+   glyph CSS below is effectively scoped to sortable cols too. */
+.st-table th.st-sortable { cursor: pointer; }
+.st-table th.st-sortable:hover { color: var(--act-primary); }
 .st-table th .st-sort-glyph {
   font-size: 14px;
   vertical-align: middle;
@@ -244,7 +262,10 @@
 .st-table td.num {
   white-space: nowrap;
   text-align: right;
-  vertical-align: top;
+  /* Section 2 addendum 2 (13 May 2026): vertical-align was 'top' here
+     and was silently overriding the addendum-1 'middle' set on the
+     broader .st-table th rule. Removed — numeric cells now inherit
+     'middle' from the broader rule, matching all other header cells. */
   font-variant-numeric: tabular-nums;
 }
 
