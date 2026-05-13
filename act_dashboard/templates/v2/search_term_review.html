@@ -7,10 +7,9 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/v2_shared.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/v2_search_term_review.css') }}">
 {# IA refactor (13 May 2026) — Rejected Terms + Negative Lists are now
-   tabs on this page; their stylesheets ride along. Section D will
-   extract the .neg-* rules into a dedicated stylesheet. #}
+   tabs on this page; their stylesheets ride along. #}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/v2_rejected_terms.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/v2_client_config.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/v2_negative_lists.css') }}">
 {% endblock %}
 
 {% block topbar_extras %}
@@ -423,21 +422,32 @@
   </div>
 
   {# ====================================================================
-     IA refactor (13 May 2026) — Negative Lists pane.
-     Sibling of the triage card + Rejected pane. switchTab('negative-lists')
-     reveals this and triggers window.NegativeListsPane.boot() on first
-     activation. v2_negative_lists.js owns the render. Section D will
-     polish visuals (wrap in .act-card with two-zone layout + .data-table). #}
-  <div id="paneNegativeLists" class="st-neg-lists-pane" style="display:none">
-    <div class="config-panel active" style="padding:0">
-      <h3 class="config-panel__title">Negative lists</h3>
-      <p class="config-panel__subtitle">
+     Section D (13 May 2026) — Negative Lists pane, redesigned to ACT
+     standard. .act-card wrapper, two-zone layout via .st-card-toolbar
+     (search + filter + refresh action) + .st-card-table (the list
+     accordion). The summary stats render above the card. v2_negative_
+     lists.js writes into three pre-built holders (#negStatsHolder,
+     #negToolbarHolder, #negListsHolder) so the markup structure stays
+     stable across renders. #}
+  <div id="paneNegativeLists" class="st-neg-pane" style="display:none">
+    <div class="neg-page" data-client-id="{{ client.id }}">
+
+      <p class="neg-page__subtitle">
         Read-only view of the latest snapshot pulled from Google Ads.
-        To change a list, edit it in Google Ads and click Refresh below.
+        To change a list, edit it in Google Ads and click <strong>Refresh neg lists from GAds</strong> below.
       </p>
-      <div id="negLists" data-client-id="{{ client.id }}">
-        <div class="neg-lists__loading" style="padding:18px;color:var(--text-muted);">
-          Loading negative lists...
+
+      <div id="negStatsHolder" class="neg-stats-holder"></div>
+      <div id="negWarnHolder"></div>
+
+      <div class="act-card">
+        <div class="st-card-toolbar">
+          <div id="negToolbarHolder" class="neg-toolbar"></div>
+        </div>
+        <div class="st-card-table">
+          <div id="negLists" data-client-id="{{ client.id }}">
+            <div class="neg-loading">Loading negative lists…</div>
+          </div>
         </div>
       </div>
     </div>

@@ -73,13 +73,25 @@
     }
   }
 
+  // Section D (13 May 2026): the host template now provides three
+  // pre-built holders (#negStatsHolder, #negWarnHolder,
+  // #negToolbarHolder) plus the original #negLists for the accordion.
+  // We write into each holder separately so the .act-card structure
+  // stays intact across renders. Old single-root render path is gone.
   function render() {
     const d = state.data;
+    const statsHolder = document.getElementById('negStatsHolder');
+    const warnHolder = document.getElementById('negWarnHolder');
+    const toolbarHolder = document.getElementById('negToolbarHolder');
+
     if (!d || d.total_lists === 0) {
+      if (statsHolder) statsHolder.innerHTML = '';
+      if (warnHolder) warnHolder.innerHTML = '';
+      if (toolbarHolder) toolbarHolder.innerHTML = '';
       root.innerHTML = `
-        <div class="neg-empty" style="padding:24px;border:1px dashed var(--border);border-radius:8px;text-align:center;">
-          <p style="margin-bottom:12px;color:var(--text-muted);">No negative list snapshot yet.<br/>Click below to pull current lists from Google Ads.</p>
-          <button type="button" class="btn btn--primary" id="negListsRefreshBtn">
+        <div class="neg-empty">
+          <p>No negative list snapshot yet.<br/>Click below to pull current lists from Google Ads.</p>
+          <button type="button" class="btn-act btn-act--approve" id="negListsRefreshBtn">
             <span class="material-symbols-outlined">refresh</span> Refresh neg lists from GAds
           </button>
         </div>`;
@@ -87,45 +99,54 @@
       return;
     }
 
-    // Role filter options
+    // ---- Stats strip (above the card) ----
+    const zone = syncZoneClass(d.last_synced_at);
+    if (statsHolder) {
+      statsHolder.innerHTML = `
+        <div class="neg-stats">
+          <div class="neg-stat"><span class="neg-stat__label">Total lists</span><span class="neg-stat__val">${d.total_lists}</span></div>
+          <div class="neg-stat"><span class="neg-stat__label">Total keywords</span><span class="neg-stat__val">${d.total_keywords}</span></div>
+          <div class="neg-stat"><span class="neg-stat__label">Snapshot date</span><span class="neg-stat__val">${d.snapshot_date || '—'}</span></div>
+          <div class="neg-stat ${zone}"><span class="neg-stat__label">Last synced</span><span class="neg-stat__val">${fmtWhen(d.last_synced_at)}</span></div>
+        </div>`;
+    }
+
+    // ---- Warn banner (red zone only) ----
+    if (warnHolder) {
+      warnHolder.innerHTML = zone === 'neg-sync--red'
+        ? `<div class="neg-warn-banner">Negative list snapshot is over 48 hours old. Click Refresh to pull latest from Google Ads.</div>`
+        : '';
+    }
+
+    // ---- Toolbar (refresh + search + role filter + count) ----
     const roles = Array.from(new Set(d.lists.map(l => l.list_role).filter(Boolean))).sort();
     const roleOptions = ['<option value="">All roles</option>'].concat(
       roles.map(r => `<option value="${r}"${state.roleFilter===r?' selected':''}>${r}</option>`)
     ).join('');
 
-    const zone = syncZoneClass(d.last_synced_at);
-    const warnBanner = zone === 'neg-sync--red'
-      ? `<div class="neg-warn-banner">Negative list snapshot is over 48 hours old. Click Refresh to pull latest from Google Ads.</div>`
-      : '';
+    if (toolbarHolder) {
+      toolbarHolder.innerHTML = `
+        <div class="neg-actions">
+          <button type="button" class="btn-act btn-act--approve" id="negListsRefreshBtn">
+            <span class="material-symbols-outlined">refresh</span> Refresh neg lists from GAds
+          </button>
+          <input type="search" id="negListsSearch" placeholder="Search keyword across all lists…" class="neg-search" value="${state.filter.replace(/"/g,'&quot;')}"/>
+          <select id="negListsRoleFilter" class="neg-role-filter">${roleOptions}</select>
+          <span class="neg-match-count" id="negMatchCount"></span>
+        </div>`;
+      document.getElementById('negListsRefreshBtn').addEventListener('click', refresh);
+      document.getElementById('negListsSearch').addEventListener('input', e => {
+        state.filter = e.target.value.trim().toLowerCase();
+        renderLists();
+      });
+      document.getElementById('negListsRoleFilter').addEventListener('change', e => {
+        state.roleFilter = e.target.value;
+        renderLists();
+      });
+    }
 
-    root.innerHTML = `
-      ${warnBanner}
-      <div class="neg-stats">
-        <div class="neg-stat"><span class="neg-stat__label">Total lists</span><span class="neg-stat__val">${d.total_lists}</span></div>
-        <div class="neg-stat"><span class="neg-stat__label">Total keywords</span><span class="neg-stat__val">${d.total_keywords}</span></div>
-        <div class="neg-stat"><span class="neg-stat__label">Snapshot date</span><span class="neg-stat__val">${d.snapshot_date || '—'}</span></div>
-        <div class="neg-stat ${zone}"><span class="neg-stat__label">Last synced</span><span class="neg-stat__val">${fmtWhen(d.last_synced_at)}</span></div>
-      </div>
-      <div class="neg-actions">
-        <button type="button" class="btn btn--primary" id="negListsRefreshBtn">
-          <span class="material-symbols-outlined">refresh</span> Refresh neg lists from GAds
-        </button>
-        <input type="search" id="negListsSearch" placeholder="Search keyword across all lists…" class="neg-search" value="${state.filter.replace(/"/g,'&quot;')}"/>
-        <select id="negListsRoleFilter" class="neg-role-filter">${roleOptions}</select>
-        <span class="neg-match-count" id="negMatchCount"></span>
-      </div>
-      <div id="negListsContainer" class="neg-lists"></div>
-    `;
-
-    document.getElementById('negListsRefreshBtn').addEventListener('click', refresh);
-    document.getElementById('negListsSearch').addEventListener('input', e => {
-      state.filter = e.target.value.trim().toLowerCase();
-      renderLists();
-    });
-    document.getElementById('negListsRoleFilter').addEventListener('change', e => {
-      state.roleFilter = e.target.value;
-      renderLists();
-    });
+    // ---- Lists accordion (inside .st-card-table) ----
+    root.innerHTML = `<div id="negListsContainer" class="neg-lists"></div>`;
     renderLists();
   }
 
