@@ -1806,8 +1806,22 @@
     // header reads the actual filtered count (not the current page size).
     lastTotal = data.total || 0;
 
-    document.getElementById('stPagerLabel').textContent =
-      `Page ${currentPage} · ${lastItems.length} of ${data.total}`;
+    // Section 2 (13 May 2026): pagination split into two pieces:
+    //   - "Showing X-Y of Z" on the left (#stPagerSummary)
+    //   - just the current page number between « and » on the right
+    //     (#stPagerLabel)
+    // Layout matches Account page. Total is data.total (server-side
+    // filtered count); shown range is the current page's slice.
+    const _total = data.total || 0;
+    const _start = _total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+    const _end = _total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + lastItems.length;
+    const _pagerSummary = document.getElementById('stPagerSummary');
+    if (_pagerSummary) {
+      _pagerSummary.textContent = _total === 0
+        ? 'Showing 0 of 0'
+        : `Showing ${_start}-${_end} of ${_total}`;
+    }
+    document.getElementById('stPagerLabel').textContent = String(currentPage);
     document.getElementById('stPrev').disabled = currentPage <= 1;
     document.getElementById('stNext').disabled = lastItems.length < PAGE_SIZE
       || (currentPage * PAGE_SIZE) >= data.total;
@@ -2015,7 +2029,10 @@
         if (ind) ind.textContent = sortDir === 'asc' ? '▲' : '▼';
       } else {
         th.classList.remove('st-sort-active');
-        if (ind) ind.textContent = '';
+        // Section 2 (13 May 2026): show a neutral ↕ glyph at rest so the
+        // column reads as sortable even when no sort is applied. Account
+        // page does the same via material-symbols-outlined "unfold_more".
+        if (ind) ind.textContent = '↕';
       }
     });
   }
@@ -2600,6 +2617,10 @@
 
   // Wave D1: wire sortable headers once (thead is static).
   wireSortHeaders();
+  // Section 2: paint the neutral ↕ sort indicator immediately so the
+  // columns read as sortable on first paint, before the initial
+  // reload() finishes.
+  updateSortIndicators();
 
   // Initial load
   reload();

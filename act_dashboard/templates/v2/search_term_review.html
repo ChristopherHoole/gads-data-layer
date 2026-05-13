@@ -37,6 +37,14 @@
 
     <div class="ai-page-main">
 
+  {# Section 2 (13 May 2026): visual restyle to match Account page.
+     All Search Terms content (tabs + filters + AI banners + action bar
+     + tables + pagination) lives inside a single white card matching
+     the Account page Campaign Performance card. .act-card / .act-card__body
+     are defined in v2_shared.css for cross-page reuse. #}
+  <div class="act-card">
+    <div class="act-card__body">
+
   {# Section 3 (12 May 2026): the 5 status cards (Pending / Approved to
      Block / Didn't Block / Pushed to Neg Lists / Expired) were removed.
      4 of 5 duplicated counts already in the Status filter pills (see
@@ -262,23 +270,34 @@
         <tr><td colspan="12" class="st-loading">Run Pass 3 to generate suggestions</td></tr>
       </tbody>
     </table>
-  </div>
+  </div>{# /.st-table-wrap #}
+  </div>{# /.st-hscroll #}
+
+  {# ---- Pagination (Section 2: lives INSIDE .act-card__body but
+       OUTSIDE the horizontal-scroll table wrapper so it doesn't
+       inherit the table's overflow. Layout matches Account page —
+       "Showing X-Y of Z" left, page-size + prev/next right) ---- #}
+  <div class="st-pager">
+    <div class="st-pager__left">
+      <span id="stPagerSummary">Showing 0 of 0</span>
+    </div>
+    <div class="st-pager__right">
+      <label for="stPageSize" class="st-pager__rpp">Rows per page:</label>
+      <select id="stPageSize">
+        <option value="10">10</option>
+        <option value="25">25</option>
+        <option value="50" selected>50</option>
+        <option value="100">100</option>
+        <option value="250">250</option>
+      </select>
+      <button id="stPrev" class="page-btn" disabled>«</button>
+      <span id="stPagerLabel" class="st-pager__label">1</span>
+      <button id="stNext" class="page-btn" disabled>»</button>
+    </div>
   </div>
 
-  {# ---- Pagination ---- #}
-  <div class="st-pager">
-    <label for="stPageSize">Rows per page:</label>
-    <select id="stPageSize">
-      <option value="10">10</option>
-      <option value="25">25</option>
-      <option value="50" selected>50</option>
-      <option value="100">100</option>
-      <option value="250">250</option>
-    </select>
-    <button id="stPrev" disabled>Prev</button>
-    <span id="stPagerLabel">Page 1</span>
-    <button id="stNext" disabled>Next</button>
-  </div>
+    </div>{# /.act-card__body — Section 2 wrap #}
+  </div>{# /.act-card — Section 2 wrap #}
 
   {# ---- Toast host ---- #}
   <div id="stToast" class="st-toast" style="display:none"></div>

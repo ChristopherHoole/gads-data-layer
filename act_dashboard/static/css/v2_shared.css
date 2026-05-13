@@ -72,3 +72,74 @@
   background: var(--act-primary);
   color: white;
 }
+
+/* ============================================================
+ * Section 2 (13 May 2026) — white-card wrapper.
+ *
+ * Mirrors the visual language of the Account page's .acct-section
+ * (in v2_account_level.css) so any v2 page can drop content into
+ * a card with one wrapper. Two pages today use this language:
+ *   - Account page  -> still uses .acct-section (legacy name; same look)
+ *   - Search Terms  -> uses .act-card (Section 2 of the polish brief)
+ * Visual rules are identical between .acct-section and .act-card; the
+ * two names are kept for the cleanest no-churn migration. Future
+ * consolidation can rename Account in one pass without behavioural risk.
+ *
+ * Use:
+ *   <div class="act-card">
+ *     <div class="act-card__header">...optional title row...</div>
+ *     <div class="act-card__body">...content...</div>
+ *   </div>
+ * Or body-only (no header):
+ *   <div class="act-card"><div class="act-card__body">...</div></div>
+ * ============================================================ */
+.act-card {
+  background: var(--act-surface);
+  border-radius: var(--act-card-radius, 8px);
+  border: 1px solid var(--act-border-light);
+  box-shadow: var(--act-card-shadow, 0 1px 2px rgba(0,0,0,0.04));
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.act-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--act-border-light);
+}
+.act-card__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--act-text);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.act-card__body {
+  padding: 20px;
+}
+
+/* ============================================================
+ * Pagination button — small bordered button used in table footers.
+ * Mirror of Account page's .page-btn rules (moved here so any
+ * page can drop a pagination footer without depending on Account
+ * page CSS). Account page can keep its existing .page-btn rules
+ * in v2_account_level.css — identical, no override conflict.
+ * ============================================================ */
+.page-btn {
+  font-size: 12px; padding: 4px 10px;
+  border: 1px solid var(--act-border);
+  border-radius: 4px;
+  background: var(--act-surface); color: var(--act-text);
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+.page-btn:hover { background: var(--act-hover-bg); }
+.page-btn.active {
+  background: var(--act-primary); color: white;
+  border-color: var(--act-primary);
+}
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
