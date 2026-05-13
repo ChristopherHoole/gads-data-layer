@@ -33,6 +33,7 @@ import logging
 from act_dashboard.ai import (
     claude_subprocess,
     context,
+    feedback_loop,
     idempotency,
     locks,
     prompt_loader,
@@ -121,13 +122,74 @@ def classify_batch(con, client_id: str, analysis_date: str, flow: str,
             rows_to_classify = [r for r in rows if r[id_key] not in already_done]
             skipped = len(rows) - len(rows_to_classify)
 
-        if not rows_to_classify:
+        # ---- Brief 2.1g — Mechanism 1: exact-match auto-fill (block/review only) ----
+        # Pass 3 has its own feedback loop in pass3_ai; skip there.
+        autofilled_results: list[dict] = []
+        autofilled_ids: set[int] = set()
+        feedback_enabled = (
+            not is_pass3 and feedback_loop.is_enabled(con, client_id)
+        )
+        if feedback_enabled and rows_to_classify:
+            still_pending: list[dict] = []
+            for row in rows_to_classify:
+                hist = feedback_loop.get_exact_match_decision(
+                    con, client_id, row['search_term'],
+                )
+                if hist is None:
+                    still_pending.append(row)
+                    continue
+                parsed_item = feedback_loop.build_historical_match_payload(
+                    hist['verdict'], hist['match_count'],
+                )
+                try:
+                    _insert_classification(
+                        con, row, parsed_item, flow, is_pass3,
+                        client_id, analysis_date, prompt_version,
+                        feedback_loop.HISTORICAL_MODEL_VERSION,
+                        0, 0, 0,
+                    )
+                    autofilled_results.append(
+                        _build_response_item(row, parsed_item, is_pass3),
+                    )
+                    autofilled_ids.add(row[id_key])
+                except Exception as auto_err:
+                    logger.warning(
+                        'historical_match auto-fill INSERT failed: '
+                        'client=%s id=%s err=%s — falling back to AI',
+                        client_id, row[id_key], str(auto_err)[:300],
+                    )
+                    still_pending.append(row)
+            saved = len(autofilled_results)
+            if saved:
+                logger.info(
+                    'feedback_loop auto-filled %d/%d row(s) from history '
+                    '(client=%s flow=%s) — AI calls saved',
+                    saved, len(rows_to_classify), client_id, flow,
+                )
+            rows_to_classify = still_pending
+
+        if not rows_to_classify and not autofilled_results:
             result = {
                 'classified': 0,
                 'results': [],
                 'skipped_already_classified': skipped,
                 'tokens_used': 0,
                 'wall_clock_ms': 0,
+            }
+            idempotency.set(cache_key, result)
+            return result
+
+        if not rows_to_classify and autofilled_results:
+            # Every row hit the historical-match path — short-circuit the
+            # AI call entirely. Saves tokens AND wall time.
+            result = {
+                'classified': len(autofilled_results),
+                'results': autofilled_results,
+                'skipped_already_classified': skipped,
+                'tokens_used': 0,
+                'wall_clock_ms': 0,
+                'ai_calls_saved_by_exact_match': len(autofilled_results),
+                'few_shot_examples_included': 0,
             }
             idempotency.set(cache_key, result)
             return result
@@ -152,6 +214,21 @@ def classify_batch(con, client_id: str, analysis_date: str, flow: str,
             system_template = prompt_loader.load_prompt(PROMPT_FILE_CLASSIFY)
             user_template = prompt_loader.load_prompt(PROMPT_FILE_USER)
             rendered_list = context.render_term_list(rows_to_classify)
+            # Brief 2.1g — Mechanism 2: inject the user's last 30 decisions
+            # as few-shot examples for novel terms. Empty string when the
+            # feedback loop is disabled, so the rendered prompt is byte-for-
+            # byte identical to the pre-2.1g version in that case.
+            few_shot_block = ''
+            few_shot_n = 0
+            if feedback_enabled:
+                examples = feedback_loop.get_recent_decisions(con, client_id)
+                few_shot_block = feedback_loop.render_few_shot_block(examples)
+                few_shot_n = len(examples)
+                if few_shot_n:
+                    logger.info(
+                        'feedback_loop injected %d few-shot example(s) '
+                        '(client=%s flow=%s)', few_shot_n, client_id, flow,
+                    )
             user_message = prompt_loader.render(
                 user_template,
                 count=len(rows_to_classify),
@@ -159,6 +236,7 @@ def classify_batch(con, client_id: str, analysis_date: str, flow: str,
                 analysis_date=analysis_date,
                 flow=flow,
                 rendered_term_list=rendered_list,
+                few_shot_block=few_shot_block,
             )
             # client_id merged in here; client_ctx intentionally omits it
             system_prompt = prompt_loader.render(
@@ -241,15 +319,24 @@ def classify_batch(con, client_id: str, analysis_date: str, flow: str,
                 )
                 # don't append — caller sees only successes
 
+        # Brief 2.1g — merge in any historical_match auto-fills so the
+        # caller sees a single combined results list. Auto-fills come
+        # FIRST since they preserve original input ordering before the
+        # split into still_pending.
+        combined_results = autofilled_results + results_payload
         result = {
-            'classified': len(results_payload),
-            'results': results_payload,
+            'classified': len(combined_results),
+            'results': combined_results,
             'skipped_already_classified': skipped,
             'tokens_used': (
                 (usage.get('input_tokens', 0) or 0)
                 + (usage.get('output_tokens', 0) or 0)
             ),
             'wall_clock_ms': wall_ms,
+            'ai_calls_saved_by_exact_match': len(autofilled_results),
+            'few_shot_examples_included': (
+                few_shot_n if not is_pass3 else 0
+            ),
         }
         idempotency.set(cache_key, result)
         return result

@@ -1,4 +1,4 @@
-Triage these {{count}} search terms for {{client_id}} on {{analysis_date}}, flow={{flow}}.
+{{few_shot_block}}Triage these {{count}} search terms for {{client_id}} on {{analysis_date}}, flow={{flow}}.
 
 Format for each row:
   [<review_id>] "<search_term>"

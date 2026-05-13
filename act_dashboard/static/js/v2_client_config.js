@@ -99,6 +99,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('textarea[data-key]').forEach(textarea => {
       textarea.addEventListener('input', markDirty);
     });
+
+    // Brief 2.1g — feedback-loop checkbox (and any future boolean toggles).
+    document.querySelectorAll('input[type="checkbox"][data-key]').forEach(cb => {
+      cb.addEventListener('change', markDirty);
+    });
   }
 
   function validateField(input, errorEl) {
@@ -420,6 +425,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const el = document.querySelector(`textarea[data-key="${k}"]`);
       data.client[k] = el ? el.value.trim().toLowerCase() : '';
     });
+
+    // Brief 2.1g — AI Triage feedback-loop flag (boolean checkbox).
+    const aiFbEl = document.querySelector('[data-key="enable_ai_feedback_loop"]');
+    if (aiFbEl) data.client.enable_ai_feedback_loop = !!aiFbEl.checked;
 
     // Level states
     document.querySelectorAll('.level-row').forEach(row => {

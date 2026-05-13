@@ -30,12 +30,14 @@ def client_config():
     con = _get_db()
 
     try:
-        # Get client
+        # Get client. COALESCE on enable_ai_feedback_loop so a pre-N9 DB
+        # (column missing) still renders the page — we treat NULL as FALSE.
         client_row = con.execute(
             """SELECT client_id, client_name, google_ads_customer_id, persona,
                       monthly_budget, target_cpa, target_roas, active, created_at, updated_at,
                       services_not_advertised, services_advertised,
-                      service_locations, client_brand_terms, rule_7_exclude_tokens
+                      service_locations, client_brand_terms, rule_7_exclude_tokens,
+                      COALESCE(enable_ai_feedback_loop, FALSE) AS enable_ai_feedback_loop
                FROM act_v2_clients WHERE client_id = ?""",
             [client_id]
         ).fetchone()
@@ -58,6 +60,8 @@ def client_config():
             'service_locations': client_row[12] or '',
             'client_brand_terms': client_row[13] or '',
             'rule_7_exclude_tokens': client_row[14] or '',
+            # Brief 2.1g — AI Triage feedback loop per-client flag.
+            'enable_ai_feedback_loop': bool(client_row[15]),
         }
 
         # Get all clients for switcher
@@ -210,18 +214,32 @@ def save_settings():
 
             rule_7_exclude_tokens = _norm_rule7(client_data.get('rule_7_exclude_tokens'))
 
+            # Brief 2.1g — coerce to bool; missing key keeps prior value
+            # (read it back so we don't clobber on payloads that omit it).
+            if 'enable_ai_feedback_loop' in client_data:
+                enable_ai_feedback_loop = bool(client_data.get('enable_ai_feedback_loop'))
+            else:
+                existing = con.execute(
+                    "SELECT COALESCE(enable_ai_feedback_loop, FALSE) "
+                    "FROM act_v2_clients WHERE client_id = ?",
+                    [client_id],
+                ).fetchone()
+                enable_ai_feedback_loop = bool(existing[0]) if existing else False
+
             con.execute("""
                 UPDATE act_v2_clients SET
                     persona = ?, monthly_budget = ?, target_cpa = ?, target_roas = ?,
                     services_not_advertised = ?, services_advertised = ?,
                     service_locations = ?, client_brand_terms = ?,
                     rule_7_exclude_tokens = ?,
+                    enable_ai_feedback_loop = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE client_id = ?
             """, [persona, monthly_budget, target_cpa, target_roas,
                   services_not_advertised, services_advertised,
                   service_locations, client_brand_terms,
                   rule_7_exclude_tokens,
+                  enable_ai_feedback_loop,
                   client_id])
 
         # Update level states

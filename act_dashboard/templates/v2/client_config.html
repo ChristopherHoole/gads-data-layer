@@ -533,6 +533,23 @@
               </div>
             </div>
 
+            {# Brief 2.1g (13 May 2026) — AI Triage feedback loop toggle.
+               DBD-only for v1; setting to TRUE on other clients has no
+               effect until the ALLOWED_CLIENTS_V1 allowlist widens. #}
+            <div class="setting-row">
+              <div class="setting-info">
+                <p class="setting-name">AI Triage feedback loop</p>
+                <p class="setting-desc">When enabled, Pass 1/2 AI Triage consults this client's past Approve/Reject decisions. Exact-match terms (last 90 days) auto-fill without an AI call. Novel terms get the last 30 user decisions injected as examples. Currently rolled out to DBD only.</p>
+              </div>
+              <div class="setting-control">
+                <label class="config-checkbox" style="display:inline-flex;align-items:center;gap:8px">
+                  <input type="checkbox" data-key="enable_ai_feedback_loop"
+                         {% if client.enable_ai_feedback_loop %}checked{% endif %}>
+                  <span>Enabled</span>
+                </label>
+              </div>
+            </div>
+
             <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--act-border)">
               <p class="setting-name" style="margin-bottom:4px">Engine Behaviour</p>
               <p class="setting-desc" style="margin-bottom:12px">Toggles that control whether specific rule matches auto-block or route to Review for manual decision.</p>
