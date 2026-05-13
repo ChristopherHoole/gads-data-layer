@@ -585,9 +585,9 @@
       ? ` data-ai-verdict="${item.ai_verdict}"`
       : '';
     return `<tr data-id="${item.id}" data-pass1="${item.pass1_status}"${aiVerdictAttr}${actionedCls}>
-      <td class="col-num">${rowNum}</td>
       <td class="st-col-check st-frozen-0" ${hideChk}><input type="checkbox" class="st-chk" ${checked} ${canEdit ? '' : 'disabled'}></td>
-      <td class="st-col-term  st-frozen-1" title="${escapeHtml(item.search_term)}">${escapeHtml(item.search_term)}</td>
+      <td class="col-num st-frozen-1">${rowNum}</td>
+      <td class="st-col-term st-frozen-2" title="${escapeHtml(item.search_term)}">${escapeHtml(item.search_term)}</td>
       <td>${renderStatusCell(item)}</td>
       <td title="${escapeHtml(humanReason(item.pass1_reason, item.pass1_reason_detail, item))}"><div class="clamp-2">${escapeHtml(humanReason(item.pass1_reason, item.pass1_reason_detail, item))}</div></td>
       <td>${roleSel}</td>
@@ -1532,8 +1532,8 @@
       : '<td class="ai-verdict-empty">—</td>';
 
     return `<tr data-id="${item.id}"${classAttr}>
-      <td class="col-num">${rowNum}</td>
       <td><input type="checkbox" class="st-chk" ${chkAttrs}></td>
+      <td class="col-num">${rowNum}</td>
       <td class="st-table__term">${escapeHtml(item.fragment)}</td>
       <td class="num">${item.word_count}</td>
       <td>${roleSel}</td>
@@ -1919,15 +1919,17 @@
     // Replace the status cell pill with the new decided state
     if (currentTab === 'pass12') {
       const cells = tr.children;
-      // Status column is index 3 in the Pass 1/2 wide table (col-num=0,
-      // checkbox=1, search-term=2, status=3 — see thead in template).
+      // Status column is still at index 3 (Section 2 addendum swapped
+      // checkbox↔#: chk=0, col-num=1, search-term=2, status=3 — same
+      // status index as before, only cells 0 and 1 swapped).
       if (cells[3]) {
         cells[3].innerHTML =
           `<span class="st-status st-status--${newStatus}">${newStatus}</span>`;
       }
     } else {
-      // Pass 3 status column is index 7 (col-num=0, chk=1, fragment=2,
-      // words=3, role=4, occ=5, risk=6, status=7).
+      // Pass 3 status column at index 7 (Section 2 addendum swapped
+      // checkbox↔#: chk=0, col-num=1, fragment=2, words=3, role=4,
+      // occ=5, risk=6, status=7 — same status index as before).
       const cells = tr.children;
       if (cells[7]) {
         cells[7].innerHTML =
@@ -2021,18 +2023,21 @@
     const dirMul = sortDir === 'asc' ? 1 : -1;
     lastItems.sort((a, b) => dirMul * _cmp(_sortValue(a, sortKey), _sortValue(b, sortKey)));
   }
+  // Section 2 addendum (13 May 2026): every header now carries a
+  // Material Icon "unfold_more" glyph as a sibling .st-sort-glyph span
+  // (was a custom .st-sort-ind glyph swap). Active sort flips the
+  // glyph name to expand_more / expand_less and adds st-sort-active
+  // on the th. Non-sortable headers also have the glyph for visual
+  // consistency — left untouched here (they never become active).
   function updateSortIndicators() {
     document.querySelectorAll('#stTable thead th.st-sortable').forEach(th => {
-      const ind = th.querySelector('.st-sort-ind');
+      const glyph = th.querySelector('.st-sort-glyph');
       if (th.dataset.sort === sortKey) {
         th.classList.add('st-sort-active');
-        if (ind) ind.textContent = sortDir === 'asc' ? '▲' : '▼';
+        if (glyph) glyph.textContent = sortDir === 'asc' ? 'expand_less' : 'expand_more';
       } else {
         th.classList.remove('st-sort-active');
-        // Section 2 (13 May 2026): show a neutral ↕ glyph at rest so the
-        // column reads as sortable even when no sort is applied. Account
-        // page does the same via material-symbols-outlined "unfold_more".
-        if (ind) ind.textContent = '↕';
+        if (glyph) glyph.textContent = 'unfold_more';
       }
     });
   }

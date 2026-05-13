@@ -123,7 +123,16 @@
 
    Simple horizontal scroll wrapper — no sticky interactions to worry about
    now that thead isn't sticky, so a plain overflow-x: auto is safe. */
-.st-hscroll { overflow-x: auto; }
+/* Section 2 addendum (13 May 2026): negative-margin bleed so the
+   first/last cell padding lines up with the .act-card__body padding
+   edge (20px). The table's th/td padding-left/right is 12px; offsetting
+   the scroller by -12px on each side means the cell CONTENT (not the
+   cell border) sits flush with the card padding inner edge — same x
+   as the action bar above and the pagination row below. */
+.st-hscroll {
+  overflow-x: auto;
+  margin: 0 -12px;
+}
 .st-table-wrap { /* no overflow */ }
 .st-table {
   width: 100%; border-collapse: separate; border-spacing: 0;
@@ -147,39 +156,81 @@
   color: var(--act-text);
   background: var(--act-surface);
   border-bottom: 2px solid var(--act-border-light);  /* Section 2: match Account .data-table — heavier header underline */
+  /* Section 2 addendum (13 May 2026): cap wraps at 2 lines (never 3).
+     normal wrap + word-wrap allows the column to wrap when content is
+     genuinely long; cells with shorter headers stay on 1 line. The
+     nth-child width rules already keep column widths sane. */
   white-space: normal;
   word-wrap: break-word;
   vertical-align: middle;
-  cursor: default;
+  /* Section 2 addendum: cursor pointer + hover-primary on EVERY header
+     (matches Account .data-table). Sortable headers do their thing on
+     click; non-sortable headers' click is a no-op but the affordance
+     is the same — visual consistency across the row. */
+  cursor: pointer;
+  user-select: none;
 }
+.st-table th:hover { color: var(--act-primary); }
+/* Section 2 addendum: Material Icon sort glyph injected by every
+   header cell. Matches Account .data-table th .material-symbols-outlined
+   styling exactly (font-size 14, opacity 0.4, vertical-align middle,
+   2px left margin). Active sort column inherits primary via
+   .st-sort-active below — color: inherit on the icon keeps it
+   visually attached to its parent th's colour state. */
+.st-table th .st-sort-glyph {
+  font-size: 14px;
+  vertical-align: middle;
+  margin-left: 2px;
+  opacity: 0.4;
+}
+.st-table th.st-sort-active { color: var(--act-primary); }
+.st-table th.st-sort-active .st-sort-glyph { opacity: 0.85; }
+
 .st-table tbody tr:last-child td { border-bottom: none; }  /* Section 2 */
 
-/* Frozen-left columns (checkbox + Search term) — horizontal-sticky only,
-   independent of sticky thead. Opaque bg so body rows scrolling under them
-   don't show through. z-index 6 for body cells, 10 for thead frozen so
-   thead frozen beats body frozen during horizontal scroll. */
+/* Frozen-left columns — horizontal-sticky only, independent of sticky
+   thead. Opaque bg so body rows scrolling under them don't show through.
+   z-index 6 for body cells, 10 for thead frozen so thead frozen beats
+   body frozen during horizontal scroll.
+   Section 2 addendum (13 May 2026): checkbox-first column reorder.
+   Three frozen columns now (was two):
+     frozen-0 = checkbox   width 25px,  left 0
+     frozen-1 = # (col-num) width 44px,  left 25px
+     frozen-2 = Search term width var, left 69px (=25+44) */
 .st-table--wide .st-frozen-0 {
   position: sticky; left: 0; z-index: 6;
   background: var(--act-surface);
-  box-shadow: 1px 0 0 var(--act-border-light);
 }
 .st-table--wide .st-frozen-1 {
   position: sticky; left: 25px; z-index: 6;
   background: var(--act-surface);
-  box-shadow: 1px 0 0 var(--act-border-light);
+}
+.st-table--wide .st-frozen-2 {
+  position: sticky; left: 69px; z-index: 6;  /* 25 (chk) + 44 (col-num) */
+  background: var(--act-surface);
+  box-shadow: 1px 0 0 var(--act-border-light);  /* divider only on the
+                                                   rightmost frozen col,
+                                                   not between frozen cols */
 }
 .st-table--wide thead .st-frozen-0,
-.st-table--wide thead .st-frozen-1 { z-index: 10; }
+.st-table--wide thead .st-frozen-1,
+.st-table--wide thead .st-frozen-2 { z-index: 10; }
 .st-col-check { width: 25px; min-width: 25px; text-align: center; }
 .st-col-term  { min-width: 100px; max-width: 180px;
                 white-space: normal !important;
                 word-wrap: break-word;
                 overflow-wrap: break-word; }
 
-/* Hover: tr:hover already highlights the body cells; frozen cells need the
-   same hover bg or they look mismatched. */
+/* Hover: tr:hover already highlights the body cells; frozen cells need
+   the same hover bg or they look mismatched. */
 .st-table--wide tbody tr:hover .st-frozen-0,
-.st-table--wide tbody tr:hover .st-frozen-1 { background: var(--act-hover-bg); }
+.st-table--wide tbody tr:hover .st-frozen-1,
+.st-table--wide tbody tr:hover .st-frozen-2 { background: rgba(0,0,0,0.015); }
+[data-theme="dark"] .st-table--wide tbody tr:hover .st-frozen-0,
+[data-theme="dark"] .st-table--wide tbody tr:hover .st-frozen-1,
+[data-theme="dark"] .st-table--wide tbody tr:hover .st-frozen-2 {
+  background: rgba(255,255,255,0.03);
+}
 
 /* Wave C — cell wrapping primitives */
 .st-table td.wrap-cell {
@@ -381,10 +432,12 @@
 .st-toast--error { background: #991b1b; }
 
 /* Wave D1 — sortable column headers */
-.st-sortable { cursor: pointer; user-select: none; }
-.st-sortable:hover { background: var(--act-hover-bg, rgba(0,0,0,0.03)); }
-.st-sort-ind { display: inline-block; width: 12px; margin-left: 4px; opacity: 0.85; font-size: 10px; }
-.st-sortable.st-sort-active { color: var(--act-blue, #1a73e8); }
+/* Section 2 addendum (13 May 2026): the old Wave D1 sort-indicator
+   classes (.st-sortable, .st-sort-ind, .st-sortable:hover bg) have
+   been folded into the generic .st-table th rules above — every
+   header is now cursor:pointer + hover-primary regardless of
+   .st-sortable. The .st-sort-active state styling moved up to the
+   th rules. Nothing here that survives consolidation. */
 
 /* Wave G — stacked "Needs / Review" pill so the Status column signals
    the action required in one glance. Padding compensates for the shorter
