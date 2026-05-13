@@ -99,6 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('textarea[data-key]').forEach(textarea => {
       textarea.addEventListener('input', markDirty);
     });
+
+    // (Brief 2.1g toggle now uses the shared .config-toggle wiring above —
+    // no extra listener needed.)
   }
 
   function validateField(input, errorEl) {
@@ -421,6 +424,12 @@ document.addEventListener('DOMContentLoaded', () => {
       data.client[k] = el ? el.value.trim().toLowerCase() : '';
     });
 
+    // Brief 2.1g — AI Triage feedback-loop slider toggle. Stored on the
+    // act_v2_clients column, not act_v2_client_settings, so read from
+    // data.client (the settings loop below skips this key).
+    const aiFbEl = document.querySelector('.config-toggle[data-key="enable_ai_feedback_loop"]');
+    if (aiFbEl) data.client.enable_ai_feedback_loop = aiFbEl.classList.contains('on');
+
     // Level states
     document.querySelectorAll('.level-row').forEach(row => {
       const level = row.dataset.level;
@@ -439,7 +448,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (['monthly_budget', 'target_cpa', 'target_roas',
            'services_not_advertised', 'services_advertised',
            'service_locations', 'client_brand_terms',
-           'rule_7_exclude_tokens'].includes(key)) return;
+           'rule_7_exclude_tokens',
+           'enable_ai_feedback_loop'].includes(key)) return;
 
       let value;
       if (el.classList.contains('config-toggle')) {

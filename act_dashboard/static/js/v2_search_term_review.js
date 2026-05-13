@@ -685,26 +685,7 @@
     const btn = document.getElementById('btnAITriage');
     if (btn) btn.disabled = (n === 0);
   }
-  function updateApplyHCButton() {
-    const btn = document.getElementById('btnApplyHighConf');
-    const badge = document.getElementById('applyHighConfCount');
-    if (!btn || !badge) return;
-    const hcRows = lastItems.filter(it =>
-      it.ai_confidence === 'high'
-      && it.review_status === 'pending'
-      && (it.ai_verdict === 'approve' || it.ai_verdict === 'reject'));
-    if (hcRows.length === 0) {
-      btn.style.display = 'none';
-    } else {
-      btn.style.display = '';
-      // Stage 7.5: show breakdown so users know what will happen BEFORE
-      // clicking. ACT-terminology mapping: approve=block, reject=keep.
-      const approveCount = hcRows.filter(r => r.ai_verdict === 'approve').length;
-      const rejectCount = hcRows.filter(r => r.ai_verdict === 'reject').length;
-      badge.textContent =
-        `(${hcRows.length}: ${approveCount} block / ${rejectCount} keep)`;
-    }
-  }
+  // Section 8a (13 May 2026): updateApplyHCButton removed — bulk-apply button deleted.
 
   // Stage 7.6: drop-in styled replacement for window.confirm — Promise
   // returns true on OK, false on Cancel / Escape / backdrop. Enter
@@ -870,80 +851,10 @@
       btn.disabled = false;
       btn.innerHTML = origLabel;
       updateAITriageBadge();
-      updateApplyHCButton();
     }
   }
 
-  // === Apply high-confidence button ===
-  async function applyHighConf() {
-    const hcRows = lastItems.filter(it =>
-      it.ai_confidence === 'high'
-      && it.review_status === 'pending'
-      && (it.ai_verdict === 'approve' || it.ai_verdict === 'reject'));
-    if (!hcRows.length) {
-      aiBanner('info', 'No high-confidence AI verdicts pending.');
-      return;
-    }
-    // Stage 7.5/7.6: compute id splits BEFORE the confirm so the dialog
-    // shows the exact breakdown. Stage 7.6 swapped native window.confirm
-    // for the styled aiConfirm modal.
-    const approveIds = hcRows
-      .filter(r => r.ai_verdict === 'approve').map(r => r.id);
-    const rejectIds = hcRows
-      .filter(r => r.ai_verdict === 'reject').map(r => r.id);
-    const ok = await aiConfirm({
-      title: `Apply ${hcRows.length} high-confidence AI verdicts?`,
-      body: `
-        <ul style="line-height:1.6; padding-left:20px; margin:0;">
-          <li><strong>${approveIds.length}</strong> will be <strong>blocked</strong> (pushed as negatives in Google Ads)</li>
-          <li><strong>${rejectIds.length}</strong> will be <strong>kept running</strong> (rejection of the block)</li>
-        </ul>
-        <p style="margin:12px 0 0; color: var(--text-muted); font-size: 12px;">You can still review them individually in the Approved to Block / Didn't Block tabs before pushing to Google Ads.</p>
-      `,
-      okLabel: 'Apply AI calls',
-      okStyle: 'primary',
-    });
-    if (!ok) return;
-    try {
-      // Reuse the negatives bulk-update endpoint. Stage 7 follows the
-      // existing bulkUpdate pattern but with a pre-built id list rather
-      // than reading checkboxes.
-      const endpoint = '/v2/api/negatives/search-term-review/bulk-update';
-      let total = 0;
-      if (approveIds.length) {
-        const res = await apiPost(endpoint, {
-          client_id: CLIENT,
-          items: approveIds.map(id => ({id, review_status: 'approved'})),
-        });
-        approveIds.forEach(id => markRowActioned(id, 'approved'));
-        total += res.updated_count || approveIds.length;
-      }
-      if (rejectIds.length) {
-        const res = await apiPost(endpoint, {
-          client_id: CLIENT,
-          items: rejectIds.map(id => ({id, review_status: 'rejected'})),
-        });
-        rejectIds.forEach(id => markRowActioned(id, 'rejected'));
-        total += res.updated_count || rejectIds.length;
-      }
-      sessionActioned += approveIds.length + rejectIds.length;
-      updateSessionProgress();
-      // Section 3 (12 May 2026): top status cards removed; only the
-      // Status filter pills need the optimistic delta now.
-      const sourceChip = statusView === 'pending' ? 'review' : statusView;
-      if (sourceChip && sourceChip !== 'all') {
-        bumpChip(sourceChip, -(approveIds.length + rejectIds.length));
-      }
-      bumpChip('approved', approveIds.length);
-      bumpChip('rejected', rejectIds.length);
-      approvedReadyCount += approveIds.length;
-      updateButtons();
-      updateApplyHCButton();
-      toast(`Applied ${total} AI verdict(s).`);
-    } catch (e) {
-      aiBanner('error', `Apply high-confidence failed: ${e.message}`);
-    }
-  }
+  // Section 8a (13 May 2026): applyHighConf() removed — bulk-apply button deleted.
 
   // === "Only show unsure" filter (pure client-side; no reload). ===
   // Section 5 (12 May 2026): the #btnFilterUnsure action-bar button +
@@ -1828,7 +1739,6 @@
     updateButtons();
     // Stage 7 — refresh AI badges/buttons whenever the table data changes
     updateAITriageBadge();
-    updateApplyHCButton();
     // Stage 8 — refresh AI panel context header (flow / total / client / date)
     updateAIPanelContext();
     // Stage 9 — re-hydrate chat history when the (flow, date) scope
@@ -2420,8 +2330,7 @@
   // -------------------- Stage 7 — AI button wiring -------------------
   const _btnAITriage = document.getElementById('btnAITriage');
   if (_btnAITriage) _btnAITriage.addEventListener('click', fireAITriage);
-  const _btnApplyHC = document.getElementById('btnApplyHighConf');
-  if (_btnApplyHC) _btnApplyHC.addEventListener('click', applyHighConf);
+  // Section 8a (13 May 2026): btnApplyHighConf listener removed — button deleted.
   // Section 5 (12 May 2026): #btnFilterUnsure listener removed — the
   // button itself is gone from the action bar. Canned-reply pill in the
   // chat panel keeps the equivalent surface via setUnsureFilter().
