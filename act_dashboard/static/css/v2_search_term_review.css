@@ -41,6 +41,14 @@
    the two groups apart edges; gap rules still apply within each group. */
 .st-tabs--split { justify-content: space-between; }
 .st-tabs__group { display: flex; gap: 4px; }
+/* Section E (14 May 2026): tabs hoisted OUT of the .act-card so they
+   stay visible on every pane. Padding aligns the tab row with the
+   .st-card-toolbar's 20px horizontal inset below; margin-bottom drops
+   the existing border-bottom flush against the card top edge. */
+.st-tabs--outside {
+  margin: 16px 0 0;
+  padding: 0 20px;
+}
 .st-tab {
   background: transparent; border: none;
   padding: 10px 14px; font-size: 13px; font-weight: 500;

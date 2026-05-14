@@ -76,6 +76,27 @@ def search_term_review_page():
             [current_client['id'], analysis_date],
         ).fetchone()[0]
 
+        # Section E (14 May 2026) — same "ACT last ran" badge as Morning
+        # Review. Reads the latest successful overnight-pipeline timestamp
+        # and any-running flag from act_v2_scheduler_runs. Source of truth
+        # mirrors v2_morning.py exactly so the two badges agree.
+        last_ran_row = con.execute(
+            "SELECT MAX(completed_at) FROM act_v2_scheduler_runs "
+            "WHERE status = 'success'"
+        ).fetchone()
+        last_ran_raw = last_ran_row[0] if last_ran_row else None
+        if isinstance(last_ran_raw, datetime):
+            last_ran = last_ran_raw.strftime('%d %b %Y, %H:%M')
+        elif last_ran_raw:
+            last_ran = str(last_ran_raw)
+        else:
+            last_ran = None
+        any_running_row = con.execute(
+            "SELECT COUNT(*) FROM act_v2_scheduler_runs "
+            "WHERE CAST(started_at AS DATE) = CURRENT_DATE AND status = 'running'"
+        ).fetchone()
+        any_running = bool(any_running_row and any_running_row[0])
+
     finally:
         con.close()
 
@@ -89,4 +110,6 @@ def search_term_review_page():
         phrase_suggestions_count=sugg_count,
         active_page='search-term-review',
         today_date=date.today().strftime('%a %d %b %Y'),
+        last_ran=last_ran,
+        any_running=any_running,
     )

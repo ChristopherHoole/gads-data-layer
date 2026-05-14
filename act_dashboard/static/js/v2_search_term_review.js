@@ -2457,35 +2457,11 @@
     });
   }
 
-  // --------- N2 Part 2/4/5: refresh snapshot + reclassify + sync pill -------
-  async function loadSyncPill() {
-    const txt = document.getElementById('stNegSyncText');
-    const pill = document.getElementById('stNegSyncPill');
-    if (!txt || !pill) return;
-    try {
-      const resp = await fetch(`/v2/api/negatives/lists?client_id=${encodeURIComponent(CLIENT)}`);
-      const data = await resp.json();
-      pill.classList.remove('neg-sync--green','neg-sync--amber','neg-sync--red','neg-sync--none');
-      if (!data.last_synced_at) {
-        pill.classList.add('neg-sync--none');
-        txt.textContent = 'No negative snapshot yet';
-        return;
-      }
-      const d = new Date(data.last_synced_at);
-      const ageHrs = (Date.now() - d.getTime()) / 3600000;
-      const zone = ageHrs < 24 ? 'neg-sync--green' : ageHrs < 48 ? 'neg-sync--amber' : 'neg-sync--red';
-      pill.classList.add(zone);
-      const rel = ageHrs < 1 ? `${Math.max(1, Math.floor(ageHrs*60))}m ago`
-                 : ageHrs < 48 ? `${Math.floor(ageHrs)}h ago`
-                 : `${Math.floor(ageHrs/24)}d ago`;
-      const nice = d.toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
-      txt.textContent = `Negatives: ${nice} (${rel})`;
-    } catch (e) {
-      pill.classList.add('neg-sync--none');
-      txt.textContent = 'Negatives: — (error)';
-    }
-  }
-  loadSyncPill();
+  // Section E (14 May 2026): the neg-sync-pill was replaced with the
+  // shared "ACT last ran" topbar badge (rendered server-side from
+  // act_v2_scheduler_runs). loadSyncPill() + its DOM targets are gone.
+  // Negative-snapshot freshness is still visible inside the Negative
+  // Keyword Lists tab via the neg-stats "Last synced" tile.
 
   // Section 5 (12 May 2026): #stRefreshNegs button + click handler
   // removed from the Search Terms page. The same /refresh-snapshot
