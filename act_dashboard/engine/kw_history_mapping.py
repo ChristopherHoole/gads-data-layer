@@ -305,21 +305,16 @@ FINANCE = payment plan / monthly payment / "on finance"; INFO = recovery / \
 - Do NOT propose new sub-groups. Do NOT invent parent themes.
 - One rationale sentence, max 80 chars, no em-dashes (hyphens only).
 
-OUTPUT
-Return ONE JSON object whose top-level keys are the input terms, in the same \
-order they were given. Example:
-{{"dental implant cost london": {{"ad_group": "[*] Dental Implants - COST", \
-"rationale": "cost intent + london; matches live COST group"}}}}
+OUTPUT FORMAT (read carefully)
+Return EXACTLY ONE JSON object. The top-level keys are the input terms in \
+the same order they were given. Each value is an object with `ad_group` and \
+`rationale` fields. Do NOT emit one object per term on separate lines. Do \
+NOT emit NDJSON. Do NOT wrap in markdown fences. ONE merged JSON object only.
 
-FEW-SHOT EXAMPLES
-{{"affordable dental implants uk": {{"ad_group": "[ex] Affordable Implants - LOCATION", \
-"rationale": "affordable + uk -> Affordable Implants LOCATION"}}}}
-{{"how long does a dental implant procedure take": {{"ad_group": "[*] Dental Implants - INFO", \
-"rationale": "informational -> Dental Implants INFO"}}}}
-{{"nhs implants for over 60s": {{"ad_group": "[ex] NHS Implants - CORE", \
-"rationale": "nhs + general -> NHS Implants CORE"}}}}
+EXAMPLE (illustrative — three terms in one object):
+{{"affordable dental implants uk": {{"ad_group": "[ex] Affordable Implants - LOCATION", "rationale": "affordable + uk -> Affordable Implants LOCATION"}}, "how long does a dental implant procedure take": {{"ad_group": "[*] Dental Implants - INFO", "rationale": "informational -> Dental Implants INFO"}}, "nhs implants for over 60s": {{"ad_group": "[ex] NHS Implants - CORE", "rationale": "nhs + general -> NHS Implants CORE"}}}}
 
-No prose. No markdown. JSON ONLY.
+No prose before or after the JSON. JSON ONLY.
 """
 
 
@@ -342,19 +337,82 @@ def _build_user_message(terms: list[str]) -> str:
 
 
 def _parse_ai_response(raw: str) -> dict[str, dict]:
-    """Sonnet sometimes wraps JSON in prose / code fences. Strip both."""
+    """Robust parser for Sonnet's mapping response.
+
+    Sonnet is told to return one merged JSON object whose top-level keys
+    are the input terms, but in practice it sometimes emits NDJSON
+    (one `{"term": {...}}` per line) — likely because the few-shot
+    examples in the prompt are themselves line-separated. We handle:
+      - bare merged object               -> json.loads
+      - ```json fenced block             -> strip then parse
+      - leading / trailing prose         -> trim to first/last brace
+      - NDJSON of per-term objects       -> parse each, merge
+      - concatenated `}{` without commas -> split + parse each
+    """
     raw = raw.strip()
     # Strip ```json fences if present.
     if raw.startswith('```'):
         raw = re.sub(r'^```(?:json)?\s*', '', raw)
         raw = re.sub(r'\s*```$', '', raw)
-    # If extra prose precedes the JSON, find the first `{` and last `}`.
-    if not raw.startswith('{'):
-        i = raw.find('{')
-        j = raw.rfind('}')
-        if i >= 0 and j > i:
-            raw = raw[i:j+1]
-    return json.loads(raw)
+
+    # 1. Happy path — full merged object.
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        pass
+
+    # 2. Strip surrounding prose by clamping to first `{` ... last `}`.
+    i = raw.find('{')
+    j = raw.rfind('}')
+    if i < 0 or j <= i:
+        raise json.JSONDecodeError(
+            'no JSON object found in response', raw, 0)
+    trimmed = raw[i:j+1]
+    try:
+        return json.loads(trimmed)
+    except json.JSONDecodeError:
+        pass
+
+    # 3. NDJSON / concatenated-object fallback. Parse object-by-object
+    # using a brace counter so quoted braces inside string values don't
+    # mis-split the stream. Skip any unparseable chunk so partial
+    # responses still contribute their good per-term mappings.
+    merged: dict[str, dict] = {}
+    depth = 0
+    start = -1
+    in_string = False
+    escape = False
+    for idx, ch in enumerate(trimmed):
+        if in_string:
+            if escape:
+                escape = False
+            elif ch == '\\':
+                escape = True
+            elif ch == '"':
+                in_string = False
+            continue
+        if ch == '"':
+            in_string = True
+            continue
+        if ch == '{':
+            if depth == 0:
+                start = idx
+            depth += 1
+        elif ch == '}':
+            depth -= 1
+            if depth == 0 and start >= 0:
+                chunk = trimmed[start:idx+1]
+                try:
+                    obj = json.loads(chunk)
+                    if isinstance(obj, dict):
+                        merged.update(obj)
+                except json.JSONDecodeError:
+                    pass
+                start = -1
+    if not merged:
+        raise json.JSONDecodeError(
+            'no parseable objects in response', raw, 0)
+    return merged
 
 
 def _ai_map_batch(terms: list[str], system_prompt: str
@@ -578,7 +636,12 @@ def run_mapping(client_id: str, force: bool = False,
             logger.info('ai batches: %d (size=%d, model=%s)',
                         len(batches), AI_BATCH_SIZE, MODEL_MAPPING_AI)
 
-            ai_writes: list[tuple[str, str, str, str, str]] = []
+            # Batch errors are logged + skipped (not break) so one bad
+            # response from Sonnet doesn't waste hours of upstream work.
+            # Writes flush PER BATCH so a future crash also doesn't lose
+            # everything that already came back successfully.
+            summary['ai_batches_failed'] = 0
+            summary['ai_errors'] = []
             for bi, batch in enumerate(batches):
                 terms_only = [t for (t, _) in batch]
                 t0 = time.monotonic()
@@ -588,13 +651,23 @@ def run_mapping(client_id: str, force: bool = False,
                 except claude_subprocess.ClaudeError as e:
                     logger.error('AI batch %d/%d failed (%s): %s',
                                  bi+1, len(batches), e.error_type, e)
-                    # Surface partial results; don't blow up the whole run.
-                    summary['ai_error'] = f'{e.error_type}: {str(e)[:200]}'
-                    break
+                    summary['ai_batches_failed'] += 1
+                    summary['ai_errors'].append(
+                        f'batch {bi+1}: {e.error_type}: {str(e)[:120]}')
+                    # Quota exhaustion is the one case where it's
+                    # genuinely better to stop early — every subsequent
+                    # call will fail the same way and burn tokens.
+                    if e.error_type == 'quota_exhausted':
+                        summary['ai_error'] = 'quota_exhausted'
+                        break
+                    continue
                 except Exception as e:  # noqa: BLE001
-                    logger.exception('AI batch %d/%d crashed', bi+1, len(batches))
-                    summary['ai_error'] = str(e)[:300]
-                    break
+                    logger.exception('AI batch %d/%d crashed',
+                                     bi+1, len(batches))
+                    summary['ai_batches_failed'] += 1
+                    summary['ai_errors'].append(
+                        f'batch {bi+1}: {str(e)[:160]}')
+                    continue
 
                 summary['ai_batches'] += 1
                 summary['ai_sent'] += len(batch)
@@ -602,10 +675,12 @@ def run_mapping(client_id: str, force: bool = False,
                 summary['ai_tokens_out'] += int(usage.get('output_tokens', 0) or 0)
                 summary['ai_wall_clock_ms'] += int(wall_ms)
 
+                # Build this batch's UPDATE tuples; mismatched-key terms
+                # (Sonnet missed them) just don't get written.
+                batch_writes: list[tuple[str, str, str, str, str]] = []
                 for term, ty in batch:
                     rec = mapping.get(term)
                     if not rec:
-                        # Sonnet missed this term — leave for next run.
                         continue
                     ag = rec.get('ad_group') or ''
                     rat = (rec.get('rationale') or '')[:300]
@@ -613,30 +688,37 @@ def run_mapping(client_id: str, force: bool = False,
                         continue
                     # No em-dashes anywhere — hyphens only.
                     rat = rat.replace('—', '-').replace('–', '-')
-                    ai_writes.append((ag, rat, client_id, term, ty))
-                    summary['ai_mapped'] += 1
+                    batch_writes.append((ag, rat, client_id, term, ty))
+
+                if batch_writes:
+                    con.executemany(
+                        """UPDATE kw_st_history
+                           SET proposed_ad_group = ?,
+                               proposal_method = 'ai',
+                               proposal_rationale = ?,
+                               ai_cached_at = CURRENT_TIMESTAMP,
+                               last_updated = CURRENT_TIMESTAMP
+                           WHERE client_id = ? AND term = ? AND type = ?""",
+                        batch_writes,
+                    )
+                    summary['ai_mapped'] += len(batch_writes)
 
                 logger.info(
                     'ai batch %d/%d: mapped %d/%d (in_tok=%s, out_tok=%s, %dms)',
                     bi+1, len(batches),
-                    sum(1 for (t, _) in batch if mapping.get(t)),
+                    len(batch_writes),
                     len(batch),
                     usage.get('input_tokens'), usage.get('output_tokens'),
                     int((time.monotonic() - t0) * 1000),
                 )
 
-            if ai_writes:
-                con.executemany(
-                    """UPDATE kw_st_history
-                       SET proposed_ad_group = ?,
-                           proposal_method = 'ai',
-                           proposal_rationale = ?,
-                           ai_cached_at = CURRENT_TIMESTAMP,
-                           last_updated = CURRENT_TIMESTAMP
-                       WHERE client_id = ? AND term = ? AND type = ?""",
-                    ai_writes,
+            if summary['ai_batches_failed']:
+                logger.warning(
+                    'ai run finished with %d failed batches; ai_mapped=%d, '
+                    'ai_sent=%d (sent counts SUCCESSFUL batches only)',
+                    summary['ai_batches_failed'],
+                    summary['ai_mapped'], summary['ai_sent'],
                 )
-                logger.info('ai writes: %d rows updated', len(ai_writes))
 
         # ----- 8. Cost report.
         cost_in  = (summary['ai_tokens_in']  / 1_000_000) * SONNET_INPUT_PER_MTOK_USD
@@ -644,7 +726,12 @@ def run_mapping(client_id: str, force: bool = False,
         summary['ai_cost_usd'] = round(cost_in + cost_out, 4)
         summary['ai_cost_gbp'] = round(summary['ai_cost_usd'] * USD_TO_GBP, 4)
 
-        summary['overall'] = 'success' if not summary.get('ai_error') else 'partial'
+        if summary.get('ai_error'):
+            summary['overall'] = 'partial'
+        elif summary.get('ai_batches_failed'):
+            summary['overall'] = 'partial'
+        else:
+            summary['overall'] = 'success'
         return summary
     except Exception as e:  # noqa: BLE001
         logger.exception('run_mapping failed: %s', e)
