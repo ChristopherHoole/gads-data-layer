@@ -22,15 +22,15 @@
 {% block content %}
 <div class="kh-page" data-client-id="{{ client.id }}">
 
-  {# Stats strip — quick at-a-glance counts. #}
+  {# Stats strip with hover tooltips clarifying what each tile counts. #}
   <div class="kh-stats">
-    <div class="status-card"><div class="status-card__count">{{ '{:,}'.format(stats.total) }}</div><div class="status-card__label">Total terms</div></div>
-    <div class="status-card status-card--green"><div class="status-card__count">{{ '{:,}'.format(stats.mapped) }}</div><div class="status-card__label">In [ex]</div></div>
-    <div class="status-card status-card--blue"><div class="status-card__count">{{ '{:,}'.format(stats.rule_mapped) }}</div><div class="status-card__label">Rule-mapped</div></div>
-    <div class="status-card status-card--blue"><div class="status-card__count">{{ '{:,}'.format(stats.ai_mapped) }}</div><div class="status-card__label">AI-mapped</div></div>
-    <div class="status-card status-card--amber"><div class="status-card__count">{{ '{:,}'.format(stats.unmapped) }}</div><div class="status-card__label">Unmapped</div></div>
-    <div class="status-card"><div class="status-card__count">{{ '{:,}'.format(stats.brand) }}</div><div class="status-card__label">Brand (skipped)</div></div>
-    <div class="status-card"><div class="status-card__count">{{ '{:,}'.format(stats.low_volume) }}</div><div class="status-card__label">Low-volume (skipped)</div></div>
+    <div class="status-card" title="Unique normalised terms in DBD history after dedupe."><div class="status-card__count">{{ '{:,}'.format(stats.total) }}</div><div class="status-card__label">Total terms</div></div>
+    <div class="status-card status-card--green" title="Term exists as an Enabled keyword in the current [ex] structure."><div class="status-card__count">{{ '{:,}'.format(stats.mapped) }}</div><div class="status-card__label">In [ex]</div></div>
+    <div class="status-card status-card--blue" title="Terms a rule-based substring match against parent anchor words gave a confident ad-group proposal for. No AI used."><div class="status-card__count">{{ '{:,}'.format(stats.rule_mapped) }}</div><div class="status-card__label">Rule-mapped</div></div>
+    <div class="status-card status-card--blue" title="Terms that fell through rules and got an ad-group proposal from Sonnet. Capped at 5,000/run."><div class="status-card__count">{{ '{:,}'.format(stats.ai_mapped) }}</div><div class="status-card__label">AI-mapped</div></div>
+    <div class="status-card status-card--amber" title="No rule match, no AI proposal yet. Pipeline halt - see brief."><div class="status-card__count">{{ '{:,}'.format(stats.unmapped) }}</div><div class="status-card__label">Unmapped</div></div>
+    <div class="status-card" title="Term came from the Brand campaign. Not mapped to [ex] by design."><div class="status-card__count">{{ '{:,}'.format(stats.brand) }}</div><div class="status-card__label">Brand (skipped)</div></div>
+    <div class="status-card" title="impressions < 5 AND clicks = 0. Skipped to control AI cost."><div class="status-card__count">{{ '{:,}'.format(stats.low_volume) }}</div><div class="status-card__label">Low-volume (skipped)</div></div>
   </div>
 
   <div class="act-card">
@@ -94,26 +94,30 @@
       <div class="kh-hscroll">
         <table class="data-table kh-table" id="khTable">
           <thead>
+            {# Column order updated (round 2, 16 May 2026): mapping
+               columns (In [ex] / Current / Proposed) hoisted left of
+               the metrics so the eye reads "is this mapped?" first,
+               then the supporting data. Method column merged into the
+               Rationale cell as a coloured chip (saves a column). #}
             <tr>
               <th class="col-num kh-frozen-0">#</th>
               <th class="kh-sortable kh-frozen-1" data-sort="term">Term<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
               <th class="kh-sortable" data-sort="type">Type<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
+              <th class="kh-sortable" data-sort="in_new_ex">In [ex]<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
+              <th class="kh-sortable" data-sort="current_new_ex_ad_group">Current [ex] ad group<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
+              <th class="kh-sortable" data-sort="proposed_ad_group">Proposed [ex] ad group<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
+              <th class="num kh-sortable" data-sort="cost_total">Cost<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
               <th class="num kh-sortable" data-sort="impressions_total">Impr<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
               <th class="num kh-sortable" data-sort="clicks_total">Clicks<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
-              <th class="num kh-sortable" data-sort="cost_total">Cost<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
               <th class="num kh-sortable" data-sort="conversions_total">Conv<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
               <th class="kh-sortable" data-sort="old_campaign">Old campaign<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
               <th class="kh-sortable" data-sort="old_ad_group">Old ad group<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
-              <th class="kh-sortable" data-sort="in_new_ex">In [ex]<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
-              <th class="kh-sortable" data-sort="current_new_ex_ad_group">Current [ex] ad group<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
-              <th class="kh-sortable" data-sort="proposed_ad_group">Proposed ad group<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
-              <th class="kh-sortable" data-sort="proposal_method">Method<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
               <th>Rationale</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody id="khTbody">
-            <tr><td colspan="15" class="kh-loading">Loading&hellip;</td></tr>
+            <tr><td colspan="14" class="kh-loading">Loading&hellip;</td></tr>
           </tbody>
         </table>
       </div>

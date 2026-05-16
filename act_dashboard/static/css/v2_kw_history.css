@@ -115,28 +115,41 @@
 .kh-in-ex-false { color: var(--act-text); opacity: 0.4; }
 [data-theme="dark"] .kh-in-ex-true { color: #34d399; }
 
-/* Proposal-method pill in the row. */
+/* Round 2 (16 May 2026): Method column merged into Rationale. The chip
+   shape mirrors .pill-btn (4px radius, 11px font, 600 weight) but
+   doesn't need the active/hover states a pill carries — it's a static
+   badge. Colour codes per spec: in_ex=green, rule=blue, ai=purple,
+   manual=amber, skip_*=grey, unset=red. */
 .kh-method {
-  display: inline-block; padding: 2px 8px;
+  display: inline-block;
+  padding: 2px 8px; margin-right: 8px;
   border-radius: 4px; font-size: 11px; font-weight: 600;
+  vertical-align: middle;
+  white-space: nowrap;
 }
+.kh-method--in_ex      { background: #d1fae5; color: #047857; }
 .kh-method--rule       { background: #dbeafe; color: #1d4ed8; }
-.kh-method--ai         { background: #fef3c7; color: #92400e; }
-.kh-method--manual     { background: #d1fae5; color: #047857; }
+.kh-method--ai         { background: #ede9fe; color: #6d28d9; }
+.kh-method--manual     { background: #fef3c7; color: #92400e; }
 .kh-method--skip_brand { background: #f3f4f6; color: #6b7280; }
 .kh-method--skip_low_volume { background: #f3f4f6; color: #6b7280; }
 .kh-method--unset      { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
+[data-theme="dark"] .kh-method--in_ex      { background: rgba(16,185,129,0.18); color: #34d399; }
 [data-theme="dark"] .kh-method--rule       { background: rgba(59,130,246,0.18); color: #93c5fd; }
-[data-theme="dark"] .kh-method--ai         { background: rgba(245,158,11,0.18); color: #fbbf24; }
-[data-theme="dark"] .kh-method--manual     { background: rgba(16,185,129,0.18); color: #34d399; }
+[data-theme="dark"] .kh-method--ai         { background: rgba(139,92,246,0.22); color: #c4b5fd; }
+[data-theme="dark"] .kh-method--manual     { background: rgba(245,158,11,0.18); color: #fbbf24; }
 [data-theme="dark"] .kh-method--skip_brand,
 [data-theme="dark"] .kh-method--skip_low_volume { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); }
 [data-theme="dark"] .kh-method--unset      { background: rgba(248,113,113,0.18); color: #fca5a5; }
 
 .kh-rationale {
-  color: var(--act-text); opacity: 0.7;
+  color: var(--act-text);
   font-size: 12px;
-  white-space: normal; max-width: 320px;
+  white-space: normal; max-width: 360px;
+  vertical-align: middle;
+}
+.kh-rationale-text {
+  opacity: 0.75;
 }
 
 .kh-edit-btn {

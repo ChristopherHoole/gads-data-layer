@@ -44,9 +44,13 @@
   }
 
   // ---------- fetch + render ----------
+  // Column count after the round-2 reorder (16 May 2026): 14 visible
+  // columns (# + 13 cells; Method merged into Rationale as a chip).
+  const COL_COUNT = 14;
+
   async function reload() {
     const tbody = document.getElementById('khTbody');
-    tbody.innerHTML = '<tr><td colspan="15" class="kh-loading">Loading&hellip;</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="${COL_COUNT}" class="kh-loading">Loading&hellip;</td></tr>`;
     const params = new URLSearchParams({
       client: CLIENT,
       page: state.page, page_size: state.page_size,
@@ -68,35 +72,57 @@
     }
   }
 
+  // Resolve the (chip label, chip css class) tuple for a row.
+  // Six cases per the round-2 spec:
+  //   in_new_ex = TRUE       -> green  "in [ex]"
+  //   rule                   -> blue   "rule"
+  //   ai                     -> purple "ai"
+  //   manual                 -> amber  "manual"
+  //   skip_brand             -> grey   "brand"
+  //   skip_low_volume        -> grey   "low volume"
+  //   (NULL, not mapped)     -> red    "unset"
+  function methodChip(row) {
+    if (row.in_new_ex) return { label: 'in [ex]', cls: 'in_ex' };
+    const m = row.proposal_method;
+    if (m === 'rule')             return { label: 'rule',       cls: 'rule' };
+    if (m === 'ai')               return { label: 'ai',         cls: 'ai' };
+    if (m === 'manual')           return { label: 'manual',     cls: 'manual' };
+    if (m === 'skip_brand')       return { label: 'brand',      cls: 'skip_brand' };
+    if (m === 'skip_low_volume')  return { label: 'low volume', cls: 'skip_low_volume' };
+    return { label: 'unset', cls: 'unset' };
+  }
+
   function renderRows(rows) {
     const tbody = document.getElementById('khTbody');
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="15" class="kh-loading">No rows match the current filters.</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="${COL_COUNT}" class="kh-loading">No rows match the current filters.</td></tr>`;
       return;
     }
     const offset = (state.page - 1) * state.page_size;
     const html = rows.map((r, idx) => {
       const rowNum = offset + idx + 1;
-      const method = r.proposal_method || 'unset';
+      const chip = methodChip(r);
       const inEx = r.in_new_ex
         ? '<span class="kh-in-ex-true">&check;</span>'
-        : '<span class="kh-in-ex-false">&mdash;</span>'.replace('&mdash;', '-');
+        : '<span class="kh-in-ex-false">-</span>';
       return `
         <tr data-term="${escapeHtml(r.term)}" data-type="${escapeHtml(r.type)}">
           <td class="col-num kh-frozen-0">${rowNum}</td>
           <td class="kh-frozen-1 kh-term">${escapeHtml(r.term_raw || r.term)}</td>
           <td>${escapeHtml(r.type)}</td>
-          <td class="num">${fmtInt(r.impressions_total)}</td>
-          <td class="num">${fmtInt(r.clicks_total)}</td>
-          <td class="num">${fmtMoney(r.cost_total)}</td>
-          <td class="num">${fmtConv(r.conversions_total)}</td>
-          <td>${escapeHtml(r.old_campaign || '-')}</td>
-          <td>${escapeHtml(r.old_ad_group || '-')}</td>
           <td>${inEx}</td>
           <td>${escapeHtml(r.current_new_ex_ad_group || '-')}</td>
           <td>${escapeHtml(r.proposed_ad_group || '-')}</td>
-          <td><span class="kh-method kh-method--${escapeHtml(method)}">${escapeHtml(method)}</span></td>
-          <td class="kh-rationale">${escapeHtml(r.proposal_rationale || '-')}</td>
+          <td class="num">${fmtMoney(r.cost_total)}</td>
+          <td class="num">${fmtInt(r.impressions_total)}</td>
+          <td class="num">${fmtInt(r.clicks_total)}</td>
+          <td class="num">${fmtConv(r.conversions_total)}</td>
+          <td>${escapeHtml(r.old_campaign || '-')}</td>
+          <td>${escapeHtml(r.old_ad_group || '-')}</td>
+          <td class="kh-rationale">
+            <span class="kh-method kh-method--${chip.cls}">${escapeHtml(chip.label)}</span>
+            <span class="kh-rationale-text">${escapeHtml(r.proposal_rationale || '-')}</span>
+          </td>
           <td>
             <button type="button" class="kh-edit-btn" data-role="edit"
                     title="Manual override: edit proposed ad group">
@@ -142,13 +168,14 @@
     document.querySelectorAll('.kh-edit-row').forEach(r => r.remove());
     const term = tr.dataset.term;
     const type = tr.dataset.type;
-    const currentCell = tr.querySelector('td:nth-child(12)');
+    // Proposed ad group is now column 6 (post round-2 reorder).
+    const currentCell = tr.querySelector('td:nth-child(6)');
     const current = (currentCell?.textContent || '').trim();
 
     const edit = document.createElement('tr');
     edit.className = 'kh-edit-row';
     edit.innerHTML = `
-      <td colspan="15">
+      <td colspan="${COL_COUNT}">
         <label>Proposed ad group (sets method = manual)</label>
         <input type="text" data-role="ag-input"
                value="${current === '-' ? '' : escapeHtml(current)}"
