@@ -22,15 +22,25 @@
 {% block content %}
 <div class="kh-page" data-client-id="{{ client.id }}">
 
-  {# Stats strip with hover tooltips clarifying what each tile counts. #}
-  <div class="kh-stats">
+  {# Stats strip (round 3, 16 May 2026): 7 cards, all disjoint
+     partitions of the total so the sanity sum holds. data-stat-* attrs
+     drive the JS render-time sum check (sums must equal data-total). #}
+  <div class="kh-stats" id="khStats"
+       data-stat-total="{{ stats.total }}"
+       data-stat-in-ex="{{ stats.in_ex }}"
+       data-stat-not-in-ex="{{ stats.not_in_ex }}"
+       data-stat-total-mapped="{{ stats.total_mapped }}"
+       data-stat-unmapped="{{ stats.unmapped }}"
+       data-stat-brand="{{ stats.brand }}"
+       data-stat-low-volume="{{ stats.low_volume }}"
+       data-stat-proposed="{{ stats.proposed }}">
     <div class="status-card" title="Unique normalised terms in DBD history after dedupe."><div class="status-card__count">{{ '{:,}'.format(stats.total) }}</div><div class="status-card__label">Total terms</div></div>
-    <div class="status-card status-card--green" title="Term exists as an Enabled keyword in the current [ex] structure."><div class="status-card__count">{{ '{:,}'.format(stats.mapped) }}</div><div class="status-card__label">In [ex]</div></div>
-    <div class="status-card status-card--blue" title="Terms a rule-based substring match against parent anchor words gave a confident ad-group proposal for. No AI used."><div class="status-card__count">{{ '{:,}'.format(stats.rule_mapped) }}</div><div class="status-card__label">Rule-mapped</div></div>
-    <div class="status-card status-card--blue" title="Terms that fell through rules and got an ad-group proposal from Sonnet. Capped at 5,000/run."><div class="status-card__count">{{ '{:,}'.format(stats.ai_mapped) }}</div><div class="status-card__label">AI-mapped</div></div>
-    <div class="status-card status-card--amber" title="No rule match, no AI proposal yet. Pipeline halt - see brief."><div class="status-card__count">{{ '{:,}'.format(stats.unmapped) }}</div><div class="status-card__label">Unmapped</div></div>
-    <div class="status-card" title="Term came from the Brand campaign. Not mapped to [ex] by design."><div class="status-card__count">{{ '{:,}'.format(stats.brand) }}</div><div class="status-card__label">Brand (skipped)</div></div>
-    <div class="status-card" title="impressions < 5 AND clicks = 0. Skipped to control AI cost."><div class="status-card__count">{{ '{:,}'.format(stats.low_volume) }}</div><div class="status-card__label">Low-volume (skipped)</div></div>
+    <div class="status-card status-card--green" title="Term exists as an Enabled keyword in the current [ex] structure."><div class="status-card__count">{{ '{:,}'.format(stats.in_ex) }}</div><div class="status-card__label">In [ex]</div></div>
+    <div class="status-card status-card--amber" title="Term is not in the current [ex] structure."><div class="status-card__count">{{ '{:,}'.format(stats.not_in_ex) }}</div><div class="status-card__label">Not in [ex]</div></div>
+    <div class="status-card status-card--blue" title="Terms with a definitive answer - either already in [ex] or proposed by rule/AI/manual."><div class="status-card__count">{{ '{:,}'.format(stats.total_mapped) }}</div><div class="status-card__label">Total mapped</div></div>
+    <div class="status-card status-card--amber" title="Not in [ex], no rule match, no AI proposal yet. Pipeline halt at 5,000 AI cap - see brief."><div class="status-card__count">{{ '{:,}'.format(stats.unmapped) }}</div><div class="status-card__label">Unmapped</div></div>
+    <div class="status-card" title="Term came from the Brand campaign. Not mapped to [ex] by design."><div class="status-card__count">{{ '{:,}'.format(stats.brand) }}</div><div class="status-card__label">Brand skipped</div></div>
+    <div class="status-card" title="impressions < 5 AND clicks = 0. Skipped to control AI cost."><div class="status-card__count">{{ '{:,}'.format(stats.low_volume) }}</div><div class="status-card__label">Low volume skipped</div></div>
   </div>
 
   <div class="act-card">
@@ -46,14 +56,18 @@
         </div>
       </div>
 
+      {# Status pills (round 3, 16 May 2026): five disjoint buckets +
+         All. Pill counts come from the server-computed stats; JS does
+         a sum sanity check on boot. Sentence case throughout. #}
       <div class="st-filter-bar">
         <span class="st-filter-bar__label">Status</span>
         <div class="pill-group" data-pill-target="status">
-          <button type="button" class="pill-btn active" data-value="all">All</button>
-          <button type="button" class="pill-btn" data-value="mapped">In [ex]</button>
-          <button type="button" class="pill-btn" data-value="unmapped">Unmapped</button>
-          <button type="button" class="pill-btn" data-value="brand">Brand</button>
-          <button type="button" class="pill-btn" data-value="low_volume">Low volume</button>
+          <button type="button" class="pill-btn active" data-value="all">All <span class="pill-btn__count">{{ '{:,}'.format(stats.total) }}</span></button>
+          <button type="button" class="pill-btn" data-value="in_ex">In [ex] <span class="pill-btn__count">{{ '{:,}'.format(stats.in_ex) }}</span></button>
+          <button type="button" class="pill-btn" data-value="proposed">Proposed <span class="pill-btn__count">{{ '{:,}'.format(stats.proposed) }}</span></button>
+          <button type="button" class="pill-btn" data-value="unmapped">Unmapped <span class="pill-btn__count">{{ '{:,}'.format(stats.unmapped) }}</span></button>
+          <button type="button" class="pill-btn" data-value="brand">Brand <span class="pill-btn__count">{{ '{:,}'.format(stats.brand) }}</span></button>
+          <button type="button" class="pill-btn" data-value="low_volume">Low volume <span class="pill-btn__count">{{ '{:,}'.format(stats.low_volume) }}</span></button>
         </div>
       </div>
 

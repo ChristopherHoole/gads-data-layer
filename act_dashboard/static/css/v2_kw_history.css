@@ -110,10 +110,20 @@
   max-width: 320px;
 }
 
-/* In-[ex] tick/cross. */
-.kh-in-ex-true  { color: #0b8a3e; font-weight: 700; }
-.kh-in-ex-false { color: var(--act-text); opacity: 0.4; }
-[data-theme="dark"] .kh-in-ex-true { color: #34d399; }
+/* In-[ex] tick/cross. Round 3 (16 May 2026): switched from text glyphs
+   to Material Symbols icons (check / close). False state renders a red
+   cross instead of a blank dash so the column reads as a definitive
+   "yes/no". Reds tap the existing alert-red palette. */
+.kh-in-ex-true,
+.kh-in-ex-false {
+  font-size: 18px;
+  vertical-align: middle;
+  font-weight: 700;
+}
+.kh-in-ex-true  { color: #0b8a3e; }
+.kh-in-ex-false { color: #b42318; }
+[data-theme="dark"] .kh-in-ex-true  { color: #34d399; }
+[data-theme="dark"] .kh-in-ex-false { color: #f87171; }
 
 /* Round 2 (16 May 2026): Method column merged into Rationale. The chip
    shape mirrors .pill-btn (4px radius, 11px font, 600 weight) but

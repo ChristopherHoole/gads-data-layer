@@ -48,7 +48,7 @@ ALLOWED_SORT = {
 }
 ALLOWED_DIR = {'asc', 'desc'}
 ALLOWED_TYPE_FILTER = {'all', 'keyword', 'search_term', 'both'}
-ALLOWED_STATUS_FILTER = {'all', 'mapped', 'unmapped', 'brand', 'low_volume'}
+ALLOWED_STATUS_FILTER = {'all', 'in_ex', 'proposed', 'unmapped', 'brand', 'low_volume'}
 ALLOWED_METHOD_FILTER = {'all', 'rule', 'ai', 'manual',
                          'skip_brand', 'skip_low_volume', 'unset'}
 
@@ -73,17 +73,26 @@ def _build_where_clause(args: dict) -> tuple[str, list]:
         where.append('type = ?')
         params.append(type_f)
 
+    # Status filter buckets (16 May 2026 round 3): every non-'all' value
+    # is a disjoint partition of the table — pill counts sum to total.
+    # The old 'mapped' / 'unmapped' labels were ambiguous (the latter
+    # silently included rule/AI/manual proposals); split into explicit
+    # in_ex / proposed / unmapped buckets matching the card definitions.
     status_f = args.get('status', 'all')
-    if status_f == 'mapped':
+    if status_f == 'in_ex':
         where.append('in_new_ex = TRUE')
-    elif status_f == 'unmapped':
+    elif status_f == 'proposed':
         where.append('in_new_ex = FALSE')
-        where.append('is_brand_campaign = FALSE')
-        # OR within a parenthesised group so it doesn't dilute the AND chain.
-        where.append("(proposal_method IS NULL "
-                     "OR proposal_method IN ('rule','ai','manual'))")
+        where.append("proposal_method IN ('rule','ai','manual')")
+    elif status_f == 'unmapped':
+        # Tightened in round 3 to exclude in_new_ex rows (which also
+        # have proposal_method IS NULL because the engine doesn't
+        # write a method when a row is already mapped). Without the
+        # extra clause the pill double-counts the 1,044 in-ex rows.
+        where.append('proposal_method IS NULL')
+        where.append('in_new_ex = FALSE')
     elif status_f == 'brand':
-        where.append('is_brand_campaign = TRUE')
+        where.append("proposal_method = 'skip_brand'")
     elif status_f == 'low_volume':
         where.append("proposal_method = 'skip_low_volume'")
 
@@ -169,30 +178,36 @@ def kw_history_page():
             [current_client['id']],
         ).fetchall()]
 
-        # Counts for the stats strip.
+        # Counts for the stats strip + status pill badges (round 3,
+        # 16 May 2026): every bucket is a disjoint partition keyed on
+        # the spec definitions, so cards 2+3 == card 1 AND cards
+        # 4+5+6+7 == card 1 always hold. JS does a sanity check on
+        # render and console.warns on drift.
         totals_row = con.execute(
             """SELECT
-                 COUNT(*),
-                 SUM(CASE WHEN in_new_ex THEN 1 ELSE 0 END)              AS mapped,
-                 SUM(CASE WHEN is_brand_campaign THEN 1 ELSE 0 END)      AS brand,
-                 SUM(CASE WHEN proposal_method = 'skip_low_volume' THEN 1 ELSE 0 END) AS low_vol,
-                 SUM(CASE WHEN proposal_method = 'rule' THEN 1 ELSE 0 END) AS rule_n,
-                 SUM(CASE WHEN proposal_method = 'ai'   THEN 1 ELSE 0 END) AS ai_n,
-                 SUM(CASE WHEN proposal_method = 'manual' THEN 1 ELSE 0 END) AS manual_n,
-                 SUM(CASE WHEN proposal_method IS NULL AND in_new_ex = FALSE
-                              AND is_brand_campaign = FALSE THEN 1 ELSE 0 END) AS unmapped_n
+                 COUNT(*)                                                          AS total,
+                 SUM(CASE WHEN in_new_ex                          THEN 1 ELSE 0 END) AS in_ex,
+                 SUM(CASE WHEN NOT in_new_ex                      THEN 1 ELSE 0 END) AS not_in_ex,
+                 SUM(CASE WHEN in_new_ex OR proposal_method IN ('rule','ai','manual')
+                                                                  THEN 1 ELSE 0 END) AS total_mapped,
+                 SUM(CASE WHEN NOT in_new_ex AND proposal_method IN ('rule','ai','manual')
+                                                                  THEN 1 ELSE 0 END) AS proposed,
+                 SUM(CASE WHEN proposal_method IS NULL AND NOT in_new_ex
+                                                                  THEN 1 ELSE 0 END) AS unmapped,
+                 SUM(CASE WHEN proposal_method = 'skip_brand'     THEN 1 ELSE 0 END) AS brand,
+                 SUM(CASE WHEN proposal_method = 'skip_low_volume' THEN 1 ELSE 0 END) AS low_vol
                FROM kw_st_history WHERE client_id = ?""",
             [current_client['id']],
         ).fetchone()
         stats = {
-            'total': int(totals_row[0] or 0),
-            'mapped': int(totals_row[1] or 0),
-            'brand': int(totals_row[2] or 0),
-            'low_volume': int(totals_row[3] or 0),
-            'rule_mapped': int(totals_row[4] or 0),
-            'ai_mapped': int(totals_row[5] or 0),
-            'manual_mapped': int(totals_row[6] or 0),
-            'unmapped': int(totals_row[7] or 0),
+            'total':        int(totals_row[0] or 0),
+            'in_ex':        int(totals_row[1] or 0),
+            'not_in_ex':    int(totals_row[2] or 0),
+            'total_mapped': int(totals_row[3] or 0),
+            'proposed':     int(totals_row[4] or 0),
+            'unmapped':     int(totals_row[5] or 0),
+            'brand':        int(totals_row[6] or 0),
+            'low_volume':   int(totals_row[7] or 0),
         }
     finally:
         con.close()

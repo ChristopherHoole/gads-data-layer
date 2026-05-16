@@ -102,9 +102,12 @@
     const html = rows.map((r, idx) => {
       const rowNum = offset + idx + 1;
       const chip = methodChip(r);
+      // Round 3 (16 May 2026): explicit red close icon for in_new_ex=false
+      // so the cell reads as "definitely not in [ex]" rather than blank.
+      // Material Symbols family matches the rest of the page.
       const inEx = r.in_new_ex
-        ? '<span class="kh-in-ex-true">&check;</span>'
-        : '<span class="kh-in-ex-false">-</span>';
+        ? '<span class="material-symbols-outlined kh-in-ex-true" aria-label="in ex">check</span>'
+        : '<span class="material-symbols-outlined kh-in-ex-false" aria-label="not in ex">close</span>';
       return `
         <tr data-term="${escapeHtml(r.term)}" data-type="${escapeHtml(r.type)}">
           <td class="col-num kh-frozen-0">${rowNum}</td>
@@ -311,10 +314,48 @@
     window.location.href = `/v2/api/kw-history/export.csv?${params.toString()}`;
   });
 
+  // Round 3 (16 May 2026): sanity-check the stat-card + status-pill
+  // counts on boot. Every bucket is a disjoint partition of the total,
+  // so both sums below must equal the total. console.warn on drift so
+  // any future migration / engine change that breaks the invariant is
+  // caught at a glance.
+  function _toInt(v) { return parseInt(String(v).replace(/[,_]/g, ''), 10) || 0; }
+  function sanityCheckCounts() {
+    const stats = document.getElementById('khStats');
+    if (!stats) return;
+    const total       = _toInt(stats.dataset.statTotal);
+    const inEx        = _toInt(stats.dataset.statInEx);
+    const notInEx     = _toInt(stats.dataset.statNotInEx);
+    const totalMapped = _toInt(stats.dataset.statTotalMapped);
+    const unmapped    = _toInt(stats.dataset.statUnmapped);
+    const brand       = _toInt(stats.dataset.statBrand);
+    const lowVolume   = _toInt(stats.dataset.statLowVolume);
+    const proposed    = _toInt(stats.dataset.statProposed);
+
+    const cardSplitAB = inEx + notInEx;
+    if (cardSplitAB !== total) {
+      console.warn(`[kw-history] card sum drift A: in_ex (${inEx}) + not_in_ex (${notInEx}) = ${cardSplitAB}, total = ${total}`);
+    }
+    const cardSplitCD = totalMapped + unmapped + brand + lowVolume;
+    if (cardSplitCD !== total) {
+      console.warn(`[kw-history] card sum drift B: total_mapped (${totalMapped}) + unmapped (${unmapped}) + brand (${brand}) + low_volume (${lowVolume}) = ${cardSplitCD}, total = ${total}`);
+    }
+    // Pills: in_ex + proposed + unmapped + brand + low_volume == total.
+    // (total_mapped = in_ex + proposed by definition; pills break it
+    // out further so the user can filter to either bucket.)
+    const pillSum = inEx + proposed + unmapped + brand + lowVolume;
+    if (pillSum !== total) {
+      console.warn(`[kw-history] pill sum drift: in_ex (${inEx}) + proposed (${proposed}) + unmapped (${unmapped}) + brand (${brand}) + low_volume (${lowVolume}) = ${pillSum}, total = ${total}`);
+    } else {
+      console.info(`[kw-history] count sanity ok: cards 2+3 = cards 4+5+6+7 = pill sum = ${total}`);
+    }
+  }
+  sanityCheckCounts();
+
   // Boot.
   if (!CLIENT) {
     document.getElementById('khTbody').innerHTML =
-      '<tr><td colspan="15" class="kh-loading">No client selected.</td></tr>';
+      `<tr><td colspan="${COL_COUNT}" class="kh-loading">No client selected.</td></tr>`;
   } else {
     reload();
   }
