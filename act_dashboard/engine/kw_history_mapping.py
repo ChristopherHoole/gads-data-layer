@@ -605,15 +605,25 @@ def run_mapping(client_id: str, force: bool = False,
         # top_n override (Chris's explicit decision per the brief's
         # "halt-and-surface" guidance): trim AI volume to the top-N
         # highest-click eligible rows. ai_eligible_q is already ordered
-        # by impressions_total DESC, clicks_total DESC so the first N is
-        # the highest-value slice.
+        # by impressions_total DESC, clicks_total DESC (or clicks DESC,
+        # impressions DESC when --click-bearing-only is on) so the
+        # first N is the highest-value slice.
         if top_n is not None and top_n > 0 and len(ai_to_send) > top_n:
             summary['ai_top_n_override'] = top_n
             summary['ai_volume_before_top_n'] = len(ai_to_send)
             ai_to_send = ai_to_send[:top_n]
             logger.info('top_n override: AI volume trimmed to %d', top_n)
+        elif top_n is not None and top_n > 0:
+            # --top-n set but eligible pool already <= top_n; treat
+            # top_n as the explicit cap so the hard-cap halt below
+            # is bypassed. Record it for the summary regardless.
+            summary['ai_top_n_override'] = top_n
+            summary['ai_volume_before_top_n'] = len(ai_to_send)
 
-        if len(ai_to_send) > AI_HARD_CAP:
+        # Hard cap halt — only fires when --top-n is NOT set. With
+        # --top-n the user has already made the explicit "I know what
+        # I'm spending" decision the cap was designed to enforce.
+        if top_n is None and len(ai_to_send) > AI_HARD_CAP:
             logger.error(
                 'AI volume %d exceeds hard cap %d. Halting BEFORE any '
                 'API call. Re-run with a stricter low-volume filter, '
