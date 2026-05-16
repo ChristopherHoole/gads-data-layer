@@ -46,9 +46,26 @@
 - Build LPs → ngrok review → push live → generate Ads Editor CSVs → upload
 - Aim 4-7 parents per day
 
-## Step 7 — Daily log
+## Step 7 - KW + Search Term History review (NEW, 16 May 2026)
+**Goal:** sign off proposed mappings + push agreed ones to live [ex] ad groups.
+
+1. Open ACT -> [KW & ST History](http://localhost:5000/v2/kw-history?client=dbd001)
+2. Filter Status = Unmapped, sort by Clicks DESC
+3. For each high-traffic unmapped term:
+   - If the AI / rule proposal is good: copy the ad-group name, add the kw to that [ex] ad group in GAds (or note for next ad-group split)
+   - If the proposal is wrong: click the pencil, type a better ad group, save (sets method = manual)
+   - If the term is genuinely out of scope (invisalign, competitor brand, postcode dentist): leave it; future filter pass can mass-skip
+4. Cadence: don't try to clear all 34k+ unmapped in one sitting. Aim ~50-100/day, top of clicks list first.
+
+**Re-import workflow:** if Chris drops fresh CSVs into `client_csvs/dbd001/kw_history_incoming/`:
+- All three files (search-terms / search-keyword / ad-group) at once
+- Auto-watcher rebuilds kw_st_history and triggers the mapping pipeline
+- AI cache means previously-mapped terms don't re-cost; only NEW unmapped terms hit Sonnet
+- If volume exceeds the 5,000 AI hard cap, the pipeline halts; re-run manually with --top-n=N to chip away in chunks
+
+## Step 8 - Daily log
 - Update memory + handoff if anything material happened
 - Note any pending Tommaso/Giulio decisions
 
 ---
-**Updated:** 2026-05-05 (added Step 5 PMax→DII redirect)
+**Updated:** 2026-05-16 (added Step 7 KW + Search Term History review)

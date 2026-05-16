@@ -282,6 +282,50 @@ def run_neg_pass2_phase(client, eval_date):
         return False, err, None
 
 
+def run_kw_history_mapping_phase(client, eval_date):
+    """N10 (16 May 2026) — KW + Search Term History mapping refresh.
+
+    Re-runs the rule + AI mapping pipeline for the client's
+    kw_st_history table. Cached AI rows are skipped (force=False), so
+    nightly runs cost ~nothing unless Chris has dropped a fresh CSV
+    that day. Hard-cap halt is by design: a stale halt result on a
+    re-run just surfaces the same "needs review" state.
+
+    DBD-only guard lives inside run_mapping (ALLOWED_CLIENTS_V1); this
+    wrapper just calls through and shapes the (ok, err, details)
+    contract the orchestrator expects.
+    """
+    try:
+        from act_dashboard.engine.kw_history_mapping import run_mapping
+        result = run_mapping(client['client_id'], force=False)
+        overall = result.get('overall')
+        ok = overall in ('success', 'partial', 'halted', 'skipped')
+        err = None if ok else (result.get('error') or 'unknown')
+        # Halt is "intentional pause for review" — log a warning, not an error.
+        if overall == 'halted':
+            logger.warning(
+                f"  [KW-HIST] {client['client_name']}: halted — "
+                f"{result.get('halt_reason')}"
+            )
+        elif overall == 'skipped':
+            logger.info(
+                f"  [KW-HIST] {client['client_name']}: skipped "
+                f"({result.get('reason')})"
+            )
+        else:
+            logger.info(
+                f"  [KW-HIST] {client['client_name']}: {overall} "
+                f"(rule={result.get('rule_mapped')}, ai={result.get('ai_mapped')}, "
+                f"cached_skip={result.get('ai_cached_skipped')}, "
+                f"cost=£{result.get('ai_cost_gbp')})"
+            )
+        return ok, err, result
+    except Exception as e:  # noqa: BLE001
+        err = str(e)[:500]
+        logger.error(f"  [KW-HIST] Failed: {err}")
+        return False, err, None
+
+
 def run_engine_phase(client, eval_date):
     """Run all enabled engine levels for a single client."""
     enabled = _get_enabled_levels(client['client_id'])
@@ -362,10 +406,15 @@ def run_client_cycle(client, eval_date):
     for phase_name, runner, key in (
         # N3: sticky expiry must run BEFORE pass1 so the cfg load sees the
         # freshly-unrejected set and re-classifies those terms normally.
-        ('neg_sticky_expiry', run_neg_sticky_expiry_phase, 'neg_sticky_expiry_status'),
-        ('neg_stale_cleanup', run_neg_stale_cleanup_phase, 'neg_stale_cleanup_status'),
-        ('neg_pass1',         run_neg_pass1_phase,          'neg_pass1_status'),
-        ('neg_pass2',         run_neg_pass2_phase,          'neg_pass2_status'),
+        ('neg_sticky_expiry',   run_neg_sticky_expiry_phase,    'neg_sticky_expiry_status'),
+        ('neg_stale_cleanup',   run_neg_stale_cleanup_phase,    'neg_stale_cleanup_status'),
+        ('neg_pass1',           run_neg_pass1_phase,            'neg_pass1_status'),
+        ('neg_pass2',           run_neg_pass2_phase,            'neg_pass2_status'),
+        # N10 (16 May 2026) — KW history mapping. Inner guard on
+        # ALLOWED_CLIENTS_V1 = {'dbd001'} keeps this a no-op for other
+        # clients; cached AI rows aren't re-sent so nightly cost is ~£0
+        # unless Chris dropped a fresh CSV that day.
+        ('kw_history_mapping', run_kw_history_mapping_phase,    'kw_history_mapping_status'),
     ):
         run_id = _write_status_start(client['client_id'], eval_date, phase_name)
         try:
