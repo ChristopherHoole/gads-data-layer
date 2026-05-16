@@ -379,17 +379,23 @@ def kw_history_export_csv():
 
 
 # ---------------------------------------------------------------------------
-# Terms-only CSV export — single column, original casing
+# "Export for AI" CSV — term + key context columns for ChatGPT prompts
 # ---------------------------------------------------------------------------
 @v2_kw_history_bp.route('/v2/api/kw-history/export-terms.csv', methods=['GET'])
 def kw_history_export_terms_csv():
-    """Single-column export for ChatGPT / bulk-paste flows. Same filter +
-    sort semantics as the full export, but the SELECT is just term_raw
-    (falling back to the normalised term where term_raw is NULL).
+    """AI-friendly export: term + impressions / clicks / cost /
+    conversions / already_in_ex / matched_ad_group_if_any. Original
+    casing on term (term_raw). Same filter + sort semantics as the
+    full export.
 
-    Filename: kw_history_terms_<status>_<YYYY-MM-DD>.csv. Status is the
-    active Status pill (or 'all'); other filters don't influence the
-    filename per spec."""
+    Round 5 (16 May 2026): renamed in the UI to "Export for AI";
+    URL slug + filename keep the legacy `_terms_` token so downstream
+    tools that have already pinned to the path don't break.
+
+    Filename: kw_history_terms_<status>_<YYYY-MM-DD>.csv. Status is
+    the active Status pill (or 'all'); other filters don't influence
+    the filename per spec.
+    """
     args = request.args
     client_id = args.get('client', 'dbd001')
     if client_id not in ALLOWED_CLIENTS_V1:
@@ -406,7 +412,14 @@ def kw_history_export_terms_csv():
     con = _db()
     try:
         rows = con.execute(
-            f"""SELECT COALESCE(term_raw, term) AS term_out
+            f"""SELECT
+                    COALESCE(term_raw, term)    AS term_out,
+                    impressions_total,
+                    clicks_total,
+                    cost_total,
+                    conversions_total,
+                    in_new_ex,
+                    current_new_ex_ad_group
                 FROM kw_st_history {where_sql}
                 ORDER BY {sort_col} {sort_dir} NULLS LAST,
                          impressions_total DESC, term ASC""",
@@ -416,15 +429,34 @@ def kw_history_export_terms_csv():
         con.close()
 
     # UTF-8 with BOM — same encoding pattern as the full export.
+    # Snake_case headers because the output gets pasted straight into
+    # ChatGPT prompts; consistent column tokens matter.
     buf = io.StringIO()
     buf.write('﻿')
     w = csv.writer(buf, quoting=csv.QUOTE_MINIMAL)
-    w.writerow(['term'])
+    w.writerow([
+        'term', 'impressions', 'clicks', 'cost', 'conversions',
+        'already_in_ex', 'matched_ad_group_if_any',
+    ])
     for r in rows:
-        v = r[0]
-        if isinstance(v, str):
-            v = v.replace('—', '-').replace('–', '-')
-        w.writerow([v if v is not None else ''])
+        term, impr, clk, cost, conv, in_ex, ag = r
+        # Defensive em-dash strip on free-text values.
+        if isinstance(term, str):
+            term = term.replace('—', '-').replace('–', '-')
+        if isinstance(ag, str):
+            ag = ag.replace('—', '-').replace('–', '-')
+        w.writerow([
+            term if term is not None else '',
+            int(impr or 0),
+            int(clk or 0),
+            f'{float(cost or 0):.2f}',
+            f'{float(conv or 0):.2f}',
+            # Literal lowercase true/false per spec — avoids Python's
+            # default `True` / `False` casing that ChatGPT sometimes
+            # mis-parses.
+            'true' if bool(in_ex) else 'false',
+            ag if ag is not None else '',
+        ])
     csv_bytes = buf.getvalue().encode('utf-8')
 
     status_label = args.get('status', 'all') or 'all'

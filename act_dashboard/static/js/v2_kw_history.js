@@ -319,13 +319,15 @@
     window.location.href = `/v2/api/kw-history/export.csv?${exportParams().toString()}`;
   });
 
-  // Terms-only CSV export — single column, original casing. Logs the
-  // expected row count to the console so the user can verify against
-  // the line count Excel reports (lines = rows + 1 header).
+  // "Export for AI" CSV — term + 6 context columns (impressions / clicks
+  // / cost / conversions / already_in_ex / matched_ad_group_if_any).
+  // Original casing on term, snake_case headers. Logs the expected row
+  // count so the user can verify against Excel's line count
+  // (lines = rows + 1 header).
   document.getElementById('khExportTermsCsv').addEventListener('click', () => {
     const expected = state.total;
     console.info(
-      `[kw-history] exporting terms-only CSV; expected ${expected.toLocaleString('en-GB')} ` +
+      `[kw-history] exporting AI CSV; expected ${expected.toLocaleString('en-GB')} ` +
       `data rows (${(expected + 1).toLocaleString('en-GB')} lines incl. header). ` +
       `Status pill = ${state.status}.`
     );
