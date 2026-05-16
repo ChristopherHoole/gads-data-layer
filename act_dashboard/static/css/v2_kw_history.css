@@ -1,0 +1,190 @@
+/* KW + Search Term History Viewer (Phase 3).
+   Reuses shared primitives from v2_shared.css (.act-card, .data-table,
+   .pill-group, .page-btn, .st-card-toolbar, .st-card-table) and the
+   .st-filter-bar / .st-pager rules from v2_search_term_review.css.
+   Only the bits that are KW-history-specific live here.
+
+   Sentence case throughout, dark-theme parity, no em-dashes. */
+
+.kh-page { padding: 0; }
+
+.kh-stats {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+@media (max-width: 1200px) {
+  .kh-stats { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 800px) {
+  .kh-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Toolbar second row: campaign + ex-ag dropdowns + search + export. */
+.kh-second-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 0;
+  flex-wrap: wrap;
+}
+.kh-select {
+  padding: 7px 10px;
+  border: 1px solid var(--act-border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--act-surface);
+  color: var(--act-text);
+  min-width: 200px;
+  max-width: 320px;
+}
+.kh-search {
+  flex: 0 1 280px; min-width: 200px;
+  padding: 7px 12px;
+  border: 1px solid var(--act-border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--act-surface);
+  color: var(--act-text);
+}
+.kh-search::placeholder { color: var(--act-text); opacity: 0.5; }
+.kh-search:focus, .kh-select:focus {
+  outline: none;
+  border-color: var(--act-primary);
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.15);
+}
+
+/* Table — uses .data-table from v2_shared.css for the base look.
+   Horizontal scroll wrapper so the wide column row scrolls inside the
+   card without breaking the layout. */
+.kh-hscroll { overflow-x: auto; }
+.kh-table { width: 100%; min-width: max-content; }
+/* Non-sortable header cells inherit cursor:pointer from .data-table th
+   — undo that so only sortable columns look interactive. */
+.kh-table th { cursor: default; white-space: nowrap; }
+.kh-table th.kh-sortable { cursor: pointer; }
+.kh-table th.kh-sortable:hover { color: var(--act-primary); }
+.kh-sort-glyph {
+  font-size: 14px; vertical-align: middle;
+  margin-left: 2px; opacity: 0.4;
+}
+.kh-table th.kh-sort-active { color: var(--act-primary); }
+.kh-table th.kh-sort-active .kh-sort-glyph { opacity: 0.85; }
+
+/* Sticky header (the standard pattern used by .data-table elsewhere
+   doesn't pin the header to viewport; here we pin to the .kh-hscroll
+   wrapper so vertical scroll keeps headers visible). */
+.kh-table thead th {
+  position: sticky; top: 0; z-index: 5;
+  background: var(--act-surface);
+}
+
+/* Frozen first two columns: # + term. Offsets 0/44 mirror the Search
+   Terms pattern. */
+.kh-frozen-0, .kh-frozen-1 {
+  position: sticky; left: 0; z-index: 4;
+  background: var(--act-surface);
+}
+.kh-frozen-0 { left: 0;    min-width: 44px; max-width: 44px; }
+.kh-frozen-1 { left: 44px; min-width: 220px; max-width: 320px; }
+.kh-table thead .kh-frozen-0,
+.kh-table thead .kh-frozen-1 { z-index: 10; }
+.kh-table tbody tr:hover .kh-frozen-0,
+.kh-table tbody tr:hover .kh-frozen-1 { background: rgba(0,0,0,0.015); }
+[data-theme="dark"] .kh-table tbody tr:hover .kh-frozen-0,
+[data-theme="dark"] .kh-table tbody tr:hover .kh-frozen-1 {
+  background: rgba(255,255,255,0.03);
+}
+
+.kh-table .col-num {
+  text-align: right;
+  color: var(--act-text); opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+.kh-table .num {
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+.kh-term {
+  font-weight: 600;
+  word-break: break-word; white-space: normal;
+  max-width: 320px;
+}
+
+/* In-[ex] tick/cross. */
+.kh-in-ex-true  { color: #0b8a3e; font-weight: 700; }
+.kh-in-ex-false { color: var(--act-text); opacity: 0.4; }
+[data-theme="dark"] .kh-in-ex-true { color: #34d399; }
+
+/* Proposal-method pill in the row. */
+.kh-method {
+  display: inline-block; padding: 2px 8px;
+  border-radius: 4px; font-size: 11px; font-weight: 600;
+}
+.kh-method--rule       { background: #dbeafe; color: #1d4ed8; }
+.kh-method--ai         { background: #fef3c7; color: #92400e; }
+.kh-method--manual     { background: #d1fae5; color: #047857; }
+.kh-method--skip_brand { background: #f3f4f6; color: #6b7280; }
+.kh-method--skip_low_volume { background: #f3f4f6; color: #6b7280; }
+.kh-method--unset      { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
+[data-theme="dark"] .kh-method--rule       { background: rgba(59,130,246,0.18); color: #93c5fd; }
+[data-theme="dark"] .kh-method--ai         { background: rgba(245,158,11,0.18); color: #fbbf24; }
+[data-theme="dark"] .kh-method--manual     { background: rgba(16,185,129,0.18); color: #34d399; }
+[data-theme="dark"] .kh-method--skip_brand,
+[data-theme="dark"] .kh-method--skip_low_volume { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); }
+[data-theme="dark"] .kh-method--unset      { background: rgba(248,113,113,0.18); color: #fca5a5; }
+
+.kh-rationale {
+  color: var(--act-text); opacity: 0.7;
+  font-size: 12px;
+  white-space: normal; max-width: 320px;
+}
+
+.kh-edit-btn {
+  background: transparent; border: 1px solid var(--act-border);
+  border-radius: 6px; padding: 4px 8px;
+  font-size: 12px; cursor: pointer; color: var(--act-text);
+}
+.kh-edit-btn:hover { background: var(--act-hover-bg); }
+.kh-edit-btn .material-symbols-outlined { font-size: 14px; vertical-align: -2px; }
+
+.kh-loading {
+  padding: 24px; text-align: center;
+  color: var(--act-text); opacity: 0.65; font-size: 13px;
+}
+
+/* Pager — uses .st-pager base from v2_search_term_review.css. */
+.st-pager.kh-pager {
+  border-top: 1px solid var(--act-border-light);
+  padding-top: 12px; padding-bottom: 12px;
+  padding-left: 20px; padding-right: 20px;
+  margin-top: 0;
+}
+
+/* Toast (same pattern as Rejected terms). */
+.kh-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: #111827; color: #fff;
+  padding: 10px 16px; border-radius: 8px;
+  font-size: 13px; box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+  z-index: 1500;
+}
+.kh-toast--error { background: #b42318; }
+
+/* Inline override prompt (browser prompt() is ugly; this is a tiny
+   inline editor below the row). */
+.kh-edit-row td { background: var(--act-hover-bg); padding: 12px 14px; }
+.kh-edit-row label {
+  display: block; font-size: 11px;
+  color: var(--act-text); opacity: 0.7; margin-bottom: 4px;
+}
+.kh-edit-row input[type="text"] {
+  width: min(420px, 90%);
+  padding: 6px 10px;
+  border: 1px solid var(--act-border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--act-surface); color: var(--act-text);
+}
+.kh-edit-row .kh-edit-actions {
+  margin-top: 8px; display: flex; gap: 8px;
+}

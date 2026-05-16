@@ -27,6 +27,10 @@
       <a href="/v2/search-term-review{% if client and client.id != 'all' %}?client={{ client.id }}{% endif %}" class="act-nav-item {% if active_page == 'search-term-review' %}active{% endif %}">
         <span class="material-symbols-outlined">filter_alt</span>Search Terms
       </a>
+      {# N10 (16 May 2026) — KW + Search Term History Viewer (DBD v1). #}
+      <a href="/v2/kw-history{% if client and client.id != 'all' %}?client={{ client.id }}{% endif %}" class="act-nav-item {% if active_page == 'kw-history' %}active{% endif %}">
+        <span class="material-symbols-outlined">history</span>KW &amp; ST History
+      </a>
       {# Rejected Terms moved into the Search Terms page as a right-aligned
          tab (IA refactor, 13 May 2026). The /v2/rejected-terms URL still
          works — it 302-redirects to /v2/search-term-review?tab=rejected. #}

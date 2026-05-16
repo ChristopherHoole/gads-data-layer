@@ -101,6 +101,11 @@ def register_blueprints(app: Flask):
     app.register_blueprint(v2_rejected_terms_bp)
     print("[OK] [N3]  Registered v2_rejected_terms blueprint (/v2/rejected-terms)")
 
+    # N10: KW + Search Term History Viewer (DBD v1)
+    from act_dashboard.routes.v2_kw_history import v2_kw_history_bp
+    app.register_blueprint(v2_kw_history_bp)
+    print("[OK] [N10] Registered v2_kw_history blueprint (/v2/kw-history)")
+
     # Tier 2.1 Stage 2: AI endpoints (stubs only — no Claude calls yet)
     from act_dashboard.routes.v2_ai_api import v2_ai_api_bp
     app.register_blueprint(v2_ai_api_bp)

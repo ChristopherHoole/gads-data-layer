@@ -1,0 +1,155 @@
+{% extends "v2/base_v2.html" %}
+
+{% block title %}KW + Search Term History{% endblock %}
+{% block page_title %}KW + Search Term History{% endblock %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/v2_shared.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/v2_kw_history.css') }}">
+{% endblock %}
+
+{% block topbar_extras %}
+  {# Same "ACT last ran" badge used on Morning Review + Search Terms. #}
+  {% if any_running %}
+  <span class="act-last-ran" style="background:var(--act-blue-bg);border:1px solid var(--act-blue-border)"><span class="material-symbols-outlined" style="color:var(--act-primary)">sync</span>ACT running now</span>
+  {% elif last_ran %}
+  <span class="act-last-ran"><span class="material-symbols-outlined">check_circle</span>ACT last ran: {{ last_ran }}</span>
+  {% else %}
+  <span class="act-last-ran" style="background:var(--act-amber-bg);border:1px solid var(--act-amber-border)"><span class="material-symbols-outlined" style="color:var(--act-amber)">schedule</span>ACT has not run yet</span>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="kh-page" data-client-id="{{ client.id }}">
+
+  {# Stats strip — quick at-a-glance counts. #}
+  <div class="kh-stats">
+    <div class="status-card"><div class="status-card__count">{{ '{:,}'.format(stats.total) }}</div><div class="status-card__label">Total terms</div></div>
+    <div class="status-card status-card--green"><div class="status-card__count">{{ '{:,}'.format(stats.mapped) }}</div><div class="status-card__label">In [ex]</div></div>
+    <div class="status-card status-card--blue"><div class="status-card__count">{{ '{:,}'.format(stats.rule_mapped) }}</div><div class="status-card__label">Rule-mapped</div></div>
+    <div class="status-card status-card--blue"><div class="status-card__count">{{ '{:,}'.format(stats.ai_mapped) }}</div><div class="status-card__label">AI-mapped</div></div>
+    <div class="status-card status-card--amber"><div class="status-card__count">{{ '{:,}'.format(stats.unmapped) }}</div><div class="status-card__label">Unmapped</div></div>
+    <div class="status-card"><div class="status-card__count">{{ '{:,}'.format(stats.brand) }}</div><div class="status-card__label">Brand (skipped)</div></div>
+    <div class="status-card"><div class="status-card__count">{{ '{:,}'.format(stats.low_volume) }}</div><div class="status-card__label">Low-volume (skipped)</div></div>
+  </div>
+
+  <div class="act-card">
+    <div class="st-card-toolbar">
+
+      <div class="st-filter-bar">
+        <span class="st-filter-bar__label">Type</span>
+        <div class="pill-group" data-pill-target="type">
+          <button type="button" class="pill-btn active" data-value="all">All</button>
+          <button type="button" class="pill-btn" data-value="keyword">Keyword</button>
+          <button type="button" class="pill-btn" data-value="search_term">Search term</button>
+          <button type="button" class="pill-btn" data-value="both">Both</button>
+        </div>
+      </div>
+
+      <div class="st-filter-bar">
+        <span class="st-filter-bar__label">Status</span>
+        <div class="pill-group" data-pill-target="status">
+          <button type="button" class="pill-btn active" data-value="all">All</button>
+          <button type="button" class="pill-btn" data-value="mapped">In [ex]</button>
+          <button type="button" class="pill-btn" data-value="unmapped">Unmapped</button>
+          <button type="button" class="pill-btn" data-value="brand">Brand</button>
+          <button type="button" class="pill-btn" data-value="low_volume">Low volume</button>
+        </div>
+      </div>
+
+      <div class="st-filter-bar">
+        <span class="st-filter-bar__label">Proposal method</span>
+        <div class="pill-group" data-pill-target="method">
+          <button type="button" class="pill-btn active" data-value="all">All</button>
+          <button type="button" class="pill-btn" data-value="rule">Rule</button>
+          <button type="button" class="pill-btn" data-value="ai">AI</button>
+          <button type="button" class="pill-btn" data-value="manual">Manual</button>
+          <button type="button" class="pill-btn" data-value="unset">Unset</button>
+        </div>
+      </div>
+
+      <div class="kh-second-row">
+        <select id="khCampaign" class="kh-select">
+          <option value="all">All old campaigns</option>
+          {% for c in campaigns %}
+          <option value="{{ c }}">{{ c }}</option>
+          {% endfor %}
+        </select>
+        <select id="khExAdGroup" class="kh-select">
+          <option value="all">All [ex] ad groups</option>
+          {% for ag in ex_ad_groups %}
+          <option value="{{ ag }}">{{ ag }}</option>
+          {% endfor %}
+        </select>
+        <input type="search" id="khSearch" class="kh-search" placeholder="Filter term&hellip;" />
+        <button type="button" id="khExportCsv" class="btn-act btn-act--details">
+          <span class="material-symbols-outlined" style="font-size:14px;vertical-align:-2px;">download</span>
+          Export CSV
+        </button>
+      </div>
+
+    </div>
+
+    <div class="st-card-table">
+      <div class="kh-hscroll">
+        <table class="data-table kh-table" id="khTable">
+          <thead>
+            <tr>
+              <th class="col-num kh-frozen-0">#</th>
+              <th class="kh-sortable kh-frozen-1" data-sort="term">Term<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
+              <th class="kh-sortable" data-sort="type">Type<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
+              <th class="num kh-sortable" data-sort="impressions_total">Impr<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
+              <th class="num kh-sortable" data-sort="clicks_total">Clicks<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
+              <th class="num kh-sortable" data-sort="cost_total">Cost<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
+              <th class="num kh-sortable" data-sort="conversions_total">Conv<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
+              <th class="kh-sortable" data-sort="old_campaign">Old campaign<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
+              <th class="kh-sortable" data-sort="old_ad_group">Old ad group<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
+              <th class="kh-sortable" data-sort="in_new_ex">In [ex]<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
+              <th class="kh-sortable" data-sort="current_new_ex_ad_group">Current [ex] ad group<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
+              <th class="kh-sortable" data-sort="proposed_ad_group">Proposed ad group<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
+              <th class="kh-sortable" data-sort="proposal_method">Method<span class="material-symbols-outlined kh-sort-glyph">unfold_more</span></th>
+              <th>Rationale</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="khTbody">
+            <tr><td colspan="15" class="kh-loading">Loading&hellip;</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="st-pager kh-pager">
+        <div class="st-pager__left">
+          <span id="khPagerSummary">Showing 0 of 0</span>
+        </div>
+        <div class="st-pager__right">
+          <label for="khPageSize" class="st-pager__rpp">Rows per page:</label>
+          <select id="khPageSize">
+            <option value="50">50</option>
+            <option value="100" selected>100</option>
+            <option value="250">250</option>
+            <option value="500">500</option>
+          </select>
+          <button id="khPrev" class="page-btn" disabled>&laquo;</button>
+          <span id="khPagerLabel" class="st-pager__label">1</span>
+          <button id="khNext" class="page-btn" disabled>&raquo;</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  {# Toast host. #}
+  <div id="khToast" class="kh-toast" style="display:none"></div>
+</div>
+{% endblock %}
+
+{% block page_js %}
+<script>
+  window.KH_CONFIG = {
+    client_id: "{{ client.id }}",
+    client_name: {{ client.name|tojson }},
+  };
+</script>
+<script src="{{ url_for('static', filename='js/v2_kw_history.js') }}"></script>
+{% endblock %}
