@@ -371,18 +371,25 @@ def _ai_map_batch(terms: list[str], system_prompt: str
 # Public entry point
 # ---------------------------------------------------------------------------
 def run_mapping(client_id: str, force: bool = False,
-                top_n: int | None = None) -> dict:
+                top_n: int | None = None,
+                click_bearing_only: bool = False) -> dict:
     """Run the full skip_brand -> exact -> rule -> AI chain.
 
     force=False: AI-cached rows are NOT re-sent. Eligible AI rows that
     already have ai_cached_at set are skipped.
     force=True: re-process every eligible row regardless of cache.
 
-    top_n: if set, cap AI volume to the top-N highest-click eligible
-    rows (rest stay unmapped). Useful when the long tail blows past
-    AI_HARD_CAP — Chris's explicit override per the brief's "halt and
-    surface for review" guidance. When None, the AI_HARD_CAP halts the
-    pipeline before any API call.
+    top_n: if set, cap AI volume to the top-N eligible rows (rest stay
+    unmapped). Useful when the long tail blows past AI_HARD_CAP — Chris's
+    explicit override per the brief's "halt and surface for review"
+    guidance. When None, the AI_HARD_CAP halts the pipeline before any
+    API call.
+
+    click_bearing_only: when True, AI eligibility ALSO requires
+    `clicks_total > 0` AND the order flips to clicks DESC, impressions
+    DESC so high-signal terms hit the model first. Designed for the
+    "tail AI run" use case where the zero-click long tail isn't worth
+    spending Sonnet tokens on.
 
     Returns a summary dict with phase counts + AI cost report.
     """
@@ -497,15 +504,33 @@ def run_mapping(client_id: str, force: bool = False,
         logger.info('rule_mapped: %d', summary['rule_mapped'])
 
         # ----- 6. AI cache check + hard cap guard.
-        ai_eligible_q = con.execute(
-            f"""SELECT term, type, ai_cached_at FROM kw_st_history
-               WHERE client_id = ?
-                 AND in_new_ex = FALSE
-                 AND is_brand_campaign = FALSE
-                 AND proposal_method IS NULL
-               ORDER BY impressions_total DESC, clicks_total DESC""",
-            [client_id],
-        ).fetchall()
+        # click_bearing_only flips the sort to lead with clicks (signal
+        # comes first) and filters out zero-click rows entirely. Default
+        # behaviour (impressions-first sort, no click filter) is
+        # preserved so existing callers don't shift.
+        if click_bearing_only:
+            ai_eligible_q = con.execute(
+                """SELECT term, type, ai_cached_at FROM kw_st_history
+                   WHERE client_id = ?
+                     AND in_new_ex = FALSE
+                     AND is_brand_campaign = FALSE
+                     AND proposal_method IS NULL
+                     AND clicks_total > 0
+                   ORDER BY clicks_total DESC, impressions_total DESC""",
+                [client_id],
+            ).fetchall()
+            summary['ai_eligibility'] = 'click_bearing_only'
+        else:
+            ai_eligible_q = con.execute(
+                """SELECT term, type, ai_cached_at FROM kw_st_history
+                   WHERE client_id = ?
+                     AND in_new_ex = FALSE
+                     AND is_brand_campaign = FALSE
+                     AND proposal_method IS NULL
+                   ORDER BY impressions_total DESC, clicks_total DESC""",
+                [client_id],
+            ).fetchall()
+            summary['ai_eligibility'] = 'all_unmapped'
 
         if not force:
             ai_to_send = [(t, ty) for (t, ty, cached) in ai_eligible_q
@@ -633,6 +658,7 @@ def run_mapping(client_id: str, force: bool = False,
 def cli_main(argv: list[str] | None = None) -> int:
     argv = argv if argv is not None else sys.argv[1:]
     force = '--force' in argv
+    click_bearing_only = '--click-bearing-only' in argv
     top_n: int | None = None
     for a in argv:
         if a.startswith('--top-n='):
@@ -642,7 +668,10 @@ def cli_main(argv: list[str] | None = None) -> int:
                 logger.error('Bad --top-n value: %s', a)
                 return 2
     client_id = next((a for a in argv if not a.startswith('--')), 'dbd001')
-    result = run_mapping(client_id, force=force, top_n=top_n)
+    result = run_mapping(
+        client_id, force=force, top_n=top_n,
+        click_bearing_only=click_bearing_only,
+    )
     logger.info('FINAL: %s', json.dumps(result, indent=2, default=str))
     return 0 if result.get('overall') in ('success', 'partial', 'halted') else 1
 
