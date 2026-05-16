@@ -379,6 +379,67 @@ def kw_history_export_csv():
 
 
 # ---------------------------------------------------------------------------
+# Terms-only CSV export — single column, original casing
+# ---------------------------------------------------------------------------
+@v2_kw_history_bp.route('/v2/api/kw-history/export-terms.csv', methods=['GET'])
+def kw_history_export_terms_csv():
+    """Single-column export for ChatGPT / bulk-paste flows. Same filter +
+    sort semantics as the full export, but the SELECT is just term_raw
+    (falling back to the normalised term where term_raw is NULL).
+
+    Filename: kw_history_terms_<status>_<YYYY-MM-DD>.csv. Status is the
+    active Status pill (or 'all'); other filters don't influence the
+    filename per spec."""
+    args = request.args
+    client_id = args.get('client', 'dbd001')
+    if client_id not in ALLOWED_CLIENTS_V1:
+        return Response('client_id not in v1 allowlist', status=403)
+
+    sort_key = args.get('sort', 'clicks_total')
+    sort_col = ALLOWED_SORT.get(sort_key, 'clicks_total')
+    sort_dir = (args.get('dir', 'desc') or 'desc').lower()
+    if sort_dir not in ALLOWED_DIR:
+        sort_dir = 'desc'
+
+    where_sql, params = _build_where_clause(args)
+
+    con = _db()
+    try:
+        rows = con.execute(
+            f"""SELECT COALESCE(term_raw, term) AS term_out
+                FROM kw_st_history {where_sql}
+                ORDER BY {sort_col} {sort_dir} NULLS LAST,
+                         impressions_total DESC, term ASC""",
+            params,
+        ).fetchall()
+    finally:
+        con.close()
+
+    # UTF-8 with BOM — same encoding pattern as the full export.
+    buf = io.StringIO()
+    buf.write('﻿')
+    w = csv.writer(buf, quoting=csv.QUOTE_MINIMAL)
+    w.writerow(['term'])
+    for r in rows:
+        v = r[0]
+        if isinstance(v, str):
+            v = v.replace('—', '-').replace('–', '-')
+        w.writerow([v if v is not None else ''])
+    csv_bytes = buf.getvalue().encode('utf-8')
+
+    status_label = args.get('status', 'all') or 'all'
+    if status_label not in ALLOWED_STATUS_FILTER:
+        status_label = 'all'
+    today = date.today().isoformat()
+    fname = f'kw_history_terms_{status_label}_{today}.csv'
+    return Response(
+        csv_bytes,
+        mimetype='text/csv; charset=utf-8',
+        headers={'Content-Disposition': f'attachment; filename="{fname}"'},
+    )
+
+
+# ---------------------------------------------------------------------------
 # Manual override — set proposed_ad_group + flip proposal_method='manual'
 # ---------------------------------------------------------------------------
 @v2_kw_history_bp.route('/v2/api/kw-history/override', methods=['POST'])

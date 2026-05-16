@@ -302,16 +302,34 @@
     }
   });
 
-  // CSV export — round-trip the filters via the export endpoint URL.
-  document.getElementById('khExportCsv').addEventListener('click', () => {
-    const params = new URLSearchParams({
+  // Build the current filter+sort URLSearchParams once — same for both
+  // export buttons.
+  function exportParams() {
+    return new URLSearchParams({
       client: CLIENT,
       sort: state.sort, dir: state.dir,
       type: state.type, status: state.status, method: state.method,
       campaign: state.campaign, ex_ad_group: state.ex_ad_group,
       q: state.q,
     });
-    window.location.href = `/v2/api/kw-history/export.csv?${params.toString()}`;
+  }
+
+  // CSV export — full row set, all columns. Round-trips active filters.
+  document.getElementById('khExportCsv').addEventListener('click', () => {
+    window.location.href = `/v2/api/kw-history/export.csv?${exportParams().toString()}`;
+  });
+
+  // Terms-only CSV export — single column, original casing. Logs the
+  // expected row count to the console so the user can verify against
+  // the line count Excel reports (lines = rows + 1 header).
+  document.getElementById('khExportTermsCsv').addEventListener('click', () => {
+    const expected = state.total;
+    console.info(
+      `[kw-history] exporting terms-only CSV; expected ${expected.toLocaleString('en-GB')} ` +
+      `data rows (${(expected + 1).toLocaleString('en-GB')} lines incl. header). ` +
+      `Status pill = ${state.status}.`
+    );
+    window.location.href = `/v2/api/kw-history/export-terms.csv?${exportParams().toString()}`;
   });
 
   // Round 3 (16 May 2026): sanity-check the stat-card + status-pill

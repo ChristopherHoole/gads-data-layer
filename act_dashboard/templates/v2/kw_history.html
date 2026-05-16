@@ -100,6 +100,14 @@
           <span class="material-symbols-outlined" style="font-size:14px;vertical-align:-2px;">download</span>
           Export CSV
         </button>
+        {# Single-column term-only export for ChatGPT / bulk-paste flows.
+           Respects active filters + sort; filename keys off the Status
+           pill (round 4, 16 May 2026). #}
+        <button type="button" id="khExportTermsCsv" class="btn-act btn-act--details"
+                title="Export just the term column (original casing) - good for pasting into ChatGPT or bulk tools.">
+          <span class="material-symbols-outlined" style="font-size:14px;vertical-align:-2px;">format_list_bulleted</span>
+          Export terms only
+        </button>
       </div>
 
     </div>
