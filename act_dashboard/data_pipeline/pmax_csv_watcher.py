@@ -313,6 +313,65 @@ class _Handler(FileSystemEventHandler):
 
 
 # ---------------------------------------------------------------------------
+# N10 (16 May 2026) — KW history handler.
+#
+# The KW history pipeline needs all 3 CSVs together (search terms + keyword
+# + ad group), not one file at a time. Strategy: on any event in the
+# kw_history_incoming/ folder, settle briefly then call process_incoming()
+# which inspects every file in the folder and runs the rebuild if at
+# least the search-terms OR the keyword report is present. The trigger
+# itself doesn't care which file fired the event.
+# ---------------------------------------------------------------------------
+class _KwHistoryHandler(FileSystemEventHandler):
+    def __init__(self, client_id: str):
+        self.client_id = client_id
+        # Debounce: a typical 3-file drop fires 3 'created' events in
+        # quick succession. We schedule one process_incoming() after a
+        # short settle delay; new events reset the timer.
+        self._timer: threading.Timer | None = None
+        self._lock = threading.Lock()
+
+    def _fire(self):
+        try:
+            from act_dashboard.data_pipeline import kw_history_ingest
+            result = kw_history_ingest.process_incoming(self.client_id)
+            logger.info(
+                f'[kw-history] {self.client_id} result: {result}'
+            )
+        except Exception:  # noqa: BLE001
+            logger.exception(
+                f'[kw-history] {self.client_id} process_incoming crashed'
+            )
+
+    def _schedule(self):
+        with self._lock:
+            if self._timer is not None:
+                self._timer.cancel()
+            # 3-second settle — longer than the PMax single-file
+            # SETTLE_SECONDS because a 43MB CSV copy may still be
+            # finishing when the 'created' event fires.
+            self._timer = threading.Timer(3.0, self._fire)
+            self._timer.daemon = True
+            self._timer.start()
+
+    def _maybe(self, src_path: str):
+        path = Path(src_path)
+        if not _is_target_file(path):
+            return
+        self._schedule()
+
+    def on_created(self, event):
+        if not event.is_directory:
+            self._maybe(event.src_path)
+
+    def on_moved(self, event):
+        if not event.is_directory:
+            dest = getattr(event, 'dest_path', None)
+            if dest:
+                self._maybe(dest)
+
+
+# ---------------------------------------------------------------------------
 # Stage 1.6.1 — Startup scan + Flask-thread entry point
 # ---------------------------------------------------------------------------
 # Window for the startup-scan to consider a sitting CSV "recent enough" to
@@ -421,11 +480,24 @@ def _run_watch_loop(blocking: bool = True) -> int:
 
     ensure_client_folders(clients)
 
+    # N10 (16 May 2026): also schedule the KW + Search Term History
+    # incoming/ folder for any DBD-allowlist client. Same Observer, same
+    # thread pool — different handler class so the dispatch is type-safe.
+    from act_dashboard.data_pipeline import kw_history_ingest
+
     observer = Observer()
     for cid in clients:
         watch_path = incoming_dir(cid)
         observer.schedule(_Handler(cid), str(watch_path), recursive=False)
         logger.info(f'  watching {watch_path}')
+
+        # KW history watcher — opt-in via ALLOWED_CLIENTS_V1.
+        if cid in kw_history_ingest.ALLOWED_CLIENTS_V1:
+            kw_inc = kw_history_ingest.incoming_dir(cid)
+            kw_history_ingest.ensure_client_folders(cid)
+            observer.schedule(
+                _KwHistoryHandler(cid), str(kw_inc), recursive=False)
+            logger.info(f'  watching {kw_inc} (kw-history)')
     observer.start()
     logger.info('Watcher running.' + (' Ctrl+C to stop.' if blocking else ''))
 
