@@ -1558,7 +1558,16 @@
       return;
     }
     lastItems = data.items || [];
-    approvedReadyCount = data.approved_ready_count || 0;
+    // 18 May 2026 follow-up: the Pass 3 endpoint
+    // (/v2/api/negatives/phrase-suggestions/<client>) does NOT return an
+    // approved_ready_count field - it returns counts.approved. Without
+    // this branch, approvedReadyCount reset to 0 on every Pass 3 reload
+    // and the Push button stayed permanently disabled. Pass 1/2 still
+    // reads the dedicated approved_ready_count field which is a global
+    // (across-filters) count there.
+    approvedReadyCount = expectedTab === 'pass3'
+      ? ((data.counts && data.counts.approved) || 0)
+      : (data.approved_ready_count || 0);
     applyClientSideSort();
     updateSortIndicators();
 
@@ -1832,6 +1841,12 @@
     } else {
       btn.removeAttribute('title');
     }
+    // 18 May 2026 follow-up: re-evaluate visibility too. Pass 3
+    // approvedReadyCount can transition 0 -> N inside a session via
+    // bulk-approve without a reload, so the visibility gate must run
+    // every time the label updates - not only on tab switches /
+    // chip re-renders.
+    updatePushButtonVisibility();
   }
 
   // ---------- Wave D1: client-side column sort -----------------------
@@ -2005,6 +2020,15 @@
         if (sourceChip && sourceChip !== 'all') bumpChip(sourceChip, -marked);
         bumpChip(status, +marked);
         if (status === 'approved') approvedReadyCount += marked;
+      }
+      // 18 May 2026 follow-up: Pass 3 was missing the live counter
+      // bump. Bulk-approving rows on the Phrase Suggestions tab now
+      // increments approvedReadyCount the same way Pass 1/2 does, so
+      // the Push button label flips from "(N)" -> "(N+marked)"
+      // without waiting for a reload.
+      if (expectedTab === 'pass3' && currentTab === expectedTab
+          && status === 'approved') {
+        approvedReadyCount += marked;
       }
       updateButtons();
     } catch (e) { toast(`Bulk update failed: ${e.message}`, 'error'); }
