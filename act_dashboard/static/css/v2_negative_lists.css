@@ -1,4 +1,4 @@
-/* Section D (13 May 2026) — Negative Lists styles.
+/* Section D (13 May 2026) - Negative Lists styles.
    Migrated from v2_client_config.css and re-tuned to the ACT design
    standard (tokens, dark theme parity, sentence case-ready labels).
    Hosted on the Search Terms page as the right-aligned tab
@@ -153,7 +153,7 @@
   font-size: 13px;
 }
 
-/* Inline keyword sub-table — compact, theme-aware. */
+/* Inline keyword sub-table - compact, theme-aware. */
 .neg-kw-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .neg-kw-table th {
   text-align: left; font-weight: 600;

@@ -1,5 +1,5 @@
 /* ============================================================================
-   ACT v2 — Account Level Page Interactions
+   ACT v2 - Account Level Page Interactions
    Chart.js, date range, table sorting, sections, approve/decline
    ============================================================================ */
 
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Date range pills — full page reload preserving client param
+  // Date range pills - full page reload preserving client param
   function getClientParam() {
     return new URL(window.location.href).searchParams.get('client') || 'oe001';
   }
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------------------------------------------------------
-  // DATE PICKER — calendar with presets
+  // DATE PICKER - calendar with presets
   // -------------------------------------------------------------------------
   const dpEl = document.getElementById('datePicker');
   const dpLeftCal = document.getElementById('dpLeftCal');
@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', (e) => { e.stopPropagation(); handleAction(btn, 'decline', 'Declined', 'info'); });
   });
 
-  // --- View Details slide-in — shared renderer in v2_decision_details.js ---
+  // --- View Details slide-in - shared renderer in v2_decision_details.js ---
   document.querySelectorAll('[data-action="details"]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -273,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------------------------------------------------------
-  // CHART.JS — Dual-axis timeline with real data
+  // CHART.JS - Dual-axis timeline with real data
   // -------------------------------------------------------------------------
   const METRIC_DEFS = {
     cost:        { label: 'Cost',               prefix: '\u00a3', suffix: '' },

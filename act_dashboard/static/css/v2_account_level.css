@@ -1,5 +1,5 @@
 /* ============================================================================
-   ACT PROTOTYPE — ACCOUNT LEVEL v9 CSS
+   ACT PROTOTYPE - ACCOUNT LEVEL v9 CSS
    v9: Combined performance section, straight lines, shared date range, intervals
    ============================================================================ */
 
@@ -48,7 +48,7 @@
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tr:hover td { background: rgba(0,0,0,0.015); }
 [data-theme="dark"] .data-table tr:hover td { background: rgba(255,255,255,0.03); }
-/* v5 Change 2: Totals row — regular weight, keep border */
+/* v5 Change 2: Totals row - regular weight, keep border */
 .data-table tr.totals-row td {
   border-top: 2px solid var(--act-border); font-weight: 400; border-bottom: none;
 }
@@ -60,7 +60,7 @@
 .data-table--hist { table-layout: fixed; width: 100%; }
 .data-table--hist th, .data-table--hist td { width: 25%; text-align: left; }
 
-/* Column hints — only for campaigns table (14 cols needs guidance) */
+/* Column hints - only for campaigns table (14 cols needs guidance) */
 #campaignsTable th:first-child { width: 40px; } /* Status dot */
 
 /* v7: ALL table content left-aligned, system font */
@@ -151,10 +151,10 @@
 }
 .table-toolbar__left, .table-toolbar__right { display: flex; align-items: center; gap: 8px; }
 
-/* Pill button group — moved to v2_shared.css (12 May 2026, Section 1).
+/* Pill button group - moved to v2_shared.css (12 May 2026, Section 1).
  * Both Account and Search Terms pages link v2_shared.css for one source
  * of truth on .pill-group / .pill-btn / .pill-btn__count. Visual rules
- * are identical — no behavioural change for Account page. */
+ * are identical - no behavioural change for Account page. */
 
 /* Status dot */
 .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }

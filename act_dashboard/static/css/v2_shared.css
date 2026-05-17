@@ -1,4 +1,4 @@
-/* v2_shared.css — shared visual primitives for ACT v2 pages.
+/* v2_shared.css - shared visual primitives for ACT v2 pages.
  *
  * Anything that wants to live identically on multiple pages goes here.
  * Pages link this BEFORE their per-page CSS so per-page rules can
@@ -6,19 +6,19 @@
  *
  * Owners (Section 1, 12 May 2026):
  *   .pill-group / .pill-btn / .pill-btn__count
- *     — single source of truth for filter pill bars (Account page top
+ *     - single source of truth for filter pill bars (Account page top
  *       filter rows + Search Terms filter bars). Previously duplicated
  *       in v2_account_level.css; consolidated here to lock visual parity.
  */
 
 /* ============================================================
- * Pill button group — single-row segmented control.
+ * Pill button group - single-row segmented control.
  * Use:
  *   <div class="pill-group">
  *     <button class="pill-btn active">All <span class="pill-btn__count">384</span></button>
  *     <button class="pill-btn">Block <span class="pill-btn__count">16</span></button>
  *   </div>
- * Multi-select rows: allow multiple `.active` simultaneously — selector
+ * Multi-select rows: allow multiple `.active` simultaneously - selector
  * makes no exclusivity assumption.
  * ============================================================ */
 .pill-group {
@@ -47,6 +47,16 @@
 }
 .pill-btn:hover { background: rgba(0,0,0,0.05); }
 [data-theme="dark"] .pill-btn:hover { background: rgba(255,255,255,0.05); }
+/* Section 8 audit [026] (17 May 2026): shared keyboard focus ring for
+   pill-btn / btn-act / st-tab. Uses :focus-visible so mouse clicks
+   don't paint a ring; keyboard tab does. */
+.pill-btn:focus-visible,
+.btn-act:focus-visible,
+.st-tab:focus-visible {
+  outline: 2px solid var(--act-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 .pill-btn.active {
   background: var(--act-surface) !important;
   box-shadow: 0 1px 2px rgba(0,0,0,0.1);
@@ -74,7 +84,7 @@
 }
 
 /* ============================================================
- * Section 2 (13 May 2026) — white-card wrapper.
+ * Section 2 (13 May 2026) - white-card wrapper.
  *
  * Mirrors the visual language of the Account page's .acct-section
  * (in v2_account_level.css) so any v2 page can drop content into
@@ -122,11 +132,11 @@
 }
 
 /* ============================================================
- * Pagination button — small bordered button used in table footers.
+ * Pagination button - small bordered button used in table footers.
  * Mirror of Account page's .page-btn rules (moved here so any
  * page can drop a pagination footer without depending on Account
  * page CSS). Account page can keep its existing .page-btn rules
- * in v2_account_level.css — identical, no override conflict.
+ * in v2_account_level.css - identical, no override conflict.
  * ============================================================ */
 .page-btn {
   font-size: 12px; padding: 4px 10px;
@@ -144,7 +154,7 @@
 .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ============================================================
- * .data-table — shared narrow table look used by Account, Rejected
+ * .data-table - shared narrow table look used by Account, Rejected
  * terms, and Negative lists. Copied from v2_account_level.css so any
  * page can drop a clean table without depending on Account CSS load
  * order. Rules are identical to the Account version, so the cascade

@@ -1,4 +1,4 @@
-/* N1b Gate 5 — Search Term Review page (reuses v2_base + Morning Review
+/* N1b Gate 5 - Search Term Review page (reuses v2_base + Morning Review
    classes where possible; only genuinely new patterns defined here). */
 
 .act-date-picker {
@@ -10,7 +10,7 @@
   color: var(--act-text);
 }
 
-/* Fix 1.8 — date picker convention info icon. Sits inline with the
+/* Fix 1.8 - date picker convention info icon. Sits inline with the
    picker; no fixed dimensions so it can't push the picker around. The
    muted opacity + currentColor lets it pick up dark-mode text colour
    automatically. The native title="" tooltip handles hover/dismiss. */
@@ -29,14 +29,14 @@
 }
 
 /* Wave A patch 1 / Section 3 (12 May 2026): the .st-page .status-cards
-   grid override is gone — the 5 status cards were removed entirely (the
+   grid override is gone - the 5 status cards were removed entirely (the
    same counts live in the Status filter pills now). Base .status-cards
    rules live in v2_base.css; this page no longer needs to override them
    because the markup is gone. */
 
 /* Tabs */
 .st-tabs { display: flex; gap: 4px; margin: 16px 0 0; border-bottom: 1px solid var(--act-border-light); }
-/* IA refactor (13 May 2026): split layout — left group (active triage)
+/* IA refactor (13 May 2026): split layout - left group (active triage)
    + right group (archive/output). justify-content:space-between gives
    the two groups apart edges; gap rules still apply within each group. */
 .st-tabs--split { justify-content: space-between; }
@@ -64,7 +64,7 @@
   font-size: 11px; padding: 1px 6px; border-radius: 8px;
 }
 
-/* Filter bar row layout — Section 1 (12 May 2026).
+/* Filter bar row layout - Section 1 (12 May 2026).
  * The pill styling has moved to v2_shared.css (.pill-group / .pill-btn).
  * This rule only handles the row container (label + inner .pill-group).
  * Old .st-chip* rules removed; nothing else in the codebase referenced
@@ -74,7 +74,7 @@
   align-items: center;
 }
 .st-filter-bar__label {
-  /* Sentence-case per global ACT rule (12 May 2026) — was uppercase. */
+  /* Sentence-case per global ACT rule (12 May 2026) - was uppercase. */
   font-size: 12px; font-weight: 500;
   color: var(--act-text); opacity: 0.7;
   margin-right: 4px; min-width: 96px;
@@ -114,7 +114,7 @@
   outline: none;
 }
 
-/* Sticky action bar — pins below fixed topbar (z:900) on vertical scroll.
+/* Sticky action bar - pins below fixed topbar (z:900) on vertical scroll.
    z:25 puts it above any body content. Opaque bg covers rows behind it. */
 .st-action-bar {
   position: sticky; top: var(--act-topbar-height); z-index: 25;
@@ -128,18 +128,18 @@
 }
 .st-action-bar label { font-size: 13px; color: var(--act-text); }
 
-/* Wave C6: sticky thead removed entirely — we fought it through Waves B,
+/* Wave C6: sticky thead removed entirely - we fought it through Waves B,
    C3, C4, C5 and still had visual glitches (row 1 appearing above header,
    ghost bands, frozen-col interactions). Cutting losses: plain thead that
    scrolls off the top normally. The sticky action bar above stays pinned
    and is where quick bulk-actions live during scroll.
 
-   Simple horizontal scroll wrapper — no sticky interactions to worry about
+   Simple horizontal scroll wrapper - no sticky interactions to worry about
    now that thead isn't sticky, so a plain overflow-x: auto is safe. */
 /* Section 2 addendum 2 (13 May 2026): two-zone card layout.
-     .st-card-toolbar — tabs + filter pills + AI banners + action bar.
+     .st-card-toolbar - tabs + filter pills + AI banners + action bar.
                         20px padding (mirrors Account .acct-section__body).
-     .st-card-table   — tables + pagination. Zero outer padding so the
+     .st-card-table   - tables + pagination. Zero outer padding so the
                         table edge sits flush with the card edge; cell
                         padding (12px) provides the visible inset.
                         The P3 banners + pagination inside this zone get
@@ -157,7 +157,7 @@
 }
 /* Banners + pagination that sit inside .st-card-table need their own
    horizontal padding so they don't sit flush against the card edge
-   — they should line up with the action bar's 20px inset. */
+   - they should line up with the action bar's 20px inset. */
 .st-card-table > .st-p3-failure-banner,
 .st-card-table > .st-p3-theme-banner {
   margin-left: 20px;
@@ -180,10 +180,10 @@
 .st-table th, .st-table td {
   padding: 10px 12px;          /* Section 2: bumped 6/10 -> 10/12 to match Account .data-table */
   border-bottom: 1px solid var(--act-border-light);
-  /* Horizontal dividers only — no border-left/right anywhere on the
+  /* Horizontal dividers only - no border-left/right anywhere on the
      table, so the page reads as horizontal rows not a grid. */
   text-align: left;
-  vertical-align: middle;      /* Section 2: was top — middle aligns better with row hover + Account aesthetic */
+  vertical-align: middle;      /* Section 2: was top - middle aligns better with row hover + Account aesthetic */
   line-height: 1.3;
 }
 .st-table td { white-space: nowrap; }  /* wrap-cell / nth-child wraps opt in */
@@ -191,7 +191,7 @@
   font-weight: 600; font-size: 12px;
   color: var(--act-text);
   background: var(--act-surface);
-  border-bottom: 2px solid var(--act-border-light);  /* Section 2: match Account .data-table — heavier header underline */
+  border-bottom: 2px solid var(--act-border-light);  /* Section 2: match Account .data-table - heavier header underline */
   /* Section 2 addendum (13 May 2026): cap wraps at 2 lines (never 3).
      normal wrap + word-wrap allows the column to wrap when content is
      genuinely long; cells with shorter headers stay on 1 line. The
@@ -201,7 +201,7 @@
   vertical-align: middle;
   /* Section 2 addendum 2 (13 May 2026): base header is NON-interactive.
      Cursor stays default; no hover-primary. Sortable headers opt in via
-     the .st-sortable modifier below — same visual treatment as Account
+     the .st-sortable modifier below - same visual treatment as Account
      where only sortable cols are clickable. */
   cursor: default;
   user-select: none;
@@ -225,12 +225,12 @@
 
 /* Section 2 addendum 2 tweak (13 May 2026): lock the header row height
    to 59px so it doesn't visually dominate the table. CSS treats `height`
-   on a th as a minimum — content can still push it taller if it has to,
+   on a th as a minimum - content can still push it taller if it has to,
    but our 2-line wrap cap (addendum 1) keeps every header within this
    budget at production column widths. */
 .st-table thead th { height: 59px; }
 
-/* Frozen-left columns — horizontal-sticky only, independent of sticky
+/* Frozen-left columns - horizontal-sticky only, independent of sticky
    thead. Opaque bg so body rows scrolling under them don't show through.
    z-index 6 for body cells, 10 for thead frozen so thead frozen beats
    body frozen during horizontal scroll.
@@ -274,7 +274,7 @@
   background: rgba(255,255,255,0.03);
 }
 
-/* Wave C — cell wrapping primitives */
+/* Wave C - cell wrapping primitives */
 .st-table td.wrap-cell {
   white-space: normal;
   word-wrap: break-word;
@@ -288,18 +288,18 @@
   text-align: right;
   /* Section 2 addendum 2 (13 May 2026): vertical-align was 'top' here
      and was silently overriding the addendum-1 'middle' set on the
-     broader .st-table th rule. Removed — numeric cells now inherit
+     broader .st-table th rule. Removed - numeric cells now inherit
      'middle' from the broader rule, matching all other header cells. */
   font-variant-numeric: tabular-nums;
 }
 
-/* Wave C3 — per-column min/max widths (tighter). Wrapping text cols opt
+/* Wave C3 - per-column min/max widths (tighter). Wrapping text cols opt
    into normal white-space + break-word. Keyword + Campaign additionally
    get 2-line clamp (full text available via title="" tooltip). */
 /* N3-hotfix-1: # column is now nth-child(1); every other column shifted
    +1 so Search-term / Reason / Keyword regain their pre-N3g widths. */
 .st-table--wide th:nth-child(4),  .st-table--wide td:nth-child(4)  { min-width:  70px; max-width:  90px; }                    /* Status */
-.st-table--wide th:nth-child(5),  .st-table--wide td:nth-child(5)  { min-width: 100px; max-width: 160px; white-space: normal; word-wrap: break-word; } /* Reason — Wave C12 wider for detail text */
+.st-table--wide th:nth-child(5),  .st-table--wide td:nth-child(5)  { min-width: 100px; max-width: 160px; white-space: normal; word-wrap: break-word; } /* Reason - Wave C12 wider for detail text */
 /* Wave C8: widen + tighten padding so the longest Target list value
    (e.g. 'Com & Bran "ph"', 15 chars) fits the closed dropdown without
    overflowing into Match type. */
@@ -319,15 +319,15 @@
 .st-table--wide th:nth-child(15), .st-table--wide td:nth-child(15) { min-width:  50px; max-width:  70px; }                    /* Avg CPC */
 .st-table--wide th:nth-child(16), .st-table--wide td:nth-child(16) { min-width:  50px; max-width:  70px; }                    /* CTR */
 .st-table--wide th:nth-child(17), .st-table--wide td:nth-child(17) { min-width:  50px; max-width:  70px; }                    /* Conv */
-.st-table--wide th:nth-child(18), .st-table--wide td:nth-child(18) { min-width:  60px; max-width:  80px; }                    /* Cost / Conv — slightly wider so "Cost /" fits line 1 */
+.st-table--wide th:nth-child(18), .st-table--wide td:nth-child(18) { min-width:  60px; max-width:  80px; }                    /* Cost / Conv - slightly wider so "Cost /" fits line 1 */
 .st-table--wide th:nth-child(19), .st-table--wide td:nth-child(19) { min-width:  50px; max-width:  70px; }                    /* Conv rate */
-/* Push error column hidden — functionally dead since DuckDB UPDATE-on-UNIQUE
+/* Push error column hidden - functionally dead since DuckDB UPDATE-on-UNIQUE
    workaround landed (autocommit DELETE+INSERT in bulk_update_phrase_suggestions).
    DB column kept; markup + colspan untouched so AI Verdict / Confidence /
    Explain at nth-child 21/22/23 keep their existing widths. Re-surface by
    reverting this rule if ever needed. */
 .st-table--wide th:nth-child(20), .st-table--wide td:nth-child(20) { display: none; }
-/* Pass 3 Push error — same reasoning as above. Column 10 in #stP3Table. */
+/* Pass 3 Push error - same reasoning as above. Column 10 in #stP3Table. */
 #stP3Table th:nth-child(10), #stP3Table td:nth-child(10) { display: none; }
 
 /* Wave C7: 2-line clamp now lives on an INNER <div class="clamp-2"> inside
@@ -347,21 +347,21 @@
   max-height: calc(1.3em * 2 + 2px);
 }
 
-/* Wave C — rows-per-page control */
+/* Wave C - rows-per-page control */
 .st-pager label { font-size: 12px; color: var(--act-text); opacity: 0.7; margin-right: 4px; }
 .st-pager select {
   background: var(--act-surface); border: 1px solid var(--act-border);
   padding: 3px 6px; border-radius: 4px; font-size: 12px; color: var(--act-text);
 }
 .st-table td.num, .st-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
-/* Section 2 (13 May 2026): match Account page hover — very subtle dark
+/* Section 2 (13 May 2026): match Account page hover - very subtle dark
    wash. Was var(--act-hover-bg) which is heavier; the new value reads
    as "passive feedback" rather than "this row is hot". */
 .st-table tbody tr:hover td { background: rgba(0,0,0,0.015); }
 [data-theme="dark"] .st-table tbody tr:hover td { background: rgba(255,255,255,0.03); }
 .st-loading { padding: 40px; text-align: center; opacity: 0.6; }
 
-/* Section 6 (12 May 2026): Phrase Suggestions empty state — shown when
+/* Section 6 (12 May 2026): Phrase Suggestions empty state - shown when
    no Pass 3 run has happened yet. Centred message + prominent Run Pass 3
    CTA inside the table area, since the action-bar Run Pass 3 button
    only appears on this tab (Section 5) and the visual emphasis should
@@ -378,7 +378,7 @@
 }
 .st-p3-empty__cta {
   /* Lifts the empty-state Run Pass 3 visually above the smaller
-     action-bar version of the same button — same handler, two
+     action-bar version of the same button - same handler, two
      surfaces, this one is the primary CTA when the tab is empty. */
   font-size: 14px;
   padding: 10px 22px;
@@ -395,7 +395,7 @@
    page's badge density. Same semantic colour cues (red/amber/green/blue)
    so reviewers still get instant status recognition, but smaller padding,
    smaller font, less saturated text colour. Chips still carry MORE info
-   than a binary dot — kept the chip form (per brief explicit), just
+   than a binary dot - kept the chip form (per brief explicit), just
    lighter visual weight. */
 .st-status {
   display: inline-block;
@@ -410,6 +410,10 @@
 .st-status--approved { background: var(--act-green-bg);  color: #166534; }
 .st-status--rejected { background: #f3f4f6; color: #6b7280; }
 .st-status--expired  { background: #f3f4f6; color: #9aa0a6; }
+/* Section 8 audit [018] (17 May 2026): dark-mode variants - hardcoded
+   light-grey badges would disappear on the dark surface. */
+[data-theme="dark"] .st-status--rejected { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); }
+[data-theme="dark"] .st-status--expired  { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.5); }
 
 .st-risk {
   display: inline-block;
@@ -420,6 +424,8 @@
 .st-risk--high   { background: var(--act-red-bg);   color: #991b1b; }
 .st-risk--medium { background: var(--act-amber-bg); color: #854d0e; }
 .st-risk--low    { background: #f3f4f6; color: #6b7280; }
+/* Section 8 audit [019] (17 May 2026): dark-mode variant for risk-low. */
+[data-theme="dark"] .st-risk--low { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); }
 
 .st-target-select {
   width: 100%;
@@ -463,7 +469,7 @@
   font-size: 12px;
 }
 /* Reuse the .page-btn primitive from v2_account_level.css (it's defined
-   on the Account page but covers our pagination needs identically —
+   on the Account page but covers our pagination needs identically -
    small bordered button, hover fill, active blue). */
 .st-pager .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -476,15 +482,15 @@
 }
 .st-toast--error { background: #991b1b; }
 
-/* Wave D1 — sortable column headers */
+/* Wave D1 - sortable column headers */
 /* Section 2 addendum (13 May 2026): the old Wave D1 sort-indicator
    classes (.st-sortable, .st-sort-ind, .st-sortable:hover bg) have
-   been folded into the generic .st-table th rules above — every
+   been folded into the generic .st-table th rules above - every
    header is now cursor:pointer + hover-primary regardless of
    .st-sortable. The .st-sort-active state styling moved up to the
    th rules. Nothing here that survives consolidation. */
 
-/* Wave G — stacked "Needs / Review" pill so the Status column signals
+/* Wave G - stacked "Needs / Review" pill so the Status column signals
    the action required in one glance. Padding compensates for the shorter
    line-height so the pill's vertical footprint stays close to single-line. */
 .st-status--stacked {
@@ -499,19 +505,11 @@
   display: block;
 }
 
-/* N2 Part 5 — Neg-list sync pill in topbar */
-.neg-sync-pill {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 4px 10px; border-radius: 14px; font-size: 12px;
-  background: #f3f4f6; color: #374151; border: 1px solid transparent;
-  margin-left: 8px;
-}
-.neg-sync-pill.neg-sync--green { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
-.neg-sync-pill.neg-sync--amber { background: #fef3c7; color: #92400e; border-color: #fde68a; }
-.neg-sync-pill.neg-sync--red   { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
-.neg-sync-pill.neg-sync--none  { background: #f3f4f6; color: #6b7280; }
+/* Section 8 audit [014] (17 May 2026): N2 Part 5 .neg-sync-pill rules
+   removed - element was deleted from the template in the Section E IA
+   refactor (replaced by the shared .act-last-ran badge). */
 
-/* N2-polish-1 — Confirm modal (ACT styled) */
+/* N2-polish-1 - Confirm modal (ACT styled) */
 .act-confirm-overlay {
   position: fixed; inset: 0; background: rgba(17, 24, 39, 0.55);
   display: flex; align-items: center; justify-content: center;
@@ -539,7 +537,7 @@
   border-top: 1px solid var(--border-light, #f3f4f6); margin-top: 10px;
 }
 
-/* N3g — row number column on Search Terms tables (shared with Rejected Terms)
+/* N3g - row number column on Search Terms tables (shared with Rejected Terms)
    N3-hotfix-1: hard-lock the width so the browser can't redistribute it to
    other columns, which was squeezing Reason/Keyword and expanding Search term. */
 .st-table th.col-num, .st-table td.col-num {
@@ -548,7 +546,7 @@
   font-variant-numeric: tabular-nums; padding-right: 10px;
 }
 
-/* Fix 1.4 — stable session row numbering.
+/* Fix 1.4 - stable session row numbering.
    Actioned rows stay in the DOM (so row numbers don't shift) but are
    visually dimmed + struck-through. The col-num cell is excluded from
    strikethrough and dimming so the row number remains a clear reference
@@ -562,7 +560,7 @@
   text-decoration: none;
   font-weight: 500;
 }
-/* Status pill on actioned rows shouldn't be struck through — keep its
+/* Status pill on actioned rows shouldn't be struck through - keep its
    colour readable so the user can see the new state at a glance. */
 .st-table tbody tr.actioned td .st-status {
   text-decoration: none;
@@ -585,20 +583,22 @@
 }
 
 /* ============================================================
-   Stage 7 — AI columns, action buttons, transitional explain modal.
+   Stage 7 - AI columns, action buttons, transitional explain modal.
    ACT terminology is INVERTED: "approve" = block (push neg) /
    "reject" = keep running. The existing btn-act--approve is GREEN
    (var(--act-green)), so .ai-verdict-approve mirrors green.
    ============================================================ */
 
-/* AI verdict pill */
+/* AI verdict pill.
+   Section 8 audit [001] (17 May 2026): text-transform: uppercase dropped.
+   ALLCAPS is the only banned casing; the JS now emits Title Case labels
+   (Block / Don't Block / Unsure) which read cleaner. */
 .ai-verdict-pill {
   display: inline-block;
   padding: 2px 8px;
   border-radius: 10px;
   font-size: 11px;
   font-weight: 600;
-  text-transform: uppercase;
   letter-spacing: 0.3px;
 }
 .ai-verdict-approve { background: var(--act-green-bg); color: #166534; border: 1px solid var(--act-green-border); }
@@ -606,19 +606,24 @@
 .ai-verdict-unsure  { background: var(--act-amber-bg); color: #92400e; border: 1px solid var(--act-amber-border); }
 .ai-verdict-empty   { color: var(--text-muted); font-size: 14px; }
 
-/* AI confidence pill (sits next to a verdict pill) */
+/* AI confidence pill (sits next to a verdict pill).
+   Section 8 audit [002] (17 May 2026): text-transform: uppercase dropped.
+   Section 8 audit [016]: added [data-theme="dark"] variants matching the
+   KW History badge convention (rgba 0.18 bg + lighter fg). */
 .ai-conf-pill {
   display: inline-block;
   padding: 1px 6px;
   border-radius: 8px;
   font-size: 10px;
   font-weight: 500;
-  text-transform: uppercase;
   letter-spacing: 0.3px;
 }
 .ai-conf-high   { background: #d1fae5; color: #065f46; }
 .ai-conf-medium { background: #fef3c7; color: #92400e; }
 .ai-conf-low    { background: #fee2e2; color: #991b1b; }
+[data-theme="dark"] .ai-conf-high   { background: rgba(16,185,129,0.18); color: #34d399; }
+[data-theme="dark"] .ai-conf-medium { background: rgba(245,158,11,0.18); color: #fbbf24; }
+[data-theme="dark"] .ai-conf-low    { background: rgba(248,113,113,0.18); color: #fca5a5; }
 
 /* Intent tag subtitle inside the verdict cell */
 .ai-intent-tag {
@@ -661,7 +666,7 @@
   100% { background-position: -200% 0; }
 }
 
-/* Action-bar AI group — sits at start of .st-action-bar__right */
+/* Action-bar AI group - sits at start of .st-action-bar__right */
 .ai-action-group {
   display: inline-flex;
   gap: 6px;
@@ -674,7 +679,7 @@
   background: var(--act-primary);
   color: white;
 }
-.btn-act--ai:hover { background: #1d4ed8; }
+.btn-act--ai:hover { background: var(--act-primary-hover); }
 .btn-act--ai:disabled { opacity: 0.55; cursor: not-allowed; }
 .btn-act--ai-secondary {
   background: var(--act-blue-bg);
@@ -687,7 +692,7 @@
   opacity: 0.85;
 }
 /* Section 5 (12 May 2026): #btnFilterUnsure active-state rule
-   removed — the button itself is gone from the action bar. The
+   removed - the button itself is gone from the action bar. The
    .st-table.only-unsure filter class (further down) stays since the
    canned-reply pill in the chat panel still triggers it. */
 
@@ -723,10 +728,10 @@
 .ai-info-banner button:hover,
 .ai-error-banner button:hover { opacity: 1; }
 
-/* Stage 10 follow-up — empty-state banner shown above the table when
+/* Stage 10 follow-up - empty-state banner shown above the table when
    "Only unsure" filter is on but the current page has no unsure rows.
    Hidden by default; JS sets data-unsure-empty="true" on body when the
-   condition is met. Static-DOM approach (no dynamic insertion) — element
+   condition is met. Static-DOM approach (no dynamic insertion) - element
    lives in the template, CSS controls visibility. */
 .st-empty-banner {
   display: none;
@@ -742,7 +747,7 @@
 .st-empty-banner strong { font-weight: 600; }
 body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
 
-/* Pin reasonable widths for the new AI columns. Append-only — these
+/* Pin reasonable widths for the new AI columns. Append-only - these
    are positions 21/22/23 so they don't collide with the existing
    nth-child(4..20) rules above. */
 .st-table--wide th:nth-child(21), .st-table--wide td:nth-child(21) {
@@ -755,7 +760,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   min-width: 80px;  max-width: 100px;
 }
 
-/* "Only show unsure" filter — pure client-side toggle on .st-table.
+/* "Only show unsure" filter - pure client-side toggle on .st-table.
    When .only-unsure is set, hide rows whose data-ai-verdict is anything
    other than 'unsure'. Rows with no AI verdict yet (unclassified) also
    hide so the table reads as "rows the AI is uncertain about". */
@@ -764,7 +769,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
 }
 
 /* ============================================================
-   Stage 7.6 — Custom confirm modal (replaces native window.confirm).
+   Stage 7.6 - Custom confirm modal (replaces native window.confirm).
    Sits at z:1100 above the explain modal (z:2000) is intentional;
    confirms are short-lived and shouldn't outlive an open explain.
    Actually we put it BELOW the explain modal so a confirm CAN
@@ -822,7 +827,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   background: var(--act-primary);
   color: white;
 }
-.ai-confirm-ok--primary:hover { background: #1d4ed8; }
+.ai-confirm-ok--primary:hover { background: var(--act-primary-hover); }
 .ai-confirm-ok--danger {
   background: var(--act-red);
   color: white;
@@ -835,7 +840,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
 }
 
 /* ============================================================
-   Stage 8 — Split-screen 65/35 layout (AI panel shell).
+   Stage 8 - Split-screen 65/35 layout (AI panel shell).
    Top-bar offset uses the existing --act-topbar-height variable
    (52px in v2_base.css) so any future top-bar resize cascades
    automatically.
@@ -844,7 +849,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
 /* Stage 9.6: page-grid no longer carries the panel column. The panel is
    position:fixed against the viewport, decoupled from grid sizing
    entirely (Stage 8's sticky-inside-flex+grid was brittle on certain
-   viewports — Chris's input area kept sliding below the viewport on
+   viewports - Chris's input area kept sliding below the viewport on
    ~1080px tall windows even after the Stage 9.5 nested-flex
    min-height:0 fix). Single-column grid + right-padding reserves the
    visual space the panel occupies; collapsed state clears the padding
@@ -854,7 +859,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   grid-template-columns: 1fr;
   gap: 0;
   min-height: calc(100vh - var(--act-topbar-height));
-  /* Stage 9.7 — use vw not % so this matches the panel's vw width.
+  /* Stage 9.7 - use vw not % so this matches the panel's vw width.
      Previously: padding-right: 35% of .st-page (narrower than viewport
      because left sidebar) didn't match panel's 35% of viewport, so the
      cards row + action bar slid under the panel. */
@@ -865,7 +870,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   padding-right: 0;
 }
 
-/* Main column — wraps every existing UI element verbatim. min-width:0
+/* Main column - wraps every existing UI element verbatim. min-width:0
    prevents the wide table from blowing the grid out; overflow-x:auto
    lets the table scroll inside the column when it's too wide for 65%. */
 .ai-page-main {
@@ -873,7 +878,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   overflow-x: auto;
 }
 
-/* AI panel — fixed to the viewport right edge, below the topbar. The
+/* AI panel - fixed to the viewport right edge, below the topbar. The
    max-height + flex column + min-height:0 children chain (Stage 9.5)
    keeps the input area pinned at the bottom regardless of message
    list length. position:fixed avoids the sticky-inside-grid edge
@@ -882,14 +887,14 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   position: fixed;
   top: var(--act-topbar-height);
   right: 0;
-  bottom: 0;                /* Stage 9.7 — top+bottom defines height implicitly.
+  bottom: 0;                /* Stage 9.7 - top+bottom defines height implicitly.
                                Without this, position:fixed sizes to content,
                                so empty panel renders ~300px tall instead of
                                filling the viewport. */
-  width: 30vw;              /* Stage 9.7 — vw not % so this matches grid
+  width: 30vw;              /* Stage 9.7 - vw not % so this matches grid
                                padding-right: 30vw. Previously % referred to
                                viewport for fixed elements, but grid % referred
-                               to .st-page (narrower due to left sidebar) — the
+                               to .st-page (narrower due to left sidebar) - the
                                mismatch let cards slide under the panel. */
   border-left: 1px solid var(--act-border-light);
   background: var(--act-surface);
@@ -957,7 +962,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
 }
 .ai-panel-placeholder p { margin: 8px 0; line-height: 1.5; }
 
-/* Slim strip — fixed to viewport right when panel is collapsed.
+/* Slim strip - fixed to viewport right when panel is collapsed.
    JS toggles its display attribute alongside the grid state. */
 .ai-panel-strip {
   position: fixed;
@@ -978,9 +983,9 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   box-shadow: -2px 0 10px rgba(0,0,0,0.15);
   letter-spacing: 0.3px;
 }
-.ai-panel-strip:hover { background: #1d4ed8; }
+.ai-panel-strip:hover { background: var(--act-primary-hover); }
 
-/* Mobile fallback — under 1024px the panel disappears entirely and
+/* Mobile fallback - under 1024px the panel disappears entirely and
    the table goes full-width. The slim strip is hidden too because
    tap-targets at the screen edge collide with iOS / Android edge
    gestures. Chris uses desktop; explicit out-of-scope per brief. */
@@ -991,7 +996,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
 }
 
 /* ============================================================
-   Stage 9 — chat panel (replaces Stage 8 placeholder + Stage 7
+   Stage 9 - chat panel (replaces Stage 8 placeholder + Stage 7
    transitional Explain modal). Bubbles use the existing --act-*
    tokens so light/dark inherits automatically.
    ============================================================ */
@@ -1056,7 +1061,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   color: var(--act-text);
   border-bottom-left-radius: 4px;
   border: 1px solid var(--act-blue-border);
-  /* Stage 9.8 — assistant bubble is wider than user bubble so markdown
+  /* Stage 9.8 - assistant bubble is wider than user bubble so markdown
      tables get full panel width. User stays at 85% (default from .ai-chat-msg)
      because user messages don't contain tables. */
   max-width: 100%;
@@ -1084,7 +1089,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   padding: 6px 10px;
 }
 /* "🔍 Explain row [N]: term" markers are user-direction but visually
-   distinct from a typed chat message — italic + slightly muted. */
+   distinct from a typed chat message - italic + slightly muted. */
 .ai-chat-msg-explain-marker {
   align-self: flex-end;
   background: var(--act-hover-bg);
@@ -1095,7 +1100,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   border-bottom-right-radius: 4px;
 }
 
-/* Typing indicator — three pulsing dots in an assistant-style bubble */
+/* Typing indicator - three pulsing dots in an assistant-style bubble */
 .ai-chat-typing {
   align-self: flex-start;
   padding: 8px 14px;
@@ -1120,7 +1125,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   30% { opacity: 1; }
 }
 
-/* Input area — pinned to the bottom of the panel. */
+/* Input area - pinned to the bottom of the panel. */
 .ai-chat-input-area {
   border-top: 1px solid var(--act-border-light);
   padding: 8px 12px;
@@ -1164,15 +1169,15 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   background: var(--act-primary);
   color: white;
 }
-.ai-chat-send:hover { background: #1d4ed8; }
+.ai-chat-send:hover { background: var(--act-primary-hover); }
 .ai-chat-send:disabled { opacity: 0.55; cursor: not-allowed; }
 
 /* ============================================================
-   Stage 9.6 — Assistant markdown rendering (h3 + tables + bold).
+   Stage 9.6 - Assistant markdown rendering (h3 + tables + bold).
    Tables sit in a horizontal-scroll wrap so dense rows don't blow
    out the narrow chat panel. All cells wrap so column widths can
    stay tight. Numeric column right-alignment intentionally skipped
-   for MVP — Tier 2.2 polish item.
+   for MVP - Tier 2.2 polish item.
    ============================================================ */
 .ai-chat-msg-assistant .ai-chat-h3 {
   font-size: 13px;
@@ -1192,7 +1197,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   width: 100%;
   font-size: 11px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  /* Stage 9.8 — white background separates the table from the blue bubble. */
+  /* Stage 9.8 - white background separates the table from the blue bubble. */
   background: var(--act-surface);
   border: 1px solid var(--act-border-light);
   border-radius: 4px;
@@ -1210,7 +1215,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   background: var(--act-hover-bg);
   font-weight: 600;
   font-size: 11px;
-  /* Stage 9.8 — sentence case, no uppercase. Chris doesn't want allcaps. */
+  /* Stage 9.8 - sentence case, no uppercase. Chris doesn't want allcaps. */
   text-transform: none;
   letter-spacing: 0;
   white-space: nowrap;          /* headers compact */
@@ -1219,20 +1224,21 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
 .ai-chat-table tbody tr:last-child td { border-bottom: none; }
 .ai-chat-table tbody tr:nth-child(even) { background: var(--act-hover-bg); }
 
-/* Stage 9.8 — verdict cells render as pills, not just coloured text.
+/* Stage 9.8 - verdict cells render as pills, not just coloured text.
    JS tags the cell with one of these classes based on the textual content
    of the cell when its column header matches /verdict/i (see renderTable
    in v2_search_term_review.js). The cell text is wrapped in a <span> by
    the renderer so we can apply the pill bg/border without affecting cell
    padding. */
 .ai-chat-table td.verdict-cell { white-space: nowrap; }
+/* Section 8 audit [003] (17 May 2026): text-transform: uppercase dropped.
+   [017]: dark-mode variants added for each verdict bucket. */
 .ai-chat-table td.verdict-cell .verdict-pill {
   display: inline-block;
   padding: 1px 5px;
   border-radius: 8px;
   font-size: 10px;
   font-weight: 600;
-  text-transform: uppercase;
   letter-spacing: 0.3px;
   border: 1px solid transparent;
 }
@@ -1245,10 +1251,21 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
 .ai-chat-table td.verdict-unsure .verdict-pill {
   background: #f3f4f6; color: #4b5563; border-color: #e5e7eb;
 }
+/* Section 8 audit [017] (17 May 2026): dark-mode variants for the three
+   verdict buckets above. Mirrors the AI-confidence-pill convention. */
+[data-theme="dark"] .ai-chat-table td.verdict-block  .verdict-pill {
+  background: rgba(248,113,113,0.18); color: #fca5a5; border-color: rgba(248,113,113,0.35);
+}
+[data-theme="dark"] .ai-chat-table td.verdict-keep   .verdict-pill {
+  background: rgba(16,185,129,0.18); color: #34d399; border-color: rgba(16,185,129,0.35);
+}
+[data-theme="dark"] .ai-chat-table td.verdict-unsure .verdict-pill {
+  background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); border-color: rgba(255,255,255,0.12);
+}
 
 .ai-chat-msg-assistant strong { font-weight: 600; }
 
-/* Stage 10 — canned reply pills above the chat input. Always visible
+/* Stage 10 - canned reply pills above the chat input. Always visible
    (entry point for new users). Compact pill row, wraps to multiple
    lines if more pills than fit in panel width. */
 .ai-canned-replies {
@@ -1296,7 +1313,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   cursor: not-allowed;
 }
 
-/* Stage 11 — Pass 3 AI routing columns. .ai-conf-pill / .ai-conf-<level>
+/* Stage 11 - Pass 3 AI routing columns. .ai-conf-pill / .ai-conf-<level>
    are reused from Stage 7 (search-term review AI columns). */
 .ai-p3-role {
   font-size: 12px;
@@ -1304,7 +1321,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   cursor: help;  /* hover shows AI reasoning via title="" attr */
 }
 
-/* Highlight rows where AI disagrees with the engine's target_list_role —
+/* Highlight rows where AI disagrees with the engine's target_list_role -
    visual cue so the reviewer can focus on what's worth a second look.
    Light amber tint, subtle. */
 .st-table tbody tr.ai-p3-disagree {
@@ -1314,7 +1331,7 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   background: rgba(251, 191, 36, 0.12);
 }
 
-/* Tier 2.1e — Pass 3 AI theme banner. Sits above the Pass 3 fragment
+/* Tier 2.1e - Pass 3 AI theme banner. Sits above the Pass 3 fragment
    table; hidden when no themes exist for the current date. */
 .st-p3-theme-banner {
   display: flex;
@@ -1335,10 +1352,12 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   flex: 1;
   min-width: 0;
 }
+/* Section 8 audit [004] (17 May 2026): text-transform: uppercase dropped.
+   Template renders "AI Theme Summary" (Title Case OK per the relaxed
+   rule); CSS no longer forces ALLCAPS. */
 .st-p3-theme-banner__title {
   font-size: 12px;
   font-weight: 600;
-  text-transform: uppercase;
   letter-spacing: 0.4px;
   color: var(--act-primary, #2563eb);
   margin-bottom: 6px;

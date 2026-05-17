@@ -1,5 +1,5 @@
 /* ============================================================================
-   ACT PROTOTYPE — CLIENT CONFIGURATION PAGE CSS
+   ACT PROTOTYPE - CLIENT CONFIGURATION PAGE CSS
    Extends prototype-v7.css (imported in HTML). Only config-specific styles here.
    ============================================================================ */
 
@@ -351,7 +351,7 @@
   .setting-control { justify-content: flex-start; }
 }
 
-/* N1a — full-width textarea rows for client profile fields */
+/* N1a - full-width textarea rows for client profile fields */
 .setting-row--textarea { grid-template-columns: 1fr; gap: 8px; }
 .setting-control--full { width: 100%; justify-content: stretch; }
 .config-input--textarea {
@@ -437,7 +437,7 @@
 .level-row.state-off .level-row__icon { color: #9ca3af; }
 .level-row.state-off .level-row__state { color: var(--act-text); opacity: 0.5; }
 
-/* Active and Monitor rows — subtle tint of the appropriate colour */
+/* Active and Monitor rows - subtle tint of the appropriate colour */
 .level-row.state-monitor { background: rgba(59,130,246,0.04); }
 [data-theme="dark"] .level-row.state-monitor { background: rgba(59,130,246,0.08); }
 
@@ -524,7 +524,7 @@
   box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
-/* Active-state coloured active chip — Off = grey, Monitor = blue, Active = level colour */
+/* Active-state coloured active chip - Off = grey, Monitor = blue, Active = level colour */
 .level-row .level-toggle__opt[data-state="off"].active {
   background: #9ca3af; color: white; box-shadow: 0 1px 2px rgba(0,0,0,0.15);
 }
@@ -560,7 +560,7 @@
 .role-assign-select:focus { outline: 2px solid #3b82f6; outline-offset: -1px; border-color: #3b82f6; }
 
 /* ============================================================
-   N1n — Profile-list summary cards + slide-in list editor
+   N1n - Profile-list summary cards + slide-in list editor
    ============================================================ */
 
 /* Summary card (replaces the raw textarea in each profile row) */
@@ -592,7 +592,7 @@
   white-space: nowrap;
 }
 .config-list-summary__preview:empty::before {
-  content: '— empty —'; opacity: 0.6;
+  content: '- empty -'; opacity: 0.6;
 }
 .config-list-summary__edit {
   flex: 0 0 auto;
@@ -678,7 +678,7 @@
 }
 
 /* ============================================================
-   N1o — Rules Reference table (Search Terms tab header)
+   N1o - Rules Reference table (Search Terms tab header)
    ============================================================ */
 .rules-reference {
   margin-bottom: 28px;
@@ -687,7 +687,7 @@
 }
 .rules-reference__header { margin-bottom: 12px; }
 
-/* N1p — Pass 1 / Pass 2 / Pass 3 subsections inside the Rules Reference. */
+/* N1p - Pass 1 / Pass 2 / Pass 3 subsections inside the Rules Reference. */
 .rules-reference__intro { margin-bottom: 20px; }
 .rules-reference__pass {
   margin-top: 24px;
@@ -742,7 +742,7 @@
 .rules-outcome--block  { background: #fce4e4; color: #8a1c1c; }
 .rules-outcome--review { background: #fff4cc; color: #7a5c00; }
 
-/* N1w: Search Terms panel collapsible sections — add horizontal padding
+/* N1w: Search Terms panel collapsible sections - add horizontal padding
    inside the section body so content isn't flush to the edges. Base
    .act-section__body has padding:0 (designed for tight row lists on
    Account/Morning Review); Client Config cards + toggles need breathing room. */
@@ -756,6 +756,6 @@
   margin-bottom: 16px;
 }
 
-/* Section D (13 May 2026) — Negative Lists styles moved to
+/* Section D (13 May 2026) - Negative Lists styles moved to
    v2_negative_lists.css (hosted on the Search Terms page). */
 

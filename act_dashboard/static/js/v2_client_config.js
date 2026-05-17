@@ -1,5 +1,5 @@
 /* ============================================================================
-   ACT v2 — Client Configuration Page Interactions
+   ACT v2 - Client Configuration Page Interactions
    Tabs, toggles, validation, save/reset, persona switch, level toggles
    ============================================================================ */
 
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------------------------------------------------------
-  // N1v — COLLAPSIBLE SECTIONS (matches Account Level / Morning Review pattern)
+  // N1v - COLLAPSIBLE SECTIONS (matches Account Level / Morning Review pattern)
   // -------------------------------------------------------------------------
   document.querySelectorAll('.act-section__header').forEach(header => {
     header.style.cursor = 'pointer';
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
       sel.addEventListener('change', markDirty);
     });
 
-    // N1j — profile textareas (services_advertised, services_not_advertised,
+    // N1j - profile textareas (services_advertised, services_not_advertised,
     // service_locations, client_brand_terms, rule_7_exclude_tokens) weren't
     // wired to dirty-state. 'input' (not 'change') so Save activates the
     // instant the user types, matching numeric-input behaviour above.
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
       textarea.addEventListener('input', markDirty);
     });
 
-    // (Brief 2.1g toggle now uses the shared .config-toggle wiring above —
+    // (Brief 2.1g toggle now uses the shared .config-toggle wiring above -
     // no extra listener needed.)
   }
 
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupValidation();
 
   // -------------------------------------------------------------------------
-  // N1n — Profile-list summary cards + slide-in editor
+  // N1n - Profile-list summary cards + slide-in editor
   // -------------------------------------------------------------------------
   const listEditor = (function () {
     const el = {
@@ -230,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function clearWarn() { el.warn.style.display = 'none'; }
 
-    // ---------- Add handler — accepts single phrase OR comma/newline paste
+    // ---------- Add handler - accepts single phrase OR comma/newline paste
     function addFromInput() {
       const raw = el.addInput.value;
       if (!raw.trim()) return;
@@ -415,14 +415,14 @@ document.addEventListener('DOMContentLoaded', () => {
       data.client.target_roas = parseFloat(document.querySelector('[data-key="target_roas"]')?.value) || null;
     }
 
-    // N1a — client profile textareas (lowercase + trim on client; server re-normalises)
+    // N1a - client profile textareas (lowercase + trim on client; server re-normalises)
     const PROFILE_FIELDS = ['services_not_advertised', 'services_advertised', 'service_locations', 'client_brand_terms', 'rule_7_exclude_tokens'];
     PROFILE_FIELDS.forEach(k => {
       const el = document.querySelector(`textarea[data-key="${k}"]`);
       data.client[k] = el ? el.value.trim().toLowerCase() : '';
     });
 
-    // Brief 2.1g — AI Triage feedback-loop slider toggle. Stored on the
+    // Brief 2.1g - AI Triage feedback-loop slider toggle. Stored on the
     // act_v2_clients column, not act_v2_client_settings, so read from
     // data.client (the settings loop below skips this key).
     const aiFbEl = document.querySelector('.config-toggle[data-key="enable_ai_feedback_loop"]');
@@ -527,7 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------------------------------------------------------
-  // OPTIMIZATION LEVELS — 3-STATE TOGGLE
+  // OPTIMIZATION LEVELS - 3-STATE TOGGLE
   // -------------------------------------------------------------------------
   const STATE_LABELS = { off: 'Off', monitor: 'Monitor Only', active: 'Active' };
 
@@ -570,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const status = document.getElementById('roleStatusText');
     if (status) {
       status.textContent = assigned + ' of ' + total + ' campaigns mapped' +
-        (assigned < total ? ' — awaiting assignment' : '');
+        (assigned < total ? ' - awaiting assignment' : '');
     }
     const icon = status?.closest('.checklist-item')?.querySelector('.checklist-icon');
     if (icon) {

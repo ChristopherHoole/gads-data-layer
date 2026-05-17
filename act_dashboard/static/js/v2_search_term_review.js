@@ -1,4 +1,4 @@
-/* N1b Gate 5 — Search Term Review front-end
+/* N1b Gate 5 - Search Term Review front-end
    Handles: tab switch, filter-chip view load, selection, bulk approve/reject,
    push-approved, run-pass3, pagination, toast, error display. */
 
@@ -8,7 +8,7 @@
   let analysisDate = cfg.analysis_date;
   // IA refactor (13 May 2026): tabs widened to 'rejected' (and
   // 'negative-lists' in Section B). Visible-state branches stay keyed on
-  // pass12/pass3 only — the new tabs are handled in switchTab via a
+  // pass12/pass3 only - the new tabs are handled in switchTab via a
   // separate "right-side" branch that hides the triage card entirely.
   let currentTab = 'pass12';              // pass12 | pass3 | rejected
   let currentPage = 1;
@@ -29,14 +29,14 @@
   let p3View = 'pending';                  // Pass 3 tab single-select
   let liveTargetListLabels = {};           // Wave C4: {role: live_name} from API
   let campaignSource = 'all';              // Wave C10: all | search | pmax
-  // Wave D1 — client-side column sort. Applied AFTER fetch to lastItems.
+  // Wave D1 - client-side column sort. Applied AFTER fetch to lastItems.
   // null = no explicit sort (server-side ordering: impr DESC tie-break).
   let sortKey = null;
   let sortDir = 'desc';                    // 'asc' | 'desc'
-  // Wave D1 — whole-client approved-not-pushed count (drives Push button
+  // Wave D1 - whole-client approved-not-pushed count (drives Push button
   // even when current filter hides approved rows).
   let approvedReadyCount = 0;
-  // Fix 1.4 — stable session row numbering. After a bulk action we mark
+  // Fix 1.4 - stable session row numbering. After a bulk action we mark
   // rows in place rather than calling reload(), so row numbers don't
   // renumber mid-session. sessionTotal/sessionActioned drive the
   // "X of N actioned" header. hideActioned toggles a CSS class that
@@ -68,32 +68,32 @@
     brand_protection:               d => d ? `Brand: ${d}` : 'Brand',
     existing_exact_neg_match:       (d, item) => {
       // Wave L: surface the matched keyword (= search_term by Rule 2 equality)
-      // so leak diagnostics read naturally — parallel to Leak-phrase format.
+      // so leak diagnostics read naturally - parallel to Leak-phrase format.
       const term = item?.search_term || '';
-      if (!d) return term ? `Leak — exact: ${term}` : 'Leak — exact';
+      if (!d) return term ? `Leak - exact: ${term}` : 'Leak - exact';
       const roles = _rolesFromCsv(d);
-      return term ? `Leak — exact: ${term} (${roles})` : `Leak — exact: ${roles}`;
+      return term ? `Leak - exact: ${term} (${roles})` : `Leak - exact: ${roles}`;
     },
     existing_phrase_neg_match:      d => {
-      if (!d) return 'Leak — phrase';
+      if (!d) return 'Leak - phrase';
       const [phrase, rolesCsv] = d.split('|');
-      if (!rolesCsv) return `Leak — phrase: ${phrase}`;
-      return `Leak — phrase: ${phrase} (${_rolesFromCsv(rolesCsv)})`;
+      if (!rolesCsv) return `Leak - phrase: ${phrase}`;
+      return `Leak - phrase: ${phrase} (${_rolesFromCsv(rolesCsv)})`;
     },
-    existing_multiword_neg_match:   d => d ? `Leak — phrase: ${d}` : 'Leak — phrase',
+    existing_multiword_neg_match:   d => d ? `Leak - phrase: ${d}` : 'Leak - phrase',
     location_outside_service_area:  d => d ? `Outside: ${d}` : 'Outside service area',
     service_not_advertised:         d => d ? `Not advertised: ${d}` : 'Not advertised',
-    // N3 Part B: mixed-intent downgrade — detail format
+    // N3 Part B: mixed-intent downgrade - detail format
     // "adv: <phrase> | not-adv: <phrase>"
-    mixed_intent_adv_and_notadv:    d => d ? `Mixed intent — ${d}` : 'Mixed intent (adv + not-adv)',
-    sticky_rejected:                d => d ? `Sticky rejected — ${d}` : 'Sticky rejected',
+    mixed_intent_adv_and_notadv:    d => d ? `Mixed intent - ${d}` : 'Mixed intent (adv + not-adv)',
+    sticky_rejected:                d => d ? `Sticky rejected - ${d}` : 'Sticky rejected',
     advertised_service_match:       d => d ? `Advertised: ${d}` : 'Advertised',
     contains_neg_vocabulary:        d => d ? `Contains: ${d}` : 'Contains excluded term',
     ambiguous: (d, item) => {
       // Wave M: phrase-level near-match signals (replaces token-level noise).
       // Each value format: "phrase|abs/total". Explicit "no_match" sentinel
       // from backend when nothing crossed the 50% meaningful-overlap threshold.
-      if (!d || d === 'no_match') return 'Needs Review — no phrase match';
+      if (!d || d === 'no_match') return 'Needs Review - no phrase match';
       const parts = {};
       d.split(';').forEach(kv => {
         const i = kv.indexOf('=');
@@ -107,7 +107,7 @@
       if (parts.brand_near)   chunks.push(`brand near: ${fmt(parts.brand_near)}`);
       if (parts.adv_near)     chunks.push(`closest advertised: ${fmt(parts.adv_near)}`);
       if (parts.notadv_near)  chunks.push(`closest not-adv: ${fmt(parts.notadv_near)}`);
-      return chunks.length ? `Needs Review — ${chunks.join(' · ')}` : 'Needs Review — no phrase match';
+      return chunks.length ? `Needs Review - ${chunks.join(' · ')}` : 'Needs Review - no phrase match';
     },
     client_not_configured:          _ => 'Not configured',
     empty_term:                     _ => 'Empty term',
@@ -115,9 +115,9 @@
   // Short-form labels for the Reason filter chip row (detail varies per row).
   const REASON_CHIP_LABELS = {
     brand_protection:               'Brand',
-    existing_exact_neg_match:       'Leak — exact',
-    existing_phrase_neg_match:      'Leak — phrase',
-    existing_multiword_neg_match:   'Leak — phrase',
+    existing_exact_neg_match:       'Leak - exact',
+    existing_phrase_neg_match:      'Leak - phrase',
+    existing_multiword_neg_match:   'Leak - phrase',
     location_outside_service_area:  'Outside service area',
     service_not_advertised:         'Not advertised',
     advertised_service_match:       'Advertised',
@@ -153,7 +153,7 @@
     return fn(detail, item);
   }
   const humanReasonChip = c => REASON_CHIP_LABELS[c] || (c || '');
-  const humanRole   = r => ROLE_LABELS[r] || (r || '—');
+  const humanRole   = r => ROLE_LABELS[r] || (r || '-');
 
   // Wave B Gate C: search_term_view.status humanised for display
   const STATUS_LABELS = {
@@ -183,7 +183,7 @@
     return s.split(',').map(x => {
       const t = x.trim();
       if (CAMPAIGN_TYPE_LABELS[t]) return CAMPAIGN_TYPE_LABELS[t];
-      // Unknown value — title-case fallback
+      // Unknown value - title-case fallback
       return t ? t.charAt(0) + t.slice(1).toLowerCase().replace(/_/g, ' ') : '';
     }).join(', ');
   }
@@ -198,7 +198,7 @@
     {key: 'rejected', label: "Didn't Block"},
     {key: 'expired',  label: 'Expired'},
   ];
-  // Display order for reason chips — matches brief
+  // Display order for reason chips - matches brief
   const REASON_CHIP_ORDER = [
     'brand_protection',
     'existing_exact_neg_match',
@@ -243,9 +243,9 @@
     toast._t = setTimeout(() => { toastEl.style.display = 'none'; }, durationMs || 4000);
   }
 
-  // Wave C10: null -> "—" so PMax rows (cost/CPC/Cost-per-conv) display
+  // Wave C10: null -> "-" so PMax rows (cost/CPC/Cost-per-conv) display
   // as em-dash, clearly distinct from "£0.00". Same for percent fmt below.
-  const EMDASH = '—';
+  const EMDASH = '-';
   function fmtNum(n) { return n == null ? EMDASH : Number(n).toLocaleString(); }
   function fmtMoney(n) { return n == null ? EMDASH : '£' + Number(n).toFixed(2); }
 
@@ -256,11 +256,11 @@
     {key: 'search', label: 'Search'},
     {key: 'pmax',   label: 'PMax'},
   ];
-  // -------------------- Section 1 (12 May 2026) — pill-bar rendering ----
+  // -------------------- Section 1 (12 May 2026) - pill-bar rendering ----
   // All three Pass 1/2 filter rows (source / status / reason) plus the
   // Pass 3 status row use the same .pill-group / .pill-btn primitives
   // from v2_shared.css. _pillGroupOf(bar) returns the inner .pill-group
-  // container (the render target), creating it if missing (defensive —
+  // container (the render target), creating it if missing (defensive -
   // markup is in HTML, but tests/hot-reload could call before parse).
   // ---------------------------------------------------------------------
   function _pillGroupOf(bar) {
@@ -290,7 +290,7 @@
   // per the brief addendum.
   const PMAX_PILL_TOOLTIP =
     "Metrics split per source. Search data aligns with Google Ads UI's "
-    + "Search-term report — cross-validate there. "
+    + "Search-term report - cross-validate there. "
     + "PMax data from Google's campaign_search_term_insight API has "
     + "known inconsistencies with the UI.";
 
@@ -325,7 +325,7 @@
     if (n != null && impr != null) metrics.push(`${impr} impr`);
     if (cost) metrics.push(`${cost} cost`);
     const detail = metrics.length ? ` (${metrics.join(', ')})` : '';
-    return `Note: ${parts.join(' ')}${detail}. Individual terms not available via the API — review in Google Ads UI for full PMax coverage.`;
+    return `Note: ${parts.join(' ')}${detail}. Individual terms not available via the API - review in Google Ads UI for full PMax coverage.`;
   }
 
   function renderSourceChips(counts) {
@@ -341,7 +341,7 @@
         campaignSource = key;
         // Section 4 (12 May 2026): cascading "All" reset. Clicking All on
         // Campaign type (the top row) resets both downstream rows to All
-        // so the user sees the full unfiltered list. State changes only —
+        // so the user sees the full unfiltered list. State changes only -
         // a single reload() below redraws everything.
         if (key === 'all') {
           statusView = 'all';
@@ -366,9 +366,9 @@
         icon.type = 'button';
         icon.className = 'pmax-info-icon';
         icon.setAttribute('aria-label', 'PMax coverage info');
-        icon.textContent = 'ⓘ';  // CIRCLED LATIN SMALL LETTER I — ⓘ
+        icon.textContent = 'ⓘ';  // CIRCLED LATIN SMALL LETTER I - ⓘ
         icon.addEventListener('click', (e) => {
-          // Pure info target — must not toggle the PMax filter.
+          // Pure info target - must not toggle the PMax filter.
           e.stopPropagation();
           e.preventDefault();
         });
@@ -392,7 +392,7 @@
         if (statusView === key) return;
         statusView = key;
         // Section 4 (12 May 2026): cascading "All" reset. Clicking All on
-        // Status (the middle row) resets Reason to All — but does NOT
+        // Status (the middle row) resets Reason to All - but does NOT
         // touch Campaign type (upstream). Reason row is multi-select so
         // "reset to All" means clear all selected reasons.
         if (key === 'all') {
@@ -400,7 +400,7 @@
         }
         // Section 5 (12 May 2026): Push button is gated on Status=approved.
         // Update visibility live on every pill click (no reload needed
-        // — the button itself isn't filter-dependent, just status-aware).
+        // - the button itself isn't filter-dependent, just status-aware).
         updatePushButtonVisibility();
         currentPage = 1;
         reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2
@@ -408,7 +408,7 @@
       pg.appendChild(btn);
     });
     // Initial paint of the Push button visibility on every renderStatusChips
-    // call (called via reload() — covers page-load, tab-switch, filter
+    // call (called via reload() - covers page-load, tab-switch, filter
     // change). Cheaper than wiring a separate observer.
     updatePushButtonVisibility();
   }
@@ -416,10 +416,10 @@
   // Section 5 (12 May 2026): #stPushApproved is gated on the Status
   // filter pill. Only visible when statusView === 'approved' (the
   // "Approved to Block" pill); hidden in all other states. The pill key
-  // is 'approved' per STATUS_CHIP_ORDER — display label is "Approved to
+  // is 'approved' per STATUS_CHIP_ORDER - display label is "Approved to
   // Block" (the verbal rename from Tier 2.1 polish), but the underlying
   // enum stayed 'approved'. Also hidden on Pass 3 tab (no Push button
-  // there — Pass 3 has its own push endpoint).
+  // there - Pass 3 has its own push endpoint).
   function updatePushButtonVisibility() {
     const btn = document.getElementById('stPushApproved');
     if (!btn) return;
@@ -449,7 +449,7 @@
       + (p3Counts.approved || 0) + (p3Counts.pushed || 0)
       + (p3Counts.rejected || 0);
     if (totalAcrossStatuses === 0) {
-      // Empty-state CTA owns this surface — hide the action-bar twin.
+      // Empty-state CTA owns this surface - hide the action-bar twin.
       btn.style.display = 'none';
     } else {
       btn.style.display = '';
@@ -521,7 +521,7 @@
         p3View = key;
         currentPage = 1;
         // N1r: re-render chips so .active moves to the newly clicked chip.
-        // Safe to self-call — _pillGroupOf clears the container on entry.
+        // Safe to self-call - _pillGroupOf clears the container on entry.
         renderP3StatusChips();
         reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2
       });
@@ -556,11 +556,11 @@
     return renderPass1StatusPill(item.pass1_status);
   }
 
-  // -------------------- Row rendering (Pass 1/2 — 19 cols) -----------
+  // -------------------- Row rendering (Pass 1/2 - 19 cols) -----------
   function renderRow(item, idx) {
-    // Fix 1.4 — once a row has been actioned IN THIS SESSION, it's locked
+    // Fix 1.4 - once a row has been actioned IN THIS SESSION, it's locked
     // and visually struck-through. Pre-decided rows from server (e.g. the
-    // Approved filter view) keep their normal styling — only their status
+    // Approved filter view) keep their normal styling - only their status
     // pill differs. canEdit drives both checkbox + role dropdown enabled
     // state, so a sort-driven re-render preserves the locked state.
     const isActioned = sessionActionedIds.has(item.id);
@@ -583,8 +583,8 @@
     // N3g: continuous row # across pagination.
     const rowNum = (currentPage - 1) * PAGE_SIZE + (idx || 0) + 1;
     const actionedCls = isActioned ? ' class="actioned"' : '';
-    // Stage 7 — data-ai-verdict on <tr> drives the "Only show unsure"
-    // filter via a single CSS class on tbody (no reload — pure client-side).
+    // Stage 7 - data-ai-verdict on <tr> drives the "Only show unsure"
+    // filter via a single CSS class on tbody (no reload - pure client-side).
     const aiVerdictAttr = item.ai_verdict
       ? ` data-ai-verdict="${item.ai_verdict}"`
       : '';
@@ -615,19 +615,21 @@
     </tr>`;
   }
 
-  // -------------------- Stage 7 — AI cells + buttons -----------------
+  // -------------------- Stage 7 - AI cells + buttons -----------------
   // Display-label map for AI verdict pills. Underlying enum values
   // (approve/reject/unsure) stay as-is in the DB, API payloads, and JS
-  // comparisons elsewhere — this map is purely for the pill text.
+  // comparisons elsewhere - this map is purely for the pill text.
   // CSS class hook (.ai-verdict-${ai_verdict}) is unchanged so the
   // existing colours stay correct.
+  // Section 8 audit [001] (17 May 2026): labels switched from ALLCAPS to
+  // Title Case. CSS no longer forces uppercase on .ai-verdict-pill.
   const AI_VERDICT_LABEL = {
-    approve: 'BLOCK',
-    reject: "DON'T BLOCK",
-    unsure: 'UNSURE',
+    approve: 'Block',
+    reject: "Don't Block",
+    unsure: 'Unsure',
   };
   function renderAIVerdictCell(item) {
-    if (item.ai_verdict == null) return '<td class="ai-verdict-empty">—</td>';
+    if (item.ai_verdict == null) return '<td class="ai-verdict-empty">-</td>';
     const reasoning = item.ai_reasoning || '';
     const tip = reasoning.length > 200
       ? reasoning.slice(0, 200) + '…'
@@ -636,15 +638,19 @@
     const intent = item.ai_intent_tag
       ? `<span class="ai-intent-tag">${escapeHtml(item.ai_intent_tag)}</span>`
       : '';
-    const label = AI_VERDICT_LABEL[item.ai_verdict] || item.ai_verdict.toUpperCase();
+    // Fallback: capitalise first letter only (no .toUpperCase() - Section 8 audit).
+    const fallback = item.ai_verdict
+      ? item.ai_verdict.charAt(0).toUpperCase() + item.ai_verdict.slice(1)
+      : '';
+    const label = AI_VERDICT_LABEL[item.ai_verdict] || fallback;
     return `<td><span class="ai-verdict-pill ai-verdict-${item.ai_verdict}"${tipAttr}>${label}</span>${intent}</td>`;
   }
   function renderAIConfidenceCell(item) {
-    if (item.ai_confidence == null) return '<td class="ai-verdict-empty">—</td>';
+    if (item.ai_confidence == null) return '<td class="ai-verdict-empty">-</td>';
     return `<td><span class="ai-conf-pill ai-conf-${item.ai_confidence}">${item.ai_confidence}</span></td>`;
   }
   function renderAIExplainCell(item) {
-    // Stage 5 scope: explain-row endpoint accepts review_id only — Pass 3
+    // Stage 5 scope: explain-row endpoint accepts review_id only - Pass 3
     // (act_v2_phrase_suggestions) is out of scope this stage. We're inside
     // the Pass 1/2 renderer so all rows here are review-table rows; render
     // the link unconditionally. Pass 3 uses a separate renderP3Row().
@@ -652,7 +658,7 @@
   }
 
   // Derive the classify-terms `flow` from current filter state. Returns
-  // null when ambiguous (statusView='all' or campaignSource='all') —
+  // null when ambiguous (statusView='all' or campaignSource='all') -
   // caller surfaces a toast asking the user to narrow filters.
   function getCurrentFlowOrNull() {
     if (currentTab === 'pass3') return 'pass3';
@@ -689,9 +695,9 @@
     const btn = document.getElementById('btnAITriage');
     if (btn) btn.disabled = (n === 0);
   }
-  // Section 8a (13 May 2026): updateApplyHCButton removed — bulk-apply button deleted.
+  // Section 8a (13 May 2026): updateApplyHCButton removed - bulk-apply button deleted.
 
-  // Stage 7.6: drop-in styled replacement for window.confirm — Promise
+  // Stage 7.6: drop-in styled replacement for window.confirm - Promise
   // returns true on OK, false on Cancel / Escape / backdrop. Enter
   // confirms (the OK button is auto-focused on open).
   //
@@ -737,7 +743,7 @@
   }
 
   // ============================================================
-  // Stage 8 — AI panel: collapse/expand state + context header.
+  // Stage 8 - AI panel: collapse/expand state + context header.
   // Stage 9 fills the body with chat. Stage 10 adds canned replies.
   // ============================================================
   const AI_PANEL_STATE_KEY = 'act_ai_panel_state';   // 'open' | 'collapsed'
@@ -754,7 +760,7 @@
     if (strip) strip.style.display = state === 'collapsed' ? '' : 'none';
   }
 
-  // Friendly label builder — uses what the user has selected even when
+  // Friendly label builder - uses what the user has selected even when
   // it's ambiguous (e.g. "All > Block" or "Search > All"). Falls back
   // to "Phrase Suggestions" on the pass3 tab (Section 6 rename).
   function _aiPanelFlowLabel() {
@@ -774,8 +780,8 @@
     const ctx = document.getElementById('aiPanelContext');
     if (!ctx) return;
     const flowLabel = _aiPanelFlowLabel();
-    const clientName = (cfg && (cfg.client_name || cfg.client_id)) || '—';
-    const dateStr = analysisDate || '—';
+    const clientName = (cfg && (cfg.client_name || cfg.client_id)) || '-';
+    const dateStr = analysisDate || '-';
     const rowsLabel = lastTotal === 1 ? 'row' : 'rows';
     ctx.innerHTML =
       `<strong>${escapeHtml(flowLabel)}</strong> · `
@@ -784,7 +790,7 @@
       + `${escapeHtml(dateStr)}`;
   }
 
-  // Banners — info auto-dismisses, error stays until clicked
+  // Banners - info auto-dismisses, error stays until clicked
   function aiBanner(kind, msg) {
     const host = document.querySelector('.st-action-bar');
     if (!host) return;
@@ -804,7 +810,7 @@
     const flow = getCurrentFlowOrNull();
     if (!flow) {
       aiBanner('error',
-        "Pick a campaign source (Search / PMax) AND a status (Block / Review) before AI Triage — current filters are too broad.");
+        "Pick a campaign source (Search / PMax) AND a status (Block / Review) before AI Triage - current filters are too broad.");
       return;
     }
     const ids = getPendingClassifiableIds();
@@ -858,7 +864,7 @@
     }
   }
 
-  // Section 8a (13 May 2026): applyHighConf() removed — bulk-apply button deleted.
+  // Section 8a (13 May 2026): applyHighConf() removed - bulk-apply button deleted.
 
   // === "Only show unsure" filter (pure client-side; no reload). ===
   // Section 5 (12 May 2026): the #btnFilterUnsure action-bar button +
@@ -866,17 +872,17 @@
   // (further down) is still the canonical setter; the canned-reply
   // pill in the chat panel calls it directly. Same filter behaviour,
   // different entry point.
-  // KNOWN LIMIT — Tier 2.2 polish: pagination is server-side, so a page
+  // KNOWN LIMIT - Tier 2.2 polish: pagination is server-side, so a page
   // with zero unsure rows looks empty under filter even if other pages
-  // have unsures. Acceptable for MVP — user can switch off + paginate.
+  // have unsures. Acceptable for MVP - user can switch off + paginate.
 
-  // Stage 10 follow-up — when the unsure filter is on AND the current page
+  // Stage 10 follow-up - when the unsure filter is on AND the current page
   // has no unsure rows, surface a friendly empty-state banner.
   //
   // Implementation: static-DOM approach. The banner element lives in the
   // template at #stUnsureEmptyBanner with `display: none`. CSS shows it
   // when body has `data-unsure-empty="true"`. This function only flips
-  // that data attribute — no dynamic insertion / parent-element races.
+  // that data attribute - no dynamic insertion / parent-element races.
   function updateUnsureEmptyState() {
     const isOn = !!(stTable && stTable.classList.contains('only-unsure'));
     const unsureCount = stTable
@@ -886,15 +892,15 @@
   }
 
   // ============================================================
-  // Stage 9 — chat panel (free-text Opus + history hydration +
+  // Stage 9 - chat panel (free-text Opus + history hydration +
   // explain redirect into the chat stream).
   // ============================================================
 
-  // In-flight latch — set true while ANY chat-style call is running
+  // In-flight latch - set true while ANY chat-style call is running
   // (chat send OR explain-into-panel). Prevents the user from firing
   // a second request before the first completes (the lock is also
   // enforced server-side via locks.LockContentionError, but checking
-  // here is a friendlier UX — we surface a system bubble instead of
+  // here is a friendlier UX - we surface a system bubble instead of
   // a 409 banner).
   let aiChatLoading = false;
 
@@ -950,7 +956,7 @@
     }
     const safe = (msg.message && msg.message.trim())
       ? msg.message
-      : '[no response — try again]';
+      : '[no response - try again]';
     if (role === 'assistant') {
       el.innerHTML = renderAssistantMarkdown(safe);
     } else {
@@ -974,7 +980,7 @@
     const trimmed = block.trim();
     if (!trimmed) return '';
 
-    // ### H3 header — single-line only (multi-line headers would be weird)
+    // ### H3 header - single-line only (multi-line headers would be weird)
     if (/^###\s+/.test(trimmed) && !trimmed.includes('\n')) {
       const heading = trimmed.replace(/^###\s+/, '');
       return `<h4 class="ai-chat-h3">${_renderMdInline(heading)}</h4>`;
@@ -990,7 +996,7 @@
       return _renderMdTable(lines);
     }
 
-    // Bullet list — every line is a "- " or "* " bullet
+    // Bullet list - every line is a "- " or "* " bullet
     if (lines.every(l => /^\s*[-*]\s/.test(l))) {
       const items = lines
         .map(l => `<li>${_renderMdInline(l.replace(/^\s*[-*]\s*/, ''))}</li>`)
@@ -998,7 +1004,7 @@
       return `<ul>${items}</ul>`;
     }
 
-    // Numbered list — every line is "N. "
+    // Numbered list - every line is "N. "
     if (lines.every(l => /^\s*\d+\.\s/.test(l))) {
       const items = lines
         .map(l => `<li>${_renderMdInline(l.replace(/^\s*\d+\.\s*/, ''))}</li>`)
@@ -1020,7 +1026,7 @@
     const headers = parseCells(lines[0]);
     const rows = lines.slice(2).map(parseCells);
 
-    // Stage 9.8 — find the verdict column index by header name so we can
+    // Stage 9.8 - find the verdict column index by header name so we can
     // colour-code its cells (block=red, keep=green, unsure=grey). Whichever
     // column matches /verdict/i wins; if Opus reorders columns, this still
     // tracks. -1 if no verdict column.
@@ -1032,7 +1038,7 @@
       .map(r => '<tr>'
         + r.map((c, i) => {
             if (i === verdictIdx) {
-              // Stage 9.8 — wrap verdict text in a pill span so the cell
+              // Stage 9.8 - wrap verdict text in a pill span so the cell
               // shows a coloured rounded pill instead of plain coloured text.
               const verdictCls = _verdictClass(c);
               const cellCls = verdictCls ? `verdict-cell ${verdictCls}` : '';
@@ -1053,7 +1059,7 @@
   }
 
   function _verdictClass(cellText) {
-    // Match the cell text loosely — Opus might use "block", "Block",
+    // Match the cell text loosely - Opus might use "block", "Block",
     // "block (X)" with a parenthetical, etc. Empty / unrecognised → no class.
     const t = (cellText || '').trim().toLowerCase();
     if (t.startsWith('block'))  return 'verdict-block';
@@ -1110,7 +1116,7 @@
     if (!flow) {
       appendChatMsg({
         role: 'system',
-        message: 'Pick a campaign source (Search / PMax) AND a status (Block / Review) before chatting — current filters are too broad.',
+        message: 'Pick a campaign source (Search / PMax) AND a status (Block / Review) before chatting - current filters are too broad.',
       });
       return;
     }
@@ -1126,12 +1132,12 @@
 
     // Stage 9.5: snapshot the current page's rows so Opus actually sees
     // the table data the user is looking at. lastItems is the current
-    // RENDERED page (PAGE_SIZE rows max) — not the full filtered set;
+    // RENDERED page (PAGE_SIZE rows max) - not the full filtered set;
     // pagination shows different rows. Sort by cost desc + slice to 50
     // to keep token budget bounded (~50 rows = ~50 lines = ~1500 tokens).
     // Number-coerce DECIMAL strings before subtracting (DuckDB serializes
     // DECIMAL as string; "10" - "5" = "10-5" without coercion).
-    // Stage 9.8 — tag each row with its on-screen page_index BEFORE the
+    // Stage 9.8 - tag each row with its on-screen page_index BEFORE the
     // cost-sort so Opus can reference rows the same way the user sees them
     // in the main table ("row 2"). Without this, Opus shows review_id (5-6
     // digits) which doesn't match the main table's 1..N row numbering.
@@ -1192,7 +1198,7 @@
   }
 
   // ============================================================
-  // Stage 10 — canned reply pills above the chat input. Two types:
+  // Stage 10 - canned reply pills above the chat input. Two types:
   //   type: 'chat'   -> fills the chat input with `prompt` and submits
   //   type: 'filter' -> toggles a table filter (no AI call, no token spend)
   //
@@ -1200,7 +1206,7 @@
   // has its own set since it's phrase routing, not row classification.
   //
   // Note: "Only unsure" duplicates the Stage 7 action-bar button intentionally.
-  // Two entry points to the same state — one in the table area for table-focused
+  // Two entry points to the same state - one in the table area for table-focused
   // work, one in the panel for chat-focused work. They both target the same
   // underlying state (the .only-unsure CSS class on stTable + the action-bar
   // button's data-active flag), kept in sync via setUnsureFilter().
@@ -1285,13 +1291,13 @@
     }
   }
 
-  // "Set, don't toggle" — clicking a canned pill should always activate
+  // "Set, don't toggle" - clicking a canned pill should always activate
   // the filter (never clear it).
   // Section 5 (12 May 2026): the action-bar #btnFilterUnsure button was
   // removed; clearing the filter is now done by re-clicking the same
   // canned-reply pill, or by leaving Status=approved/etc which auto-
   // recomputes the table. (User-facing flow change banked; behaviour
-  // here is unchanged — function still sets the .only-unsure CSS class
+  // here is unchanged - function still sets the .only-unsure CSS class
   // on stTable, same as before.)
   function setUnsureFilter(active) {
     if (stTable) stTable.classList.toggle('only-unsure', !!active);
@@ -1301,7 +1307,7 @@
   function applyCannedFilter(filter) {
     if (filter && filter.ai_verdict === 'unsure') {
       setUnsureFilter(true);
-      // No reload needed — setUnsureFilter is pure client-side CSS.
+      // No reload needed - setUnsureFilter is pure client-side CSS.
     }
   }
 
@@ -1316,7 +1322,7 @@
     }
     const ok = await aiConfirm({
       title: 'Clear this conversation?',
-      body: 'All messages for the current view will be hidden. (Soft delete — recoverable from the database.)',
+      body: 'All messages for the current view will be hidden. (Soft delete - recoverable from the database.)',
       okLabel: 'Clear',
       okStyle: 'danger',
     });
@@ -1343,13 +1349,13 @@
   }
 
   // Replaces the Stage 7 transitional Explain modal. Per-row Explain
-  // now appends to the chat stream — auto-expands the panel if it's
+  // now appends to the chat stream - auto-expands the panel if it's
   // collapsed so the user actually SEES their request + reply.
   async function explainRowInPanel(reviewId, searchTerm, item) {
     if (aiChatLoading) {
       appendChatMsg({
         role: 'system',
-        message: 'Another AI call is in flight — wait for it to finish.',
+        message: 'Another AI call is in flight - wait for it to finish.',
       });
       return;
     }
@@ -1412,7 +1418,7 @@
 
   // -------------------- Row rendering (Pass 3) -----------------------
   function renderP3Row(item, idx) {
-    // Fix 1.4 — same actioned-row lock as Pass 1/2 (in-session only).
+    // Fix 1.4 - same actioned-row lock as Pass 1/2 (in-session only).
     const isActioned = sessionActionedIds.has(item.id);
     const roleSel = isActioned
       ? `<select class="st-target-select" disabled><option>${humanRole(item.target_list_role)}</option></select>`
@@ -1427,7 +1433,7 @@
       : '<span class="st-status st-status--review">pending</span>';
     const rowNum = (currentPage - 1) * PAGE_SIZE + (idx || 0) + 1;
 
-    // Stage 11 — unified class list (replaces standalone actionedCls).
+    // Stage 11 - unified class list (replaces standalone actionedCls).
     // Two flags can apply at the same time: in-session actioned lock AND
     // AI-disagrees-with-engine highlight. Build one class attribute.
     const trClasses = [];
@@ -1437,14 +1443,14 @@
     if (aiDisagrees) trClasses.push('ai-p3-disagree');
     const classAttr = trClasses.length ? ` class="${trClasses.join(' ')}"` : '';
 
-    // Stage 11 — AI suggested role + confidence cells. Reuses the
+    // Stage 11 - AI suggested role + confidence cells. Reuses the
     // .ai-conf-pill / ai-conf-<level> classes from Stage 7.
     const aiRoleCell = item.ai_target_list_role
       ? `<td><span class="ai-p3-role" title="${escapeHtml(item.ai_reasoning || '')}">${escapeHtml(humanRole(item.ai_target_list_role))}</span></td>`
-      : '<td class="ai-verdict-empty">—</td>';
+      : '<td class="ai-verdict-empty">-</td>';
     const aiConfCell = item.ai_confidence
       ? `<td><span class="ai-conf-pill ai-conf-${escapeHtml(item.ai_confidence)}">${escapeHtml(item.ai_confidence)}</span></td>`
-      : '<td class="ai-verdict-empty">—</td>';
+      : '<td class="ai-verdict-empty">-</td>';
 
     return `<tr data-id="${item.id}"${classAttr}>
       <td><input type="checkbox" class="st-chk" ${chkAttrs}></td>
@@ -1463,12 +1469,12 @@
   }
 
   // ============================================================
-  // Stage 11 — Pass 3 AI routing.
-  //   * fireAIRouteP3   — POST /classify-terms with flow=pass3
-  //   * applyAIRouteP3  — bulk-update pending row dropdowns to AI's
+  // Stage 11 - Pass 3 AI routing.
+  //   * fireAIRouteP3   - POST /classify-terms with flow=pass3
+  //   * applyAIRouteP3  - bulk-update pending row dropdowns to AI's
   //                       suggestion (client-side only; user still
   //                       reviews + approves via the existing flow).
-  //   * updateAIRouteP3Badge / updateApplyAIRouteP3Button — counters.
+  //   * updateAIRouteP3Badge / updateApplyAIRouteP3Button - counters.
   // ============================================================
   async function fireAIRouteP3() {
     const pendingIds = (lastItems || [])
@@ -1521,7 +1527,7 @@
   }
 
   // Bulk-update each pending row's target_list_role dropdown to AI's
-  // suggestion. Does NOT auto-approve and does NOT write to the DB —
+  // suggestion. Does NOT auto-approve and does NOT write to the DB -
   // user reviews + approves via existing flow. Sidesteps the DuckDB
   // UPDATE-on-UNIQUE bug by keeping changes purely in-memory + DOM.
   //
@@ -1539,7 +1545,7 @@
     }
     const ok = await aiConfirm({
       title: `Apply AI routing to ${candidates.length} phrases?`,
-      body: `Each row's target list dropdown will be updated to the AI's suggestion. You still need to <strong>approve</strong> them via the existing flow before they push to Google Ads. This change is reversible — just change the dropdown back, or refresh.<br><br><em>Don't reload the page before approving — your changes will revert.</em>`,
+      body: `Each row's target list dropdown will be updated to the AI's suggestion. You still need to <strong>approve</strong> them via the existing flow before they push to Google Ads. This change is reversible - just change the dropdown back, or refresh.<br><br><em>Don't reload the page before approving - your changes will revert.</em>`,
       okLabel: 'Apply routing',
       okStyle: 'primary',
     });
@@ -1612,8 +1618,8 @@
 
   // -------------------- Load + render --------------------------------
   // Fix 1.4 follow-up (Issue 2): chip filters (status / reason / source / p3)
-  // are not a context boundary — they're just a view filter on the same
-  // dataset — so the in-session actioned set must persist across them.
+  // are not a context boundary - they're just a view filter on the same
+  // dataset - so the in-session actioned set must persist across them.
   // Pagination, page-size, date change, refresh, reclassify, push, and
   // initial load are real boundaries and DO reset the session set.
   async function reload(opts) {
@@ -1647,7 +1653,7 @@
     applyClientSideSort();
     updateSortIndicators();
 
-    // Fix 1.4 follow-up — clear/preserve the in-session actioned set BEFORE
+    // Fix 1.4 follow-up - clear/preserve the in-session actioned set BEFORE
     // we render the new tbody, so renderRow's isActioned check sees the
     // correct state. Order matters: stale Set + new rows would otherwise
     // carry .actioned classes onto rows from a different page/date.
@@ -1681,7 +1687,7 @@
         renderP3StatusChips();
       }
       // Section 6 addendum: re-evaluate the action-bar Run Pass 3 button
-      // now that p3Counts is fresh — flips between hidden (no run yet,
+      // now that p3Counts is fresh - flips between hidden (no run yet,
       // empty-state CTA owns the surface) and visible "Re-run Pass 3"
       // (suggestions exist).
       updateRunPass3ButtonVisibility();
@@ -1694,11 +1700,11 @@
     } else {
       // Section 6 (12 May 2026): two distinct empty-state messages on
       // the Phrase Suggestions tab:
-      //   (a) No run yet — total across ALL p3 statuses is 0. Show a
+      //   (a) No run yet - total across ALL p3 statuses is 0. Show a
       //       centred CTA pointing at Run Pass 3 (the empty-state
       //       button delegates to the same runPass3 handler as the
-      //       action-bar Run Pass 3 button — both fire AI Pass 3).
-      //   (b) Filter shows nothing — at least one status has rows but
+      //       action-bar Run Pass 3 button - both fire AI Pass 3).
+      //   (b) Filter shows nothing - at least one status has rows but
       //       the current view filter excludes everything. Show the
       //       plain "No matching suggestions" message.
       const totalAcrossStatuses = (p3Counts.pending || 0)
@@ -1709,7 +1715,7 @@
       } else if (totalAcrossStatuses === 0) {
         p3body.innerHTML = `
           <tr><td colspan="12" class="st-p3-empty">
-            <div class="st-p3-empty__text">No phrase suggestions yet — run Pass 3 to generate them.</div>
+            <div class="st-p3-empty__text">No phrase suggestions yet - run Pass 3 to generate them.</div>
             <button type="button" class="btn-act btn-act--approve st-p3-empty__cta" data-action="run-pass3-empty">Run Pass 3</button>
           </td></tr>`;
       } else {
@@ -1741,21 +1747,21 @@
     document.getElementById('stNext').disabled = lastItems.length < PAGE_SIZE
       || (currentPage * PAGE_SIZE) >= data.total;
     updateButtons();
-    // Stage 7 — refresh AI badges/buttons whenever the table data changes
+    // Stage 7 - refresh AI badges/buttons whenever the table data changes
     updateAITriageBadge();
-    // Stage 8 — refresh AI panel context header (flow / total / client / date)
+    // Stage 8 - refresh AI panel context header (flow / total / client / date)
     updateAIPanelContext();
-    // Stage 9 — re-hydrate chat history when the (flow, date) scope
+    // Stage 9 - re-hydrate chat history when the (flow, date) scope
     // changes. hydrateChatHistory itself is a no-op when flow is null
     // (e.g. "All > All") so calling it on every reload is safe.
     hydrateChatHistory();
-    // Stage 10 — re-render canned reply pills (Pass 3 vs main flows
+    // Stage 10 - re-render canned reply pills (Pass 3 vs main flows
     // get different sets; tab switches funnel through reload()).
     renderCannedReplies();
-    // Stage 11 — Pass 3 AI routing badge + apply button visibility.
+    // Stage 11 - Pass 3 AI routing badge + apply button visibility.
     updateAIRouteP3Badge();
     updateApplyAIRouteP3Button();
-    // Stage 10 follow-up — recompute unsure-filter empty banner now that
+    // Stage 10 follow-up - recompute unsure-filter empty banner now that
     // tbody has new rows (the filter state may have stayed on across reload).
     updateUnsureEmptyState();
   }
@@ -1766,7 +1772,7 @@
       ? tbody.querySelectorAll('tr[data-id]') : p3body.querySelectorAll('tr[data-id]');
     const ids = [];
     rows.forEach(tr => {
-      // Fix 1.4 — actioned rows are visually struck-through and locked;
+      // Fix 1.4 - actioned rows are visually struck-through and locked;
       // skip them so a stray Select-all click can't re-action them.
       if (tr.classList.contains('actioned')) return;
       const chk = tr.querySelector('input.st-chk');
@@ -1795,7 +1801,7 @@
   // during QA. Rewrote as a single defensive helper that strips any non-digit
   // cruft (whitespace, commas, NBSP), parses, clamps to >=0, and writes back.
   // Same code path for every card so behaviour is symmetric across paths.
-  // Section 3 (12 May 2026): bumpCard removed — the 5 status cards it
+  // Section 3 (12 May 2026): bumpCard removed - the 5 status cards it
   // updated were deleted from the page. bumpChip (below) handles the
   // optimistic count updates on the Status filter pills, which are now
   // the single source for these counts.
@@ -1834,7 +1840,7 @@
     if (currentTab === 'pass12') {
       const cells = tr.children;
       // Status column is still at index 3 (Section 2 addendum swapped
-      // checkbox↔#: chk=0, col-num=1, search-term=2, status=3 — same
+      // checkbox↔#: chk=0, col-num=1, search-term=2, status=3 - same
       // status index as before, only cells 0 and 1 swapped).
       if (cells[3]) {
         cells[3].innerHTML =
@@ -1843,7 +1849,7 @@
     } else {
       // Pass 3 status column at index 7 (Section 2 addendum swapped
       // checkbox↔#: chk=0, col-num=1, fragment=2, words=3, role=4,
-      // occ=5, risk=6, status=7 — same status index as before).
+      // occ=5, risk=6, status=7 - same status index as before).
       const cells = tr.children;
       if (cells[7]) {
         cells[7].innerHTML =
@@ -1853,7 +1859,7 @@
     // Lock the checkbox so the row can't be re-actioned without reload
     const chk = tr.querySelector('input.st-chk');
     if (chk) { chk.checked = false; chk.disabled = true; }
-    // Lock the role dropdown too — role choice is captured at action time
+    // Lock the role dropdown too - role choice is captured at action time
     const roleEl = tr.querySelector('select.st-target-select');
     if (roleEl) roleEl.disabled = true;
     return true;
@@ -1872,19 +1878,19 @@
     document.getElementById('lblReject').textContent = sel.length;
     document.getElementById('stBulkApprove').disabled = sel.length === 0;
     document.getElementById('stBulkReject').disabled = sel.length === 0;
-    // Wave D1 (Fix 3) — push button reflects ALL approved-not-pushed rows for
+    // Wave D1 (Fix 3) - push button reflects ALL approved-not-pushed rows for
     // this client+date, not just what's in the current filtered view. Users
     // often approve from Block view (rows then move to Approved view) and
     // would otherwise see a greyed-out button that looks broken.
     //
     // Stage 7.6: backend push endpoint is genuinely global (POSTs
     // {client_id, analysis_date} with no filter pass-through), so the
-    // count + handler ARE consistent — the button DOES push exactly
+    // count + handler ARE consistent - the button DOES push exactly
     // what it says. The label gets an "(across all tabs)" caveat when
     // the global count is larger than what's visible in the current
     // filter, so the user understands the scope. Re-aligning to a
     // filtered scope would need a backend change (filter pass-through
-    // on POST /v2/api/negatives/push-approved) — Tier 2.2.
+    // on POST /v2/api/negatives/push-approved) - Tier 2.2.
     const btn = document.getElementById('stPushApproved');
     btn.disabled = approvedReadyCount === 0;
     const approvedInView = lastItems.filter(i =>
@@ -1892,7 +1898,7 @@
     if (approvedReadyCount === 0) {
       btn.textContent = 'Push to GAds Neg Lists';
     } else if (approvedInView < approvedReadyCount) {
-      // More approved rows exist outside the current filter — be explicit
+      // More approved rows exist outside the current filter - be explicit
       btn.textContent =
         `Push ${approvedReadyCount} to GAds Neg Lists (across all tabs)`;
     } else {
@@ -1913,7 +1919,7 @@
   }
 
   // ---------- Wave D1: client-side column sort -----------------------
-  // Compare helper: nulls last in both directions so "—" rows sink.
+  // Compare helper: nulls last in both directions so "-" rows sink.
   function _cmp(a, b) {
     if (a == null && b == null) return 0;
     if (a == null) return 1;
@@ -1942,7 +1948,7 @@
   // (was a custom .st-sort-ind glyph swap). Active sort flips the
   // glyph name to expand_more / expand_less and adds st-sort-active
   // on the th. Non-sortable headers also have the glyph for visual
-  // consistency — left untouched here (they never become active).
+  // consistency - left untouched here (they never become active).
   function updateSortIndicators() {
     document.querySelectorAll('#stTable thead th.st-sortable').forEach(th => {
       const glyph = th.querySelector('.st-sort-glyph');
@@ -1999,7 +2005,7 @@
     try {
       const res = await apiPost(endpoint, {client_id: CLIENT, items});
       toast(`${status}: ${res.updated_count} row(s)`);
-      // Fix 1.4 — mark each actioned row in-place so row numbers stay
+      // Fix 1.4 - mark each actioned row in-place so row numbers stay
       // stable for the session. We deliberately do NOT call reload();
       // that's what was renumbering the table mid-triage. Status-card +
       // chip counts go slightly stale until next filter/page change,
@@ -2008,7 +2014,7 @@
       sel.forEach(s => { if (markRowActioned(s.id, status)) marked++; });
       sessionActioned += marked;
       updateSessionProgress();
-      // Fix 1.4 Issue 1 / Section 3 (12 May 2026) — keep the Status filter
+      // Fix 1.4 Issue 1 / Section 3 (12 May 2026) - keep the Status filter
       // pills in sync with the action. (Top stat cards were removed in
       // Section 3; the pills are now the single source for these counts.)
       // The pre-action source pill (typically Review for Pass 1/2 triage)
@@ -2045,7 +2051,7 @@
   }
 
   async function runPass3() {
-    // Tier 2.1e — "Run Pass 3" now calls the AI engine. The legacy
+    // Tier 2.1e - "Run Pass 3" now calls the AI engine. The legacy
     // rule-based engine remains callable at /v2/api/negatives/run-pass3
     // (gated by ACT_PASS3_ENGINE=rules env var, used for debugging).
     //
@@ -2060,7 +2066,7 @@
     // OR failure) both buttons are re-enabled in a single render pass;
     // labels are restored (action-bar via updateRunPass3ButtonVisibility
     // which re-derives from p3Counts; empty-state to plain "Run Pass 3"
-    // — though the empty-state usually disappears after a successful run
+    // - though the empty-state usually disappears after a successful run
     // anyway since lastItems populates and the render branch switches).
     const _collectPass3Buttons = () => {
       const out = [];
@@ -2085,13 +2091,13 @@
         const label = `⏳ running… ${secs}s`;
         pass3Buttons.forEach(({el}) => {
           // Only update buttons still in the DOM. If a re-render swapped
-          // out the empty-state container mid-run, its button is gone —
+          // out the empty-state container mid-run, its button is gone -
           // skip it. Action-bar button stays put throughout.
           if (el.isConnected) el.textContent = label;
         });
       }, 1000);
     }
-    toast('Pass 3 AI started — this can take 30s to 5min depending on dataset size.', 'info');
+    toast('Pass 3 AI started - this can take 30s to 5min depending on dataset size.', 'info');
     try {
       const res = await apiPost('/v2/api/search-terms/run-pass3-ai',
         {client_id: CLIENT, analysis_date: analysisDate});
@@ -2164,17 +2170,17 @@
           })
         : '(unknown time)';
       const err = data.error_message
-        ? ` — ${data.error_message.slice(0, 200)}`
+        ? ` - ${data.error_message.slice(0, 200)}`
         : '';
       detail.textContent = `Failed at ${when} today${err}.`;
       banner.style.display = '';
     } catch (e) {
-      // Banner is non-critical — fail silently, leave it hidden.
+      // Banner is non-critical - fail silently, leave it hidden.
       banner.style.display = 'none';
     }
   }
 
-  // Tier 2.1e — fetch + render the Pass 3 theme banner. Called on tab
+  // Tier 2.1e - fetch + render the Pass 3 theme banner. Called on tab
   // switch into pass3 and after a successful Run Pass 3.
   async function hydrateP3ThemeBanner() {
     const banner = document.getElementById('stP3ThemeBanner');
@@ -2203,7 +2209,7 @@
         .join('');
       banner.style.display = '';
     } catch (e) {
-      // Banner is non-critical — fail silently, leave it hidden.
+      // Banner is non-critical - fail silently, leave it hidden.
       banner.style.display = 'none';
     }
   }
@@ -2237,7 +2243,7 @@
       if (tab === 'pass12') url.searchParams.delete('tab');
       else url.searchParams.set('tab', tab);
       history.replaceState({}, '', url.toString());
-    } catch (_) { /* old browser — non-critical */ }
+    } catch (_) { /* old browser - non-critical */ }
   }
   function switchTab(tab) {
     currentTab = tab;
@@ -2257,7 +2263,7 @@
       const pane = document.getElementById(paneId);
       if (pane) pane.style.display = (t === tab) ? '' : 'none';
     });
-    // Hide the AI co-pilot side panel on archive/output tabs — it's
+    // Hide the AI co-pilot side panel on archive/output tabs - it's
     // scoped to the active triage flow. On the way back to a triage tab
     // we restore via setAIPanelState() (it reads the persisted state).
     const aiPanel = document.getElementById('aiPanel');
@@ -2282,11 +2288,11 @@
     document.getElementById('stFilterBarP3').style.display = tab === 'pass3' ? '' : 'none';
     // Section 3 addendum (12 May 2026): #stPmaxOtherBanner was deleted;
     // bucket data now lives as a tooltip on the PMax info icon, which is
-    // inside #stSourceBar — that already gets hidden above on Pass 3
+    // inside #stSourceBar - that already gets hidden above on Pass 3
     // tab, so the icon is auto-hidden with no extra toggle needed.
     stTable.style.display = tab === 'pass12' ? '' : 'none';
     stP3Table.style.display = tab === 'pass3' ? '' : 'none';
-    // Stage 11 — Pass 3 AI Route button only shows on Pass 3 tab. The
+    // Stage 11 - Pass 3 AI Route button only shows on Pass 3 tab. The
     // Apply button visibility additionally depends on whether any
     // disagreements exist (handled in updateApplyAIRouteP3Button after
     // reload).
@@ -2295,18 +2301,18 @@
     const _btnApplyRoute = document.getElementById('btnApplyAIRouteP3');
     if (_btnApplyRoute && tab !== 'pass3') _btnApplyRoute.style.display = 'none';
     // Section 5 (12 May 2026): tab-conditional visibility for AI Triage
-    // (Pass 1/2 only — Pass 3 doesn't classify search-term rows).
+    // (Pass 1/2 only - Pass 3 doesn't classify search-term rows).
     const _btnAITriage = document.getElementById('btnAITriage');
     if (_btnAITriage) _btnAITriage.style.display = tab === 'pass12' ? '' : 'none';
     // Section 6 addendum (12 May 2026): Run Pass 3 + Reclassify + Push
-    // all use centralised visibility helpers — single source of truth
+    // all use centralised visibility helpers - single source of truth
     // for each, called here on tab change and from render paths on
     // state change.
     updateRunPass3ButtonVisibility();
     updateReclassifyButtonVisibility();
     updatePushButtonVisibility();
     if (tab === 'pass3') renderP3StatusChips();
-    // Tier 2.1e — theme banner only shows on Pass 3 tab.
+    // Tier 2.1e - theme banner only shows on Pass 3 tab.
     const _p3Banner = document.getElementById('stP3ThemeBanner');
     if (_p3Banner) {
       if (tab === 'pass3') {
@@ -2324,7 +2330,7 @@
         _p3FailBanner.style.display = 'none';
       }
     }
-    reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2 — tab switch is a view change, not a data boundary
+    reload({preserveSession: true});  // Fix 1.4 follow-up Issue 2 - tab switch is a view change, not a data boundary
   }
 
   // -------------------- Wire events ----------------------------------
@@ -2336,7 +2342,7 @@
   // Chip interaction is now attached inside renderStatusChips /
   // renderReasonChips / renderP3StatusChips (per-button listener).
   document.getElementById('stSelectAll').addEventListener('change', e => {
-    // Fix 1.4 — Select-all must not pick up actioned rows; their checkbox
+    // Fix 1.4 - Select-all must not pick up actioned rows; their checkbox
     // is already disabled, but we also skip via the .actioned guard so a
     // future un-disabled state still couldn't reactivate them.
     const root = currentTab === 'pass12' ? tbody : p3body;
@@ -2347,7 +2353,7 @@
     });
     updateButtons();
   });
-  // Fix 1.4 — Hide actioned rows toggle. Pure CSS hide; numbering preserved.
+  // Fix 1.4 - Hide actioned rows toggle. Pure CSS hide; numbering preserved.
   const hideToggle = document.getElementById('stHideActioned');
   if (hideToggle) {
     hideToggle.addEventListener('change', e => setHideActioned(e.target.checked));
@@ -2365,7 +2371,7 @@
     // Same handler as the action-bar Run Pass 3 button. After success
     // the banner won't re-appear (status changes to 'success').
     runPass3();
-    // Hide immediately for snappy UX — hydrateP3FailureBanner will
+    // Hide immediately for snappy UX - hydrateP3FailureBanner will
     // re-evaluate on the next reload anyway.
     const b = document.getElementById('stP3FailureBanner');
     if (b) b.style.display = 'none';
@@ -2386,19 +2392,19 @@
       if (btn) runPass3();
     });
   }
-  // Stage 11 — Pass 3 AI routing buttons.
+  // Stage 11 - Pass 3 AI routing buttons.
   document.getElementById('btnAIRouteP3')?.addEventListener('click', fireAIRouteP3);
   document.getElementById('btnApplyAIRouteP3')?.addEventListener('click', applyAIRouteP3);
 
-  // -------------------- Stage 7 — AI button wiring -------------------
+  // -------------------- Stage 7 - AI button wiring -------------------
   const _btnAITriage = document.getElementById('btnAITriage');
   if (_btnAITriage) _btnAITriage.addEventListener('click', fireAITriage);
-  // Section 8a (13 May 2026): btnApplyHighConf listener removed — button deleted.
-  // Section 5 (12 May 2026): #btnFilterUnsure listener removed — the
+  // Section 8a (13 May 2026): btnApplyHighConf listener removed - button deleted.
+  // Section 5 (12 May 2026): #btnFilterUnsure listener removed - the
   // button itself is gone from the action bar. Canned-reply pill in the
   // chat panel keeps the equivalent surface via setUnsureFilter().
 
-  // -------------------- Stage 8 — AI panel wiring --------------------
+  // -------------------- Stage 8 - AI panel wiring --------------------
   // Restore persisted collapse/expand state on load
   setAIPanelState(getAIPanelState());
   const _btnPanelCollapse = document.getElementById('btnAIPanelCollapse');
@@ -2412,7 +2418,7 @@
   // Initial context-header paint (reload() also calls this on every fetch)
   updateAIPanelContext();
 
-  // Per-row Explain link — event delegation on tbody so it survives
+  // Per-row Explain link - event delegation on tbody so it survives
   // re-renders (sort, reload, etc.). Stage 9 redirects the explain
   // output into the chat stream (replacing the Stage 7 transitional
   // modal); the modal HTML/CSS/JS were removed in Stage 9.
@@ -2427,7 +2433,7 @@
     });
   }
 
-  // -------------------- Stage 9 — chat panel wiring ------------------
+  // -------------------- Stage 9 - chat panel wiring ------------------
   const _btnChatSend = document.getElementById('btnAIChatSend');
   if (_btnChatSend) _btnChatSend.addEventListener('click', sendChatMessage);
   const _btnChatClear = document.getElementById('btnAIChatClear');
@@ -2446,7 +2452,7 @@
   // hook in the reload tail (filter / date / tab change).
   hydrateChatHistory();
 
-  // Stage 10 — initial canned-reply pill render + click delegation.
+  // Stage 10 - initial canned-reply pill render + click delegation.
   renderCannedReplies();
   const _cannedRoot = document.getElementById('aiCannedReplies');
   if (_cannedRoot) {
@@ -2554,7 +2560,7 @@
   document.getElementById('stNext').addEventListener('click', () => {
     currentPage++; reload();
   });
-  // Wave C: rows-per-page — sync dropdown with localStorage, wire change handler
+  // Wave C: rows-per-page - sync dropdown with localStorage, wire change handler
   const pageSizeSel = document.getElementById('stPageSize');
   if (pageSizeSel) {
     pageSizeSel.value = String(PAGE_SIZE);
@@ -2578,7 +2584,7 @@
   // Initial load
   reload();
 
-  // IA refactor (13 May 2026) — deep-link to a specific tab via ?tab=…
+  // IA refactor (13 May 2026) - deep-link to a specific tab via ?tab=…
   // Done AFTER the initial reload() kicks off so the triage data still
   // hydrates in the background; right-side tabs hide the triage card on
   // arrival. Switching back later finds the data already cached.

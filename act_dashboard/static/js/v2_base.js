@@ -1,5 +1,5 @@
 /* ============================================================================
-   ACT v2 — Base Interactions
+   ACT v2 - Base Interactions
    Dark mode toggle, client switcher, toast notifications
    ============================================================================ */
 

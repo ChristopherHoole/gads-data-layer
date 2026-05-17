@@ -15,7 +15,7 @@
   {% else %}
   <span class="act-last-ran" style="background:var(--act-amber-bg);border:1px solid var(--act-amber-border)"><span class="material-symbols-outlined" style="color:var(--act-amber)">schedule</span>ACT has not run yet</span>
   {% endif %}
-  {# Fix 1.6 follow-up — upload PMax CSV button #}
+  {# Fix 1.6 follow-up - upload PMax CSV button #}
   <button type="button" class="btn-act btn-act--details" id="mrCsvUploadBtn"
           title="Drop a Search-terms CSV into the watched folder for ingestion">
     <span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px">upload_file</span>
@@ -44,14 +44,14 @@
 </div>
 {% endif %}
 
-{# ---- Fix 1.6 — PMax CSV watcher banner / pill ---- #}
+{# ---- Fix 1.6 - PMax CSV watcher banner / pill ---- #}
 {% if csv_watch_failed %}
 <div class="scheduler-banner scheduler-banner--failed">
   <span class="material-symbols-outlined">error</span>
   <span>
     PMax CSV ingest failed:
     <strong>{{ csv_watch_failed.file_path.split('\\')[-1].split('/')[-1] }}</strong>
-    — {{ csv_watch_failed.error_message or 'unknown error' }}
+    - {{ csv_watch_failed.error_message or 'unknown error' }}
     {% if csv_watch_failed.client_id %} (client: {{ csv_watch_failed.client_id }}){% endif %}
   </span>
 </div>
@@ -158,7 +158,7 @@
   </div>
 </section>
 
-{# ============ N1b — SEARCH TERMS AWAITING REVIEW ============ #}
+{# ============ N1b - SEARCH TERMS AWAITING REVIEW ============ #}
 <section class="act-section" id="sectionSearchTermReview">
   <div class="act-section__header" style="cursor:default">
     <h2 class="act-section__title">
@@ -331,10 +331,10 @@
 {# ---- Slide-in panel ---- #}
 {% include 'v2/_decision_details.html' %}
 
-{# ---- Fix 1.6 follow-up — PMax CSV upload toast host ---- #}
+{# ---- Fix 1.6 follow-up - PMax CSV upload toast host ---- #}
 <div id="mrToast" class="st-toast" style="display:none"></div>
 
-{# ---- Fix 1.6 follow-up — PMax CSV upload modal (hidden until trigger) ---- #}
+{# ---- Fix 1.6 follow-up - PMax CSV upload modal (hidden until trigger) ---- #}
 <div class="act-confirm-overlay" id="mrCsvUploadOverlay" style="display:none">
   <div class="act-confirm" role="dialog" aria-modal="true" aria-labelledby="mrCsvUploadTitle" style="max-width:460px">
     <div class="act-confirm__header">
@@ -343,7 +343,7 @@
     <div class="act-confirm__body">
       <p style="margin:0 0 12px;font-size:13px;color:var(--act-text)">
         Drops the file into <code>client_csvs/&lt;client_id&gt;/incoming/</code>.
-        The watcher picks it up automatically; refresh in 5–10s to see the result.
+        The watcher picks it up automatically; refresh in 5-10s to see the result.
       </p>
       <label style="display:block;margin-bottom:10px;font-size:13px">
         Client

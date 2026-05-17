@@ -1,5 +1,5 @@
 /* ============================================================================
-   ACT v2 — Shared Decision Details slide-in renderer
+   ACT v2 - Shared Decision Details slide-in renderer
    Used by /v2/morning-review and /v2/account. Single source of truth so the
    two pages cannot drift. Populates #slideinPanel from data-* attrs on an
    .act-item click, with formatted current/proposed values (never raw JSON).
@@ -178,7 +178,7 @@
       html += renderDecisionTree(decision);
     }
 
-    // 7+8. Values — combined current + proposed view
+    // 7+8. Values - combined current + proposed view
     const hasCurrent = current && Object.keys(current).length;
     const hasProposed = proposed && Object.keys(proposed).length;
     if (hasCurrent && hasProposed) {
@@ -204,7 +204,7 @@
     panel && panel.classList.remove('open');
   }
 
-  // Wire default handlers — click overlay, close btn, Escape
+  // Wire default handlers - click overlay, close btn, Escape
   document.addEventListener('DOMContentLoaded', () => {
     const overlay = document.getElementById('slideinOverlay');
     const closeBtn = document.getElementById('slideinClose');

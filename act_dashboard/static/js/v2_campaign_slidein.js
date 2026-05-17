@@ -1,5 +1,5 @@
 /* ============================================================================
-   ACT v2 — Campaign Detail Slide-in
+   ACT v2 - Campaign Detail Slide-in
    800px right-aligned panel. Opens via window.openCampaignSlidein(clientId, campaignId).
    Reusable on /v2/account today, /v2/campaigns later.
    ============================================================================ */
@@ -62,7 +62,7 @@
       const barWidth = Math.min(Math.abs(pts), 100);
       const windowKey = row.window || (row.label.match(/(\d+)-day/) || [])[1];
       const winLabel = (row.label.match(/(\d+-day)/) || ['', ''])[1] || row.label;
-      const metric = row.metric != null ? (row.metric_unit === '£' ? '£' + row.metric : row.metric + row.metric_unit) : '—';
+      const metric = row.metric != null ? (row.metric_unit === '£' ? '£' + row.metric : row.metric + row.metric_unit) : '-';
       rowsHtml += `<div class="score-breakdown__row" style="padding:6px 0">
         <span class="score-breakdown__label">${winLabel}</span>
         <span style="font-size:12px;color:var(--act-text);min-width:60px">${metric}</span>
@@ -86,7 +86,7 @@
     if (!b) {
       return `<div class="slidein-section collapsed">
         <div class="slidein-section__header"><span class="material-symbols-outlined" style="font-size:20px;color:#3b82f6">account_balance</span><span style="font-size:16px;font-weight:600">Budget Position</span><span class="material-symbols-outlined slidein-section__toggle">expand_more</span></div>
-        <div class="slidein-section__body"><div style="padding:14px 20px;font-size:13px;color:var(--act-text);opacity:0.7">No role assigned — budget bands not applied.</div></div>
+        <div class="slidein-section__body"><div style="padding:14px 20px;font-size:13px;color:var(--act-text);opacity:0.7">No role assigned - budget bands not applied.</div></div>
       </div>`;
     }
     const statusLabel = s => s === 'in_band' ? 'Within band' : s === 'over_band' ? 'Over band' : 'Under band';
@@ -102,7 +102,7 @@
     return `<div class="slidein-section">
       <div class="slidein-section__header"><span class="material-symbols-outlined" style="font-size:20px;color:#3b82f6">account_balance</span><span style="font-size:16px;font-weight:600">Budget Position</span><span class="material-symbols-outlined slidein-section__toggle">expand_more</span></div>
       <div class="slidein-section__body"><div style="padding:14px 20px">
-        <div style="font-size:13px;margin-bottom:8px"><strong>${b.role} (${b.role_label}):</strong> ${b.band_min_pct}–${b.band_max_pct}% of ${fmtGBP(b.monthly_budget_total)}/mo = ${fmtGBP(b.band_min_abs)}–${fmtGBP(b.band_max_abs)}/mo</div>
+        <div style="font-size:13px;margin-bottom:8px"><strong>${b.role} (${b.role_label}):</strong> ${b.band_min_pct}-${b.band_max_pct}% of ${fmtGBP(b.monthly_budget_total)}/mo = ${fmtGBP(b.band_min_abs)}-${fmtGBP(b.band_max_abs)}/mo</div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <div style="font-size:14px"><strong>Current: ${fmtGBP(b.current_mtd)}</strong> MTD (${b.current_pct}% of total)</div>
           <span style="font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;color:white;background:${statusColour(b.status)}">${statusLabel(b.status)}</span>
@@ -272,13 +272,13 @@
     const dev = levers.device || {};
     const geo = levers.geo || {};
     const sched = levers.schedule || {};
-    const devGuard = `Caps: ${levers.device_caps?.min ?? '—'}% / +${levers.device_caps?.max ?? '—'}% · Cooldown: ${levers.device_caps?.cooldown ?? '—'} days`;
-    const geoGuard = `Caps: ${levers.geo_caps?.min ?? '—'}% / +${levers.geo_caps?.max ?? '—'}% · Cooldown: ${levers.geo_caps?.cooldown ?? '—'} days`;
-    const schedGuard = `Caps: ${levers.schedule_caps?.min ?? '—'}% / +${levers.schedule_caps?.max ?? '—'}% · Cooldown: ${levers.schedule_caps?.cooldown ?? '—'} days`;
+    const devGuard = `Caps: ${levers.device_caps?.min ?? '-'}% / +${levers.device_caps?.max ?? '-'}% · Cooldown: ${levers.device_caps?.cooldown ?? '-'} days`;
+    const geoGuard = `Caps: ${levers.geo_caps?.min ?? '-'}% / +${levers.geo_caps?.max ?? '-'}% · Cooldown: ${levers.geo_caps?.cooldown ?? '-'} days`;
+    const schedGuard = `Caps: ${levers.schedule_caps?.min ?? '-'}% / +${levers.schedule_caps?.max ?? '-'}% · Cooldown: ${levers.schedule_caps?.cooldown ?? '-'} days`;
 
-    const devRows = (dev.rows || []).map(r => [r.device, fmtGBP(r.cost), r.cpa != null ? fmtGBP(r.cpa) : '—', r.conv, r.ctr + '%']);
-    const geoRows = (geo.rows || []).map(r => [r.location, fmtGBP(r.cost), r.cpa != null ? fmtGBP(r.cpa) : '—', r.conv]);
-    const schedRows = (sched.rows || []).map(r => [r.slot, fmtGBP(r.cost), r.cpa != null ? fmtGBP(r.cpa) : '—', r.conv]);
+    const devRows = (dev.rows || []).map(r => [r.device, fmtGBP(r.cost), r.cpa != null ? fmtGBP(r.cpa) : '-', r.conv, r.ctr + '%']);
+    const geoRows = (geo.rows || []).map(r => [r.location, fmtGBP(r.cost), r.cpa != null ? fmtGBP(r.cpa) : '-', r.conv]);
+    const schedRows = (sched.rows || []).map(r => [r.slot, fmtGBP(r.cost), r.cpa != null ? fmtGBP(r.cpa) : '-', r.conv]);
 
     const devStatus = (dev.rows?.length || 0) + ' devices';
     const geoStatus = (geo.rows?.length || 0) + ' locations';
@@ -357,7 +357,7 @@
       h.addEventListener('click', () => h.closest('.lever-summary-row').classList.toggle('expanded'));
     });
 
-    // Approve / Decline — guarded, same pattern as main page
+    // Approve / Decline - guarded, same pattern as main page
     body.querySelectorAll('[data-action="approve"], [data-action="decline"]').forEach(btn => {
       btn.addEventListener('click', e => {
         e.stopPropagation();
@@ -384,7 +384,7 @@
       });
     });
 
-    // View Details — open shared Decision Details panel using attached data-*
+    // View Details - open shared Decision Details panel using attached data-*
     body.querySelectorAll('[data-action="details"]').forEach(btn => {
       btn.addEventListener('click', e => {
         e.stopPropagation();

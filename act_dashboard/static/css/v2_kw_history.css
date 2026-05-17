@@ -53,13 +53,13 @@
   box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.15);
 }
 
-/* Table — uses .data-table from v2_shared.css for the base look.
+/* Table - uses .data-table from v2_shared.css for the base look.
    Horizontal scroll wrapper so the wide column row scrolls inside the
    card without breaking the layout. */
 .kh-hscroll { overflow-x: auto; }
 .kh-table { width: 100%; min-width: max-content; }
 /* Non-sortable header cells inherit cursor:pointer from .data-table th
-   — undo that so only sortable columns look interactive. */
+   - undo that so only sortable columns look interactive. */
 .kh-table th { cursor: default; white-space: nowrap; }
 .kh-table th.kh-sortable { cursor: pointer; }
 .kh-table th.kh-sortable:hover { color: var(--act-primary); }
@@ -127,7 +127,7 @@
 
 /* Round 2 (16 May 2026): Method column merged into Rationale. The chip
    shape mirrors .pill-btn (4px radius, 11px font, 600 weight) but
-   doesn't need the active/hover states a pill carries — it's a static
+   doesn't need the active/hover states a pill carries - it's a static
    badge. Colour codes per spec: in_ex=green, rule=blue, ai=purple,
    manual=amber, skip_*=grey, unset=red. */
 .kh-method {
@@ -175,7 +175,7 @@
   color: var(--act-text); opacity: 0.65; font-size: 13px;
 }
 
-/* Pager — uses .st-pager base from v2_search_term_review.css. */
+/* Pager - uses .st-pager base from v2_search_term_review.css. */
 .st-pager.kh-pager {
   border-top: 1px solid var(--act-border-light);
   padding-top: 12px; padding-bottom: 12px;

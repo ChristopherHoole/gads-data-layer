@@ -1,16 +1,20 @@
 /* ============================================================================
-   ACT PROTOTYPE v6 — CUSTOM CSS
+   ACT PROTOTYPE v6 - CUSTOM CSS
    v6: Date/time context, estimated impact, consecutive streaks, overnight
    impact summary, empty states for all sections.
    ============================================================================ */
 
 /* ----------------------------------------------------------------------------
-   CSS CUSTOM PROPERTIES (Design Tokens) — v54 Design System
+   CSS CUSTOM PROPERTIES (Design Tokens) - v54 Design System
    ---------------------------------------------------------------------------- */
 :root {
   /* Core palette */
   --act-primary: #3b82f6;
   --act-primary-bg: #dbeafe;
+  /* Section 8 audit [020] (17 May 2026): hover token so AI buttons
+     and the panel-expand strip don't bake the blue darken value into
+     a hardcoded hex. */
+  --act-primary-hover: #1d4ed8;
   --act-text: #000000;
   --act-border: #dadce0;
   --act-border-light: #e8eaed;
@@ -51,7 +55,7 @@
   --act-slidein-width: 520px;
 }
 
-/* === DARK THEME — v54 derived tints === */
+/* === DARK THEME - v54 derived tints === */
 [data-theme="dark"] {
   --act-text: #ffffff;
   --act-border: #1e293b;
@@ -60,6 +64,10 @@
   --act-page-bg: #0a0e17;
   --act-hover-bg: #1e293b;
   --act-primary-bg: #1e3a5f;
+  /* Section 8 audit [020] - dark variant of the hover token. Slightly
+     lighter than the light theme's #1d4ed8 so it reads as an active
+     state against the dark surface. */
+  --act-primary-hover: #60a5fa;
   --act-card-shadow: 0 1px 3px rgba(0,0,0,0.3);
   --act-green-bg: rgba(16,185,129,0.12);
   --act-green-border: rgba(16,185,129,0.25);
@@ -73,7 +81,7 @@
   --act-rec-text: #ffffff;
 }
 
-/* Smooth theme transition — sunrise/sunset feel */
+/* Smooth theme transition - sunrise/sunset feel */
 body,
 .act-sidebar,
 .act-topbar,
@@ -441,7 +449,7 @@ body {
 .act-item:hover { background: rgba(0,0,0,0.015); }
 [data-theme="dark"] .act-item:hover { background: rgba(255,255,255,0.03); }
 
-/* Alert items — red left border only */
+/* Alert items - red left border only */
 .act-item[data-priority="alert"] {
   border-left: 3px solid var(--act-red);
 }
@@ -594,7 +602,7 @@ body {
 [data-theme="dark"] .health-label--neutral { background: #334155; }
 
 /* ----------------------------------------------------------------------------
-   BADGES — v54 Design System colours
+   BADGES - v54 Design System colours
    ---------------------------------------------------------------------------- */
 .badge-level {
   font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
@@ -638,7 +646,7 @@ body {
 .badge-resolution--auto     { background: var(--act-blue-bg); color: #1e40af; }
 
 /* ----------------------------------------------------------------------------
-   BUTTONS — v54 colours
+   BUTTONS - v54 colours
    ---------------------------------------------------------------------------- */
 .btn-act {
   font-size: 12px; font-weight: 600; padding: 5px 14px; border-radius: 6px;
@@ -729,7 +737,7 @@ body {
 }
 
 /* ----------------------------------------------------------------------------
-   TOAST — v54 colours
+   TOAST - v54 colours
    ---------------------------------------------------------------------------- */
 .act-toast {
   position: fixed; bottom: 24px; right: 24px;

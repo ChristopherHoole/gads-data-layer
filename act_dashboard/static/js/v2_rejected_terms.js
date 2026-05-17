@@ -1,17 +1,17 @@
-/* N3 — Rejected Terms page front-end. Lists sticky rejections, supports
+/* N3 - Rejected Terms page front-end. Lists sticky rejections, supports
    status filter, text search, manual unreject + cycle-history inline row,
    live countdowns (1-min tick). Mirrors the search_term_review toast helper.
 
    Brief 13 May 2026 (IA refactor Section A): this file is now also loaded
    by the Search Terms page as the Rejected Terms tab. When `RT_CONFIG.lazy`
-   is true the IIFE wires listeners but does NOT auto-fetch — the host page
+   is true the IIFE wires listeners but does NOT auto-fetch - the host page
    calls window.RejectedTerms.boot() on first tab activation. */
 (function () {
   const CFG = window.RT_CONFIG || {};
   const CLIENT = CFG.client_id;
   const LAZY = !!CFG.lazy;
   const body = document.getElementById('rtBody');
-  if (!body) return;  // markup absent on this page — nothing to wire.
+  if (!body) return;  // markup absent on this page - nothing to wire.
   const toastEl = document.getElementById('rtToast');
   let state = {
     items: [],
@@ -36,7 +36,7 @@
 
   function formatCountdown(expiresAt, unrejectedAt) {
     if (unrejectedAt) return { text: 'UNREJECTED', cls: 'countdown--expired' };
-    if (!expiresAt) return { text: '—', cls: '' };
+    if (!expiresAt) return { text: '-', cls: '' };
     const ms = new Date(expiresAt) - Date.now();
     if (ms <= 0) return { text: 'EXPIRED', cls: 'countdown--expired' };
     const days = Math.floor(ms / 86400000);
@@ -57,7 +57,7 @@
   }
 
   function fmtDate(iso) {
-    if (!iso) return '—';
+    if (!iso) return '-';
     try { return new Date(iso).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
     catch { return iso; }
   }
@@ -112,8 +112,8 @@
       const rowNum = (state.page - 1) * state.pageSize + idx + 1;
       const st = statusOf(item);
       const cd = formatCountdown(item.expires_at, item.unrejected_at);
-      const reason = item.reason_at_rejection || '—';
-      const detail = item.reason_detail_at_rejection ? ` — ${escapeHtml(item.reason_detail_at_rejection)}` : '';
+      const reason = item.reason_at_rejection || '-';
+      const detail = item.reason_detail_at_rejection ? ` - ${escapeHtml(item.reason_detail_at_rejection)}` : '';
       const canUnreject = st.label === 'Active';
       return `
         <tr data-id="${item.id}" data-term="${escapeHtml(item.search_term_normalized)}">
@@ -133,7 +133,7 @@
           <td class="rt-actions-col">
             ${canUnreject
               ? `<button type="button" class="btn-act btn-act--decline" data-role="unreject">Unreject</button>`
-              : '<span class="rt-actions-placeholder">—</span>'}
+              : '<span class="rt-actions-placeholder">-</span>'}
           </td>
         </tr>`;
     }).join('');
@@ -238,9 +238,9 @@
                     <td>${h.cycle_number}</td>
                     <td>${fmtDate(h.rejected_at)}</td>
                     <td>${fmtDate(h.expires_at)}</td>
-                    <td>${h.unrejected_at ? fmtDate(h.unrejected_at) + ' (' + (h.unrejected_reason || '') + ')' : '—'}</td>
-                    <td>${escapeHtml(h.reason_at_rejection || '—')}</td>
-                    <td>${escapeHtml(h.rejected_by || '—')}</td>
+                    <td>${h.unrejected_at ? fmtDate(h.unrejected_at) + ' (' + (h.unrejected_reason || '') + ')' : '-'}</td>
+                    <td>${escapeHtml(h.reason_at_rejection || '-')}</td>
+                    <td>${escapeHtml(h.rejected_by || '-')}</td>
                   </tr>`).join('')}
               </tbody>
             </table>
@@ -253,7 +253,7 @@
 
   // -------- Filter controls --------------------------------------------
   document.getElementById('rtStatusPills').addEventListener('click', (e) => {
-    // Section C (13 May 2026) — pills restyled to .pill-btn from
+    // Section C (13 May 2026) - pills restyled to .pill-btn from
     // v2_shared.css. JS selector updated to match.
     const pill = e.target.closest('.pill-btn');
     if (!pill) return;

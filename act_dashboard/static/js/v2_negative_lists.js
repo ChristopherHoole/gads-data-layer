@@ -1,8 +1,8 @@
-/* IA refactor (13 May 2026) — Negative Lists viewer.
+/* IA refactor (13 May 2026) - Negative Lists viewer.
    Extracted from v2_client_config.js so it can be hosted by the Search
    Terms page (right-aligned tab) instead of buried in Client Config.
 
-   Behaviour is unchanged — same DOM ids, same endpoints, same render.
+   Behaviour is unchanged - same DOM ids, same endpoints, same render.
    The host page provides `<div id="negLists" data-client-id="…">`; this
    script auto-detects the element on load and, when present, wires the
    refresh button + filter/search controls. The initial fetch is deferred
@@ -13,7 +13,7 @@
    Section D will polish visuals to the ACT standard. */
 (function () {
   const root = document.getElementById('negLists');
-  if (!root) return;  // markup absent — nothing to wire.
+  if (!root) return;  // markup absent - nothing to wire.
   const clientId = root.dataset.clientId;
   let state = { loaded: false, filter: '', roleFilter: '', data: null };
 
@@ -28,7 +28,7 @@
   }
 
   function fmtWhen(iso) {
-    if (!iso) return '—';
+    if (!iso) return '-';
     try {
       const d = new Date(iso);
       const diffMs = Date.now() - d.getTime();
@@ -106,7 +106,7 @@
         <div class="neg-stats">
           <div class="neg-stat"><span class="neg-stat__label">Total lists</span><span class="neg-stat__val">${d.total_lists}</span></div>
           <div class="neg-stat"><span class="neg-stat__label">Total keywords</span><span class="neg-stat__val">${d.total_keywords}</span></div>
-          <div class="neg-stat"><span class="neg-stat__label">Snapshot date</span><span class="neg-stat__val">${d.snapshot_date || '—'}</span></div>
+          <div class="neg-stat"><span class="neg-stat__label">Snapshot date</span><span class="neg-stat__val">${d.snapshot_date || '-'}</span></div>
           <div class="neg-stat ${zone}"><span class="neg-stat__label">Last synced</span><span class="neg-stat__val">${fmtWhen(d.last_synced_at)}</span></div>
         </div>`;
     }
@@ -171,8 +171,8 @@
           <div class="neg-list__header">
             <span class="neg-list__toggle material-symbols-outlined">${expanded?'expand_more':'chevron_right'}</span>
             <span class="neg-list__name">${escapeHtml(l.list_name)}</span>
-            <span class="neg-list__role">${l.list_role || '—'}</span>
-            <span class="neg-list__match">${l.match_type || '—'}</span>
+            <span class="neg-list__role">${l.list_role || '-'}</span>
+            <span class="neg-list__match">${l.match_type || '-'}</span>
             <span class="neg-list__count">${matchedKws.length}${f ? '/' + l.keyword_count : ''} kw</span>
             <span class="neg-list__linked ${l.is_linked_to_campaign?'linked':'unlinked'}">${l.is_linked_to_campaign?'linked':'unlinked'}</span>
           </div>
@@ -205,7 +205,7 @@
       });
     });
 
-    // Load-more pager — client-side slice into full dataset
+    // Load-more pager - client-side slice into full dataset
     container.querySelectorAll('.neg-kw-more').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -232,7 +232,7 @@
     const highlighted = filter
       ? txt.replace(new RegExp('('+filter.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')', 'ig'), '<mark>$1</mark>')
       : txt;
-    const when = k.added_at ? new Date(k.added_at).toLocaleDateString('en-GB') : '—';
+    const when = k.added_at ? new Date(k.added_at).toLocaleDateString('en-GB') : '-';
     return `<tr><td>${highlighted}</td><td>${k.match_type || ''}</td><td>${when}</td><td>${k.added_by || ''}</td></tr>`;
   }
 

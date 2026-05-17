@@ -6,7 +6,7 @@
 {% block page_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/v2_shared.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/v2_search_term_review.css') }}">
-{# IA refactor (13 May 2026) — Rejected Terms + Negative Lists are now
+{# IA refactor (13 May 2026) - Rejected Terms + Negative Lists are now
    tabs on this page; their stylesheets ride along. #}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/v2_rejected_terms.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/v2_negative_lists.css') }}">
@@ -14,16 +14,16 @@
 
 {% block topbar_extras %}
   <input type="date" id="stDate" value="{{ analysis_date }}" class="act-date-picker">
-  {# Fix 1.8 — date picker convention tooltip. Native title="" respects
+  {# Fix 1.8 - date picker convention tooltip. Native title="" respects
      light/dark mode automatically. #}
   <span class="st-date-help"
         tabindex="0"
         aria-label="Date picker convention"
-        title="The picker shows analysis_date — the date ACT analysed.&#10;Selected date X displays activity from date X-1.&#10;Example: 25 Apr picker = data from 24 Apr ad activity.">
+        title="The picker shows analysis_date - the date ACT analysed.&#10;Selected date X displays activity from date X-1.&#10;Example: 25 Apr picker = data from 24 Apr ad activity.">
     <span class="material-symbols-outlined">info</span>
   </span>
   {# Section E (14 May 2026): the old neg-sync-pill was replaced with
-     the shared "ACT last ran" badge — same data source + same markup as
+     the shared "ACT last ran" badge - same data source + same markup as
      Morning Review's topbar. Source: act_v2_scheduler_runs. #}
   {% if any_running %}
   <span class="act-last-ran" style="background:var(--act-blue-bg);border:1px solid var(--act-blue-border)"><span class="material-symbols-outlined" style="color:var(--act-primary)">sync</span>ACT running now</span>
@@ -39,7 +39,7 @@
 
   {# ---- Stage 8: split-screen 65/35 grid wrapper.
        Main column carries every existing UI element verbatim; panel is
-       new. Grid template is conditional on data-panel-state — JS toggles
+       new. Grid template is conditional on data-panel-state - JS toggles
        between '1fr 35%' (open) and '1fr' (collapsed). State persists via
        localStorage. Mobile (<1024px) hides the panel and forces 1fr. #}
   <div class="ai-page-grid" id="aiPageGrid" data-panel-state="open">
@@ -48,16 +48,16 @@
 
   {# Section 2 + addendum 2 (13 May 2026): white card with two sibling
      zones, mirroring Account .acct-section's header+body split.
-       .st-card-toolbar — tabs + filter pills + AI banners + action bar.
+       .st-card-toolbar - tabs + filter pills + AI banners + action bar.
                           20px padding (same as Account body).
-       .st-card-table   — tables + pagination. Zero outer padding;
+       .st-card-table   - tables + pagination. Zero outer padding;
                           inset is driven by table cell padding (12px).
      Result: action-bar contents and table cell contents sit on the
      same vertical line as the card edge + 20px (zone padding) or
-     + 12px (cell padding) — no negative-margin hacks needed. #}
+     + 12px (cell padding) - no negative-margin hacks needed. #}
   {# ---- Tabs (Section E, 14 May 2026) ----
      The tab nav lives OUTSIDE the .act-card so it stays visible on every
-     pane — Term Review / Phrase Suggestions / Negative Keyword Lists /
+     pane - Term Review / Phrase Suggestions / Negative Keyword Lists /
      Rejected Terms. Previously the tabs sat inside the .act-card and
      were hidden along with the card whenever switchTab() flipped a
      right-side pane on (Sections A/B oversight).
@@ -94,12 +94,12 @@
      pill in the Campaign type filter row (see renderSourceChips +
      PMAX_INFO_ICON in v2_search_term_review.js). The existing PMax
      pill tooltip (API quirk note from Section 1 addendum) is unchanged
-     — two separate tooltips on two separate targets. #}
+     - two separate tooltips on two separate targets. #}
 
   {# ---- Wave C10: Campaign type pill row (single-select).
        Section 1 (12 May 2026): inner .pill-group is the JS render target;
        JS injects .pill-btn buttons into it. Outer .st-filter-bar carries
-       the row layout (label + group) only — no chip styling here, all
+       the row layout (label + group) only - no chip styling here, all
        pill visuals live in v2_shared.css. #}
   <div class="st-filter-bar" id="stSourceBar" data-for="pass12">
     <span class="st-filter-bar__label">Campaign type</span>
@@ -110,12 +110,12 @@
      tooltip on hover of the PMax pill (rendered by renderSourceChips in
      v2_search_term_review.js). #}
 
-  {# ---- Status pill row (single-select) — populated by JS ---- #}
+  {# ---- Status pill row (single-select) - populated by JS ---- #}
   <div class="st-filter-bar" id="stStatusBar" data-for="pass12">
     <span class="st-filter-bar__label">Status</span>
     <div class="pill-group" data-pill-target="status"></div>
   </div>
-  {# ---- Reason pill row (multi-select) — populated by JS ---- #}
+  {# ---- Reason pill row (multi-select) - populated by JS ---- #}
   <div class="st-filter-bar" id="stReasonBar" data-for="pass12">
     <span class="st-filter-bar__label">Reason</span>
     <div class="pill-group" data-pill-target="reason"></div>
@@ -132,7 +132,7 @@
       <label><input type="checkbox" id="stSelectAll"> Select all on page</label>
       <button class="btn-act btn-act--approve" id="stBulkApprove" disabled>Block in GAds (<span id="lblApprove">0</span>)</button>
       <button class="btn-act btn-act--decline" id="stBulkReject" disabled>Don't Block (<span id="lblReject">0</span>)</button>
-      {# Fix 1.4 — stable session row numbering: progress + hide-actioned toggle.
+      {# Fix 1.4 - stable session row numbering: progress + hide-actioned toggle.
          Hidden until the first action; shows "N actioned this session" only. #}
       <span class="st-session-progress" id="stSessionProgress" title="Rows you've approved or rejected since loading this view. Resets on date change, pagination, refresh, or reclassify." style="display:none">
         <span id="stSessionActioned">0</span> actioned this session
@@ -142,19 +142,19 @@
       </label>
     </div>
     <div class="st-action-bar__right">
-      {# Stage 7 — AI helpers. Sit at the START of the right group so the
+      {# Stage 7 - AI helpers. Sit at the START of the right group so the
          flow reads left-to-right: AI assists → user actions → push to GAds.
          Section 5 (12 May 2026): #btnFilterUnsure was removed (the canned
          reply pill in the chat panel still triggers .st-table.only-unsure
-         via setUnsureFilter — same filter behaviour, different surface).
+         via setUnsureFilter - same filter behaviour, different surface).
          #btnAITriage is Pass 1/2-only; switchTab() toggles visibility. #}
       <div class="ai-action-group">
         <button class="btn-act btn-act--ai" id="btnAITriage"
                 title="Classify pending rows in the current view using Claude Opus.">
           🤖 AI Triage <span class="ai-action-badge" id="aiTriageCount">(0 pending)</span>
         </button>
-        {# Section 8a (13 May 2026): Apply high-conf button removed — bulk-apply path not trusted. #}
-        {# Stage 11 — Pass 3 routing AI buttons. Hidden until Pass 3 tab. #}
+        {# Section 8a (13 May 2026): Apply high-conf button removed - bulk-apply path not trusted. #}
+        {# Stage 11 - Pass 3 routing AI buttons. Hidden until Pass 3 tab. #}
         <button class="btn-act btn-act--ai" id="btnAIRouteP3"
                 style="display:none"
                 title="Ask Opus to suggest the right target list for each pending phrase.">
@@ -170,12 +170,12 @@
          Hidden by default (Status defaults to 'All'); shown only when
          Status=Approved to Block. JS toggles via renderStatusChips. #}
       <button class="btn-act btn-act--approve" id="stPushApproved" style="display:none" disabled>Push to GAds Neg Lists</button>
-      {# Section 5: #stRefreshNegs removed — same functionality lives in
+      {# Section 5: #stRefreshNegs removed - same functionality lives in
          Client Config; out of place on the Search Terms page. #}
       {# Section 6 addendum (12 May 2026): #stReclassify promoted from
          btn-act--details (text-link style) to btn-act--decline (proper
          button matching the rest of the action bar). Term Review tab
-         only — switchTab() hides it on Phrase Suggestions tab. #}
+         only - switchTab() hides it on Phrase Suggestions tab. #}
       <button class="btn-act btn-act--decline" id="stReclassify" title="Re-run Pass 1 + Pass 2 on today's terms using current config and latest neg snapshot">♻️ Reclassify today's terms</button>
       {# Section 5 / Section 6 addendum: #stRunPass3 is Pass 3-only AND
          only visible when suggestions already exist (empty-state CTA
@@ -196,7 +196,7 @@
     Click <strong>🤖 AI Triage</strong> to classify rows first, or turn the filter off.
   </div>
 
-  </div>{# /.st-card-toolbar — Section 2 addendum 2 split #}
+  </div>{# /.st-card-toolbar - Section 2 addendum 2 split #}
 
   <div class="st-card-table">
 
@@ -224,7 +224,7 @@
       </div>
     </div>
 
-    {# Tier 2.1e — Pass 3 AI theme banner. Populated by JS on tab activation
+    {# Tier 2.1e - Pass 3 AI theme banner. Populated by JS on tab activation
        from GET /v2/api/search-terms/pass3-themes/<client>?date=...
        Hidden when no themes for the current date. #}
     <div id="stP3ThemeBanner" class="st-p3-theme-banner" style="display:none">
@@ -235,7 +235,7 @@
       </div>
     </div>
 
-  {# ---- Table area — outer wrap keeps NO overflow; the wide Pass 1/2
+  {# ---- Table area - outer wrap keeps NO overflow; the wide Pass 1/2
        table scrolls horizontally inside its own .st-hscroll wrapper so
        sticky thead can pin to the page viewport. ---- #}
   <div class="st-hscroll" id="stHScroll">
@@ -246,19 +246,19 @@
            - Column order swapped: checkbox first, # second, Search term
              third (was # first, checkbox second, term third). Three
              frozen-left columns now (offsets in CSS: frozen-0/1/2).
-             nth-child(4..23) width rules unchanged — content columns
+             nth-child(4..23) width rules unchanged - content columns
              from Status onwards stayed at the same indices.
            - Every <th> carries an unfold_more Material Icon (matches
              Account .data-table). Sortable behaviour gated by
              .st-sortable + data-sort; non-sortable headers show the
              glyph for visual consistency but the click is a no-op.
-           - Removed the custom <span class="st-sort-ind"> — replaced by
+           - Removed the custom <span class="st-sort-ind"> - replaced by
              a span.material-symbols-outlined the JS swaps name on. #}
         {# Section 2 addendum 2 (13 May 2026): sort glyph + interactivity
            ONLY on genuinely-sortable columns. Non-sortable headers (#,
            Search term, Status, Reason, Target list, Match type,
            Added / Excl, Push error, Explain) carry no glyph, no pointer,
-           no hover-primary — they're plain labels. Sortable: Campaign,
+           no hover-primary - they're plain labels. Sortable: Campaign,
            Campaign type, Keyword, Cost, Impr, Clicks, Avg CPC, CTR,
            Conv, Cost/Conv, Conv rate, AI Verdict, AI Confidence. #}
         <tr>
@@ -282,10 +282,10 @@
           <th class="num st-sortable" data-sort="cost_per_conversion">Cost/Conv<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
           <th class="num st-sortable" data-sort="conversion_rate">Conv rate<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
           <th>Push error</th>
-          {# Stage 7 — AI columns appended at the end so the existing
+          {# Stage 7 - AI columns appended at the end so the existing
              nth-child width rules don't need re-numbering. Trade-off:
              user scrolls right to see them. Acceptable for MVP. #}
-          <th class="st-sortable" data-sort="ai_verdict" title="AI verdict (BLOCK = push as negative / DON'T BLOCK = keep running / UNSURE = escalate)">AI Verdict<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
+          <th class="st-sortable" data-sort="ai_verdict" title="AI verdict (Block = push as negative / Don't Block = keep running / Unsure = escalate)">AI Verdict<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
           <th class="st-sortable" data-sort="ai_confidence" title="AI confidence in its verdict (high / medium / low)">AI Conf<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
           <th title="Get a deep-reasoning explanation from Opus for this row">Explain</th>
         </tr>
@@ -297,7 +297,7 @@
 
     {# Pass 3 table (hidden until tab-switch).
        Section 2 addendum 2: the P3 banners that used to sit here have
-       been hoisted out of .st-hscroll — they now live at the top of
+       been hoisted out of .st-hscroll - they now live at the top of
        .st-card-table (above this table area block). #}
     <table class="st-table" id="stP3Table" style="display:none">
       <thead>
@@ -318,7 +318,7 @@
           <th>Status</th>
           <th>Source terms</th>
           <th>Push error</th>
-          {# Stage 11 — AI routing suggestion columns. #}
+          {# Stage 11 - AI routing suggestion columns. #}
           <th>AI Role</th>
           <th>AI Conf</th>
         </tr>
@@ -332,7 +332,7 @@
 
   {# ---- Pagination (Section 2: lives INSIDE .act-card__body but
        OUTSIDE the horizontal-scroll table wrapper so it doesn't
-       inherit the table's overflow. Layout matches Account page —
+       inherit the table's overflow. Layout matches Account page -
        "Showing X-Y of Z" left, page-size + prev/next right) ---- #}
   <div class="st-pager">
     <div class="st-pager__left">
@@ -353,11 +353,11 @@
     </div>
   </div>
 
-    </div>{# /.st-card-table — Section 2 addendum 2 split #}
-  </div>{# /.act-card — Section 2 wrap #}
+    </div>{# /.st-card-table - Section 2 addendum 2 split #}
+  </div>{# /.act-card - Section 2 wrap #}
 
   {# ====================================================================
-     Section C (13 May 2026) — Rejected Terms pane, redesigned to ACT
+     Section C (13 May 2026) - Rejected Terms pane, redesigned to ACT
      standard: .act-card wrapper, two-zone .st-card-toolbar / .st-card-
      table layout, .pill-group filter pills, .data-table table, .page-btn
      pagination. Visually consistent with the Term Review tab and the
@@ -366,10 +366,10 @@
     <div class="rt-page" data-client-id="{{ client.id }}">
 
       <div class="rt-stats">
-        <div class="status-card status-card--amber"><div class="status-card__count" id="rtActive">—</div><div class="status-card__label">Active rejections</div></div>
-        <div class="status-card"><div class="status-card__count" id="rtExpired30d">—</div><div class="status-card__label">Expired (last 30d)</div></div>
-        <div class="status-card status-card--blue"><div class="status-card__count" id="rtTotalCycles">—</div><div class="status-card__label">Total cycles recorded</div></div>
-        <div class="status-card status-card--green"><div class="status-card__count" id="rtAvgCycles">—</div><div class="status-card__label">Avg cycles / term</div></div>
+        <div class="status-card status-card--amber"><div class="status-card__count" id="rtActive">-</div><div class="status-card__label">Active rejections</div></div>
+        <div class="status-card"><div class="status-card__count" id="rtExpired30d">-</div><div class="status-card__label">Expired (last 30d)</div></div>
+        <div class="status-card status-card--blue"><div class="status-card__count" id="rtTotalCycles">-</div><div class="status-card__label">Total cycles recorded</div></div>
+        <div class="status-card status-card--green"><div class="status-card__count" id="rtAvgCycles">-</div><div class="status-card__label">Avg cycles / term</div></div>
       </div>
 
       <div class="act-card">
@@ -427,7 +427,7 @@
   </div>
 
   {# ====================================================================
-     Section D (13 May 2026) — Negative Lists pane, redesigned to ACT
+     Section D (13 May 2026) - Negative Lists pane, redesigned to ACT
      standard. .act-card wrapper, two-zone layout via .st-card-toolbar
      (search + filter + refresh action) + .st-card-table (the list
      accordion). The summary stats render above the card. v2_negative_
@@ -467,7 +467,7 @@
 
     </div>{# /.ai-page-main #}
 
-    {# Stage 8 — AI panel shell. Stage 9 fills the body with chat. #}
+    {# Stage 8 - AI panel shell. Stage 9 fills the body with chat. #}
     <aside class="ai-panel" id="aiPanel" aria-label="AI Co-pilot panel">
       <div class="ai-panel-header">
         <div class="ai-panel-title">
@@ -478,31 +478,31 @@
                 title="Collapse AI panel" aria-label="Collapse AI panel">»</button>
       </div>
       <div class="ai-panel-context" id="aiPanelContext">
-        <span class="ai-panel-context-empty">—</span>
+        <span class="ai-panel-context-empty">-</span>
       </div>
       <div class="ai-panel-body" id="aiPanelBody">
-        {# Stage 9 — chat panel. Hydrated via /v2/api/ai/chat-history on
+        {# Stage 9 - chat panel. Hydrated via /v2/api/ai/chat-history on
            page load + on every filter/date/tab change. The aiChatEmpty
            div is hidden by JS once any message exists. #}
         <div class="ai-chat-messages" id="aiChatMessages">
           <div class="ai-chat-empty" id="aiChatEmpty">
             <p>💬 No messages yet for this view.</p>
             <p style="font-size:11px; opacity:0.7;">
-              Ask me anything about the rows you're triaging — patterns,
+              Ask me anything about the rows you're triaging - patterns,
               clusters, specific terms, anomalies.
             </p>
           </div>
         </div>
 
         <div class="ai-chat-input-area">
-          {# Stage 10 — canned reply pills, populated by JS based on current flow. #}
+          {# Stage 10 - canned reply pills, populated by JS based on current flow. #}
           <div class="ai-canned-replies" id="aiCannedReplies"></div>
           <textarea id="aiChatInput" rows="2" maxlength="4000"
                     placeholder="Ask about this batch... (Enter to send, Shift+Enter for newline)"></textarea>
           <div class="ai-chat-input-row">
             <button class="btn-act ai-chat-clear" id="btnAIChatClear"
                     type="button"
-                    title="Clear this conversation (soft delete — recoverable in DB)">
+                    title="Clear this conversation (soft delete - recoverable in DB)">
               🗑️ Clear
             </button>
             <button class="btn-act ai-chat-send" id="btnAIChatSend"
@@ -515,7 +515,7 @@
       </div>
     </aside>
 
-    {# Slim strip — visible only when panel is collapsed. #}
+    {# Slim strip - visible only when panel is collapsed. #}
     <button class="ai-panel-strip" id="btnAIPanelExpand" type="button"
             title="Expand AI panel" aria-label="Expand AI panel"
             style="display:none">🤖<br>Expand</button>
@@ -548,7 +548,7 @@
 {% endblock %}
 
 {% block page_js %}
-{# IA refactor (13 May 2026) — Rejected Terms front-end runs lazily on
+{# IA refactor (13 May 2026) - Rejected Terms front-end runs lazily on
    this page. The IIFE wires listeners on load but does NOT fetch until
    window.RejectedTerms.boot() is called from switchTab('rejected'). #}
 <script>

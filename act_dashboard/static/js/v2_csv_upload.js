@@ -1,4 +1,4 @@
-/* Fix 1.6 follow-up — PMax CSV upload modal handler.
+/* Fix 1.6 follow-up - PMax CSV upload modal handler.
  * Renders the modal, posts multipart to /v2/api/csv/upload, surfaces
  * a toast. The actual ingestion happens in the watcher process via
  * watchdog's on_created event after the file lands in incoming/. */
@@ -65,7 +65,7 @@
         return;
       }
       close();
-      toast(`Uploaded ${data.saved_as} — ingestion in progress, refresh in ~10s to see result.`);
+      toast(`Uploaded ${data.saved_as} - ingestion in progress, refresh in ~10s to see result.`);
     } catch (e) {
       toast('Upload failed: ' + e.message, 'error');
     } finally {

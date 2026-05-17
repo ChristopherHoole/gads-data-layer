@@ -38,7 +38,7 @@
       <div class="config-tab" data-tab="ad"><span class="material-symbols-outlined">article</span>Ad</div>
       <div class="config-tab" data-tab="shopping"><span class="material-symbols-outlined">shopping_cart</span>Shopping</div>
       <div class="config-tab" data-tab="search-terms"><span class="material-symbols-outlined">filter_alt</span>Search Terms</div>
-      {# IA refactor (13 May 2026) — Negative Lists tab moved to the
+      {# IA refactor (13 May 2026) - Negative Lists tab moved to the
          Search Terms page (right-aligned tab alongside Rejected terms). #}
       <div class="config-tab" data-tab="onboarding"><span class="material-symbols-outlined">checklist</span>Onboarding</div>
     </nav>
@@ -427,7 +427,7 @@
       <div class="config-panel" id="panel-search-terms">
         <h3 class="config-panel__title">Search Terms</h3>
 
-        {# N1v — Two collapsible sections: lists at top (expanded), rules reference below (collapsed). #}
+        {# N1v - Two collapsible sections: lists at top (expanded), rules reference below (collapsed). #}
 
         <!-- SECTION 1: CLIENT LISTS (expanded by default) -->
         <section class="act-section">
@@ -437,7 +437,7 @@
           </div>
           <div class="act-section__body">
 
-            {# N1a/N1n — 5 profile summary cards (hidden textareas remain the
+            {# N1a/N1n - 5 profile summary cards (hidden textareas remain the
                source of truth; slide-in editor writes back + dispatches input). #}
             <div class="setting-row">
               <div class="setting-info">
@@ -534,7 +534,7 @@
               </div>
             </div>
 
-            {# Brief 2.1g (13 May 2026) — AI Triage feedback loop toggle.
+            {# Brief 2.1g (13 May 2026) - AI Triage feedback loop toggle.
                DBD-only for v1; setting to TRUE on other clients has no
                effect until the ALLOWED_CLIENTS_V1 allowlist widens. #}
             <div class="setting-row">
@@ -545,7 +545,7 @@
               <div class="setting-control">
                 {# Slider toggle matches the Rule 5 / Rule 7 sliders below.
                    Stored on act_v2_clients.enable_ai_feedback_loop (not
-                   act_v2_client_settings) — collectData() reads it into
+                   act_v2_client_settings) - collectData() reads it into
                    data.client and the settings-loop skips this key. #}
                 <div class="config-toggle{% if client.enable_ai_feedback_loop %} on{% endif %}"
                      data-key="enable_ai_feedback_loop"><div class="config-toggle__knob"></div></div>
@@ -558,7 +558,7 @@
               <p class="setting-desc" style="margin-bottom:12px">Toggles that control whether specific rule matches auto-block or route to Review for manual decision.</p>
             </div>
 
-            {# N1b Wave C9 — Negatives engine Rule 5 behaviour #}
+            {# N1b Wave C9 - Negatives engine Rule 5 behaviour #}
             <div class="setting-row">
               <div class="setting-info">
                 <p class="setting-name">Auto-block services offered but not advertised</p>
@@ -570,7 +570,7 @@
               </div>
             </div>
 
-            {# N1b Wave C12 — Rule 7 behaviour toggle #}
+            {# N1b Wave C12 - Rule 7 behaviour toggle #}
             <div class="setting-row">
               <div class="setting-info">
                 <p class="setting-name">Auto-block Rule 7 (contains excluded term) matches</p>
@@ -592,7 +592,7 @@
           </div>
           <div class="act-section__body">
 
-        {# N1p — Rules Reference: full Pass 1 / Pass 2 / Pass 3 hierarchy. #}
+        {# N1p - Rules Reference: full Pass 1 / Pass 2 / Pass 3 hierarchy. #}
         <div class="rules-reference">
           <div class="rules-reference__intro">
             <p class="setting-name">How ACT Processes Search Terms</p>
@@ -671,7 +671,7 @@
         </section>
       </div>
 
-      {# IA refactor (13 May 2026) — panel-negative-lists removed. The
+      {# IA refactor (13 May 2026) - panel-negative-lists removed. The
          viewer now lives on the Search Terms page (#paneNegativeLists). #}
 
       <!-- ============ ONBOARDING CHECKLIST ============ -->
@@ -719,12 +719,12 @@
                     <td class="role-assign-name">{{ c.campaign_name }}</td>
                     <td>
                       <select class="role-assign-select">
-                        <option value="" {% if not c.role %}selected{% endif %}>— Unassigned —</option>
-                        <option value="BD" {% if c.role == 'BD' %}selected{% endif %}>BD — Brand Defence</option>
-                        <option value="CP" {% if c.role == 'CP' %}selected{% endif %}>CP — Core Performance</option>
-                        <option value="RT" {% if c.role == 'RT' %}selected{% endif %}>RT — Retargeting</option>
-                        <option value="PR" {% if c.role == 'PR' %}selected{% endif %}>PR — Prospecting</option>
-                        <option value="TS" {% if c.role == 'TS' %}selected{% endif %}>TS — Testing</option>
+                        <option value="" {% if not c.role %}selected{% endif %}>- Unassigned -</option>
+                        <option value="BD" {% if c.role == 'BD' %}selected{% endif %}>BD - Brand Defence</option>
+                        <option value="CP" {% if c.role == 'CP' %}selected{% endif %}>CP - Core Performance</option>
+                        <option value="RT" {% if c.role == 'RT' %}selected{% endif %}>RT - Retargeting</option>
+                        <option value="PR" {% if c.role == 'PR' %}selected{% endif %}>PR - Prospecting</option>
+                        <option value="TS" {% if c.role == 'TS' %}selected{% endif %}>TS - Testing</option>
                       </select>
                     </td>
                   </tr>
@@ -775,7 +775,7 @@
     </div>
   </div>
 
-<!-- N1n — Reusable slide-in list editor. Opens over any of the 5 profile
+<!-- N1n - Reusable slide-in list editor. Opens over any of the 5 profile
      lists; hidden textarea is still the source of truth. -->
 <div class="act-slidein-overlay" id="listEditorOverlay"></div>
 <aside class="act-slidein" id="listEditor" aria-hidden="true">

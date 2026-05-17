@@ -1,5 +1,5 @@
 /* ============================================================================
-   ACT PROTOTYPE — CAMPAIGN LEVEL OPTION D v8 CSS
+   ACT PROTOTYPE - CAMPAIGN LEVEL OPTION D v8 CSS
    Reasoning context, guardrail notes, match bar, full strategy, reordered guardrails
    ============================================================================ */
 
@@ -73,7 +73,7 @@
 .camp-health-card__value { font-size: 28px; font-weight: 700; color: var(--act-text); line-height: 1; margin-bottom: 2px; }
 .camp-health-card__detail { font-size: 12px; color: var(--act-text); }
 
-/* v7: Lever summary — zero-gap stacking, aligned icons/chevrons */
+/* v7: Lever summary - zero-gap stacking, aligned icons/chevrons */
 .lever-summary { margin-bottom: 0; }
 
 .lever-summary-row {
@@ -82,7 +82,7 @@
 }
 .lever-summary-row:last-child { border-bottom: none; }
 
-/* Header row: icon + name/status + chevron — all inside 16px horizontal padding */
+/* Header row: icon + name/status + chevron - all inside 16px horizontal padding */
 .lever-summary-row__header {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 16px;
@@ -135,7 +135,7 @@
 }
 .btn-full-detail:hover { background: var(--act-hover-bg); border-color: var(--act-primary); color: var(--act-primary); }
 
-/* v3 Change 3: Impact inline in badge row — override prototype-v7 positioning */
+/* v3 Change 3: Impact inline in badge row - override prototype-v7 positioning */
 .act-item__impact {
   margin-top: 0;
 }
@@ -159,7 +159,7 @@
 .slidein-section.collapsed .slidein-section__toggle { transform: rotate(-90deg); }
 .slidein-section.collapsed .slidein-section__body { display: none; }
 
-/* v6 Change 6: Lever mini-table — even columns, proper spacing */
+/* v6 Change 6: Lever mini-table - even columns, proper spacing */
 .lever-mini-table {
   width: 100%; border-collapse: collapse; font-size: 14px;
   margin-top: 12px; table-layout: fixed;
@@ -174,7 +174,7 @@
 }
 .lever-mini-table tr:last-child td { border-bottom: none; }
 
-/* (v7: removed v6 padding overrides — handled above) */
+/* (v7: removed v6 padding overrides - handled above) */
 
 /* v6 Change 7: Stacked buttons on ALL approval items (main page + slide-in) */
 .act-item__actions {

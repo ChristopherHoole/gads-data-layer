@@ -1,5 +1,5 @@
 /* ============================================================================
-   ACT v2 — Morning Review Page Interactions
+   ACT v2 - Morning Review Page Interactions
    Section/group collapse, approve/decline, bulk approve, undo, slide-in
    ============================================================================ */
 
@@ -51,10 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   document.querySelectorAll('[data-action="approve"]').forEach(btn => {
-    btn.addEventListener('click', (e) => { e.stopPropagation(); handleMRAction(btn, 'approve', 'approved', 'Approved — change will be applied in next cycle', 'success'); });
+    btn.addEventListener('click', (e) => { e.stopPropagation(); handleMRAction(btn, 'approve', 'approved', 'Approved - change will be applied in next cycle', 'success'); });
   });
   document.querySelectorAll('[data-action="decline"]').forEach(btn => {
-    btn.addEventListener('click', (e) => { e.stopPropagation(); handleMRAction(btn, 'decline', 'declined', 'Declined — no changes will be made', 'info'); });
+    btn.addEventListener('click', (e) => { e.stopPropagation(); handleMRAction(btn, 'decline', 'declined', 'Declined - no changes will be made', 'info'); });
   });
 
   // --- Bulk approve ---
@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
             badge.textContent = 'Undo requested';
             const top = item.querySelector('.act-item__top');
             if (top) top.appendChild(badge);
-            showToast('Undo requested — revert will apply when execution layer is live', 'warning');
+            showToast('Undo requested - revert will apply when execution layer is live', 'warning');
           } else {
             showToast('Undo failed: ' + (res.error || 'unknown'), 'error');
           }

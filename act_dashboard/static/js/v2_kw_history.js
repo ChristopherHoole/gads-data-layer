@@ -302,7 +302,7 @@
     }
   });
 
-  // Build the current filter+sort URLSearchParams once — same for both
+  // Build the current filter+sort URLSearchParams once - same for both
   // export buttons.
   function exportParams() {
     return new URLSearchParams({
@@ -314,12 +314,12 @@
     });
   }
 
-  // CSV export — full row set, all columns. Round-trips active filters.
+  // CSV export - full row set, all columns. Round-trips active filters.
   document.getElementById('khExportCsv').addEventListener('click', () => {
     window.location.href = `/v2/api/kw-history/export.csv?${exportParams().toString()}`;
   });
 
-  // "Export for AI" CSV — term + 6 context columns (impressions / clicks
+  // "Export for AI" CSV - term + 6 context columns (impressions / clicks
   // / cost / conversions / already_in_ex / matched_ad_group_if_any).
   // Original casing on term, snake_case headers. Logs the expected row
   // count so the user can verify against Excel's line count
