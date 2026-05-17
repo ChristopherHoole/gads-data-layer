@@ -282,6 +282,69 @@ def run_neg_pass2_phase(client, eval_date):
         return False, err, None
 
 
+def run_neg_pass3_phase(client, eval_date):
+    """Pass 3 AI - phrase-fragment discovery + intent routing.
+
+    Wired into the overnight loop on 18 May 2026 after today's diagnostic
+    confirmed Pass 3 was never part of the overnight chain (only the
+    PMax CSV watcher + the manual Generate button fired it). Mirrors the
+    pass1 / pass2 / kw_history_mapping shim shape; delegates to
+    engine.pass3_ai.run_pass3_ai.
+
+    DBD-only via the same ALLOWED_CLIENTS_V1 allowlist used by
+    daily_pipeline + kw_history_mapping. Without this check the scheduler
+    would call run_pass3_ai directly for every active client and spend
+    Sonnet/Haiku tokens on non-DBD clients that have no Pass 3 corpus
+    (caught the first run: OE001 burned $0.06 generating 0 suggestions).
+
+    Idempotency: pass3_ai also checks scheduler_runs for an existing
+    success row at the same prompt_version, so a re-run inside the same
+    day is a cheap no-op.
+    """
+    from datetime import date as _date
+    from act_dashboard.engine.daily_pipeline import ALLOWED_CLIENTS_V1
+    if client['client_id'] not in ALLOWED_CLIENTS_V1:
+        logger.info(
+            f"  [NEG-PASS3] {client['client_name']}: skipped "
+            f"({client['client_id']!r} not in v1 allowlist)"
+        )
+        return True, None, {'skipped': 'not_in_allowlist'}
+    try:
+        from act_dashboard.engine.pass3_ai import run_pass3_ai
+        con = duckdb.connect(DB_PATH)
+        try:
+            result = run_pass3_ai(
+                con, client['client_id'], _date.today().isoformat(),
+            )
+        finally:
+            con.close()
+        overall = result.get('overall') if isinstance(result, dict) else None
+        suggestions = (result or {}).get('suggestions_created')
+        themes = len((result or {}).get('themes') or [])
+        cost = (result or {}).get('cost_usd')
+        logger.info(
+            f"  [NEG-PASS3] {client['client_name']}: overall={overall} "
+            f"suggestions={suggestions} themes={themes} cost_usd={cost}"
+        )
+        # run_pass3_ai returns its own overall status; treat anything
+        # not 'failed' as a successful phase run (success / partial /
+        # skipped / idempotent are all OK).
+        ok = overall not in ('failed',)
+        return ok, None if ok else (result or {}).get('error'), {
+            'overall': overall,
+            'suggestions_created': suggestions,
+            'themes_count': themes,
+            'tokens_in': (result or {}).get('tokens_in'),
+            'tokens_out': (result or {}).get('tokens_out'),
+            'cost_usd': cost,
+            'wall_clock_ms': (result or {}).get('wall_clock_ms'),
+        }
+    except Exception as e:
+        err = str(e)[:500]
+        logger.error(f"  [NEG-PASS3] Failed: {err}")
+        return False, err, None
+
+
 def run_kw_history_mapping_phase(client, eval_date):
     """N10 (16 May 2026) — KW + Search Term History mapping refresh.
 
@@ -410,6 +473,11 @@ def run_client_cycle(client, eval_date):
         ('neg_stale_cleanup',   run_neg_stale_cleanup_phase,    'neg_stale_cleanup_status'),
         ('neg_pass1',           run_neg_pass1_phase,            'neg_pass1_status'),
         ('neg_pass2',           run_neg_pass2_phase,            'neg_pass2_status'),
+        # 18 May 2026 - Pass 3 wired into the overnight loop. Before today
+        # only the PMax watcher autotrigger + the manual Generate button
+        # fired Pass 3, so an overnight cycle with no fresh CSV left
+        # phrase_suggestions empty (diagnosed 17 May).
+        ('neg_pass3',           run_neg_pass3_phase,            'neg_pass3_status'),
         # N10 (16 May 2026) — KW history mapping. Inner guard on
         # ALLOWED_CLIENTS_V1 = {'dbd001'} keeps this a no-op for other
         # clients; cached AI rows aren't re-sent so nightly cost is ~£0
