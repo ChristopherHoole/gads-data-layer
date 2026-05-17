@@ -248,37 +248,25 @@ def process_file(path: Path, client_id: str) -> None:
     _log_row(str(target), client_id=client_id, status='ingested',
              rows_ingested=rows, processed=True)
 
-    # Section 7 (12 May 2026): auto-run Pass 1 → 2 → 3 pipeline after a
-    # successful daily ingest. Fire-and-forget on a daemon thread so the
-    # watcher returns immediately to listening — Pass 3 AI alone takes
-    # 1-3 min, would otherwise block subsequent CSV drops. Exceptions
-    # inside the thread MUST NOT propagate out of the thread (would not
-    # crash the watcher anyway because daemon, but log them so they're
-    # visible). DBD-only guard lives inside run_daily_pipeline; non-DBD
-    # clients are no-op'd there.
+    # Tier 2.1 Part C (17 May 2026): replaced the immediate fire-and-
+    # forget run_daily_pipeline call with a 2-minute debounce so
+    # back-to-back CSV drops coalesce into a single pipeline run
+    # (Pass 1/2/3 chain). The autotrigger logs its own scheduler_runs
+    # row under phase 'pass3_ai_autotrigger' separately from the
+    # overnight scheduler's 'neg_pass3' rows. DBD-only guard lives
+    # inside pass3_autotrigger.schedule().
     try:
-        import threading
-        from act_dashboard.engine.daily_pipeline import run_daily_pipeline
-
-        def _bg():
-            try:
-                run_daily_pipeline(client_id)
-            except Exception as e:  # noqa: BLE001
-                logger.error(
-                    f"  daily_pipeline crashed for {client_id}: {e}",
-                    exc_info=True,
-                )
-        threading.Thread(
-            target=_bg,
-            daemon=True,
-            name=f'daily-pipeline-{client_id}',
-        ).start()
-        logger.info(f"  triggered daily_pipeline background thread for {client_id}")
+        from act_dashboard.data_pipeline import pass3_autotrigger
+        outcome = pass3_autotrigger.schedule(client_id)
+        logger.info(
+            f"  scheduled pass3_autotrigger for {client_id}: {outcome}"
+        )
     except Exception as e:  # noqa: BLE001
-        # Defensive — if the import itself fails, the ingest is already
-        # done and archived; pipeline can be re-triggered manually via
-        # the UI buttons. Don't crash the watcher.
-        logger.error(f"  failed to dispatch daily_pipeline: {e}")
+        # Defensive - if the import or schedule call fails, the ingest
+        # is already done and archived; pipeline can still be triggered
+        # via the overnight scheduler or the UI buttons. Don't crash
+        # the watcher.
+        logger.error(f"  failed to dispatch pass3_autotrigger: {e}")
 
 
 # ---------------------------------------------------------------------------
