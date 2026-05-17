@@ -35,10 +35,12 @@
   }
 
   function formatCountdown(expiresAt, unrejectedAt) {
-    if (unrejectedAt) return { text: 'UNREJECTED', cls: 'countdown--expired' };
+    // Section 8 follow-up (17 May 2026): countdown cell labels switched
+    // from ALLCAPS to Title Case. ALLCAPS is the only banned casing.
+    if (unrejectedAt) return { text: 'Unrejected', cls: 'countdown--expired' };
     if (!expiresAt) return { text: '-', cls: '' };
     const ms = new Date(expiresAt) - Date.now();
-    if (ms <= 0) return { text: 'EXPIRED', cls: 'countdown--expired' };
+    if (ms <= 0) return { text: 'Expired', cls: 'countdown--expired' };
     const days = Math.floor(ms / 86400000);
     const hours = Math.floor(ms / 3600000);
     if (days >= 2) return { text: `${days} days`, cls: 'countdown--ok' };
