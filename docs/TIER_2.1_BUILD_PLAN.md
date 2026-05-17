@@ -195,6 +195,14 @@ CREATE INDEX idx_ai_chat_client_flow_date ON act_v2_ai_chat_log(client_id, flow,
 - Log any UX papercuts → backlog for Tier 2.2 polish sprint
 - ~1h Chris
 
+### Tier 2.2 polish backlog (added 17 May 2026 during Stage 12 QA)
+Full punch-list lives in `docs/TIER_2.1_STAGE12_QA_REPORT_17-5-26.md`
+(UX papercuts section, 10 items). Should-fix headline items:
+- #2 revert-to-AI button next to manual-override pencil
+- #4 Pass 3 status pills (per-bucket counts at the top of the tab)
+- #7 prompt regression sandbox (synthetic gloucester / k2 fixture)
+- #8 AI-Role-column-vs-live-Role-dropdown semantics decision (currently the same data, confusing UI)
+
 ---
 
 ## Time budget
