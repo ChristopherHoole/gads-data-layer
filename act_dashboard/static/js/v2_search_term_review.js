@@ -1631,8 +1631,19 @@
   // initial load are real boundaries and DO reset the session set.
   async function reload(opts) {
     const preserveSession = !!(opts && opts.preserveSession);
+    // Race-condition fix (17 May 2026): capture the tab at call time so
+    // a slower-arriving response can't render into the wrong tab if
+    // currentTab has flipped while we were awaiting. The URL is built
+    // synchronously below from this expectedTab; the post-await render
+    // branches (lines ~1678 and ~1703) MUST use expectedTab not the
+    // live currentTab. Without this fix, hard-refreshing on the Pass 3
+    // deep-link triggers an initial Pass 1/2 reload + a switchTab()-
+    // initiated Pass 3 reload back-to-back, the Pass 1/2 response can
+    // land after the tab flipped, and the wrong renderer runs against
+    // mismatched data shapes -> "undefined" in every column.
+    const expectedTab = currentTab;
     let url, view;
-    if (currentTab === 'pass12') {
+    if (expectedTab === 'pass12') {
       view = statusView;
       const reasonsParam = selectedReasons.size
         ? `&reasons=${encodeURIComponent([...selectedReasons].join(','))}`
@@ -1655,6 +1666,14 @@
       toast(`Load failed: ${e.message}`, 'error');
       return;
     }
+    // If the user has navigated to a DIFFERENT tab while this request
+    // was in flight, drop the response on the floor - the newer reload
+    // that fired on the tab switch is authoritative for that tab. This
+    // protects every read below (lastItems / chip renders / table
+    // innerHTML) without us having to thread expectedTab everywhere.
+    if (currentTab !== expectedTab) {
+      return;
+    }
     lastItems = data.items || [];
     approvedReadyCount = data.approved_ready_count || 0;
     applyClientSideSort();
@@ -1675,7 +1694,11 @@
     // Section 3 addendum: store PMax bucket BEFORE renderSourceChips so
     // the info icon next to the PMax pill picks up the latest data
     // (renderSourceChips reads pmaxOtherBucket via _pmaxIconTooltip).
-    if (currentTab === 'pass12') {
+    // Race fix: use expectedTab (captured at call time) - belt-and-
+    // braces with the early-return guard above. The guard means the
+    // two values are equal here, but using expectedTab keeps the
+    // pattern obvious to future maintainers.
+    if (expectedTab === 'pass12') {
       setPmaxOtherBucket(data.pmax_other_bucket);
       if (data.campaign_source_counts) renderSourceChips(data.campaign_source_counts);
       if (data.counts) renderStatusChips(data.counts);
@@ -1700,7 +1723,9 @@
       updateRunPass3ButtonVisibility();
     }
 
-    if (currentTab === 'pass12') {
+    // Race fix: render branch keyed off expectedTab (the tab the URL
+    // was built for) not the live currentTab.
+    if (expectedTab === 'pass12') {
       tbody.innerHTML = lastItems.length
         ? lastItems.map(renderRow).join('')
         : '<tr><td colspan="10" class="st-loading">No matching rows</td></tr>';
@@ -2053,13 +2078,19 @@
   async function bulkUpdate(status) {
     const sel = getCheckedRows();
     if (!sel.length) return;
-    const endpoint = currentTab === 'pass12'
+    // Race-condition fix (17 May 2026): same expectedTab pattern as
+    // reload(). Capture the tab at click-time so a mid-action tab
+    // switch can't route the post-await chip bump onto the wrong
+    // tab's pill row. Same class of latent bug as the reload race
+    // that surfaced with the Pass 3 "undefined" render.
+    const expectedTab = currentTab;
+    const endpoint = expectedTab === 'pass12'
       ? '/v2/api/negatives/search-term-review/bulk-update'
       : '/v2/api/negatives/phrase-suggestions/bulk-update';
     const items = sel.map(s => {
       const o = {id: s.id, review_status: status};
       if (s.role_override) {
-        if (currentTab === 'pass12') o.pass2_target_list_role_override = s.role_override;
+        if (expectedTab === 'pass12') o.pass2_target_list_role_override = s.role_override;
         else o.target_list_role_override = s.role_override;
       }
       return o;
@@ -2082,7 +2113,10 @@
       // The pre-action source pill (typically Review for Pass 1/2 triage)
       // is whichever filter the user has active, except 'all' (all-rows
       // total doesn't change with an action).
-      if (currentTab === 'pass12') {
+      // Race fix: bump chips ONLY when the user is still looking at
+      // the tab we acted on - otherwise they would see counts move on
+      // a tab they haven't touched.
+      if (expectedTab === 'pass12' && currentTab === expectedTab) {
         const sourceChip = statusView === 'pending' ? 'review' : statusView;
         if (sourceChip && sourceChip !== 'all') bumpChip(sourceChip, -marked);
         bumpChip(status, +marked);
