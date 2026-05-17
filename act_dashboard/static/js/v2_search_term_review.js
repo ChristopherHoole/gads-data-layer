@@ -654,7 +654,7 @@
     // (act_v2_phrase_suggestions) is out of scope this stage. We're inside
     // the Pass 1/2 renderer so all rows here are review-table rows; render
     // the link unconditionally. Pass 3 uses a separate renderP3Row().
-    return `<td><a class="ai-explain-link" data-row-id="${item.id}" data-search-term="${escapeHtml(item.search_term)}">🔍 Explain</a></td>`;
+    return `<td><a class="ai-explain-link" data-row-id="${item.id}" data-search-term="${escapeHtml(item.search_term)}"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:-2px;">search</span> Explain</a></td>`;
   }
 
   // Derive the classify-terms `flow` from current filter state. Returns
@@ -835,7 +835,7 @@
     const btn = document.getElementById('btnAITriage');
     btn.disabled = true;
     const origLabel = btn.innerHTML;
-    btn.innerHTML = '🤖 AI Triage … <span class="ai-skeleton" style="width:40px"></span>';
+    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px;">auto_awesome</span> AI Triage … <span class="ai-skeleton" style="width:40px"></span>';
     setAILoadingState(ids);
     try {
       const data = await apiPost(
@@ -1365,7 +1365,7 @@
 
     appendChatMsg({
       role: 'user',
-      message: `🔍 Explain row [${reviewId}]: "${searchTerm}"`,
+      message: `Explain row [${reviewId}]: "${searchTerm}"`,
       related_review_id: reviewId,
     });
     appendTypingIndicator();
@@ -1963,6 +1963,61 @@
       }
     });
   }
+  // Section 8 audit [033] (17 May 2026): Pass 3 sort state. Separate
+   // from the Pass 1/2 sortKey/sortDir so switching tabs doesn't trample
+   // each other's column. Active key is one of word_count /
+   // occurrence_count / risk_score.
+  let p3SortKey = null;
+  let p3SortDir = 'desc';
+  const _P3_RISK_RANK = { high: 3, med: 2, medium: 2, low: 1 };
+  function _p3SortValue(item, key) {
+    if (key === 'word_count')       return Number(item.word_count) || 0;
+    if (key === 'occurrence_count') return Number(item.occurrence_count) || 0;
+    if (key === 'risk_score') {
+      // Sort by risk_score number if present, otherwise rank the level string.
+      if (item.risk_score != null) return Number(item.risk_score);
+      const lvl = (item.risk_level || '').toLowerCase();
+      return _P3_RISK_RANK[lvl] || 0;
+    }
+    return 0;
+  }
+  function applyP3Sort() {
+    if (!p3SortKey) return;
+    const mul = p3SortDir === 'asc' ? 1 : -1;
+    lastItems.sort((a, b) => mul * _cmp(_p3SortValue(a, p3SortKey), _p3SortValue(b, p3SortKey)));
+  }
+  function updateP3SortIndicators() {
+    document.querySelectorAll('#stP3Table thead th.st-p3-sortable').forEach(th => {
+      const glyph = th.querySelector('.st-sort-glyph');
+      if (th.dataset.p3Sort === p3SortKey) {
+        th.classList.add('st-sort-active');
+        if (glyph) glyph.textContent = p3SortDir === 'asc' ? 'expand_less' : 'expand_more';
+      } else {
+        th.classList.remove('st-sort-active');
+        if (glyph) glyph.textContent = 'unfold_more';
+      }
+    });
+  }
+  function wireP3SortHeaders() {
+    document.querySelectorAll('#stP3Table thead th.st-p3-sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.p3Sort;
+        if (!key) return;
+        if (p3SortKey === key) {
+          p3SortDir = p3SortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+          p3SortKey = key;
+          p3SortDir = 'desc';  // word_count / occ / risk all numeric -> desc first
+        }
+        applyP3Sort();
+        updateP3SortIndicators();
+        p3body.innerHTML = lastItems.length
+          ? lastItems.map(renderP3Row).join('')
+          : '<tr><td colspan="12" class="st-loading">No matching suggestions</td></tr>';
+      });
+    });
+  }
+
   function wireSortHeaders() {
     document.querySelectorAll('#stTable thead th.st-sortable').forEach(th => {
       th.addEventListener('click', () => {
@@ -2254,6 +2309,13 @@
       el.classList.toggle('active', el.dataset.tab === tab);
     });
     _updateUrlTab(tab);
+    // Section 8 audit [032] (17 May 2026): screen-reader-only h3 in the
+    // triage card swaps text between the two triage tabs so AT users
+    // hear the correct pane name.
+    const _triageH3 = document.getElementById('stTriagePaneHeading');
+    if (_triageH3) {
+      _triageH3.textContent = tab === 'pass3' ? 'Phrase suggestions' : 'Term review';
+    }
 
     // Right-side tabs: hide the triage card + AI panel; show the matching
     // pane; trigger first-load if needed; bail before the pass12/pass3
@@ -2465,17 +2527,10 @@
     });
   }
 
-  // Section E (14 May 2026): the neg-sync-pill was replaced with the
-  // shared "ACT last ran" topbar badge (rendered server-side from
-  // act_v2_scheduler_runs). loadSyncPill() + its DOM targets are gone.
-  // Negative-snapshot freshness is still visible inside the Negative
-  // Keyword Lists tab via the neg-stats "Last synced" tile.
-
-  // Section 5 (12 May 2026): #stRefreshNegs button + click handler
-  // removed from the Search Terms page. The same /refresh-snapshot
-  // functionality lives in Client Config and is the canonical surface
-  // for refreshing the negative-keywords snapshot. loadSyncPill() above
-  // still polls the snapshot state for the topbar sync indicator.
+  // neg-sync-pill + #stRefreshNegs removed in the Section E IA refactor
+  // (14 May 2026); freshness is shown by the topbar "ACT last ran" badge
+  // and the neg-stats "Last synced" tile inside the Negative Keyword
+  // Lists tab. [Section 8 audit [015]: comments trimmed.]
 
   // N2-polish-1: in-app confirm modal (replaces crude window.confirm).
   // Lightweight: injected on demand, removed on resolve. Returns a Promise.
@@ -2578,6 +2633,7 @@
 
   // Wave D1: wire sortable headers once (thead is static).
   wireSortHeaders();
+  wireP3SortHeaders();  // Section 8 audit [033]
   // Section 2: paint the neutral ↕ sort indicator immediately so the
   // columns read as sortable on first paint, before the initial
   // reload() finishes.

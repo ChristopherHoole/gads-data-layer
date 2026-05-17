@@ -29,16 +29,9 @@
 .zone-badge--ontarget { background: var(--act-blue-bg); color: #1e40af; }
 .zone-badge--underperforming { background: var(--act-red-bg); color: #991b1b; }
 
-/* Section wrapper */
-.acct-section { background: var(--act-surface); border-radius: var(--act-card-radius); border: 1px solid var(--act-border-light); box-shadow: var(--act-card-shadow); margin-bottom: 20px; overflow: hidden; }
-.acct-section__header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--act-border-light); cursor: pointer; user-select: none; }
-.acct-section__header:hover { background: var(--act-hover-bg); }
-.acct-section__title { font-size: 16px; font-weight: 600; color: var(--act-text); display: flex; align-items: center; gap: 8px; margin: 0; }
-.acct-section__body { padding: 20px; }
-.acct-section.collapsed .acct-section__body { display: none; }
-.acct-section__toggle { font-size: 20px; color: var(--act-text); transition: transform 200ms ease; }
-.acct-section.collapsed .acct-section__toggle { transform: rotate(-90deg); }
-
+/* Section 8 audit [031] (17 May 2026): .acct-section converged into
+   the shared .act-card primitive in v2_shared.css. Account template
+   + JS now use .act-card across the board. */
 /* Data tables */
 .data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .data-table th { font-size: 12px; font-weight: 600; color: var(--act-text); padding: 10px 12px; text-align: left; border-bottom: 2px solid var(--act-border-light); cursor: pointer; white-space: nowrap; user-select: none; }
@@ -184,10 +177,6 @@
 }
 
 /* v9: Section header context note */
-.acct-section__context {
-  font-size: 12px; font-weight: 400; color: var(--act-text); opacity: 0.5;
-  margin-left: 8px;
-}
 
 /* v9: Inner section padding (summary cards + chart inside combined section) */
 .perf-inner { padding: 20px; }

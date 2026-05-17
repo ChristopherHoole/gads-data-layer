@@ -80,6 +80,11 @@
   </div>
 
   <div class="act-card">
+    {# Section 8 audit [032] (17 May 2026): screen-reader-only h3 for
+       the triage pane. JS swaps the text between "Term review" and
+       "Phrase suggestions" in switchTab() so AT users hear the right
+       heading for the active tab without changing visual hierarchy. #}
+    <h3 id="stTriagePaneHeading" class="visually-hidden">Term review</h3>
     <div class="st-card-toolbar">
 
   {# Section 3 (12 May 2026): the 5 status cards (Pending / Approved to
@@ -115,9 +120,12 @@
     <span class="st-filter-bar__label">Status</span>
     <div class="pill-group" data-pill-target="status"></div>
   </div>
-  {# ---- Reason pill row (multi-select) - populated by JS ---- #}
+  {# ---- Reason pill row (multi-select) - populated by JS ----
+       Section 8 audit [036] (17 May 2026): "(pick one or more)" hint
+       added to the row label so the multi-select behaviour reads
+       differently from the single-select Status row above. #}
   <div class="st-filter-bar" id="stReasonBar" data-for="pass12">
-    <span class="st-filter-bar__label">Reason</span>
+    <span class="st-filter-bar__label">Reason <span class="st-filter-bar__hint">(pick one or more)</span></span>
     <div class="pill-group" data-pill-target="reason"></div>
   </div>
   {# ---- Pass 3 pill row (single-select status) ---- #}
@@ -155,19 +163,19 @@
            number; the parentheses live in the template. #}
         <button class="btn-act btn-act--ai" id="btnAITriage"
                 title="Classify pending rows in the current view using Claude Opus.">
-          🤖 AI Triage <span class="ai-action-badge" id="aiTriageCount">(0)</span>
+          <span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px;">auto_awesome</span> AI Triage <span class="ai-action-badge" id="aiTriageCount">(0)</span>
         </button>
         {# Section 8a (13 May 2026): Apply high-conf button removed - bulk-apply path not trusted. #}
         {# Stage 11 - Pass 3 routing AI buttons. Hidden until Pass 3 tab. #}
         <button class="btn-act btn-act--ai" id="btnAIRouteP3"
                 style="display:none"
                 title="Ask Opus to suggest the right target list for each pending phrase.">
-          🤖 AI Route <span class="ai-action-badge" id="aiRouteP3Count">(0)</span>
+          <span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px;">auto_awesome</span> AI Route <span class="ai-action-badge" id="aiRouteP3Count">(0)</span>
         </button>
         <button class="btn-act btn-act--ai-secondary" id="btnApplyAIRouteP3"
                 style="display:none"
                 title="Update each pending row's target list dropdown to match the AI's suggestion. You still review + approve via the existing flow.">
-          ✅ Apply AI routing <span class="ai-action-badge" id="applyAIRouteP3Count">(0)</span>
+          <span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px;">check_circle</span> Apply AI routing <span class="ai-action-badge" id="applyAIRouteP3Count">(0)</span>
         </button>
       </div>
       {# Section 5: #stPushApproved is gated on the Status filter pill.
@@ -180,7 +188,7 @@
          btn-act--details (text-link style) to btn-act--decline (proper
          button matching the rest of the action bar). Term Review tab
          only - switchTab() hides it on Phrase Suggestions tab. #}
-      <button class="btn-act btn-act--decline" id="stReclassify" title="Re-run Pass 1 + Pass 2 on today's terms using current config and latest neg snapshot">♻️ Reclassify today's terms</button>
+      <button class="btn-act btn-act--decline" id="stReclassify" title="Re-run Pass 1 + Pass 2 on today's terms using current config and latest neg snapshot"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px;">refresh</span> Reclassify today's terms</button>
       {# Section 5 / Section 6 addendum: #stRunPass3 is Pass 3-only AND
          only visible when suggestions already exist (empty-state CTA
          lives inside the tab body when none have been generated yet).
@@ -196,8 +204,8 @@
        which JS sets after evaluating. This is a static-DOM approach (no
        dynamic insertion) so no race conditions / parent-element confusion. #}
   <div id="stUnsureEmptyBanner" class="st-empty-banner">
-    🔍 <strong>"Only unsure" filter is on, but no unsure rows on this page.</strong>
-    Click <strong>🤖 AI Triage</strong> to classify rows first, or turn the filter off.
+    <span class="material-symbols-outlined" style="font-size:18px;vertical-align:-4px;">search</span> <strong>"Only unsure" filter is on, but no unsure rows on this page.</strong>
+    Click <strong><span class="material-symbols-outlined" style="font-size:14px;vertical-align:-2px;">auto_awesome</span> AI Triage</strong> to classify rows first, or turn the filter off.
   </div>
 
   </div>{# /.st-card-toolbar - Section 2 addendum 2 split #}
@@ -232,7 +240,7 @@
        from GET /v2/api/search-terms/pass3-themes/<client>?date=...
        Hidden when no themes for the current date. #}
     <div id="stP3ThemeBanner" class="st-p3-theme-banner" style="display:none">
-      <div class="st-p3-theme-banner__icon" aria-hidden="true">🤖</div>
+      <span class="material-symbols-outlined st-p3-theme-banner__icon" aria-hidden="true">auto_awesome</span>
       <div class="st-p3-theme-banner__body">
         <div class="st-p3-theme-banner__title">AI Theme Summary</div>
         <div class="st-p3-theme-banner__themes" id="stP3ThemesList"></div>
@@ -295,7 +303,7 @@
         </tr>
       </thead>
       <tbody id="stTbody">
-        <tr><td colspan="23" class="st-loading">Loading…</td></tr>
+        <tr><td colspan="23" class="st-loading"><span class="act-spinner material-symbols-outlined">progress_activity</span>Loading…</td></tr>
       </tbody>
     </table>
 
@@ -311,17 +319,17 @@
            (.st-table not .st-table--wide), so no offset CSS needed.
            Section 2 addendum 2: Pass 3 has no client-side sort wiring,
            so no headers carry the .st-sortable class or sort glyph. #}
-        {# Section 8 audit [023] (17 May 2026): tooltips on every jargon
-           column. Words / Occ / Risk / Source terms / AI Role / AI Conf
-           all carry a one-line explainer now. #}
+        {# Section 8 audit [023][033] (17 May 2026): tooltips on every
+           jargon column + sortable headers on Words / Occ / Risk
+           (the only Pass 3 columns where ordering is meaningful). #}
         <tr>
           <th style="width:34px"></th>
           <th class="col-num">#</th>
           <th>Fragment</th>
-          <th class="num" title="Word count in the fragment.">Words</th>
+          <th class="num st-sortable st-p3-sortable" data-p3-sort="word_count" title="Word count in the fragment.">Words<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
           <th>Target list</th>
-          <th class="num" title="Occurrence count - how many distinct search terms this fragment covers today.">Occ</th>
-          <th title="AI risk rating for this fragment (low / med / high).">Risk</th>
+          <th class="num st-sortable st-p3-sortable" data-p3-sort="occurrence_count" title="Occurrence count - how many distinct search terms this fragment covers today.">Occ<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
+          <th class="st-sortable st-p3-sortable" data-p3-sort="risk_score" title="AI risk rating for this fragment (low / med / high).">Risk<span class="material-symbols-outlined st-sort-glyph">unfold_more</span></th>
           <th>Status</th>
           <th title="Up to 3 search terms this fragment was derived from.">Source terms</th>
           <th title="Error message from Google Ads if the push failed.">Push error</th>
@@ -370,6 +378,8 @@
      pagination. Visually consistent with the Term Review tab and the
      Account page. Sentence case throughout, dark-theme parity. #}
   <div id="paneRejected" class="st-rejected-pane" style="display:none">
+    {# Section 8 audit [032] - screen-reader-only heading. #}
+    <h3 class="visually-hidden">Rejected terms</h3>
     <div class="rt-page" data-client-id="{{ client.id }}">
 
       <div class="rt-stats">
@@ -417,7 +427,7 @@
                 </tr>
               </thead>
               <tbody id="rtBody">
-                <tr><td colspan="9" class="rt-loading">Loading…</td></tr>
+                <tr><td colspan="9" class="rt-loading"><span class="act-spinner material-symbols-outlined">progress_activity</span>Loading…</td></tr>
               </tbody>
             </table>
           </div>
@@ -447,6 +457,8 @@
      #negToolbarHolder, #negListsHolder) so the markup structure stays
      stable across renders. #}
   <div id="paneNegativeLists" class="st-neg-pane" style="display:none">
+    {# Section 8 audit [032] - screen-reader-only heading. #}
+    <h3 class="visually-hidden">Negative keyword lists</h3>
     <div class="neg-page" data-client-id="{{ client.id }}">
 
       <p class="neg-page__subtitle">
@@ -463,7 +475,7 @@
         </div>
         <div class="st-card-table">
           <div id="negLists" data-client-id="{{ client.id }}">
-            <div class="neg-loading">Loading negative lists…</div>
+            <div class="neg-loading"><span class="act-spinner material-symbols-outlined">progress_activity</span>Loading negative lists…</div>
           </div>
         </div>
       </div>
@@ -483,7 +495,7 @@
     <aside class="ai-panel" id="aiPanel" aria-label="AI Co-pilot panel">
       <div class="ai-panel-header">
         <div class="ai-panel-title">
-          🤖 <span id="aiPanelTitleText">AI Co-pilot</span>
+          <span class="material-symbols-outlined" style="font-size:18px;vertical-align:-4px;">auto_awesome</span> <span id="aiPanelTitleText">AI Co-pilot</span>
         </div>
         <button class="ai-panel-collapse-btn" id="btnAIPanelCollapse"
                 type="button"
@@ -498,7 +510,7 @@
            div is hidden by JS once any message exists. #}
         <div class="ai-chat-messages" id="aiChatMessages">
           <div class="ai-chat-empty" id="aiChatEmpty">
-            <p>💬 No messages yet for this view.</p>
+            <p><span class="material-symbols-outlined" style="font-size:18px;vertical-align:-4px;">chat</span> No messages yet for this view.</p>
             <p style="font-size:11px; opacity:0.7;">
               Ask me anything about the rows you're triaging - patterns,
               clusters, specific terms, anomalies.
@@ -515,7 +527,7 @@
             <button class="btn-act ai-chat-clear" id="btnAIChatClear"
                     type="button"
                     title="Clear this conversation (soft delete - recoverable in DB)">
-              🗑️ Clear
+              <span class="material-symbols-outlined" style="font-size:14px;vertical-align:-2px;">delete</span> Clear
             </button>
             <button class="btn-act ai-chat-send" id="btnAIChatSend"
                     type="button"
@@ -530,7 +542,7 @@
     {# Slim strip - visible only when panel is collapsed. #}
     <button class="ai-panel-strip" id="btnAIPanelExpand" type="button"
             title="Expand AI panel" aria-label="Expand AI panel"
-            style="display:none">🤖<br>Expand</button>
+            style="display:none"><span class="material-symbols-outlined" style="font-size:16px;">auto_awesome</span><br>Expand</button>
 
   </div>{# /.ai-page-grid #}
 

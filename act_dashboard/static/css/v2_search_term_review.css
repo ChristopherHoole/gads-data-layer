@@ -22,7 +22,15 @@
   cursor: help;
   border-radius: 4px;
 }
-.st-date-help:hover, .st-date-help:focus { opacity: 0.95; outline: none; }
+.st-date-help:hover, .st-date-help:focus { opacity: 0.95; }
+/* Section 8 audit [027] (17 May 2026): replace the suppressed outline
+   with the shared focus-visible ring so keyboard users get visible
+   focus on these tabbable info icons. */
+.st-date-help:focus-visible {
+  outline: 2px solid var(--act-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 .st-date-help .material-symbols-outlined {
   font-size: 16px;
   vertical-align: middle;
@@ -74,10 +82,20 @@
   align-items: center;
 }
 .st-filter-bar__label {
-  /* Sentence-case per global ACT rule (12 May 2026) - was uppercase. */
+  /* Sentence or Title Case both fine per Section 8 rule update;
+     ALLCAPS still banned. */
   font-size: 12px; font-weight: 500;
   color: var(--act-text); opacity: 0.7;
   margin-right: 4px; min-width: 96px;
+}
+/* Section 8 audit [036] (17 May 2026): small italic hint for the Reason
+   filter row so the multi-select behaviour reads differently from the
+   single-select Status row above. */
+.st-filter-bar__hint {
+  font-weight: 400;
+  font-style: italic;
+  opacity: 0.7;
+  margin-left: 2px;
 }
 
 /* Wave C10 / Section 1 addendum (12 May 2026): the .st-source-note
@@ -111,7 +129,11 @@
 .pmax-info-icon:hover, .pmax-info-icon:focus {
   opacity: 1;
   background: var(--act-hover-bg);
-  outline: none;
+}
+/* Section 8 audit [027] (17 May 2026): focus ring on keyboard focus. */
+.pmax-info-icon:focus-visible {
+  outline: 2px solid var(--act-primary);
+  outline-offset: 2px;
 }
 
 /* Sticky action bar - pins below fixed topbar (z:900) on vertical scroll.
@@ -365,6 +387,22 @@
 .st-table tbody tr:hover td { background: rgba(0,0,0,0.015); }
 [data-theme="dark"] .st-table tbody tr:hover td { background: rgba(255,255,255,0.03); }
 .st-loading { padding: 40px; text-align: center; opacity: 0.6; }
+/* Section 8 audit [038] (17 May 2026): Material spinner glyph so the
+   loading state reads as "in progress" rather than a static label.
+   Pages that want the spinner add <span class="act-spinner ...">
+   progress_activity</span> before the loading text. */
+.act-spinner.material-symbols-outlined {
+  display: inline-block;
+  font-size: 18px;
+  vertical-align: -3px;
+  margin-right: 6px;
+  animation: act-spin 1.2s linear infinite;
+  transform-origin: center;
+}
+@keyframes act-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
 
 /* Section 6 (12 May 2026): Phrase Suggestions empty state - shown when
    no Pass 3 run has happened yet. Centred message + prominent Run Pass 3
@@ -1003,6 +1041,35 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   .ai-page-grid { grid-template-columns: 1fr; }
   .ai-panel,
   .ai-panel-strip { display: none !important; }
+}
+
+/* Section 8 audit [034] (17 May 2026): lightweight responsive treatment.
+   Account is desktop-first too, but a few breakpoints help when Chris
+   pops the laptop out for a quick triage on the train.
+
+   Tablet (<= 1024px):
+     - status-card grid drops to 2 columns
+     - action bar wraps the AI-action group onto its own row
+     - tabs stay horizontal (rely on overflow-x:auto if too wide)
+
+   Phone (<= 640px):
+     - status cards stack 1-col
+     - status-card font scales down slightly
+     - sticky action bar relaxes its sticky position so it doesn't
+       eat 60% of the viewport on small screens */
+@media (max-width: 1024px) {
+  .st-page .status-cards,
+  .kh-stats { grid-template-columns: repeat(2, 1fr) !important; }
+  .st-action-bar { flex-wrap: wrap; row-gap: 6px; }
+  .st-action-bar__right { flex-wrap: wrap; row-gap: 6px; }
+}
+@media (max-width: 640px) {
+  .st-page .status-cards,
+  .kh-stats { grid-template-columns: 1fr !important; }
+  .st-action-bar { position: static; }
+  .st-tabs--outside { padding: 0 12px; overflow-x: auto; }
+  .st-card-toolbar { padding: 5px 12px; }
+  .st-filter-bar__label { min-width: 0; }
 }
 
 /* ============================================================

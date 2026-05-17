@@ -50,7 +50,7 @@
 
   async function reload() {
     const tbody = document.getElementById('khTbody');
-    tbody.innerHTML = `<tr><td colspan="${COL_COUNT}" class="kh-loading">Loading&hellip;</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${COL_COUNT}" class="kh-loading"><span class="act-spinner material-symbols-outlined">progress_activity</span>Loading&hellip;</td></tr>`;
     const params = new URLSearchParams({
       client: CLIENT,
       page: state.page, page_size: state.page_size,

@@ -5,11 +5,13 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // Section collapse (both acct-section and act-section patterns)
-  document.querySelectorAll('.acct-section__header, .act-section__header').forEach(header => {
+  // Section collapse. Section 8 audit [031] (17 May 2026): .acct-section
+  // converged into the shared .act-card primitive; .act-section is the
+  // morning-review collapsible variant. Both selectors stay for now.
+  document.querySelectorAll('.act-card__header, .act-section__header').forEach(header => {
     header.addEventListener('click', (e) => {
       if (e.target.closest('.table-toolbar') || e.target.closest('.pill-group')) return;
-      const section = header.closest('.acct-section') || header.closest('.act-section');
+      const section = header.closest('.act-card') || header.closest('.act-section');
       if (section) section.classList.toggle('collapsed');
     });
   });

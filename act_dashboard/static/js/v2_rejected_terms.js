@@ -63,7 +63,7 @@
   }
 
   async function load() {
-    body.innerHTML = '<tr><td colspan="9" class="rt-loading">Loading…</td></tr>';
+    body.innerHTML = '<tr><td colspan="9" class="rt-loading"><span class="act-spinner material-symbols-outlined">progress_activity</span>Loading…</td></tr>';
     try {
       const url = new URL('/v2/api/sticky-rejections', window.location.origin);
       url.searchParams.set('client_id', CLIENT);

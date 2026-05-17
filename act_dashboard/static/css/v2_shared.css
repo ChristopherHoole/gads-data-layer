@@ -57,6 +57,20 @@
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* Section 8 audit [032] (17 May 2026): screen-reader-only utility for
+   semantic headings that don't need to compete with the visible tab
+   row. h3s tagged with .visually-hidden surface the pane's name to
+   AT users without changing visual hierarchy. */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 .pill-btn.active {
   background: var(--act-surface) !important;
   box-shadow: 0 1px 2px rgba(0,0,0,0.1);
@@ -129,6 +143,32 @@
 }
 .act-card__body {
   padding: 20px;
+}
+/* Section 8 audit [031] (17 May 2026): collapsible-section modifiers
+   migrated from the Account page's .acct-section primitive. The Account
+   template + JS now use .act-card across the board; the .acct-section
+   block in v2_account_level.css is gone. */
+.act-card__header[role="button"],
+.act-card--collapsible .act-card__header {
+  cursor: pointer;
+  user-select: none;
+}
+.act-card__header:hover { background: var(--act-hover-bg); }
+.act-card__toggle {
+  font-size: 20px;
+  color: var(--act-text);
+  transition: transform 200ms ease;
+}
+.act-card.collapsed .act-card__body { display: none; }
+.act-card.collapsed .act-card__toggle { transform: rotate(-90deg); }
+/* Small context label that sits next to .act-card__title (campaign
+   count / date range). Pulled in from the Account page convention. */
+.act-card__context {
+  font-size: 12px;
+  color: var(--act-text);
+  opacity: 0.65;
+  margin-left: 8px;
+  font-weight: 400;
 }
 
 /* ============================================================
