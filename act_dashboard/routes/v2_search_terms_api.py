@@ -122,6 +122,61 @@ def get_last_pass3_status():
 
 
 # ---------------------------------------------------------------------------
+# GET /last-pass3-cost?client_id=X
+#   Stage 11 (17 May 2026): drives the cost-report banner at the top of
+#   the Pass 3 pane. Pulls the most recent successful neg_pass3 row +
+#   parses details_json (tokens_in/out, cost_usd, wall_clock_ms, theme
+#   count, suggestions_created) so the UI can render "Last run: 12s,
+#   $0.18, 8 suggestions, 3 themes".
+# ---------------------------------------------------------------------------
+@v2_search_terms_api_bp.route('/last-pass3-cost', methods=['GET'])
+def get_last_pass3_cost():
+    import json as _json
+    client_id = (request.args.get('client_id') or '').strip()
+    if not client_id:
+        return _err('missing_client_id', 'client_id required')
+    con = _db()
+    try:
+        row = con.execute(
+            """SELECT status, started_at, completed_at, details_json
+               FROM act_v2_scheduler_runs
+               WHERE client_id = ?
+                 AND phase IN ('neg_pass3', 'pass3_ai_autotrigger')
+                 AND status = 'success'
+               ORDER BY started_at DESC
+               LIMIT 1""",
+            [client_id],
+        ).fetchone()
+    finally:
+        con.close()
+    if not row:
+        return jsonify({'client_id': client_id, 'status': None})
+    status, started_at, completed_at, details_raw = row
+    details = {}
+    if details_raw:
+        try:
+            details = _json.loads(details_raw) if isinstance(details_raw, str) else (details_raw or {})
+        except (ValueError, TypeError):
+            details = {}
+    cost_usd = details.get('cost_usd')
+    # GBP conversion mirrors the kw_history_mapping constant.
+    cost_gbp = round(float(cost_usd) * 0.79, 4) if cost_usd is not None else None
+    return jsonify({
+        'client_id':            client_id,
+        'status':               status,
+        'started_at':           started_at.isoformat() if started_at else None,
+        'completed_at':         completed_at.isoformat() if completed_at else None,
+        'tokens_in':            details.get('tokens_in'),
+        'tokens_out':           details.get('tokens_out'),
+        'cost_usd':             cost_usd,
+        'cost_gbp':             cost_gbp,
+        'wall_clock_ms':        details.get('wall_clock_ms'),
+        'suggestions_created':  details.get('suggestions_created'),
+        'themes_count':         details.get('themes_count'),
+    })
+
+
+# ---------------------------------------------------------------------------
 # GET /pass3-themes/<client_id>?date=YYYY-MM-DD
 # ---------------------------------------------------------------------------
 @v2_search_terms_api_bp.route('/pass3-themes/<client_id>', methods=['GET'])

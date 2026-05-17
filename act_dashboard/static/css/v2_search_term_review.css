@@ -1489,3 +1489,45 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   gap: 8px;
   flex-shrink: 0;
 }
+
+/* Stage 11 (17 May 2026) - Pass 3 cost report banner.
+   Sits below the AI theme banner. Subtler than the theme banner (grey
+   left border vs primary blue) since it's reference info, not headline. */
+.st-p3-cost-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  margin: 0 0 12px;
+  background: var(--act-hover-bg);
+  border: 1px solid var(--act-border-light);
+  border-left: 3px solid var(--act-text);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--act-text);
+}
+[data-theme="dark"] .st-p3-cost-banner {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.1);
+  border-left-color: rgba(255,255,255,0.5);
+}
+.st-p3-cost-banner__icon { font-size: 18px; opacity: 0.65; flex-shrink: 0; }
+.st-p3-cost-banner__title { font-weight: 600; margin-right: 6px; }
+.st-p3-cost-banner__text { opacity: 0.85; }
+.st-p3-cost-banner__text .sep { opacity: 0.4; margin: 0 6px; }
+
+/* Stage 11 (17 May 2026) - manually-edited row indicator. Small pencil
+   icon next to the target_list_role select that lights up once Chris
+   has hand-changed the AI's choice on that row. Sits inline; muted
+   until hover. */
+.st-p3-manual-flag {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  color: var(--act-text);
+  opacity: 0.45;
+  font-size: 14px;
+  cursor: help;
+}
+.st-p3-manual-flag.is-manual { color: var(--act-amber, #f59e0b); opacity: 1; }
+[data-theme="dark"] .st-p3-manual-flag.is-manual { color: #fbbf24; }

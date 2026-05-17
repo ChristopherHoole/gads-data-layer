@@ -749,6 +749,9 @@ def list_phrase_suggestions(client_id):
         # onto act_v2_phrase_suggestions (n8 cols), so we don't JOIN
         # act_v2_ai_classifications anymore. Confidence is a DOUBLE 0..1 — bucket
         # it into the high/medium/low pill values the UI expects.
+        # Stage 11 (17 May 2026): added manual_override column to the
+        # SELECT so the UI can render the "manually edited" pencil
+        # indicator on each row.
         rows = con.execute(
             f"""SELECT ps.id, ps.analysis_date, ps.fragment, ps.word_count,
                        ps.target_list_role,
@@ -763,7 +766,8 @@ def list_phrase_suggestions(client_id):
                          WHEN ps.confidence IS NOT NULL THEN 'low'
                          ELSE NULL
                        END AS ai_confidence,
-                       ps.rationale AS ai_reasoning
+                       ps.rationale AS ai_reasoning,
+                       COALESCE(ps.manual_override, FALSE) AS manual_override
                 FROM act_v2_phrase_suggestions ps
                 WHERE {where_ps}
                 ORDER BY ps.occurrence_count DESC NULLS LAST,
@@ -821,6 +825,10 @@ def list_phrase_suggestions(client_id):
             'ai_target_list_role': r[14],
             'ai_confidence': r[15],
             'ai_reasoning': r[16],
+            # Stage 11 (17 May 2026): flag set TRUE when Chris manually
+            # changes target_list_role via the UI dropdown. Used to
+            # render a pencil indicator + (future) skip on Pass 3 re-runs.
+            'manual_override': bool(r[17]),
         })
     return jsonify({
         'items': items, 'total': int(total),
@@ -889,12 +897,16 @@ def bulk_update_phrase_suggestions():
                 # avoid. Autocommit each statement and use a
                 # compensating re-INSERT if the second statement fails,
                 # so we never leave the row deleted.
+                # Stage 11 (17 May 2026): include manual_override in the
+                # round-trip so the DELETE+INSERT workaround preserves it
+                # (and bumps it to TRUE on a successful role swap).
                 full_row = con.execute(
                     """SELECT client_id, analysis_date, fragment, word_count,
                               target_list_role, source_search_terms,
                               occurrence_count, risk_level, review_status,
                               reviewed_at, reviewed_by, pushed_to_ads_at,
-                              pushed_google_ads_criterion_id, push_error
+                              pushed_google_ads_criterion_id, push_error,
+                              manual_override
                        FROM act_v2_phrase_suggestions
                        WHERE id = ? AND client_id = ?""",
                     [row_id, client_id],
@@ -916,9 +928,10 @@ def bulk_update_phrase_suggestions():
                             word_count, target_list_role, source_search_terms,
                             occurrence_count, risk_level, review_status,
                             reviewed_at, reviewed_by, pushed_to_ads_at,
-                            pushed_google_ads_criterion_id, push_error)
+                            pushed_google_ads_criterion_id, push_error,
+                            manual_override)
                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                                   CURRENT_TIMESTAMP, 'user', ?, ?, ?)""",
+                                   CURRENT_TIMESTAMP, 'user', ?, ?, ?, TRUE)""",
                         [row_id, full_row[0], full_row[1], full_row[2],
                          full_row[3], override, full_row[5], full_row[6],
                          full_row[7], new_status,
@@ -935,19 +948,20 @@ def bulk_update_phrase_suggestions():
                                 word_count, target_list_role, source_search_terms,
                                 occurrence_count, risk_level, review_status,
                                 reviewed_at, reviewed_by, pushed_to_ads_at,
-                                pushed_google_ads_criterion_id, push_error)
+                                pushed_google_ads_criterion_id, push_error,
+                                manual_override)
                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                                       ?, ?, ?, ?, ?)""",
+                                       ?, ?, ?, ?, ?, ?)""",
                             [row_id, full_row[0], full_row[1], full_row[2],
                              full_row[3], full_row[4], full_row[5],
                              full_row[6], full_row[7], full_row[8],
                              full_row[9], full_row[10], full_row[11],
-                             full_row[12], full_row[13]],
+                             full_row[12], full_row[13], full_row[14]],
                         )
                     except Exception:
                         logger.exception(
                             f"[bulk-update-phrase] id={row_id} compensation "
-                            f"re-insert FAILED. Row lost — investigate."
+                            f"re-insert FAILED. Row lost - investigate."
                         )
                     raise
             else:

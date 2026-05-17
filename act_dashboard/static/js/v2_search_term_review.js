@@ -1453,12 +1453,17 @@
       ? `<td><span class="ai-conf-pill ai-conf-${escapeHtml(item.ai_confidence)}">${escapeHtml(item.ai_confidence)}</span></td>`
       : '<td class="ai-verdict-empty">-</td>';
 
+    // Stage 11 (17 May 2026): manually-edited pencil indicator. Lights
+    // up amber when manual_override = TRUE so Chris can see at a glance
+    // which rows have been hand-routed off the AI's choice.
+    const manualFlag = `<span class="st-p3-manual-flag material-symbols-outlined ${item.manual_override ? 'is-manual' : ''}" title="${item.manual_override ? 'Manually edited - target list changed off the AI suggestion.' : 'AI routing in effect. Change the dropdown to override.'}">edit</span>`;
+
     return `<tr data-id="${item.id}"${classAttr}>
       <td><input type="checkbox" class="st-chk" ${chkAttrs}></td>
       <td class="col-num">${rowNum}</td>
       <td class="st-table__term">${escapeHtml(item.fragment)}</td>
       <td class="num">${item.word_count}</td>
-      <td>${roleSel}</td>
+      <td>${roleSel}${manualFlag}</td>
       <td class="num">${item.occurrence_count}</td>
       <td><span class="st-risk st-risk--${item.risk_level}">${item.risk_level}</span></td>
       <td>${reviewed}</td>
@@ -2173,6 +2178,7 @@
       // button takes over (Section 6 addendum mutex).
       if (currentTab === 'pass3') {
         hydrateP3ThemeBanner();
+        hydrateP3CostBanner();  // Stage 11 (17 May 2026)
         await reload({preserveSession: true});
       }
     } catch (e) { toast(`Pass 3 AI failed: ${e.message}`, 'error'); }
@@ -2267,6 +2273,47 @@
       banner.style.display = '';
     } catch (e) {
       // Banner is non-critical - fail silently, leave it hidden.
+      banner.style.display = 'none';
+    }
+  }
+
+  // Stage 11 (17 May 2026) - hydrate the cost-report banner from
+  // /v2/api/search-terms/last-pass3-cost. Called on Pass 3 tab switch
+  // and after a successful Run Pass 3. Stays hidden when no successful
+  // run exists yet (the failure banner / empty-state CTA cover those
+  // cases).
+  async function hydrateP3CostBanner() {
+    const banner = document.getElementById('stP3CostBanner');
+    const txt = document.getElementById('stP3CostText');
+    if (!banner || !txt) return;
+    try {
+      const r = await fetch(
+        '/v2/api/search-terms/last-pass3-cost'
+        + `?client_id=${encodeURIComponent(CLIENT)}`,
+      );
+      if (!r.ok) { banner.style.display = 'none'; return; }
+      const d = await r.json();
+      if (!d || d.status !== 'success') {
+        banner.style.display = 'none';
+        return;
+      }
+      const wallS = d.wall_clock_ms ? (d.wall_clock_ms / 1000).toFixed(1) + 's' : '-';
+      const tokIn = d.tokens_in != null ? Number(d.tokens_in).toLocaleString('en-GB') : '-';
+      const tokOut = d.tokens_out != null ? Number(d.tokens_out).toLocaleString('en-GB') : '-';
+      const cost = d.cost_gbp != null
+        ? `£${Number(d.cost_gbp).toFixed(4)}`
+        : (d.cost_usd != null ? `$${Number(d.cost_usd).toFixed(4)}` : '-');
+      const sugg = d.suggestions_created != null ? `${d.suggestions_created} suggestions` : '-';
+      const themes = d.themes_count != null ? `${d.themes_count} themes` : '-';
+      txt.innerHTML = (
+        `${wallS}<span class="sep">|</span>`
+        + `${tokIn} in / ${tokOut} out tokens<span class="sep">|</span>`
+        + `${cost}<span class="sep">|</span>`
+        + `${sugg}<span class="sep">|</span>`
+        + `${themes}`
+      );
+      banner.style.display = '';
+    } catch (_) {
       banner.style.display = 'none';
     }
   }
@@ -2377,6 +2424,16 @@
     updatePushButtonVisibility();
     if (tab === 'pass3') renderP3StatusChips();
     // Tier 2.1e - theme banner only shows on Pass 3 tab.
+    // Stage 11 (17 May 2026): cost-report banner hydration on Pass 3
+    // tab activation. Hidden on non-Pass-3 tabs.
+    const _p3Cost = document.getElementById('stP3CostBanner');
+    if (_p3Cost) {
+      if (tab === 'pass3') {
+        hydrateP3CostBanner();
+      } else {
+        _p3Cost.style.display = 'none';
+      }
+    }
     const _p3Banner = document.getElementById('stP3ThemeBanner');
     if (_p3Banner) {
       if (tab === 'pass3') {

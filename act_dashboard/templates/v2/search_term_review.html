@@ -169,8 +169,8 @@
         {# Stage 11 - Pass 3 routing AI buttons. Hidden until Pass 3 tab. #}
         <button class="btn-act btn-act--ai" id="btnAIRouteP3"
                 style="display:none"
-                title="Ask Opus to suggest the right target list for each pending phrase.">
-          <span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px;">auto_awesome</span> AI Route <span class="ai-action-badge" id="aiRouteP3Count">(0)</span>
+                title="Ask the AI engine to route each pending phrase to the correct negative-keyword list by intent (Stage 11).">
+          <span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px;">route</span> Route phrases by intent <span class="ai-action-badge" id="aiRouteP3Count">(0)</span>
         </button>
         <button class="btn-act btn-act--ai-secondary" id="btnApplyAIRouteP3"
                 style="display:none"
@@ -244,6 +244,18 @@
       <div class="st-p3-theme-banner__body">
         <div class="st-p3-theme-banner__title">AI Theme Summary</div>
         <div class="st-p3-theme-banner__themes" id="stP3ThemesList"></div>
+      </div>
+    </div>
+
+    {# Stage 11 (17 May 2026): cost report banner. Populated by
+       hydrateP3CostBanner() on Pass 3 tab activation from GET
+       /v2/api/search-terms/last-pass3-cost?client_id=...
+       Hidden when no successful run yet. #}
+    <div id="stP3CostBanner" class="st-p3-cost-banner" style="display:none">
+      <span class="material-symbols-outlined st-p3-cost-banner__icon" aria-hidden="true">receipt_long</span>
+      <div class="st-p3-cost-banner__body">
+        <span class="st-p3-cost-banner__title">Last Pass 3 run:</span>
+        <span id="stP3CostText" class="st-p3-cost-banner__text"></span>
       </div>
     </div>
 
