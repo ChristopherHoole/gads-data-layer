@@ -102,12 +102,13 @@
     // ---- Stats strip (above the card) ----
     const zone = syncZoneClass(d.last_synced_at);
     if (statsHolder) {
+      // Section 8 audit [025] (17 May 2026): tooltips on every tile.
       statsHolder.innerHTML = `
         <div class="neg-stats">
-          <div class="neg-stat"><span class="neg-stat__label">Total lists</span><span class="neg-stat__val">${d.total_lists}</span></div>
-          <div class="neg-stat"><span class="neg-stat__label">Total keywords</span><span class="neg-stat__val">${d.total_keywords}</span></div>
-          <div class="neg-stat"><span class="neg-stat__label">Snapshot date</span><span class="neg-stat__val">${d.snapshot_date || '-'}</span></div>
-          <div class="neg-stat ${zone}"><span class="neg-stat__label">Last synced</span><span class="neg-stat__val">${fmtWhen(d.last_synced_at)}</span></div>
+          <div class="neg-stat" title="Number of negative-keyword lists in the latest GAds snapshot."><span class="neg-stat__label">Total lists</span><span class="neg-stat__val">${d.total_lists}</span></div>
+          <div class="neg-stat" title="Sum of negative keywords across all lists."><span class="neg-stat__label">Total keywords</span><span class="neg-stat__val">${d.total_keywords}</span></div>
+          <div class="neg-stat" title="Date the snapshot was taken in GAds."><span class="neg-stat__label">Snapshot date</span><span class="neg-stat__val">${d.snapshot_date || '-'}</span></div>
+          <div class="neg-stat ${zone}" title="Last time ACT refreshed the snapshot."><span class="neg-stat__label">Last synced</span><span class="neg-stat__val">${fmtWhen(d.last_synced_at)}</span></div>
         </div>`;
     }
 

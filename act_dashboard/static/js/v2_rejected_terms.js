@@ -77,6 +77,18 @@
       document.getElementById('rtExpired30d').textContent = s.expired_last_30d ?? 0;
       document.getElementById('rtTotalCycles').textContent = s.total_cycles ?? 0;
       document.getElementById('rtAvgCycles').textContent = s.avg_cycles_per_term ?? 0;
+      // Section 8 audit [030] (17 May 2026): pill count badges.
+      // Expired here counts last-30d (matches the stat tile above);
+      // "All" is the sum so the badge math reads correctly against the
+      // two non-All pills.
+      const nActive = Number(s.active_count) || 0;
+      const nExpired = Number(s.expired_last_30d) || 0;
+      const elA = document.getElementById('rtCountActive');
+      const elE = document.getElementById('rtCountExpired');
+      const elAll = document.getElementById('rtCountAll');
+      if (elA) elA.textContent = nActive.toLocaleString('en-GB');
+      if (elE) elE.textContent = nExpired.toLocaleString('en-GB');
+      if (elAll) elAll.textContent = (nActive + nExpired).toLocaleString('en-GB');
       state.page = 1;
       render();
     } catch (e) {

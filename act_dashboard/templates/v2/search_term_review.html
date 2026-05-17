@@ -149,16 +149,20 @@
          via setUnsureFilter - same filter behaviour, different surface).
          #btnAITriage is Pass 1/2-only; switchTab() toggles visibility. #}
       <div class="ai-action-group">
+        {# Section 8 audit [037] (17 May 2026): badge format normalised
+           to "(N)" across all three AI action buttons. Previous mix of
+           "(0 pending)" / "(0)" was inconsistent. JS updates the inner
+           number; the parentheses live in the template. #}
         <button class="btn-act btn-act--ai" id="btnAITriage"
                 title="Classify pending rows in the current view using Claude Opus.">
-          🤖 AI Triage <span class="ai-action-badge" id="aiTriageCount">(0 pending)</span>
+          🤖 AI Triage <span class="ai-action-badge" id="aiTriageCount">(0)</span>
         </button>
         {# Section 8a (13 May 2026): Apply high-conf button removed - bulk-apply path not trusted. #}
         {# Stage 11 - Pass 3 routing AI buttons. Hidden until Pass 3 tab. #}
         <button class="btn-act btn-act--ai" id="btnAIRouteP3"
                 style="display:none"
                 title="Ask Opus to suggest the right target list for each pending phrase.">
-          🤖 AI Route <span class="ai-action-badge" id="aiRouteP3Count">(0 pending)</span>
+          🤖 AI Route <span class="ai-action-badge" id="aiRouteP3Count">(0)</span>
         </button>
         <button class="btn-act btn-act--ai-secondary" id="btnApplyAIRouteP3"
                 style="display:none"
@@ -307,20 +311,23 @@
            (.st-table not .st-table--wide), so no offset CSS needed.
            Section 2 addendum 2: Pass 3 has no client-side sort wiring,
            so no headers carry the .st-sortable class or sort glyph. #}
+        {# Section 8 audit [023] (17 May 2026): tooltips on every jargon
+           column. Words / Occ / Risk / Source terms / AI Role / AI Conf
+           all carry a one-line explainer now. #}
         <tr>
           <th style="width:34px"></th>
           <th class="col-num">#</th>
           <th>Fragment</th>
-          <th class="num">Words</th>
+          <th class="num" title="Word count in the fragment.">Words</th>
           <th>Target list</th>
-          <th class="num">Occ</th>
-          <th>Risk</th>
+          <th class="num" title="Occurrence count - how many distinct search terms this fragment covers today.">Occ</th>
+          <th title="AI risk rating for this fragment (low / med / high).">Risk</th>
           <th>Status</th>
-          <th>Source terms</th>
-          <th>Push error</th>
+          <th title="Up to 3 search terms this fragment was derived from.">Source terms</th>
+          <th title="Error message from Google Ads if the push failed.">Push error</th>
           {# Stage 11 - AI routing suggestion columns. #}
-          <th>AI Role</th>
-          <th>AI Conf</th>
+          <th title="AI-suggested target list role for this fragment.">AI Role</th>
+          <th title="AI confidence in the suggested role (high / medium / low).">AI Conf</th>
         </tr>
       </thead>{# Pass 3 headers already sentence-case #}
       <tbody id="stP3Tbody">
@@ -366,20 +373,25 @@
     <div class="rt-page" data-client-id="{{ client.id }}">
 
       <div class="rt-stats">
-        <div class="status-card status-card--amber"><div class="status-card__count" id="rtActive">-</div><div class="status-card__label">Active rejections</div></div>
-        <div class="status-card"><div class="status-card__count" id="rtExpired30d">-</div><div class="status-card__label">Expired (last 30d)</div></div>
-        <div class="status-card status-card--blue"><div class="status-card__count" id="rtTotalCycles">-</div><div class="status-card__label">Total cycles recorded</div></div>
-        <div class="status-card status-card--green"><div class="status-card__count" id="rtAvgCycles">-</div><div class="status-card__label">Avg cycles / term</div></div>
+        {# Section 8 audit [024] (17 May 2026): tooltips on every tile. #}
+        <div class="status-card status-card--amber" title="Sticky rejections still in their cool-down window."><div class="status-card__count" id="rtActive">-</div><div class="status-card__label">Active rejections</div></div>
+        <div class="status-card" title="Sticky rejections whose cool-down expired in the last 30 days."><div class="status-card__count" id="rtExpired30d">-</div><div class="status-card__label">Expired (last 30d)</div></div>
+        <div class="status-card status-card--blue" title="Lifetime count of approve - reject - re-approve cycles."><div class="status-card__count" id="rtTotalCycles">-</div><div class="status-card__label">Total cycles recorded</div></div>
+        <div class="status-card status-card--green" title="Average number of cycles per rejected term."><div class="status-card__count" id="rtAvgCycles">-</div><div class="status-card__label">Avg cycles / term</div></div>
       </div>
 
       <div class="act-card">
         <div class="st-card-toolbar">
           <div class="st-filter-bar">
             <span class="st-filter-bar__label">Status</span>
+            {# Section 8 audit [029][030] (17 May 2026): All-first order
+               for consistency with every other pill row in the module;
+               Active remains default-selected. .pill-btn__count badges
+               render server counts so users see bucket sizes at a glance. #}
             <div class="pill-group" id="rtStatusPills" role="tablist">
-              <button type="button" class="pill-btn active" data-status="active">Active</button>
-              <button type="button" class="pill-btn" data-status="expired">Expired</button>
-              <button type="button" class="pill-btn" data-status="all">All</button>
+              <button type="button" class="pill-btn" data-status="all">All <span class="pill-btn__count" id="rtCountAll">-</span></button>
+              <button type="button" class="pill-btn active" data-status="active">Active <span class="pill-btn__count" id="rtCountActive">-</span></button>
+              <button type="button" class="pill-btn" data-status="expired">Expired <span class="pill-btn__count" id="rtCountExpired">-</span></button>
             </div>
           </div>
           <div class="rt-search-row">

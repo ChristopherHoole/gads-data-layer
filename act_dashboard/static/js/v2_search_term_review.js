@@ -691,7 +691,8 @@
     const el = document.getElementById('aiTriageCount');
     if (!el) return;
     const n = getPendingClassifiableIds().length;
-    el.textContent = `(${n} pending)`;
+    // Section 8 audit [037] (17 May 2026): badge format normalised to (N).
+    el.textContent = `(${n})`;
     const btn = document.getElementById('btnAITriage');
     if (btn) btn.disabled = (n === 0);
   }
@@ -1570,9 +1571,10 @@
   }
 
   function updateAIRouteP3Badge() {
+    // Section 8 audit [037] (17 May 2026): badge format normalised to (N).
     const count = (lastItems || []).filter(it => it.review_status === 'pending').length;
     const el = document.getElementById('aiRouteP3Count');
-    if (el) el.textContent = `(${count} pending)`;
+    if (el) el.textContent = `(${count})`;
   }
 
   function updateApplyAIRouteP3Button() {

@@ -274,12 +274,17 @@
   background: rgba(255,255,255,0.03);
 }
 
-/* Wave C - cell wrapping primitives */
+/* Wave C - cell wrapping primitives.
+   Section 8 audit [028] (17 May 2026): vertical-align switched from top
+   to middle so Pass 3 wrap-cells (Source terms, Push error) sit on the
+   same line as the middle-aligned numeric cells. Pass 1/2 wraps too
+   but they were already middle-aligned at the row level, so no regression
+   here. */
 .st-table td.wrap-cell {
   white-space: normal;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  vertical-align: top;
+  vertical-align: middle;
 }
 .st-table td.nowrap-cell,
 .st-table th.num,
@@ -529,9 +534,13 @@
 .act-confirm__body p { margin: 0 0 12px; }
 .act-confirm__list   { list-style: none; padding: 0; margin: 6px 0 4px; display: flex; flex-direction: column; gap: 6px; }
 .act-confirm__list li { display: flex; align-items: baseline; gap: 8px; }
+/* Section 8 audit [022] (17 May 2026): dark-mode variants added. */
 .act-confirm__ok     { color: #0b8a3e; font-weight: 700; width: 14px; display: inline-block; }
 .act-confirm__change { color: #1e40af; font-weight: 700; width: 14px; display: inline-block; }
 .act-confirm__add    { color: #6b7280; font-weight: 700; width: 14px; display: inline-block; }
+[data-theme="dark"] .act-confirm__ok     { color: #34d399; }
+[data-theme="dark"] .act-confirm__change { color: #93c5fd; }
+[data-theme="dark"] .act-confirm__add    { color: rgba(255,255,255,0.55); }
 .act-confirm__footer {
   padding: 14px 22px 18px; display: flex; justify-content: flex-end; gap: 10px;
   border-top: 1px solid var(--border-light, #f3f4f6); margin-top: 10px;
@@ -832,7 +841,8 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
   background: var(--act-red);
   color: white;
 }
-.ai-confirm-ok--danger:hover { background: #dc2626; }
+/* Section 8 audit [021] (17 May 2026): hardcoded #dc2626 -> token. */
+.ai-confirm-ok--danger:hover { background: var(--act-danger-hover); }
 .ai-confirm-ok:focus-visible,
 .ai-confirm-cancel:focus-visible {
   outline: 2px solid var(--act-primary);
