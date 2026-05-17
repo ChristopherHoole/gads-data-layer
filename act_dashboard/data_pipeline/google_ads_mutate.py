@@ -299,3 +299,91 @@ def remove_shared_criteria(customer_id: str, resource_names: list[str],
         'results': [r.resource_name for r in resp.results],
         'partial_failure': str(getattr(resp, 'partial_failure_error', '') or ''),
     }
+
+
+# ---------------------------------------------------------------------------
+# Phase 1 (2.2 neg-list audit) — single-criterion idempotent remove.
+#
+# Used by the neg-list audit workflow's "Apply approved" pipeline. Wraps
+# `SharedCriterionService.mutate_shared_criteria` for a single criterion and
+# treats GAds NOT_FOUND / DOES_NOT_EXIST as a successful idempotent no-op
+# (the criterion is already gone, the caller's intent is satisfied).
+#
+# Returns a structured dict the route layer can serialise straight to JSON.
+# ---------------------------------------------------------------------------
+def remove_shared_criterion_safe(
+    customer_id: str,
+    criterion_resource_name: str,
+    google_ads_client: GoogleAdsClient | None = None,
+) -> dict:
+    """Remove a single shared-criterion by resource_name, idempotently.
+
+    Returns:
+      {
+        'success': bool,
+        'idempotent_noop': bool,   # True if criterion was already gone
+        'error_message': str|None,
+        'error_code': str|None,    # raw GAds error_code string when failed
+      }
+    """
+    if google_ads_client is None:
+        google_ads_client = GoogleAdsClient.load_from_storage(YAML_PATH)
+
+    crit_svc = google_ads_client.get_service('SharedCriterionService')
+    op = google_ads_client.get_type('SharedCriterionOperation')
+    op.remove = criterion_resource_name
+
+    req = google_ads_client.get_type('MutateSharedCriteriaRequest')
+    req.customer_id = str(customer_id)
+    req.operations.append(op)
+    req.partial_failure = True
+
+    try:
+        resp = crit_svc.mutate_shared_criteria(request=req)
+    except GoogleAdsException as e:
+        # RPC-level failure (auth, malformed resource_name, etc.) — not the
+        # partial-failure path. Still check for NOT_FOUND inside in case it
+        # was raised here instead of routed through partial_failure.
+        msg = _format_ads_exception(e)
+        lowered = msg.lower()
+        if 'does_not_exist' in lowered or 'not_found' in lowered:
+            return {
+                'success': True,
+                'idempotent_noop': True,
+                'error_message': None,
+                'error_code': None,
+            }
+        return {
+            'success': False,
+            'idempotent_noop': False,
+            'error_message': msg,
+            'error_code': 'rpc_error',
+        }
+
+    # Single-op with partial_failure=True: success shows up in resp.results[0],
+    # failure shows up in resp.partial_failure_error.details.
+    per_op_errors = _parse_partial_failure(google_ads_client, resp)
+    if 0 in per_op_errors:
+        err = per_op_errors[0]
+        lowered = err.lower()
+        if 'does_not_exist' in lowered or 'not_found' in lowered:
+            return {
+                'success': True,
+                'idempotent_noop': True,
+                'error_message': None,
+                'error_code': None,
+            }
+        return {
+            'success': False,
+            'idempotent_noop': False,
+            'error_message': err,
+            'error_code': err.split(':', 1)[0].strip() if ':' in err else 'partial_failure',
+        }
+
+    # Success path — resp.results[0].resource_name will echo input
+    return {
+        'success': True,
+        'idempotent_noop': False,
+        'error_message': None,
+        'error_code': None,
+    }

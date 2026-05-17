@@ -1111,6 +1111,137 @@ def refresh_snapshot():
 
 
 # ---------------------------------------------------------------------------
+# Phase 1 (2.2 neg-list audit) — POST /remove-from-list
+#
+# Foundation for the audit "Apply approved" pipeline. Removes one shared-
+# criterion by resource_name from a neg list. Idempotent: NOT_FOUND /
+# DOES_NOT_EXIST returns success=true, idempotent_noop=true. All other
+# errors return success=false with the error message.
+#
+# Every call is logged to act_v2_executed_actions with action_type='neg_remove'.
+# DBD-only via ALLOWED_CLIENTS_V1.
+# ---------------------------------------------------------------------------
+@v2_negatives_api_bp.route('/remove-from-list', methods=['POST'])
+def remove_from_list():
+    from act_dashboard.engine.daily_pipeline import ALLOWED_CLIENTS_V1
+    from act_dashboard.data_pipeline.google_ads_mutate import (
+        remove_shared_criterion_safe,
+    )
+
+    data = request.get_json(silent=True) or {}
+    client_id = data.get('client_id')
+    criterion_resource_name = data.get('criterion_resource_name')
+
+    if not client_id:
+        return _err('missing_client_id', 'client_id required')
+    if not criterion_resource_name:
+        return _err(
+            'missing_criterion_resource_name',
+            'criterion_resource_name required',
+        )
+
+    if client_id not in ALLOWED_CLIENTS_V1:
+        return _err(
+            'client_not_in_v1_allowlist',
+            f'remove-from-list is DBD-only in v1 ({client_id!r} not allowed)',
+            403,
+        )
+
+    # Look up customer_id for the GAds API call. Also captured for the
+    # executed_actions before-state.
+    con = _db()
+    try:
+        row = con.execute(
+            'SELECT google_ads_customer_id FROM act_v2_clients WHERE client_id = ?',
+            [client_id],
+        ).fetchone()
+    finally:
+        con.close()
+    if not row or not row[0]:
+        return _err('bad_client', f'no customer_id for client_id={client_id}', 404)
+    customer_id = row[0]
+
+    # Optional: derive shared_set_id from the resource_name for audit context.
+    # Format: customers/{cid}/sharedCriteria/{shared_set_id}~{criterion_id}
+    shared_set_id = None
+    criterion_id = None
+    try:
+        tail = criterion_resource_name.split('/')[-1]
+        if '~' in tail:
+            shared_set_id, criterion_id = tail.split('~', 1)
+    except Exception:  # noqa: BLE001
+        pass
+
+    before_state = {
+        'criterion_resource_name': criterion_resource_name,
+        'customer_id': str(customer_id),
+        'shared_set_id': shared_set_id,
+        'criterion_id': criterion_id,
+    }
+
+    try:
+        result = remove_shared_criterion_safe(
+            customer_id=str(customer_id),
+            criterion_resource_name=criterion_resource_name,
+        )
+    except Exception as e:
+        logger.exception(
+            f'[remove-from-list] client_id={client_id} '
+            f'crit={criterion_resource_name}'
+        )
+        result = {
+            'success': False,
+            'idempotent_noop': False,
+            'error_message': f'{type(e).__name__}: {str(e)[:400]}',
+            'error_code': 'exception',
+        }
+
+    # Log to act_v2_executed_actions regardless of success/failure
+    try:
+        con = _db()
+        try:
+            con.execute(
+                """INSERT INTO act_v2_executed_actions
+                   (client_id, level, check_id, entity_id, entity_name,
+                    action_type, before_value_json, after_value_json,
+                    reason, execution_status, error_message,
+                    google_ads_api_response)
+                   VALUES (?, 'keyword', 'neg_remove_via_audit', ?, ?,
+                           'neg_remove', ?, ?, ?, ?, ?, ?)""",
+                [
+                    client_id,
+                    criterion_resource_name,
+                    f'shared_set:{shared_set_id} crit:{criterion_id}'
+                    if shared_set_id else criterion_resource_name,
+                    json.dumps(before_state),
+                    json.dumps({
+                        'success': result['success'],
+                        'idempotent_noop': result['idempotent_noop'],
+                    }),
+                    'neg_list_audit_apply',
+                    'success' if result['success'] else 'failed',
+                    result.get('error_message'),
+                    json.dumps({
+                        'idempotent_noop': result['idempotent_noop'],
+                        'error_code': result.get('error_code'),
+                    }),
+                ],
+            )
+        finally:
+            con.close()
+    except Exception:  # noqa: BLE001
+        logger.exception(
+            '[remove-from-list] failed to log to act_v2_executed_actions'
+        )
+
+    return jsonify({
+        'success': result['success'],
+        'idempotent_noop': result['idempotent_noop'],
+        'error_message': result.get('error_message'),
+    })
+
+
+# ---------------------------------------------------------------------------
 # N2 Part 3 — GET /lists  (read-only viewer for Client Config tab)
 # ---------------------------------------------------------------------------
 @v2_negatives_api_bp.route('/lists', methods=['GET'])
