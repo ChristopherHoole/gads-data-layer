@@ -166,17 +166,12 @@
           <span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px;">auto_awesome</span> AI Triage <span class="ai-action-badge" id="aiTriageCount">(0)</span>
         </button>
         {# Section 8a (13 May 2026): Apply high-conf button removed - bulk-apply path not trusted. #}
-        {# Stage 11 - Pass 3 routing AI buttons. Hidden until Pass 3 tab. #}
-        <button class="btn-act btn-act--ai" id="btnAIRouteP3"
-                style="display:none"
-                title="Ask the AI engine to route each pending phrase to the correct negative-keyword list by intent (Stage 11).">
-          <span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px;">route</span> Route phrases by intent <span class="ai-action-badge" id="aiRouteP3Count">(0)</span>
-        </button>
-        <button class="btn-act btn-act--ai-secondary" id="btnApplyAIRouteP3"
-                style="display:none"
-                title="Update each pending row's target list dropdown to match the AI's suggestion. You still review + approve via the existing flow.">
-          <span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px;">check_circle</span> Apply AI routing <span class="ai-action-badge" id="applyAIRouteP3Count">(0)</span>
-        </button>
+        {# Pass 3 "Route phrases by intent" + "Apply AI routing"
+           buttons removed 18 May 2026 - Pass 3 already runs AI routing
+           as part of its main job (engine/pass3_ai.py writes
+           target_list_role + confidence directly onto every phrase
+           suggestion). The separate routing button was redundant; the
+           Apply button was a no-op against the engine's shape. #}
       </div>
       {# Section 5: #stPushApproved is gated on the Status filter pill.
          Hidden by default (Status defaults to 'All'); shown only when
@@ -194,7 +189,7 @@
          lives inside the tab body when none have been generated yet).
          Promoted to btn-act--decline (proper button); label flips to
          "Re-run Pass 3" post-run via updateRunPass3ButtonVisibility(). #}
-      <button class="btn-act btn-act--decline" id="stRunPass3" style="display:none">Run Pass 3</button>
+      <button class="btn-act btn-act--decline" id="stRunPass3" style="display:none">Generate phrase suggestions</button>
     </div>
   </div>
 
@@ -231,7 +226,7 @@
         <div class="st-p3-failure-banner__detail" id="stP3FailureDetail"></div>
       </div>
       <div class="st-p3-failure-banner__actions">
-        <button type="button" class="btn-act btn-act--decline" id="btnP3FailureRerun">Re-run Pass 3</button>
+        <button type="button" class="btn-act btn-act--decline" id="btnP3FailureRerun">Regenerate phrase suggestions</button>
         <button type="button" class="btn-act btn-act--decline" id="btnP3FailureDismiss">Dismiss</button>
       </div>
     </div>
@@ -351,7 +346,7 @@
         </tr>
       </thead>{# Pass 3 headers already sentence-case #}
       <tbody id="stP3Tbody">
-        <tr><td colspan="12" class="st-loading">Run Pass 3 to generate suggestions</td></tr>
+        <tr><td colspan="12" class="st-loading">Click Generate phrase suggestions to populate this tab.</td></tr>
       </tbody>
     </table>
   </div>{# /.st-table-wrap #}

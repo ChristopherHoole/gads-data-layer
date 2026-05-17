@@ -1516,18 +1516,6 @@ body[data-unsure-empty="true"] #stUnsureEmptyBanner { display: block; }
 .st-p3-cost-banner__text { opacity: 0.85; }
 .st-p3-cost-banner__text .sep { opacity: 0.4; margin: 0 6px; }
 
-/* Stage 11 (17 May 2026) - manually-edited row indicator. Small pencil
-   icon next to the target_list_role select that lights up once Chris
-   has hand-changed the AI's choice on that row. Sits inline; muted
-   until hover. */
-.st-p3-manual-flag {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 4px;
-  color: var(--act-text);
-  opacity: 0.45;
-  font-size: 14px;
-  cursor: help;
-}
-.st-p3-manual-flag.is-manual { color: var(--act-amber, #f59e0b); opacity: 1; }
-[data-theme="dark"] .st-p3-manual-flag.is-manual { color: #fbbf24; }
+/* Stage 11 pencil indicator removed 18 May 2026 - dropdown is the
+   edit affordance; the pencil added no signal. manual_override is
+   still tracked server-side. */
