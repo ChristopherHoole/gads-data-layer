@@ -414,16 +414,21 @@
   }
 
   // Section 5 (12 May 2026): #stPushApproved is gated on the Status
-  // filter pill. Only visible when statusView === 'approved' (the
-  // "Approved to Block" pill); hidden in all other states. The pill key
-  // is 'approved' per STATUS_CHIP_ORDER - display label is "Approved to
-  // Block" (the verbal rename from Tier 2.1 polish), but the underlying
-  // enum stayed 'approved'. Also hidden on Pass 3 tab (no Push button
-  // there - Pass 3 has its own push endpoint).
+  // filter pill on Pass 1/2 (only visible when statusView === 'approved').
+  //
+  // 18 May 2026: also surface on Pass 3 (Phrase Suggestions) whenever
+  // there are approved-not-pushed rows. The shared /push-phrase-
+  // suggestions endpoint already exists; the button was just gated off.
+  // No filter-pill dependency on Pass 3 because Pass 3's Status pill row
+  // is a single-select that defaults to 'pending'; pushing should always
+  // be one click regardless of which status the user is filtered to.
   function updatePushButtonVisibility() {
     const btn = document.getElementById('stPushApproved');
     if (!btn) return;
-    const shouldShow = currentTab === 'pass12' && statusView === 'approved';
+    const shouldShow = (
+      (currentTab === 'pass12' && statusView === 'approved')
+      || (currentTab === 'pass3' && approvedReadyCount > 0)
+    );
     btn.style.display = shouldShow ? '' : 'none';
   }
 
@@ -1804,14 +1809,16 @@
     btn.disabled = approvedReadyCount === 0;
     const approvedInView = lastItems.filter(i =>
       i.review_status === 'approved' && !i.pushed_to_ads_at).length;
+    // Label format normalised 18 May 2026: "Push to GAds Neg Lists (N)"
+    // so the count badge reads the same as the AI action buttons.
     if (approvedReadyCount === 0) {
       btn.textContent = 'Push to GAds Neg Lists';
     } else if (approvedInView < approvedReadyCount) {
       // More approved rows exist outside the current filter - be explicit
       btn.textContent =
-        `Push ${approvedReadyCount} to GAds Neg Lists (across all tabs)`;
+        `Push to GAds Neg Lists (${approvedReadyCount}, across all tabs)`;
     } else {
-      btn.textContent = `Push ${approvedReadyCount} to GAds Neg Lists`;
+      btn.textContent = `Push to GAds Neg Lists (${approvedReadyCount})`;
     }
     // Tooltip clarifies scope + remediation
     if (approvedReadyCount > 0 && approvedInView < approvedReadyCount) {
@@ -2004,9 +2011,35 @@
   }
 
   async function pushApproved() {
-    const endpoint = currentTab === 'pass12'
+    // Race-condition fix pattern (17 May 2026): capture the tab at click
+    // time so a tab-switch mid-confirm can't route the POST to the wrong
+    // endpoint.
+    const expectedTab = currentTab;
+    const endpoint = expectedTab === 'pass12'
       ? '/v2/api/negatives/push-approved'
       : '/v2/api/negatives/push-phrase-suggestions';
+    // 18 May 2026: confirm modal before firing the push. Same pattern
+    // for both tabs - approved rows go to Google Ads via API, the
+    // change is observable to Chris's clients, so an explicit confirm
+    // is cheap insurance against double-clicks + tab-switch races.
+    const flowLabel = expectedTab === 'pass3'
+      ? 'phrase suggestions'
+      : 'search-term blocks';
+    const ok = await showConfirmModal({
+      title: `Push ${approvedReadyCount} to GAds Neg Lists?`,
+      bodyHtml: (
+        `<p>This will push <strong>${approvedReadyCount}</strong> approved `
+        + `${escapeHtml(flowLabel)} to Google Ads now. Each row is routed `
+        + `to its <code>target_list_role</code> shared negative-keyword list.</p>`
+        + `<p style="color:var(--act-text);opacity:0.7;font-size:12px;">`
+        + `Successful rows flip to <strong>pushed</strong>. Failed rows stay `
+        + `<strong>approved</strong> with the GAds error captured in <code>push_error</code>.</p>`
+      ),
+      confirmLabel: 'Push to GAds',
+      cancelLabel: 'Cancel',
+    });
+    if (!ok) return;
+
     const btn = document.getElementById('stPushApproved');
     btn.disabled = true; btn.textContent = 'Pushing…';
     try {
